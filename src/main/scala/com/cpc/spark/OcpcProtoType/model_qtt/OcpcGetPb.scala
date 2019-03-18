@@ -92,7 +92,7 @@ object OcpcGetPb {
 
   def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // set the unitid that we need to reset
-    val unitidSelection = s"unitid in ('1974640', '1970124', '1888967', '1927786')"
+    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
 
     // time span
     val sqlRequest =
@@ -121,6 +121,7 @@ object OcpcGetPb {
       .groupBy("identifier")
       .agg(avg(col("kvalue")).alias("kvalue_bak"))
       .select("identifier", "kvalue_bak")
+    data.show(10)
 
     val result = kvalue
       .withColumn("kvalue_ori", col("kvalue"))
