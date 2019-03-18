@@ -45,7 +45,6 @@ object ReportCoinTotalMetrics {
          |        where day='$date'
          |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
          |        and isshow = 1
-         |        and antispam_score != 10000 -- 剔除作弊
          |        and ideaid > 0
          |        and adsrc in (1,28) --cpc广告
          |        and city_level != 1 --非一线城市
