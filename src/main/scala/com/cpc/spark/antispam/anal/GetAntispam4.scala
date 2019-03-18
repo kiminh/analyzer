@@ -32,7 +32,7 @@ object GetAntispam4 {
          |  antispam_rules
          |  , media_appsid
          |  , count(distinct searchid) as num
-         |from dl_cpc.cpc_basedata_click_event
+         |from dl_cpc.cpc_basedata_union_events
          |where day='$date'
          |  and isclick=1
          |  and antispam_rules != "DUP_SEARCH_ID"
