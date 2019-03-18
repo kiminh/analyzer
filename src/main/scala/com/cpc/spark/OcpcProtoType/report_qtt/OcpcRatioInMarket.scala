@@ -16,13 +16,13 @@ object OcpcRatioInMarket {
     val sql =
       s"""
         |select
-        |    round(sum(case when a.is_ocpc = 1 then 1 else 0 end) * 1.0 / count(a.industry), 3) as all_ratio,
+        |    round(sum(case when a.is_ocpc = 1 then 1 else 0 end) * 1.0 / count(a.industry), 4) as all_ratio,
         |    round(sum(case when a.is_ocpc = 1 and a.industry = 'elds' then 1 else 0 end) * 1.0
-        |    / sum(case when a.industry = 'elds' then 1 else 0 end), 3) as elds_ratio,
+        |    / sum(case when a.industry = 'elds' then 1 else 0 end), 4) as elds_ratio,
         |    round(sum(case when a.is_ocpc = 1 and a.industry = 'feedapp' then 1 else 0 end) * 1.0
-        |    / sum(case when a.industry = 'feedapp' then 1 else 0 end), 3) as feedapp_ratio,
+        |    / sum(case when a.industry = 'feedapp' then 1 else 0 end), 4) as feedapp_ratio,
         |    round(sum(case when a.is_ocpc = 1 and a.industry = 'wz' then 1 else 0 end) * 1.0
-        |    / sum(case when a.industry = 'wz' then 1 else 0 end), 3) as wz_ratio
+        |    / sum(case when a.industry = 'wz' then 1 else 0 end), 4) as wz_ratio
         |from
         |    (select
         |        `date`,

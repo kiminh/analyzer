@@ -18,6 +18,8 @@ object OcpcGetDarkTestData {
     println("has got index")
     getData(indexDF, jsonDF, date, spark)
     println("has got all dark test data")
+    getTimeInterval(indexDF, date, spark)
+    println("has got time interval")
   }
 
   // 首先获取统计数据需要的基本字段
@@ -65,7 +67,7 @@ object OcpcGetDarkTestData {
         |    and
         |        antispam = 0
         |    and
-        |        adslot_type in (1,2,3)
+        |        adslot_type in (1, 2, 3)
         |    and
         |        adsrc = 1
         |    and
@@ -141,19 +143,22 @@ object OcpcGetDarkTestData {
         |select
         |    unitid,
         |    userid,
-        |    (case when is_ocpc=1 then "ocpc" else "cpc" end) as ab_group,
-        |    round(sum(case when isclick=1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
-        |    round(sum(case when isclick=1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
-        |    cpa_given * 0.01 as cpagiven,
-        |    round(sum(case when isclick=1 then price else 0 end) * 0.01
-        |    / sum(case when conversion_goal = 1 then iscvr1
-        |               when conversion_goal = 2 then iscvr2
-        |               else iscvr3 end), 4) as cpareal,
-        |    round(sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick), 4) as pre_cvr,
-        |    round(sum(case when conversion_goal = 1 then iscvr1
-        |                   when conversion_goal = 2 then iscvr2
-        |                   else iscvr3 end) * 1.0 / sum(isclick), 4) as post_cvr,
-        |    round(sum(case when isclick=1 then price else 0 end) * 0.01, 4) as cost,
+        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end) as ab_group,
+        |    conversion_goal,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
+        |    avg(cpa_given) * 0.01 as cpagiven,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01
+        |    / sum(case when isclick = 1 and conversion_goal = 1 then iscvr1
+        |               when isclick = 1 and conversion_goal = 2 then iscvr2
+        |               when isclick = 1 and conversion_goal = 3 then iscvr3
+        |               else 0 end), 4) as cpareal,
+        |    round(sum(case when isclick = 1 then exp_cvr else 0 end) * 1.0 / sum(isclick), 4) as pre_cvr,
+        |    round(sum(case when isclick = 1 and conversion_goal = 1 then iscvr1
+        |                   when isclick = 1 and conversion_goal = 2 then iscvr2
+        |                   when isclick = 1 and conversion_goal = 3 then iscvr3
+        |                   else 0 end) * 1.0 / sum(isclick), 4) as post_cvr,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01, 4) as cost,
         |    sum(isshow) as show,
         |    sum(isclick) as click,
         |    sum(case when conversion_goal = 1 then iscvr1
@@ -161,13 +166,11 @@ object OcpcGetDarkTestData {
         |             else iscvr3 end) as cv
         |from
         |    all_index
-        |where
-        |    `hour` >= '18'
         |group by
         |    unitid,
         |    userid,
-        |    (case when is_ocpc=1 then "ocpc" else "cpc" end),
-        |    cpa_given
+        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end),
+        |    conversion_goal
       """.stripMargin
     val data = spark.sql(sql)
     data
@@ -176,6 +179,34 @@ object OcpcGetDarkTestData {
       .repartition(100)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_dark_test_data")
+  }
+
+  // 获得每天的投放时间区间
+  def getTimeInterval(indexDF: DataFrame, date: String, spark: SparkSession): Unit ={
+    indexDF.createOrReplaceTempView("temp_view")
+    val sql =
+      s"""
+        |select
+        |	unitid,
+        |	hour
+        |from
+        |	temp_view
+        |where
+        | is_ocpc = 1
+        |group by
+        |	unitid,
+        |	hour
+        |order by
+        |	unitid,
+        |	hour
+      """.stripMargin
+    val data = spark.sql(sql)
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(2)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_dark_test_time")
   }
 
 }
