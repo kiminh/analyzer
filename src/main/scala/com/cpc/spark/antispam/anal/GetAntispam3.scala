@@ -24,13 +24,24 @@ object GetAntispam3 {
       .appName("model user anal" + date)
       .enableHiveSupport()
       .getOrCreate()
-    var sql1 = (" SELECT DISTINCT searchid ,hour,adslot_type from" +
-      " dl_cpc.cpc_click_log where `date` =\"%s\"  and  ext['antispam_predict'].float_value > %s ").format(date,predict)
+    /* var sql1 = (" SELECT DISTINCT searchid ,hour,adslot_type from" +
+      " dl_cpc.cpc_click_log where `date` =\"%s\"  and  ext['antispam_predict'].float_value > %s ").format(date,predict)*/
 
-    if(isTrainModel == "train"){
+    val sql1 =
+      s"""
+         |SELECT DISTINCT
+         |  searchid
+         |  , hour
+         |  , adslot_type
+         |  from dl_cpc.cpc_basedata_click_event
+         |where day='$date'
+         |  and antispam_rules like "%TRAIN_MODEL%"
+       """.stripMargin
+
+    /*if(isTrainModel == "train"){
       sql1 = ("SELECT DISTINCT searchid ,hour,adslot_type from" +
         " dl_cpc.cpc_click_log where `date` =\"%s\"  and antispam_rules like \"TRAIN_MODEL\"").format(date)
-    }
+    }*/
     println("sql1:"+ sql1)
     var union =  ctx.sql(sql1).rdd.map{
       x =>
@@ -39,11 +50,23 @@ object GetAntispam3 {
         val adslotType= x(2).toString().toInt
         ((searchid,hour,adslotType), 1)
     }
-    var sql2 =  """
-                  |SELECT DISTINCT tr.searchid,tr.trace_type,tr.duration, un.uid,un.hour,un.adslot_type,un.ext['antispam'].int_value
-                  |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-                  |WHERE  tr.`date` = '%s'  and un.`date` = '%s'
-                """.stripMargin.format(date,date)
+
+
+    val sql2 =
+      s"""
+         |SELECT DISTINCT
+         |  tr.searchid
+         |  , tr.trace_type
+         |  , tr.duration
+         |  , un.uid
+         |  , un.hour
+         |  , un.adslot_type
+         |  , un.spam_click
+         |from dl_cpc.cpc_basedata_trace_event as tr
+         |left join dl_cpc.cpc_basedata_union_events as un on tr.searchid = un.searchid
+         |WHERE tr.day="$date"
+         |  and un.day="$date"
+       """.stripMargin
 
 
     println("sql2:"+sql2)
