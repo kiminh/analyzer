@@ -119,7 +119,7 @@ object OcpcGetPb {
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
       .groupBy("identifier")
-      .agg(avg(col("kvalue")).alias("kvalue"))
+      .agg(avg(col("kvalue")).alias("kvalue_bak"))
       .select("identifier", "kvalue_bak")
 
     val result = kvalue
