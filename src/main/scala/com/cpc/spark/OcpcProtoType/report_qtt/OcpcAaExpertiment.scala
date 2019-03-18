@@ -307,19 +307,19 @@ object OcpcAaExpertiment {
       """.stripMargin
     val dataFrame3 = spark.sql(sql3)
 
-    println("dateFrame1:")
-    dataFrame1.printSchema()
-    println("------------------")
-    println("dateFrame2:")
-    dataFrame2.printSchema()
-    println("------------------")
-    println("dateFrame3:")
-    dataFrame3.printSchema()
+//    println("dateFrame1:")
+//    dataFrame1.printSchema()
+//    println("------------------")
+//    println("dateFrame2:")
+//    dataFrame2.printSchema()
+//    println("------------------")
+//    println("dateFrame3:")
+//    dataFrame3.printSchema()
 
     val dataFrame = dataFrame1.union(dataFrame2).union(dataFrame3)
-    println("-----------------")
-    println("dateFrame:")
-    dataFrame.printSchema()
+//    println("-----------------")
+//    println("dateFrame:")
+//    dataFrame.printSchema()
     val hour = "16"
     val aucDF = OcpcHourlyAucReport.calculateAUCbyUnitid(dataFrame, date, hour, spark)
     aucDF
@@ -462,7 +462,7 @@ object OcpcAaExpertiment {
     compIndexValueDF
       .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
+      .repartition(300)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index_value")
   }
@@ -546,7 +546,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("date", lit(endDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
+      .repartition(300)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_expertiment_data")
   }
