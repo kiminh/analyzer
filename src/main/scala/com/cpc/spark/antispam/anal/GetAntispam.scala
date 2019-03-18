@@ -16,11 +16,19 @@ object GetAntispam {
       .appName("cvr report")
       .enableHiveSupport()
       .getOrCreate()
-   val sql =  """
-             SELECT uid,isclick,isshow,adslot_type,hour
-             from dl_cpc.cpc_union_log where ext['antispam'].int_value =1
-             and `date`="%s"
-           """.stripMargin.format(dateDay)
+   val sql =
+     s"""
+        |SELECT
+        |  uid
+        |  , isclick
+        |  , isshow
+        |  , adslot_type
+        |  , hour
+        |from dl_cpc.cpc_basedata_union_events
+        |where (isclick=1 and spam_click>=1)
+        |  and day="$dateDay"
+      """.stripMargin
+
     println("sql:"+sql)
     val rdd = ctx.sql(sql).rdd
       .map {
