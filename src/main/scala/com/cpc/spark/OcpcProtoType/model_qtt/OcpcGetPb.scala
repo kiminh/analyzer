@@ -134,9 +134,10 @@ object OcpcGetPb {
 
     val result = kvalue
       .withColumn("kvalue_ori", col("kvalue"))
-      .join(data, Seq("identifier", "conversion_goal"), "left_outer")
+      .join(data, Seq("identifier", "conversion_goal"), "outer")
       .select("identifier", "kvalue_ori", "conversion_goal", "kvalue_bak")
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
+      .filter(s"kvalue is not null")
 
     result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
