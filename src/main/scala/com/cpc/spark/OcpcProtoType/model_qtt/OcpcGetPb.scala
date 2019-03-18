@@ -61,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -100,6 +100,7 @@ object OcpcGetPb {
          |SELECT
          |  searchid,
          |  cast(unitid as string) identifier,
+         |  2 as conversion_goal,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -115,21 +116,23 @@ object OcpcGetPb {
          |  isclick = 1
          |AND
          |  $unitidSelection
+         |AND
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-      .groupBy("identifier")
+      .groupBy("identifier", "conversion_goal")
       .agg(avg(col("kvalue")).alias("kvalue_bak"))
-      .select("identifier", "kvalue_bak")
+      .select("identifier", "conversion_goal", "kvalue_bak")
     data.show(10)
 
     val result = kvalue
       .withColumn("kvalue_ori", col("kvalue"))
-      .join(data, Seq("identifier"), "left_outer")
+      .join(data, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "kvalue_ori", "conversion_goal", "kvalue_bak")
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
 
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
+    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
     val resultDF = result
       .select("identifier", "kvalue", "conversion_goal")
