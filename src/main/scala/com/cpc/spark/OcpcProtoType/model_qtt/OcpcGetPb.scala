@@ -106,7 +106,7 @@ object OcpcGetPb {
          |WHERE
          |  `date` = '2019-03-13'
          |AND
-         |  `hour` between '12' and '17'
+         |  `hour` between '0' and '17'
          |AND
          |  $mediaSelection
          |AND
