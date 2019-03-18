@@ -11,7 +11,6 @@ jars=(
 )
 dt=$1
 
-#sh testOcpcExtractData.sh 2019-03-08 yesterday
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 4g \
