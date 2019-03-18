@@ -102,7 +102,7 @@ object ReportCoinTotalMetrics {
 
     val tagAucListSql =
       s"""
-         |select tag , exp_cvr as score,label2 as label2
+         |select tag , exp_cvr as score,label2 as label
          |from total
                  """.stripMargin
 
