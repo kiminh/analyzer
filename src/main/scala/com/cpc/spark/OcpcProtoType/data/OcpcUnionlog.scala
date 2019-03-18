@@ -23,7 +23,7 @@ object OcpcUnionlog {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -73,7 +73,8 @@ object OcpcUnionlog {
          |    exp_ctr,
          |    exp_cvr,
          |    antispam,
-         |    conversion_goal
+         |    conversion_goal,
+         |    charge_type
          |from
          |    base_data
        """.stripMargin

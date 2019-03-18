@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgiven(spark)
+    val cpaGiven = getCPAgivenV2(spark)
 
     // 数据关联
     val result1 = data
@@ -99,10 +99,29 @@ object OcpcSampleToPb {
     val result = result1.union(result2)
     result.printSchema()
     result.show(10)
+
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
 
     resultDF
+  }
+
+  def getCPAgivenV2(spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  conversion_goal,
+         |  cpa as cpagiven2
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_once
+         |WHERE
+         |  industry = 'elds'
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result
   }
 
   def getCPAgiven(spark: SparkSession) = {

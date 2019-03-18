@@ -76,7 +76,8 @@ object OcpcGetPb {
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
     val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
     val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
-    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue2 = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = setKvalueByUnitid(kvalue2, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
@@ -85,6 +86,63 @@ object OcpcGetPb {
       .na.fill(0, Seq("cvrcnt", "kvalue"))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
+
+    resultDF
+  }
+
+  def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+    // set the unitid that we need to reset
+//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
+//
+//    // time span
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  cast(unitid as string) identifier,
+//         |  2 as conversion_goal,
+//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
+//         |FROM
+//         |  dl_cpc.ocpc_filter_unionlog
+//         |WHERE
+//         |  `date` = '2019-03-13'
+//         |AND
+//         |  `hour` between '0' and '17'
+//         |AND
+//         |  $mediaSelection
+//         |AND
+//         |  antispam = 0
+//         |AND
+//         |  isclick = 1
+//         |AND
+//         |  $unitidSelection
+//         |AND
+//         |  is_ocpc = 1
+//       """.stripMargin
+//    println(sqlRequest)
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_all.ocpc_reset_k"
+    val expDataPath = conf.getString(conf_key)
+    val rawData = spark.read.format("json").json(expDataPath)
+    val data = rawData
+      .filter(s"kvalue > 0")
+      .select("identifier", "conversion_goal", "kvalue")
+      .groupBy("identifier", "conversion_goal")
+      .agg(avg(col("kvalue")).alias("kvalue_bak"))
+      .select("identifier", "conversion_goal", "kvalue_bak")
+    data.show(10)
+
+    val result = kvalue
+      .withColumn("kvalue_ori", col("kvalue"))
+      .join(data, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "kvalue_ori", "conversion_goal", "kvalue_bak")
+      .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
+      .filter(s"kvalue is not null")
+
+//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
+
+    val resultDF = result
+      .select("identifier", "kvalue", "conversion_goal")
 
     resultDF
   }
@@ -298,11 +356,12 @@ object OcpcGetPb {
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
     val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+    val selectCondition2 = getTimeRangeSql2(date1, hour, date, hour)
 
-    calendar.add(Calendar.DATE, -4)
-    val dt2 = calendar.getTime
-    val date2 = sdf.format(dt2)
-    val selectCondition2 = getTimeRangeSql2(date2, hour, date, hour)
+//    calendar.add(Calendar.DATE, -4)
+//    val dt2 = calendar.getTime
+//    val date2 = sdf.format(dt2)
+//    val selectCondition2 = getTimeRangeSql2(date2, hour, date, hour)
 
     // history_ocpc_flag标签
     val sqlRequest1 =
