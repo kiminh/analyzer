@@ -366,40 +366,40 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
      val sqlfinal=
        s"""
           |select   maxexpcvr.userid, case
-          |         when (traffic_0per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_0per_expcvr>=adclass_act_cvr ) then expcvr_0per
-          |         when (traffic_5per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_5per_expcvr>=adclass_act_cvr ) then expcvr_5per
-          |         when (traffic_10per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_10per_expcvr>=adclass_act_cvr ) then expcvr_10per
-          |         when (traffic_15per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_15per_expcvr>=adclass_act_cvr ) then expcvr_15per
-          |         when (traffic_20per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_20per_expcvr>=adclass_act_cvr ) then expcvr_20per
-          |         when (traffic_25per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_25per_expcvr>=adclass_act_cvr ) then expcvr_25per
-          |         when (traffic_30per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_30per_expcvr>=adclass_act_cvr ) then expcvr_30per
+          |         when (traffic_0per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_0per_expcvr>=adclass_act_cvr ) then expcvr_threshold0per
+          |         when (traffic_5per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_5per_expcvr>=adclass_act_cvr ) then expcvr_threshold5per
+          |         when (traffic_10per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_10per_expcvr>=adclass_act_cvr ) then expcvr_threshold10per
+          |         when (traffic_15per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_15per_expcvr>=adclass_act_cvr ) then expcvr_threshold15per
+          |         when (traffic_20per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_20per_expcvr>=adclass_act_cvr ) then expcvr_threshold20per
+          |         when (traffic_25per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_25per_expcvr>=adclass_act_cvr ) then expcvr_threshold25per
+          |         when (traffic_30per_expcvr>=bigpic_act_cvr) or ( bigpic_act_cvr is null and  traffic_30per_expcvr>=adclass_act_cvr ) then expcvr_threshold30per
           |         else max_expcvr end  max_expcvr,
           |          dt, hr
           | from
           | (
           |  select    userid,
-          |            case when    (expcvr_0per>=expcvr_5per
-          |                     and  expcvr_0per>=expcvr_10per
-          |                     and  expcvr_0per>=expcvr_15per
-          |                     and  expcvr_0per>=expcvr_20per
-          |                     and  expcvr_0per>=expcvr_25per
-          |                     and  expcvr_0per>=expcvr_30per) then expcvr_0per
-          |                 when    (expcvr_5per>=expcvr_10per
-          |				              and  expcvr_5per>=expcvr_15per
-          |                     and  expcvr_5per>=expcvr_20per
-          |                     and  expcvr_5per>=expcvr_25per
-          |                     and  expcvr_5per>=expcvr_30per) then expcvr_5per
-          |                 when    (expcvr_10per>=expcvr_15per
-          |				              and  expcvr_10per>=expcvr_20per
-          |                     and  expcvr_10per>=expcvr_25per
-          |                     and  expcvr_10per>=expcvr_30per) then expcvr_10per
-          |                 when    (expcvr_15per>=expcvr_20per
-          |				              and  expcvr_15per>=expcvr_25per
-          |                     and  expcvr_15per>=expcvr_30per)  then expcvr_15per
-          |                 when    (expcvr_20per>=expcvr_25per
-          |				              and  expcvr_20per>=expcvr_30per)   then expcvr_25per
-          |                 when    expcvr_25per>=expcvr_30per    then expcvr_25per
-          |				     else   expcvr_30per
+          |            case when    (expcvr_threshold0per>=expcvr_threshold5per
+          |                     and  expcvr_threshold0per>=expcvr_threshold10per
+          |                     and  expcvr_threshold0per>=expcvr_threshold15per
+          |                     and  expcvr_threshold0per>=expcvr_threshold20per
+          |                     and  expcvr_threshold0per>=expcvr_threshold25per
+          |                     and  expcvr_threshold0per>=expcvr_threshold30per) then expcvr_threshold0per
+          |                 when    (expcvr_threshold5per>=expcvr_threshold10per
+          |				              and  expcvr_threshold5per>=expcvr_threshold15per
+          |                     and  expcvr_threshold5per>=expcvr_threshold20per
+          |                     and  expcvr_threshold5per>=expcvr_threshold25per
+          |                     and  expcvr_threshold5per>=expcvr_threshold30per) then expcvr_threshold5per
+          |                 when    (expcvr_threshold10per>=expcvr_threshold15per
+          |				              and  expcvr_threshold10per>=expcvr_threshold20per
+          |                     and  expcvr_threshold10per>=expcvr_threshold25per
+          |                     and  expcvr_threshold10per>=expcvr_threshold30per) then expcvr_threshold10per
+          |                 when    (expcvr_threshold15per>=expcvr_threshold20per
+          |				              and  expcvr_threshold15per>=expcvr_threshold25per
+          |                     and  expcvr_threshold15per>=expcvr_threshold30per)  then expcvr_threshold15per
+          |                 when    (expcvr_threshold20per>=expcvr_threshold25per
+          |				              and  expcvr_threshold20per>=expcvr_threshold30per)   then expcvr_threshold20per
+          |                 when    expcvr_threshold25per>=expcvr_threshold30per    then expcvr_threshold25per
+          |				     else   expcvr_threshold30per
           |                 end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
           |where  dt='${date}' and hr='${hour}'
