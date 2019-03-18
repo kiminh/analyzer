@@ -31,7 +31,7 @@ object GetAntispam2 {
          |where day="$dateDay"
          |  and adslot_type=1
        """.stripMargin
-    
+
     println("sql:"+sql)
     println("hivesql:"+hivesql)
     val union = ctx.sql(sql).rdd
