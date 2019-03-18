@@ -61,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -139,7 +139,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
       .filter(s"kvalue is not null")
 
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
+    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
     val resultDF = result
       .select("identifier", "kvalue", "conversion_goal")
