@@ -96,26 +96,9 @@ object ReportCoinTotalMetrics {
              """.stripMargin
     println(totalSql)
     val total = spark.sql(totalSql)
-    total.persist()
     total.createOrReplaceTempView("total")
     total.show(10)
     println("total rows are"+ total.count())
-
-    val tagAucListSql =
-      s"""
-         |select tag , exp_cvr as score,label2 as label
-         |from total
-        """.stripMargin
-    println(tagAucListSql)
-    val tagAucList = spark.sql(tagAucListSql)
-    println("sql")
-    val uAuc = CalcMetrics.getGauc(spark, tagAucList, "tag")
-      .select("name", "auc")
-    println("auc success!")
-    val testTotalTable = s"test.uauc_total_$tmpDate"
-    uAuc.show(10)
-
-    uAuc.write.mode("overwrite").saveAsTable(testTotalTable)
 
     val tagSql =
       s"""
@@ -142,7 +125,6 @@ object ReportCoinTotalMetrics {
          |    if (uid_num!=0,round(click_total_price/uid_num/100,6),0) as arpu,
          |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
          |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu, --*100是用作百分比
-         |    b.auc as auc,
          |    '$date' as `date`
          |from
          |(
@@ -159,11 +141,6 @@ object ReportCoinTotalMetrics {
          |    from total
          |    group by tag
          |) a
-         |left join
-         |(
-         | select name as tag, auc
-         | from $testTotalTable
-         |)b  on a.tag = b.tag
              """.stripMargin
     val result = spark.sql(tagSql)
     result.show(10)
@@ -171,6 +148,7 @@ object ReportCoinTotalMetrics {
       .write
       .mode("overwrite")
       .saveAsTable("test.lyl_coin_metrics")
+
     // .insertInto("dl_cpc.cpc_report_coin_tag_metrics")
 
     //val tagMetricsDelSql = s"delete from report2.cpc_report_coin_tag_metrics where `date`='$date'"
@@ -180,9 +158,6 @@ object ReportCoinTotalMetrics {
     //println("insert into report2.cpc_report_coin_tag_metrics success!")
     //result.unpersist()
 
-    val delSql = s"drop table if exists $testTotalTable"
-    spark.sql(delSql)
-    println(s"drop table $testTotalTable success!")
   }
 
 }
