@@ -108,7 +108,7 @@ object ReportCoinTotalMetrics {
 
     val tagAucList = spark.sql(tagAucListSql)
     val uAuc = CalcMetrics.getGauc(spark,tagAucList,"tag")
-      .select("name","auc")
+      .select("tag","auc")
     val testTotalTable = s"test.uauc_total_$tmpDate"
 
     uAuc.write.mode("overwrite").saveAsTable(testTotalTable)
