@@ -31,7 +31,7 @@ object ReportCoinTotalMetrics {
          |select
          |    isshow,
          |    is_auto_coin,
-         |    exp_style
+         |    exp_style,
          |    isclick,
          |    if (b.searchid is null,0,1) as label2,
          |    price,
@@ -47,13 +47,14 @@ object ReportCoinTotalMetrics {
          |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
          |        and adsrc in (1,28) --cpc广告
          |        and city_level != 1 --非一线城市
+         |        and isshow=1
          |        and (charge_type is null or charge_type=1) --CPC计费
          |        and userid not in (1001028, 1501875) --排除测试账号
          |        and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7335680","7871301")
          |        and round(adclass/1000) != 132101 --去除 互动导流
          |        and adslot_type in (1,2) --列表页1，详情页2
          |    ) a
-         |    left outer join
+         |    left join
          |    (
          |        select tmp.searchid
          |        from
@@ -91,6 +92,7 @@ object ReportCoinTotalMetrics {
          |                ) final
          |            ) tmp
          |        where tmp.isreport=1 --真正的转化
+         |        group by tmp.searchid
          |    ) b
          |    on a.searchid = b.searchid
              """.stripMargin
