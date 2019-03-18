@@ -25,17 +25,14 @@ object OcpcCollectSuggestData {
     // api回传的feedapp广告
     val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-    feedapp.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest20190318a")
 
     // 二类电商
     val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-    elds.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest20190318b")
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
-    wz.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest20190318c")
 
     // 数据串联
     val cpaData = feedapp
@@ -56,8 +53,8 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
 
     data
       .withColumn("date", lit(date))
