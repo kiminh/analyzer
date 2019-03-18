@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_data
+create table if not exists dl_cpc.ocpc_ab_test_data
 (
     dt                      string,
     unitid                  int,
@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_data
     click                   bigint,
     cv                      bigint
 )
-PARTITIONED BY (`date` string, tag string, version string)
-STORED AS PARQUET;
+partitioned by (`date` string, tag string, version string)
+stored as parquet;
