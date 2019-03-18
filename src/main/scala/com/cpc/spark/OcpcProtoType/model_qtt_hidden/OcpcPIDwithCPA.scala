@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -31,18 +32,14 @@ object OcpcPIDwithCPA {
     val version = args(4).toString
     val media = args(5).toString
 
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = ""
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if(media == "novel"){
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"media selection: $mediaSelection")
 
-    // TODO 表名
     val prevTable = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version='$version'")
@@ -59,13 +56,13 @@ object OcpcPIDwithCPA {
         .withColumn("version", lit(version))
         .withColumn("method", lit("pid"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-
-    resultDF
-      .repartition(10)
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_model_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//
+//    resultDF
+//      .repartition(10)
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -163,6 +160,7 @@ object OcpcPIDwithCPA {
          |  ocpc_log_dict,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  hour
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -174,7 +172,7 @@ object OcpcPIDwithCPA {
          |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = spark.sql(sqlRequest).filter(s"is_hidden = 1")
     resultDF
   }
 
