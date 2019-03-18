@@ -40,12 +40,9 @@ object GetCvrInfo {
 
     val traceRdd = ctx.sql(
       """
-        |SELECT DISTINCT
-        |  searchid
-        |  , trace_type
-        |  , duration
-        |FROM dl_cpc.cpc_basedata_trace_event
-        |WHERE day='%s'
+        |SELECT DISTINCT searchid,trace_type,duration
+        |FROM dl_cpc.cpc_union_trace_log
+        |WHERE `date`='%s'
       """.stripMargin.format(dateDay)).rdd
       .map {
         x =>
@@ -121,20 +118,9 @@ object GetCvrInfo {
 
     val unionLogSql =
       """
-        |SELECT DISTINCT
-        |  searchid
-        |  , isshow
-        |  , isclick
-        |  , price
-        |  , media_appsid
-        |  , adslotid
-        |  , adslot_type
-        |  , hour
-        |  , exptags
-        |  , adclass
-        |FROM dl_cpc.cpc_basedata_union_events
-        |WHERE day="%s"
-        |  AND (coalesce(isshow, 0)+coalesce(isclick, 0))>0 %s
+        |SELECT DISTINCT searchid,isshow,isclick,price,media_appsid,adslotid,adslot_type,hour,exptags,ext['adclass'].int_value
+        |FROM dl_cpc.cpc_union_log
+        |WHERE `date`="%s" AND (isshow+isclick)>0 %s
       """.stripMargin.format(dateDay, dynamicSql)
 
     val unionLogRdd = ctx.sql(unionLogSql).rdd

@@ -48,16 +48,11 @@ object GetQuestionUserRead {
       .filter(_._2._2.length > 3)
 
     val unionLog = ctx.sql(
-      s"""
-        |SELECT
-        |  DISTINCT uid
-        |FROM dl_cpc.cpc_basedata_union_events
-        |WHERE day='$dataEnd'
-        |  AND sex=0
-        |  AND uid IS NOT NULL
-      """.stripMargin
-    )
-      .rdd
+      """
+        |SELECT DISTINCT uid
+        |FROM dl_cpc.cpc_union_log
+        |WHERE `date`="%s" AND sex=0 AND uid IS NOT NULL
+      """.stripMargin.format(dataEnd)).rdd
       .map {
         x =>
           (x.getString(0), (x.getString(0), Seq(""), "x"))

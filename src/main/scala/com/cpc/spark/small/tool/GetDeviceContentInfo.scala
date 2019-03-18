@@ -40,18 +40,7 @@ object GetDeviceContentInfo {
         }
 
     val unionLogRdd =
-      ctx.sql(
-        s"""
-           |SELECT
-           |  uid
-           |  ,count(*)
-           |  ,sum(isshow)
-           |  ,sum(isclick)
-           |FROM dl_cpc.cpc_basedata_union_events
-           |WHERE day='%s'
-           |  AND media_appsid in ('80000001', '80000002', '80000006')
-           |GROUP BY uid
-         """.stripMargin.format(day)).rdd
+      ctx.sql("SELECT uid,count(*),sum(isshow),sum(isclick) FROM dl_cpc.cpc_union_log WHERE `date` = '%s' AND media_appsid in(80000001,80000002,80000006) GROUP BY uid".format(day)).rdd
         .map {
           x => {
             (x.getString(0), (Iterable(("", "")), x.getLong(1), x.getLong(2), x.getLong(3)))

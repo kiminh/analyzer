@@ -39,14 +39,7 @@ object GetReportCpmShow {
 
     val unionLog = ctx.sql(
       """
-        |SELECT
-        |  isshow
-        |  , bid
-        |  , ctr
-        |  , adslot_type
-        |FROM dl_cpc.cpc_basedata_union_events
-        |WHERE day="%s"
-        |  AND isshow=1
+        |SELECT isshow,bid,ctr,adslot_type FROM dl_cpc.cpc_union_log WHERE `date`="%s" AND isshow=1
       """.stripMargin.format(day)).rdd
       .map {
         x =>

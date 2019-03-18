@@ -42,22 +42,13 @@ object InsertAdslotHot {
     val hotData = ctx
       .sql(
         """
-          |SELECT
-          |  media_appsid
-          |  , adslot_id
-          |  , adslot_type
-          |  , touch_x
-          |  , touch_y
-          |  , slot_width
-          |  , slot_height
-          |FROM dl_cpc.cpc_basedata_union_events
-          |WHERE day="%s"
-          |  AND hour=%s
-          |  AND
-          |  ( touch_x>0 OR touch_y>0 )
-          |  AND slot_width>0
-          |  AND slot_height>0
-          |  AND adslot_id=7268884
+          |SELECT media_appsid,adslotid,adslot_type,ext['touch_x'].int_value,ext['touch_y'].int_value,
+          |ext['slot_width'].int_value,ext['slot_height'].int_value
+          |FROM dl_cpc.cpc_union_log
+          |WHERE date="%s" AND hour="%s" AND (ext['touch_x'].int_value>0 OR ext['touch_y'].int_value>0)
+          |AND (ext['slot_width'].int_value>0 AND ext['slot_height'].int_value>0)
+          |AND adslotid=7268884
+          |-- AND media_appsid not in("80000001","80000002","80000006","800000062","80000064","80000066","80000141")
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
