@@ -108,7 +108,7 @@ object ReportCoinTotalMetrics {
 
     val tagAucList = spark.sql(tagAucListSql)
     val uAuc = CalcMetrics.getGauc(spark,tagAucList,"tag")
-      .select("tag","auc")
+      .select("name","auc")
     val testTotalTable = s"test.uauc_total_$tmpDate"
 
     uAuc.write.mode("overwrite").saveAsTable(testTotalTable)
@@ -157,7 +157,7 @@ object ReportCoinTotalMetrics {
          |) a
          |left join
          |(
-         | select tag, auc
+         | select name as tag, auc
          | from $testTotalTable
          |)b  on a.tag = b.tag
              """.stripMargin
