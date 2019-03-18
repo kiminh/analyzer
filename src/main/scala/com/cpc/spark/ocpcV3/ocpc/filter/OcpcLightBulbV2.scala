@@ -48,21 +48,21 @@ object OcpcLightBulbV2{
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
     cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_20190305new")
-    cpaSuggest
-      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
-
-    // 清除redis数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, date, hour, spark)
-
-    // 存储redis数据
-    saveDataToRedis(date, hour, spark)
-    println(s"############## saving redis database ##########################")
-    // 存储结果表
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    cpaSuggest
+//      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+//
+//    // 清除redis数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, date, hour, spark)
+//
+//    // 存储redis数据
+//    saveDataToRedis(date, hour, spark)
+//    println(s"############## saving redis database ##########################")
+//    // 存储结果表
+//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
@@ -184,34 +184,60 @@ object OcpcLightBulbV2{
 
 
   def getLightData(version: String, date: String, hour: String, spark: SparkSession) = {
-    val data = spark
+    val rawData = spark
       .table("test.ocpc_qtt_light_control_data_redis")
       .select("unitid", "cpa1", "cpa2", "cpa3")
 
-    val data1 = data
+    val data1 = rawData
       .withColumn("cpa", col("cpa1"))
       .withColumn("conversion_goal", lit(1))
       .select("unitid", "conversion_goal", "cpa")
 
-    val data2 = data
+    val data2 = rawData
       .withColumn("cpa", col("cpa2"))
       .withColumn("conversion_goal", lit(2))
       .select("unitid", "conversion_goal", "cpa")
 
-    val data3 = data
+    val data3 = rawData
       .withColumn("cpa", col("cpa3"))
       .withColumn("conversion_goal", lit(3))
       .select("unitid", "conversion_goal", "cpa")
 
-    val resultDF = data1
+    val data4 = getDataByConf(spark)
+
+    val data = data1
       .union(data2)
       .union(data3)
-      .filter(s"conversion_goal != 2")
+      .withColumn("cpa1", col("cpa"))
+      .select("unitid", "conversion_goal", "cp1")
 
-    resultDF.show(10)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
+    val result = data
+      .join(data4, Seq("unitid", "conversion_goal"), "outer")
+      .select("unitid", "conversion_goal", "cp1", "cpa2")
+      .withColumn("cpa", when(col("cpa2").isNotNull, col("cpa2")).otherwise(col("cpa1")))
+
+    result.show(10)
+    result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
+
+    val resultDF = result
+        .select("unitid", "conversion_goal", "cp")
 
     resultDF
+  }
+
+  def getDataByConf(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_all.ocpc_reset_k"
+    val expDataPath = conf.getString(conf_key)
+    val rawData = spark.read.format("json").json(expDataPath)
+    val data = rawData
+      .filter(s"kvalue > 0")
+      .select("identifier", "conversion_goal", "cpa")
+      .groupBy("identifier", "conversion_goal")
+      .agg(min(col("cpa")).alias("cpa2"))
+      .select("identifier", "conversion_goal", "cpa2")
+    data.show(10)
+    data
   }
 
 }
