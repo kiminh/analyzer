@@ -209,11 +209,11 @@ object OcpcLightBulbV2{
       .union(data2)
       .union(data3)
       .withColumn("cpa1", col("cpa"))
-      .select("unitid", "conversion_goal", "cp1")
+      .select("unitid", "conversion_goal", "cpa1")
 
     val result = data
       .join(data4, Seq("unitid", "conversion_goal"), "outer")
-      .select("unitid", "conversion_goal", "cp1", "cpa2")
+      .select("unitid", "conversion_goal", "cpa1", "cpa2")
       .withColumn("cpa", when(col("cpa2").isNotNull, col("cpa2")).otherwise(col("cpa1")))
 
     result.show(10)
