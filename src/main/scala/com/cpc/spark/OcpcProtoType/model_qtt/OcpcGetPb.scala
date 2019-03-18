@@ -139,7 +139,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
       .filter(s"kvalue is not null")
 
-    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
+//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
     val resultDF = result
       .select("identifier", "kvalue", "conversion_goal")
