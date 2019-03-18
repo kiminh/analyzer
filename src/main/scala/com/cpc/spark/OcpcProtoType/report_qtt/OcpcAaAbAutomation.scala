@@ -141,11 +141,10 @@ object OcpcAaAbAutomation {
     val list = resultDF.collectAsList()
     for(i <- 0 until list.size()) println(list.get(i))
     val csvPath = "/home/cpc/wt/test_data/ab/" + date + ".csv"
-    val saveOptions = Map("header" -> "true", "path" -> csvPath)
-    resultDF.coalesce(1)
-      .write.mode("overwrite").format("csv")
-      .options(saveOptions)
-      .save()
+    resultDF.repartition(1)
+      .write.mode("overwrite").format("com.databricks.spark.csv")
+      .option("header", "true")
+      .save(csvPath)
   }
 
 //  // 得到ab实验数据比较结果

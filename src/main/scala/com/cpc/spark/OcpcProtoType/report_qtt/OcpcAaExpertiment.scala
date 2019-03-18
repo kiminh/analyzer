@@ -388,6 +388,13 @@ object OcpcAaExpertiment {
         |    conversion_goal
       """.stripMargin
     val temp_compIndexValueDF = spark.sql(sql)
+    println("save temp compare index value")
+    temp_compIndexValueDF
+      .withColumn("date", lit(preDate))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(200)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.temp_comp_index_value")
 
     temp_compIndexValueDF.createOrReplaceTempView("temp_comp_index_value")
     isHiddenEtcIndexDF.createOrReplaceTempView("etc_index_value")
@@ -423,7 +430,7 @@ object OcpcAaExpertiment {
     val otherIndexDF = spark.sql(sql2)
     println("save other index")
     otherIndexDF
-      .withColumn("date", lit(preDate))
+    .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(200)
       .write.mode("overwrite")
