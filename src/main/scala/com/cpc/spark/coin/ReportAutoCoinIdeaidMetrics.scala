@@ -162,31 +162,5 @@ object ReportAutoCoinIdeaidMetrics {
         println("insert into report2.report_coin_ideaid_metrics success!")
         ideaidMetrics.unpersist()
 
-        val useridAucListSql =
-            s"""
-               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
-               |from union
-             """.stripMargin
-
-        val useridAucList = spark.sql(useridAucListSql)
-
-        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
-          .withColumnRenamed("name","userid")
-          .withColumn("date",lit(date))
-          .select("userid","auc","date")
-
-        uAuc.repartition(1)
-          .write.insertInto("dl_cpc.cpc_coin_userid_auc")
-
     }
 }
-
-/*
-
-create table if not exists dl_cpc.cpc_coin_userid_auc
-(
-    userid string,
-    auc double
-) PARTITIONED BY (`date` string)
-STORED as PARQUET;
- */
