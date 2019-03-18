@@ -421,7 +421,13 @@ object OcpcAaExpertiment {
          | a.userid = c.userid
       """.stripMargin
     val otherIndexDF = spark.sql(sql2)
-    otherIndexDF.createOrReplaceTempView("other_index")
+    println("save other index")
+    otherIndexDF
+      .withColumn("date", lit(preDate))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(200)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_other_index")
 
     val sql3 =
       s"""
@@ -457,13 +463,14 @@ object OcpcAaExpertiment {
         |from
         |	temp_comp_index_value a
         |left join
-        |	other_index b
+        |	dl_cpc.ocpc_other_index b
         |on
         |	a.unitid = b.unitid
         |and
         |	a.userid = b.userid
       """.stripMargin
     val compIndexValueDF = spark.sql(sql3)
+    println("save all index")
     compIndexValueDF
       .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
