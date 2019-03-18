@@ -43,17 +43,17 @@ object ReportCoinTotalMetrics {
          |        case when concat_ws(',',exptags) like  '%needautocoin%'  then  '95%'  else '5%' end as tag
          |        from dl_cpc.cpc_basedata_union_events
          |        where `date`='$date'
-         |        and media_appsid  in ("80000001", "80000002")  // 趣头条
+         |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
          |        and isshow = 1
-         |        and antispam_score != 10000 // 剔除作弊
+         |        and antispam_score != 10000 -- 剔除作弊
          |        and ideaid > 0
-         |        and adsrc in (1,28) //cpc广告
-         |        and city_level != 1 //非一线城市
-         |        and (charge_type is null or charge_type=1) // CPC计费
-         |        and userid not in (1001028, 1501875) //排除测试账号
+         |        and adsrc in (1,28) --cpc广告
+         |        and city_level != 1 --非一线城市
+         |        and (charge_type is null or charge_type=1) --CPC计费
+         |        and userid not in (1001028, 1501875) --排除测试账号
          |        and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
-         |        and round(adclass/1000) != 132101 //去除 互动导流
-         |        and adslot_type in (1,2) // 列表页1，详情页2
+         |        and round(adclass/1000) != 132101 --去除 互动导流
+         |        and adslot_type in (1,2) --列表页1，详情页2
          |    ) a
          |    left outer join
          |    (
@@ -77,10 +77,10 @@ object ReportCoinTotalMetrics {
          |                    searchid, media_appsid, uid,
          |                    planid, unitid, ideaid, adclass,
          |                    case
-         |                        when (adclass like '134%' or adclass like '107%') then "elds" //二类电商
-         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"  //feedapp
-         |                        when (adslot_type=7 and adclass like '100%') then "yysc"  //应用商城
-         |                        when adclass in (110110100, 125100100) then "wzcp" //网赚
+         |                        when (adclass like '134%' or adclass like '107%') then "elds" --二类电商
+         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp" --feedapp
+         |                        when (adslot_type=7 and adclass like '100%') then "yysc"  --应用商城
+         |                        when adclass in (110110100, 125100100) then "wzcp" --网赚
          |                        else "others"
          |                    end as src,
          |                    label_type
@@ -92,7 +92,7 @@ object ReportCoinTotalMetrics {
          |                    and media_appsid in ("80000001", "80000002")
          |                ) final
          |            ) tmp
-         |        where tmp.isreport=1 //真正的转化
+         |        where tmp.isreport=1 --真正的转化
          |    ) b
          |    on a.searchid = b.searchid
              """.stripMargin
