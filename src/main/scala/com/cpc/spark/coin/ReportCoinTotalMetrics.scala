@@ -99,6 +99,8 @@ object ReportCoinTotalMetrics {
 
     val total = spark.sql(totalSql)
     total.createOrReplaceTempView("total")
+    println("total success!")
+    total.show(10)
 
     val tagAucListSql =
       s"""
@@ -110,6 +112,7 @@ object ReportCoinTotalMetrics {
     val uAuc = CalcMetrics.getGauc(spark,tagAucList,"tag")
       .select("name","auc")
     val testTotalTable = s"test.uauc_total_$tmpDate"
+    uAuc.show(10)
 
     uAuc.write.mode("overwrite").saveAsTable(testTotalTable)
 
@@ -162,6 +165,7 @@ object ReportCoinTotalMetrics {
          |)b  on a.tag = b.tag
              """.stripMargin
     val result = spark.sql(tagSql)
+    result.show(10)
     result.repartition(1)
       .write
       .mode("overwrite")
