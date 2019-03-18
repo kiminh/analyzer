@@ -174,7 +174,7 @@ object OcpcABtest {
   }
 
   def readExpSet(date: String, hour: String, spark: SparkSession) = {
-    val path = s"/user/cpc/wangjun/ocpc_exp/ocpc_ab.json"
+    val path = s"hdfs://emr-cluster/user/cpc/wangjun/ocpc_exp/ocpc_ab.json"
 
     val data = spark.read.format("json").json(path)
 

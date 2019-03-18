@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_data
     click                   bigint,
     cv                      bigint
 )
-PARTITIONED BY (`date` string, version string)
+PARTITIONED BY (`date` string, tag string, version string)
 STORED AS PARQUET;

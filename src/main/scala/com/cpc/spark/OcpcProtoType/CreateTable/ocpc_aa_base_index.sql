@@ -1,12 +1,12 @@
-CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_temp(
-    searchid                string,
-    exptags                 string,
+create table if not exists dl_cpc.ocpc_aa_base_index(
     unitid                  int,
-    ideaid                  int,
     userid                  int,
+    searchid                string,
     isclick                 int,
     isshow                  int,
     price                   int,
+    uid                     string,
+    bid                     int,
     cpagiven                double,
     kvalue                  double,
     pcvr                    double,
@@ -15,10 +15,7 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_temp(
     conversion_goal         int,
     iscvr1                  int,
     iscvr2                  int,
-    iscvr3                  int,
-    iscvr                   int,
-    dt                      string,
-    hr                      string
+    iscvr3                  int
 )
-PARTITIONED BY (`date` string, version string)
-STORED AS PARQUET;
+partitioned by (`date` string, version string)
+stored as parquet;

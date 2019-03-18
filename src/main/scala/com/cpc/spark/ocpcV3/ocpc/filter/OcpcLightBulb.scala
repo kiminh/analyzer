@@ -47,8 +47,7 @@ object OcpcLightBulb{
         .join(ocpcRecord, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-//        .withColumn("ocpc_cpa2", when(col("unitid") === 1921134, lit(17)).otherwise(col("ocpc_cpa2")))
-//        .withColumn("ocpc_cpa2", when(col("unitid") === 1951024, lit(20)).otherwise(col("ocpc_cpa2")))
+
     data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
@@ -114,7 +113,7 @@ object OcpcLightBulb{
         .join(data2, Seq("unitid"), "outer")
         .join(data3, Seq("unitid"), "outer")
         .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3")
-        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3"))
+//        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3"))
 
     val sqlRequets1 =
       s"""
@@ -124,6 +123,8 @@ object OcpcLightBulb{
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_k_once
+         |WHERE
+         |  duration <= 3
        """.stripMargin
     println(sqlRequets1)
     val suggestDataRaw = spark.sql(sqlRequets1)
@@ -143,14 +144,15 @@ object OcpcLightBulb{
         .join(suggestData2, Seq("unitid"), "outer")
         .join(suggestData3, Seq("unitid"), "outer")
         .select("unitid", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
-        .na.fill(-1, Seq("cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
+//        .na.fill(-1, Seq("cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
 
     val result = cpaGivenData
         .join(suggestData, Seq("unitid"), "left_outer")
         .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
-        .withColumn("ocpc_cpa1", when(col("cpa_given1") === -1, -1).otherwise(when(col("cpa_suggest1") === -1, col("cpa_given1")).otherwise(col("cpa_suggest1"))))
-        .withColumn("ocpc_cpa2", when(col("cpa_given2") === -1, -1).otherwise(when(col("cpa_suggest2") === -1, col("cpa_given2")).otherwise(col("cpa_suggest2"))))
-        .withColumn("ocpc_cpa3", when(col("cpa_given3") === -1, -1).otherwise(when(col("cpa_suggest3") === -1, col("cpa_given3")).otherwise(col("cpa_suggest3"))))
+        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
+        .withColumn("ocpc_cpa1", when(col("cpa_given1") === -1, -1).otherwise(when(col("cpa_suggest1") === -1, 0).otherwise(col("cpa_suggest1"))))
+        .withColumn("ocpc_cpa2", when(col("cpa_given2") === -1, -1).otherwise(when(col("cpa_suggest2") === -1, 0).otherwise(col("cpa_suggest2"))))
+        .withColumn("ocpc_cpa3", when(col("cpa_given3") === -1, -1).otherwise(when(col("cpa_suggest3") === -1, 0).otherwise(col("cpa_suggest3"))))
 
     result.show(10)
     val resultDF = result.select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
@@ -224,13 +226,13 @@ object OcpcLightBulb{
           println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
-          if (cpa1 > 0) {
+          if (cpa1 >= 0) {
             json.put("download_cpa", cpa1)
           }
-          if (cpa2 > 0) {
+          if (cpa2 >= 0) {
             json.put("appact_cpa", cpa2)
           }
-          if (cpa3 > 0) {
+          if (cpa3 >= 0) {
             json.put("formsubmit_cpa", cpa3)
           }
           val value = json.toString

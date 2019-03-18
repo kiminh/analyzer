@@ -24,6 +24,12 @@ message AdFreq {
 	int64 auto_coin_timestamp = 7; //自动化金币样式时间戳
 	int64 class_last_show_timestamp = 8; //上次展示class时间戳
 	int64 class_coin_last_show_timestamp = 9; //上次展示金币导流应用商城class的时间戳
+	repeated Freqency freqs = 10;
+}
+
+message Freqency {
+	string key = 1;
+	int64 timestamp = 2;
 }
 
 message APPPackage {
@@ -49,7 +55,7 @@ message UserProfile {
 	int32 incr_coin = 8; // 新增金币数
 	int32 antispam = 9; // 是否命中反作弊人群
 	int32 share_coin = 10; //分享朋友圈获得的积分
-	int32 newUser = 11; // 是否是新用户，45天内是新用户，是1，不是0
+	int32 newUser = 11; //是否是新用户，45天内是新用户，是1，不是0
 	repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
 	string province = 13; //省份
 	string city = 14; //城市
@@ -58,9 +64,10 @@ message UserProfile {
 	int64 cvrcnt = 17; // uid维度的最近几天转化总次数
 	string lastDayInCPC = 18; // 最近一次在cpc union log中出现的date，以"yyyy-mm-dd"的格式
 	string ageNew = 21; // dnn年龄模型预测4分段结果
-	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果
+	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果，0: 未知 1: 小于18 2:18-22 3:23-40 4: >40
 	string recentIP = 23; // 最近常用的ip地址
 	string registeredIP = 24; // 注册时使用的ip地址
+    repeated int32 installedUserIDList = 25; // 通过应用商城最近安装过的广告主id列表
 	QttProfile qttProfile = 101;
 }
 
@@ -113,7 +120,33 @@ message UserSignal {
 	Feature st_2_birth = 23;
 	map<string, Cvr> recall_cvr = 24;
 	map<string, double> allTagIDs = 25; // 人群包，key为人群包id，value目前不使用
+	int32 ageID = 26; // 广告定向中使用的年龄的编号
+    map<string, Cvr> recall_cvr_exp = 27;
+	repeated int32 installedUserIDList = 28; // 通过应用商城最近安装过的广告主id列表
+	string recentIP = 29; // 最近常用ip地址
+	string registeredIP = 30; // 注册时使用ip地址
+	QttProfile qttProfile = 101;
 }
+
+
+message UserProfileV2 {
+	string uid = 1;
+	int32 sex = 2;
+	int32 age = 3;
+	int32 newUser = 4;
+	string province = 5;
+	string city = 6;
+	string userCreateTime = 7;
+	string lastDayInCPC = 8;
+	repeated int32 installedUserIDList = 9;
+	string recentIP = 10;
+	string registeredIP = 11;
+	repeated InterestItem interests = 12; // 人群标签，已废弃，不再使用
+	repeated InterestItem interestedWords = 13;  //感兴趣的词汇分类，人群包标签
+	repeated APPPackage installpkg = 14; // 已安装列表
+	QttProfile qttProfile = 101;
+}
+
 
 message Cvr {
 	double cvr = 1;

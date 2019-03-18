@@ -46,6 +46,7 @@ object prepare_bsCvr_dnnPredictSample {
     import spark.implicits._
     val day = getDay(date, 1)
     val dayFeature = getDay(date, 1)
+    val dayCost = getDay(date, 10)
 
     val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature/$dayFeature")
 
@@ -110,13 +111,15 @@ object prepare_bsCvr_dnnPredictSample {
       s"""
          |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from
          |adv.unit) temp
-          """.stripMargin
+      """.stripMargin
 
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
+
     val table2=
       s"""
      |select unitid,userid,planid,adslot_type,charge_type from adv
-     |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid group by unitid)
+     |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$day' group by unitid)
+     |and unitid not in ('1910998')
      |""".stripMargin
 
     spark.sql(table2).select("unitid").createTempView("unitid_table")
@@ -256,7 +259,6 @@ object prepare_bsCvr_dnnPredictSample {
     }
     re.mkString("','")
   }
-
   /**
     * 获取时间
     *

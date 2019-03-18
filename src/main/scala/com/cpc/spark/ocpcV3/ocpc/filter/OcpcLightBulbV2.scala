@@ -34,6 +34,7 @@ object OcpcLightBulbV2{
 
 
     val tableName = "test.ocpc_qtt_light_control_v2"
+//    val tableName = "test.ocpc_qtt_light_control_v2_20190314"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
@@ -46,7 +47,7 @@ object OcpcLightBulbV2{
 
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
-//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
+    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_20190305new")
     cpaSuggest
       .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
       .withColumn("date", lit(date))
@@ -61,7 +62,7 @@ object OcpcLightBulbV2{
     saveDataToRedis(date, hour, spark)
     println(s"############## saving redis database ##########################")
     // 存储结果表
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
+    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
@@ -86,8 +87,6 @@ object OcpcLightBulbV2{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
           var key = "new_algorithm_unit_ocpc_" + identifier
-          val json = new JSONObject()
-          val value = json.toString
           redis.del(key)
         }
       }
@@ -112,15 +111,19 @@ object OcpcLightBulbV2{
     println(s"host: $host")
     println(s"port: $port")
 
-//    val redis = new RedisClient(host, port)
 //    for (record <- data.collect()) {
 //      val identifier = record.getAs[Int]("unitid").toString
-//      val value = record.getAs[Double]("cpa")
+//      val valueDouble = record.getAs[Double]("cpa")
 //      var key = "new_algorithm_unit_ocpc_" + identifier
-//      println(s"key:$key, value:$value")
-//      redis.setex(key, 2 * 24 * 60 * 60, value)
+//      if (valueDouble >= 0) {
+//        var valueString = valueDouble.toString
+//        if (valueString == "0.0") {
+//          valueString = "0"
+//        }
+//        println(s"key:$key, value:$valueString")
+//      }
 //    }
-//    redis.disconnect
+
 
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
@@ -128,10 +131,16 @@ object OcpcLightBulbV2{
       iterator.foreach{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
-          val value = record.getAs[Double]("cpa")
+          val valueDouble = record.getAs[Double]("cpa")
           var key = "new_algorithm_unit_ocpc_" + identifier
-          println(s"key:$key, value:$value")
-          redis.setex(key, 2 * 24 * 60 * 60, value)
+          if (valueDouble >= 0) {
+            var valueString = valueDouble.toString
+            if (valueString == "0.0") {
+              valueString = "0"
+            }
+            println(s"key:$key, value:$valueString")
+            redis.setex(key, 2 * 24 * 60 * 60, valueString)
+          }
         }
       }
       redis.disconnect
@@ -141,6 +150,7 @@ object OcpcLightBulbV2{
   def getCPAsuggest(completeData: DataFrame, conversionGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val result = conversionGoal
       .join(completeData, Seq("unitid", "conversion_goal"), "left_outer")
+      .filter(s"cpa is not null")
       .select("unitid", "conversion_goal", "cpa")
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
@@ -193,7 +203,10 @@ object OcpcLightBulbV2{
       .withColumn("conversion_goal", lit(3))
       .select("unitid", "conversion_goal", "cpa")
 
-    val resultDF = data1.union(data2).union(data3)
+    val resultDF = data1
+      .union(data2)
+      .union(data3)
+      .filter(s"conversion_goal != 2")
 
     resultDF.show(10)
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
