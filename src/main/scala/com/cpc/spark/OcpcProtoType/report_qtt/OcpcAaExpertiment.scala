@@ -307,19 +307,7 @@ object OcpcAaExpertiment {
       """.stripMargin
     val dataFrame3 = spark.sql(sql3)
 
-//    println("dateFrame1:")
-//    dataFrame1.printSchema()
-//    println("------------------")
-//    println("dateFrame2:")
-//    dataFrame2.printSchema()
-//    println("------------------")
-//    println("dateFrame3:")
-//    dataFrame3.printSchema()
-
     val dataFrame = dataFrame1.union(dataFrame2).union(dataFrame3)
-//    println("-----------------")
-//    println("dateFrame:")
-//    dataFrame.printSchema()
     val hour = "16"
     val aucDF = OcpcHourlyAucReport.calculateAUCbyUnitid(dataFrame, date, hour, spark)
     aucDF
@@ -408,6 +396,35 @@ object OcpcAaExpertiment {
 
     val sql2 =
       s"""
+         |select
+         |  a.unitid,
+         |  a.userid,
+         |	a.is_hidden,
+         |	a.adslot_type,
+         |	a.cv_goal,
+         |	a.charge,
+         |	b.suggest_cpa,
+         |  c.auc
+         |from
+         |	etc_index_value a
+         |left join
+         |	suggest_cpa b
+         |on
+         |	a.unitid = b.unitid
+         |and
+         |	a.userid = b.userid
+         |left join
+         | auc_temp c
+         |on
+         | a.unitid = c.unitid
+         |and
+         | a.userid = c.userid
+      """.stripMargin
+    val otherIndexDF = spark.sql(sql2)
+    otherIndexDF.createOrReplaceTempView("other_index")
+
+    val sql3 =
+      s"""
         |select
         |	a.dt,
         |	a.unitid,
@@ -435,30 +452,18 @@ object OcpcAaExpertiment {
         |	b.adslot_type,
         |	b.cv_goal,
         |	b.charge,
-        |	c.suggest_cpa,
-        | d.auc
+        |	b.suggest_cpa,
+        | b.auc
         |from
         |	temp_comp_index_value a
         |left join
-        |	etc_index_value b
+        |	other_index b
         |on
         |	a.unitid = b.unitid
         |and
         |	a.userid = b.userid
-        |left join
-        |	suggest_cpa c
-        |on
-        |	a.unitid = c.unitid
-        |and
-        |	a.userid = c.userid
-        |left join
-        | auc_temp d
-        |on
-        | a.unitid = d.unitid
-        |and
-        | a.userid = d.userid
       """.stripMargin
-    val compIndexValueDF = spark.sql(sql2)
+    val compIndexValueDF = spark.sql(sql3)
     compIndexValueDF
       .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
@@ -518,7 +523,7 @@ object OcpcAaExpertiment {
         | (case when a.conversion_goal = 1 then b.cpareal1
         |    	  when a.conversion_goal = 2 then b.cpareal2
         |    	  else b.cpareal3 end) as cpa_real,
-        | b.cpa_given,
+        | b.cpagiven as cpa_given,
         | b.suggest_cpa,
         | b.auc,
         | b.kvalue,
