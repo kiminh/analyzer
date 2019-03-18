@@ -42,7 +42,7 @@ object ReportCoinTotalMetrics {
          |        select searchid,isshow,isclick,price,uid,exp_style,is_auto_coin,exp_cvr,
          |        case when concat_ws(',',exptags) like  '%needautocoin%'  then  '95%'  else '5%' end as tag
          |        from dl_cpc.cpc_basedata_union_events
-         |        where `date`='$date'
+         |        where day='$date'
          |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
          |        and isshow = 1
          |        and antispam_score != 10000 -- 剔除作弊
