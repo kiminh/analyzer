@@ -21,7 +21,16 @@ object AdCategoryShow {
          |  dl_cpc.cpc_basedata_union_events
          |  WHERE day=$date
          |  and isshow=1
-         |  and antispam_score=10000
+         |  and (
+         |    isclick=0
+         |      or
+         |    isclick=1 and
+         |      (
+         |        spam_click=0
+         |          or
+         |        spam_click is null
+         |      )
+         |  )
          |  and adsrc=1
          |  and os=1
          |  and adslot_id in ("7096368","7034978","7453081","7903746","7659152","7132208")

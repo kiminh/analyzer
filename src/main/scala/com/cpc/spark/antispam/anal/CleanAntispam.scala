@@ -17,9 +17,17 @@ object CleanAntispam {
       .appName("clean antispam ")
       .enableHiveSupport()
       .getOrCreate()
-   val sql =  """
-             SELECT uid from dl_cpc.cpc_union_log where `date` in(%s) and ext['antispam'].int_value = 1 GROUP BY uid
-           """.stripMargin.format(dateDay)
+
+   val sql =
+     s"""
+        |SELECT
+        |  uid
+        |from dl_cpc.cpc_basedata_union_events
+        |where day='$dateDay'
+        |and (isclick=1 and spam_click>=1)
+        |GROUP BY uid
+      """.stripMargin
+
     println("sql:"+sql)
     val conf = ConfigFactory.load()
     val sum = ctx.sql(sql).rdd.mapPartitions {
