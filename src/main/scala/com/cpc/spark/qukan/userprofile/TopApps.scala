@@ -1,8 +1,7 @@
 package com.cpc.spark.qukan.userprofile
 
-import com.cpc.spark.qukan.parser.HdfsParser
-import org.apache.spark.sql.{SaveMode, SparkSession}
 import com.cpc.spark.common.Utils.sendMail
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by roydong on 12/07/2018.
@@ -32,12 +31,12 @@ object TopApps {
     import spark.implicits._
     val pkgs = spark.read.parquet(inpath)
       .rdd
-      .map(x => (x.getString(0), x.getAs[Seq[String]]("pkgs")))
+      .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
 
-    pkgs.toDF("pkg", "install_user_num")
+    pkgs.toDF("app_name", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/top_apps/%s".format(date))
@@ -60,7 +59,7 @@ object TopApps {
     }
 
     val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net"))
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net"))
     if (!b) {
       println("发送邮件失败")
     }
