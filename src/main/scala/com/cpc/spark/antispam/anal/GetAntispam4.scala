@@ -23,8 +23,21 @@ object GetAntispam4 {
       .appName("model user anal" + date)
       .enableHiveSupport()
       .getOrCreate()
-    var sql1 = (" SELECT antispam_rules,media_appsid,count(distinct searchid) as num  from dl_cpc.cpc_click_log " +
-      "where `date` ='%s' and isclick=1 and antispam_rules != \"DUP_SEARCH_ID\"  group by media_appsid,antispam_rules ").format(date)
+    /*var sql1 = (" SELECT antispam_rules,media_appsid,count(distinct searchid) as num  from dl_cpc.cpc_click_log " +
+      "where `date` ='%s' and isclick=1 and antispam_rules != \"DUP_SEARCH_ID\"  group by media_appsid,antispam_rules ").format(date)*/
+
+    val sql1 =
+      s"""
+         |SELECT
+         |  antispam_rules
+         |  , media_appsid
+         |  , count(distinct searchid) as num
+         |from dl_cpc.cpc_basedata_click_event
+         |where day='$date'
+         |  and isclick=1
+         |  and antispam_rules != "DUP_SEARCH_ID"
+         |group by media_appsid, antispam_rules
+       """.stripMargin
 
     println("sql1:"+ sql1)
     var union =  ctx.sql(sql1).rdd.map{
