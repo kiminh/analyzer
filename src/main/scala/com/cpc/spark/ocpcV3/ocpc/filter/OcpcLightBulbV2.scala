@@ -220,7 +220,7 @@ object OcpcLightBulbV2{
     result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
 
     val resultDF = result
-        .select("unitid", "conversion_goal", "cp")
+        .select("unitid", "conversion_goal", "cpa")
 
     resultDF
   }
