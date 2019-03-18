@@ -1,4 +1,5 @@
 package com.cpc.spark.coin
+
 import java.util.Properties
 
 import com.cpc.spark.novel.OperateMySQL
@@ -23,7 +24,7 @@ object ReportCoinTotalMetrics {
       .getOrCreate()
     import spark.implicits._
 
-    val tmpDate = date.replace("-","")
+    val tmpDate = date.replace("-", "")
 
     val totalSql =
       s"""
@@ -44,13 +45,11 @@ object ReportCoinTotalMetrics {
          |        from dl_cpc.cpc_basedata_union_events
          |        where day='$date'
          |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
-         |        and isshow = 1
-         |        and ideaid > 0
          |        and adsrc in (1,28) --cpc广告
          |        and city_level != 1 --非一线城市
          |        and (charge_type is null or charge_type=1) --CPC计费
          |        and userid not in (1001028, 1501875) --排除测试账号
-         |        and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
+         |        and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7335680","7871301")
          |        and round(adclass/1000) != 132101 --去除 互动导流
          |        and adslot_type in (1,2) --列表页1，详情页2
          |    ) a
@@ -95,10 +94,9 @@ object ReportCoinTotalMetrics {
          |    ) b
          |    on a.searchid = b.searchid
              """.stripMargin
-
+    println(totalSql)
     val total = spark.sql(totalSql)
     total.createOrReplaceTempView("total")
-    println("total success!")
     total.show(10)
 
     val tagAucListSql =
@@ -108,8 +106,8 @@ object ReportCoinTotalMetrics {
                  """.stripMargin
 
     val tagAucList = spark.sql(tagAucListSql)
-    val uAuc = CalcMetrics.getGauc(spark,tagAucList,"tag")
-      .select("name","auc")
+    val uAuc = CalcMetrics.getGauc(spark, tagAucList, "tag")
+      .select("name", "auc")
     val testTotalTable = s"test.uauc_total_$tmpDate"
     uAuc.show(10)
 
@@ -174,7 +172,7 @@ object ReportCoinTotalMetrics {
     //val tagMetricsDelSql = s"delete from report2.cpc_report_coin_tag_metrics where `date`='$date'"
     //OperateMySQL.del(tagMetricsDelSql)
     //result.write.mode(SavaMode.Append)
-     // .jdbc(mariadb_write_url,"report2.cpc_report_coin_tag_metrics",mariadb_write_prop)
+    // .jdbc(mariadb_write_url,"report2.cpc_report_coin_tag_metrics",mariadb_write_prop)
     //println("insert into report2.cpc_report_coin_tag_metrics success!")
     //result.unpersist()
 
