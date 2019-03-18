@@ -61,7 +61,7 @@ object OcpcAaAbAutomation {
       val nextList = abTestData.get(i+1)
       // 首先添加cpc的实验组数据
       var preBuffer: ListBuffer[String] = new ListBuffer
-      for(item <- preList) preBuffer.append(item)
+      for(j <- 0 until preList.size) preBuffer.append(preList.get(j).toString)
       dataList.append(preBuffer)
       // 判断前后两条数据是不是相同的unitid和userid
       val isCpc = "cpc".equals(preList.getAs[String](3))
@@ -70,7 +70,7 @@ object OcpcAaAbAutomation {
       if(isCpc && isOcpc && isSame){
         // 然后添加ocpc的实验组数据
         var nextBuffer: ListBuffer[String] = new ListBuffer
-        for(item <- preList) nextBuffer.append(item)
+        for(j <- 0 until nextList.size) nextBuffer.append(nextList.get(j).toString)
         dataList.append(nextBuffer)
         // 最后添加cpc和ocpc的对比结果
         val compareBuffer: ListBuffer[String] = new ListBuffer[String]
