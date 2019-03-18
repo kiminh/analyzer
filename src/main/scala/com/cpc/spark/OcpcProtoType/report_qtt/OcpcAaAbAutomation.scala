@@ -140,7 +140,7 @@ object OcpcAaAbAutomation {
   // 将ab实验数据比较结果写到本地文件夹
   def compareAbTestData(date: String, resultDF: DataFrame): Unit ={
     val list = resultDF.collectAsList()
-    for(item <- list) println(item)
+    for(i <- 0 to list.size()) println(list.get(i))
     val csvPath = "/home/cpc/wt/test_data/ab/" + date + ".csv"
     val saveOptions = Map("header" -> "true", "path" -> csvPath)
     resultDF.coalesce(1)
