@@ -39,21 +39,21 @@ object MiduTouTiaolog {
       val sql2 =
         s"""
            |select
-           |  opt_map,opt_map["appscore"] as appscore,
+           |  opt_map,null as appscore,
            |  opt_map["ButtonText"] as buttontext,
-           |  opt_map["CommentNum"] as commentnum,
+           |  null as commentnum,
            |  opt_map["Description"] as description,
            |  opt_map["ImageMode"] as Imagemode,
            |  opt_map["InteractionType"] as interactiontype,
            |  opt_map["Source"] as source,
            |  opt_map["Title"] as title,
            |  opt_map["imageList"] as imagelist,
-           |  minute,imei,day as date,hour
+           |  minute,imei,day,hour
            |  from tmp
              """.stripMargin
       val data2 = spark.sql(sql2)
         data2.show(5)
-        data2.repartition(50).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+        data2.repartition(20).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
 
     def decode = udf {
