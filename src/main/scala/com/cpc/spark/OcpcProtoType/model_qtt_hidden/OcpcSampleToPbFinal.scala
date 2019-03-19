@@ -3,6 +3,8 @@
 package com.cpc.spark.OcpcProtoType.model_qtt_hidden
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import ocpc.ocpc.{OcpcList, SingleRecord}
 import org.apache.spark.sql.functions._
@@ -45,8 +47,8 @@ object OcpcSampleToPbFinal {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_v1"))
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
-//        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
 
 
     savePbPack(resultDF, version, isKnown)
@@ -61,46 +63,41 @@ object OcpcSampleToPbFinal {
       .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
       .withColumn("version", when(col("version2").isNotNull, col("version2")).otherwise(col("version1")))
 
-//    data.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
+    data.write.mode("overwrite").saveAsTable("test.check_data_pb_20190319")
 
     data
   }
 
   def getPbData2(date: String, hour: String, spark: SparkSession) = {
-    val data1 = spark
+    val data = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'wz' and cpagiven > 0")
-      .withColumn("conversion_goal", lit(0))
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-
-    val data2 = data1
-        .withColumn("conversion_goal", lit(1))
-        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-
-    val data = data1
-      .union(data2)
+      .withColumn("conversion_goal", lit(1))
       .withColumn("cpagiven2", col("cpagiven"))
       .withColumn("cvrcnt2", col("cvrcnt"))
       .withColumn("kvalue2", col("kvalue"))
       .withColumn("version2", col("version"))
-      .select("identifier", "conversion_goal", "cpagiven2", "cvrcnt2", "kvalue2", "version2")
+      .select("identifier", "conversion_goal", "cvrcnt2", "cpagiven2", "kvalue2", "version2")
 
     data.show(10)
     data
   }
 
   def getPbData1(date: String, hour: String, spark: SparkSession) = {
-    val data = spark
+    /*
+    1. 从pb文件抽取数据
+    2. 从预算控制表抽取数据
+     */
+    val resultDF = spark
       .table("dl_cpc.ocpc_prev_pb_once")
-      .where(s"version = 'qtt_demo'")
+      .where(s"version = qtt_hidden'")
       .withColumn("cpagiven1", col("cpagiven"))
       .withColumn("cvrcnt1", col("cvrcnt"))
       .withColumn("kvalue1", col("kvalue"))
       .withColumn("version1", col("version"))
       .select("identifier", "conversion_goal", "cpagiven1", "cvrcnt1", "kvalue1", "version1")
 
-    data.show(10)
-    data
+    resultDF
   }
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {

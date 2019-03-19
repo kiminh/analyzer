@@ -45,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
 //    savePbPack(resultDF, version, isKnown)
   }
@@ -62,25 +62,60 @@ object OcpcSampleToPb {
     2. 按照实验配置文件给出cpagiven
      */
     // 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version'"
+    val selectCondition1 = s"`date`='$date' and `hour`='$hour' and version='$version'"
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |  identifier,
          |  conversion_goal,
-         |  kvalue,
-         |  cpagiven,
+         |  kvalue1,
+         |  cpagiven1,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
-         |  $selectCondition
+         |  $selectCondition1
          |AND
          |  kvalue > 0
        """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
+
+
+    // 时间分区
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition2 = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  conversion_goal,
+         |  cpa as cpagiven2,
+         |  kvalue as kvalue2
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_hourly
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  industry in ('elds', 'feedapp')
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    // 数据关联
+    val result = data2
+      .join(data1, Seq("identifier", "conversion_goal"), "left_outer")
+      .withColumn("cpagiven", col("cpagiven2"))
+      .withColumn("kvalue", when(col("kvalue1").isNotNull, col("kvalue1")).otherwise(col("kvalue2")))
+      .select("identifier", "conversion_goal", "cpagiven1", "cpagiven2", "cvrcnt", "kvalue1", "kvalue2", "cpagiven", "kvalue", "version")
+
 
     result.printSchema()
     result.show(10)
