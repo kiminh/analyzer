@@ -69,8 +69,8 @@ object OcpcSampleToPb {
          |SELECT
          |  identifier,
          |  conversion_goal,
-         |  kvalue1,
-         |  cpagiven1,
+         |  kvalue as kvalue1,
+         |  cpagiven as cpagiven1,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
