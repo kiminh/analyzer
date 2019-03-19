@@ -293,6 +293,7 @@ object videoPromotion {
       val df = base
         .filter(s"userid = $userid and adtype1 = $adtype1 and test_tag = $test_tag ")
         .selectExpr("exp_cvr as score", "iscvr as label")
+      df.show(20)
       val auc = CalcMetrics.getAuc(spark, df)
       println("auc = " + auc)
       result += Group(userid, adtype1, test_tag, auc)
