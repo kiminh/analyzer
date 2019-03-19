@@ -70,7 +70,7 @@ object OcpcSampleToPb {
          |  identifier,
          |  conversion_goal,
          |  kvalue,
-         |  cpagiven as cpagiven1,
+         |  cpagiven,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
