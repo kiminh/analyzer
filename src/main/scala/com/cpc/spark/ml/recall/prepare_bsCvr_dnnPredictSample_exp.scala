@@ -90,19 +90,27 @@ object prepare_bsCvr_dnnPredictSample_exp {
 
     val adv=
       s"""
-        |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type, cnt from
+        |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type, cnt, tb.os_type,
+        |REPLACE(tb.age,'0','0,1,2,3,4') as age,
+        |case when tb.sex=0 then '0,1,2' when tb.sex=1 then '1' else 2 end as sex,
+        |case when tb.regions>0 then tb.regions else '0' end as regions from
         |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date>='$day' group by unit_id) ta
         |join adv.unit tb on ta.unit_id=tb.id
-        |where audience_orient>0) temp
+        |where tb.audience_orient>0) temp
       """.stripMargin
 
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
     val table2=
       s"""
-         |select ta.unitid,ta.userid,ta.planid,ta.adslot_type,ta.charge_type from (select * from adv where unitid
+         |select ta.unitid,ta.userid,ta.planid,ta.adslot_type,ta.charge_type, os_type, age1, sex1, regions1
+         |from (select unitid, userid, planid, adslot_type, charge_type, cnt, os_type, age1, sex1, regions1 from adv
+         |lateral view explode(split(age,',')) age as age1
+         |lateral view explode(split(sex,',')) sex as sex1
+         |lateral view explode(split(regions,',')) regions as regions1 where unitid
          |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$day' group by unitid)) ta join
          |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.8 group by id) tb
-         |on ta.unitid=tb.unitid order by ta.cnt desc limit 300
+         |on ta.unitid=tb.unitid
+         |order by ta.cnt desc
          |""".stripMargin
 
 
@@ -130,23 +138,22 @@ object prepare_bsCvr_dnnPredictSample_exp {
       hash("f5")($"userid").alias("f5"),
       //hash("f16")($"is_new_ad").alias("f16"),
       hash("f6")($"charge_type").alias("f6")
-      ,$"unitid")
+      ,$"unitid", $"age1", $"sex1", $"regions1", $"os_type")
     unit_hash.show(10)
 
     val sql =
       s"""
-         |select os, phone_price, brand, province, city, city_level, uid, age, sex from (
          |select
-         |  os, ext['phone_price'].int_value as phone_price,
-         |  ext['brand_title'].string_value as brand,
-         |  province, city, ext['city_level'].int_value as city_level,
-         |  uid, age, sex, row_number() over(partition by uid order by hour desc) row_num
-         |from dl_cpc.cpc_union_log where `date` = '$day'
+         |  max(os) as os, max(phone_price) as phone_price,
+         |  max(brand_title) as brand,
+         |  max(province) as province, max(city) as city, max(city_level) as city_level,
+         |  uid, max(age) as age, max(sex) as sex
+         |from dl_cpc.cpc_basedata_union_events where day = '$day'
          |  and ideaid > 0
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid is not null) ta where ta.row_num=1
+         |  and uid is not null group by uid
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -157,7 +164,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
         .join(profileData, Seq("uid"), "leftouter")
         .join(uidRequest, Seq("uid"), "leftouter")
         .join(behavior_data, Seq("uid"), "leftouter")
-        .select(
+        .select($"sex",$"age",$"os", $"city", $"province",
           //hash("f1")($"media_type").alias("f1"),
           //hash("f2")($"mediaid").alias("f2"),
           //hash("f3")($"channel").alias("f3"),
@@ -196,7 +203,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
         $"sparse".getField("_4").alias("id_arr"),
-        $"uid"
+        $"uid",$"sex",$"age",$"os", $"city", $"province"
       ).repartition(8000).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
@@ -204,7 +211,10 @@ object prepare_bsCvr_dnnPredictSample_exp {
     val bunit_hash = broadcast(unit_hash).persist(StorageLevel.DISK_ONLY)
     bunit_hash.show(10)
 
-    val result_temp1 = result_temp.crossJoin(bunit_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+    val result_temp1 = result_temp.join(bunit_hash,
+      $"sex"===$"sex1" and $"age"===$"age1" and $"os"===$"os_type"
+        and ($"city"===$"regions1" or $"province"===$"regions1" or $"regions1"===0)
+    ).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
       $"f10", $"f11", $"f12", $"f13", $"f14").alias("dense"),
       //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
       //mkSparseFeature1($"m1").alias("sparse"), $"label"
