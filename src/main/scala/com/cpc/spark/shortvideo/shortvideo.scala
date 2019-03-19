@@ -436,7 +436,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
         """.stripMargin).
        selectExpr("userid ","expcvr ")
      tabfinal2.show(10,false)
-    tabfinal2.createOrReplaceTempView()
+//    tabfinal2.createOrReplaceTempView()
     /*#########################################################################*/
     //   pb写法2
 
