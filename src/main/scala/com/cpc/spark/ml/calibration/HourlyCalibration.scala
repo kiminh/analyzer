@@ -110,7 +110,7 @@ object HourlyCalibration {
               if (softMode == 0) {
                 val conf = ConfigFactory.load()
                 println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
-                println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
+                  println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
               }
             }
             config
