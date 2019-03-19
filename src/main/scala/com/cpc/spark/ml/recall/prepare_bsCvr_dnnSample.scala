@@ -83,38 +83,20 @@ object prepare_bsCvr_dnnSample {
          |  uid, age, sex, dtu_id,
          |  a.hour
          |from
-         |  (select media_type,media_appsid,ext['channel'].int_value as channel,
-         |  ext['client_type'].string_value as sdk_type,
-         |  adslot_type,adslotid,adtype, interaction, bid, ideaid, unitid, planid, userid
-         |  ,ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass, ext['charge_type'].int_value as charge_type,
-         |  ext_int['siteid'] as site_id, os, network,
-         |  ext['phone_price'].int_value as phone_price,
-         |  ext['brand_title'].string_value as brand, province, city,
-         |  ext['city_level'].int_value as city_level, uid, age, sex,
-         |  ext_string['dtu_id'] as dtu_id, hour,searchid
-         |from dl_cpc.cpc_union_log where `date` = '$day'
+         |  (select media_type,media_appsid, channel,
+         |  client_type as sdk_type,
+         |  adslot_type,adslot_id,adtype, interaction, bid, ideaid, unitid, planid, userid
+         |  ,is_new_ad, adclass, charge_type,
+         |  siteid as site_id, os, network,
+         |  phone_price,
+         |  brand_title as brand, province, city,
+         |  city_level, uid, age, sex,
+         |  dtu_id, hour,searchid
+         |from dl_cpc.cpc_basedata_union_events where day = '$day'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and adslot_type!=7
-         |  union
-         |  select media_type,media_appsid,ext['channel'].int_value as channel,
-         |  ext['client_type'].string_value as sdk_type,
-         |  adslot_type,adslotid,adtype, interaction, info.bid, info.ideaid, info.unitid, info.planid, info.userid
-         |  ,ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass, ext['charge_type'].int_value as charge_type,
-         |  ext_int['siteid'] as site_id, os, network,
-         |  ext['phone_price'].int_value as phone_price,
-         |  ext['brand_title'].string_value as brand, province, city,
-         |  ext['city_level'].int_value as city_level, uid, age, sex,
-         |  ext_string['dtu_id'] as dtu_id, hour,searchid
-         |from dl_cpc.cpc_union_log lateral view explode(motivation) b AS info
-         | where `date` = '$day'
-         |  and info.isclick = 1 and info.ideaid > 0
-         |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
-         |  and uid not like "%.%"
-         |  and uid not like "%000000%"
-         |  and adslot_type=7
          |) a
          |left join
          |(select searchid, ideaid, max(label2) as iscvr from dl_cpc.ml_cvr_feature_v1
