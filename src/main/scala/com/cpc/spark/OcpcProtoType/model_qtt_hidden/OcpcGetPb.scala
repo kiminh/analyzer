@@ -37,16 +37,13 @@ object OcpcGetPb {
     val version = args(3).toString
     val media = args(4).toString
 
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if (media == "novel") {
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"media selection: $mediaSelection")
 
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
@@ -61,8 +58,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -92,34 +89,6 @@ object OcpcGetPb {
 
   def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // set the unitid that we need to reset
-//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
-//
-//    // time span
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  cast(unitid as string) identifier,
-//         |  2 as conversion_goal,
-//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
-//         |FROM
-//         |  dl_cpc.ocpc_filter_unionlog
-//         |WHERE
-//         |  `date` = '2019-03-13'
-//         |AND
-//         |  `hour` between '0' and '17'
-//         |AND
-//         |  $mediaSelection
-//         |AND
-//         |  antispam = 0
-//         |AND
-//         |  isclick = 1
-//         |AND
-//         |  $unitidSelection
-//         |AND
-//         |  is_ocpc = 1
-//       """.stripMargin
-//    println(sqlRequest)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "ocpc_all.ocpc_reset_k"
     val expDataPath = conf.getString(conf_key)
@@ -267,11 +236,11 @@ object OcpcGetPb {
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
 
-    result
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+//    result
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
 
     println("k smooth strat1:")
     result.show(10)
