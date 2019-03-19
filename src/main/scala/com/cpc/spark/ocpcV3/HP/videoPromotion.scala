@@ -159,7 +159,8 @@ object videoPromotion {
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     val summary = baseData //同时含视频和大图的数据
-        .filter("if_use_strategy = 1")
+        .join(pivot_table, Seq("userid"), "left")
+        .filter("if_use_strategy = 1 and video > 0")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
         .groupBy("userid", "adclass2", "threshold",  "adtype1", "test_tag" )
@@ -182,7 +183,7 @@ object videoPromotion {
     val adclass2Cvr = baseData
       .filter("adtype1 = 'bigimage'")
       .groupBy( "adtype1","adclass2", "test_tag")
-      .agg( (sum("iscvr")/sum("isclick")).alias("cvr_bigimage_adclass2") )
+      .agg( (sum("iscvr")*100/sum("isclick")).alias("cvr_bigimage_adclass2") )
       .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2" )
 
     val result0 = summary
@@ -190,7 +191,7 @@ object videoPromotion {
       .join(adclass2Cvr, Seq( "adtype1", "adclass2", "test_tag"), "left")
       .withColumn("cvr", col("cvrn")*100/col("clickn"))
       .withColumn("cpm", col("cost")*10/col("shown"))
-      .withColumn("exp_cvr", col("exp_cvr_sum")/col("clickn"))
+      .withColumn("exp_cvr", col("exp_cvr_sum")*0.0001/col("clickn"))
       .withColumn("pcoc",    col("exp_cvr")/col("cvr"))
       .withColumn("date", lit(date))
       .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2",  "cpm" , "date")
@@ -237,10 +238,10 @@ object videoPromotion {
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
       .withColumn("date", lit(date))
-      .select("adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp", "date")
+      .select("adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "uidn", "arpu", "acp", "date")
 
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2
-    //    ( adtype1 string, test_tag string, show_n int, ctr double, click_n int, cvr double, cvr_n int, total_cost double, cpm double, cpa double, arpu double, acp double )
+    //    ( adtype1 string, test_tag string, show_n int, ctr double, click_n int, cvr double, cvr_n int, total_cost double, cpm double, cpa double, uidn int, arpu double, acp double )
     //    comment "group by adtype1, test_tag to summary"
     //    partitioned by (`date` string);
 
