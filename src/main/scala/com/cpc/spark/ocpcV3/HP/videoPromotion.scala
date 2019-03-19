@@ -56,7 +56,7 @@ object videoPromotion {
          |      dl_cpc.cpc_basedata_union_events
          |    where
          |      day = '$date'
-         |      --and hour = '12'
+         |      and hour = '12'
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -160,7 +160,7 @@ object videoPromotion {
 
     val summary = baseData //同时含视频和大图的数据
         .join(pivot_table, Seq("userid"), "left")
-        .filter("if_use_strategy = 1 and video > 0")
+//        --.filter("if_use_strategy = 1 and video > 0")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
         .groupBy("userid", "adclass2", "threshold",  "adtype1", "test_tag" )
@@ -207,7 +207,7 @@ object videoPromotion {
     //      cost   double,
     //      cvrn int,
     //      cvr double,
-    //      exp_cvr bigint,
+    //      exp_cvr double,
     //      pcoc double,
     //      auc double,
     //      cvr_bigimage_adclass2 double,
