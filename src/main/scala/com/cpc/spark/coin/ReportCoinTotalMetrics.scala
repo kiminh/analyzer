@@ -149,7 +149,10 @@ object ReportCoinTotalMetrics {
     result.repartition(1)
       .write
       .mode("overwrite")
-      .saveAsTable("test.lyl_coin_metrics")
+      .insertInto("dl_cpc.cpc_report_coin_tag_metrics")
+
+
+    // .saveAsTable("test.lyl_coin_metrics")
 
     // .insertInto("dl_cpc.cpc_report_coin_tag_metrics")
 
