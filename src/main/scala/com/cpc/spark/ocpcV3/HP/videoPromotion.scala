@@ -259,7 +259,7 @@ object videoPromotion {
 
 
     val userCvr2 = userCvr
-      .join( userAdclassCvr, Seq("userid"), "left" )
+      .join( userAdclassCvr, Seq("userid", "test_tag"), "left" )
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
       .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
