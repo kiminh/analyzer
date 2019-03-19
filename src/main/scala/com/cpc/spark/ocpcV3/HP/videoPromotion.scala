@@ -72,7 +72,7 @@ object videoPromotion {
          |      --  and length(uid) in (14, 15, 36)
          |
          |  ) t1
-         |  left join (  select userid, expcvr as threshold from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid ) tt
+         |  left join (  select userid, expcvr as threshold from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid, expcvr ) tt
          |    on t1.userid = tt.userid
          |  left join (
          |    select
