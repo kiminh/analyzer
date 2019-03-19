@@ -18,13 +18,13 @@ object videoPromotion {
          |    when exptags like '%use_strategy%' then 'A'
          |    else 'B'
          |  end as test_tag,
-         |  t1.searchid,
+         |  --t1.searchid,
          |  uid,
          |  cast(adclass/1000 as int) as adclass2,
          |  t1.userid,
          |  case when tt.userid is not NULL then 1 else 0 end as if_use_strategy,
          |  tt.threshold,
-         |  usertype,
+         |  --usertype,
          |  adtype1,
          |  ideaid,
          |  isshow,
@@ -56,6 +56,7 @@ object videoPromotion {
          |      dl_cpc.cpc_basedata_union_events
          |    where
          |      day = '$date'
+         |      and hour = '12'
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -175,7 +176,7 @@ object videoPromotion {
     summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
     val group = summary
-      .select("userid", "adtype1", "test_tag").rdd
+      .select("userid", "adtype1", "test_tag").distinct().rdd
       .map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
     val groupAuc = addAuc( spark, group, baseData )
 
@@ -284,14 +285,16 @@ object videoPromotion {
   def addAuc( spark: SparkSession, group: RDD[(Int, String, String)], base: DataFrame ) ={
     import spark.implicits._
     val result = scala.collection.mutable.ListBuffer[Group]()
-    for (row <- group){
+    for (row <- group.collect()){
       val userid = row._1
       val adtype1 = row._2
       val test_tag = row._3
+      println(" ::::" + userid + adtype1 + test_tag )
       val df = base
         .filter(s"userid = $userid and adtype1 = $adtype1 and test_tag = $test_tag ")
         .selectExpr("exp_cvr as score", "iscvr as label")
       val auc = CalcMetrics.getAuc(spark, df)
+      println("auc = " + auc)
       result += Group(userid, adtype1, test_tag, auc)
     }
     result.toList.toDF()
