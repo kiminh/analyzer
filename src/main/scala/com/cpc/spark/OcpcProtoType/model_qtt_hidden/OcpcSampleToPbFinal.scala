@@ -90,7 +90,7 @@ object OcpcSampleToPbFinal {
      */
     val resultDF = spark
       .table("dl_cpc.ocpc_prev_pb_once")
-      .where(s"version = qtt_hidden'")
+      .where(s"version = 'qtt_hidden'")
       .withColumn("cpagiven1", col("cpagiven"))
       .withColumn("cvrcnt1", col("cvrcnt"))
       .withColumn("kvalue1", col("kvalue"))
@@ -102,12 +102,7 @@ object OcpcSampleToPbFinal {
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
     var list = new ListBuffer[SingleRecord]
-    var filename = ""
-    if (isKnown == 1) {
-      filename = s"Ocpc_" + version + "_known.pb"
-    } else {
-      filename = s"Ocpc_" + version + "_unknown.pb"
-    }
+    var filename = "ocpc_hidden_adv_params.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
