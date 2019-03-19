@@ -35,7 +35,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction_exp-$sampleDay")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction_exp1-$sampleDay")
 
     //train.take(10).foreach(println)
 
