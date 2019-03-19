@@ -1,11 +1,9 @@
 package com.cpc.spark.ocpcV3.HP
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
 import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions._
-
+import com.cpc.spark.tools.CalcMetrics
 
 object videoPromotion {
   def main(args: Array[String]): Unit ={
@@ -22,9 +20,10 @@ object videoPromotion {
          |  end as test_tag,
          |  t1.searchid,
          |  uid,
-         |  adclass,
+         |  cast(adclass/1000 as int) as adclass2,
          |  t1.userid,
          |  case when tt.userid is not NULL then 1 else 0 end as if_use_strategy,
+         |  tt.threshold,
          |  usertype,
          |  adtype1,
          |  ideaid,
@@ -73,7 +72,7 @@ object videoPromotion {
          |      --  and length(uid) in (14, 15, 36)
          |
          |  ) t1
-         |  left join (  select userid from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid ) tt
+         |  left join (  select userid, expcvr as threshold from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid ) tt
          |    on t1.userid = tt.userid
          |  left join (
          |    select
@@ -159,87 +158,49 @@ object videoPromotion {
 
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
-    val summary0 = baseData //同时含视频和大图的数据
-      .groupBy("userid", "test_tag", "adtype1", "adclass")
-      .agg(
-        sum("isclick").alias("clickn"),
-        sum("iscvr").alias("cvrn")
-      ).select("userid", "test_tag", "adtype1", "adclass",  "clickn", "cvrn")
-
     val summary = baseData //同时含视频和大图的数据
         .filter("if_use_strategy = 1")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
-        .groupBy("userid", "test_tag", "adtype1", "adclass")
-        .agg(sum("isshow").alias("shown"),
-          sum("isclick").alias("clickn"),
-          sum("iscvr").alias("cvrn"),
+        .groupBy("userid", "adclass2", "threshold",  "adtype1", "test_tag" )
+        .agg(
+          sum(col("isshow" )).alias("shown"),
+          sum(col("isclick")).alias("clickn"),
+          sum(col("iscvr"  )).alias("cvrn"),
+          sum(col("isclick")*col("exp_cvr") ).alias("exp_cvr_sum"),
           sum("price1").alias("cost")
-        ).select("userid", "test_tag", "adtype1", "adclass", "shown", "clickn", "cvrn", "cost")
+        ).select("userid", "adclass2", "threshold",  "adtype1", "test_tag", "shown", "clickn", "cvrn", "exp_cvr_sum","cost")
     println("========================summary=========================")
-
     summary.persist()
-
     summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
-    baseData.groupBy("userid", "adclass")
-      .agg(sum("isshow").alias("shown2"))
-      .createOrReplaceTempView("baseSummary")
+    val group = summary.select("userid", "adtype1", "test_tag").rdd.map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
+    val groupAuc = addAuc( spark, group, baseData)
 
-    val sql2 =
-      s"""
-         |select
-         | userid,
-         | adclass
-         |from (
-         |select
-         |  userid,
-         |  adclass,
-         |  rank()over(partition by userid, adclass order by shown2 desc ) rk
-         |from baseSummary
-         |) where rk = 1
-       """.stripMargin
+    val adclass2Cvr = baseData
+      .filter("adtype1 = 'bigimage'")
+      .groupBy( "adtype1","adclass2", "test_tag")
+      .agg( (sum("iscvr")/sum("isclick")).alias("cvr") )
+      .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2" )
 
-    val userAdclass = spark.sql(sql2)
-    println("=====================userAdclass====================")
-    userAdclass.show(10)
+    val result0 = summary
+      .join(groupAuc, Seq("userid", "adtype1", "test_tag"), "left")
+      .join(adclass2Cvr, Seq( "adtype1", "adclass2", "test_tag"), "left")
+      .withColumn("cvr", col("cvrn")*100/col("clickn"))
+      .withColumn("cpm", col("cost")*10/col("shown"))
+      .withColumn("exp_cvr", col("exp_cvr_sum")/col("clickn"))
+      .withColumn("pcoc",    col("exp_cvr")/col("cvr"))
+      .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2",  "cpm" )
 
-    val adclassCvr = summary0
-        .filter("adtype1 = 'bigimage'") // 行业大图转化率
-      .groupBy("adclass")
-      .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
-      .select("adclass", "cvr")
-
-    val userAdclassCvr = userAdclass
-      .join( adclassCvr, Seq("adclass"), "inner" )
-      .select("userid", "adclass", "cvr" ) //userid为大图userid,
+    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
     val uidn_ab = baseData
-        //.filter("adtype1 = 'video'")
+      //.filter("adtype1 = 'video'")
       .groupBy("test_tag", "adtype1")
       .agg(countDistinct("uid").alias("uidn"))
       .select("test_tag", "adtype1", "uidn")
 
-    val result0 = summary
-      // .filter("adtype1 = 'video'")
-      .groupBy( "userid","adtype1", "test_tag")
-      .agg(
-        sum("shown").alias("show_n"),
-        sum("clickn").alias("click_n"),
-        sum("cvrn").alias("cvr_n"),
-        sum("cost").alias("total_cost")
-      )
-      .withColumn("ctr", col("click_n")*100/col("show_n"))
-      .withColumn("cvr", col("cvr_n")*100/col("click_n"))
-      .withColumn("cpm", col("total_cost")*10/col("show_n"))
-      .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
-      .withColumn("acp", col("total_cost")/col("click_n")/100)
-      .select("userid","adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "acp")
-
-    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
-
     val result = summary
-       // .filter("adtype1 = 'video'")
       .groupBy("adtype1", "test_tag" )
       .agg(
           sum("shown").alias("show_n"),
@@ -257,21 +218,47 @@ object videoPromotion {
 
     result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
-
     val userCvr = summary
-        .join( pivot_table, Seq("userid"), "left")
+      .join( pivot_table, Seq("userid"), "left")
       .filter("video > 0")  //排除没有视频的userid
       .groupBy("test_tag", "userid", "adtype1")
-      .agg(( sum("cvrn")/sum("clickn") ).alias("cvr"))
+      .agg( ( sum("cvrn")/sum("clickn") ).alias("cvr") )
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
       .select("test_tag", "userid", "video", "bigimage")
 
     userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
 
+    baseData.groupBy("userid", "adclass2")
+      .agg(sum("isshow").alias("shown2"))
+      .createOrReplaceTempView("baseSummary")
+
+    val sql2 =
+      s"""
+         |select
+         | userid,
+         | adclass2
+         |from (
+         |select
+         |  userid,
+         |  adclass2,
+         |  rank()over(partition by userid, adclass2 order by shown2 desc ) rk
+         |from baseSummary
+         |) where rk = 1
+       """.stripMargin
+
+    val userAdclass = spark.sql(sql2)
+    println("=====================userAdclass====================")
+    userAdclass.show(10)
+
+    val userAdclassCvr = userAdclass
+      .join( adclass2Cvr, Seq("adclass2"), "inner" )
+      .select("userid", "adclass2", "test_tag", "cvr_bigimage_adclass2" ) //userid为大图userid,
+
+
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
-      .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
-      .select("test_tag", "userid","adclass", "video", "bigimage","bigimage2")
+      .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
+      .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
     userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
@@ -285,6 +272,25 @@ object videoPromotion {
 
     result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
 
+  }
+
+  case class Group ( var userid: Int,
+                     val adtype1: String,
+                     val test_tag: String,
+                     val auc: Double )
+
+  def addAuc( spark: SparkSession, group: RDD[(Int, String, String)], base: DataFrame ) ={
+    import spark.implicits._
+    val result = scala.collection.mutable.ListBuffer[Group]()
+    for (row <- group){
+      val userid = row._1
+      val adtype1 = row._2
+      val test_tag = row._3
+      val df = base.filter(s"useerid = $userid and adtype1 = $adtype1 and test_tag = $test_tag ")
+      val auc = CalcMetrics.getAuc(spark, df)
+      result += Group(userid, adtype1, test_tag, auc)
+    }
+    result.toList.toDF()
   }
 
 }
