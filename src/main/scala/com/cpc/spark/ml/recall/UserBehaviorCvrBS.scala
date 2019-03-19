@@ -45,7 +45,7 @@ object UserBehaviorCvrBS {
          |  (select searchid, ideaid, label from dl_cpc.ml_cvr_feature_v2
          |  WHERE `date` = '$date' and label = 1
          |  ) c on a.searchid = c.searchid and a.cvr_ideaid=c.ideaid
-         |  where label2=1 or lable=1
+         |  where label2=1 or label=1
       """.stripMargin
 
     println(cvr_sql)
