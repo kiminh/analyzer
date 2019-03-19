@@ -35,7 +35,7 @@ object prepare_bsCvr_dnnPredictSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction-$sampleDay")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction-$sampleDay")
 
     //train.take(10).foreach(println)
 
@@ -48,12 +48,12 @@ object prepare_bsCvr_dnnPredictSample {
     val dayFeature = getDay(date, 1)
     val dayCost = getDay(date, 10)
 
-    val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature/$dayFeature")
+    val behavior_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/features/adBehaviorFeature/$dayFeature")
 
-    val uidRequest = spark.read.parquet("/user/cpc/features/timeDistributionFeature").
+    val uidRequest = spark.read.parquet("hdfs://emr-cluster/user/cpc/features/timeDistributionFeature").
       select($"uid", hashSeq("m26", "string")($"request").alias("m26"))
 
-    val profileData = spark.read.parquet("/user/cpc/qtt-lookalike-sample/pv1").
+    val profileData = spark.read.parquet("hdfs://emr-cluster/user/cpc/qtt-lookalike-sample/pv1").
       select($"did".alias("uid"), hashSeq("m1", "string")($"apps._1").alias("m1"),
         hashSeq("m24", "string")($"words").alias("m24"),
         hashSeq("m25", "string")($"terms").alias("m25")
