@@ -2,8 +2,8 @@ package com.cpc.spark.ml.calibration
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import com.cpc.spark.common.Utils
+import org.apache.spark.sql.functions._
 
 
 object HourlyCalibrationOnMiduCtr {
@@ -49,7 +49,9 @@ object HourlyCalibrationOnMiduCtr {
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).sample(false, 0.5)
+    val log = session.sql(sql).select("isclick","ectr","show_timestamp","ctr_model_name")
+        .withColumn("isclick",when(col("isclik")===null,0).otherwise(col("isclick")))
+        .select("isclick","ectr","show_timestamp","ctr_model_name")
 
     HourlyCalibration.unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
