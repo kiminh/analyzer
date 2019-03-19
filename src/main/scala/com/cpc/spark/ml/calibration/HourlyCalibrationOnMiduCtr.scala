@@ -49,7 +49,7 @@ object HourlyCalibrationOnMiduCtr {
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql)
+    val log = session.sql(sql).sample(false, 0.5)
 
     HourlyCalibration.unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
