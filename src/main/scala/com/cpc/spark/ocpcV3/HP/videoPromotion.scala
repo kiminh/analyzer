@@ -137,7 +137,7 @@ object videoPromotion {
          |  ) t2 on t1.searchid = t2.searchid
        """.stripMargin
 
-    val baseData = spark.sql(sql1)
+    val baseData = spark.sql(sql1).na.fill(0,Seq("iscvr"))
     baseData.persist()
 
     baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
@@ -183,7 +183,7 @@ object videoPromotion {
     val adclass2Cvr = baseData
       .filter("adtype1 = 'bigimage'")
       .groupBy( "adtype1","adclass2", "test_tag")
-      .agg( (sum("iscvr")/sum("isclick")).alias("cvr") )
+      .agg( (sum("iscvr")/sum("isclick")).alias("cvr_bigimage_adclass2") )
       .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2" )
 
     val result0 = summary
