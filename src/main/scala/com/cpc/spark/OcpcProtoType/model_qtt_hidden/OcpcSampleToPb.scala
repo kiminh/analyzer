@@ -45,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
 //    savePbPack(resultDF, version, isKnown)
   }
@@ -120,7 +120,9 @@ object OcpcSampleToPb {
     result.printSchema()
     result.show(10)
 
-    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
+    val resultDF = result
+      .na.fill(0, Seq("cvrcnt"))
+      .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
     resultDF
   }
