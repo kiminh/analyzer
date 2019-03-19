@@ -56,7 +56,7 @@ object videoPromotion {
          |      dl_cpc.cpc_basedata_union_events
          |    where
          |      day = '$date'
-         |      and hour = '12'
+         |      --and hour = '12'
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -146,11 +146,10 @@ object videoPromotion {
     println( "baseData has " + baseData.count() + " logs" )
 
     val pivot_table = baseData
+        .filter("if_use_strategy = 1")
         .select("userid", "adtype1", "ideaid")
-      .groupBy("userid", "adtype1" )
-      .agg(countDistinct("ideaid").alias("ad_num"))
-      .groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
-        .na.fill(0, Seq("video", "bigimage"))
+      .groupBy("userid").pivot("adtype1").agg(countDistinct("ideaid").alias("ad_num"))
+      .na.fill(0, Seq("video", "bigimage"))
 
     pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
@@ -178,7 +177,7 @@ object videoPromotion {
     val group = summary
       .select("userid", "adtype1", "test_tag").distinct().rdd
       .map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
-    val groupAuc = addAuc( spark, group, baseData )
+    val groupAuc = addAuc( spark, group, baseData.filter("if_use_strategy = 1") )
 
     val adclass2Cvr = baseData
       .filter("adtype1 = 'bigimage'")
@@ -198,7 +197,7 @@ object videoPromotion {
     result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
     val uidn_ab = baseData
-      //.filter("adtype1 = 'video'")
+      .filter("if_use_strategy = 1 ")
       .groupBy("test_tag", "adtype1")
       .agg(countDistinct("uid").alias("uidn"))
       .select("test_tag", "adtype1", "uidn")
@@ -257,15 +256,14 @@ object videoPromotion {
       .join( adclass2Cvr, Seq("adclass2"), "inner" )
       .select("userid", "adclass2", "test_tag", "cvr_bigimage_adclass2" ) //userid为大图userid,
 
-
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid", "test_tag"), "left" )
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
       .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
-        .join(summary.filter("adtype1 = 'video'").selectExpr("test_tag", "userid", "clickn as clickn_video"), Seq("test_tag", "userid"), "left")
-        .join(summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage"), Seq("test_tag", "userid"), "left")
-        .select("test_tag", "userid", "adclass2", "clickn_video", "video", "clickn_bigimage", "bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag")
+        .join(summary.filter("adtype1 = 'video'").selectExpr("test_tag", "userid", "clickn as clickn_video",       "cvrn as cvrn_video"),    Seq("test_tag", "userid"), "left")
+        .join(summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage"), Seq("test_tag", "userid"), "left")
+        .select("test_tag", "userid", "adclass2", "clickn_video", "cvrn_video", "video", "clickn_bigimage", "cvrn_bigimage","bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag")
 
     userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
