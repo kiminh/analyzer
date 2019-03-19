@@ -19,19 +19,10 @@ object GetAntispam2 {
       .getOrCreate()
     val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate > \"%s\" and rate > 0.7 and rate < 999 group by device ".format(date)
 
-    val sql =
-      s"""
-         |SELECT
-         |  uid
-         |  , isclick
-         |  , isshow
-         |  , adslot_type
-         |  , hour
-         |from dl_cpc.cpc_basedata_union_events
-         |where day="$dateDay"
-         |  and adslot_type=1
-       """.stripMargin
-
+    val sql =  """
+             SELECT uid,isclick,isshow,adslot_type,hour
+             from dl_cpc.cpc_union_log where `date`="%s" and adslot_type = 1
+           """.stripMargin.format(dateDay)
     println("sql:"+sql)
     println("hivesql:"+hivesql)
     val union = ctx.sql(sql).rdd
