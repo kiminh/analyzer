@@ -2,6 +2,8 @@ package com.cpc.spark.adindex
 
 import idxinterface.Idx.{GroupItem, IdeaItem}
 
+import scala.collection.mutable
+
 object GetItem {
   def getIdea(ideaItem: IdeaItem): Idea = {
 
@@ -14,13 +16,15 @@ object GetItem {
       `class` = ideaItem.getClass_,
       material_level = ideaItem.getMaterialLevelValue,
       siteid = ideaItem.getSiteid,
-      white_user_ad_corner = ideaItem.getWhiteUserAdCorner
+      white_user_ad_corner = ideaItem.getWhiteUserAdCorner,
+      is_api_callback = ideaItem.getIsApiCallback
     )
     idea
   }
 
   def getGroup(groupItem: GroupItem): Seq[Group] = {
     var groups = Seq[Group]()
+    val extInt = mutable.Map[String, Int]()
 
     var group = Group(
       unitid = groupItem.getGroupid,
@@ -62,6 +66,12 @@ object GetItem {
       adslot_weight = groupItem.getAdslotWeight,
       target_adslot_ids = groupItem.getTargetAdslotIdsList.toArray.mkString(",")
     )
+
+    val not_delivery_pr = groupItem.getNotDeliveryPr
+    extInt.update("not_delivery_pr", not_delivery_pr)
+    group = group.copy(ext_int = extInt)
+
+
     val ideaidsCount = groupItem.getIdeaidsCount
     for (i <- 0 until ideaidsCount) {
       val ideaid = groupItem.getIdeaids(i)
@@ -83,7 +93,8 @@ case class Idea(
                  var `class`: Int = 0,
                  var material_level: Int = 7, //素材级别
                  var siteid: Int = 0, //建站id，0：非建站
-                 var white_user_ad_corner: Int = 0 //白名单用户无广告角标，0：关闭，1：开启
+                 var white_user_ad_corner: Int = 0, //白名单用户无广告角标，0：关闭，1：开启
+                 var is_api_callback: Int = 0 //是否是api回传加金币
                )
 
 

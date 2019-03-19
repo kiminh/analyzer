@@ -1,11 +1,11 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.typesafe.config.ConfigFactory
 import scala.collection.mutable.ListBuffer
 
-object OcpcExtractData {
+object OcpcAbExpertiment {
 
   def main(args: Array[String]): Unit = {
 
@@ -13,9 +13,12 @@ object OcpcExtractData {
     val tag = args(1).toString
     val spark = SparkSession.builder().appName(name = s"CreateTempTable").enableHiveSupport().getOrCreate()
     val unitids = getUnitid(spark)
-    createTempTable(tag, date, spark)
-    getData(tag, unitids, date, spark)
-    getTime(tag, unitids, date, spark)
+    val indexValueDF = createTempTable(tag, date, spark)
+    println("has got index value")
+    getData(indexValueDF, tag, unitids, date, spark)
+    println("has got need data")
+    getTime(indexValueDF, tag, unitids, date, spark)
+    println("has got time")
   }
 
   // 获取unitid
@@ -36,10 +39,11 @@ object OcpcExtractData {
   }
 
   // 创建临时表
-  def createTempTable(tag: String, date: String, spark: SparkSession): Unit = {
+  def createTempTable(tag: String, date: String, spark: SparkSession): DataFrame = {
     val createTableSQL =
       s"""
-        |SELECT
+        |select
+        |    a.`date`,
         |    a.searchid,
         |    a.exptags,
         |    a.unitid,
@@ -60,10 +64,10 @@ object OcpcExtractData {
         |    (case when a.conversion_goal = 1 then b.iscvr1
         |          when a.conversion_goal = 2 then c.iscvr2
         |          else d.iscvr3 end) as iscvr,
-        |    date as dt,
         |    hour as hr
-        |FROM
-        |    (SELECT
+        |from
+        |    (select
+        |        `date`,
         |        searchid,
         |        exptags,
         |        ideaid,
@@ -78,99 +82,96 @@ object OcpcExtractData {
         |        cast(ocpc_log_dict['dynamicbidmax'] as double) as dynamicbidmax,
         |        cast(ocpc_log_dict['dynamicbid'] as double) as dynamicbid,
         |        cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-        |        date,
         |        hour
-        |    FROM
+        |    from
         |        dl_cpc.ocpc_filter_unionlog
-        |    WHERE
-        |        `date` = '$date'
-        |    AND
+        |    where
+        |        `date` >= '$date'
+        |    and
         |        is_ocpc = 1
-        |    AND
+        |    and
         |        media_appsid  in ("80000001", "80000002")
-        |    AND
-        |        isshow=1
+        |    and
+        |        isshow = 1
         |    ) as a
-        |LEFT JOIN
-        |    (SELECT
+        |left join
+        |    (select
         |        searchid,
         |        label2 as iscvr1
-        |    FROM
+        |    from
         |        dl_cpc.ml_cvr_feature_v1
-        |    WHERE
+        |    where
         |        `date` >= '$date'
-        |    AND
+        |    and
         |        label2 = 1
-        |    AND
+        |    and
         |        label_type in (1, 2, 3, 4, 5)
-        |    GROUP BY searchid, label2) as b
-        |ON
+        |    group by searchid, label2) as b
+        |on
         |    a.searchid = b.searchid
-        |LEFT JOIN
-        |    (SELECT
+        |left join
+        |    (select
         |        searchid,
         |        label as iscvr2
-        |    FROM
+        |    from
         |        dl_cpc.ml_cvr_feature_v2
-        |    WHERE
+        |    where
         |        `date` >= '$date'
-        |    AND
+        |    and
         |        label = 1
-        |    GROUP BY searchid, label) as c
-        |ON
+        |    group by searchid, label) as c
+        |on
         |    a.searchid = c.searchid
-        |LEFT JOIN
-        |    (SELECT
+        |left join
+        |    (select
         |        searchid,
         |        1 as iscvr3
-        |    FROM
+        |    from
         |        dl_cpc.site_form_unionlog
-        |    WHERE
+        |    where
         |        `date` >= '$date'
-        |    AND
-        |        ideaid>0
-        |    AND
-        |        searchid is not NULL
-        |    GROUP BY searchid) as d
-        |ON
+        |    and
+        |        ideaid > 0
+        |    and
+        |        searchid is not null
+        |    group by searchid) as d
+        |on
         |    a.searchid = d.searchid
       """.stripMargin
-    val data = spark.sql(createTableSQL)
-    data
-      .withColumn("date", lit(date))
-      .withColumn("tag", lit(tag))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_temp.sql")
+    val indexValueDF = spark.sql(createTableSQL)
+    indexValueDF
   }
 
   // 抽取数据
-  def getData(tag: String, unitids: String, date: String, spark: SparkSession): Unit = {
+  def getData(indexValueDF: DataFrame, tag: String, unitids: String,
+              date: String, spark: SparkSession): Unit = {
+    indexValueDF.createOrReplaceTempView("temp_index_value")
     val getDataSQL =
       s"""
-        |SELECT
-        |    dt,
+        |select
+        |    `date` as dt,
         |    unitid,
         |    userid,
         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end) as ab_group,
-        |    sum(case when isclick=1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    sum(case when isclick=1 then dynamicbid else 0 end) * 0.01 / sum(isclick) as acb,
-        |    sum(case when isclick=1 then dynamicbidmax else 0 end) * 0.01 / sum(isclick) as acb_max,
-        |    round(sum(case WHEN isclick=1 then price else 0 end)*0.1/sum(isshow),3) as cpm,
-        |    sum(case when isclick=1 then cpagiven else 0 end) * 0.01 / sum(isclick) as cpagiven,
-        |    sum(case when isclick=1 then price else 0 end) * 0.01 / sum(iscvr) as cpareal,
-        |    sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
-        |    sum(iscvr) * 1.0 / sum(isclick) as post_cvr,
-        |    sum(case when isclick=1 then kvalue else 0 end) * 1.0 / sum(isclick) as kvalue,
-        |    sum(case when isclick=1 then price else 0 end) * 0.01 as cost,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
+        |    round(sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01 / sum(isclick), 4) as acb,
+        |    round(sum(case when isclick = 1 then dynamicbidmax else 0 end) * 0.01 / sum(isclick), 4) as acb_max,
+        |    round(sum(case when isclick = 1 then price else 0 end)*0.1/sum(isshow), 4) as cpm,
+        |    round(sum(case when isclick = 1 then cpagiven else 0 end) * 0.01 / sum(isclick), 4) as cpagiven,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr), 4) as cpareal,
+        |    round(sum(case when isclick = 1 then pcvr else 0 end) * 1.0 / sum(isclick), 4) as pre_cvr,
+        |    round(sum(iscvr) * 1.0 / sum(isclick), 4) as post_cvr,
+        |    round(sum(case when isclick = 1 then kvalue else 0 end) * 1.0 / sum(isclick), 4) as kvalue,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01, 4) as cost,
         |    sum(isshow) as show,
         |    sum(isclick) as click,
         |    sum(iscvr) as cv
-        |FROM
-        |    dl_cpc.ocpc_ab_test_temp.sql
-        |WHERE
+        |from
+        |    temp_index_value
+        |where
         |    unitid in ($unitids)
-        |GROUP BY
-        |    dt,
+        |group by
+        |    `date`,
         |    unitid,
         |    userid,
         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end)
@@ -184,21 +185,24 @@ object OcpcExtractData {
   }
 
   // 统计时间
-  def getTime(tag: String, unitids: String, date: String, spark: SparkSession): Unit = {
+  def getTime(indexValueDF: DataFrame, tag: String, unitids: String,
+              date: String, spark: SparkSession): Unit = {
+    indexValueDF.createOrReplaceTempView("temp_index_value")
     val getTimeSQL =
       s"""
-        |SELECT
-        |    unitid, `hr`
-        |FROM
-        |    dl_cpc.ocpc_ab_test_temp.sql
-        |WHERE
-        |    `date` = '$date'
-        |AND
+        |select
+        |    unitid,
+        |    `hr`
+        |from
+        |    temp_index_value
+        |where
         |    unitid in ($unitids)
-        |GROUP BY
-            unitid, `hr`
-        |ORDER BY
-        |	  unitid, `hr`
+        |group by
+            unitid,
+            `hr`
+        |order by
+        |	  unitid,
+        |   `hr`
       """.stripMargin
     val time = spark.sql(getTimeSQL)
     time

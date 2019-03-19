@@ -45,7 +45,7 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190317")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV2(spark)
+    val cpaGiven = getCPAgivenV3(date, spark)
 
     // 数据关联
     val result = data
@@ -91,12 +91,42 @@ object OcpcSampleToPb {
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
         .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_wz_pb20190317")
+
     result.printSchema()
     result.show(10)
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
 
     resultDF
+  }
+
+  def getCPAgivenV3(date: String, spark: SparkSession) = {
+    // 时间分区
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpagiven2
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  industry in ('wzcp')
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result
   }
 
   def getCPAgivenV2(spark: SparkSession) = {

@@ -79,6 +79,9 @@ object AdvertisingIndex {
       val ideaid = u.ideaid
       if (ideaItemMap.contains(ideaid)) {
         val ideaItem = ideaItemMap(ideaid)
+        var extInt = unitItem.ext_int
+        extInt = extInt.updated("is_api_callback", ideaItem.is_api_callback)
+
         unitItem = unitItem.copy(
           mtype = ideaItem.mtype,
           width = ideaItem.width,
@@ -88,7 +91,10 @@ object AdvertisingIndex {
           material_level = ideaItem.material_level,
           siteid = ideaItem.siteid,
           white_user_ad_corner = ideaItem.white_user_ad_corner,
-          timestamp = timestamp)
+          timestamp = timestamp,
+          ext_int = extInt
+        )
+
         idx :+= unitItem
       }
     }
