@@ -174,7 +174,9 @@ object videoPromotion {
     summary.persist()
     summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
-    val group = summary.select("userid", "adtype1", "test_tag").rdd.map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
+    val group = summary
+      .select("userid", "adtype1", "test_tag").rdd
+      .map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
     val groupAuc = addAuc( spark, group, baseData )
 
     val adclass2Cvr = baseData
@@ -287,7 +289,7 @@ object videoPromotion {
       val adtype1 = row._2
       val test_tag = row._3
       val df = base
-        .filter(s"useerid = $userid and adtype1 = $adtype1 and test_tag = $test_tag ")
+        .filter(s"userid = $userid and adtype1 = $adtype1 and test_tag = $test_tag ")
         .selectExpr("exp_cvr as score", "iscvr as label")
       val auc = CalcMetrics.getAuc(spark, df)
       result += Group(userid, adtype1, test_tag, auc)
