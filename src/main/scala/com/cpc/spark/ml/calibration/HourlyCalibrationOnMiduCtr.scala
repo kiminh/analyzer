@@ -45,6 +45,7 @@ object HourlyCalibrationOnMiduCtr {
                  |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name from dl_cpc.cpc_basedata_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1 and ctr_model_name <>''
+                 | and ctr_model_name != 'noctr'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
