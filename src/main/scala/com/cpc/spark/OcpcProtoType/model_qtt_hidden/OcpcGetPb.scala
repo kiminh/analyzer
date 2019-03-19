@@ -260,9 +260,9 @@ object OcpcGetPb {
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
+    finalK.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
