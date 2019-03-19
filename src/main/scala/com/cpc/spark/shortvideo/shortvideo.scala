@@ -420,17 +420,22 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
      val tabfinal2= spark.sql(
        s"""
-          |select  userid,expcvr
+          |select userid,expcvr
           |from
           |(
-          |select  userid ,expcvr
+          |select  userid,expcvr,row_number() over (partition by userid order by dt )  ranking
+          |from
+          |(
+          |select  userid ,expcvr,dt
           |from    dl_cpc.cpc_appdown_cvr_threshold
           |where   dt='${date}'  and hr='13'
           |union  all
-          |select  userid ,expcvr
+          |select  userid ,expcvr,dt
           |from    dl_cpc.cpc_appdown_cvr_threshold
           |where   dt=date_add('${date}',-1) and  hr='13'
           |) view2
+          |) view3
+          |where  ranking=1
           |group by userid,expcvr
 
         """.stripMargin).
