@@ -129,6 +129,7 @@ object GetNewUser {
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
     redis.select(3)
 
+
     val key = "touched_uv_percent_old_or_new_user_2"
     val key2 = "touched_uv_percent_old_or_new_user_1"
 
