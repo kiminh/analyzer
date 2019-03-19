@@ -160,7 +160,7 @@ object videoPromotion {
 
     val summary = baseData //同时含视频和大图的数据
         .join(pivot_table, Seq("userid"), "left")
-//        --.filter("if_use_strategy = 1 and video > 0")
+        .filter("if_use_strategy = 1 and video > 0")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
         .groupBy("userid", "adclass2", "threshold",  "adtype1", "test_tag" )
@@ -284,6 +284,8 @@ object videoPromotion {
       .join( adclass2Cvr, Seq("adclass2"), "inner" )
       .select("userid", "adclass2", "test_tag", "cvr_bigimage_adclass2" ) //userid为大图userid,
 
+    println("note1")
+
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid", "test_tag"), "left" )
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
@@ -294,11 +296,13 @@ object videoPromotion {
       .withColumn( "date", lit(date) )
         .select("test_tag", "userid", "adclass2", "clickn_video", "cvrn_video", "video", "clickn_bigimage", "cvrn_bigimage","bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag", "date")
 
+    println("note2")
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
     //    ( test_tag string, userid int, adclass2 int, clickn_video int, cvrn_video int, video double, clickn_bigimage int, cvrn_bigimage int, bigimage double, cvr_bigimage_adclass2 double, bigimage2 double, flag int )
     //    comment "group by test_tag, userid, adclass2 to summary"
     //    partitioned by (`date` string);
 
+    println("note3")
     userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
 //    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
