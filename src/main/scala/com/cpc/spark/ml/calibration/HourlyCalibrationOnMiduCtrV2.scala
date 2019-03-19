@@ -47,7 +47,7 @@ object HourlyCalibrationOnMiduCtrV2 {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = getTimeRangeSql(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
@@ -59,7 +59,7 @@ object HourlyCalibrationOnMiduCtrV2 {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    Utils.unionLogToConfig(log.rdd, session.sparkContext, softMode)
+    unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
 
   def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
