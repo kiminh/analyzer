@@ -110,7 +110,7 @@ object prepare_bsCvr_dnnPredictSample {
     val adv=
         s"""
            |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type,
-           |REPLACE(os_type,'0','0,1,2,3') as os_type,
+           |REPLACE(os_type,'0','0,1,2,3') as os_type1,
            |REPLACE(age,'0','0,1,2,3,4') as age,
            |case when sex=0 then '0,1,2' when sex=1 then '1' else '2' end as sex,
            |case when regions>0 then regions else '0' end as regions from
@@ -122,7 +122,9 @@ object prepare_bsCvr_dnnPredictSample {
     val table2=
       s"""
          |select unitid,userid,planid,adslot_type,charge_type, os_type, age1, sex1, regions1
-         |from adv lateral view explode(split(age,',')) age as age1
+         |from adv
+         |lateral view explode(split(os_type1,',')) os_type1 as os_type
+         |lateral view explode(split(age,',')) age as age1
          |lateral view explode(split(sex,',')) sex as sex1
          |lateral view explode(split(regions,',')) regions as regions1
          |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$day' group by unitid)
