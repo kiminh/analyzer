@@ -263,6 +263,9 @@ object videoPromotion {
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
       .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
+        .join(summary.filter("adtype1 = 'video'").selectExpr("test_tag", "userid", "clickn as clickn_video"), Seq("test_tag", "userid"), "left")
+        .join(summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage"), Seq("test_tag", "userid"), "left")
+        .select("test_tag", "userid", "adclass2", "clickn_video", "video", "clickn_bigimage", "bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag")
 
     userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
