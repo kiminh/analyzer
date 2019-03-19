@@ -114,7 +114,7 @@ object OcpcSampleToPb {
       .join(data1, Seq("identifier", "conversion_goal"), "left_outer")
       .withColumn("cpagiven", col("cpagiven2"))
       .withColumn("kvalue", when(col("kvalue1").isNotNull, col("kvalue1")).otherwise(col("kvalue2")))
-      .select("identifier", "conversion_goal", "cpagiven1", "cpagiven2", "cvrcnt", "kvalue1", "kvalue2", "cpagiven", "kvalue", "version")
+      .select("identifier", "conversion_goal", "cpagiven1", "cpagiven2", "cvrcnt", "kvalue1", "kvalue2", "cpagiven", "kvalue")
 
 
     result.printSchema()
