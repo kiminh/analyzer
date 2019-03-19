@@ -59,7 +59,7 @@ object HourlyCalibrationOnMiduCtrV2 {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    unionLogToConfig(log.rdd, session.sparkContext, softMode)
+    Utils.unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
 
   def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
