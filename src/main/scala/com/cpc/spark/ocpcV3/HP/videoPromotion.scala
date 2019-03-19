@@ -291,10 +291,10 @@ object videoPromotion {
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
       .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
-        .join(summary.filter("adtype1 = 'video'").selectExpr("test_tag", "userid", "clickn as clickn_video",       "cvrn as cvrn_video"),    Seq("test_tag", "userid"), "left")
-        .join(summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage"), Seq("test_tag", "userid"), "left")
+//        .join(summary.filter("adtype1 = 'video'"   ).selectExpr("test_tag", "userid", "clickn as clickn_video",    "cvrn as cvrn_video"),    Seq("test_tag", "userid"), "left")
+//        .join(summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage"), Seq("test_tag", "userid"), "left")
       .withColumn( "date", lit(date) )
-        .select("test_tag", "userid", "adclass2", "clickn_video", "cvrn_video", "video", "clickn_bigimage", "cvrn_bigimage","bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag", "date")
+//        .select("test_tag", "userid", "adclass2", "clickn_video", "cvrn_video", "video", "clickn_bigimage", "cvrn_bigimage","bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag", "date")
 
     println("note2")
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
@@ -303,8 +303,8 @@ object videoPromotion {
     //    partitioned by (`date` string);
 
     println("note3")
-    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
-//    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
+//    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
+    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
     val result2 = userCvr2
       .groupBy("test_tag")
