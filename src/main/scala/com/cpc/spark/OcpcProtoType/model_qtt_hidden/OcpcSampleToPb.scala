@@ -80,62 +80,12 @@ object OcpcSampleToPb {
          |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val result = spark.sql(sqlRequest)
 
-    // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV2(spark)
-
-    // 数据关联
-    val result1 = data
-        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
-        .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    // 数据关联
-    val result2 = result1.filter("cpagiven2 is not null")
-        .withColumn("conversion_goal", lit(0))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    val result = result1.union(result2)
     result.printSchema()
     result.show(10)
 
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
-
-
-    resultDF
-  }
-
-  def getCPAgivenV2(spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpagiven2
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_once
-         |WHERE
-         |  industry = 'elds'
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest)
-    result
-  }
-
-  def getCPAgiven(spark: SparkSession) = {
-    // 从实验配置文件读取配置的CPAgiven
-    val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
-    println(expDataPath)
-    val data = spark.read.format("json").json(expDataPath)
-
-    val resultDF = data
-      .select("identifier", "cpa_given", "conversion_goal")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("cpa_given")).alias("cpagiven2"))
-      .select("identifier", "conversion_goal", "cpagiven2")
 
     resultDF
   }
