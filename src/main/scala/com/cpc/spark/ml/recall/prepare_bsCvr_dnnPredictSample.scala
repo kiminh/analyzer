@@ -109,9 +109,10 @@ object prepare_bsCvr_dnnPredictSample {
   */
     val adv=
         s"""
-           |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type, os_type,
+           |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type,
+           |REPLACE(os_type,'0','0,1,2,3') as os_type,
            |REPLACE(age,'0','0,1,2,3,4') as age,
-           |case when sex=0 then '0,1,2' when sex=1 then '1' else 2 end as sex,
+           |case when sex=0 then '0,1,2' when sex=1 then '1' else '2' end as sex,
            |case when regions>0 then regions else '0' end as regions from
            |adv.unit) temp
       """.stripMargin
