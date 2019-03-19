@@ -224,7 +224,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
           |from
           |(
-          |select  adclass,isshow,isclick,price,searchid
+          |select  substr(adclass,1,6) adclass,isshow,isclick,price,searchid
           |from     dl_cpc.slim_union_log
           |where  ${selectCondition}
           |and   adsrc=1
@@ -236,7 +236,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |)   m
           |left join
           |(
-          |  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,adclass,
+          |  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,substr(adclass,1,6) adclass,
           |             label_type,  label2
           |  FROM
           |  (
@@ -292,7 +292,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |       video.dt,video.hr
          |from
          |(
-         |select userid,adtype_cate,cvr video_act_cvr1,adclass,dt,hr
+         |select userid,adtype_cate,cvr video_act_cvr1,substr(adclass,1,6) adclass,dt,hr
          |from  dl_cpc.cpc_bigpicvideo_cvr
          |where  dt='${date}' and hr='${hour}'
          |and   adtype_cate='video'
@@ -436,6 +436,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
         """.stripMargin).
        selectExpr("userid ","expcvr ")
      tabfinal2.show(10,false)
+    tabfinal2.createOrReplaceTempView()
     /*#########################################################################*/
     //   pb写法2
 
