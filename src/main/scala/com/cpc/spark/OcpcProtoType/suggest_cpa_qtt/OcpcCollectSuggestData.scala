@@ -22,9 +22,9 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-//    // api回传的feedapp广告
-//    val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
-//    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    // api回传的feedapp广告
+    val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
+    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
     val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
@@ -35,7 +35,8 @@ object OcpcCollectSuggestData {
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
     // 数据串联
-    val cpaData = elds
+    val cpaData = feedapp
+      .union(elds)
       .union(wz)
 
     // 整理每个网赚广告单元最近24小时ocpc消费的成本和cpm

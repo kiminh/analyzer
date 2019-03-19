@@ -1,6 +1,6 @@
 
 
-package com.cpc.spark.OcpcProtoType.model_qtt
+package com.cpc.spark.OcpcProtoType.model_qtt_hidden
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV3(date, spark)
+    val cpaGiven = getCPAgivenV2(spark)
 
     // 数据关联
     val result1 = data
@@ -105,34 +105,6 @@ object OcpcSampleToPb {
 
 
     resultDF
-  }
-
-  def getCPAgivenV3(date: String, spark: SparkSession) = {
-    // 时间分区
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpagiven2
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_hourly
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  industry in ('elds', 'feedapp')
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest)
-    result
   }
 
   def getCPAgivenV2(spark: SparkSession) = {
