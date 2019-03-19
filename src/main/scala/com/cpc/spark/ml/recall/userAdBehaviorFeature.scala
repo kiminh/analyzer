@@ -102,7 +102,7 @@ object userAdBehaviorFeature {
       )
     val day = getDay(date, 1)
     ud_features.repartition(100).write.mode("overwrite")
-      .parquet(s"/user/cpc/features/adBehaviorFeature/$day")
+      .parquet(s"hdfs://emr-cluster/user/cpc/features/adBehaviorFeature/$day")
   }
   /**
     * 获取时间序列

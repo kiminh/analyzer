@@ -91,36 +91,7 @@ object unitid_inAndOut {
     val data = spark.sql(
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
-         |and unitid in (select unit_id from cost_unitid) and date='$tardate' and unitid not in ('1656016',
-         |'1656196',
-         |'1881511',
-         |'1881522',
-         |'1927597',
-         |'1890237',
-         |'1962808',
-         |'1945431',
-         |'1945432',
-         |'1945435',
-         |'1947596',
-         |'1954515',
-         |'1967666',
-         |'1967668',
-         |'1967669',
-         |'1974240',
-         |'1974245',
-         |'1974455',
-         |'1962256',
-         |'1971235',
-         |'1928344',
-         |'1928381',
-         |'1928382',
-         |'1928385',
-         |'1937236',
-         |'1937266',
-         |'1937267',
-         |'1937268',
-         |'1962865',
-         |'1962866')
+         |and unitid in (select unit_id from cost_unitid) and date='$tardate'
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
