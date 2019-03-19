@@ -48,7 +48,7 @@ object OcpcSampleToPb {
 //        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
-    savePbPack(resultDF, version, isKnown)
+//    savePbPack(resultDF, version, isKnown)
   }
 
   def getPbData(version: String, date: String, hour: String, spark: SparkSession) = {
