@@ -44,9 +44,9 @@ object OcpcRegression {
       .withColumn("version", lit(version))
       .withColumn("method", lit("regression"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -61,9 +61,9 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly_v2")
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tablename)
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly_v2")
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     // 结果表
     val kvalue = getKWithRatio(middleData, date, hour, spark)
