@@ -428,11 +428,11 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid ,expcvr,dt
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt='${date}'  and hr='13'
+          |where   dt='${date}'  and hr='${hour}'
           |union  all
           |select  userid ,expcvr,dt
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt=date_add('${date}',-1) and  hr='13'
+          |where   dt=date_add('${date}',-1) and  hr='${hour}'
           |) view2
           |) view3
           |where  ranking=1
