@@ -97,6 +97,7 @@ object prepare_bsCvr_dnnSample {
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
+         |  and
          |) a
          |left join
          |(select searchid, ideaid, max(label2) as iscvr from dl_cpc.ml_cvr_feature_v1
