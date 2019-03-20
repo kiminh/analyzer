@@ -15,7 +15,7 @@ object videoPromotion {
     val baseData = getBaseData(spark, date)
     baseData.persist()
 
-    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
+//    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
     println("========================baseData=======================")
     baseData.show(20)
     println( "baseData has " + baseData.count() + " logs" )
@@ -25,8 +25,9 @@ object videoPromotion {
         .select("userid", "adtype1", "ideaid")
       .groupBy("userid").pivot("adtype1").agg(countDistinct("ideaid").alias("ad_num"))
       .na.fill(0, Seq("video", "bigimage"))
+    pivot_table.persist()
 
-    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
+//    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     println("========================pivot_table=====================")
     pivot_table.show(20)
@@ -48,7 +49,7 @@ object videoPromotion {
         ).select("userid", "adclass2", "threshold",  "adtype1", "test_tag", "shown", "clickn", "cvrn", "exp_cvr_sum","cost")
     println("========================summary=========================")
     summary.persist()
-    summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
+//    summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
     val group = summary
       .select("userid", "adtype1", "test_tag").distinct().rdd
@@ -58,15 +59,15 @@ object videoPromotion {
     val adclass2Cvr = baseData
       .filter("adtype1 = 'bigimage'")
       .groupBy( "adtype1","adclass2", "test_tag")
-      .agg( (sum("iscvr")*100/sum("isclick")).alias("cvr_bigimage_adclass2") )
+      .agg( (sum("iscvr")/sum("isclick")).alias("cvr_bigimage_adclass2") )
       .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2" )
 
     val result0 = summary
-      .join(groupAuc, Seq("userid", "adtype1", "test_tag"), "left")
+      .join(groupAuc,    Seq("userid", "adtype1", "test_tag"), "left")
       .join(adclass2Cvr, Seq( "adtype1", "adclass2", "test_tag"), "left")
-      .withColumn("cvr", col("cvrn")*100/col("clickn"))
+      .withColumn("cvr", col("cvrn")/col("clickn"))
       .withColumn("cpm", col("cost")*10/col("shown"))
-      .withColumn("exp_cvr", col("exp_cvr_sum")*0.0001/col("clickn"))
+      .withColumn("exp_cvr", col("exp_cvr_sum")*0.000001/col("clickn"))
       .withColumn("pcoc",    col("exp_cvr")/col("cvr"))
       .withColumn("date", lit(date))
       .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2",  "cpm" , "date")
@@ -107,8 +108,8 @@ object videoPromotion {
           sum("cvrn").alias("cvr_n"),
           sum("cost").alias("total_cost")
            ).join(uidn_ab, Seq("adtype1", "test_tag"), "inner")
-      .withColumn("ctr", col("click_n")*100/col("show_n"))
-      .withColumn("cvr", col("cvr_n")*100/col("click_n"))
+      .withColumn("ctr", col("click_n")/col("show_n"))
+      .withColumn("cvr", col("cvr_n")/col("click_n"))
       .withColumn("cpm", col("total_cost")*10/col("show_n"))
       .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
@@ -145,7 +146,7 @@ object videoPromotion {
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
       .select("test_tag", "userid", "video", "bigimage")
 
-    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
+//    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
 
     baseData.groupBy("userid", "adclass2")
       .agg(sum("isshow").alias("shown2"))
