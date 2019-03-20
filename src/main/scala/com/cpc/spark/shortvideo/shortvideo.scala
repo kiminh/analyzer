@@ -378,28 +378,35 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           | from
           | (
           |  select    userid,
-          |            case when    (expcvr_threshold0per>=expcvr_threshold5per
-          |                     and  expcvr_threshold0per>=expcvr_threshold10per
-          |                     and  expcvr_threshold0per>=expcvr_threshold15per
-          |                     and  expcvr_threshold0per>=expcvr_threshold20per
-          |                     and  expcvr_threshold0per>=expcvr_threshold25per
-          |                     and  expcvr_threshold0per>=expcvr_threshold30per) then expcvr_threshold0per
-          |                 when    (expcvr_threshold5per>=expcvr_threshold10per
-          |				              and  expcvr_threshold5per>=expcvr_threshold15per
-          |                     and  expcvr_threshold5per>=expcvr_threshold20per
-          |                     and  expcvr_threshold5per>=expcvr_threshold25per
-          |                     and  expcvr_threshold5per>=expcvr_threshold30per) then expcvr_threshold5per
-          |                 when    (expcvr_threshold10per>=expcvr_threshold15per
-          |				              and  expcvr_threshold10per>=expcvr_threshold20per
-          |                     and  expcvr_threshold10per>=expcvr_threshold25per
-          |                     and  expcvr_threshold10per>=expcvr_threshold30per) then expcvr_threshold10per
-          |                 when    (expcvr_threshold15per>=expcvr_threshold20per
-          |				              and  expcvr_threshold15per>=expcvr_threshold25per
-          |                     and  expcvr_threshold15per>=expcvr_threshold30per)  then expcvr_threshold15per
-          |                 when    (expcvr_threshold20per>=expcvr_threshold25per
-          |				              and  expcvr_threshold20per>=expcvr_threshold30per)   then expcvr_threshold20per
-          |                 when    expcvr_threshold25per>=expcvr_threshold30per    then expcvr_threshold25per
-          |				     else   expcvr_threshold30per
+          |            case when    (expcvr_threshold30per>=expcvr_threshold5per
+          |                     and  expcvr_threshold30per>=expcvr_threshold10per
+          |                     and  expcvr_threshold30per>=expcvr_threshold15per
+          |                     and  expcvr_threshold30per>=expcvr_threshold20per
+          |                     and  expcvr_threshold30per>=expcvr_threshold25per
+          |                     and  expcvr_threshold30per>=expcvr_threshold0per)
+          |                     and  ${traffic}=0.3         then expcvr_threshold30per
+          |                 when    (expcvr_threshold25per>=expcvr_threshold20per
+          |				              and  expcvr_threshold25per>=expcvr_threshold15per
+          |                     and  expcvr_threshold25per>=expcvr_threshold10per
+          |                     and  expcvr_threshold25per>=expcvr_threshold5per
+          |                     and  expcvr_threshold25per>=expcvr_threshold0per)
+          |                     and   ${traffic}>=0.25      then expcvr_threshold25per
+          |                 when    (expcvr_threshold20per>=expcvr_threshold15per
+          |				              and  expcvr_threshold20per>=expcvr_threshold10per
+          |                     and  expcvr_threshold20per>=expcvr_threshold5per
+          |                     and  expcvr_threshold20per>=expcvr_threshold0per)
+          |                     and  ${traffic}>=0.2        then expcvr_threshold20per
+          |                 when    (expcvr_threshold15per>=expcvr_threshold10per
+          |				              and  expcvr_threshold15per>=expcvr_threshold5per
+          |                     and  expcvr_threshold15per>=expcvr_threshold0per)
+          |                     and  ${traffic}>=0.15       then expcvr_threshold15per
+          |                 when    (expcvr_threshold10per>=expcvr_threshold5per
+          |				              and  expcvr_threshold10per>=expcvr_threshold0per)
+          |                     and  ${traffic}>=0.1        then expcvr_threshold10per
+          |                 when    expcvr_threshold5per>=expcvr_threshold0per
+          |                     and  ${traffic}>=0.05       then expcvr_threshold5per
+          |				          when   ${traffic}>=0.0          then expcvr_threshold0per
+          |                 else  expcvr_threshold0per
           |                 end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
           |where  dt='${date}' and hr='${hour}'
