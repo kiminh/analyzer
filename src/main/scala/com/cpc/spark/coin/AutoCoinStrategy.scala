@@ -400,7 +400,8 @@ object AutoCoinStrategy {
               val i7th = (length * 0.7).toInt
               val i8th = (length * 0.8).toInt
               val i9th = (length * 0.9).toInt
-              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+              val exp_cvr =  if (sorted(index)=1000000) sorted(index) - 1 else sorted(index)
+              (exp_cvr, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
           })
@@ -417,7 +418,7 @@ object AutoCoinStrategy {
       */
     def getThresholdAdjust(spark:SparkSession,df:DataFrame,date:String, hour:String, p:Double):
         RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
-        val t = getPreTime(date,hour,2) //获取3个小时前的时间
+        val t = getPreTime(date,hour,3) //获取3个小时前的时间
 
         val ideaP = getIdeaidP(spark,t.substring(0, 10))    //获取p值
 
@@ -443,7 +444,8 @@ object AutoCoinStrategy {
               val i7th = (length * 0.7).toInt
               val i8th = (length * 0.8).toInt
               val i9th = (length * 0.9).toInt
-              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+              val exp_cvr =  if (sorted(index)=1000000) sorted(index) - 1 else sorted(index)
+              (exp_cvr, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
           })
     }
