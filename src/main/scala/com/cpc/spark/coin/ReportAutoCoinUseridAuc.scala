@@ -19,8 +19,10 @@ object ReportAutoCoinUseridAuc {
 
         val sql =
             s"""
-               |select cast(userid as string) as userid, exp_cvr as score
-               | if (b.searchid is null,0,1) as label
+               |select cast(userid as string) as userid,
+               |    cast(ideaid as string) as ideaid,
+               |    exp_cvr as score,
+               |    if (b.searchid is null,0,1) as label
                |from
                |(
                |    select searchid, userid, ideaid, isshow, isclick, price, uid, is_auto_coin, exp_cvr, exp_style
@@ -33,7 +35,7 @@ object ReportAutoCoinUseridAuc {
                |    and city_level != 1
                |    and (charge_type is null or charge_type=1)
                |    and userid not in (1001028, 1501875)
-               |    and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
+               |    and adslot_id not in ("7774304","7636999","7602943","7783705","7443868","7917491","7335680","7871301")
                |    and round(adclass/1000) != 132101
                |    and adslot_type in (1,2)
                |) a
@@ -82,6 +84,14 @@ object ReportAutoCoinUseridAuc {
         uAuc.repartition(1)
           .write.insertInto("dl_cpc.cpc_coin_userid_auc")
 
+        val iAuc = CalcMetrics.getGauc(spark,useridAucList,"ideaid")
+          .withColumnRenamed("name","ideaid")
+          .withColumn("date",lit(date))
+          .select("ideaid","auc","date")
+
+        iAuc.repartition(1)
+          .write.insertInto("dl_cpc.cpc_coin_ideaid_auc")
+
     }
 }
 
@@ -90,6 +100,13 @@ object ReportAutoCoinUseridAuc {
 create table if not exists dl_cpc.cpc_coin_userid_auc
 (
     userid string,
+    auc double
+) PARTITIONED BY (`date` string)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.cpc_coin_ideaid_auc
+(
+    ideaid string,
     auc double
 ) PARTITIONED BY (`date` string)
 STORED as PARQUET;
