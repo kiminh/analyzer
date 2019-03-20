@@ -53,6 +53,7 @@ object OcpcConversionTest {
          |  (adclass like '134%' or adclass like '107%')
          |GROUP BY searchid, label
        """.stripMargin
+    println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
     val resultDF = data1
