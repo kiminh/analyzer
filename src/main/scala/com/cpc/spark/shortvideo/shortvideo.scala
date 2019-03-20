@@ -414,9 +414,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |
         """.stripMargin
      val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr","dt","hr")
-    tabfinal.show(10,false)
-     tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-     println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
+     tabfinal.show(10,false)
+    tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold_mid")
+
+     println("dl_cpc.cpc_appdown_cvr_threshold stage1 insert success!")
 
      val tabfinal2= spark.sql(
        s"""
@@ -427,7 +428,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |from
           |(
           |select  userid ,expcvr,dt
-          |from    dl_cpc.cpc_appdown_cvr_threshold
+          |from    dl_cpc.cpc_appdown_cvr_threshold_mid
           |where   dt='${date}'  and hr='${hour}'
           |union  all
           |select  userid ,expcvr,dt
@@ -439,8 +440,9 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |group by userid,expcvr
 
         """.stripMargin).
-       selectExpr("userid ","expcvr ")
+       selectExpr("userid","expcvr")
      tabfinal2.show(10,false)
+      tabfinal2.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
 //    tabfinal2.createOrReplaceTempView()
     /*#########################################################################*/
     //   pb写法2
