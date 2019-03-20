@@ -384,7 +384,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |                     and  expcvr_threshold30per>=expcvr_threshold20per
           |                     and  expcvr_threshold30per>=expcvr_threshold25per
           |                     and  expcvr_threshold30per>=expcvr_threshold0per)
-          |                     and  ${traffic}=0.3         then expcvr_threshold30per
+          |                     and  ${traffic}>=0.3         then expcvr_threshold30per
           |                 when    (expcvr_threshold25per>=expcvr_threshold20per
           |				              and  expcvr_threshold25per>=expcvr_threshold15per
           |                     and  expcvr_threshold25per>=expcvr_threshold10per
