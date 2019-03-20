@@ -103,8 +103,9 @@ object videoPromotion_v2 {
     //      cpm  double)
     //    comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
     //    partitioned by (`date` string);
-    //    result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
-    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
+
+        result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
+//    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
     val uidn_ab = baseData
       .filter("if_use_strategy = 1 ")
@@ -149,8 +150,8 @@ object videoPromotion_v2 {
     //    comment "group by adtype1, test_tag to summary"
     //    partitioned by (`date` string);
 
-    //    result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
-    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
+        result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
+//    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
     val userCvr = summary
       .join(pivot_table, Seq("userid"), "left")
@@ -203,11 +204,7 @@ object videoPromotion_v2 {
     //    ( test_tag string,
     //      userid      int,
     //      adclass2    int,
-    //      --clickn_video int,
-    //      --cvrn_video  int,
     //      cvr_video    double,
-    //      --clickn_bigimage int,
-    //      --cvrn_bigimage int,
     //      cvr_bigimage double,
     //      cvr_bigimage_adclass2 double,
     //      cvr_bigimage_final double,
@@ -216,8 +213,8 @@ object videoPromotion_v2 {
     //    partitioned by (`date` string);
 
     println("note3")
-    //    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
-    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
+        userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
+//    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
     val result2 = userCvr2
       .groupBy("test_tag")
@@ -227,14 +224,17 @@ object videoPromotion_v2 {
       ).withColumn("account", col("video_outstand_usern") / col("usern"))
       .withColumn("date", lit(date))
       .select("test_tag", "usern",  "account", "date")
-
+    //    drop table   dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account
-    //    ( test_tag string, usern int, video_outstand_usern int,  account double)
+    //    ( test_tag string comment '实验标签',
+    //      usern int comment '使用策略且有视频广告的广告主数',
+    //      video_outstand_usern int comment '视频转化率比大图好的广告主数量',
+    //      account double comment 'video_outstand_usern/usern')
     //    comment "users with good video account"
     //    partitioned by (`date` string);
 
-    //    result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
-        result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
+        result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
+//        result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
   }
   case class Group ( var userid: Int,
                      val adtype1: String,
@@ -314,9 +314,7 @@ object videoPromotion_v2 {
          |    from
          |      dl_cpc.cpc_basedata_union_events
          |    where
-         |      --$timeCondition1
-         |      day = '$date'
-         |      and hour = '12'
+         |      $timeCondition1
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -387,8 +385,7 @@ object videoPromotion_v2 {
          |            from
          |              dl_cpc.ml_cvr_feature_v1
          |            where
-         |              --$timeCondition2
-         |              `date` = '$date'
+         |              $timeCondition2
          |              and label2 = 1
          |              and media_appsid in ("80000001", "80000002")
          |          ) final
