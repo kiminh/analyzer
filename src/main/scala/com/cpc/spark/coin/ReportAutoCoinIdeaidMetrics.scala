@@ -27,7 +27,7 @@ object ReportAutoCoinIdeaidMetrics {
 
         val unionSql =
             s"""
-               |select searchid, userid, ideaid, isshow, isclick, price, uid, is_auto_coin, exp_cvr, exp_style
+               |select searchid, userid, ideaid, isshow, isclick, price, uid, is_auto_coin, exp_cvr, exp_style,
                | if (b.searchid is null,0,1) as label2
                |from
                |(
