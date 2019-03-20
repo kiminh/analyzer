@@ -223,7 +223,7 @@ object videoPromotion_v2 {
         sum("flag").alias("video_outstand_usern")
       ).withColumn("account", col("video_outstand_usern") / col("usern"))
       .withColumn("date", lit(date))
-      .select("test_tag", "usern",  "account", "date")
+      .select("test_tag", "usern",  "video_outstand_usern", "account", "date")
     //    drop table   dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account
     //    ( test_tag string comment '实验标签',
