@@ -45,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -83,7 +83,12 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV3(date, spark)
+    val cpaGivenTable = getCPAgivenV3(date, spark)
+    val cpaGivenConf = getCPAgivenV4(spark)
+    val cpaGiven = cpaGivenTable
+      .join(cpaGivenConf, Seq("identifier", "conversion_goal"), "outer")
+      .withColumn("cpagiven2", when(col("cpagiven2_conf").isNotNull, col("cpagiven2_conf")).otherwise(col("cpagiven2_table")))
+      .select("identifier", "conversion_goal", "cpagiven2")
 
     // 数据关联
     val result1 = data
@@ -100,10 +105,24 @@ object OcpcSampleToPb {
     result.printSchema()
     result.show(10)
 
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
+//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
 
+    resultDF
+  }
+
+  def getCPAgivenV4(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_all.unitid_abtest_path"
+    val path = conf.getString(conf_key)
+
+    val resultDF = spark
+      .read.format("json").json(path)
+      .select("unitid", "cpa", "conversion_goal")
+      .selectExpr("cast(unitid as string) as identifier", "conversion_goal", "cpa as cpagiven2_conf")
+
+    resultDF.show(10)
     resultDF
   }
 
@@ -122,7 +141,7 @@ object OcpcSampleToPb {
          |SELECT
          |  cast(unitid as string) identifier,
          |  conversion_goal,
-         |  cpa as cpagiven2
+         |  cpa as cpagiven2_table
          |FROM
          |  dl_cpc.ocpc_auto_budget_hourly
          |WHERE
