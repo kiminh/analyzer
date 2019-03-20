@@ -37,16 +37,13 @@ object OcpcGetPb {
     val version = args(3).toString
     val media = args(4).toString
 
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if (media == "novel") {
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"media selection: $mediaSelection")
 
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
@@ -76,8 +73,7 @@ object OcpcGetPb {
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
     val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
     val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
-    val kvalue2 = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
-    val kvalue = setKvalueByUnitid(kvalue2, mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
@@ -86,63 +82,6 @@ object OcpcGetPb {
       .na.fill(0, Seq("cvrcnt", "kvalue"))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
-
-    resultDF
-  }
-
-  def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    // set the unitid that we need to reset
-//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
-//
-//    // time span
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  cast(unitid as string) identifier,
-//         |  2 as conversion_goal,
-//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
-//         |FROM
-//         |  dl_cpc.ocpc_filter_unionlog
-//         |WHERE
-//         |  `date` = '2019-03-13'
-//         |AND
-//         |  `hour` between '0' and '17'
-//         |AND
-//         |  $mediaSelection
-//         |AND
-//         |  antispam = 0
-//         |AND
-//         |  isclick = 1
-//         |AND
-//         |  $unitidSelection
-//         |AND
-//         |  is_ocpc = 1
-//       """.stripMargin
-//    println(sqlRequest)
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "ocpc_all.ocpc_reset_k"
-    val expDataPath = conf.getString(conf_key)
-    val rawData = spark.read.format("json").json(expDataPath)
-    val data = rawData
-      .filter(s"kvalue > 0")
-      .select("identifier", "conversion_goal", "kvalue")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("kvalue")).alias("kvalue_bak"))
-      .select("identifier", "conversion_goal", "kvalue_bak")
-    data.show(10)
-
-    val result = kvalue
-      .withColumn("kvalue_ori", col("kvalue"))
-      .join(data, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "kvalue_ori", "conversion_goal", "kvalue_bak")
-      .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
-      .filter(s"kvalue is not null")
-
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
-
-    val resultDF = result
-      .select("identifier", "kvalue", "conversion_goal")
 
     resultDF
   }
@@ -321,9 +260,9 @@ object OcpcGetPb {
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
+//    finalK.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 

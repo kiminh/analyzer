@@ -6,7 +6,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcHourlyReport {
+object OcpcHourlyReportHidden {
   def main(args: Array[String]): Unit = {
     /*
     新版报表程序
@@ -45,8 +45,8 @@ object OcpcHourlyReport {
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 
-    // 存储数据到mysql
-    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+//    // 存储数据到mysql
+//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
   }
 
@@ -395,7 +395,7 @@ object OcpcHourlyReport {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and ocpc_log_dict['IsHiddenOcpc'] != 1
+         |and ocpc_log_dict['IsHiddenOcpc'] = 1
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
