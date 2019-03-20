@@ -27,7 +27,7 @@ object NovelUnionEvents {
 
         println(sql)
 
-        spark.sql(sql).repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
+        spark.sql(sql).repartition(5).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
 
     }
 }
