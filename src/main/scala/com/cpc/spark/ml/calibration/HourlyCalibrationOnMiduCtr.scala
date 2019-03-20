@@ -52,7 +52,7 @@ object HourlyCalibrationOnMiduCtr {
     val log = session.sql(sql).select("isclick","ectr","show_timestamp","ctr_model_name")
         .withColumn("isclick",when(col("isclick")===null,0).otherwise(col("isclick")))
         .select("isclick","ectr","show_timestamp","ctr_model_name")
-        .sample(false,0.5)
+
 
     HourlyCalibration.unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
