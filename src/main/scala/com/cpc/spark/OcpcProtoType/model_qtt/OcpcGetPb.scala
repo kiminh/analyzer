@@ -92,34 +92,6 @@ object OcpcGetPb {
 
   def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // set the unitid that we need to reset
-//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
-//
-//    // time span
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  cast(unitid as string) identifier,
-//         |  2 as conversion_goal,
-//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
-//         |FROM
-//         |  dl_cpc.ocpc_filter_unionlog
-//         |WHERE
-//         |  `date` = '2019-03-13'
-//         |AND
-//         |  `hour` between '0' and '17'
-//         |AND
-//         |  $mediaSelection
-//         |AND
-//         |  antispam = 0
-//         |AND
-//         |  isclick = 1
-//         |AND
-//         |  $unitidSelection
-//         |AND
-//         |  is_ocpc = 1
-//       """.stripMargin
-//    println(sqlRequest)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "ocpc_all.ocpc_reset_k"
     val expDataPath = conf.getString(conf_key)
@@ -305,7 +277,18 @@ object OcpcGetPb {
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值
-    val cpcK = getCpcK(mediaSelection, conversionGoal, date, hour, spark)
+    val cpcK1raw = getCpcK(mediaSelection, conversionGoal, 3, date, hour, spark)
+    val cpcK2raw = getCpcKv2(mediaSelection, conversionGoal, date, hour, spark)
+    val cpcK1 = cpcK1raw
+      .withColumn("kvalue1", col("kvalue"))
+      .select("identifier", "kvalue1", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
+    val cpcK2 = cpcK2raw
+      .withColumn("kvalue2", col("kvalue"))
+      .select("identifier", "kvalue2")
+    val cpcK = cpcK1
+      .join(cpcK2, Seq("identifier"), "left_outer")
+      .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
 
     // 数据外关联
     val ocpcKfinal = ocpcK
@@ -329,7 +312,27 @@ object OcpcGetPb {
 
   }
 
-  def getCpcK(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCpcKv2(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_all.unitid_abtest_path"
+    val path = conf.getString(conf_key)
+
+    val unitidList = spark
+      .read.format("json").json(path)
+      .select("unitid", "conversion_goal")
+      .filter(s"conversion_goal = $conversionGoal")
+      .selectExpr("cast(unitid as string) identifier")
+
+
+    val cpcK = getCpcK(mediaSelection, conversionGoal, 1, date, hour, spark)
+    val resultDF = cpcK
+      .join(unitidList, Seq("identifier"), "inner")
+      .select("identifier", "kvalue")
+
+    resultDF
+  }
+
+  def getCpcK(mediaSelection: String, conversionGoal: Int, dayCnt: Int, date: String, hour: String, spark: SparkSession) = {
     /*
      通过slim_union_log关联的方式获取前72小时中的k值
      1. 以searchid关联的方式关联k值与cvr
@@ -352,7 +355,7 @@ object OcpcGetPb {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -3)
+    calendar.add(Calendar.DATE, -dayCnt)
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
     val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
