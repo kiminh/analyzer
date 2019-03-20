@@ -122,7 +122,7 @@ object prepare_bsCvr_dnnSample {
         //hash("f3")($"channel").alias("f3"),
         //hash("f4")($"sdk_type").alias("f4"),
         hash("f1")($"adslot_type").alias("f1"),
-        //hash("f6")($"adslotid").alias("f6"),
+        //hash("f6")($"adslot_id").alias("f6"),
         hash("f2")($"sex").alias("f2"),
         //hash("f8")($"dtu_id").alias("f8"),
         hash("f3")($"planid").alias("f3"),
