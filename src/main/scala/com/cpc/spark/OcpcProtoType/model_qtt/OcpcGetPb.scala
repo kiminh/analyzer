@@ -285,8 +285,10 @@ object OcpcGetPb {
     val cpcK2 = cpcK2raw
       .withColumn("kvalue2", col("kvalue"))
       .select("identifier", "kvalue2")
-    val cpcK = cpcK1
+    val cpcKraw = cpcK1
       .join(cpcK2, Seq("identifier"), "left_outer")
+    cpcKraw.write.mode("overwrite").saveAsTable("test.ocpc_check_k_by_conf20190320")
+    val cpcK = cpcKraw
       .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
 
