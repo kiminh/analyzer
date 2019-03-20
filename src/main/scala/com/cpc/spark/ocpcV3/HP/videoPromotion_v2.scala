@@ -16,19 +16,19 @@ import com.typesafe.config.ConfigFactory
   * */
 
 object videoPromotion_v2 {
-  def main(args: Array[String]): Unit ={
+  def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("videoPromotion").enableHiveSupport().getOrCreate()
 
     val date = args(0).toString
     val hour = args(1).toString
     val hr = args(2).toString
-    val baseData = getBaseData( spark, date, hour, hr )
+    val baseData = getBaseData(spark, date, hour, hr)
     baseData.persist()
 
     //    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
     println("========================baseData=======================")
     baseData.show(20)
-    println( "baseData has " + baseData.count() + " logs" )
+    println("baseData has " + baseData.count() + " logs")
 
     val pivot_table = baseData
       .filter("if_use_strategy = 1")
@@ -48,16 +48,16 @@ object videoPromotion_v2 {
       .join(pivot_table, Seq("userid"), "left")
       .filter("if_use_strategy = 1 and video > 0")
       .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
-      .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
-      .groupBy("userid", "adclass2", "threshold",  "adtype1", "test_tag" )
+      .withColumn("price1", when(col("charge_type") === 2, col("price0") / 1000).otherwise(col("price0")))
+      .groupBy("userid", "adclass2", "threshold", "adtype1", "test_tag")
       .agg(
         count(col("searchid")).alias("queryn"),
-        sum(col("isshow" )).alias("shown"),
+        sum(col("isshow")).alias("shown"),
         sum(col("isclick")).alias("clickn"),
-        sum(col("iscvr"  )).alias("cvrn"),
-        sum(col("isclick")*col("exp_cvr") ).alias("exp_cvr_sum"),
+        sum(col("iscvr")).alias("cvrn"),
+        sum(col("isclick") * col("exp_cvr")).alias("exp_cvr_sum"),
         sum("price1").alias("cost")
-      ).select("userid", "adclass2", "threshold",  "adtype1", "test_tag", "queryn", "shown", "clickn", "cvrn", "exp_cvr_sum","cost")
+      ).select("userid", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cvrn", "exp_cvr_sum", "cost")
     println("========================summary=========================")
     summary.persist()
     //    summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
@@ -65,23 +65,23 @@ object videoPromotion_v2 {
     val group = summary
       .select("userid", "adtype1", "test_tag").distinct().rdd
       .map(x => (x.getAs[Int]("userid"), x.getAs[String]("adtype1"), x.getAs[String]("test_tag")))
-    val groupAuc = addAuc( spark, group, baseData.filter("if_use_strategy = 1") )
+    val groupAuc = addAuc(spark, group, baseData.filter("if_use_strategy = 1"))
 
     val adclass2Cvr = baseData
       .filter("adtype1 = 'bigimage'")
-      .groupBy( "adtype1","adclass2", "test_tag")
-      .agg( (sum("iscvr")/sum("isclick")).alias("cvr_bigimage_adclass2") )
-      .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2" )
+      .groupBy("adtype1", "adclass2", "test_tag")
+      .agg((sum("iscvr") / sum("isclick")).alias("cvr_bigimage_adclass2"))
+      .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2")
 
     val result0 = summary
-      .join(groupAuc,    Seq("userid", "adtype1", "test_tag"), "left")
-      .join(adclass2Cvr, Seq( "adtype1", "adclass2", "test_tag"), "left")
-      .withColumn("cvr", col("cvrn")/col("clickn"))
-      .withColumn("cpm", col("cost")*10/col("shown"))
-      .withColumn("exp_cvr", col("exp_cvr_sum")*0.000001/col("clickn"))
-      .withColumn("pcoc",    col("exp_cvr")/col("cvr"))
+      .join(groupAuc, Seq("userid", "adtype1", "test_tag"), "left")
+      .join(adclass2Cvr, Seq("adtype1", "adclass2", "test_tag"), "left")
+      .withColumn("cvr", col("cvrn") / col("clickn"))
+      .withColumn("cpm", col("cost") * 10 / col("shown"))
+      .withColumn("exp_cvr", col("exp_cvr_sum") * 0.000001 / col("clickn"))
+      .withColumn("pcoc", col("exp_cvr") / col("cvr"))
       .withColumn("date", lit(date))
-      .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2",  "cpm" , "date")
+      .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2", "cpm", "date")
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
@@ -103,8 +103,8 @@ object videoPromotion_v2 {
     //      cpm  double)
     //    comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
     //    partitioned by (`date` string);
-//    result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
-        result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
+    //    result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
+    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
     val uidn_ab = baseData
       .filter("if_use_strategy = 1 ")
@@ -113,7 +113,7 @@ object videoPromotion_v2 {
       .select("test_tag", "adtype1", "uidn")
 
     val result = summary
-      .groupBy("adtype1", "test_tag" )
+      .groupBy("adtype1", "test_tag")
       .agg(
         sum("queryn").alias("query_n"),
         sum("shown").alias("show_n"),
@@ -121,12 +121,12 @@ object videoPromotion_v2 {
         sum("cvrn").alias("cvr_n"),
         sum("cost").alias("total_cost")
       ).join(uidn_ab, Seq("adtype1", "test_tag"), "inner")
-      .withColumn("ctr", col("click_n")/col("show_n"))
-      .withColumn("cvr", col("cvr_n")/col("click_n"))
-      .withColumn("cpm", col("total_cost")*10/col("show_n"))
-      .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
-      .withColumn("arpu", col("total_cost")/col("uidn")/100)
-      .withColumn("acp", col("total_cost")/col("click_n")/100)
+      .withColumn("ctr", col("click_n") / col("show_n"))
+      .withColumn("cvr", col("cvr_n") / col("click_n"))
+      .withColumn("cpm", col("total_cost") * 10 / col("show_n"))
+      .withColumn("cpa", col("total_cost") / col("cvr_n") / 100)
+      .withColumn("arpu", col("total_cost") / col("uidn") / 100)
+      .withColumn("acp", col("total_cost") / col("click_n") / 100)
       .withColumn("date", lit(date))
       .select("adtype1", "test_tag", "query_n", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "uidn", "arpu", "acp", "date")
 
@@ -149,14 +149,14 @@ object videoPromotion_v2 {
     //    comment "group by adtype1, test_tag to summary"
     //    partitioned by (`date` string);
 
-//    result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
-        result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
+    //    result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
+    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
     val userCvr = summary
-      .join( pivot_table, Seq("userid"), "left")
-      .filter("video > 0")  //排除没有视频的userid
+      .join(pivot_table, Seq("userid"), "left")
+      .filter("video > 0") //排除没有视频的userid
       .groupBy("test_tag", "userid", "adtype1")
-      .agg( ( sum("cvrn")/sum("clickn") ).alias("cvr") )
+      .agg((sum("cvrn") / sum("clickn")).alias("cvr"))
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
       .select("test_tag", "userid", "video", "bigimage")
 
@@ -185,24 +185,24 @@ object videoPromotion_v2 {
     userAdclass.show(10)
 
     val userAdclassCvr = userAdclass
-      .join( adclass2Cvr, Seq("adclass2"), "inner" )
-      .select("userid", "adclass2", "test_tag", "cvr_bigimage_adclass2" ) //userid为大图userid,
+      .join(adclass2Cvr, Seq("adclass2"), "inner")
+      .select("userid", "adclass2", "test_tag", "cvr_bigimage_adclass2") //userid为大图userid,
 
     println("note1")
 
-        val video    = summary.filter("adtype1 = 'video'"   ).selectExpr("test_tag", "userid", "clickn as clickn_video",    "cvrn as cvrn_video")
-        val bigimage = summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage")
+    val video = summary.filter("adtype1 = 'video'").selectExpr("test_tag", "userid", "clickn as clickn_video", "cvrn as cvrn_video")
+    val bigimage = summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage")
 
     println("note2")
     val userCvr2 = userCvr // "test_tag", "userid", "video", "bigimage"
-      .join( userAdclassCvr, Seq("userid", "test_tag"), "left" ) //"userid", "adclass2", "test_tag", "cvr_bigimage_adclass2"
+      .join(userAdclassCvr, Seq("userid", "test_tag"), "left") //"userid", "adclass2", "test_tag", "cvr_bigimage_adclass2"
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
-      .select("test_tag","userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
-      .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
-            .join(video,    Seq("test_tag", "userid"), "left")
-            .join(bigimage, Seq("test_tag", "userid"), "left")
-      .withColumn( "date", lit(date) )
-      .selectExpr("test_tag", "userid", "adclass2",  "video as cvr_video", "bigimage as cvr_bigimage", "cvr_bigimage_adclass2", "bigimage2 as cvr_bigimage_final", "flag", "date")
+      .select("test_tag", "userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
+      .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)))
+      .join(video, Seq("test_tag", "userid"), "left")
+      .join(bigimage, Seq("test_tag", "userid"), "left")
+      .withColumn("date", lit(date))
+      .selectExpr("test_tag", "userid", "adclass2", "video as cvr_video", "bigimage as cvr_bigimage", "cvr_bigimage_adclass2", "bigimage2 as cvr_bigimage_final", "flag", "date")
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
@@ -222,28 +222,26 @@ object videoPromotion_v2 {
     //    partitioned by (`date` string);
 
     println("note3")
-//    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
-        userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
+    //    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
+    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
     val result2 = userCvr2
       .groupBy("test_tag")
       .agg(
         countDistinct("userid").alias("usern"),
         sum("flag").alias("video_outstand_usern")
-      ).withColumn("account", col("video_outstand_usern")/col("usern"))
+      ).withColumn("account", col("video_outstand_usern") / col("usern"))
       .withColumn("date", lit(date))
-      .select( "test_tag", "usern", "video_outstand_usern", "account", "date" )
+      .select("test_tag", "usern", "video_outstand_usern", "account", "date")
 
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account
     //    ( test_tag string, usern int, video_outstand_usern int,  account double)
     //    comment "users with good video account"
     //    partitioned by (`date` string);
 
-//    result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
+    //    result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
         result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
-
   }
-
   case class Group ( var userid: Int,
                      val adtype1: String,
                      val test_tag: String,
@@ -322,7 +320,9 @@ object videoPromotion_v2 {
          |    from
          |      dl_cpc.cpc_basedata_union_events
          |    where
-         |      $timeCondition1
+         |      --$timeCondition1
+         |      day = '$date'
+         |      and hour = '12'
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -393,7 +393,8 @@ object videoPromotion_v2 {
          |            from
          |              dl_cpc.ml_cvr_feature_v1
          |            where
-         |              $timeCondition2
+         |              --$timeCondition2
+         |              `date` = '$date'
          |              and label2 = 1
          |              and media_appsid in ("80000001", "80000002")
          |          ) final
