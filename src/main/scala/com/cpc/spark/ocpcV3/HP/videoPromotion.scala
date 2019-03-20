@@ -207,8 +207,8 @@ object videoPromotion {
 //    partitioned by (`date` string);
 
     println("note3")
-//    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
-    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
+    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
+//    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
     val result2 = userCvr2
       .groupBy("test_tag")
