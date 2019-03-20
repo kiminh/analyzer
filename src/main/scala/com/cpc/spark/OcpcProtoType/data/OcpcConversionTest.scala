@@ -37,9 +37,7 @@ object OcpcConversionTest {
          |and (adclass like '134%' or adclass like '107%')
        """.stripMargin
     println(sqlRequest1)
-    val data1 = spark
-      .sql(sqlRequest1)
-      .select("searchid", "label")
+    val data1 = spark.sql(sqlRequest1)
 
     val sqlRequest2 =
       s"""
@@ -53,9 +51,7 @@ object OcpcConversionTest {
          |  label=1
          |GROUP BY searchid, label
        """.stripMargin
-    val data2 = spark
-      .sql(sqlRequest2)
-      .select("searchid", "label")
+    val data2 = spark.sql(sqlRequest2)
 
     val resultDF = data1
       .union(data2)
