@@ -56,7 +56,7 @@ object videoPromotion {
          |      dl_cpc.cpc_basedata_union_events
          |    where
          |      day = '$date'
-         |      and hour = '12'
+         |      --and hour = '12'
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -196,24 +196,25 @@ object videoPromotion {
       .withColumn("date", lit(date))
       .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2",  "cpm" , "date")
 
-    //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
-    //    ( userid  int,
-    //      adclass2 int,
-    //      threshold bigint,
-    //      adtype1 string,
-    //      test_tag string,
-    //      shown int,
-    //      clickn int,
-    //      cost   double,
-    //      cvrn int,
-    //      cvr double,
-    //      exp_cvr double,
-    //      pcoc double,
-    //      auc double,
-    //      cvr_bigimage_adclass2 double,
-    //      cpm  double)
-    //    comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
-    //    partitioned by (`date` string);
+//    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1;
+//    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
+//    ( userid  int,
+//      adclass2 int,
+//      threshold bigint,
+//      adtype1 string,
+//      test_tag string,
+//      shown int,
+//      clickn int,
+//      cost   double,
+//      cvrn int,
+//      cvr double,
+//      exp_cvr double,
+//      pcoc double,
+//      auc double,
+//      cvr_bigimage_adclass2 double,
+//      cpm  double)
+//    comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
+//    partitioned by (`date` string);
     result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
 //    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
@@ -240,10 +241,23 @@ object videoPromotion {
       .withColumn("date", lit(date))
       .select("adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "uidn", "arpu", "acp", "date")
 
-    //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2
-    //    ( adtype1 string, test_tag string, show_n int, ctr double, click_n int, cvr double, cvr_n int, total_cost double, cpm double, cpa double, uidn int, arpu double, acp double )
-    //    comment "group by adtype1, test_tag to summary"
-    //    partitioned by (`date` string);
+//    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2;
+//    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2
+//    ( adtype1 string,
+//      test_tag string,
+//      show_n int,
+//      ctr double,
+//      click_n int,
+//      cvr double,
+//      cvr_n int,
+//      total_cost double,
+//      cpm double,
+//      cpa double,
+//      uidn int,
+//      arpu double,
+//      acp double )
+//    comment "group by adtype1, test_tag to summary"
+//    partitioned by (`date` string);
 
     result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
 //    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
@@ -300,10 +314,22 @@ object videoPromotion {
       .withColumn( "date", lit(date) )
         .select("test_tag", "userid", "adclass2",  "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2", "flag", "date")
 
-    //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
-    //    ( test_tag string, userid int, adclass2 int, clickn_video int, cvrn_video int, video double, clickn_bigimage int, cvrn_bigimage int, bigimage double, cvr_bigimage_adclass2 double, bigimage2 double, flag int )
-    //    comment "group by test_tag, userid, adclass2 to summary"
-    //    partitioned by (`date` string);
+//    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3;
+//    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
+//    ( test_tag string,
+//      userid      int,
+//      adclass2    int,
+//      --clickn_video int,
+//      --cvrn_video  int,
+//      video    double,
+//      --clickn_bigimage int,
+//      --cvrn_bigimage int,
+//      bigimage double,
+//      cvr_bigimage_adclass2 double,
+//      bigimage2 double,
+//      flag int )
+//    comment "group by test_tag, userid, adclass2 to summary"
+//    partitioned by (`date` string);
 
     println("note3")
 //    userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
