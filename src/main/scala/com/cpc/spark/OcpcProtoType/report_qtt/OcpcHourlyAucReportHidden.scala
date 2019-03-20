@@ -8,7 +8,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
 
-object OcpcHourlyAucReport {
+object OcpcHourlyAucReportHidden {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
@@ -87,7 +87,7 @@ object OcpcHourlyAucReport {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and ocpc_log_dict['IsHiddenOcpc'] != 1
+         |and ocpc_log_dict['IsHiddenOcpc'] = 1
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark.sql(sqlRequest)
