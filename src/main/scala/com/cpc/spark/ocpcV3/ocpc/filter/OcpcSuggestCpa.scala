@@ -119,9 +119,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 //    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
