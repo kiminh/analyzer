@@ -105,7 +105,7 @@ object OcpcSampleToPb {
     result.printSchema()
     result.show(10)
 
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
 
