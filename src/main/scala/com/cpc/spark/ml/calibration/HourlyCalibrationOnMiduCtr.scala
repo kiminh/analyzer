@@ -42,7 +42,7 @@ object HourlyCalibrationOnMiduCtr {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name from dl_cpc.cpc_basedata_union_events
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1 and ctr_model_name <>''
                  | and ctr_model_name != 'noctr'
