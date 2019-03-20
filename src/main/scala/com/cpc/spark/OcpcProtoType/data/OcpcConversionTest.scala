@@ -56,8 +56,26 @@ object OcpcConversionTest {
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid
+         |FROM
+         |  dl_cpc.site_form_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  ideaid>0
+         |AND
+         |  searchid is not null
+         |GROUP BY searchid
+       """.stripMargin
+    println(sqlRequest3)
+    val data3 = spark.sql(sqlRequest3)
+
     val resultDF = data1
       .union(data2)
+      .union(data3)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")
