@@ -322,7 +322,7 @@ object videoPromotion {
          |      --  and length(uid) in (14, 15, 36)
          |
          |  ) t1
-         |  left join (  select userid, expcvr as threshold from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid, expcvr ) tt
+         |  left join (  select userid, expcvr as threshold from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date1' group by userid, expcvr ) tt
          |    on t1.userid = tt.userid
          |  left join (
          |    select
@@ -376,7 +376,7 @@ object videoPromotion {
          |            from
          |              dl_cpc.ml_cvr_feature_v1
          |            where
-         |              $timeCondition1
+         |              $timeCondition2
          |              and label2 = 1
          |              and media_appsid in ("80000001", "80000002")
          |          ) final
