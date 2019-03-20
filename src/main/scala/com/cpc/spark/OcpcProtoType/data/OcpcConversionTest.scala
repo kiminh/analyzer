@@ -31,7 +31,7 @@ object OcpcConversionTest {
          |    searchid
          |from dl_cpc.ml_cvr_feature_v1
          |lateral view explode(cvr_list) b as a
-         |where `date`='2019-03-20' and hour='12'
+         |where $selectCondition
          |and access_channel="site"
          |and a in ('site_form','ctsite_form')
          |and (adclass like '134%' or adclass like '107%')
