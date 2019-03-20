@@ -49,6 +49,8 @@ object OcpcConversionTest {
          |  $selectCondition
          |AND
          |  label=1
+         |AND
+         |  (adclass like '134%' or adclass like '107%')
          |GROUP BY searchid, label
        """.stripMargin
     val data2 = spark.sql(sqlRequest2)
