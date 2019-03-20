@@ -259,7 +259,7 @@ object videoPromotion {
     val tomorrow = calendar.getTime
     val date1 = dateConverter.format( tomorrow )
     val timeCondition1 = s"(( day   = '$date' and hour >= '06') or ( day   = '$date1' and hour <= '05'))"
-    val timeCondition2 = s"(('date' = '$date' and hour >= '06') or ('date' = '$date1' and hour <= '05'))"
+    val timeCondition2 = s"((`date` = '$date' and hour >= '06') or (`date` = '$date1' and hour <= '05'))"
     println("time1: " + timeCondition1)
     println("time2: " + timeCondition2)
 
