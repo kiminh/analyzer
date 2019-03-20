@@ -73,7 +73,7 @@ object prepare_bsCvr_dnnSample {
          |  media_type, media_appsid as mediaid,
          |  channel,
          |  sdk_type,
-         |  adslot_type, adslotid,
+         |  adslot_type, adslot_id,
          |  adtype, interaction, bid, a.ideaid, unitid, planid, userid,
          |  is_new_ad, adclass, charge_type,
          |  site_id,
