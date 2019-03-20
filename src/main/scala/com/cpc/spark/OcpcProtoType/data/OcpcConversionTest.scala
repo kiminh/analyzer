@@ -25,26 +25,42 @@ object OcpcConversionTest {
   def getLabel(cvrPt: String, date: String, hour: String, spark: SparkSession) = {
     var selectCondition = s"`date`='$date' and hour = '$hour'"
 
-    val sqlRequest =
+    val sqlRequest1 =
+      s"""
+         |select
+         |    searchid
+         |from dl_cpc.ml_cvr_feature_v1
+         |lateral view explode(cvr_list) b as a
+         |where `date`='2019-03-20' and hour='12'
+         |and access_channel="site"
+         |and a in ('site_form','ctsite_form')
+         |and (adclass like '134%' or adclass like '107%')
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .select("searchid", "label")
+
+    val sqlRequest2 =
       s"""
          |SELECT
-         |  searchid,
-         |  label2 as label
+         |  searchid
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ml_cvr_feature_v2
          |WHERE
          |  $selectCondition
          |AND
-         |  label2=1
-         |AND
-         |  label_type=6
-         |AND
-         |  active15=1
-         |GROUP BY searchid, label2
+         |  label=1
+         |GROUP BY searchid, label
        """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark
-      .sql(sqlRequest)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .select("searchid", "label")
+
+    val resultDF = data1
+      .union(data2)
+      .distinct()
+      .withColumn("label", lit(1))
       .select("searchid", "label")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
