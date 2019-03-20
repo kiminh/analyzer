@@ -194,15 +194,21 @@ object videoPromotion_v2 {
     val bigimage = summary.filter("adtype1 = 'bigimage'").selectExpr("test_tag", "userid", "queryn as queryn_bigimage", "clickn as clickn_bigimage", "cvrn as cvrn_bigimage")
 
     println("note2")
-    val userCvr2 = userCvr // "test_tag", "userid", "video", "bigimage"
+    val userCvr_tmp1 = userCvr // "test_tag", "userid", "video", "bigimage"
       .join(userAdclassCvr, Seq("userid", "test_tag"), "left") //"userid", "adclass2", "test_tag", "cvr_bigimage_adclass2"
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr_bigimage_adclass2")).otherwise(col("bigimage")))
       .select("test_tag", "userid", "adclass2", "video", "bigimage", "cvr_bigimage_adclass2", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)))
-      .join(video, Seq("test_tag", "userid"), "left")
-      .join(bigimage, Seq("test_tag", "userid"), "left")
+
+    userCvr_tmp1.show(10)
+
+      val userCvr_tmp2 = userCvr_tmp1.join(video, Seq("test_tag", "userid"), "left")
+    userCvr_tmp2.show(10)
+
+      val userCvr2 = userCvr_tmp2
+//      .join(bigimage, Seq("test_tag", "userid"), "left")
       .withColumn("date", lit(date))
-      .selectExpr("test_tag", "userid", "adclass2", "queryn_video", "clickn_video",  "cvrn_video", "video as cvr_video", "queryn_bigimage", "clickn_bigimage",  "cvrn_bigimage", "bigimage as cvr_bigimage", "cvr_bigimage_adclass2", "bigimage2 as cvr_bigimage_final", "flag", "date")
+//      .selectExpr("test_tag", "userid", "adclass2", "queryn_video", "clickn_video",  "cvrn_video", "video as cvr_video", "queryn_bigimage", "clickn_bigimage",  "cvrn_bigimage", "bigimage as cvr_bigimage", "cvr_bigimage_adclass2", "bigimage2 as cvr_bigimage_final", "flag", "date")
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
