@@ -47,7 +47,7 @@ object ReportCoinMetrics {
                |        and ext['city_level'].int_value != 1
                |        AND (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
                |        and userid not in (1001028, 1501875)
-               |        and adslotid not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
+               |        and adslotid not in ("7774304","7636999","7602943","7783705","7443868","7917491","7335680","7871301")
                |        and round(ext["adclass"].int_value/1000) != 132101
                |        and adslot_type in (1,2)
                |    ) a

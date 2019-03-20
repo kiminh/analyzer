@@ -184,6 +184,8 @@ object AutoCoinStrategy {
                |where user_id in ($unKnownUseridList)
              """.stripMargin
 
+        println(getIdeaidSql)
+
         val unKnownIdeaid = spark.sql(getIdeaidSql)
           .rdd
           .map(_.getAs[Int]("ideaid").toString)
@@ -336,6 +338,7 @@ object AutoCoinStrategy {
                |            select id, account_type
                |            from src_cpc.cpc_user_p
                |            where account_type = 2
+               |            and day > '2019-01-01'
                |            group by id, account_type
                |         ) y
                |         on x.user_id = y.id
@@ -347,7 +350,7 @@ object AutoCoinStrategy {
                |    and (b.userid in ($userWhiteList) or b.account_type is null)
              """.stripMargin
         println(mlFeatureSql)
-        val mlFeature = spark.sql(mlFeatureSql)
+        val mlFeature = spark.sql(mlFeatureSql).cache()
 
         val mlFeature1 = mlFeature.filter(s"ideaid not in ($unKnownIdeaidList)")    //非黑五类ideaid
         val mlFeature2 = mlFeature.filter(s"ideaid in ($unKnownIdeaidList)")        //黑五类ideaid
@@ -371,7 +374,7 @@ object AutoCoinStrategy {
                |where `date`='$date'
              """.stripMargin
 
-        val ideaP = spark.sql(sql)
+        val ideaP = spark.sql(sql).cache()
 
         ideaP
     }
@@ -390,13 +393,15 @@ object AutoCoinStrategy {
               (x: List[Int], y: List[Int]) => x ::: y)
           .mapValues(x => {
               val sorted = x.sorted
-              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
-              val i5th = (sorted.length * 0.5).toInt
-              val i6th = (sorted.length * 0.6).toInt
-              val i7th = (sorted.length * 0.7).toInt
-              val i8th = (sorted.length * 0.8).toInt
-              val i9th = (sorted.length * 0.9).toInt
-              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+              val length = sorted.length - 1
+              val index = (length * p).toInt
+              val i5th = (length * 0.5).toInt
+              val i6th = (length * 0.6).toInt
+              val i7th = (length * 0.7).toInt
+              val i8th = (length * 0.8).toInt
+              val i9th = (length * 0.9).toInt
+              val exp_cvr =  if (sorted(index)=1000000) sorted(index) - 1 else sorted(index)
+              (exp_cvr, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
           })
@@ -413,7 +418,7 @@ object AutoCoinStrategy {
       */
     def getThresholdAdjust(spark:SparkSession,df:DataFrame,date:String, hour:String, p:Double):
         RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
-        val t = getPreTime(date,hour,2) //获取3个小时前的时间
+        val t = getPreTime(date,hour,3) //获取3个小时前的时间
 
         val ideaP = getIdeaidP(spark,t.substring(0, 10))    //获取p值
 
@@ -432,13 +437,15 @@ object AutoCoinStrategy {
               val cvrlist = x._1
               val p = x._2
               val sorted = cvrlist.sorted
-              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
-              val i5th = (sorted.length * 0.5).toInt
-              val i6th = (sorted.length * 0.6).toInt
-              val i7th = (sorted.length * 0.7).toInt
-              val i8th = (sorted.length * 0.8).toInt
-              val i9th = (sorted.length * 0.9).toInt
-              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+              val length = sorted.length - 1
+              val index = (length * p).toInt
+              val i5th = (length * 0.5).toInt
+              val i6th = (length * 0.6).toInt
+              val i7th = (length * 0.7).toInt
+              val i8th = (length * 0.8).toInt
+              val i9th = (length * 0.9).toInt
+              val exp_cvr =  if (sorted(index)=1000000) sorted(index) - 1 else sorted(index)
+              (exp_cvr, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
           })
     }
