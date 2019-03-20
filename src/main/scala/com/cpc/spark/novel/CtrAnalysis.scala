@@ -24,6 +24,7 @@ object CtrAnalysis {
          |WHERE day = '2019-03-19'
          |  and isshow = 1
          |  and adsrc = 1
+         |  and ctr_model_name = 'qtt-list-dnn-rawid-v4'
          |  and media_appsid in ('80000001','80000002')
          |  AND userid > 0
          |  AND (charge_type IS NULL OR charge_type = 1)
@@ -56,6 +57,7 @@ object CtrAnalysis {
          |WHERE day = '2019-03-19'
          |  and isshow = 1
          |  and adsrc = 1
+         |  and ctr_model_name = 'novel-ctr-dnn-rawid-v7'
          |  and media_appsid in ('80001098','80001292')
          |  AND userid > 0
          |  AND (charge_type IS NULL OR charge_type = 1)
