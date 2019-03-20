@@ -30,7 +30,7 @@ object prepareAgePredictionSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/dnn/age/dnnpredict")
+      .save(s"hdfs://emr-cluster/user/cpc/dnn/age/dnnpredict")
   }
 
   def getSample(spark: SparkSession): DataFrame = {
@@ -39,7 +39,7 @@ object prepareAgePredictionSample {
     val calCur = Calendar.getInstance()
     val dateCur = new SimpleDateFormat("yyyyMMdd").format(calCur.getTime)
 
-    val profileData = spark.read.parquet("/user/cpc/qtt-lookalike-sample/pv1").
+    val profileData = spark.read.parquet("hdfs://emr-cluster/user/cpc/qtt-lookalike-sample/pv1").
       select($"did".alias("uid"), $"apps._1".alias("pkgs"), $"words", $"terms", $"brand",
         split($"province._1", "province")(1).alias("province"), split($"city._1", "city")(1).alias("city"),
         split($"isp._1", "isp")(1).alias("isp"), split($"os._1", "os")(1).alias("os"),
@@ -47,7 +47,7 @@ object prepareAgePredictionSample {
         split($"sex._1", "sex")(1).alias("sex"), split($"antispam_score._1", "antispam_score")(1).alias("antispam_score")
       )
 
-    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10").map {
+    val zfb = spark.read.parquet("hdfs://emr-cluster/user/cpc/qtt-zfb/10").map {
       r =>
         val did = r.getAs[String]("did")
         val birth = r.getAs[String]("birth")
@@ -78,7 +78,7 @@ object prepareAgePredictionSample {
 
     //获取在app的请求时间分布
 
-    val uidRequest = spark.read.parquet("/user/cpc/features/timeDistributionFeature")
+    val uidRequest = spark.read.parquet("hdfs://emr-cluster/user/cpc/features/timeDistributionFeature")
 
     val sample = profileData.join(zfb, Seq("uid"), "leftouter").join(uidRequest, Seq("uid"), "leftouter").repartition(800)
 
