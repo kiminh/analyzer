@@ -33,7 +33,7 @@ object OcpcConversionTest {
          |lateral view explode(cvr_list) b as a
          |where $selectCondition
          |and access_channel="site"
-         |and a in ('site_form','ctsite_form')
+         |and a in ('ctsite_form')
          |and (adclass like '134%' or adclass like '107%')
        """.stripMargin
     println(sqlRequest1)
