@@ -228,6 +228,7 @@ object videoPromotion_v2 {
     val result2 = userCvr2
       .groupBy("test_tag")
       .agg(
+        (sum("queryn_video") + sum("queryn_bigimage")).alias("queryn"),
         countDistinct("userid").alias("usern"),
         sum("flag").alias("video_outstand_usern")
       ).withColumn("account", col("video_outstand_usern") / col("usern"))
