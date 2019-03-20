@@ -202,6 +202,8 @@ object videoPromotion_v2 {
 
     userCvr_tmp1.show(10)
 
+    video.show(10)
+
       val userCvr_tmp2 = userCvr_tmp1.join(video, Seq("test_tag", "userid"), "left")
     userCvr_tmp2.show(10)
 
