@@ -26,6 +26,28 @@ object CtrAnalysisbyshow {
     val qttctr=spark.sql(show_sql)
     qttctr.write.mode("overwrite").saveAsTable("test.qttctrbyshow")
 
+    val sql1=
+      s"""
+         |select
+         |  day,
+         |  ctr_model_name,
+         |  rk,
+         |  sum(isshow) as imp,
+         |  round(sum(exp_ctr)/sum(isshow)/10000,3) as ectr,
+         |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
+         |  round(sum(exp_ctr)/1000000/sum(isclick),3) as pcoc
+         |FROM
+         |  test.qttctrbyshow
+         |GROUP BY
+         |  day,
+         |  ctr_model_name,
+         |  rk
+         |order by imp desc
+       """.stripMargin
+
+    val qttctr2=spark.sql(sql1)
+    qttctr2.write.mode("overwrite").saveAsTable("test.qttctrbyshow2")
+
     val sql2=
       s"""
          |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,
@@ -44,6 +66,28 @@ object CtrAnalysisbyshow {
     val novelctr=spark.sql(sql2)
 
     novelctr.write.mode("overwrite").saveAsTable("test.novelctrbyshow")
+
+    val sql3=
+      s"""
+         |select
+         |  day,
+         |  ctr_model_name,
+         |  rk,
+         |  sum(isshow) as imp,
+         |  round(sum(exp_ctr)/sum(isshow)/10000,3) as ectr,
+         |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
+         |  round(sum(exp_ctr)/1000000/sum(isclick),3) as pcoc
+         |FROM
+         |  test.novelctrbyshow
+         |GROUP BY
+         |  day,
+         |  ctr_model_name,
+         |  rk
+         |order by imp desc
+       """.stripMargin
+
+    val qttctr3=spark.sql(sql3)
+    qttctr3.write.mode("overwrite").saveAsTable("test.novelctrbyshow2")
 
 
   }
