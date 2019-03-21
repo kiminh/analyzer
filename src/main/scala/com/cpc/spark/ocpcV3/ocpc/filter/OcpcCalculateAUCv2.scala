@@ -33,26 +33,6 @@ object OcpcCalculateAUCv2 {
     // 获取userid与industry之间的关联表
     val useridIndustry = getIndustry(date, hour, spark)
 
-    //    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
-    //    data
-    //      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
-
-    //    // 设置cv门槛
-    //    var cvThreshold = 100
-    //    if (conversionGoal == "3") {
-    //      cvThreshold = 30
-    //    } else {
-    //      cvThreshold = 100
-    //    }
-    //
-    //    val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
-    //    val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
-    //    processedData
-    //      .repartition(10).write.mode("overwrite").insertInto(tableName2)
-    //    val tableName2 = "test.ocpc_auc_filter_conversiongoal"
-    //    processedData
-    //      .repartition(10).write.mode("overwrite").saveAsTable(tableName2)
-
     // 计算auc
     val aucData = getAuc(tableName1, conversionGoal, version, date, hour, spark)
 
