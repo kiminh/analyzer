@@ -14,7 +14,7 @@ object Lab {
     val baseData = getBaseData(spark, date, hour, hr)
     baseData.persist()
 
-    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
+    baseData.write.mode("overwrite").saveAsTable("test.baseData2_sjq")
     println("========================baseData=======================")
     baseData.show(20)
 
@@ -46,7 +46,7 @@ object Lab {
          |  t1.userid,
          |  case when tt.userid is not NULL then 1 else 0 end as if_use_strategy,
          |  tt.threshold,
-         |  --usertype,
+         |  usertype,
          |  adtype1,
          |  ideaid,
          |  isshow,
