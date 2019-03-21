@@ -10,7 +10,7 @@ object CtrAnalysisbyshow {
 
     val show_sql =
       s"""
-         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,
+         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,
          |      row_number() over(partition by uid,ideaid order by timestamp) rk
          |from dl_cpc.cpc_basedata_union_events
          |where day='2019-03-20'
@@ -31,6 +31,7 @@ object CtrAnalysisbyshow {
          |select
          |  day,
          |  ctr_model_name,
+         |  adslot_id,
          |  rk,
          |  sum(isshow) as imp,
          |  round(sum(exp_ctr)/sum(isshow)/10000,3) as ectr,
@@ -41,16 +42,17 @@ object CtrAnalysisbyshow {
          |GROUP BY
          |  day,
          |  ctr_model_name,
+         |  adslot_id,
          |  rk
          |order by imp desc
        """.stripMargin
 
     val qttctr2=spark.sql(sql1)
-    qttctr2.write.mode("overwrite").saveAsTable("test.qttctrbyshow2")
+    qttctr2.write.mode("overwrite").saveAsTable("test.qttctrbyshow_id")
 
     val sql2=
       s"""
-         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,
+         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,
          |      row_number() over(partition by uid,ideaid order by timestamp) rk
          |from dl_cpc.cpc_novel_union_events
          |where day='2019-03-20'
@@ -72,6 +74,7 @@ object CtrAnalysisbyshow {
          |select
          |  day,
          |  ctr_model_name,
+         |  adslot_id,
          |  rk,
          |  sum(isshow) as imp,
          |  round(sum(exp_ctr)/sum(isshow)/10000,3) as ectr,
@@ -82,12 +85,13 @@ object CtrAnalysisbyshow {
          |GROUP BY
          |  day,
          |  ctr_model_name,
+         |  adslot_id,
          |  rk
          |order by imp desc
        """.stripMargin
 
     val qttctr3=spark.sql(sql3)
-    qttctr3.write.mode("overwrite").saveAsTable("test.novelctrbyshow2")
+    qttctr3.write.mode("overwrite").saveAsTable("test.novelctrbyshow_id")
 
 
   }
