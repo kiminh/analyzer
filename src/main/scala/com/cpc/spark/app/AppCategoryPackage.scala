@@ -21,7 +21,7 @@ object AppCategoryPackage {
       .getOrCreate()
 
     val appCategoryRdd = spark.sparkContext.parallelize(appCategory)
-    val appCategoryDF = spark.createDataFrame(appCategoryRdd).repartition(1).createOrReplaceTempView("t")
+    spark.createDataFrame(appCategoryRdd).repartition(1).createOrReplaceTempView("t")
     spark.sql(
       s"""
          | insert overwrite table $outdb.app_category_package partition(dt='$date')
@@ -32,7 +32,7 @@ object AppCategoryPackage {
   }
 
   def readAppList() = {
-    val file = Source.fromFile("appList")
+    val file = Source.fromFile(AppCategoryPackage.getClass.getResource("appList").getFile)
 
     val list = new mutable.ArrayBuffer[String]()
     for (line <- file.getLines()) {
