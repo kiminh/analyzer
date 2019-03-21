@@ -32,7 +32,7 @@ object AppCategoryPackage {
   }
 
   def readAppList() = {
-    val file = Source.fromFile(AppCategoryPackage.getClass.getResource("/appList").getFile)
+    val file = Source.fromFile(AppCategoryPackage.getClass.getResource("/src/main/resources/appList").getFile)
 
     val list = new mutable.ArrayBuffer[String]()
     for (line <- file.getLines()) {
