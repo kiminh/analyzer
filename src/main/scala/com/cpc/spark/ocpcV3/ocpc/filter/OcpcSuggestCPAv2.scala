@@ -13,9 +13,6 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 object OcpcSuggestCPAv2{
   def main(args: Array[String]): Unit = {
-    //TODO
-    // 预估cvr分布，计算进入ocpc之后的展现量
-    // 使用cpa_suggest * kvalue * exp_cvr * exp_ctr 作为ecpm计算分布
 
     // 计算日期周期
     val date = args(0).toString
@@ -218,8 +215,9 @@ object OcpcSuggestCPAv2{
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
-    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+//    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+//    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     // ctrData
     val sqlRequest1 =
@@ -230,7 +228,7 @@ object OcpcSuggestCPAv2{
          |    adclass,
          |    isclick
          |FROM
-         |    dl_cpc.slim_union_log
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectCondition
          |AND
@@ -247,52 +245,19 @@ object OcpcSuggestCPAv2{
 
     // cvrData1
     // 根据conversionGoal选择cv的sql脚本
-    var sqlRequest2 = ""
-    if (conversionGoal == 1) {
-      // cvr1数据
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.ml_cvr_feature_v1
-           |WHERE
-           |  $selectCondition2
-           |AND
-           |  label2=1
-           |AND
-           |  label_type in (1, 2, 3, 4, 5)
-           |GROUP BY searchid
+    val cvrPt = "cvr" + conversionGoal.toString
+    val sqlRequest2 =
+    s"""
+       |SELECT
+       |  searchid,
+       |  label as iscvr
+       |FROM
+       |  dl_cpc.ocpc_label_cvr_hourly
+       |WHERE
+       |  $selectCondition
+       |AND
+       |  cvr_goal = '$cvrPt'
        """.stripMargin
-    } else if (conversionGoal == 2) {
-      // cvr2数据
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.ml_cvr_feature_v2
-           |WHERE
-           |  $selectCondition2
-           |AND
-           |  label=1
-           |GROUP BY searchid
-       """.stripMargin
-    } else {
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.site_form_unionlog
-           |WHERE
-           |  $selectCondition2
-           |GROUP BY searchid
-       """.stripMargin
-    }
     println(sqlRequest2)
     val cvrRaw = spark.sql(sqlRequest2)
 
@@ -302,7 +267,6 @@ object OcpcSuggestCPAv2{
       .na.fill(0, Seq("iscvr"))
 
 
-    // conversiongoal=1
     val resultDF = cvrData
       .groupBy("unitid", "adclass")
       .agg(
@@ -429,52 +393,19 @@ object OcpcSuggestCPAv2{
 
     // cvrData1
     // 根据conversionGoal选择cv的sql脚本
-    var sqlRequest2 = ""
-    if (conversionGoal == 1) {
-      // cvr1数据
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.ml_cvr_feature_v1
-           |WHERE
-           |  $selectCondition2
-           |AND
-           |  label2=1
-           |AND
-           |  label_type in (1, 2, 3, 4, 5)
-           |GROUP BY searchid
+    val cvrPt = "cvr" + conversionGoal.toString
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  cvr_goal = '$cvrPt'
        """.stripMargin
-    } else if (conversionGoal == 2) {
-      // cvr2数据
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.ml_cvr_feature_v2
-           |WHERE
-           |  $selectCondition2
-           |AND
-           |  label=1
-           |GROUP BY searchid
-       """.stripMargin
-    } else {
-      sqlRequest2 =
-        s"""
-           |SELECT
-           |  searchid,
-           |  1 as iscvr
-           |FROM
-           |  dl_cpc.site_form_unionlog
-           |WHERE
-           |  $selectCondition2
-           |GROUP BY searchid
-       """.stripMargin
-    }
     println(sqlRequest2)
     val cvrRaw = spark.sql(sqlRequest2)
 
@@ -483,8 +414,6 @@ object OcpcSuggestCPAv2{
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr")
       .na.fill(0, Seq("iscvr"))
 
-
-    // conversiongoal=1
     val data = cvrData
       .groupBy("unitid")
       .agg(
