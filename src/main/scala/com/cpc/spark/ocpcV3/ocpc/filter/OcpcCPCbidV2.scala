@@ -136,8 +136,8 @@ object OcpcCPCbidV2 {
     val data = suggestData
       .join(confData, Seq("identifier"), "outer")
       .selectExpr("identifier", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
-      .withColumn("cpa_suggest", when(col("cpa_suggest2").isNotNull, col("cpa_suggest2")).otherwise(col("cpa_suggest1")))
-      .withColumn("param_t", when(col("param_t2").isNotNull, col("param_t2")).otherwise(col("param_t1")))
+      .withColumn("cpa_suggest", when(col("cpa_suggest1").isNotNull, col("cpa_suggest1")).otherwise(col("cpa_suggest2")))
+      .withColumn("param_t", when(col("param_t1").isNotNull, col("param_t1")).otherwise(col("param_t2")))
     data.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest20190321")
 
     data.show(10)
