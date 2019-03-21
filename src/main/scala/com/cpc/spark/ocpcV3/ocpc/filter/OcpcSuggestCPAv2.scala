@@ -364,8 +364,8 @@ object OcpcSuggestCPAv2{
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
-    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+//    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     // ctrData
     val sqlRequest1 =
@@ -373,10 +373,10 @@ object OcpcSuggestCPAv2{
          |SELECT
          |    searchid,
          |    unitid,
-         |    exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |    exp_cvr,
          |    isclick
          |FROM
-         |    dl_cpc.slim_union_log
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectCondition
          |AND
