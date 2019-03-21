@@ -59,8 +59,8 @@ object OcpcCPCbidV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
@@ -138,7 +138,6 @@ object OcpcCPCbidV2 {
       .selectExpr("identifier", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
       .withColumn("cpa_suggest", when(col("cpa_suggest1").isNotNull, col("cpa_suggest1")).otherwise(col("cpa_suggest2")))
       .withColumn("param_t", when(col("param_t1").isNotNull, col("param_t1")).otherwise(col("param_t2")))
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest20190321")
 
     data.show(10)
 
