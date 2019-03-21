@@ -27,12 +27,12 @@ object yyscDiscountStrategy {
                |    case when click_num > 15 and click_num <= 21 then 0.5
                |         when click_num > 21 and click_num <= 30 then 0.2
                |         when click_num > 30 and click_num <= 43 then 0.1
-               |         else 0
+               |         else 0.1
                |    end as price_discount,
                |    case when click_num > 15 and click_num <= 21 then 0.5
                |         when click_num > 21 and click_num <= 30 then 0.2
                |         when click_num > 30 and click_num <= 43 then 0.1
-               |         else 0
+               |         else 0.1
                |    end as coin_discount,
                |    '$date' as create_date
                |from
