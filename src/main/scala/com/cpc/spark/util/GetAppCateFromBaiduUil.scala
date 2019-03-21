@@ -1,14 +1,17 @@
 package com.cpc.spark.util
 
 
+import org.apache.log4j.{Level, Logger}
 import org.json4s._
 import org.json4s.native.JsonMethods.parse
 
 import scala.io.Source
 
 object GetAppCateFromBaiduUil {
+  val logger = Logger.getRootLogger
 
   def getAppCate(name: String, page: Int) = {
+    logger.warn(s"""Name : $name""")
     val url = "https://appc.baidu.com/as?pn=%d&st=10a001&subsearch=app&tn=appsite&word=%s"
     var pkgs = List[(String, String)]()
     for (page <- 1 to page) {
