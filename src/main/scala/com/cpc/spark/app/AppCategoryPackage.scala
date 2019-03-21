@@ -3,9 +3,6 @@ package com.cpc.spark.app
 import com.cpc.spark.util.GetAppCateFromBaiduUil
 import org.apache.spark.sql.SparkSession
 
-import scala.collection.mutable
-import scala.io.Source
-
 object AppCategoryPackage {
   def main(args: Array[String]): Unit = {
     val date = args(0)
