@@ -43,8 +43,8 @@ object Lab {
         .select("deno", "num", "remain_rate")
       rate.show()
 
-      val row = rate.rdd.collect().map(x => (x.getAs[Int]("deno"), x.getAs[Int]("num"), x.getAs[Double]("remain_rate")) )
-      println
+      val row = rate.rdd.collect().map(x => (x.getAs[Long]("deno"), x.getAs[Long]("num"), x.getAs[Double]("remain_rate")) )
+      println("note1")
       val deno = row(0)._1
       val num  = row(0)._2
       val remain_rate = row(0)._3
@@ -55,6 +55,6 @@ object Lab {
 
   }
 
-  case class RemainMate( var dau: Int, var remain: Int, var remainRate: Double)
+  case class RemainMate( var dau: Long, var remain: Long, var remainRate: Double)
 
 }
