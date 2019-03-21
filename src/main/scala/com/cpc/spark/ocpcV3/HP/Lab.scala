@@ -31,6 +31,7 @@ object Lab {
       val next = temp + 1
       val today = arr(temp)
       val tomorrow = arr(next)
+      println("today: " + today + ", tomorrow: " + tomorrow)
 
       val rate = uid_dt.filter(s"dt = '$today'").selectExpr("dt as dt1", "uid")
         .join(uid_dt.filter(s"dt = '$tomorrow'").selectExpr("dt as dt2", "uid"), Seq("uid"), "left")
@@ -40,6 +41,8 @@ object Lab {
         ).withColumn("remain_rate", col("num")/col("deno"))
         .withColumn("date", lit(today))
         .select("deno", "num", "remain_rate")
+      rate.show()
+
       val row = rate.rdd.collect().map(x => (x.getAs[Int]("deno"), x.getAs[Int]("num"), x.getAs[Double]("remain_rate")) )
       println
       val deno = row(0)._1
