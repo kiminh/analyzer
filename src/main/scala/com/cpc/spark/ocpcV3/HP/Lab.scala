@@ -5,7 +5,7 @@ import org.apache.spark.sql.functions.{col, count, lit}
 
 object Lab {
   def main(args: Array[String]): Unit ={
-    val spark = SparkSession.builder().appName("A test from sjq").getOrCreate()
+    val spark = SparkSession.builder().enableHiveSupport().appName("A test from sjq").getOrCreate()
     import spark.implicits._
 
     val sql1 =
