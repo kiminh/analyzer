@@ -78,7 +78,7 @@ object MultiDimensionCalibOnMidu {
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
       val model = x.getString(3)
       val adslot_id = x.getString(4)
-      val ideaid = x.getInt(5)
+      val ideaid = x.getInt(5).toString
       val key = model+'_'+adslot_id+'_'+ideaid
       (key, (ectr, isClick))
     }).groupByKey()
