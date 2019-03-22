@@ -96,7 +96,7 @@ object MultiDimensionCalibOnMidu {
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
-            println("bin number too small, don't output the calibration")
+//            println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
