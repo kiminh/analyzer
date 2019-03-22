@@ -52,7 +52,7 @@ object videoPromotion_v2 {
       .withColumn("price1",  when(( col("charge_type") === 1 || col("charge_type").isNull) && col("isclick") === 0, lit(0) ).otherwise(col("price01")))
     middle.write.mode("overwrite").saveAsTable("test.middle_sjq")
 
-    val summary =  middle.
+    val summary =  middle
       .groupBy("userid", "adclass2", "threshold", "adtype1", "test_tag")
       .agg(
         count(col("searchid")).alias("queryn"),
