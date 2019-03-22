@@ -53,15 +53,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
@@ -285,11 +285,11 @@ object OcpcCollectSuggestData {
   def joinData(cpaData: DataFrame, costData: DataFrame, ocpcData: DataFrame, prevBudget: DataFrame, spark: SparkSession) ={
     val data = cpaData
       .join(costData, Seq("unitid"), "inner")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
       .join(ocpcData, Seq("unitid", "industry"), "left_outer")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "last_bid")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent")
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent", "last_bid")
       .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(0.2))
       .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(0.05))
 
@@ -315,7 +315,8 @@ object OcpcCollectSuggestData {
          |  bottom_percent,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
          |        when prev_percent is null or cpa_flag is null then bottom_percent
-         |        else prev_percent end) as percent
+         |        else prev_percent end) as percent,
+         |  last_bid
          |FROM
          |  base_data
        """.stripMargin
@@ -330,7 +331,7 @@ object OcpcCollectSuggestData {
     result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent", "last_bid")
 
     resultDF
 
@@ -393,6 +394,7 @@ object OcpcCollectSuggestData {
          |  cpa,
          |  kvalue,
          |  cost,
+         |  0.5 * acb as last_bid,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
