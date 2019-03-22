@@ -27,7 +27,7 @@ object Lab {
       .flatMap(x => x.split(","))
       .map(x => (x,1)).reduceByKey((x, y) => x+y).map( x => AppCount(x._1, x._2) ).toDF()
 
-    appFreq.orderBy( appFreq("count").desc ).show(30)
+    appFreq.orderBy( appFreq("count").desc ).show(30, false)
 
   }
   case class AppCount( var appName: String, var count: Int)
