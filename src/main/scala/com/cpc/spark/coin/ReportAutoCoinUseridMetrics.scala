@@ -58,7 +58,7 @@ object ReportAutoCoinUseridMetrics {
                |        sum(click_total_price) as click_total_price,
                |        sum(coin_click_total_price) as coin_click_total_price,
                |        sum(uid_num) as uid_num
-               |    from from dl_cpc.cpc_report_auto_coin_ideaid_metrics
+               |    from dl_cpc.cpc_report_auto_coin_ideaid_metrics
                |    where `date`='$date'
                |    group by userid
                |) a
