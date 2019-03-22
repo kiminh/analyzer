@@ -44,16 +44,13 @@ object videoPromotion_v2 {
 
     //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
-    val middle = baseData //同时含视频和大图的数据
+    val summary = baseData //同时含视频和大图的数据
       .join(pivot_table, Seq("userid"), "left")
       .filter("if_use_strategy = 1 and video > 0")
       .withColumn("price0",  when(col("isshow") === 1, col("price")).otherwise(lit(0)))
       .withColumn("price01", when(col("charge_type") === 2, col("price0")/1000).otherwise(col("price0")))
       .withColumn("price1",  when(( col("charge_type") === 1 || col("charge_type").isNull) && col("isclick") === 0, lit(0) ).otherwise(col("price01")))
-    middle.write.mode("overwrite").saveAsTable("test.middle_sjq")
-
-    val summary =  middle
-      .groupBy("userid", "adclass2", "threshold", "adtype1", "test_tag")
+      .groupBy("userid", "usertype", "adclass2", "threshold", "adtype1", "test_tag")
       .agg(
         count(col("searchid")).alias("queryn"),
         sum(col("isshow")).alias("shown"),
@@ -61,7 +58,7 @@ object videoPromotion_v2 {
         sum(col("iscvr")).alias("cvrn"),
         sum(col("isclick") * col("exp_cvr")).alias("exp_cvr_sum"),
         sum("price1").alias("cost")
-      ).select("userid", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cvrn", "exp_cvr_sum", "cost")
+      ).select("userid", "usertype", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cvrn", "exp_cvr_sum", "cost")
     println("========================summary=========================")
     summary.persist()
     //    summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
@@ -72,7 +69,7 @@ object videoPromotion_v2 {
     val groupAuc = addAuc(spark, group, baseData.filter("if_use_strategy = 1"))
 
     val adclass2Cvr = baseData
-      .filter("adtype1 = 'bigimage'")
+      .filter("adtype1 = 'bigimage'" )
       .groupBy("adtype1", "adclass2", "test_tag")
       .agg((sum("iscvr") / sum("isclick")).alias("cvr_bigimage_adclass2"))
       .select("adtype1", "adclass2", "test_tag", "cvr_bigimage_adclass2")
@@ -85,11 +82,12 @@ object videoPromotion_v2 {
       .withColumn("exp_cvr", col("exp_cvr_sum") * 0.000001 / col("clickn"))
       .withColumn("pcoc", col("exp_cvr") / col("cvr"))
       .withColumn("date", lit(date))
-      .select("userid", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2", "cpm", "date")
+      .select("userid", "usertype", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2", "cpm", "date")
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
     //    ( userid  int,
+    //      usertype bigint comment '用户类型',
     //      adclass2 int comment '二级行业类目',
     //      threshold bigint comment '视频广告预测转化率阈值',
     //      adtype1 string,
@@ -308,7 +306,7 @@ object videoPromotion_v2 {
          |  t1.userid,
          |  case when tt.userid is not NULL then 1 else 0 end as if_use_strategy,
          |  tt.threshold,
-         |  --usertype,
+         |  usertype,
          |  adtype1,
          |  ideaid,
          |  isshow,
