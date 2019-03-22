@@ -14,7 +14,7 @@ object Lab {
       s"""
          |select
          | uid,
-         | concat_ws(',',pkgs) as pkgs1
+         | concat_ws(',', app_name) as pkgs1
          |from dl_cpc.cpc_user_installed_apps a
          |where load_date = '$date'
        """.stripMargin
@@ -27,7 +27,7 @@ object Lab {
       .flatMap(x => x.split(","))
       .map(x => (x,1)).reduceByKey((x, y) => x+y).map( x => AppCount(x._1, x._2) ).toDF()
 
-    appFreq.orderBy( appFreq("count").desc ).show(10)
+    appFreq.orderBy( appFreq("count").desc ).show(30)
 
   }
   case class AppCount( var appName: String, var count: Int)
