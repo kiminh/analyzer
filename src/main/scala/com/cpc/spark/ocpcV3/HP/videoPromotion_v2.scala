@@ -421,7 +421,7 @@ object videoPromotion_v2 {
        """.stripMargin
     println(sql1)
 
-    val result = spark.sql(sql1).na.fill(0, Seq("iscvr"))
+    val result = spark.sql(sql1).na.fill(0, Seq("iscvr", "isshow", "isclick" ))
     result
   }
 
