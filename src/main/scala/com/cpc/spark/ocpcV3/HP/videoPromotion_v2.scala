@@ -44,11 +44,15 @@ object videoPromotion_v2 {
 
     //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
-    val summary = baseData //同时含视频和大图的数据
+    val middle = baseData //同时含视频和大图的数据
       .join(pivot_table, Seq("userid"), "left")
       .filter("if_use_strategy = 1 and video > 0")
-      .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
-      .withColumn("price1", when(col("charge_type") === 2, col("price0") / 1000).otherwise(col("price0")))
+      .withColumn("price0",  when(col("isshow") === 1, col("price")).otherwise(lit(0)))
+      .withColumn("price01", when(col("charge_type") === 2, col("price0")/1000).otherwise(col("price0")))
+      .withColumn("price1",  when(( col("charge_type") === 1 || col("charge_type").isNull) && col("isclick") === 0, lit(0) ).otherwise(col("price01")))
+    middle.write.mode("overwrite").saveAsTable("test.middle_sjq")
+
+    val summary =  middle.
       .groupBy("userid", "adclass2", "threshold", "adtype1", "test_tag")
       .agg(
         count(col("searchid")).alias("queryn"),
@@ -107,6 +111,11 @@ object videoPromotion_v2 {
         result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
 //    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
+//    val report_tb1 = "report2.qtt_shortvideo_cvr_promotion_monitor_summary1"
+//    val deletesql1 = s"delete from $report_tb1 where date = '$date'"
+//    update(deletesql1)
+//    insert(result0, report_tb1)
+
     val uidn_ab = baseData
       .filter("if_use_strategy = 1 ")
       .groupBy("test_tag", "adtype1")
@@ -152,6 +161,11 @@ object videoPromotion_v2 {
 
         result.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2")
 //    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
+
+//    val report_tb2 = "report2.qtt_shortvideo_cvr_promotion_monitor_summary2"
+//    val deletesql2 = s"delete from $report_tb2 where date = '$date'"
+//    update(deletesql2)
+//    insert(result, report_tb2)
 
     val userCvr = summary
       .join(pivot_table, Seq("userid"), "left")
@@ -216,6 +230,11 @@ object videoPromotion_v2 {
         userCvr2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3")
 //    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
+//    val report_tb3 = "report2.qtt_shortvideo_cvr_promotion_monitor_summary3"
+//    val deletesql3 = s"delete from $report_tb3 where date = '$date'"
+//    update(deletesql3)
+//    insert(userCvr2, report_tb3)
+
     val result2 = userCvr2
       .groupBy("test_tag")
       .agg(
@@ -235,6 +254,12 @@ object videoPromotion_v2 {
 
         result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
 //        result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
+
+//    val report_tb4 = "report2.qtt_shortvideo_cvr_promotion_monitor_good_video_account"
+//    val deletesql4 = s"delete from $report_tb4 where date = '$date'"
+//    update(deletesql4)
+//    insert(result2, report_tb4)
+
   }
   case class Group ( var userid: Int,
                      val adtype1: String,
@@ -319,7 +344,7 @@ object videoPromotion_v2 {
          |      --and isclick = 1
          |      --and isshow = 1
          |      and media_appsid in ("80000001")
-         |      and adtype in (2, 8, 10) --and    userid>0
+         |      and adtype in (2, 8, 10)
          |      and usertype in (0, 1, 2)
          |      and adslot_type = 1
          |      --and (charge_type is NULL or charge_type = 1)
