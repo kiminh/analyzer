@@ -10,7 +10,7 @@ object CtrAnalysisbyshow {
 
     val show_sql =
       s"""
-         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,
+         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,user_req_ad_num,
          |      row_number() over(partition by uid,ideaid order by timestamp) rk
          |from dl_cpc.cpc_basedata_union_events
          |where day='2019-03-20'
@@ -52,7 +52,7 @@ object CtrAnalysisbyshow {
 
     val sql2=
       s"""
-         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,
+         |select uid, ideaid,ctr_model_name,isclick,isshow,exp_ctr,day,adslot_id,adslot_type,user_req_ad_num,
          |      row_number() over(partition by uid,ideaid order by timestamp) rk
          |from dl_cpc.cpc_novel_union_events
          |where day='2019-03-20'
