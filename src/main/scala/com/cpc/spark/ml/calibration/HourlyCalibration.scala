@@ -59,7 +59,7 @@ object HourlyCalibration {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    unionLogToConfig(log.rdd, session.sparkContext, softMode)
+    unionLogToConfig(log.rdd, session.sparkContext, softMode,false)
   }
 
   def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
