@@ -75,7 +75,6 @@ object MultiDimensionCalibOnMidu {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      // TODO(huazhenhao) not used right now in the first version, should be used as weights
       val model = x.getString(3)
       val adslot_id = x.getString(4)
       val ideaid = x.getInt(5).toString
@@ -93,12 +92,14 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
-          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-          println(s"bin size: ${bins._1.size}")
+//          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
+//          println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
 //            println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
+            println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
+            println(s"bin size: ${bins._1.size}")
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
             val irModel = IRModel(
               boundaries = irFullModel.boundaries,
