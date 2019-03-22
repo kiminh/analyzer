@@ -21,7 +21,7 @@ object MultiDimensionCalibOnMidu {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 20
-  val MIN_BIN_SIZE = 1000
+  val MIN_BIN_SIZE = 10000
 
   def main(args: Array[String]): Unit = {
 
