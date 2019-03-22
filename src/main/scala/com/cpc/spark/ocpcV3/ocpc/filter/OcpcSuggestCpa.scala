@@ -20,7 +20,7 @@ object OcpcSuggestCpa{
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
-    val version = "qtt_demo"
+    val version = args(2).toString
     val spark = SparkSession
       .builder()
       .appName(s"ocpc cpc stage data: $date, $hour")

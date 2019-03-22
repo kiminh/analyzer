@@ -18,7 +18,7 @@ object OcpcCalculateAUCv2 {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toString
-    val version = "qtt_test"
+    val version = args(3).toString
     val spark = SparkSession
       .builder()
       .appName(s"ocpc userid auc: $date, $hour, $conversionGoal")
@@ -26,10 +26,11 @@ object OcpcCalculateAUCv2 {
 
     // 抽取数据
     val data = getData(conversionGoal, version, date, hour, spark)
-    val tableName1 = "test.ocpc_auc_raw_conversiongoal_bak_" + conversionGoal.toString
+    // val tableName1 = "test.ocpc_auc_raw_conversiongoal_bak_" + conversionGoal.toString
+    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
     data
-      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
-//      .repartition(10).write.mode("overwrite").insertInto(tableName1)
+      // .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
+     .repartition(10).write.mode("overwrite").insertInto(tableName1)
 
     // 获取userid与industry之间的关联表
     val useridIndustry = getIndustry(date, hour, spark)
