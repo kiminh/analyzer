@@ -79,7 +79,7 @@ object unitid_inAndOut {
     jdbcProp.put("password", "seJzIPUc7xU")
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
     val cal2 = Calendar.getInstance()
-    cal2.add(Calendar.DATE, -15)
+    cal2.add(Calendar.DATE, -7)
     val dayCost = new SimpleDateFormat("yyyy-MM-dd").format(cal2.getTime)
     val adv=
       s"""
