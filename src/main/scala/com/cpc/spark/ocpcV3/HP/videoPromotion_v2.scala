@@ -267,6 +267,8 @@ object videoPromotion_v2 {
   def addAuc( spark: SparkSession, group: RDD[(Int, String, String)], base: DataFrame ) ={
     import spark.implicits._
     val result = scala.collection.mutable.ListBuffer[Group]()
+    val n = group.count().asInstanceOf[Int]
+    var i = 0
     for (row <- group.collect()){
       val userid = row._1
       val adtype1 = row._2
@@ -276,6 +278,7 @@ object videoPromotion_v2 {
         .selectExpr("exp_cvr as score", "iscvr as label")
       val auc = CalcMetrics.getAuc(spark, df)
       result += Group(userid, adtype1, test_tag, auc)
+      println("[" + "="*i + ">" + " "*( n - i ) + s"] ($i/$n)" )
     }
     result.toList.toDF()
   }
