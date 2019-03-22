@@ -26,9 +26,8 @@ object Lab {
       .map(x =>  x.getAs[String]("pkgs").stripPrefix("[").stripSuffix("]"))
       .flatMap(x => x.split(","))
       .map(x => (x,1)).reduceByKey((x, y) => x+y).map( x => AppCount(x._1, x._2) ).toDF()
-      .orderBy("count","desc")
 
-    appFreq.show(5)
+    appFreq.orderBy( appFreq("count").desc ).show(10)
 
   }
   case class AppCount( var appName: String, var count: Int)
