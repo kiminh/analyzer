@@ -394,7 +394,7 @@ object OcpcCollectSuggestData {
          |  cpa,
          |  kvalue,
          |  cost,
-         |  0.5 * acb as last_bid,
+         |  cast(0.5 * acb as int) as last_bid,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
