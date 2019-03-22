@@ -6,7 +6,7 @@ import com.cpc.spark.novel.OperateMySQL
 import com.cpc.spark.tools.CalcMetrics
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.functions._
 
 /**
   * @author Jinbao
@@ -130,7 +130,7 @@ object ReportAutoCoinIdeaidMetrics {
                |)
              """.stripMargin
 
-        val ideaidMetrics = spark.sql(ideaidSql)    //计算ideaid级别的指标
+        val ideaidMetrics = spark.sql(ideaidSql).na.fill(0,Seq("ctr"))   //计算ideaid级别的指标
 
         ideaidMetrics.repartition(1)
           .write
