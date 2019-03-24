@@ -439,7 +439,8 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def calculateDataPart2(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateDataPart2(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val rawData = baseData.filter(s"isclick=1")
     val data = rawData
       .groupBy("unitid")
       .agg(
