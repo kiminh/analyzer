@@ -14,3 +14,4 @@ STORED as PARQUET;
 
 --alter table dl_cpc.ocpc_auto_budget_hourly add columns (industry string);
 --alter table dl_cpc.ocpc_auto_budget_hourly add columns (budget_percent double);
+alter table dl_cpc.ocpc_auto_budget_hourly add columns (last_bid int);

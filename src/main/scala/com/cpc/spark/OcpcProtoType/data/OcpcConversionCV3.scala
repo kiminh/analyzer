@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.data
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
-object OcpcConversionTest {
+object OcpcConversionCV3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
