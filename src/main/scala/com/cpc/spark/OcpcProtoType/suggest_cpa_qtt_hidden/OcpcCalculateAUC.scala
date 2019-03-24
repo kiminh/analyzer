@@ -133,7 +133,6 @@ object OcpcCalculateAUC {
          |and media_appsid  in ("80000001", "80000002")
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
-         |and adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
