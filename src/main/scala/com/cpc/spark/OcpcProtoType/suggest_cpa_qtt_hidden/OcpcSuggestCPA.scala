@@ -77,10 +77,18 @@ object OcpcSuggestCPA {
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
-  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, cvrType: String, spark: SparkSession) = {
     /*
     assemlby the data together
      */
+    var conversionGoal = 1
+    if (cvrType == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrType == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
     val result = baseData
       .join(kvalue, Seq("unitid"), "left_outer")
       .join(aucData, Seq("unitid"), "left_outer")
@@ -98,7 +106,9 @@ object OcpcSuggestCPA {
       .withColumn("bottom_halfbid_percent", lit(0.0))
       .withColumn("top_halfbid_percent", lit(0.0))
       .withColumn("largebid_percent", lit(0.0))
-      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+      .withColumn("original_conversion", lit(conversionGoal))
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
 
     result
   }
