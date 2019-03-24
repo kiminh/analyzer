@@ -30,8 +30,8 @@ object OcpcSuggestCPA {
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
-    val cvrGoal = "wz"
-    val version = "wz"
+    val cvrGoal = args(3).toString
+    val version = "qtt_hidden"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc suggest cpa v2: $date, $hour")
@@ -54,7 +54,7 @@ object OcpcSuggestCPA {
     val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
 
     // 历史推荐cpa的pcoc数据
-    val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
+    val prevData = getPrevSuggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
     val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
@@ -112,7 +112,7 @@ object OcpcSuggestCPA {
     result
   }
 
-  def getPrevSugggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+  def getPrevSuggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     /*
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
      */
@@ -128,6 +128,7 @@ object OcpcSuggestCPA {
     val startDateTime2 = calendar.getTime
     val date2 = dateConverter.format(startDateTime2)
 
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest1 =
       s"""
          |SELECT
@@ -141,7 +142,7 @@ object OcpcSuggestCPA {
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = 1
+         |  original_conversion = $conversionGoal
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -163,7 +164,7 @@ object OcpcSuggestCPA {
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = 1
+         |  original_conversion = $conversionGoal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
@@ -217,8 +218,6 @@ object OcpcSuggestCPA {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
-         |AND
-         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
@@ -234,6 +233,7 @@ object OcpcSuggestCPA {
     /*
     从dl_cpc.ocpc_unitid_auc_daily根据version和conversion_goal来抽取对应unitid的auc
      */
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest =
       s"""
          |SELECT
@@ -246,7 +246,7 @@ object OcpcSuggestCPA {
          |AND
          |  version = '$version'
          |AND
-         |  conversion_goal = 1
+         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -254,6 +254,7 @@ object OcpcSuggestCPA {
   }
 
   def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest =
       s"""
          |SELECT
@@ -264,7 +265,7 @@ object OcpcSuggestCPA {
          |WHERE
          |  version = '$version'
          |AND
-         |  conversion_goal = 1
+         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
@@ -333,7 +334,6 @@ object OcpcSuggestCPA {
       .join(dataPart2, Seq("unitid"), "left_outer")
       .join(dataPart3, Seq("unitid"), "left_outer")
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype")
-      .filter(s"adclass = 110110100")
 
     resultDF
   }
@@ -495,7 +495,7 @@ object OcpcSuggestCPA {
     data
   }
 
-  def getBaseLog(media: String, cvrType: String, date: String, hour: String, spark: SparkSession) = {
+  def getBaseLog(media: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     /*
     抽取基础数据用于后续计算与统计
     unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
@@ -556,13 +556,12 @@ object OcpcSuggestCPA {
          |    adsrc = 1
          |AND
          |    (charge_type is null or charge_type = 1)
-         |AND
-         |    adclass = 110110100
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     // 抽取转化数据
+    val cvrType = "cvr" + cvrGoal
     val sqlRequest2 =
       s"""
          |SELECT
