@@ -45,7 +45,7 @@ object OcpcSuggestCPA {
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
 
     // ocpc部分：kvalue
-    val kvalue = getKvalue(version, cvrGoal, spark)
+    val kvalue = getKvalue(version, cvrGoal, date, hour, spark)
 
     // 模型部分
     val aucData = getAucData(version, cvrGoal, date, spark)
@@ -54,7 +54,7 @@ object OcpcSuggestCPA {
     val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
 
     // 历史推荐cpa的pcoc数据
-    val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
+    val prevData = getPrevSuggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
     val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
@@ -63,14 +63,15 @@ object OcpcSuggestCPA {
     val alpha = 0.1
     val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
     val resultDF = result2
+      .withColumn("cv_goal", lit(1))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
   def predictOcpcBid(suggestData: DataFrame, alpha: Double, date: String, hour: String, spark: SparkSession) = {
@@ -112,7 +113,7 @@ object OcpcSuggestCPA {
     result
   }
 
-  def getPrevSugggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+  def getPrevSuggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     /*
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
      */
@@ -132,16 +133,17 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  unitid,
-         |  original_conversion as conversion_goal,
          |  pcoc as pcoc1
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date1'
          |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
-         |  original_conversion = 1
+         |  cv_goal = 1
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -153,17 +155,18 @@ object OcpcSuggestCPA {
     val sqlRequest2 =
       s"""
          |SELECT
-         |  unitid,
-         |  original_conversion as conversion_goal,
-         |  pcoc as pcoc2
+         |    unitid,
+         |    pcoc as pcoc2
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
-         |  `date` = '$date2'
+         |    `date` = '$date2'
          |AND
-         |  version = '$version'
+         |    `hour` = '$hour'
          |AND
-         |  original_conversion = 1
+         |    version = '$version'
+         |AND
+         |    cv_goal = 1
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
@@ -253,15 +256,19 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
+  def getKvalue(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  dl_cpc.ocpc_prev_pb_once
+         |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
          |  conversion_goal = 1
