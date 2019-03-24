@@ -22,12 +22,16 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    // 安装类feedapp广告单元
+    val feedappNoAPI1 = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
+    val feedappNoAPI = feedappNoAPI1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
     // api回传的feedapp广告
-    val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
+    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
-    val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
+    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 从网赚推荐cpa抽取数据
@@ -35,7 +39,8 @@ object OcpcCollectSuggestData {
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
     // 数据串联
-    val cpaData = feedapp
+    val cpaData = feedappNoAPI
+      .union(feedapp)
       .union(elds)
       .union(wz)
 
@@ -397,7 +402,7 @@ object OcpcCollectSuggestData {
          |  cast(0.5 * acb as int) as last_bid,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
