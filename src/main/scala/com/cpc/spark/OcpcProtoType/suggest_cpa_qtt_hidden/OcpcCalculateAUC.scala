@@ -129,7 +129,7 @@ object OcpcCalculateAUC {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition1 = getTimeRangeSql3(date1, hour1, date, hour)
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -137,7 +137,7 @@ object OcpcCalculateAUC {
          |    searchid,
          |    unitid,
          |    exp_cvr as score
-         |from dl_cpc.ocpc_base_unionlog
+         |from dl_cpc.slim_union_log
          |where $selectCondition1
          |and isclick = 1
          |and media_appsid  in ("80000001", "80000002")
