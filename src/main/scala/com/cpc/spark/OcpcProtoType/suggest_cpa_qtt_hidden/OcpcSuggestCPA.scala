@@ -45,7 +45,7 @@ object OcpcSuggestCPA {
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
 
     // ocpc部分：kvalue
-    val kvalue = getKvalue(version, cvrGoal, spark)
+    val kvalue = getKvalue(version, cvrGoal, date, hour, spark)
 
     // 模型部分
     val aucData = getAucData(version, cvrGoal, date, spark)
@@ -253,7 +253,7 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
+  def getKvalue(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     val conversionGoal = cvrGoal.toInt
     val sqlRequest =
       s"""
@@ -261,8 +261,12 @@ object OcpcSuggestCPA {
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  dl_cpc.ocpc_prev_pb_once
+         |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
+         |  `date` = '$date'
+         |and
+         |  `hour` = '$hour'
+         |and
          |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
