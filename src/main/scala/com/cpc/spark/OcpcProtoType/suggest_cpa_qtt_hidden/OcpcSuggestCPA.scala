@@ -63,9 +63,9 @@ object OcpcSuggestCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
