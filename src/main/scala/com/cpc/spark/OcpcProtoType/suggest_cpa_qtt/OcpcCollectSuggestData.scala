@@ -45,8 +45,7 @@ object OcpcCollectSuggestData {
     wz.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324d")
 
     // 数据串联
-    val cpaData = feedappNoAPI
-      .union(feedapp)
+    val cpaData = feedapp
       .union(elds)
       .union(wz)
 
