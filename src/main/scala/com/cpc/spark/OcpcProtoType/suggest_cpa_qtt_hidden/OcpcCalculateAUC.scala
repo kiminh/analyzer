@@ -15,7 +15,7 @@ object OcpcCalculateAUC {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toString
-    val version = "qtt_demo"
+    val version = "qtt_hidden"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc unitid auc: $date, $hour, $conversionGoal")
@@ -185,29 +185,29 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def filterData(tableName: String, cvThreshold: Int, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark
-      .table(tableName)
-      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
-
-    val filterCondition = s"when conversion_goal is $conversionGoal: cvrcnt >= $cvThreshold"
-    println("############ filter function #######################")
-    println(filterCondition)
-    val dataIdea = rawData
-      .groupBy("userid")
-      .agg(sum(col("label")).alias("cvrcnt"))
-      .select("userid", "cvrcnt")
-      .filter(s"cvrcnt >= $cvThreshold")
-
-    val resultDF = rawData
-      .join(dataIdea, Seq("userid"), "inner")
-      .select("searchid", "userid", "score", "label")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-
-    resultDF
-  }
+//  def filterData(tableName: String, cvThreshold: Int, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
+//    val rawData = spark
+//      .table(tableName)
+//      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+//
+//    val filterCondition = s"when conversion_goal is $conversionGoal: cvrcnt >= $cvThreshold"
+//    println("############ filter function #######################")
+//    println(filterCondition)
+//    val dataIdea = rawData
+//      .groupBy("userid")
+//      .agg(sum(col("label")).alias("cvrcnt"))
+//      .select("userid", "cvrcnt")
+//      .filter(s"cvrcnt >= $cvThreshold")
+//
+//    val resultDF = rawData
+//      .join(dataIdea, Seq("userid"), "inner")
+//      .select("searchid", "userid", "score", "label")
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+//  }
 
 
   def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
