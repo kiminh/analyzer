@@ -63,6 +63,7 @@ object OcpcSuggestCPA {
     val alpha = 0.1
     val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
     val resultDF = result2
+      .withColumn("cv_goal", lit(cvrGoal.toInt))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -133,16 +134,15 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  unitid,
-         |  original_conversion as conversion_goal,
          |  pcoc as pcoc1
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date1'
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -155,16 +155,15 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  unitid,
-         |  original_conversion as conversion_goal,
          |  pcoc as pcoc2
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date2'
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
