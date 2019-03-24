@@ -23,14 +23,16 @@ object OcpcCollectSuggestData {
       .enableHiveSupport().getOrCreate()
 
     // 安装类feedapp广告单元
-    val feedappNoAPI1 = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
-    val feedappNoAPI = feedappNoAPI1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-    feedappNoAPI.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324a")
+    val feedappNoAPI = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
+//    feedappNoAPI.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324a")
 
     // api回传的feedapp广告
-    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
-    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-    feedapp.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324b")
+    val feedappAPI = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+    val feedappAPIlist = feedappAPI.select("unitid").distinct()
+    val feedapp = feedappNoAPI
+      .join(feedappAPIlist, Seq("unitid"), "inner")
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
+      .withColumn("exp_tag", lit("OcpcHiddenAdv")) //    feedapp.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324b")
 
     // 二类电商
     val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
@@ -62,15 +64,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
