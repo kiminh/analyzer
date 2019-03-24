@@ -56,7 +56,7 @@ object OcpcSuggestCPA {
     val prevData = getPrevSuggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
+    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, cvrGoal, spark)
     var conversionGoal = 1
     if (cvrGoal == "cvr1") {
       conversionGoal = 1
