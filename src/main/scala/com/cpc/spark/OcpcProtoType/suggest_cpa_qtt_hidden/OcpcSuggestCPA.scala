@@ -291,6 +291,7 @@ object OcpcSuggestCPA {
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, cvrGoal, date, hour, spark)
+    baseLog.write.mode("overwrite").saveAsTable("test.check_base_log20190324")
 
     // 统计数据
     val resultDF = calculateLog(baseLog, date, hour, spark)
