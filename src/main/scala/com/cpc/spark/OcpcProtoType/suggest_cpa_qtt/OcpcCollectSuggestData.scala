@@ -412,7 +412,7 @@ object OcpcCollectSuggestData {
          |AND
          |  industry = '$industry'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
          |AND
          |  is_recommend = 1
        """.stripMargin
