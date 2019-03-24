@@ -57,7 +57,7 @@ object OcpcSuggestCPA {
     val prevData = getPrevSuggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
-    val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
+    val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, cvrGoal, spark)
 
     // 预估数据
     val alpha = 0.1
@@ -79,8 +79,6 @@ object OcpcSuggestCPA {
     根据slim unionlog抽取数据,并根据cpa，校准cvr，k值计算dynamicbid分布
      */
     val resultDF = suggestData
-      .withColumn("original_conversion", lit(1))
-      .withColumn("conversion_goal", lit(1))
       .withColumn("zerobid_percent", lit(0.0))
       .withColumn("bottom_halfbid_percent", lit(0.0))
       .withColumn("top_halfbid_percent", lit(0.0))
@@ -91,10 +89,11 @@ object OcpcSuggestCPA {
 
   }
 
-  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, cvrGoal: String, spark: SparkSession) = {
     /*
     assemlby the data together
      */
+    val conversionGoal = cvrGoal.toInt
     val result = baseData
       .join(kvalue, Seq("unitid"), "left_outer")
       .join(aucData, Seq("unitid"), "left_outer")
@@ -108,7 +107,9 @@ object OcpcSuggestCPA {
 //      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
 //      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 2.0, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < 10, 0).otherwise(col("is_recommend")))
-      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
+      .withColumn("original_conversion", lit(conversionGoal))
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
 
     result
   }

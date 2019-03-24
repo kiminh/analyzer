@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
 object OcpcCollectSuggestData {
   def main(args: Array[String]): Unit = {
     /*
-    从dl_cpc.ocpc_suggest_cpa_recommend_hourly中抽取需要的字段
+    从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2中抽取需要的字段
      */
     // 计算日期周期
     val date = args(0).toString
@@ -25,18 +25,22 @@ object OcpcCollectSuggestData {
     // 安装类feedapp广告单元
     val feedappNoAPI1 = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
     val feedappNoAPI = feedappNoAPI1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    feedappNoAPI.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324a")
 
     // api回传的feedapp广告
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    feedapp.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324b")
 
     // 二类电商
     val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    elds.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324c")
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
+    wz.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324d")
 
     // 数据串联
     val cpaData = feedappNoAPI
