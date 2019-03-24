@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hidden
+package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hidden_bak
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -15,7 +15,7 @@ object OcpcCalculateAUC {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toString
-    val version = "qtt_demo"
+    val version = "qtt_hidden"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc unitid auc: $date, $hour, $conversionGoal")
@@ -23,7 +23,7 @@ object OcpcCalculateAUC {
 
     // 抽取数据
     val data = getData(conversionGoal, version, date, hour, spark)
-    val tableName = "test.ocpc_auc_raw_conversiongoal_qtthidden_" + conversionGoal
+    val tableName = "test.ocpc_auc_raw_conversiongoal_qtt_hidden_" + conversionGoal
     data
       .repartition(10).write.mode("overwrite").saveAsTable(tableName)
 //    data
@@ -45,10 +45,10 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-    val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
+    val finalTableName = "test.ocpc_unitid_auc_daily20190324_" + conversionGoal
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
-        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+//        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
@@ -107,16 +107,6 @@ object OcpcCalculateAUC {
   }
 
   def getData(conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
-    //    // 取历史区间: score数据
-    //    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    //    val today = dateConverter.parse(date)
-    //    val calendar = Calendar.getInstance
-    //    calendar.setTime(today)
-    ////    calendar.add(Calendar.DATE, 2)
-    ////    val yesterday = calendar.getTime
-    ////    val date1 = dateConverter.format(yesterday)
-    ////    val selectCondition1 = s"`date`='$date1'"
-    //    val selectCondition1 = s"`dt`='$date'"
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -137,7 +127,7 @@ object OcpcCalculateAUC {
          |    searchid,
          |    unitid,
          |    exp_cvr as score
-         |from dl_cpc.ocpc_base_unionlog
+         |from dl_cpc.slim_union_log
          |where $selectCondition1
          |and isclick = 1
          |and media_appsid  in ("80000001", "80000002")
@@ -148,12 +138,8 @@ object OcpcCalculateAUC {
     val scoreData = spark.sql(sqlRequest)
 
     // 取历史区间: cvr数据
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.qtt.cv_pt.cvr" + conversionGoal
-    val cvrGoal = conf.getString(conf_key)
-    println(s"conf key is: $conf_key")
-    println(s"cvr partition is: $cvrGoal")
     val selectCondition2 = s"`date`>='$date1'"
+    val cvrType = "cvr" + conversionGoal
     // 根据conversionGoal选择cv的sql脚本
     // 抽取数据
     val sqlRequest2 =
@@ -166,7 +152,7 @@ object OcpcCalculateAUC {
        |WHERE
        |  ($selectCondition2)
        |AND
-       |  (cvr_goal = '$cvrGoal')
+       |  (cvr_goal = '$cvrType')
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)

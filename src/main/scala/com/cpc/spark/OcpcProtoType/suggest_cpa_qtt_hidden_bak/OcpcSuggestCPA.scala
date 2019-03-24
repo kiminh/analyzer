@@ -1,8 +1,9 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hidden
+package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hidden_bak
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -29,8 +30,8 @@ object OcpcSuggestCPA {
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
-    val cvrGoal = "cvr1"
-    val version = "qtt_demo"
+    val cvrGoal = args(3).toString
+    val version = "qtt_hidden"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc suggest cpa v2: $date, $hour")
@@ -44,26 +45,55 @@ object OcpcSuggestCPA {
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
 
     // ocpc部分：kvalue
-    val kvalue = getKvalue(version, cvrGoal, spark)
+    val kvalue = getKvalue(version, cvrGoal, date, hour, spark)
 
     // 模型部分
     val aucData = getAucData(version, cvrGoal, date, spark)
 
     // 实时查询ocpc标记（从mysql抽取）
-    val ocpcFlag = getOcpcFlag(cvrGoal, spark)
+    val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
 
     // 历史推荐cpa的pcoc数据
-    val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
+    val prevData = getPrevSuggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+    val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, cvrGoal, spark)
+
+    // 预估数据
+    val alpha = 0.1
+    val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
+    val resultDF = result2
+      .withColumn("cv_goal", lit(cvrGoal.toInt))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
-  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
+  def predictOcpcBid(suggestData: DataFrame, alpha: Double, date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据slim unionlog抽取数据,并根据cpa，校准cvr，k值计算dynamicbid分布
+     */
+    val resultDF = suggestData
+      .withColumn("zerobid_percent", lit(0.0))
+      .withColumn("bottom_halfbid_percent", lit(0.0))
+      .withColumn("top_halfbid_percent", lit(0.0))
+      .withColumn("largebid_percent", lit(0.0))
+      .selectExpr("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+
+    resultDF
+
+  }
+
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, cvrGoal: String, spark: SparkSession) = {
     /*
     assemlby the data together
      */
+    val conversionGoal = cvrGoal.toInt
     val result = baseData
       .join(kvalue, Seq("unitid"), "left_outer")
       .join(aucData, Seq("unitid"), "left_outer")
@@ -73,27 +103,21 @@ object OcpcSuggestCPA {
       .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
       .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
-      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
+      .withColumn("is_recommend", when(col("auc") <= 0.5, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 2.0, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < 10, 0).otherwise(col("is_recommend")))
+      .withColumn("original_conversion", lit(conversionGoal))
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
 
     result
   }
 
-  def getPrevSugggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+  def getPrevSuggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
+    从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2表的前两天数据中抽取pcoc
      */
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
     // 时间区间选择
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val endDayTime = dateConverter.parse(date)
@@ -106,20 +130,22 @@ object OcpcSuggestCPA {
     val startDateTime2 = calendar.getTime
     val date2 = dateConverter.format(startDateTime2)
 
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest1 =
       s"""
          |SELECT
          |  unitid,
-         |  original_conversion as conversion_goal,
          |  pcoc as pcoc1
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date1'
          |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -132,16 +158,17 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  unitid,
-         |  original_conversion as conversion_goal,
          |  pcoc as pcoc2
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date2'
          |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
@@ -157,48 +184,50 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getOcpcFlag(cvrGoal: String, spark: SparkSession) = {
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
+  def getOcpcFlag(cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    观察是否有ocpc投放记录
+     */
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.qtt.media_selection"
+    val mediaSelection = conf.getString(conf_key)
 
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status, is_ocpc from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    // 时间区间选择
+    val hourCnt = 72
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val endDay = date + " " + hour
+    val endDayTime = dateConverter.parse(endDay)
+    val calendar = Calendar.getInstance
+    calendar.setTime(endDayTime)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val startDateTime = calendar.getTime
+    val startDateStr = dateConverter.format(startDateTime)
+    val date1 = startDateStr.split(" ")(0)
+    val hour1 = startDateStr.split(" ")(1)
+    val timeSelection = getTimeRangeSql(date1, hour1, date, hour)
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val base = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal")
-
-    base.createOrReplaceTempView("base_data")
     val sqlRequest =
       s"""
          |SELECT
+         |  searchid,
          |  unitid,
-         |  is_ocpc
+         |  is_ocpc,
+         |  adclass
          |FROM
-         |  base_data
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  conversion_goal = $conversionGoal
+         |  $timeSelection
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = spark
+        .sql(sqlRequest)
+        .select("unitid", "is_ocpc")
+        .distinct()
 
     resultDF.show(10)
     resultDF
@@ -208,15 +237,7 @@ object OcpcSuggestCPA {
     /*
     从dl_cpc.ocpc_unitid_auc_daily根据version和conversion_goal来抽取对应unitid的auc
      */
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest =
       s"""
          |SELECT
@@ -236,24 +257,20 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
+  def getKvalue(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+    val conversionGoal = cvrGoal.toInt
     val sqlRequest =
       s"""
          |SELECT
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  dl_cpc.ocpc_prev_pb_once
+         |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
+         |  `date` = '$date'
+         |and
+         |  `hour` = '$hour'
+         |and
          |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
@@ -274,6 +291,7 @@ object OcpcSuggestCPA {
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, cvrGoal, date, hour, spark)
+    baseLog.write.mode("overwrite").saveAsTable("test.check_base_log20190324")
 
     // 统计数据
     val resultDF = calculateLog(baseLog, date, hour, spark)
@@ -422,6 +440,7 @@ object OcpcSuggestCPA {
 
   def calculateDataPart2(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val data = rawData
+      .filter(s"isclick = 1")
       .groupBy("unitid")
       .agg(
         sum(col("isclick")).alias("click"),
@@ -432,6 +451,7 @@ object OcpcSuggestCPA {
       .select("unitid", "post_cvr", "post_cvr_cali")
 
     val caliData = rawData
+      .filter(s"isclick = 1")
       .join(data, Seq("unitid"), "left_outer")
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
@@ -484,7 +504,7 @@ object OcpcSuggestCPA {
     data
   }
 
-  def getBaseLog(media: String, cvrType: String, date: String, hour: String, spark: SparkSession) = {
+  def getBaseLog(media: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     /*
     抽取基础数据用于后续计算与统计
     unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
@@ -550,6 +570,7 @@ object OcpcSuggestCPA {
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     // 抽取转化数据
+    val cvrType = "cvr" + cvrGoal
     val sqlRequest2 =
       s"""
          |SELECT
@@ -573,21 +594,6 @@ object OcpcSuggestCPA {
     data
   }
 
-//  def getTimeRangeSqlCondition(endDate: String, endHour: String, hourCnt: Int): String = {
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-//    val endDay = endDate + " " + endHour
-//    val endDayTime = dateConverter.parse(endDay)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(endDayTime)
-//    calendar.add(Calendar.HOUR, -hourCnt)
-//    val startDateTime = calendar.getTime
-//    val startDateStr = dateConverter.format(startDateTime)
-//    val startDate = startDateStr.split(" ")(0)
-//    val startHour = startDateStr.split(" ")(1)
-//    val timeSelection = getTimeRangeSql(startDate, startHour, endDate, endHour)
-//    println(s"time selection is: $timeSelection")
-//    return timeSelection
-//  }
 
   def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
