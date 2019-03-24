@@ -140,6 +140,8 @@ object OcpcSuggestCPA {
          |WHERE
          |  `date` = '$date1'
          |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
          |  cv_goal = $conversionGoal
@@ -160,6 +162,8 @@ object OcpcSuggestCPA {
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date2'
+         |AND
+         |  `hour` = '$hour'
          |AND
          |  version = '$version'
          |AND
