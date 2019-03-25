@@ -9,7 +9,7 @@ object Lab {
     val date = args(0).toString
     import spark.implicits._
 
-    val app_cat = spark.read.csv("/home/cpc/sunjianqiang/app_cat.csv")
+    val app_cat = spark.read.csv("hdfs://emr-cluster/warehouse/sunjianqiang/app_cat.csv")
     app_cat.show(10)
 
 
