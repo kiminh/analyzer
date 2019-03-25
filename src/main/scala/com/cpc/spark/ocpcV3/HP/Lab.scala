@@ -3,7 +3,6 @@ package com.cpc.spark.ocpcV3.HP
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
 
-
 object Lab {
   def main(args: Array[String]): Unit ={
     val spark = SparkSession.builder().appName("appInstallation").enableHiveSupport().getOrCreate()
@@ -21,13 +20,14 @@ object Lab {
     val pkgs = spark.sql(sql1)
     pkgs.show(3)
 
-
     val appFreq = pkgs.rdd
       .map(x =>  x.getAs[String]("pkgs1") )
       .flatMap(x => x.split(","))
       .map(x => (x,1)).reduceByKey((x, y) => x+y).map( x => AppCount(x._1, x._2) ).toDF()
 
-    appFreq.orderBy( appFreq("count").desc ).show(30, false)
+    appFreq.write.mode("overwrite").saveAsTable("test.appInstalledCount_sjq")
+
+//    appFreq.orderBy( appFreq("count").desc ).show(50, false)
 
   }
   case class AppCount( var appName: String, var count: Int)
