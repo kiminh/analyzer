@@ -157,6 +157,7 @@ object HotTopicCtrCvrAucGauc {
       val cvrModeGaucLists = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").collect()
       val gauc1 = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
       if (gauc1.length > 0) {
+        val gauc = gauc1
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
           .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
         val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
