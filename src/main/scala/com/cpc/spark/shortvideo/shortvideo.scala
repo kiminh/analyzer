@@ -62,7 +62,7 @@ select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           usertype,view1.adslotid,isshow,price,'${date}' as dt,'${hour}' as hr
 from
 (
-  select     day,hour,a.searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
+  select     day,hour,a.searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslot_id adslotid,
              charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
   from       dl_cpc.cpc_basedata_union_events a
