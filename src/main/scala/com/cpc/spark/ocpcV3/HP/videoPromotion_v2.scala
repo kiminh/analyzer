@@ -27,7 +27,7 @@ object videoPromotion_v2 {
 
     //    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
     println("========================baseData=======================")
-    baseData.show(20)
+//    baseData.show(20)
 //    println("baseData has " + baseData.count() + " logs")
 
     val pivot_table = baseData
