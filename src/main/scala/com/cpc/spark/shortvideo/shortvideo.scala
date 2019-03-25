@@ -17,9 +17,7 @@ import java.io.PrintWriter
 import org.apache.spark.sql.functions
 import shortvideothreshold.Shortvideothreshold
 
-/*2019-03-21 基础表slim_union_log 换成dl_cpc.cpc_basedata_union_events
- *2019-03-25 增加详情页的media_appsid 80000002
-* */
+/*2019-03-21 基础表slim_union_log 换成dl_cpc.cpc_basedata_union_events*/
 import scala.collection.mutable.ListBuffer
 
 object shortvideo {
@@ -52,10 +50,6 @@ object shortvideo {
     val selectCondition3 = getTimeRangeSql23(date1, hour1, date, hour)
 
     spark.sql("set hive.exec.dynamic.partition=true")
-    spark.sql("set mapred.max.split.size=256000000")
-    spark.sql("set mapred.min.split.size.per.node=256000000")
-    spark.sql("set mapreduce.job.priority=NORMAL")
-    spark.sql("set mapred.min.split.size.per.rack=256000000")
     //  生成中间表 video_mid
      spark.sql(
       s"""
@@ -66,10 +60,10 @@ select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           usertype,view1.adslotid,isshow,price,'${date}' as dt,'${hour}' as hr
 from
 (
-  select     day,hour,a.searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslot_id adslotid,
+  select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
              charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-  from       dl_cpc.cpc_basedata_union_events a
+  from       dl_cpc.slim_union_log
   where    ${selectCondition}
   and      media_appsid in  ("80000001","80000002")
   and      interaction=2
@@ -85,18 +79,7 @@ from
   and     uid not like "%.%"
   and     uid not like "%000000%"
   and     length(uid) in (14, 15, 36)
-  and     a.searchid not in
-        (
-         | select searchid
-         | from
-         |   (
-         |   select searchid,exptags,newcol,day
-         |   from   dl_cpc.cpc_basedata_union_events
-         |   lateral view explode(exptags) tag as newcol
-         |   )  c
-         |  where  ${selectCondition}
-         |  and    newcol='use_strategy'
-         |)
+  and     exptags not like '%use_strategy%'
 ) view1
 left JOIN
 (
@@ -467,10 +450,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
        selectExpr("userid","expcvr",s"""'${date}' as dt""",s"""'${hour}' as dt""")
      tabfinal2.show(10,false)
       tabfinal2.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-      val tabfinal3=tabfinal2.selectExpr("userid","expcvr","dt")
+      val tabfinal3=tabfinal2.selectExpr("userid","expcvr")
     /*#########################################################################*/
     //   pb写法2
-   //不执行pb文件
+
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
     for (record <- tabfinal3.collect()) {
@@ -509,11 +492,11 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
   def getTimeRangeSql21(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
-      return s"( day = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+      return s"( dt = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
-    return s"((day = '$startDate' and hour >='$startHour') " +
-      s"or (day = '$endDate' and hour <'$endHour') " +
-      s"or (day > '$startDate' and day < '$endDate'))"
+    return s"((dt = '$startDate' and hour >='$startHour') " +
+      s"or (dt = '$endDate' and hour <'$endHour') " +
+      s"or (dt > '$startDate' and dt < '$endDate'))"
   }
 
    def getTimeRangeSql22(startDate: String, startHour: String, endDate: String, endHour: String): String = {
