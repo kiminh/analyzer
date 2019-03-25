@@ -123,6 +123,14 @@ object HotTopicCtrCvrAucGauc {
         gauc = gauc,
         day = date,
         hour = hour)
+
+      val cvrModeGaucLists1 = CalcMetrics.getGauc(spark, ctrModelName, "uid").collect()
+      val gauc1 = cvrModeGaucLists1.filter(x => x.getAs[Double]("auc") != -1)
+        .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
+        .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+      val gaucROC = if (gauc1._2 != 0) gauc1._1 * 1.0 / gauc1._2 else 0
+
+      println("$$$$$$" + gaucROC)
     }
 
     val CtrAucGauc = CtrAucGaucListBuffer.toList.toDF()
@@ -140,6 +148,7 @@ object HotTopicCtrCvrAucGauc {
       .map(x => x.getAs[String]("cvr_model_name"))
 
     println("cvrModelNames 's num is " + cvrModelNames.length)
+
     for (cvrModelName <- cvrModelNames) {
       val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName'").withColumnRenamed("score2","score").withColumnRenamed("label2","label")
       val cvrModelAuc = CalcMetrics.getAuc(spark,cvrModelUnion)
@@ -160,9 +169,9 @@ object HotTopicCtrCvrAucGauc {
     CvrAucGauc.repartition(1)
       .write
       .mode("overwrite")
-      .saveAsTable("test.cpc_hot_topic_ctr_auc_gauc_hourly")
+      .saveAsTable("test.cpc_hot_topic_cvr_auc_gauc_hourly")
     //.insertInto("test.cpc_hot_topic_ctr_auc_gauc_hourly")
-    println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
+    println("test.cpc_hot_topic_cvr_auc_gauc_hourly success!")
 
    // val conf = ConfigFactory.load()
     // val mariadb_write_prop = new Properties()
