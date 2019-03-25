@@ -148,24 +148,26 @@ object HotTopicCtrCvrAucGauc {
       .distinct()
       .collect()
       .map(x => x.getAs[String]("cvr_model_name"))
-
     println("cvrModelNames 's num is " + cvrModelNames.length)
 
     for (cvrModelName <- cvrModelNames) {
-      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName'").withColumnRenamed("score2","score").withColumnRenamed("label2","label")
-      val cvrModelAuc = CalcMetrics.getAuc(spark,cvrModelUnion)
+      println(cvrModelName)
+      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName'").withColumnRenamed("score2", "score").withColumnRenamed("label2", "label")
+      val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       val cvrModeGaucLists = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").collect()
-      val gauc = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
+      val gauc1 = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
+      if (gauc1.length > 0) {
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
-        .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-      val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
+          .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+        val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
 
-      CvrAucGaucListBuffer += DetailAucGauc(
-        model = cvrModelName,
-        auc = cvrModelAuc,
-        gauc =  gaucROC,
-        day = date,
-        hour = hour)
+        CvrAucGaucListBuffer += DetailAucGauc(
+          model = cvrModelName,
+          auc = cvrModelAuc,
+          gauc = gaucROC,
+          day = date,
+          hour = hour)
+      }
     }
     val CvrAucGauc = CvrAucGaucListBuffer.toList.toDF()
     CvrAucGauc.repartition(1)
