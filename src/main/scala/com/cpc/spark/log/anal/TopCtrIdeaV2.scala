@@ -53,10 +53,10 @@ object TopCtrIdeaV2 {
     var adctr: RDD[((Int, Int), Adinfo)] = null
 
     val conf = ConfigFactory.load()
-    mariadbUrl = conf.getString("mariadb.report2_write.url")
-    mariadbProp.put("user", conf.getString("mariadb.report2_write.user"))
-    mariadbProp.put("password", conf.getString("mariadb.report2_write.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password", conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     mariadb_union_test_write_url = conf.getString("mariadb.union_test_write.url")
     mariadb_union_test_prop.put("user", conf.getString("mariadb.union_test_write.user"))
@@ -331,7 +331,7 @@ object TopCtrIdeaV2 {
         .write
         .mode(SaveMode.Append)
         .jdbc(mariadbUrl,
-          "report2.%s".format(table),
+          "report.%s".format(table),
           mariadbProp)
     }
 
