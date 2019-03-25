@@ -102,7 +102,9 @@ object HotTopicCtrCvrAucGauc {
     for (ctrModelName <- ctrModelNames) {
       val ctrModelUnion = union.filter(s"ctr_model_name = '$ctrModelName'").withColumnRenamed("score1","score").withColumnRenamed("label1","label")
       val ctrModelAuc = CalcMetrics.getAuc(spark,ctrModelUnion)
-      val ctrModeGaucLists = CalcMetrics.getGauc(spark, ctrModelUnion,"uid").rdd
+      val ctrModeGaucLists = CalcMetrics.getGauc(spark, ctrModelUnion,"uid")
+        .filter(x => x.getAs[Double]("auc") != -1)
+      .rdd
       .map(x => {
         val uid = x.getAs[String]("name")
         val auc = x.getAs[Double]("auc")
