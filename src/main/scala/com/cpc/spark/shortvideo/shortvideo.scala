@@ -52,6 +52,10 @@ object shortvideo {
     val selectCondition3 = getTimeRangeSql23(date1, hour1, date, hour)
 
     spark.sql("set hive.exec.dynamic.partition=true")
+    spark.sql("set mapred.max.split.size=256000000")
+    spark.sql("set mapred.min.split.size.per.node=256000000")
+    spark.sql("set mapreduce.job.priority=NORMAL")
+    spark.sql("set mapred.min.split.size.per.rack=256000000")
     //  生成中间表 video_mid
      spark.sql(
       s"""
