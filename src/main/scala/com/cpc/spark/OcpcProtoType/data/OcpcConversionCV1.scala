@@ -33,7 +33,7 @@ object OcpcConversionCV1 {
          |lateral view explode(cvr_list) b as a
          |where $selectCondition
          |and access_channel="sdk"
-         |and (a="sdk_app_install")
+         |and (a in ("sdk_app_install", "sdk_site_wz"))
          |and adslot_type != 7
        """.stripMargin
     println(sqlRequest)
