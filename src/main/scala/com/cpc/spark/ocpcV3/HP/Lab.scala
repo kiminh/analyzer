@@ -12,6 +12,21 @@ object Lab {
     val app_cat = spark.read.csv("hdfs://emr-cluster/warehouse/sunjianqiang/app_cat.csv")
     app_cat.show(10)
 
+    val social = List( "挖客", "MOMO陌陌", "比邻",  "探探", "MOMO约", "富聊",  "抱抱",  "UKI",  "漂流瓶子", "草莓聊天交友",
+      "百合婚恋",  "米聊",  "约爱吧",  "95爱播",  "配配",  "桃花洞",  "微光",  "快猫",  "默默聊",  "Blued", "花田",
+      "附近语聊约会", "同城爱约", "摇一摇交友",  "探约探爱-同城交友约会", "甜友聊天交友",  "遇到视频聊天", "雨音-一对一视频",
+      "脉脉", "小恩爱",  "啵啵",  "聊聊",  "在哪",  "蜜聊", "语玩语音聊天交友约会",  "妇聊",  "美聊", "tataUFO",
+      "玩洽",   "陌声同城聊天交友", "富聊一对一视频",  "黄瓜视频",  "美丽约",  "陌聊（陌陌聊天交友）",  "碰碰交友",
+      "随缘漂流瓶",  "乐聊", "知页Pick",  "同城追爱", "甜逗" )
+
+    val lb = scala.collection.mutable.ListBuffer[AppCat]()
+
+    for (app <- social){
+      lb += AppCat(app, "社交")
+    }
+
+    lb.toList.toDF().write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
+
 
 
 
@@ -39,6 +54,6 @@ object Lab {
 
   }
 
-//  case class AppCat( var appName: String, )
+  case class AppCat( var appName: String, var cat: String)
   case class AppCount( var appName1: String, appName2: String, var count: Int)
 }
