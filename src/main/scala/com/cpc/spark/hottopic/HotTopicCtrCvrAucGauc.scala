@@ -155,8 +155,11 @@ object HotTopicCtrCvrAucGauc {
       val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName'").withColumnRenamed("score2", "score").withColumnRenamed("label2", "label")
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       val cvrModeGaucLists = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").collect()
+      println(cvrModeGaucLists.length)
       val gauc1 = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
+      println(gauc1.length)
       if (gauc1.length > 0) {
+        println("ajksdfan")
         val gauc = gauc1
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
           .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
