@@ -89,8 +89,8 @@ object HotTopicCtrCvrAucGauc {
              """.stripMargin
 
     val union = spark.sql(sql).cache()
-    val CtrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAuc]()
-    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAuc]()
+    val CtrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
+    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
 
     //分模型-ctr
     val ctrModelNames = union.filter("length(ctr_model_name)>0").select("ctr_model_name")
@@ -110,8 +110,8 @@ object HotTopicCtrCvrAucGauc {
         (uid,auc,sum)
       })
       .collect()
-    var top=0
-    var bottom =0
+    var top =0.0
+    var bottom =0.0
     for(ctrModeGaucList <- ctrModeGaucLists) {
       top += ctrModeGaucList._2 * ctrModeGaucList._3
       bottom += ctrModeGaucList._3
@@ -148,6 +148,7 @@ object HotTopicCtrCvrAucGauc {
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
         .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
       val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
+
       CvrAucGaucListBuffer += DetailAucGauc(
         model = cvrModelName,
         auc = cvrModelAuc,
@@ -163,12 +164,6 @@ object HotTopicCtrCvrAucGauc {
     //.insertInto("test.cpc_hot_topic_ctr_auc_gauc_hourly")
     println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
 
-    case class DetailAucGauc(var model: String = "",
-                         var auc: Double = 0,
-                         var gauc: Double = 0,
-                         var day: String = "",
-                         var hour: String = "")
-
    // val conf = ConfigFactory.load()
     // val mariadb_write_prop = new Properties()
 //    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
@@ -183,4 +178,9 @@ object HotTopicCtrCvrAucGauc {
 //    println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success !")
 //    CtrAucGaucListBuffer.unpersist()
   }
+  case class DetailAucGauc(var model: String = "",
+                           var auc: Double = 0,
+                           var gauc: Double = 0,
+                           var day: String = "",
+                           var hour: String = "")
 }
