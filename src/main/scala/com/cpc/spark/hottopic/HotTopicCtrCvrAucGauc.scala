@@ -175,19 +175,19 @@ object HotTopicCtrCvrAucGauc {
     //.insertInto("test.cpc_hot_topic_ctr_auc_gauc_hourly")
     println("test.cpc_hot_topic_cvr_auc_gauc_hourly success!")
 
-    val conf = ConfigFactory.load()
-     val mariadb_write_prop = new Properties()
-    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
-    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
-    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
-    mariadb_write_prop.put("driver", conf.getSitring("mariadb.report2_write.driver"))
-
-    val ctrMetricsDelSql = s"delete from report2.cpc_hot_topic_ctr_auc_gauc_hourly `date` = '$date' `hour` = '$hour'"
-    OperateMySQL.del(ctrMetricsDelSql)
-    CtrAucGaucListBuffer.write.mode(SaveMode.Append)
-      .jdbc(mariadb_write_url, "report2.cpc_hot_topic_ctr_auc_gauc_hourly", mariadb_write_prop)
-    println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success !")
-    CtrAucGaucListBuffer.unpersist()
+//    val conf = ConfigFactory.load()
+//     val mariadb_write_prop = new Properties()
+//    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+//    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+//    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+//    mariadb_write_prop.put("driver", conf.getSitring("mariadb.report2_write.driver"))
+//
+//    val ctrMetricsDelSql = s"delete from report2.cpc_hot_topic_ctr_auc_gauc_hourly `date` = '$date' `hour` = '$hour'"
+//    OperateMySQL.del(ctrMetricsDelSql)
+//    CtrAucGaucListBuffer.write.mode(SaveMode.Append)
+//      .jdbc(mariadb_write_url, "report2.cpc_hot_topic_ctr_auc_gauc_hourly", mariadb_write_prop)
+//    println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success !")
+//    CtrAucGaucListBuffer.unpersist()
   }
   case class DetailAucGauc(var model: String = "",
                            var auc: Double = 0,
