@@ -35,20 +35,11 @@ object TopCtrIdeaV2 {
   val mariadb_union_test_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
-
-    if (args.length < 2) {
-      System.err.println(
-        s"""
-           |Usage: GetUserProfile <day_before> <int> <table:string>
-        """.stripMargin)
-      System.exit(1)
-    }
-
     val if_test = 0
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt //10
-    val table = args(1) //top_ctr_idea
+    val table = "top_ctr_idea"// args(1) //top_ctr_idea
 
     val spark = SparkSession.builder()
       .appName("[trident] top ctr ideas")
