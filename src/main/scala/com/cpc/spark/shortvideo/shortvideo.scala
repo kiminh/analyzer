@@ -81,7 +81,7 @@ from
   and     uid not like "%.%"
   and     uid not like "%000000%"
   and     length(uid) in (14, 15, 36)
-  and     a.seachid not in
+  and     a.searchid not in
         (
          | select searchid
          | from
