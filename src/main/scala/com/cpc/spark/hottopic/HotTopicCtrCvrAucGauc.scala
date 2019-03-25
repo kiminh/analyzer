@@ -113,7 +113,7 @@ object HotTopicCtrCvrAucGauc {
     var top =0.0
     var bottom =0.0
     for(ctrModeGaucList <- ctrModeGaucLists) {
-      top += ctrModeGaucList._2 * ctrModeGaucList._3cd
+      top += ctrModeGaucList._2 * ctrModeGaucList._3
       bottom += ctrModeGaucList._3
     }
     var gauc = top/bottom
