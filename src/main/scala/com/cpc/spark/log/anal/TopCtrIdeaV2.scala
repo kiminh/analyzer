@@ -12,6 +12,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
+import com.typesafe.config.ConfigFactory
+
 import scala.collection.mutable
 
 
@@ -23,8 +25,14 @@ import scala.collection.mutable
   * 4. 根据adslot_type等比取80000数据
   *
   * created by zhy
+  * modified by fym 190325.
   */
 object TopCtrIdeaV2 {
+
+  var mariadbUrl = ""
+  val mariadbProp = new Properties()
+  var mariadb_union_test_write_url = ""
+  val mariadb_union_test_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
 
@@ -32,17 +40,18 @@ object TopCtrIdeaV2 {
       System.err.println(
         s"""
            |Usage: GetUserProfile <day_before> <int> <table:string>
-           |
         """.stripMargin)
       System.exit(1)
     }
+
+    val if_test = 0
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt //10
     val table = args(1) //top_ctr_idea
 
     val spark = SparkSession.builder()
-      .appName("top ctr ideas")
+      .appName("[trident] top ctr ideas")
       .enableHiveSupport()
       .getOrCreate()
 
@@ -52,14 +61,34 @@ object TopCtrIdeaV2 {
     //读取近10天广告信息。 ((adslot_type, ideaid), Adinfo)
     var adctr: RDD[((Int, Int), Adinfo)] = null
 
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.report2_write.url")
+    mariadbProp.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadbProp.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    mariadb_union_test_write_url = conf.getString("mariadb.union_test_write.url")
+    mariadb_union_test_prop.put("user", conf.getString("mariadb.union_test_write.user"))
+    mariadb_union_test_prop.put("password", conf.getString("mariadb.union_test_write.password"))
+    mariadb_union_test_prop.put("driver", conf.getString("mariadb.union_test_write.driver"))
+
     for (i <- 0 until dayBefore) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
-          |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and ideaid > 0
-          |group by adslot_type, ideaid
+          |select
+          |  adslot_type
+          |  , ideaid
+          |  , sum(isclick) as sum_click
+          |  , sum(isshow) as sum_show
+          |from dl_cpc.cpc_basedata_union_events
+          |where day="%s"
+          |  and isshow=1
+          |  and adslot_id>0
+          |  and ideaid>0
+          |group by
+          |  adslot_type
+          |  , ideaid
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
@@ -248,40 +277,75 @@ object TopCtrIdeaV2 {
     }
 
 
-    val conf = ConfigFactory.load()
-    val mariadbUrl = conf.getString("mariadb.url")
-    val mariadbProp = new Properties()
-    mariadbProp.put("user", conf.getString("mariadb.user"))
-    mariadbProp.put("password", conf.getString("mariadb.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.driver"))
-
     //truncate table
-    try {
-      Class.forName(mariadbProp.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        mariadbUrl,
-        mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        """
-          |TRUNCATE TABLE report.%s
-        """.stripMargin.format(table)
-      stmt.executeUpdate(sql);
-      stmt.close()
-      conn.close()
-    } catch {
-      case e: Exception => println("truncate table failed : " + e);
+
+    if (if_test==1) {
+      try {
+        Class.forName(mariadb_union_test_prop.getProperty("driver"))
+        val conn = DriverManager.getConnection(
+          mariadb_union_test_write_url,
+          mariadb_union_test_prop.getProperty("user"),
+          mariadb_union_test_prop.getProperty("password"))
+        val stmt = conn.createStatement()
+        val sql =
+          """
+            |TRUNCATE TABLE union_test.%s
+          """.stripMargin.format(table)
+        stmt.executeUpdate(sql)
+        stmt.close()
+        conn.close()
+      } catch {
+        case e: Exception => println("truncate table failed : " + e);
+      }    } else {
+      try {
+        Class.forName(mariadbProp.getProperty("driver"))
+        val conn = DriverManager.getConnection(
+          mariadbUrl,
+          mariadbProp.getProperty("user"),
+          mariadbProp.getProperty("password"))
+        val stmt = conn.createStatement()
+        val sql =
+          """
+            |TRUNCATE TABLE report.%s
+          """.stripMargin.format(table)
+        stmt.executeUpdate(sql)
+        stmt.close()
+        conn.close()
+      } catch {
+        case e: Exception => println("truncate table failed : " + e);
+      }
     }
 
-    spark.createDataFrame(topIdeaData)
+
+
+    /*spark.createDataFrame(topIdeaData)
       .drop("adslot_type", "show", "click")
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+      .jdbc(mariadbUrl, "report." + table, mariadbProp)*/
+
+    if (if_test==1) {
+      spark
+        .createDataFrame(topIdeaData)
+        .drop("adslot_type", "show", "click")
+        .write
+        .mode(SaveMode.Append)
+        .jdbc(mariadb_union_test_write_url,
+          "union_test.%s".format(table),
+          mariadb_union_test_prop)
+    } else {
+      spark
+        .createDataFrame(topIdeaData)
+        .drop("adslot_type", "show", "click")
+        .write
+        .mode(SaveMode.Append)
+        .jdbc(mariadbUrl,
+          "report2.%s".format(table),
+          mariadbProp)
+    }
 
     /* 插入手动推荐的素材 --陈超 */
-    try {
+    /*try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariadbUrl,
@@ -297,7 +361,7 @@ object TopCtrIdeaV2 {
       conn.close()
     } catch {
       case e: Exception => println("insert table failed : " + e);
-    }
+    }*/
 
 
     println("###### num: " + topIdeaData.length)
