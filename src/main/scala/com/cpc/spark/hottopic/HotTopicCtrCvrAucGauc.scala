@@ -124,13 +124,13 @@ object HotTopicCtrCvrAucGauc {
         day = date,
         hour = hour)
 
-      val cvrModeGaucLists1 = CalcMetrics.getGauc(spark, ctrModelName, "uid").collect()
-      val gauc1 = cvrModeGaucLists1.filter(x => x.getAs[Double]("auc") != -1)
+      val ctrModeGaucLists1 = CalcMetrics.getGauc(spark, ctrModelUnion, "uid").collect()
+      val gauc1 = ctrModeGaucLists1.filter(x => x.getAs[Double]("auc") != -1)
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
         .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-      val gaucROC = if (gauc1._2 != 0) gauc1._1 * 1.0 / gauc1._2 else 0
+      val gaucROC1 = if (gauc1._2 != 0) gauc1._1 * 1.0 / gauc1._2 else 0
 
-      println("$$$$$$" + gaucROC)
+      println("$$$$$$" + gaucROC1)
     }
 
     val CtrAucGauc = CtrAucGaucListBuffer.toList.toDF()
