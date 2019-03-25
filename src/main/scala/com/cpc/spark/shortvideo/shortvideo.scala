@@ -463,13 +463,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
        selectExpr("userid","expcvr",s"""'${date}' as dt""",s"""'${hour}' as dt""")
      tabfinal2.show(10,false)
       tabfinal2.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-      val tabfinal3=tabfinal2.selectExpr("userid","expcvr")
+      val tabfinal3=tabfinal2.selectExpr("userid","expcvr","dt")
     /*#########################################################################*/
     //   pb写法2
    //不执行pb文件
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- tabfinal4.collect()) {
+    for (record <- tabfinal3.collect()) {
       var userid = record.getAs[String]("userid")
       var exp_cvr = record.getAs[Long]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
