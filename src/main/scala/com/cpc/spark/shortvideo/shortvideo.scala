@@ -17,7 +17,9 @@ import java.io.PrintWriter
 import org.apache.spark.sql.functions
 import shortvideothreshold.Shortvideothreshold
 
-
+/*2019-03-21 基础表slim_union_log 换成dl_cpc.cpc_basedata_union_events
+ *2019-03-25 增加详情页的media_appsid 80000002
+* */
 import scala.collection.mutable.ListBuffer
 
 object shortvideo {
@@ -63,9 +65,9 @@ from
   select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
              charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-  from       dl_cpc.slim_union_log
+  from       dl_cpc.cpc_basedata_union_events
   where    ${selectCondition}
-  and      media_appsid in  ("80000001")
+  and      media_appsid in  ("80000001","80000002")
   and      interaction=2
   and     adtype in (2,8,10)
   and     userid>0
@@ -115,7 +117,7 @@ label_type,  label2
           where
               ${selectCondition2}
               and label2=1
-             and media_appsid in ("80000001")
+             and media_appsid in ("80000001","80000002")
             ) final
        ) aa
   where   aa.isreport=1
@@ -225,12 +227,12 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |from
           |(
           |select  substr(adclass,1,6) adclass,isshow,isclick,price,searchid
-          |from     dl_cpc.slim_union_log
+          |from     dl_cpc.cpc_basedata_union_events
           |where  ${selectCondition}
           |and   adsrc=1
           |and   isshow=1
           |and   isclick=1
-          |and   media_appsid in  ("80000001")
+          |and   media_appsid in  ("80000001","80000002")
           |and   interaction=2
           |and  adtype=2
           |)   m
@@ -268,7 +270,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |          where
           |              ${selectCondition2}
           |              and label2=1
-          |             and media_appsid in ("80000001")
+          |             and media_appsid in ("80000001","80000002")
           |            ) final
           |       ) aa
           |  where   aa.isreport=1
@@ -492,11 +494,11 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
   def getTimeRangeSql21(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
-      return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+      return s"( day = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
-    return s"((dt = '$startDate' and hour >='$startHour') " +
-      s"or (dt = '$endDate' and hour <'$endHour') " +
-      s"or (dt > '$startDate' and dt < '$endDate'))"
+    return s"((day = '$startDate' and hour >='$startHour') " +
+      s"or (day = '$endDate' and hour <'$endHour') " +
+      s"or (day > '$startDate' and day < '$endDate'))"
   }
 
    def getTimeRangeSql22(startDate: String, startHour: String, endDate: String, endHour: String): String = {
