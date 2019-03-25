@@ -23,12 +23,13 @@ object Lab {
     val appFreq = pkgs.rdd
       .map(x =>  x.getAs[String]("pkgs1") )
       .flatMap(x => x.split(","))
-      .map(x => (x,1)).reduceByKey((x, y) => x+y).map( x => AppCount(x._1, x._2) ).toDF()
+      .map(x => (x,1)).reduceByKey((x, y) => x+y).map(x => (x._1.split("-"), x._2)).map( x => AppCount2(x._1(0), x._1(1), x._2)).toDF()
 
     appFreq.write.mode("overwrite").saveAsTable("test.appInstalledCount_sjq")
 
 //    appFreq.orderBy( appFreq("count").desc ).show(50, false)
 
   }
-  case class AppCount( var appName: String, var count: Int)
+  case class AppCount(  var appName: String, var count: Int)
+  case class AppCount2( var appName1: String, appName2: String, var count: Int)
 }
