@@ -37,7 +37,7 @@ object HotTopicCtrCvrAucGauc {
          |  cvr_model_name,
          |  cast(uid as string) as uid
          |from dl_cpc.cpc_hot_topic_basedata_union_events
-         |where `date` = '$date'
+         |where day = '$date'
          |and `hour`='$hour'
          |and media_appsid in ('80002819')
          |and adsrc = 1
@@ -113,7 +113,7 @@ object HotTopicCtrCvrAucGauc {
     var top =0.0
     var bottom =0.0
     for(ctrModeGaucList <- ctrModeGaucLists) {
-      top += ctrModeGaucList._2 * ctrModeGaucList._3
+      top += ctrModeGaucList._2 * ctrModeGaucList._3cd
       bottom += ctrModeGaucList._3
     }
     var gauc = top/bottom
