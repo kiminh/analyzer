@@ -82,6 +82,7 @@ object videoPromotion_v2 {
       .withColumn("pcoc", col("exp_cvr") / col("cvr"))
       .withColumn("date", lit(date))
       .select("userid", "usertype", "adclass2", "threshold", "adtype1", "test_tag", "queryn", "shown", "clickn", "cost", "cvrn", "cvr", "exp_cvr", "pcoc", "auc", "cvr_bigimage_adclass2", "cpm", "date")
+      .na.fill(-1.0, Seq("cvr_bigimage_adclass2"))
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
@@ -209,6 +210,7 @@ object videoPromotion_v2 {
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)))
       .withColumn("date", lit(date))
       .selectExpr("test_tag", "userid", "adclass2", "video as cvr_video", "bigimage as cvr_bigimage", "cvr_bigimage_adclass2", "bigimage2 as cvr_bigimage_final", "flag", "date")
+      .na.fill(-1.0, Seq("cvr_bigimage", "cvr_bigimage_adclass2", "cvr_bigimage_final"))
 
     //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3;
     //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary3
