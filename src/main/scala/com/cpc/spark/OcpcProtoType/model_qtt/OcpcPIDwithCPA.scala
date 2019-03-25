@@ -173,7 +173,7 @@ object OcpcPIDwithCPA {
          |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest).filter(s"is_hidden = 0")
+    val resultDF = spark.sql(sqlRequest).filter(s"is_hidden != 1")
     resultDF
   }
 

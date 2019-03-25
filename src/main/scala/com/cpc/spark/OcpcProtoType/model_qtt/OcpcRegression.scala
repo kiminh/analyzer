@@ -144,6 +144,7 @@ object OcpcRegression {
          |  ocpc_log_dict,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  hour
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -157,7 +158,7 @@ object OcpcRegression {
          |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = spark.sql(sqlRequest).filter(s"is_hidden != 1")
 
     resultDF
   }
