@@ -26,7 +26,7 @@ object HotTopicCtrCvrAucGauc {
          |a.ctr_model_name,
          |a.cvr_model_name,
          |a.uid,
-         |case when b.searchid is null then '1' else '0' end as label2
+         |case when b.searchid is not null then '1' else '0' end as label2
          |from
          |(select
          | searchid,
