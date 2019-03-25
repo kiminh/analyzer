@@ -28,7 +28,7 @@ import scala.collection.mutable
   * created by zhy (o.: TopCtrIdeasV2)
   * modified by fym 190325.
   */
-object TopCtrIdeas {
+object TopCtrIdeaFromTrident {
 
   var mariadbUrl = ""
   val mariadbProp = new Properties()
