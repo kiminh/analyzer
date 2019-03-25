@@ -62,10 +62,10 @@ select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           usertype,view1.adslotid,isshow,price,'${date}' as dt,'${hour}' as hr
 from
 (
-  select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
+  select     dt as day,hour,a.searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
              charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-  from       dl_cpc.cpc_basedata_union_events
+  from       dl_cpc.cpc_basedata_union_events a
   where    ${selectCondition}
   and      media_appsid in  ("80000001","80000002")
   and      interaction=2
@@ -81,7 +81,18 @@ from
   and     uid not like "%.%"
   and     uid not like "%000000%"
   and     length(uid) in (14, 15, 36)
-  and     exptags not like '%use_strategy%'
+  and     a.seachid not in
+        (
+         | select searchid
+         | from
+         |   (
+         |   select searchid,exptags,newcol,day
+         |   from   dl_cpc.cpc_basedata_union_events
+         |   lateral view explode(exptags) tag as newcol
+         |   )  c
+         |  where  ${selectCondition}
+         |  and    newcol='use_strategy'
+         |)
 ) view1
 left JOIN
 (
