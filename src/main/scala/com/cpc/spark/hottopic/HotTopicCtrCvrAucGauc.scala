@@ -77,7 +77,7 @@ object HotTopicCtrCvrAucGauc {
          |                from
          |                    dl_cpc.ml_cvr_feature_v1
          |                where
-         |                    `date`='$date
+         |                    `date`='$date'
          |                    and 'hour'='$hour'
          |                    and label2=1
          |                    and media_appsid in ('80002819')
