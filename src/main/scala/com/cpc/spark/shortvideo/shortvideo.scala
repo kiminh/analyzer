@@ -466,10 +466,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       val tabfinal3=tabfinal2.selectExpr("userid","expcvr")
     /*#########################################################################*/
     //   pb写法2
-
+   //不执行pb文件
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- tabfinal3.collect()) {
+    for (record <- tabfinal4.collect()) {
       var userid = record.getAs[String]("userid")
       var exp_cvr = record.getAs[Long]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
