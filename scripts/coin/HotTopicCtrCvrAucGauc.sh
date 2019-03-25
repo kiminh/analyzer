@@ -25,6 +25,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.coin.HotTopicCtrCvrAucGauc \
+    --class com.cpc.spark.hottopic.HotTopicCtrCvrAucGauc \
     $indin $date $hour
 
