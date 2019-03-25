@@ -23,7 +23,7 @@ object Lab {
     val appFreq = pkgs.rdd
       .map(x =>  x.getAs[String]("pkgs1") )
       .flatMap(x => x.split(","))
-      .map(x => (x,1)).reduceByKey((x, y) => x+y).map(x => (x._1.split("-"), x._2)).map( x => AppCount2(x._1(0), x._1(1), x._2)).toDF()
+      .map(x => (x,1)).reduceByKey((x, y) => x+y).map(x => (x._1.split("-"), x._2)).map( x => if(x._1.length > 1) AppCount2(x._1(0), x._1(1), x._2) else AppCount2(x._1(0), "" , x._2)).toDF()
 
     appFreq.show(10)
 
