@@ -225,7 +225,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |from
           |(
           |select  substr(adclass,1,6) adclass,isshow,isclick,price,searchid
-          |from     dl_cpc.cpc_basedata_union_events
+          |from     dl_cpc.slim_union_log
           |where  ${selectCondition}
           |and   adsrc=1
           |and   isshow=1
