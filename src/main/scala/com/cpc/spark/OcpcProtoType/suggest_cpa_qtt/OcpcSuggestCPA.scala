@@ -29,7 +29,7 @@ object OcpcSuggestCPA {
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
-    val cvrGoal = "cvr1"
+    val cvrGoal = args(3).toString
     val version = "qtt_demo"
     val spark = SparkSession
       .builder()
@@ -57,7 +57,24 @@ object OcpcSuggestCPA {
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+    var conversionGoal = 1
+    if (cvrGoal == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrGoal == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
+
+    val resultDF = result
+      .withColumn("cv_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
