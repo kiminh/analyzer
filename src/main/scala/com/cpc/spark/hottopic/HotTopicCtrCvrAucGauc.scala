@@ -220,7 +220,7 @@ object HotTopicCtrCvrAucGauc {
     for (cvrModelName <- cvrModelNames) {
       println(cvrModelName)
       val cvrModelUnion = union_cvr.filter(s"cvr_model_name = '$cvrModelName' ")
-      cvrModelUnion.show(10)
+      cvrModelUnion.filter("label =1 ").show(10)
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       println("auc" + cvrModelAuc)
       var L = CalcMetrics.getGauc(spark, cvrModelUnion, "uid")
