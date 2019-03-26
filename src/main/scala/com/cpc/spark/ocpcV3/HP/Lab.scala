@@ -21,8 +21,10 @@ object Lab {
 
     val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName0")
+      .select("cat", "appName", "appName0").distinct()
       .toDF()
+
+    appCat0.write.mode("overwrite").saveAsTable("test.appCat0_sjq")
 
     println("appCat0 has " + appCat0.count() + " lines. ")
     println("==============================  appCat0  ==========================================")
