@@ -15,8 +15,8 @@ object OcpcNewBaseCtr {
     // 从base表抽取基础数据
     val resultDF = preprocessUnionlog(date, hour, spark)
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
-        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpc_ctr_data_hourly")
   }
 
@@ -38,11 +38,11 @@ object OcpcNewBaseCtr {
          |    media_appsid,
          |    adslot_type,
          |    adtype,
-         |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |    adclass,
+         |    exp_cvr,
          |    isclick,
          |    isshow,
-         |    ext_string['ocpc_log'] as ocpc_log
+         |    ocpc_log
          |from dl_cpc.ocpc_base_unionlog
          |where $selectWhere
          |and isclick is not null

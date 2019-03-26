@@ -51,7 +51,8 @@ object OcpcCPCbidV2 {
       .withColumn("cvr2", when(col("identifier") === "270", 0.5).otherwise(col("cvr2")))
       .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
       .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
-      .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
+      .na.fill(0.2, Seq("factor1", "factor3"))
+      .na.fill(0.5, Seq("factor2"))
 
 
     val resultDF = data
@@ -160,6 +161,7 @@ object OcpcCPCbidV2 {
     resultDF.show(10)
     resultDF
   }
+
 
   def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark.read.format("json").json(dataPath)
