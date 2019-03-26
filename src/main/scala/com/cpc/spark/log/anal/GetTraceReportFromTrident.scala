@@ -120,11 +120,13 @@ object GetTraceReportFromTrident {
     val unionRdd = ctx.sql(sql1)
       .rdd
       .map( x => {
-        val ideaid: Int = x(0).toString().toInt
-        val show: Int = x(1).toString().toInt
-        val click: Int = x(2).toString().toInt
-
-        (ideaid, (show, click))
+        (
+          x.getAs[Int]("ideaid"),
+          (
+            x.getAs[Int]("show"),
+            x.getAs[Int]("click")
+          )
+        )
       }
     )
 
