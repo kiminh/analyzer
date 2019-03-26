@@ -55,7 +55,7 @@ object Lab {
 
     val result = appCat0
       .join(uidApp2, appCat0("appName0") === uidApp2("app"), "inner" )
-      .select("uid", "app", "cat")
+      .select("uid", "cat").distinct()
 
     println("=============================== result =========================================")
     result.show(10)
