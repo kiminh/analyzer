@@ -25,7 +25,7 @@ object Lab {
       .filter("cat is not NULL").toDF()
 
     //    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
-    println("==============================  app  ==========================================")
+    println("==============================  appCat0  ==========================================")
     appCat0.show(10)
 
     val uidApp = getUidApp(spark, date).cache() //uid,pkgs
@@ -33,6 +33,9 @@ object Lab {
 //    uidApp.write.mode("overwrite").saveAsTable("test.uidApp_sjq")
 //        val uidApp1 = uidApp
 //        uidApp1.show( 10 )
+
+    println("=============================== uidApp =============================================")
+    uidApp.show(10)
 
     val uidApp2 = uidApp.rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
@@ -45,15 +48,18 @@ object Lab {
         }
         lb
       }).toDF() // uid, app
-
-    //      .map( x => x._2.map( y => UidApp( x._1, y )) )
-    //      .reduce((x, y) => x ++ y )//.toDF()
+    println("============================== uidApp2 =======================================")
+    uidApp2.show(10)
 
 //    uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
 
     val result = appCat0
       .join(uidApp2, appCat0("appName0") === uidApp2("app"), "inner" )
       .select("uid", "app", "cat")
+
+    println("=============================== result =========================================")
+    result.show(10)
+
 
     result.write.mode("overwrite").saveAsTable("test.uid_app_cat_sjq")
 
