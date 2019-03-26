@@ -183,7 +183,7 @@ object GetTraceReportFromTrident {
          |  b.userid as user_id
          |  , b.planid as plan_id
          |  , b.unitid as unit_id
-         |  , a.ideaid
+         |  , a.idea_id
          |  , a.trace_type
          |  , a.trace_op1
          |  , a.total_num
