@@ -400,7 +400,7 @@ object AutoCoinStrategy {
               val i7th = (length * 0.7).toInt
               val i8th = (length * 0.8).toInt
               val i9th = (length * 0.9).toInt
-              val exp_cvr =  if (sorted(index)==1000000) sorted(index) - 1 else sorted(index)
+              val exp_cvr =  if (sorted(index) == 1000000) sorted(index) - 1 else sorted(index)
               (exp_cvr, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)

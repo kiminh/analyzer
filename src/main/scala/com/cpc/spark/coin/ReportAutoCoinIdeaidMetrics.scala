@@ -6,7 +6,7 @@ import com.cpc.spark.novel.OperateMySQL
 import com.cpc.spark.tools.CalcMetrics
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.functions._
 
 /**
   * @author Jinbao
@@ -90,25 +90,25 @@ object ReportAutoCoinIdeaidMetrics {
                |    ideaid,
                |    if (show_num is null,0,show_num) as show_num,
                |    if (coin_show_num is null,0,coin_show_num) as coin_show_num,
-               |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
+               |    if (show_num>0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
                |    if (click_num is null,0,click_num) as click_num,
                |    if (coin_click_num is null,0,coin_click_num) as coin_click_num,
-               |    if (click_num!=0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
-               |    if (show_num!=0,round(click_num/show_num, 6),0) as ctr,
-               |    if (coin_show_num!=0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
+               |    if (click_num>0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
+               |    if (show_num>0,round(click_num/show_num, 6),0) as ctr,
+               |    if (coin_show_num>0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
                |    if (convert_num is null,0,convert_num) as convert_num,
                |    if (coin_convert_num is null,0,coin_convert_num) as coin_convert_num,
-               |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
-               |    if (nocoin_click_num!=0,round(nocoin_convert_num/nocoin_click_num, 6),0) as cvr,
-               |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
+               |    if (convert_num>0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
+               |    if (nocoin_click_num>0,round(nocoin_convert_num/nocoin_click_num, 6),0) as cvr,
+               |    if (coin_click_num>0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
                |    if (click_total_price is null,0,click_total_price) as click_total_price,
                |    if (coin_click_total_price is null,0,coin_click_total_price) as coin_click_total_price,
                |    if (uid_num is null,0,uid_num) as uid_num,
-               |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
-               |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
-               |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
-               |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
-               |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
+               |    if (show_num>0,round(click_total_price*10/show_num,6),0) as cpm,
+               |    if (click_num>0,round(click_total_price*10/click_num,6),0) as acp,
+               |    if (uid_num>0,round(click_total_price*10/uid_num,6),0) as arpu,
+               |    if (uid_num>0,round(show_num/uid_num,6),0) as aspu,
+               |    if (uid_num>0,round(convert_num*100/uid_num,6),0) as acpu,
                |    '$date' as `date`
                |from
                |(
@@ -130,7 +130,7 @@ object ReportAutoCoinIdeaidMetrics {
                |)
              """.stripMargin
 
-        val ideaidMetrics = spark.sql(ideaidSql)    //计算ideaid级别的指标
+        val ideaidMetrics = spark.sql(ideaidSql).na.fill(0,Seq("ctr"))   //计算ideaid级别的指标
 
         ideaidMetrics.repartition(1)
           .write
