@@ -4,11 +4,11 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 
 cur_time=$1
-date=`date -d"${cur_time} 1 day ago" +"%Y-%m-%d"`
-hour=`date -d "${cur_time} 1 day ago" +%H`
+date=`date -d"${cur_time}" +"%Y-%m-%d"`
+hour=`date -d "${cur_time}" +%H`
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
