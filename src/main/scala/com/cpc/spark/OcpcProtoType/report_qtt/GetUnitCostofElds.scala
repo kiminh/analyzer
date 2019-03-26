@@ -68,7 +68,7 @@ object GetUnitCostofElds {
         s"""
            |select
            |    unitid,
-           |    sum(case when isclick = 1 then price else 0 end) as unit_all_cost
+           |    sum(case when isclick = 1 then price else 0 end) as unit_ocpc_cost
            |from
            |    dl_cpc.ocpc_base_unionlog
            |where
