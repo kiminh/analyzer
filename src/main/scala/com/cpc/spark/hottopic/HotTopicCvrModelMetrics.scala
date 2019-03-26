@@ -2,6 +2,7 @@ package com.cpc.spark.hottopic
 
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
+import com.cpc.spark.tools.OperateMySQL
 /**
   * @author Jinbao
   * @date 2019/3/26 9:49
@@ -82,7 +83,7 @@ object HotTopicCvrModelMetrics {
           .distinct()
           .collect()
           .map(_.getAs[String]("cvr_model_name"))
-
+        val resultListBuffer = scala.collection.mutable.ListBuffer[hotTopicAucGauc]()
         for (cvr_model_name <- cvr_model_names) {
             val modelData = union.filter(s"cvr_model_name = '$cvr_model_name'")
             val auc = CalcMetrics.getAuc(spark,modelData)
@@ -101,7 +102,23 @@ object HotTopicCvrModelMetrics {
             else 0
 
             println(s"cvr_model_name = $cvr_model_name , auc = $auc , gauc = $gauc")
-        }
 
+            resultListBuffer += hotTopicAucGauc(auc = auc,gauc = gauc, model = cvr_model_name, date = day, hour = hour)
+        }
+        val result = resultListBuffer.toList.toDF()
+
+        val tableName = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
+        val deleteSql = s"delete from $tableName where `date` = '$day' and hour = '$hour'"
+        OperateMySQL.update(deleteSql) //先删除历史数据
+        OperateMySQL.insert(result,tableName) //插入到MySQL中的report2库中
     }
+
+    case class hotTopicAucGauc(var auc:Double = 0,
+                               var gauc:Double = 0,
+                               var model:String = "",
+                               var date:String = "",
+                               var hour:String = "")
+
 }
+
+
