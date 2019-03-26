@@ -3,7 +3,7 @@ package com.cpc.spark.log.anal
 /**
   * @author fym
   * @version created: 2019-03-25 21:09
-  * @desc
+  * @desc (o.: TopCtrIdeasV2)
   */
 import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
@@ -25,8 +25,7 @@ import scala.collection.mutable
   * 3. 删除ctr等比缩放
   * 4. 根据adslot_type等比取80000数据
   *
-  * created by zhy (o.: TopCtrIdeasV2)
-  * modified by fym 190325.
+  * created by zhy.
   */
 object TopCtrIdeaFromTrident {
 
@@ -215,7 +214,6 @@ object TopCtrIdeaFromTrident {
           )
       ) //推荐素材去掉test用户 1001028 1501897； 过滤违规关键词
 
-    //!Seq(110100100, 110110100, 125100100, 100100100, 100101100, 100101109).contains(x.adclass)
     val sum = topIdeaRDD.size.toDouble //总元素个数
     println("总元素个数：" + sum)
 
@@ -280,8 +278,7 @@ object TopCtrIdeaFromTrident {
     }
 
 
-    //truncate table
-
+    // truncate table
     if (if_test==1) {
       try {
         Class.forName(mariadb_union_test_prop.getProperty("driver"))
@@ -320,14 +317,6 @@ object TopCtrIdeaFromTrident {
       }
     }
 
-
-
-    /*spark.createDataFrame(topIdeaData)
-      .drop("adslot_type", "show", "click")
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report." + table, mariadbProp)*/
-
     if (if_test==1) {
       spark
         .createDataFrame(topIdeaData)
@@ -335,7 +324,7 @@ object TopCtrIdeaFromTrident {
         .write
         .mode(SaveMode.Append)
         .jdbc(mariadb_union_test_write_url,
-          "union_test.%s".format(table),
+          "union_test.top_ctr_idea",
           mariadb_union_test_prop)
     } else {
       spark
@@ -344,12 +333,12 @@ object TopCtrIdeaFromTrident {
         .write
         .mode(SaveMode.Append)
         .jdbc(mariadbUrl,
-          "report.%s".format(table),
+          "report.top_ctr_idea",
           mariadbProp)
     }
 
     /* 插入手动推荐的素材 --陈超 */
-    /*try {
+    try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariadbUrl,
@@ -365,8 +354,7 @@ object TopCtrIdeaFromTrident {
       conn.close()
     } catch {
       case e: Exception => println("insert table failed : " + e);
-    }*/
-
+    }
 
     println("###### num: " + topIdeaData.length)
 
