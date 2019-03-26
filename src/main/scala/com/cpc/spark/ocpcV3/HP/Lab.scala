@@ -10,7 +10,12 @@ object Lab {
     import spark.implicits._
 
     val appCat = getAppCat(spark)
+    println("============================== appCat ===================================")
+    appCat.show(10)
+
     val appFreq = getAppFreq(spark, date)
+    println("============================== appFreq  ======================================")
+    appFreq.show(10)
 
     val app = appCat
       .join(appFreq, Seq("appName"), "left")
@@ -18,6 +23,8 @@ object Lab {
       .filter("cat is not NULL").toDF()
 
 //    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
+    println("==============================  app  ==========================================")
+    app.show(10)
 
     val uidApp = getUidApp(spark, date).cache() //uid,pkgs
 
