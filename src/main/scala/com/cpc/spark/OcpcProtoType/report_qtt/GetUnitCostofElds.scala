@@ -12,7 +12,8 @@ object GetUnitCostofElds {
   def main(args: Array[String]): Unit = {
     val dateBuffer = getDate("2019-03-01", "2019-03-25")
     val spark = SparkSession.builder().appName("getUnitCostOfElds").enableHiveSupport().getOrCreate()
-    getUnitCost(dateBuffer, spark)
+    getUnitAllCost(dateBuffer, spark)
+    getUnitOcpcCost(dateBuffer, spark)
   }
 
   def getDate(startDate: String, endDate: String): ListBuffer[String] = {
@@ -28,7 +29,7 @@ object GetUnitCostofElds {
     dateBuffer
   }
 
-  def getUnitCost(dateBuffer: ListBuffer[String], spark: SparkSession): Unit ={
+  def getUnitAllCost(dateBuffer: ListBuffer[String], spark: SparkSession): Unit ={
     for(date <- dateBuffer){
       val sql =
         s"""
@@ -56,8 +57,43 @@ object GetUnitCostofElds {
       dataDF
         .withColumn("date", lit(date))
         .repartition(50)
-        .write.mode("overwrite").insertInto("test.wt_unit_cost_every_day_elds")
-      println(date)
+        .write.mode("overwrite").insertInto("test.wt_unit_all_cost_every_day_elds")
+      println("all " + date)
+    }
+  }
+
+  def getUnitOcpcCost(dateBuffer: ListBuffer[String], spark: SparkSession): Unit = {
+    for (date <- dateBuffer) {
+      val sql =
+        s"""
+           |select
+           |    unitid,
+           |    sum(case when isclick = 1 then price else 0 end) as unit_all_cost
+           |from
+           |    dl_cpc.ocpc_base_unionlog
+           |where
+           |    `date` = '$date'
+           |and
+           |    is_ocpc = 1
+           |and
+           |    (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
+           |and
+           |    media_appsid  in ("80000001", "80000002")
+           |and
+           |    isshow = 1
+           |and
+           |    antispam = 0
+           |and
+           |    adsrc = 1
+           |group by
+           |    unitid
+        """.stripMargin
+      val dataDF = spark.sql(sql)
+      dataDF
+        .withColumn("date", lit(date))
+        .repartition(50)
+        .write.mode("overwrite").insertInto("test.wt_unit_ocpc_cost_every_day_elds")
+      println("ocpc " + date)
     }
   }
 }
