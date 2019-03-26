@@ -123,8 +123,8 @@ object GetTraceReportFromTrident {
         (
           x.getAs[Int]("ideaid"),
           (
-            x.getAs[Int]("show"),
-            x.getAs[Int]("click")
+            x.getAs[Long]("show").toInt,
+            x.getAs[Long]("click").toInt
           )
         )
       }
