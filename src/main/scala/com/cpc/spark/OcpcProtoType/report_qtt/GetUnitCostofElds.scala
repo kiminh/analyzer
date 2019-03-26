@@ -11,7 +11,8 @@ import scala.collection.mutable.ListBuffer
 object GetUnitCostofElds {
   def main(args: Array[String]): Unit = {
     val dateBuffer = getDate("2019-03-01", "2019-03-25")
-    for(date <- dateBuffer) println(date)
+    val spark = SparkSession.builder().appName("getUnitCostOfElds").enableHiveSupport().getOrCreate()
+    getUnitCost(dateBuffer, spark)
   }
 
   def getDate(startDate: String, endDate: String): ListBuffer[String] = {
@@ -27,7 +28,7 @@ object GetUnitCostofElds {
     dateBuffer
   }
 
-  def getUnitCost(dateBuffer: String, spark: SparkSession): Unit ={
+  def getUnitCost(dateBuffer: ListBuffer[String], spark: SparkSession): Unit ={
     for(date <- dateBuffer){
       val sql =
         s"""
