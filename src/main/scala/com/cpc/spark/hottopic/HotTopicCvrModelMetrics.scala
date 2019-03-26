@@ -70,6 +70,7 @@ object HotTopicCvrModelMetrics {
                |        ) tmp
                |    where tmp.isreport=1
                |) b
+               |on a.searchid = b.searchid
                |where cvr_model_name is not null
                |and length(cvr_model_name) > 0
                |and cvr_model_name not like '%noctr%'
