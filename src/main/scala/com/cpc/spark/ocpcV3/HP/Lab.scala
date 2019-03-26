@@ -11,29 +11,28 @@ object Lab {
     import spark.implicits._
 
 
-    val appCat = getAppCat(spark)
+    val appCat = getAppCat(spark)  // appName, cat
     println("============================== appCat ===================================")
     appCat.show(10)
 
-    val appFreq = getAppFreq(spark, date)
+    val appFreq = getAppFreq(spark, date)  // appName0, appName1, appName, count
     println("============================== appFreq  ======================================")
     appFreq.show(10)
 
-    val app = appCat
+    val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName0")
+      .select("cat", "appName", "appName1", "appName0")
       .filter("cat is not NULL").toDF()
 
     //    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
     println("==============================  app  ==========================================")
-    app.show(10)
+    appCat0.show(10)
 
     val uidApp = getUidApp(spark, date).cache() //uid,pkgs
 
-    uidApp.write.mode("overwrite").saveAsTable("test.uidApp_sjq")
-
-    //    val uidApp1 = uidApp
-    //    uidApp1.show( 10 )
+//    uidApp.write.mode("overwrite").saveAsTable("test.uidApp_sjq")
+//        val uidApp1 = uidApp
+//        uidApp1.show( 10 )
 
     val uidApp2 = uidApp.rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
@@ -45,11 +44,18 @@ object Lab {
           lb += UidApp(uid, app)
         }
         lb
-      }).toDF()
+      }).toDF() // uid, app
+
     //      .map( x => x._2.map( y => UidApp( x._1, y )) )
     //      .reduce((x, y) => x ++ y )//.toDF()
 
-    uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
+//    uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
+
+    val result = appCat0
+      .join(uidApp2, appCat0("appName0") === uidApp2("app"), "inner" )
+      .select("uid", "app", "cat")
+
+    result.write.mode("overwrite").saveAsTable("test.uid_app_cat_sjq")
 
 
   }
