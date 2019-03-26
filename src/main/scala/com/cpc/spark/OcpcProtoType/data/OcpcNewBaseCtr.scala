@@ -38,11 +38,11 @@ object OcpcNewBaseCtr {
          |    media_appsid,
          |    adslot_type,
          |    adtype,
-         |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |    adclass,
+         |    exp_cvr,
          |    isclick,
          |    isshow,
-         |    ext_string['ocpc_log'] as ocpc_log
+         |    ocpc_log
          |from dl_cpc.ocpc_base_unionlog
          |where $selectWhere
          |and isclick is not null
