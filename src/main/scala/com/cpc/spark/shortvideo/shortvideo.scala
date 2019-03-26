@@ -72,7 +72,7 @@ object shortvideo {
          |             charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,media_appsid,interaction,adsrc,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
          |  from       dl_cpc.cpc_basedata_union_events
-         |  where     (day>=date_add('${date}',-1)  and hour>='${hour}' ) and  (day<='${date}' and hour<'${hour}')
+         |  where     (day=date_add('${date}',-1)  and hour>='${hour}' ) and  (day='${date}' and hour<'${hour}')
          |  and      media_appsid in  ("80000001","80000002")
          |  and      interaction=2
          |  and     adtype in (2,8,10)
