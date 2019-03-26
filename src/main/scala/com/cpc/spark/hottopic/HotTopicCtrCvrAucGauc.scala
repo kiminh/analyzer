@@ -144,7 +144,7 @@ object HotTopicCtrCvrAucGauc {
     println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
 
 //    分模型-cvr
-    val cvrModelNames = union.filter("length(cvr_model_name)>0").select("cvr_model_name")
+    val cvrModelNames = union.filter("length(cvr_model_name)>0  && label1 = 1 ").select("cvr_model_name")
       .distinct()
       .collect()
       .map(x => x.getAs[String]("cvr_model_name"))
@@ -152,7 +152,7 @@ object HotTopicCtrCvrAucGauc {
 
     for (cvrModelName <- cvrModelNames) {
       println(cvrModelName)
-      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName'").withColumnRenamed("score2", "score").withColumnRenamed("label2", "label")
+      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName' && label1 = 1 ").withColumnRenamed("score2", "score").withColumnRenamed("label2", "label")
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       val cvrModeGaucLists = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").collect()
       println(cvrModeGaucLists.length)
