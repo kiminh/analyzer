@@ -39,6 +39,13 @@ object shortvideo {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
+////  设定前一天的时间点
+//    val cala=calendar.add(Calendar.HOUR,-24)
+//    val yes=cala.setTime
+//    val yesday=dateConverter.format(yes)
+//    val yesdate=yesday.split(" ")(0)
+//    val yestime=yesday.split(" ")(1)
+//    设定过去七天的时间点
     calendar.add(Calendar.HOUR, -168)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
@@ -49,7 +56,100 @@ object shortvideo {
     val selectCondition2 = getTimeRangeSql22(date1, hour1, date, hour)
     val selectCondition3 = getTimeRangeSql23(date1, hour1, date, hour)
 
+
     spark.sql("set hive.exec.dynamic.partition=true")
+//  每日更新过去24小时的unionevents数据
+    val sql0=
+      s"""
+         |insert overwrite table dl_cpc.cpc_unionevents_video_mid  partition (dt,hr)
+         |select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
+         |         exp_cvr,cvr_rank,src,
+         |          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
+         |          usertype,view1.adslotid,isshow,price,media_appsid,interaction,adsrc,charge_type,day as dt,hour as hr
+         |from
+         |(
+         |  select      day  ,hour ,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslot_id as adslotid,
+         |             charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,media_appsid,interaction,adsrc,charge_type,
+         |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
+         |  from       dl_cpc.cpc_basedata_union_events
+         |  where     (day>=date_add('${date}',-1)  and hour>='${hour}' ) and  (day<='${date}' and hour<'${hour}')
+         |  and      media_appsid in  ("80000001","80000002")
+         |  and      interaction=2
+         |  and     adtype in (2,8,10)
+         |  and     userid>0
+         |  and     usertype in (0,1,2)
+         |  and     isclick=1
+         |  and     adslot_type = 1
+         |  and     adsrc = 1
+         |  and     isshow = 1
+         |  and     ideaid > 0
+         |  and      (charge_type is null or charge_type=1)
+         |  and     uid not like "%.%"
+         |  and     uid not like "%000000%"
+         |  and     length(uid) in (14, 15, 36)
+         |  and     searchid not in
+         |      (
+         |        select  searchid
+         |        FROM
+         |        (
+         |         select  searchid,userid,exptags,newtags
+         |         from   dl_cpc.cpc_basedata_union_events
+         |         lateral view explode(exptags) tab as newtags
+         |         )   f
+         |        where   f.newtags like '%use_strategy%'
+         |        group by searchid
+         |      )
+         |) view1
+         |left JOIN
+         |(
+         |  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,
+         |label_type,  label2
+         |  FROM
+         |  (
+         |    select          `date`,hour,
+         |                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
+         |                     final.ideaid as ideaid,
+         |                     case
+         |          when final.src="elds" and final.label_type=6 then 1
+         |          when final.src="feedapp" and final.label_type in (4, 5) then 1
+         |          when final.src="yysc" and final.label_type=12 then 1
+         |          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+         |          when final.src="others" and final.label_type=6 then 1
+         |          else 0     end as isreport
+         |          from
+         |          (
+         |          select  distinct
+         |              `date`,hour,searchid, media_appsid, uid,
+         |              planid, unitid, ideaid, adclass,adslot_type,label2,
+         |              case
+         |                  when (adclass like '134%' or adclass like '107%') then "elds"
+         |                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
+         |                  when (adslot_type=7 and adclass like '100%') then "yysc"
+         |                  when adclass in (110110100, 125100100) then "wzcp"
+         |                  else "others"
+         |              end as src,
+         |              label_type
+         |          from
+         |              dl_cpc.ml_cvr_feature_v1
+         |          where
+         |              ${selectCondition2}
+         |              and label2=1
+         |             and media_appsid in ("80000001","80000002")
+         |            ) final
+         |       ) aa
+         |  where   aa.isreport=1
+         |) a
+         |on  a.searchid2=view1.searchid
+         |and   a.`date`=view1.day
+         |and   a.hour2 =view1.hour
+         |group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
+         |         exp_cvr,cvr_rank,src,
+         |          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
+         |          usertype, adslotid,isshow,price,media_appsid,interaction,adsrc,charge_type,day,hour
+       """.stripMargin
+      val tab00=spark.sql(sql0).persist()
+       tab00.createOrReplaceTempView("videomidtab")
+
     //  生成中间表 video_mid
      spark.sql(
       s"""
@@ -171,21 +271,6 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     tabd.write.mode("overwrite").insertInto("dl_cpc.userid_expcvr_lastpercent")
     tabd.show(10,false)
 
-//    val tabc = spark.createDataFrame(tabb)
-//    val tabd = tabc.rdd.map(r => {
-//      val userid = r.getAs[String](0)
-//      userid
-//      val rank0per = r.getAs[Int](1)(0).toInt
-//       val rank5per = r.getAs[Int](1)(1)
-//      val rank10per = r.getAs[Int](1)(2)
-//      val rank15per = r.getAs[Int](1)(3)
-//      val rank20per = r.getAs[Array[Int]](1)(4)
-//      val rank25per = r.getAs[Array[Int]](1)(5)
-//      val rank30per = r.getAs[Array[Int]](1)(6)
-//      (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
-//    }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
-//      toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
-//    tabd.show(false)
     println("spark 7 threshold tab success!")
 
     //计算大图和短视频实际cvr
@@ -640,5 +725,36 @@ expcvr_threshold   bigint comment'expcvr阈值'
 partitioned by (dt string, hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n'
 
+//后续新增每日更新的video的基础中间表，作为dl_cpc.cpc_union_events_video_mid的from来源
+create table if not exists dl_cpc.cpc_unionevents_video_mid
+(
+    searchid string,
+    adtype   string,
+    userid   string,
+    ideaid   int,
+    isclick  int,
+    isreport int,
+    expcvr_d  double,
+    exp_cvr int,
+    cvr_rank bigint,
+    src      string,
+    label_type int,
+    planid   int,
+    unitid   int,
+    adclass  int,
+    adslot_type  int,
+    label2   int,
+    uid      string,
+    usertype  int,
+    adslot_id string,
+    isshow   int,
+    price    bigint,
+    media_appsid string,
+    interaction  int,
+    adsrc  int,
+    charge_type  int
+)
+partitioned by (dt string,hr string)
+row format delimited fields terminated by '\t' lines terminated by '\n';
 */
 
