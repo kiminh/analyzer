@@ -21,10 +21,10 @@ object Lab {
 
     val app = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName1", "appName0", "count")
+      .select("cat", "appName0")
       .filter("cat is not NULL").toDF()
 
-//    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
+    //    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
     println("==============================  app  ==========================================")
     app.show(10)
 
@@ -32,17 +32,24 @@ object Lab {
 
     uidApp.write.mode("overwrite").saveAsTable("test.uidApp_sjq")
 
-//    val uidApp1 = uidApp
-//    uidApp1.show( 10 )
+    //    val uidApp1 = uidApp
+    //    uidApp1.show( 10 )
 
     val uidApp2 = uidApp.rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",") ) )
-      .map( x => x._2.map( y => UidApp( x._1, y )) ).reduce((x, y) => x ++ y ).toList.toDF()
+      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
+      .flatMap(x => {
+        val uid = x._1
+        val pkgs = x._2
+        val lb = scala.collection.mutable.ListBuffer[UidApp]()
+        for (app <- pkgs) {
+          lb += UidApp(uid, app)
+        }
+        lb
+      }).toDF()
+    //      .map( x => x._2.map( y => UidApp( x._1, y )) )
+    //      .reduce((x, y) => x ++ y )//.toDF()
 
     uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
-
-
-
 
 
   }
@@ -126,8 +133,10 @@ object Lab {
   }
 
   case class AppCat(var appName: String, var cat: String)
+
   case class AppCount(var appName0: String, var appName1: String, appName: String, var count: Int)
-  case class UidApp( var uid: String, var app: String)
+
+  case class UidApp(var uid: String, var app: String)
 
 }
 
