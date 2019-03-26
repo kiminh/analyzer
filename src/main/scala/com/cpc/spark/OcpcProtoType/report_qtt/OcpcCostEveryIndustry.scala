@@ -15,19 +15,21 @@ object OcpcCostEveryIndustry {
     val sql =
       s"""
         |select
+        |    `date`,
         |    (case when (cast(adclass as string) like "134%" or cast(adclass as string) like "107%") then 'elds'
         |          when cast(adclass as string) like "100%" then 'app'
         |          when adclass in (110110100, 125100100) then 'wzcp'
         |          else 'others' end) as industry,
         |    sum(isclick) as click,
         |    sum(isshow) as show,
-        |    sum(case when isclick = 1 then price else 0 end) * 0.01 as cost
+        |    sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01 as ocpc_cost,
+        |    sum(case when isclick = 1 then price else 0 end) * 0.01 as all_cost,
+        |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end)
+        |      / sum(case when isclick = 1 then price else 0 end), 3) as ratio
         |from
         |    dl_cpc.ocpc_filter_unionlog
         |where
         |    `date` = '$date'
-        |and
-        |    is_ocpc = 1
         |and
         |    media_appsid  in ("80000001", "80000002")
         |and
@@ -37,6 +39,7 @@ object OcpcCostEveryIndustry {
         |and
         |    adsrc = 1
         |group by
+        |    `date`,
         |    (case when (cast(adclass as string) like "134%" or cast(adclass as string) like "107%") then 'elds'
         |          when cast(adclass as string) like "100%" then 'app'
         |          when adclass in (110110100, 125100100) then 'wzcp'
