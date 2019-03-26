@@ -10,6 +10,7 @@ object Lab {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("appInstallation").enableHiveSupport().getOrCreate()
     val date = args(0).toString
+    val days = args(1).toInt
 
     val appCat = getAppCat(spark) // appName, cat
     println("============================== appCat ===================================")
@@ -30,7 +31,7 @@ object Lab {
     println("==============================  appCat0  ==========================================")
     appCat0.show(10)
 
-    val uidApp = getUidApp(spark, date, appCat0).cache() //"date", "uid", "cat"
+    val uidApp = getUidApp(spark, date, days-1, appCat0).cache() //"date", "uid", "cat"
 
     println("uidApp has " + uidApp.count() + " lines. ")
     println("=============================== uidApp =============================================")
@@ -91,7 +92,7 @@ object Lab {
     result
   }
 
-  def getUidApp(spark: SparkSession, date: String, appCat: DataFrame) = {
+  def getUidApp(spark: SparkSession, date: String, days: Int, appCat: DataFrame) = {
     /** appCat字段： cat, appName, appName0 */
     import spark.implicits._
 
@@ -99,7 +100,7 @@ object Lab {
     val calendar = Calendar.getInstance
     val yesterday = sdf.parse(date)
     calendar.setTime(yesterday)
-    calendar.add(Calendar.DATE, -6)
+    calendar.add(Calendar.DATE, -days)
     val firstDay = calendar.getTime
     val date0 = sdf.format(firstDay)
 
