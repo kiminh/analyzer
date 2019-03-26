@@ -2,7 +2,7 @@ package com.cpc.spark.ocpcV3.HP
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
-import Array._
+
 
 object Lab {
   def main(args: Array[String]): Unit = {
@@ -37,7 +37,7 @@ object Lab {
 
     val uidApp2 = uidApp.rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",") ) )
-      .map( x => x._2.map( y => UidApp( x._1, y )) ).reduce((x, y) => concat(x, y)).toList.toDF()
+      .map( x => x._2.map( y => UidApp( x._1, y )) ).reduce((x, y) => x ++ y ).toList.toDF()
 
     uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
 
