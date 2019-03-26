@@ -25,6 +25,7 @@ object OcpcUnionlog {
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
+    
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
