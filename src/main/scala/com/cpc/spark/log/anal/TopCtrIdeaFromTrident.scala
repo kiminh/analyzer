@@ -91,7 +91,9 @@ object TopCtrIdeaFromTrident {
           |  adslot_type
           |  , ideaid
         """.stripMargin.format(date)
+
       println(stmt)
+
       val ulog = spark.sql(stmt)
         .rdd
         .map {

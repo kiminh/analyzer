@@ -97,17 +97,47 @@ object GetTraceReportFromTrident {
   def saveTraceReport(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
-         |select tr.searchid, un.userid as user_id
-         |,un.planid as plan_id ,un.unitid as unit_id ,
-         |un.ideaid as idea_id, tr.date as date,tr.hour,
-         |tr.trace_type as trace_type,tr.trace_op1 as trace_op1 ,tr.duration as duration, tr.auto
-         |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
-       """.stripMargin.format(date, hour, date, hour))
-      //      .as[TraceReportLog]
-      .rdd.cache()
+         |select
+         |  tr.searchid
+         |  , un.userid as user_id
+         |  , un.planid as plan_id
+         |  , un.unitid as unit_id
+         |  , un.ideaid as idea_id
+         |  , tr.day as date
+         |  , tr.hour
+         |  , tr.trace_type as trace_type
+         |  , tr.trace_op1 as trace_op1
+         |  , tr.duration as duration
+         |  , tr.auto
+         |from dl_cpc.cpc_basedata_trace_event as tr
+         |left join dl_cpc.cpc_basedata_union_events as un
+         |  on tr.searchid = un.searchid
+         |where tr.day="%s"
+         |  and tr.hour=%s
+         |  and un.day="%s"
+         |  and un.hour=%s
+         |  and un.isclick=1
+         |  and un.adslot_type<>7
+       """
+        .stripMargin
+        .format(date, hour, date, hour))
+      .rdd
+      .cache()
 
-    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
+    val sql1 =
+      s"""
+         |select
+         |  ideaid
+         |  , sum(isshow) as show
+         |  , sum(isclick) as click
+         |from dl_cpc.cpc_basedata_union_events
+         |where day="%s"
+         |  and hour=%s
+         |group by ideaid
+       """
+        .stripMargin
+        .format(date, hour)
+
     val unionRdd = ctx.sql(sql1).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
