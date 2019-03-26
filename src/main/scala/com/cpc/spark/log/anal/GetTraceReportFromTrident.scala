@@ -88,7 +88,7 @@ object GetTraceReportFromTrident {
          |  , tr.trace_op1 as trace_op1
          |  , tr.duration as duration
          |  , tr.auto
-         |from dl_cpc.cpc_basedata_trace_event as tr
+         |from dl_cpc.cpc_basedata_union_trace_events as tr
          |left join dl_cpc.cpc_basedata_union_events as un
          |  on tr.searchid = un.searchid
          |where tr.day="%s"
