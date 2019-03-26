@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#sh ReportCoinTotalMetrics.sh 2019-01-24
+#sh HotTopicCtrCvrAucGauc.sh 2019-01-24
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 
 cur_time=$1
-date=`date -d"${cur_time} 1 day ago" +"%Y-%m-%d"`
-
+date=`date -d"${cur_time}" +"%Y-%m-%d"`
+hour=`date -d "${cur_time}" +%H`
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -25,6 +25,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.coin.ReportCoinTotalMetrics \
-    $indin $date
+    --class com.cpc.spark.hottopic.HotTopicCtrCvrAucGauc \
+    $indin $date $hour
 
