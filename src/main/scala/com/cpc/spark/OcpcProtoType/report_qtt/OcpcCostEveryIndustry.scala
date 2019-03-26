@@ -27,7 +27,7 @@ object OcpcCostEveryIndustry {
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end)
         |      / sum(case when isclick = 1 then price else 0 end), 3) as ratio
         |from
-        |    dl_cpc.ocpc_filter_unionlog
+        |    dl_cpc.ocpc_base_unionlog
         |where
         |    `date` = '$date'
         |and
