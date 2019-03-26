@@ -143,8 +143,75 @@ object HotTopicCtrCvrAucGauc {
                     //.insertInto("test.cpc_hot_topic_ctr_auc_gauc_hourly")
     println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
 
+    val sql_cvr =
+      s"""
+         |select
+         |a.score,
+         |a.cvr_model_name,
+         |a.uid,
+         |case when b.searchid is not null then 1 else 0 end as label
+         |from
+         |(select
+         | searchid,
+         |  exp_cvr as score,
+         |  cvr_model_name,
+         |  cast(uid as string) as uid
+         |from dl_cpc.cpc_hot_topic_basedata_union_events
+         |where day = '$date'
+         |and `hour`='$hour'
+         |and media_appsid in ('80002819')
+         |and adsrc = 1
+         |and isclick = 1
+         |and ideaid > 0
+         |and userid > 0
+         |and (charge_type IS NULL OR charge_type = 1)  )a
+         |left join
+         |    (
+         |        select tmp.searchid
+         |        from
+         |        (
+         |            select
+         |                final.searchid as searchid,
+         |                final.ideaid as ideaid,
+         |                case
+         |                    when final.src="elds" and final.label_type=6 then 1
+         |                    when final.src="feedapp" and final.label_type in (4, 5) then 1
+         |                    when final.src="yysc" and final.label_type=12 then 1
+         |                    when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+         |                    when final.src="others" and final.label_type=6 then 1
+         |                    else 0
+         |                end as isreport
+         |            from
+         |            (
+         |                select
+         |                    searchid, media_appsid, uid,
+         |                    planid, unitid, ideaid, adclass,
+         |                    case
+         |                        when (adclass like '134%' or adclass like '107%') then "elds"
+         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
+         |                        when (adslot_type=7 and adclass like '100%') then "yysc"
+         |                        when adclass in (110110100, 125100100) then "wzcp"
+         |                        else "others"
+         |                    end as src,
+         |                    label_type
+         |                from
+         |                    dl_cpc.ml_cvr_feature_v1
+         |                where
+         |                    `date`='$date'
+         |                    and 'hour'='$hour'
+         |                    and label2=1
+         |                    and media_appsid in ('80002819')
+         |                ) final
+         |            ) tmp
+         |        where tmp.isreport=1
+         |    ) b
+         |    on a.searchid = b.searchid
+             """.stripMargin
+
+    val union_cvr = spark.sql(sql_cvr).cache()
+
 //    分模型-cvr
-    val cvrModelNames = union.filter("length(cvr_model_name)>0 and label1 = 1 ").select("cvr_model_name")
+    val cvrModelNames = union_cvr.filter("length(cvr_model_name)>0 ").select("cvr_model_name")
       .distinct()
       .collect()
       .map(x => x.getAs[String]("cvr_model_name"))
@@ -152,7 +219,7 @@ object HotTopicCtrCvrAucGauc {
 
     for (cvrModelName <- cvrModelNames) {
       println(cvrModelName)
-      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName' and label1 = 1 ").withColumnRenamed("score2", "score").withColumnRenamed("label2", "label")
+      val cvrModelUnion = union.filter(s"cvr_model_name = '$cvrModelName' ")
       cvrModelUnion.show(10)
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       println("auc" + cvrModelAuc)
