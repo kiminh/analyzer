@@ -145,67 +145,62 @@ object HotTopicCtrCvrAucGauc {
 
     val sql_cvr =
       s"""
-         |select
-         |a.score,
-         |a.cvr_model_name,
-         |a.uid,
-         |case when b.searchid is not null then 1 else 0 end as label
+         |select cvr_model_name,exp_cvr as score,uid,if(b.searchid is not null,1,0) as label
          |from
-         |(select
-         | searchid,
-         |  exp_cvr as score,
-         |  cvr_model_name,
-         |  cast(uid as string) as uid
-         |from dl_cpc.cpc_hot_topic_basedata_union_events
-         |where day = '$date'
-         |and `hour`='$hour'
-         |and media_appsid in ('80002819')
-         |and adsrc = 1
-         |and isclick = 1
-         |and ideaid > 0
-         |and userid > 0
-         |and (charge_type IS NULL OR charge_type = 1)  )a
-         |left join
+         |(
+         |    select searchid,cvr_model_name,exp_cvr,uid
+         |    from dl_cpc.cpc_hot_topic_basedata_union_events
+         |    where day = '$date' and hour = '$hour'
+         |    and media_appsid in ('80002819')
+         |    and adsrc = 1
+         |    and isclick = 1
+         |    and (charge_type is null or charge_type=1)
+         |    and uid not like "%.%"
+         |    and uid not like "%000000%"
+         |    and length(uid) in (14, 15, 36)
+         |    and ideaid > 0
+         |    and userid > 0
+         |) a
+         |left outer join
+         |(
+         |    select tmp.searchid
+         |    from
          |    (
-         |        select tmp.searchid
+         |        select
+         |            final.searchid as searchid,
+         |            final.ideaid as ideaid,
+         |            case when final.src="elds" and final.label_type=6 then 1
+         |                when final.src="feedapp" and final.label_type in (4, 5) then 1
+         |                when final.src="yysc" and final.label_type=12 then 1
+         |                when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+         |                when final.src="others" and final.label_type=6 then 1
+         |                else 0
+         |            end as isreport
          |        from
          |        (
-         |            select
-         |                final.searchid as searchid,
-         |                final.ideaid as ideaid,
-         |                case
-         |                    when final.src="elds" and final.label_type=6 then 1
-         |                    when final.src="feedapp" and final.label_type in (4, 5) then 1
-         |                    when final.src="yysc" and final.label_type=12 then 1
-         |                    when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-         |                    when final.src="others" and final.label_type=6 then 1
-         |                    else 0
-         |                end as isreport
+         |            select searchid, media_appsid, uid,
+         |                planid, unitid, ideaid, adclass,
+         |                case when (adclass like '134%' or adclass like '107%') then "elds"
+         |                    when (adslot_type<>7 and adclass like '100%') then "feedapp"
+         |                    when (adslot_type=7 and adclass like '100%') then "yysc"
+         |                    when adclass in (110110100, 125100100) then "wzcp"
+         |                    else "others"
+         |                end as src,
+         |                label_type
          |            from
-         |            (
-         |                select
-         |                    searchid, media_appsid, uid,
-         |                    planid, unitid, ideaid, adclass,
-         |                    case
-         |                        when (adclass like '134%' or adclass like '107%') then "elds"
-         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
-         |                        when (adslot_type=7 and adclass like '100%') then "yysc"
-         |                        when adclass in (110110100, 125100100) then "wzcp"
-         |                        else "others"
-         |                    end as src,
-         |                    label_type
-         |                from
-         |                    dl_cpc.ml_cvr_feature_v1
-         |                where
-         |                    `date`='$date'
-         |                    and 'hour'='$hour'
-         |                    and label2=1
-         |                    and media_appsid in ('80002819')
-         |                ) final
-         |            ) tmp
-         |        where tmp.isreport=1
-         |    ) b
-         |    on a.searchid = b.searchid
+         |                dl_cpc.ml_cvr_feature_v1
+         |            where
+         |                `date`='$date' and hour = '$hour'
+         |                and label2=1
+         |                and media_appsid in ("80002819")
+         |            ) final
+         |        ) tmp
+         |    where tmp.isreport=1
+         |) b
+         |on a.searchid = b.searchid
+         |where cvr_model_name is not null
+         |and length(cvr_model_name) > 0
+         |and cvr_model_name not like '%noctr%'
              """.stripMargin
 
     val union_cvr = spark.sql(sql_cvr).cache()
