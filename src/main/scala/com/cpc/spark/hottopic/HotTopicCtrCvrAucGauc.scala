@@ -250,8 +250,8 @@ object HotTopicCtrCvrAucGauc {
 
     val tableName1 = "report2.cpc_hot_topic_ctr_auc_gauc_hourly"
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
-    val deleteSql1 = s"delete from $tableName1 where `date` = '$date' and hour = '$hour'"
-    val deleteSql2 = s"delete from $tableName2 where `date` = '$date' and hour = '$hour'"
+    val deleteSql1 = s"delete from $tableName1 where day = '$date' and hour = '$hour'"
+    val deleteSql2 = s"delete from $tableName2 where day = '$date' and hour = '$hour'"
     OperateMySQL.update(deleteSql1) //先删除历史数据
     OperateMySQL.insert(CtrAucGauc,tableName1)
     OperateMySQL.update(deleteSql2) //先删除历史数据
