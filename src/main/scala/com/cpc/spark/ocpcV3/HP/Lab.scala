@@ -1,5 +1,7 @@
 package com.cpc.spark.ocpcV3.HP
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
 
@@ -8,60 +10,29 @@ object Lab {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("appInstallation").enableHiveSupport().getOrCreate()
     val date = args(0).toString
-    import spark.implicits._
 
-
-    val appCat = getAppCat(spark)  // appName, cat
+    val appCat = getAppCat(spark) // appName, cat
     println("============================== appCat ===================================")
     appCat.show(10)
 
-    val appFreq = getAppFreq(spark, date)  // appName0, appName1, appName, count
+    val appFreq = getAppFreq(spark, date) // appName0, appName1, appName, count
     println("============================== appFreq  ======================================")
     appFreq.show(10)
 
     val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName1", "appName0")
-      .filter("cat is not NULL").toDF()
+      .select("cat", "appName", "appName0")
+      .toDF()
 
-    //    app.write.mode("overwrite").saveAsTable("test.AppCat1_sjq")
+    println("appCat0 has " + appCat0.count() + " lines. ")
     println("==============================  appCat0  ==========================================")
     appCat0.show(10)
 
-    val uidApp = getUidApp(spark, date).cache() //uid,pkgs
+    val uidApp = getUidApp(spark, date, appCat0).cache() //"date", "uid", "cat"
 
-//    uidApp.write.mode("overwrite").saveAsTable("test.uidApp_sjq")
-//        val uidApp1 = uidApp
-//        uidApp1.show( 10 )
-
+    println("uidApp has " + uidApp.count() + " lines. ")
     println("=============================== uidApp =============================================")
     uidApp.show(10)
-
-    val uidApp2 = uidApp.rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
-      .flatMap(x => {
-        val uid = x._1
-        val pkgs = x._2
-        val lb = scala.collection.mutable.ListBuffer[UidApp]()
-        for (app <- pkgs) {
-          lb += UidApp(uid, app)
-        }
-        lb
-      }).toDF() // uid, app
-    println("============================== uidApp2 =======================================")
-    uidApp2.show(10)
-
-//    uidApp2.write.mode("overwrite").saveAsTable("test.uidApp2_sjq")
-
-    val result = appCat0
-      .join(uidApp2, appCat0("appName0") === uidApp2("app"), "inner" )
-      .select("uid", "cat").distinct()
-
-    println("=============================== result =========================================")
-    result.show(10)
-
-
-    result.write.mode("overwrite").saveAsTable("test.uid_app_cat_sjq")
 
 
   }
@@ -91,10 +62,10 @@ object Lab {
 
   def getAppFreq(spark: SparkSession, date: String) = {
     import spark.implicits._
+
     val sql1 =
       s"""
          |select
-         | uid,
          | concat_ws(',', app_name) as pkgs1
          |from dl_cpc.cpc_user_installed_apps a
          |where load_date = '$date'
@@ -118,37 +89,73 @@ object Lab {
     result
   }
 
-  def getUidApp(spark: SparkSession, date: String) = {
+  def getUidApp(spark: SparkSession, date: String, appCat: DataFrame) = {
+    /** appCat字段： cat, appName, appName0 */
+    import spark.implicits._
+
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    val yesterday = sdf.parse(date)
+    calendar.setTime(yesterday)
+    calendar.add(Calendar.DATE, -6)
+    val firstDay = calendar.getTime
+    val date0 = sdf.format(firstDay)
+
     val sql =
       s"""
          | select
+         |  t1.dt as date,
          |  t1.uid,
          |  t2.pkgs1
          |from (
          | select
+         |  dt,
          |  uid
          | from dl_cpc.slim_union_log
-         |where dt = '$date'
+         |where dt between '$date0' and '$date'
          |  and adsrc = 1
          |  and userid >0
          |  and isshow = 1
          |  and antispam = 0
          |  and media_appsid = '80002819'
-         | group by uid ) t1
+         | group by dt, uid ) t1
          | join (
-         |   select uid, concat_ws(',', app_name) as pkgs1  from dl_cpc.cpc_user_installed_apps where load_date = '$date' group by uid, app_name
+         |   select
+         |    load_date,
+         |    uid,
+         |    concat_ws(',', app_name) as pkgs1
+         |   from dl_cpc.cpc_user_installed_apps
+         |  where load_date between '$date0' and '$date'
+         |  group by load_date, uid, app_name
          | ) t2
-         | on t1.uid = t2.uid
+         | on t1.uid = t2.uid and t1.dt = t2.load_date
        """.stripMargin
     val df = spark.sql(sql)
-    df
+
+    val result = df.rdd
+      .map(x => (x.getAs[String]("date"), x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
+      .flatMap(x => {
+        val date = x._1
+        val uid = x._2
+        val pkgs = x._3
+        val lb = scala.collection.mutable.ListBuffer[UidApp]()
+        for (app <- pkgs) {
+          lb += UidApp(date, uid, app)
+        }
+        lb
+      }).toDF() // date, uid, appName0
+      .join(appCat, Seq("appName0"))
+      .select("date", "uid", "cat")
+      .distinct().toDF()
+
+    result
   }
 
   case class AppCat(var appName: String, var cat: String)
 
   case class AppCount(var appName0: String, var appName1: String, appName: String, var count: Int)
 
-  case class UidApp(var uid: String, var app: String)
+  case class UidApp(var date: String, var uid: String, var appName0: String)
 
 }
 
