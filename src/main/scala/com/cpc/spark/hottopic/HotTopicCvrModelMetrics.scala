@@ -21,7 +21,7 @@ object HotTopicCvrModelMetrics {
                |select cvr_model_name,exp_cvr as score,uid,if(b.searchid is not null,1,0) as label
                |from
                |(
-               |    select cvr_model_name,exp_cvr,uid
+               |    select searchid,cvr_model_name,exp_cvr,uid
                |    from dl_cpc.cpc_hot_topic_basedata_union_events
                |    where day = '$day' and hour = '$hour'
                |    and media_appsid in ('80002819')
