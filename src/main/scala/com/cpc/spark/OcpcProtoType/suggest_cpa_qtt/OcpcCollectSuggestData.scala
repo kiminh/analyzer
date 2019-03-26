@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
 object OcpcCollectSuggestData {
   def main(args: Array[String]): Unit = {
     /*
-    从dl_cpc.ocpc_suggest_cpa_recommend_hourly中抽取需要的字段
+    从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2中抽取需要的字段
      */
     // 计算日期周期
     val date = args(0).toString
@@ -22,17 +22,27 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    // 安装类feedapp广告单元
+    val feedappNoAPI = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
+//    feedappNoAPI.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324a")
+
     // api回传的feedapp广告
-    val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
-    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    val feedappAPI = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+    val feedappAPIlist = feedappAPI.select("unitid").distinct()
+    val feedapp = feedappNoAPI
+      .join(feedappAPIlist, Seq("unitid"), "inner")
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
+      .withColumn("exp_tag", lit("OcpcHiddenAdv")) //    feedapp.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324b")
 
     // 二类电商
-    val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
+    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    elds.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324c")
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
+    wz.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324d")
 
     // 数据串联
     val cpaData = feedapp
@@ -53,15 +63,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-//
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("verion", lit("qtt_demo"))
-//      .repartition(5)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+
+    data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("verion", lit("qtt_demo"))
+      .repartition(5)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
@@ -397,7 +407,7 @@ object OcpcCollectSuggestData {
          |  cast(0.5 * acb as int) as last_bid,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
@@ -407,7 +417,7 @@ object OcpcCollectSuggestData {
          |AND
          |  industry = '$industry'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
          |AND
          |  is_recommend = 1
        """.stripMargin

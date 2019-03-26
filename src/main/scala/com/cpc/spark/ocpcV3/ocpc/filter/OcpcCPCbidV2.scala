@@ -112,7 +112,7 @@ object OcpcCPCbidV2 {
     println(sqlRequest)
     val data1 = spark
       .sql(sqlRequest)
-      .filter(s"duration <= 3")
+      .filter(s"duration <= 15")
       .withColumn("param_t2", lit(10))
       .select("unitid", "conversion_goal", "cpa_suggest2", "param_t2")
 

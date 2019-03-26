@@ -61,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -111,7 +111,6 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
       .filter(s"kvalue is not null")
 
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
     val resultDF = result
       .select("identifier", "kvalue", "conversion_goal")
@@ -239,11 +238,11 @@ object OcpcGetPb {
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
 
-    result
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+//    result
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
 
     println("k smooth strat1:")
     result.show(10)
@@ -287,7 +286,6 @@ object OcpcGetPb {
 //      .select("identifier", "kvalue2")
 //    val cpcKraw = cpcK1
 //      .join(cpcK2, Seq("identifier"), "left_outer")
-//    cpcKraw.write.mode("overwrite").saveAsTable("test.ocpc_check_k_by_conf20190320")
 //    val cpcK = cpcKraw
 //      .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
 //      .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
@@ -306,9 +304,9 @@ object OcpcGetPb {
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
+    finalK.write.mode("overwrite").saveAsTable("test.check_new_getpb20190325")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
@@ -374,6 +372,7 @@ object OcpcGetPb {
          |SELECT
          |  searchid,
          |  cast(unitid as string) as identifier,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  1 as history_ocpc_flag
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -387,6 +386,7 @@ object OcpcGetPb {
     println(sqlRequest1)
     val ocpcHistoryData = spark
       .sql(sqlRequest1)
+      .filter(s"is_hidden != 1")
       .select("identifier", "history_ocpc_flag")
       .distinct()
 
@@ -645,14 +645,28 @@ object OcpcGetPb {
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
+    val sqlRequestOcpcRecord =
+      s"""
+         |SELECT
+         |  searchid,
+         |  cast(unitid as string) identifier,
+         |  isclick,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) is_hidden
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc=1
+       """.stripMargin
+    println(sqlRequestOcpcRecord)
     val ocpcUnionlog = spark
-      .table("dl_cpc.ocpc_filter_unionlog")
-      .where(selectCondition)
-      .filter(mediaSelection)
-      .filter(s"is_ocpc = 1")
-      .withColumn("identifier", col("unitid"))
+      .sql(sqlRequestOcpcRecord)
+      .filter(s"is_hidden != 1")
       .filter("isclick=1")
-      .selectExpr("searchid", "cast(identifier as string) identifier")
+      .select("searchid", "identifier")
 
     // cvr data
     // 抽取数据
