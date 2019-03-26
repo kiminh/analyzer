@@ -84,7 +84,7 @@ object HotTopicCvrModelMetrics {
           .map(_.getAs[String]("cvr_model_name"))
 
         for (cvr_model_name <- cvr_model_names) {
-            val modelData = union.filter(s"cvr_model_name = $cvr_model_name")
+            val modelData = union.filter(s"cvr_model_name = '$cvr_model_name'")
             val auc = CalcMetrics.getAuc(spark,modelData)
             val aucArray = CalcMetrics.getGauc(spark,modelData,"uid").filter("auc != -1").collect()
             val gauc = if(aucArray.length > 0) {
