@@ -245,6 +245,4 @@ object MultiDimensionCalibOnMidu {
     }
     return (bins, totalSize, allClickSum)
   }
-
-  def
 }
