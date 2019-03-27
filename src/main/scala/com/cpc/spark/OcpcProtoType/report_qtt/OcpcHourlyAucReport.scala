@@ -74,6 +74,7 @@ object OcpcHourlyAucReport {
          |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    price
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -89,7 +90,7 @@ object OcpcHourlyAucReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val ctrData = spark.sql(sqlRequest)
+    val ctrData = spark.sql(sqlRequest).filter(s"is_hidden != 1")
 
     // cvr1Data
     val sqlRequest1 =

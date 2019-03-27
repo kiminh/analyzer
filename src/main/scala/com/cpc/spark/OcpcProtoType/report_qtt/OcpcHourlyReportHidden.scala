@@ -382,6 +382,7 @@ object OcpcHourlyReportHidden {
          |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -395,10 +396,9 @@ object OcpcHourlyReportHidden {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and ocpc_log_dict['IsHiddenOcpc'] = 1
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest).filter(s"is_hidden = 1")
 
 
     // 关联转化表
