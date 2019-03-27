@@ -67,6 +67,7 @@ object OcpcCheckFile {
          |            adsrc = 1
          |        and
          |            is_ocpc=0
+         |        AND charge_type IN (0,1,28)
          |        ) as a
          |    left join
          |        (
@@ -167,6 +168,7 @@ object OcpcCheckFile {
          |            adsrc = 1
          |        and
          |            is_ocpc=0
+         |        AND charge_type IN (0,1,28)
          |        ) as a
          |    left join
          |        (
@@ -268,6 +270,7 @@ object OcpcCheckFile {
          |            adsrc = 1
          |        and
          |            is_ocpc=0
+         |        AND charge_type IN (0,1,28)
          |        ) as a
          |    left join
          |        (
@@ -322,7 +325,7 @@ object OcpcCheckFile {
 
     val result = data1.union(data2).union(data3)
 
-    result.write.mode("overwrite").saveAsTable("test.check_data_elds20190327cpc")
+    result.write.mode("overwrite").saveAsTable("test.check_data_elds20190327cpc1")
 
   }
 }
