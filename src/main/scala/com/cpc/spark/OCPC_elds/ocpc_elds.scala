@@ -58,7 +58,7 @@ object ocpc_elds {
          |b.pre_cvr as after_pre_cvr,
          |b.post_cvr as after_post_cvr,
          |if(a.cost is not null or a.cost != 0,(a.cost-b.cost)/a.cost,0) as cost_ratio,
-         |a.`date`,
+         |a.`date`
          |from
          |(select
          |*
