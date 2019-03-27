@@ -89,7 +89,7 @@ object MultiDimensionCalibOnMidu {
     keygroup.printSchema()
     keygroup.select("user_req_ad_num","adslot_id","ideaid","group").distinct().show(100)
 
-    val data = log.
+    val data = log
 
 //    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
   }
