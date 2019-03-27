@@ -71,24 +71,21 @@ object MultiDimensionCalibOnMidu {
     val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count()
       .withColumn("count1",col("count"))
 
-    group1.printSchema()
-
-    group1.show(5)
-
     val group2 = log.groupBy("user_req_ad_num","adslot_id").count().withColumn("count2",col("count"))
 
     val group3 = log.groupBy("user_req_ad_num").count().withColumn("count3",col("count"))
 
     val keygroup = group1.join(group2,Seq("user_req_ad_num","adslot_id"),"left").join(group3,Seq("user_req_ad_num"),"left")
         .withColumn("group",concat_ws("_",col("user_req_ad_num"),col("adslot_id"),col("ideaid")))
-        .withColumn("group",when(col("count1") < 50000,concat_ws("_",col("user_req_ad_num"),col("adslot_id")))
+        .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("user_req_ad_num"),col("adslot_id")))
           .otherwise(col("group")))
-        .withColumn("group",when(col("count2") < 50000,col("user_req_ad_num"))
+        .withColumn("group",when(col("count2") < 100000,col("user_req_ad_num"))
           .otherwise(col("group")))
         .select("user_req_ad_num","adslot_id","ideaid","group").distinct()
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
 
+    keygroup.count()
     data.printSchema()
     data.show(5)
 
