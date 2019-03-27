@@ -67,7 +67,18 @@ object MultiDimensionCalibOnMidu {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
+    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count()
+
+    group1.printSchema()
+
+    group1.show(5)
+
+    val group2 = log.groupBy("user_req_ad_num","adslot_id").count()
+
+    val group3 = log.groupBy("user_req_ad_num").count()
+
+
+//    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
   }
 
   def unionLogToConfig2(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
