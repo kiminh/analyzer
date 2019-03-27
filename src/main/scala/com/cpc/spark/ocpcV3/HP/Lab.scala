@@ -47,6 +47,8 @@ object Lab {
 
     uidApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
 
+    upDate(spark, date )
+
 
   }
 
@@ -163,6 +165,59 @@ object Lab {
       .withColumn("date", lit(date))
 
     result
+  }
+
+  def upDate(spark: SparkSession, date: String): Unit = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    val today = sdf.parse("date")
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime()
+    val date0 = sdf.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |select
+         |  coalesce(t1.cat, t2.cat) as cat,
+         |  coalesce(t1.uid, t2.uid) as uid,
+         |  tag0,
+         |  tag1
+         |from
+         |  (
+         |    select
+         |      cat,
+         |      uid,
+         |      1 as tag1
+         |    from
+         |      dl_cpc.hottopic_uid_bag
+         |    where
+         |      `date` = '$date'
+         |  ) t1 full
+         |  outer join (
+         |    select
+         |      cat,
+         |      uid,
+         |      1 as tag0
+         |    from
+         |      dl_cpc.hottopic_uid_bag
+         |    where
+         |      `date` = '$date0'
+         |  ) t2 on t1.cat = t2.cat
+         |  and t1.uid = t2.uid
+       """.stripMargin
+
+    println(sqlRequest)
+    val df = spark.sql(sqlRequest)
+      //.filter("tag0 is NULL or tag1 is NULL")
+      .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
+      .withColumn("io", when(col("tag0").isNull && col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
+      .withColumn("io1", when(col("tag0").isNull && col("tag1").isNotNull, lit(1)).otherwise(when(col("tag0").isNotNull && col("tag1").isNull, lit(0)).otherwise(lit(-1))))
+
+
+    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
+
+
   }
 
   case class AppCat(var appName: String, var cat: String)
