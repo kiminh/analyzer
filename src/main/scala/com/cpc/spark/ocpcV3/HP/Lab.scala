@@ -218,7 +218,7 @@ object Lab {
 
     val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
 
-//    val result = SetUserProfileTagInHiveDaily( rdd1 )
+    val result = SetUserProfileTagInHiveDaily(rdd1)
 
   }
 
