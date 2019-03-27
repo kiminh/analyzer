@@ -170,7 +170,7 @@ object Lab {
   def upDate(spark: SparkSession, date: String): Unit = {
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val calendar = Calendar.getInstance
-    val today = sdf.parse("date")
+    val today = sdf.parse( date )
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime()
