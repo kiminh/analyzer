@@ -34,6 +34,7 @@ object TopApps {
       .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
+      .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
 
     pkgs.toDF("app_name", "install_user_num")
@@ -49,17 +50,23 @@ object TopApps {
 
     pkgs.take(100).foreach(println)
 
-    //topApps 活跃用户数top100
-    val topApps_top100 = pkgs.take(100)
+
+    val iterator = pkgs.toLocalIterator
 
     var txt = ""
-    for (i <- 0 until topApps_top100.length) {
-      val t = topApps_top100(i)
+    while(iterator.hasNext){
+      val t=iterator.next()
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net"))
+//    for (i <- 0 until topApps_top100.length) {
+    //      val t = topApps_top100(i)
+    //      txt = txt + "%s %s\n".format(t._1, t._2)
+    //    }
+
+//    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+//      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net"))
+    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
