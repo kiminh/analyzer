@@ -76,10 +76,12 @@ object ocpc_elds {
          |and version = 'qtt_demo'
          |and conversion_goal = 3 )b on a.identifier=b.identifier )p
              """.stripMargin
-
+   println(Sql)
     val union = spark.sql(Sql)
+
     //保存到临时表里
     union.createOrReplaceTempView("union")
+    println ("union is successful! ")
 
     val totalsql =
       s"""
@@ -93,7 +95,7 @@ object ocpc_elds {
          | a.dl_b_cost-a.dl_a_cost as gap_cost
          |from
          |(select
-         |count(distinct case when after_unitid is not null then after_identifier else null end) as unitid_cnt,
+         |count(distinct case when after_identifier is not null then after_identifier else null end) as unitid_cnt,
          |count(distinct case when after_userid is not null then after_userid else null end) as userid_cnt,
          |count(distinct case when `date` is null then after_identifier else null end) as new_unitid_cnt,
          |count(distinct case when after_date is null then identifier else null end) as no_unitid_cnt,
@@ -104,10 +106,11 @@ object ocpc_elds {
          |union  )a
              """.stripMargin
 
+    println(totalsql)
     val total = spark.sql(totalsql)
     //保存到临时表里
     total.write.mode("overwrite").saveAsTable("test.ocpc_elds_total")
-
+    println("total is successful! ")
    val dlsql =
      s"""
         |select
@@ -115,8 +118,10 @@ object ocpc_elds {
         |from
         |union a
         |where a.cost>1000
-        |and cost_ratio>0.3
+        |and (cost_ratio>0.3 or after_cost is null)
              """.stripMargin
+
+    println(dlsql)
 
     val result = spark.sql(dlsql)
     result.show(10)
@@ -124,6 +129,7 @@ object ocpc_elds {
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.dl_cpc.ocpc_elds_data")
+    println("result is successful! ")
   }
 
 }
