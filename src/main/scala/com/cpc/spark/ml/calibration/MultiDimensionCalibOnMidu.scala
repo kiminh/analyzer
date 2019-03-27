@@ -73,13 +73,23 @@ object MultiDimensionCalibOnMidu {
 
     group1.show(5)
 
-    val group2 = log.groupBy("user_req_ad_num","adslot_id").count()
+    val group2 = log.groupBy("user_req_ad_num","adslot_id").count().alias("count2")
 
-    val group3 = log.groupBy("user_req_ad_num").count()
+    val group3 = log.groupBy("user_req_ad_num").count().alias("count3")
 
+    val keygroup = group1.join(group2,Seq("user_req_ad_num","adslot_id"),"left").join(group3,Seq("user_req_ad_num"),"left")
+        .withColumn("group",concat_ws("_",col("user_req_ad_num"),col("adslot_id"),col("ideaid")))
+        .withColumn("group",when(col("count1") < 10000,concat_ws("_",col("user_req_ad_num"),col("adslot_id")))
+          .otherwise("group"))
+        .withColumn("group",when(col("count2") < 10000,col("user_req_ad_num"))
+         .otherwise("group"))
+
+    keygroup.printSchema()
+    keygroup.select("user_req_ad_num","adslot_id","ideaid","group").distinct().show(100)
 
 //    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
   }
+
 
   def unionLogToConfig2(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
