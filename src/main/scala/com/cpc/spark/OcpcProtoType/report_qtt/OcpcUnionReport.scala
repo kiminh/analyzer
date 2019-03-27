@@ -1,6 +1,7 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
-import org.apache.spark.sql.SparkSession
+import com.cpc.spark.tools.OperateMySQL
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcUnionReport {
@@ -8,11 +9,13 @@ object OcpcUnionReport {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
-    unionAucReport(date, hour, spark)
-    println("------success---------")
+    unionDetailReport(date, hour, spark)
+    println("------union detail report success---------")
+    unionSummaryReport(date, hour, spark)
+    println("------union summary report success---------")
   }
 
-  def unionAucReport(date: String, hour: String, spark: SparkSession): Unit ={
+  def unionDetailReport(date: String, hour: String, spark: SparkSession): Unit ={
     val sql =
       s"""
         |select
@@ -41,7 +44,8 @@ object OcpcUnionReport {
         |    acb,
         |    auc,
         |    hour,
-        |    version
+        |    version,
+        |    0 as is_hidden
         |from
         |    dl_cpc.ocpc_detail_report_hourly_v4
         |where
@@ -79,7 +83,8 @@ object OcpcUnionReport {
         |    acb,
         |    auc,
         |    hour,
-        |    version
+        |    version,
+        |    1 as is_hidden
         |from
         |    dl_cpc.ocpc_detail_report_hourly_v4
         |where
@@ -93,6 +98,112 @@ object OcpcUnionReport {
     dataDF
       .withColumn("date", lit(date))
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.wt_union_auc_report")
+      .write.mode("overwrite").insertInto("test.wt_union_detail_report")
+    //dataDF
   }
+
+  def unionSummaryReport(date: String, hour: String, spark: SparkSession): Unit ={
+    val sql =
+      s"""
+        |select
+        |    conversion_goal,
+        |    total_adnum,
+        |    step2_adnum,
+        |    low_cpa_adnum,
+        |    high_cpa_adnum,
+        |    step2_cost,
+        |    step2_cpa_high_cost,
+        |    impression,
+        |    click,
+        |    conversion,
+        |    ctr,
+        |    click_cvr,
+        |    cost,
+        |    acp,
+        |    pre_cvr,
+        |    post_cvr,
+        |    q_factor,
+        |    acb,
+        |    auc,
+        |    hour,
+        |    version,
+        |    0 as is_hidden,
+        |from
+        |    dl_cpc.ocpc_summary_report_hourly_v4
+        |where
+        |    `date` = '$date'
+        |and
+        |    hour = '$hour'
+        |and
+        |    version = 'qtt_demo'
+        |
+        |union
+        |
+        |select
+        |    conversion_goal,
+        |    total_adnum,
+        |    step2_adnum,
+        |    low_cpa_adnum,
+        |    high_cpa_adnum,
+        |    step2_cost,
+        |    step2_cpa_high_cost,
+        |    impression,
+        |    click,
+        |    conversion,
+        |    ctr,
+        |    click_cvr,
+        |    cost,
+        |    acp,
+        |    pre_cvr,
+        |    post_cvr,
+        |    q_factor,
+        |    acb,
+        |    auc,
+        |    hour,
+        |    version,
+        |    1 as is_hidden
+        |from
+        |    dl_cpc.ocpc_summary_report_hourly_v4
+        |where
+        |    `date` = '$date'
+        |and
+        |    hour = '$hour'
+        |and
+        |    version = 'qtt_hidden'
+      """.stripMargin
+    val dataDF = spark.sql(sql)
+    dataDF
+      .withColumn("date", lit(date))
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.wt_union_summary_report")
+  }
+
+
+  def saveDataToMysql(dataUnit: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+    // 详情表
+    val dataUnitMysql = dataUnit
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden")
+      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableUnit = "report2.report_ocpc_data_detail_v2"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
+
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+
+    // 汇总表
+    val dataConversionMysql = dataConversion
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden")
+      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
+    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
+
+    OperateMySQL.update(delSQLconversion) //先删除历史数据
+    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+  }
+
 }

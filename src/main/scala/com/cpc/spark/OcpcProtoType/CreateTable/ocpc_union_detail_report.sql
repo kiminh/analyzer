@@ -1,4 +1,4 @@
-create table if not exists test.wt_union_auc_report(
+create table if not exists test.wt_union_detail_report(
     identifier             string,
     userid                  int,
     conversion_goal         int,
@@ -24,7 +24,8 @@ create table if not exists test.wt_union_auc_report(
     acb                     double,
     auc                     double,
     hour                    string,
-    version                 string
+    version                 string,
+    is_hidden               int
 )
 partitioned by (`date` string)
 stored as parquet;
