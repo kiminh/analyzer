@@ -66,16 +66,18 @@ object MultiDimensionCalibOnMidu {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
+    log.persist()
 
-    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count().alias("count1")
+    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count()
+      .withColumn("count1",col("count"))
 
     group1.printSchema()
 
     group1.show(5)
 
-    val group2 = log.groupBy("user_req_ad_num","adslot_id").count().alias("count2")
+    val group2 = log.groupBy("user_req_ad_num","adslot_id").count().withColumn("count2",col("count"))
 
-    val group3 = log.groupBy("user_req_ad_num").count().alias("count3")
+    val group3 = log.groupBy("user_req_ad_num").count().withColumn("count3",col("count"))
 
     val keygroup = group1.join(group2,Seq("user_req_ad_num","adslot_id"),"left").join(group3,Seq("user_req_ad_num"),"left")
         .withColumn("group",concat_ws("_",col("user_req_ad_num"),col("adslot_id"),col("ideaid")))
@@ -86,6 +88,8 @@ object MultiDimensionCalibOnMidu {
 
     keygroup.printSchema()
     keygroup.select("user_req_ad_num","adslot_id","ideaid","group").distinct().show(100)
+
+    val data = log.
 
 //    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
   }
