@@ -9,13 +9,15 @@ object OcpcUnionReport {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
-    //unionDetailReport(date, hour, spark)
+    val dataUnit = unionDetailReport(date, hour, spark)
     println("------union detail report success---------")
-    unionSummaryReport(date, hour, spark)
+    val dataConversion = unionSummaryReport(date, hour, spark)
     println("------union summary report success---------")
+    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+    println("------insert into mysql success----------")
   }
 
-  def unionDetailReport(date: String, hour: String, spark: SparkSession): Unit ={
+  def unionDetailReport(date: String, hour: String, spark: SparkSession): DataFrame ={
     val sql =
       s"""
         |select
@@ -96,13 +98,12 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-      .withColumn("date", lit(date))
-      .repartition(10)
-      .write.mode("overwrite").insertInto("test.wt_union_detail_report")
-    //dataDF
+//      .withColumn("date", lit(date))
+//      .repartition(10)
+//      .write.mode("overwrite").insertInto("test.wt_union_detail_report")
   }
 
-  def unionSummaryReport(date: String, hour: String, spark: SparkSession): Unit ={
+  def unionSummaryReport(date: String, hour: String, spark: SparkSession): DataFrame ={
     val sql =
       s"""
         |select
@@ -173,9 +174,9 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-      .withColumn("date", lit(date))
-      .repartition(10)
-      .write.mode("overwrite").insertInto("test.wt_union_summary_report")
+//      .withColumn("date", lit(date))
+//      .repartition(10)
+//      .write.mode("overwrite").insertInto("test.wt_union_summary_report")
   }
 
 
@@ -190,8 +191,8 @@ object OcpcUnionReport {
     val reportTableUnit = "report2.report_ocpc_data_detail_v2"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLunit) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+//    OperateMySQL.update(delSQLunit) //先删除历史数据
+//    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -202,8 +203,8 @@ object OcpcUnionReport {
     val reportTableConversion = "report2.report_ocpc_data_summary_v2"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLconversion) //先删除历史数据
-    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+//    OperateMySQL.update(delSQLconversion) //先删除历史数据
+//    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
 }
