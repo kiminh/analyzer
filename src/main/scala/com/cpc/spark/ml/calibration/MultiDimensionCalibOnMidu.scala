@@ -67,7 +67,7 @@ object MultiDimensionCalibOnMidu {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count()
+    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count().alias("count1")
 
     group1.printSchema()
 
@@ -245,4 +245,6 @@ object MultiDimensionCalibOnMidu {
     }
     return (bins, totalSize, allClickSum)
   }
+
+  def
 }
