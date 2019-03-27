@@ -30,7 +30,6 @@ object ocpc_elds {
          |*
          |from
          |(select
-         |a.`date`,
          |a.identifier,
          |a.userid,
          |a.cpa_given,
@@ -58,7 +57,8 @@ object ocpc_elds {
          |b.avg_k as after_avg_k,
          |b.pre_cvr as after_pre_cvr,
          |b.post_cvr as after_post_cvr,
-         |if(a.cost is not null or a.cost != 0,(a.cost-b.cost)/a.cost,0) as cost_ratio
+         |if(a.cost is not null or a.cost != 0,(a.cost-b.cost)/a.cost,0) as cost_ratio,
+         |a.`date`,
          |from
          |(select
          |*
