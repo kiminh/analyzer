@@ -86,11 +86,10 @@ object MultiDimensionCalibOnMidu {
         .withColumn("group",when(col("count2") < 10000,col("user_req_ad_num"))
           .otherwise(col("group")))
         .select("user_req_ad_num","adslot_id","ideaid","group").distinct()
-      keygroup.show(100)
 
-    val data = log
+    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
 
-//    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
+    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
   }
 
 
@@ -105,9 +104,8 @@ object MultiDimensionCalibOnMidu {
       }
       val ectr = x.getLong(1).toDouble / 1e6d
       val model = x.getString(3)
-      val adslot_id = x.getString(4)
-      val ideaid = x.getInt(5).toString
-      val key = model+'_'+adslot_id+'_'+ideaid
+      val group = x.getString(8)
+      val key = model+'_'+group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
