@@ -89,7 +89,10 @@ object MultiDimensionCalibOnMidu {
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
 
-    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
+    data.printSchema()
+    data.show(5)
+
+//    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
   }
 
 
