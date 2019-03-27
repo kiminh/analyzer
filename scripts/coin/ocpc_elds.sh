@@ -24,5 +24,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.coin.ocpc_elds \
+    --class com.cpc.spark.OCPC_elds.ocpc_elds \
     $indin $date
