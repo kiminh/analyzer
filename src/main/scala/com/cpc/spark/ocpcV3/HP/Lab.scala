@@ -213,7 +213,7 @@ object Lab {
       .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
       .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
       .select("cat", "uid", "tag0", "tag1", "id", "io")
-    
+
     df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
 
     val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
