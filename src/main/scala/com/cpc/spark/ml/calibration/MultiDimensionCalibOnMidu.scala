@@ -11,8 +11,9 @@ import mlmodel.mlmodel.{CalibrationConfig, IRModel}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import com.cpc.spark.ml.common.{Utils => MUtils}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.functions._
 
 
@@ -68,11 +69,8 @@ object MultiDimensionCalibOnMidu {
     val log = session.sql(sql)
     log.persist()
 
-    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count()
-      .withColumn("count1",col("count"))
-
+    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count().withColumn("count1",col("count"))
     val group2 = log.groupBy("user_req_ad_num","adslot_id").count().withColumn("count2",col("count"))
-
     val group3 = log.groupBy("user_req_ad_num").count().withColumn("count3",col("count"))
 
     val keygroup = group1.join(group2,Seq("user_req_ad_num","adslot_id"),"left").join(group3,Seq("user_req_ad_num"),"left")
@@ -85,18 +83,16 @@ object MultiDimensionCalibOnMidu {
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
 
-    keygroup.count()
-    data.printSchema()
-    data.show(5)
-
-    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
+    unionLogToConfig2(data.rdd, session, softMode)
   }
 
 
-  def unionLogToConfig2(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
+  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, saveToLocal: Boolean = true,
                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
-
+    import session.implicits._
+    val sc=session.sparkContext
+    var auc=Seq[(Double,Double)]()
     val result = log.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
@@ -109,8 +105,13 @@ object MultiDimensionCalibOnMidu {
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
-        x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000)))
+        x => {
+          val l = x.toList
+          val l1 = l.take(l.length - l.length/3)
+          val l2 = l.takeRight(l.length/3)
+          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
+        }
+          )
       .toLocalIterator
       .map {
         x =>
@@ -119,14 +120,16 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
+          val test = x._2._3
+          val ScoreAndLabel = sc.parallelize(test)
+          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
             println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
-            println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-            println(s"bin size: ${bins._1.size}")
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
             val irModel = IRModel(
               boundaries = irFullModel.boundaries,
@@ -134,6 +137,11 @@ object MultiDimensionCalibOnMidu {
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
+            val caliauc = getauccali(test, sc, irModel)
+            println(s"test auc(before, after): $aucROC,$caliauc")
+            auc = auc :+ (aucROC,caliauc)
+
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
@@ -150,6 +158,7 @@ object MultiDimensionCalibOnMidu {
             config
           }
       }.toList
+    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     return result
   }
 
@@ -167,7 +176,22 @@ object MultiDimensionCalibOnMidu {
       calibrated += computeCalibration(x._1, irModel)
     })
     return (ectr / click, calibrated / click)
+  }
 
+  def getauccali(samples: Array[(Double, Double)],sc: SparkContext, irModel: IRModel): Double = {
+    //val data=Array(Double, Double)
+    val dataListBuffer = scala.collection.mutable.ListBuffer[(Double,Double)]()
+    samples.foreach(x => {
+      val calibrated = computeCalibration(x._1, irModel)
+      val label = x._2
+      val t = (calibrated,label)
+      dataListBuffer += t
+    })
+    val data = dataListBuffer.toArray
+    val ScoreAndLabel = sc.parallelize(data)
+    val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+    val aucROC = metrics.areaUnderROC
+    return aucROC
   }
 
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
@@ -221,7 +245,7 @@ object MultiDimensionCalibOnMidu {
 
   // input: Seq<(<ectr, click>)
   // return: (Seq(<ctr, ectr, weight>), total count)
-  def binIterable(data: Iterable[(Double, Double)], minBinSize: Int, maxBinCount: Int)
+  def binIterable(data: List[(Double, Double)], minBinSize: Int, maxBinCount: Int)
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
