@@ -9,7 +9,7 @@ object OcpcUnionReport {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
-    unionDetailReport(date, hour, spark)
+    //unionDetailReport(date, hour, spark)
     println("------union detail report success---------")
     unionSummaryReport(date, hour, spark)
     println("------union summary report success---------")
@@ -127,7 +127,7 @@ object OcpcUnionReport {
         |    auc,
         |    hour,
         |    version,
-        |    0 as is_hidden,
+        |    0 as is_hidden
         |from
         |    dl_cpc.ocpc_summary_report_hourly_v4
         |where
