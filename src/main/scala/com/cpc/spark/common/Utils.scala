@@ -110,7 +110,7 @@ object Utils {
       s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 
-  def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+  def getTimeRangeSql_2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
       return s"(day = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
     }
