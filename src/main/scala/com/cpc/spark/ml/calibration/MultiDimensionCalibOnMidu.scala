@@ -48,11 +48,16 @@ object MultiDimensionCalibOnMidu {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = getTimeRangeSql(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid,
+                 |case when user_req_ad_num = 1 then '1'
+                 |  when user_req_ad_num = 2 then '2'
+                 |  when user_req_ad_num in (3,4) then '4'
+                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_req_ad_num
                  | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
@@ -62,10 +67,10 @@ object MultiDimensionCalibOnMidu {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    unionLogToConfig(log.rdd, session.sparkContext, softMode)
+    unionLogToConfig2(log.rdd, session.sparkContext, softMode)
   }
 
-  def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
+  def unionLogToConfig2(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
 
@@ -228,14 +233,5 @@ object MultiDimensionCalibOnMidu {
         }
     }
     return (bins, totalSize, allClickSum)
-  }
-
-  def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
-    if (startDate.equals(endDate)) {
-      return s"(day = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
-    }
-    return s"((day = '$startDate' and hour >= '$startHour') " +
-      s"or (day = '$endDate' and hour <= '$endHour') " +
-      s"or (day > '$startDate' and day < '$endDate'))"
   }
 }

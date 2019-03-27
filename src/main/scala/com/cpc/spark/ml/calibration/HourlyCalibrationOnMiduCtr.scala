@@ -38,7 +38,7 @@ object HourlyCalibrationOnMiduCtr {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = getTimeRangeSql(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
@@ -55,14 +55,5 @@ object HourlyCalibrationOnMiduCtr {
 
 
     HourlyCalibration.unionLogToConfig(log.rdd, session.sparkContext, softMode)
-  }
-
-  def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
-    if (startDate.equals(endDate)) {
-      return s"(day = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
-    }
-    return s"((day = '$startDate' and hour >= '$startHour') " +
-      s"or (day = '$endDate' and hour <= '$endHour') " +
-      s"or (day > '$startDate' and day < '$endDate'))"
   }
 }
