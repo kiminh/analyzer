@@ -128,7 +128,7 @@ object ocpc_elds {
     result.repartition(1)
       .write
       .mode("overwrite")
-      .insertInto("dl_cpc.dl_cpc.ocpc_elds_data")
+      .insertInto("dl_cpc.ocpc_elds_data")
     println("result is successful! ")
   }
 
