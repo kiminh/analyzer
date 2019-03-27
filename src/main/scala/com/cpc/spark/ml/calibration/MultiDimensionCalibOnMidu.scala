@@ -92,7 +92,7 @@ object MultiDimensionCalibOnMidu {
     data.printSchema()
     data.show(5)
 
-//    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
+    unionLogToConfig2(data.rdd, session.sparkContext, softMode)
   }
 
 
@@ -102,12 +102,12 @@ object MultiDimensionCalibOnMidu {
 
     val result = log.map( x => {
       var isClick = 0d
-      if (x.get(0) != null) {
-        isClick = x.getInt(0).toDouble
+      if (x.get(3) != null) {
+        isClick = x.getInt(3).toDouble
       }
-      val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(3)
-      val group = x.getString(8)
+      val ectr = x.getLong(4).toDouble / 1e6d
+      val model = x.getString(6)
+      val group = x.getString(7)
       val key = model+'_'+group
       (key, (ectr, isClick))
     }).groupByKey()
