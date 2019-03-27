@@ -119,10 +119,10 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
-//          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-//          println(s"bin size: ${bins._1.size}")
+          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
+          println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
-//            println("bin number too small, don't output the calibration")
+            println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
             println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
