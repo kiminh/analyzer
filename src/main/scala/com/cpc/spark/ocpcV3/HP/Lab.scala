@@ -1,5 +1,6 @@
 package com.cpc.spark.ocpcV3.HP
 
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag.SetUserProfileTagInHiveDaily
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.spark.sql.{SparkSession, DataFrame}
@@ -47,7 +48,7 @@ object Lab {
 
     uidApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
 
-    upDate(spark, date )
+    upDate(spark, date)
 
 
   }
@@ -170,7 +171,7 @@ object Lab {
   def upDate(spark: SparkSession, date: String): Unit = {
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val calendar = Calendar.getInstance
-    val today = sdf.parse( date )
+    val today = sdf.parse(date)
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime()
@@ -209,14 +210,15 @@ object Lab {
 
     println(sqlRequest)
     val df = spark.sql(sqlRequest)
-      //.filter("tag0 is NULL or tag1 is NULL")
       .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
-      .withColumn("io", when(col("tag0").isNull && col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
-      .withColumn("io1", when(col("tag0").isNull && col("tag1").isNotNull, lit(1)).otherwise(when(col("tag0").isNotNull && col("tag1").isNull, lit(0)).otherwise(lit(-1))))
-
-
+      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
+      .select("cat", "uid", "tag0", "tag1", "id", "io")
+    
     df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
 
+    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
+
+//    val result = SetUserProfileTagInHiveDaily( rdd1 )
 
   }
 
