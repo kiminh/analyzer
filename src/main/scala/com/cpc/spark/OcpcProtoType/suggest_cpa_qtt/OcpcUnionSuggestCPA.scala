@@ -38,7 +38,7 @@ object OcpcUnionSuggestCPA {
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-    data.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_data20190327")
+//    data.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_data20190327")
 
     val resultDF = data
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
