@@ -48,7 +48,7 @@ object TopApps {
         | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
       """.stripMargin.format(date, date))
 
-    pkgs.take(100).foreach(println)
+    println("count: "+pkgs.count())
 
 
     val iterator = pkgs.toLocalIterator
