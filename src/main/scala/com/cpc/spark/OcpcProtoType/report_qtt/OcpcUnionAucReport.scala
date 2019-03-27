@@ -16,6 +16,8 @@ object OcpcUnionAucReport {
     val sql =
       s"""
         |select
+        |    indentifier,
+        |    userid,
         |    conversion_goal,
         |    pre_cvr,
         |    post_cvr,
@@ -28,17 +30,19 @@ object OcpcUnionAucReport {
         |    hour,
         |    version
         |from
-        |    dl_cpc.ocpc_auc_report_summary_hourly
+        |    dl_cpc.ocpc_auc_report_detail_hourly
         |where
-        |    `date` = ''
+        |    `date` = '$date'
         |and
-        |    hour = ''
+        |    hour = '$hour'
         |and
         |    version = 'qtt_demo'
         |
         |union
         |
         |select
+        |    indentifier,
+        |    userid,
         |    conversion_goal,
         |    pre_cvr,
         |    post_cvr,
@@ -51,11 +55,11 @@ object OcpcUnionAucReport {
         |    hour,
         |    version
         |from
-        |    dl_cpc.ocpc_auc_report_summary_hourly
+        |    dl_cpc.ocpc_auc_report_detail_hourly
         |where
-        |    `date` = ''
+        |    `date` = '$date'
         |and
-        |    hour = ''
+        |    hour = '$hour'
         |and
         |    version = 'qtt_hidden'
       """.stripMargin
