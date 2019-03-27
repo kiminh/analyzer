@@ -116,6 +116,7 @@ object OcpcCheckFile {
          |        a.searchid = b.searchid) as t
          |GROUP BY t.`date`
        """.stripMargin
+    println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
 
     val sqlRequest2 =
@@ -215,6 +216,7 @@ object OcpcCheckFile {
          |        a.searchid = b.searchid) as t
          |GROUP BY t.`date`
        """.stripMargin
+    println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
 
@@ -315,6 +317,7 @@ object OcpcCheckFile {
          |        a.searchid = b.searchid) as t
          |GROUP BY t.`date`
        """.stripMargin
+    println(sqlRequest3)
     val data3 = spark.sql(sqlRequest3)
 
     val result = data1.union(data2).union(data3)
