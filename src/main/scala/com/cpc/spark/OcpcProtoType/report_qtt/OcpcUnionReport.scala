@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.report_qtt
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
-object OcpcUnionAucReport {
+object OcpcUnionReport {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val hour = args(1).toString
@@ -16,21 +16,34 @@ object OcpcUnionAucReport {
     val sql =
       s"""
         |select
-        |    indentifier,
+        |    identifier,
         |    userid,
         |    conversion_goal,
+        |    step2_click_percent,
+        |    is_step2,
+        |    cpa_given,
+        |    cpa_real,
+        |    cpa_ratio,
+        |    is_cpa_ok,
+        |    impression,
+        |    click,
+        |    conversion,
+        |    ctr,
+        |    click_cvr,
+        |    show_cvr,
+        |    cost,
+        |    acp,
+        |    avg_k,
+        |    recent_k,
         |    pre_cvr,
         |    post_cvr,
         |    q_factor,
-        |    cpagiven,
-        |    cpareal,
-        |    acp,
         |    acb,
         |    auc,
         |    hour,
         |    version
         |from
-        |    dl_cpc.ocpc_auc_report_detail_hourly
+        |    dl_cpc.ocpc_detail_report_hourly_v4
         |where
         |    `date` = '$date'
         |and
@@ -41,21 +54,34 @@ object OcpcUnionAucReport {
         |union
         |
         |select
-        |    indentifier,
+        |    identifier,
         |    userid,
         |    conversion_goal,
+        |    step2_click_percent,
+        |    is_step2,
+        |    cpa_given,
+        |    cpa_real,
+        |    cpa_ratio,
+        |    is_cpa_ok,
+        |    impression,
+        |    click,
+        |    conversion,
+        |    ctr,
+        |    click_cvr,
+        |    show_cvr,
+        |    cost,
+        |    acp,
+        |    avg_k,
+        |    recent_k,
         |    pre_cvr,
         |    post_cvr,
         |    q_factor,
-        |    cpagiven,
-        |    cpareal,
-        |    acp,
         |    acb,
         |    auc,
         |    hour,
         |    version
         |from
-        |    dl_cpc.ocpc_auc_report_detail_hourly
+        |    dl_cpc.ocpc_detail_report_hourly_v4
         |where
         |    `date` = '$date'
         |and
