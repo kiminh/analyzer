@@ -48,25 +48,25 @@ object TopApps {
         | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
       """.stripMargin.format(date, date))
 
-    println("count: "+pkgs.count())
+    println("count: " + pkgs.count())
 
 
     val iterator = pkgs.toLocalIterator
 
     var txt = ""
-    while(iterator.hasNext){
-      val t=iterator.next()
+    while (iterator.hasNext) {
+      val t = iterator.next()
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-//    for (i <- 0 until topApps_top100.length) {
+    //    for (i <- 0 until topApps_top100.length) {
     //      val t = topApps_top100(i)
     //      txt = txt + "%s %s\n".format(t._1, t._2)
     //    }
 
-//    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-//      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net"))
-    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
+    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net"))
+    //val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
