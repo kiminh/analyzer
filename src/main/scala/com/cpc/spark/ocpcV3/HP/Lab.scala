@@ -22,7 +22,7 @@ object Lab {
 
     val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName0").distinct()
+      .select("cat", "appName", "appName0").filter("appName0 is not NULL").distinct()
       .toDF()
 
     appCat0.write.mode("overwrite").saveAsTable("test.appCat0_sjq")
@@ -31,11 +31,21 @@ object Lab {
     println("==============================  appCat0  ==========================================")
     appCat0.show(10)
 
-    val uidApp = getUidApp(spark, date, days-1, appCat0).cache() //"date", "uid", "cat"
+    val uidApp = getUidApp(spark, date, days - 1, appCat0).cache() //"uid", "cat", "date"
 
     println("uidApp has " + uidApp.count() + " lines. ")
     println("=============================== uidApp =============================================")
     uidApp.show(10)
+
+    //    create table if not exists dl_cpc.hottopic_uid_bag
+    //    (
+    //      uid STRING COMMENT '用户id',
+    //      cat STRING COMMENT 'app类别'
+    //    )
+    //    comment '段子社交、短视频、直播人群包'
+    //    partitioned by (`date` string);
+
+    uidApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
 
 
   }
@@ -107,7 +117,6 @@ object Lab {
     val sql =
       s"""
          | select
-         |  t1.dt as date,
          |  t1.uid,
          |  t2.pkgs1
          |from (
@@ -132,24 +141,26 @@ object Lab {
          |  group by load_date, uid, app_name
          | ) t2
          | on t1.uid = t2.uid and t1.dt = t2.load_date
+         | group by t1.uid, t2.pkgs1
        """.stripMargin
+    println(sql)
     val df = spark.sql(sql)
 
     val result = df.rdd
-      .map(x => (x.getAs[String]("date"), x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
+      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
       .flatMap(x => {
-        val date = x._1
-        val uid = x._2
-        val pkgs = x._3
+        val uid = x._1
+        val pkgs = x._2
         val lb = scala.collection.mutable.ListBuffer[UidApp]()
         for (app <- pkgs) {
-          lb += UidApp(date, uid, app)
+          lb += UidApp(uid, app)
         }
         lb
-      }).toDF() // date, uid, appName0
+      }).toDF() // uid, appName0
       .join(appCat, Seq("appName0"))
-      .select("date", "uid", "cat")
+      .select("uid", "cat")
       .distinct().toDF()
+      .withColumn("date", lit(date))
 
     result
   }
@@ -158,7 +169,7 @@ object Lab {
 
   case class AppCount(var appName0: String, var appName1: String, appName: String, var count: Int)
 
-  case class UidApp(var date: String, var uid: String, var appName0: String)
+  case class UidApp(var uid: String, var appName0: String)
 
 }
 
