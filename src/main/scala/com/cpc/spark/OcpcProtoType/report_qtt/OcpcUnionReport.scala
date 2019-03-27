@@ -21,8 +21,8 @@ object OcpcUnionReport {
     val sql =
       s"""
         |select
-        |    identifier,
-        |    userid,
+        |    identifier as unit_id,
+        |    userid as user_id,
         |    conversion_goal,
         |    step2_click_percent,
         |    is_step2,
@@ -60,8 +60,8 @@ object OcpcUnionReport {
         |union
         |
         |select
-        |    identifier,
-        |    userid,
+        |    identifier as unit_id,
+        |    userid as user_id,
         |    conversion_goal,
         |    step2_click_percent,
         |    is_step2,
