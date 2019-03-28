@@ -72,9 +72,9 @@ object OcpcSuggestCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
@@ -314,12 +314,12 @@ object OcpcSuggestCPA {
     val baseLog = getBaseLog(media, cvrGoal, date, hour, spark)
 
     // 统计数据
-    val resultDF = calculateLog(baseLog, date, hour, spark)
+    val resultDF = calculateLog(baseLog, cvrGoal, date, hour, spark)
 
     resultDF
   }
 
-  def calculateLog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateLog(data: DataFrame, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
     // 抽取基础数据
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -353,7 +353,13 @@ object OcpcSuggestCPA {
     val dataPart1 = calculateDataPart1(rawData, date, hour, spark)
 
     // 统计指标：unitid, pcvr, post_cvr, pcoc
-    val dataPart2 = calculateDataPart2(rawData, date, hour, spark)
+    var factor = 0.2
+    if (cvrGoal == "cvr2") {
+      factor = 0.5
+    } else {
+      factor = 0.2
+    }
+    val dataPart2 = calculateDataPart2(rawData, factor, date, hour, spark)
 
     // 统计指标：unitid, userid, adclass, industry, usertype
     val dataPart3 = calculateDataPart3(rawData, date, hour, spark)
@@ -458,7 +464,7 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def calculateDataPart2(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateDataPart2(baseData: DataFrame, factor: Double, date: String, hour: String, spark: SparkSession) = {
     val rawData = baseData.filter(s"isclick=1")
     val data = rawData
       .groupBy("unitid")
@@ -470,11 +476,32 @@ object OcpcSuggestCPA {
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("unitid", "post_cvr", "post_cvr_cali")
 
-    val caliData = rawData
+    val caliData1 = rawData
       .join(data, Seq("unitid"), "left_outer")
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
-      .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
-      .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+      .withColumn("pre_cvr_origin", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
+      .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr_origin", "post_cvr_cali")
+
+    caliData1.createOrReplaceTempView("cali_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  exp_cvr,
+         |  isclick,
+         |  iscvr,
+         |  post_cvr,
+         |  pre_cvr_origin,
+         |  post_cvr_cali,
+         |  (1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali as pre_cvr
+         |FROM
+         |  cali_data
+       """.stripMargin
+    println(sqlRequest)
+    val caliData = spark.sql(sqlRequest)
+    caliData.write.mode("overwrite").saveAsTable("test.check_suggest_cpa20190328new")
+
 
     val finalData = caliData
       .groupBy("unitid")
@@ -496,6 +523,7 @@ object OcpcSuggestCPA {
 
     resultDF
   }
+
 
   def calculateDataPart1(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
