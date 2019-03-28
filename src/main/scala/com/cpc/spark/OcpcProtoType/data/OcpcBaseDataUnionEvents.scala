@@ -89,7 +89,7 @@ object OcpcBaseDataUnionEvents {
 
         result.printSchema()
 
-        result.repartition(20)
+        result.repartition(100)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.ocpc_basedata_union_events")
