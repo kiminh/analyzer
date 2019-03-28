@@ -3,7 +3,6 @@ package com.cpc.spark.hottopic
 import com.cpc.spark.hottopic.HotTopicCtrAuc.DetailAuc
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
-import com.cpc.spark.tools.OperateMySQL
 import com.cpc.spark.novel.OperateMySQL
 /**
   * @author Liuyulin
@@ -248,6 +247,7 @@ object HotTopicCtrCvrAucGauc {
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
     val deleteSql1 = s"delete from $tableName1 where 'date' = '$date' and hour = '$hour'"
     val deleteSql2 = s"delete from $tableName2 where 'date' = '$date' and hour = '$hour'"
+
     OperateMySQL.del(deleteSql1) //先删除历史数据
     CtrAucGauc.write.mode(SavaMode.Append)
       .jdbc(mariadb_write_url,"report2.cpc_hot_topic_ctr_auc_gauc_hourly",mariadb_write_prop)
