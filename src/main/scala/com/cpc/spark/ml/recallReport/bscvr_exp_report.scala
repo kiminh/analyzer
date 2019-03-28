@@ -130,12 +130,17 @@ object bscvr_exp_report {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_bsExp_report partition (date='$tardate')
          |select * from unitid_total
          |union
          |select * from unitid_detail
          |union
          |select * from unitid_all
+      """.stripMargin).repartition(1).createOrReplaceTempView("bsExp_report")
+
+    spark.sql(
+      s"""
+         |insert overwrite table dl_cpc.cpc_recall_bsExp_report partition (date='$tardate')
+         |select * from bsExp_report
       """.stripMargin)
   }
 }
