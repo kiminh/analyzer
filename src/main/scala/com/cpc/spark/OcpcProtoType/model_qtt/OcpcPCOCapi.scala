@@ -36,7 +36,7 @@ object OcpcPCOCapi {
 
     // 抽取click的基础数据
     val clickData = getClickData(baseData, date, hour, spark)
-    val jfbData = clickData.select("untitid", "jfb")
+    val jfbData = clickData.select("unitid", "jfb")
 
     // 从ml_cvr_feature_v2表中抽取iscvr的转化数据
     val cvData = getCvData(media, hourInt, date, hour, spark)
