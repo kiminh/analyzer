@@ -57,8 +57,8 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvrExp'
-         |group by unitid having count(*)>1
+         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$tardate' and experiment='bscvrExp'
+         |group by unitid having count(*)>=1
       """.stripMargin).repartition(1).createOrReplaceTempView("desired")
 
     spark.sql(
@@ -69,8 +69,8 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvr'
-         |group by unitid having count(*)>1
+         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$tardate' and experiment='bscvr'
+         |group by unitid having count(*)>=1
       """.stripMargin).repartition(1).createOrReplaceTempView("undesired")
     //剔除15天以内没有活跃的单元
     val jdbcProp = new Properties()
