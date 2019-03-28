@@ -458,7 +458,7 @@ object OcpcGetPb {
       s"""
          |SELECT
          |  searchid,
-         |  unitid,
+         |  identifier,
          |  exp_cvr,
          |  isclick,
          |  iscvr,
