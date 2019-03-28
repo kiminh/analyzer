@@ -38,12 +38,24 @@ object OcpcPCOCapi {
     val cvData = getCvData(media, hourInt, date, hour, spark)
 
     // 计算pcoc与jfb
-    val kvalue = calculateK(clickData, cvData, spark)
+    val result = calculateK(clickData, cvData, spark)
+
+    val resultDF = result
+      .select("identifier", "kvalue")
+      .withColumn("conversion_goal", lit(2))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .withColumn("method", lit("api_pcoc"))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_api_pcoc_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
+
 
   }
 
   def calculateK(clickData: DataFrame, cvData: DataFrame, spark: SparkSession) = {
-    // todo
     val data = clickData
         .join(cvData, Seq("unitid"), "outer")
         .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
@@ -51,12 +63,22 @@ object OcpcPCOCapi {
         .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
         .withColumn("pre_cvr", col("total_pcvr") * 1.0 / col("click"))
         .withColumn("pcoc", col("pre_cvr") / col("post_cvr"))
-        .withColumn("k_middle", col("jfb") * col("pcoc"))
 
     data.show(10)
-    val resultDF = data
-      .select("unitid", "pcoc", "jfb")
+    data.write.mode("overwrite").saveAsTable("test.check_api_unitid_pcoc201909328")
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  1.0 / (pcoc * jfb) as kvalue
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
 
+    resultDF
   }
 
   def getCvData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
