@@ -56,7 +56,7 @@ object Udfs_wj{
       "qtt"
     else if (midu.contains((media_appsid)))
       "midu"
-    else if (hottopic.contains("media_appsid"))
+    else if (hottopic.contains(media_appsid))
       "hottopic"
     else
       "other"
