@@ -7,6 +7,7 @@ import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcPIDwithCPA {
@@ -22,6 +23,7 @@ object OcpcPIDwithCPA {
     4. 更新k值
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // bash: 2019-01-02 12 24 1 qtt_demo qtt
     val date = args(0).toString

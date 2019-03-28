@@ -8,12 +8,14 @@ import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable
 
 object OcpcRegression {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 72 1 qtt_demo qtt

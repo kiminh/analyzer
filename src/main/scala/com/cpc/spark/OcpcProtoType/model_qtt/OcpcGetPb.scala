@@ -11,6 +11,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 
+import org.apache.log4j.{Level, Logger}
 import scala.collection.mutable.ListBuffer
 
 
@@ -28,6 +29,7 @@ object OcpcGetPb {
 
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 1 qtt_demo qtt
