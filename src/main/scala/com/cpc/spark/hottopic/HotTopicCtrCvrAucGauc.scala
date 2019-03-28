@@ -204,28 +204,24 @@ object HotTopicCtrCvrAucGauc {
          |and cvr_model_name not like '%noctr%'
              """.stripMargin
 
+
     val union_cvr = spark.sql(sql_cvr).cache()
 
 //    分模型-cvr
     val cvrModelNames = union_cvr.select("cvr_model_name")
       .distinct()
       .collect()
-      .map(x => x.getAs[String]("cvr_model_name"))
+      .map(_.getAs[String]("cvr_model_name"))
+
     println("cvrModelNames 's num is " + cvrModelNames.length)
 
     for (cvrModelName <- cvrModelNames) {
-      println(cvrModelName)
       val cvrModelUnion = union_cvr.filter(s"cvr_model_name = '$cvrModelName' ")
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       println("auc" + cvrModelAuc)
-      var L = CalcMetrics.getGauc(spark, cvrModelUnion, "uid")
-      L.show(10)
-      val cvrModeGaucLists = L.collect()
-      println(cvrModeGaucLists.length)
-      val gauc1 = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
-      println(gauc1.length)
+      var gauc1 = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").filter("auc != -1").collect()
       if (gauc1.length > 0) {
-        println("ajksdfan")
+        println("YES!")
         val gauc = gauc1
         .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
           .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
@@ -251,10 +247,22 @@ object HotTopicCtrCvrAucGauc {
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
     val deleteSql1 = s"delete from $tableName1 where 'date' = '$date' and hour = '$hour'"
     val deleteSql2 = s"delete from $tableName2 where 'date' = '$date' and hour = '$hour'"
-    OperateMySQL.update(deleteSql1) //先删除历史数据
-    OperateMySQL.insert(CtrAucGauc,tableName1)
-    OperateMySQL.update(deleteSql2) //先删除历史数据
-    OperateMySQL.insert(CvrAucGauc,tableName2)
+    OperateMySQL.del(deleteSql1) //先删除历史数据
+    CtrAucGauc.write.mode(SavaMode.Append)
+      .jdbc(mariadb_write_url,"report2.cpc_hot_topic_ctr_auc_gauc_hourly",mariadb_write_prop)
+    println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success!")
+    CtrAucGauc.unpersist()
+
+    OperateMySQL.del(deleteSql2) //先删除历史数据
+    CvrAucGauc.write.mode(SavaMode.Append)
+      .jdbc(mariadb_write_url,"report2.cpc_hot_topic_cvr_auc_gauc_hourly",mariadb_write_prop)
+    println("insert into report2.cpc_hot_topic_cvr_auc_gauc_hourly success!")
+    CvrAucGauc.unpersist()
+
+//    OperateMySQL.insert(CtrAucGauc,tableName1)
+//    OperateMySQL.update(deleteSql2) //先删除历史数据
+//    OperateMySQL.insert(CvrAucGauc,tableName2)
+
   }
   case class DetailAucGauc(
                            var auc: Double = 0,
