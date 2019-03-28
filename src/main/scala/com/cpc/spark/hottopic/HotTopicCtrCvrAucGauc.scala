@@ -97,7 +97,6 @@ object HotTopicCtrCvrAucGauc {
 
     val union = spark.sql(sql).cache()
     val CtrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
-    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
 
     //分模型-ctr
     val ctrModelNames = union.filter("length(ctr_model_name)>0").select("ctr_model_name")
@@ -150,6 +149,7 @@ object HotTopicCtrCvrAucGauc {
                     .insertInto("dl_cpc.cpc_hot_topic_ctr_auc_gauc_hourly")
     println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
 
+    //CVR模型
     val sql_cvr =
       s"""
          |select cvr_model_name,exp_cvr as score,uid,if(b.searchid is not null,1,0) as label
@@ -210,75 +210,44 @@ object HotTopicCtrCvrAucGauc {
          |and cvr_model_name not like '%noctr%'
              """.stripMargin
 
-
     val union_cvr = spark.sql(sql_cvr).cache()
 
-//    分模型-cvr
-    val cvrModelNames = union_cvr.select("cvr_model_name")
+    val cvr_model_names = union_cvr.select("cvr_model_name")
       .distinct()
       .collect()
       .map(_.getAs[String]("cvr_model_name"))
-
-    println("cvrModelNames 's num is " + cvrModelNames.length)
-
-    for (cvrModelName <- cvrModelNames) {
-      val cvrModelUnion = union_cvr.filter(s"cvr_model_name = '$cvrModelName' ")
-      val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
-      println("auc" + cvrModelAuc)
-      var gauc1 = CalcMetrics.getGauc(spark, cvrModelUnion, "uid").filter("auc != -1").collect()
-      if (gauc1.length > 0) {
-        println("YES!")
-        val gauc = gauc1
-        .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
+    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
+    for (cvr_model_name <- cvr_model_names) {
+      val cvrmodelData = union_cvr.filter(s"cvr_model_name = '$cvr_model_name'")
+      val cvr_auc = CalcMetrics.getAuc(spark,cvrmodelData)
+      val cvr_gauc = CalcMetrics.getGauc(spark,cvrmodelData,"uid").filter("auc != -1").collect()
+      val gauc = if(cvr_gauc.length > 0) {
+        val aucs = cvr_gauc.map(x =>
+          (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum"))
+        )
           .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-        val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
 
-        CvrAucGaucListBuffer += DetailAucGauc(
-          auc = cvrModelAuc,
-          gauc = gaucROC,
-          model = cvrModelName,
-          date = date,
-          hour = hour)
+        if (aucs._2 != 0)
+          aucs._1 * 1.0 / aucs._2
+        else 0
+
       }
+      else 0
+
+      println(s"cvr_model_name = $cvr_model_name , auc = $cvr_auc , gauc = $gauc")
+
+      CvrAucGaucListBuffer += DetailAucGauc( auc = cvr_auc,gauc = gauc, model = cvr_model_name, date = date, hour = hour)
     }
     val CvrAucGauc = CvrAucGaucListBuffer.toList.toDF()
-    CvrAucGauc.repartition(1)
-      .write
-      .mode("overwrite")
-      //.saveAsTable("test.cpc_hot_topic_cvr_auc_gauc_hourly")
-     .insertInto("dl_cpc.cpc_hot_topic_cvr_auc_gauc_hourly")
-    println("test.cpc_hot_topic_cvr_auc_gauc_hourly success!")
-
-
-
-    val conf = ConfigFactory.load()
-    val mariadb_write_prop = new Properties()
-
-    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
-    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
-    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
-    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
     val tableName1 = "report2.cpc_hot_topic_ctr_auc_gauc_hourly"
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
-    val deleteSql1 = s"delete from $tableName1 where 'date' = '$date' and hour = '$hour'"
-    val deleteSql2 = s"delete from $tableName2 where 'date' = '$date' and hour = '$hour'"
-
-    OperateMySQL.del(deleteSql1) //先删除历史数据
-    CtrAucGauc.write.mode(SaveMode.Append)
-      .jdbc(mariadb_write_url,"report2.cpc_hot_topic_ctr_auc_gauc_hourly",mariadb_write_prop)
-    println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success!")
-    CtrAucGauc.unpersist()
-
-    OperateMySQL.del(deleteSql2) //先删除历史数据
-    CvrAucGauc.write.mode(SaveMode.Append)
-      .jdbc(mariadb_write_url,"report2.cpc_hot_topic_cvr_auc_gauc_hourly",mariadb_write_prop)
-    println("insert into report2.cpc_hot_topic_cvr_auc_gauc_hourly success!")
-    CvrAucGauc.unpersist()
-
-//    OperateMySQL.insert(CtrAucGauc,tableName1)
-//    OperateMySQL.update(deleteSql2) //先删除历史数据
-//    OperateMySQL.insert(CvrAucGauc,tableName2)
+    val deleteSql1 = s"delete from $tableName1 where `date` = '$date' and hour = '$hour'"
+    val deleteSql2 = s"delete from $tableName2 where `date` = '$date' and hour = '$hour'"
+     OperateMySQL.update(deleteSql1) //先删除历史数据
+     OperateMySQL.insert(CtrAucGauc,tableName1) //插入到MySQL中的report2库中
+    OperateMySQL.update(deleteSql2) //先删除历史数据
+    OperateMySQL.insert(CvrAucGauc,tableName2)
 
   }
   case class DetailAucGauc(
