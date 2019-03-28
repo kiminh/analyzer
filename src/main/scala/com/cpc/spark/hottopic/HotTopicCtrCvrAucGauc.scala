@@ -5,10 +5,11 @@ import java.util.Properties
 import com.cpc.spark.hottopic.HotTopicCtrAuc.DetailAuc
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
-import com.cpc.spark.novel.OperateMySQL
+import com.cpc.spark.tools.OperateMySQL
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
 
 /**
   * @author Liuyulin
