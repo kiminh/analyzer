@@ -280,13 +280,14 @@ object OcpcSuggestCPA {
       conversionGoal = 3
     }
 
+//    dl_cpc.ocpc_pb_result_hourly_v2
     val sqlRequest =
       s"""
          |SELECT
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  dl_cpc.ocpc_pb_result_hourly_v2
+         |  test.ocpc_pb_result_hourly_20190303
          |WHERE
          |  `date` = '$date'
          |AND

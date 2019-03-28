@@ -61,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -342,12 +342,16 @@ object OcpcGetPb {
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
     // cvr 分区
     var cvrGoal = ""
+    var factor = 0.2
     if (conversionGoal == 1) {
       cvrGoal = "cvr1"
+      factor = 0.2
     } else if (conversionGoal == 2) {
       cvrGoal = "cvr2"
+      factor = 0.5
     } else {
       cvrGoal = "cvr3"
+      factor = 0.2
     }
 
     // 取历史数据
@@ -443,11 +447,30 @@ object OcpcGetPb {
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("identifier", "post_cvr", "post_cvr_cali")
 
-    val caliData = data
+    val caliData1 = data
       .join(cvrData, Seq("identifier"), "left_outer")
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
-      .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
-      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+      .withColumn("pre_cvr_origin", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
+      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr_origin", "post_cvr_cali")
+
+    caliData1.createOrReplaceTempView("cali_data")
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  exp_cvr,
+         |  isclick,
+         |  iscvr,
+         |  post_cvr,
+         |  pre_cvr_origin,
+         |  post_cvr_cali,
+         |  (1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali as pre_cvr
+         |FROM
+         |  cali_data
+       """.stripMargin
+    println(sqlRequest3)
+    val caliData = spark.sql(sqlRequest3)
 
     val resultDF = caliData
       .groupBy("identifier")
