@@ -4,6 +4,7 @@ import com.cpc.spark.hottopic.HotTopicCtrAuc.DetailAuc
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.tools.OperateMySQL
+import com.cpc.spark.novel.OperateMySQL
 /**
   * @author Liuyulin
   * @date 2019/3/25 15:10
