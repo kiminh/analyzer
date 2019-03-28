@@ -480,6 +480,7 @@ object OcpcCollectSuggestData {
          |    adsrc = 1
          |AND
          |    (charge_type is null or charge_type = 1)
+         |GROUP BY unitid, adslot_type
        """.stripMargin
     println(sqlRequest1)
     val data = spark.sql(sqlRequest1)
