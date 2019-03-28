@@ -287,7 +287,7 @@ object OcpcSuggestCPA {
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  test.ocpc_pb_result_hourly_20190303
+         |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
