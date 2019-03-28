@@ -41,7 +41,6 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
       .withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-
     // 二类电商
     val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
@@ -49,6 +48,10 @@ object OcpcCollectSuggestData {
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
+
+    feedapp.printSchema()
+    elds.printSchema()
+    wz.printSchema()
 
     // 数据串联
     val cpaData = feedapp
