@@ -207,7 +207,7 @@ object HotTopicCtrCvrAucGauc {
     val union_cvr = spark.sql(sql_cvr).cache()
 
 //    分模型-cvr
-    val cvrModelNames = union_cvr.filter("length(cvr_model_name)>0 ").select("cvr_model_name")
+    val cvrModelNames = union_cvr.select("cvr_model_name")
       .distinct()
       .collect()
       .map(x => x.getAs[String]("cvr_model_name"))
@@ -216,7 +216,6 @@ object HotTopicCtrCvrAucGauc {
     for (cvrModelName <- cvrModelNames) {
       println(cvrModelName)
       val cvrModelUnion = union_cvr.filter(s"cvr_model_name = '$cvrModelName' ")
-      cvrModelUnion.filter("label =1 ").show(10)
       val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
       println("auc" + cvrModelAuc)
       var L = CalcMetrics.getGauc(spark, cvrModelUnion, "uid")
