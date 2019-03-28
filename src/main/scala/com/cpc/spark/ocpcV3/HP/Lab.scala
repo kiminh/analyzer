@@ -23,7 +23,7 @@ object Lab {
 
     val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName0").filter("appName0 is not NULL").distinct()
+      .select("cat", "appName", "appName0", "count").filter("appName0 is not NULL").distinct()
       .toDF()
 
     appCat0.write.mode("overwrite").saveAsTable("test.appCat0_sjq")
