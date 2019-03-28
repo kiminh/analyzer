@@ -158,7 +158,7 @@ object OcpcRegression {
          |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest).filter(s"is_hidden != 1")
+    val resultDF = spark.sql(sqlRequest)
 
     resultDF
   }
