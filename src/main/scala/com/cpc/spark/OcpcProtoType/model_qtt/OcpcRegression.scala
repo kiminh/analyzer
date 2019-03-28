@@ -47,9 +47,9 @@ object OcpcRegression {
       .withColumn("version", lit(version))
       .withColumn("method", lit("regression"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
