@@ -11,7 +11,7 @@ object PcocForEldsAndApiCallback {
     println("------has got api callback unitids-------")
     val baseDataDF = getBaseData(date, spark)
     println("------has got base data-------")
-    val valueDF = calculateValue(baseDataDF, date, spark)
+    val valueDF = calculateValue(baseDataDF, spark)
     println("------has calculate pre_cvr and post_cvr-------")
     calculateApiPcoc(unitDF, valueDF, date, spark)
     println("------has got api callback's pcoc-------")
@@ -136,7 +136,7 @@ object PcocForEldsAndApiCallback {
   }
 
   // 统计pre_cvr和post_cvr
-  def calculateValue(baseDataDF: DataFrame, date: String, spark: SparkSession): DataFrame ={
+  def calculateValue(baseDataDF: DataFrame, spark: SparkSession): DataFrame ={
     baseDataDF.createOrReplaceTempView("base_data")
     val sql =
       s"""
