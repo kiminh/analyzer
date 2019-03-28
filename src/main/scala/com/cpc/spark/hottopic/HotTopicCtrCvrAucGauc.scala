@@ -1,9 +1,15 @@
 package com.cpc.spark.hottopic
 
+import java.util.Properties
+
 import com.cpc.spark.hottopic.HotTopicCtrAuc.DetailAuc
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.novel.OperateMySQL
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
 /**
   * @author Liuyulin
   * @date 2019/3/25 15:10
@@ -243,19 +249,29 @@ object HotTopicCtrCvrAucGauc {
      .insertInto("dl_cpc.cpc_hot_topic_cvr_auc_gauc_hourly")
     println("test.cpc_hot_topic_cvr_auc_gauc_hourly success!")
 
+
+
+    val conf = ConfigFactory.load()
+    val mariadb_write_prop = new Properties()
+
+    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
     val tableName1 = "report2.cpc_hot_topic_ctr_auc_gauc_hourly"
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
     val deleteSql1 = s"delete from $tableName1 where 'date' = '$date' and hour = '$hour'"
     val deleteSql2 = s"delete from $tableName2 where 'date' = '$date' and hour = '$hour'"
 
     OperateMySQL.del(deleteSql1) //先删除历史数据
-    CtrAucGauc.write.mode(SavaMode.Append)
+    CtrAucGauc.write.mode(SaveMode.Append)
       .jdbc(mariadb_write_url,"report2.cpc_hot_topic_ctr_auc_gauc_hourly",mariadb_write_prop)
     println("insert into report2.cpc_hot_topic_ctr_auc_gauc_hourly success!")
     CtrAucGauc.unpersist()
 
     OperateMySQL.del(deleteSql2) //先删除历史数据
-    CvrAucGauc.write.mode(SavaMode.Append)
+    CvrAucGauc.write.mode(SaveMode.Append)
       .jdbc(mariadb_write_url,"report2.cpc_hot_topic_cvr_auc_gauc_hourly",mariadb_write_prop)
     println("insert into report2.cpc_hot_topic_cvr_auc_gauc_hourly success!")
     CvrAucGauc.unpersist()
