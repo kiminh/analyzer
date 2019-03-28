@@ -38,7 +38,7 @@ object OcpcCollectSuggestData {
     val feedapp = feedapp1
       .join(adslot_type, Seq("unitid"), "left_outer")
       .filter(s"adslot_type in (1, 2)")
-      .select("unitid", "cpa", "kvalue", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
       .withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
