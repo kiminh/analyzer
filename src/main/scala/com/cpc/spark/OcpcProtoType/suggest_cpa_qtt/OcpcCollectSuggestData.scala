@@ -497,7 +497,7 @@ object OcpcCollectSuggestData {
          |  base_data
        """.stripMargin
     println(sqlRequest2)
-    val resultDF = spark.sql(sqlRequest2).filter(s"seq = 1")
+    val resultDF = spark.sql(sqlRequest2).filter(s"seq = 1").select("unitid", "adslot_type")
 
     resultDF.show(10)
     resultDF
