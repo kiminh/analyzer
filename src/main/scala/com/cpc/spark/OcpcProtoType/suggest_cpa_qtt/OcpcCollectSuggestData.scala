@@ -22,21 +22,25 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+//    unitid,
+//    |  cpa,
+//    |  kvalue,
+//    |  cost,
+//    |  cast(0.5 * acb as int) as last_bid,
+//    |  row_number() over(partition by unitid order by cost desc) as seq
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("max_budget", lit(maxBudget))
+//      .withColumn("industry", lit(industry))
 
     // 安装类feedapp广告单元
-    val feedappNoAPI = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
+    val adslot_type = getAdSlotType(date, hour, spark)
+    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
+    val feedapp = feedapp1
+      .join(adslot_type, Seq("unitid"), "left_outer")
+      .filter(s"adslot_type in (1, 2)")
+      .select("unitid", "cpa", "kvalue", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
+      .withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // api回传的feedapp广告
-    val feedappAPI = getAPIunitid(date, hour, spark)
-
-    val feedappRaw = feedappNoAPI
-      .join(feedappAPI, Seq("unitid"), "left_outer")
-      .na.fill(0, Seq("api_flag"))
-      .filter("api_flag = 0")
-      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry", "api_flag")
-      .withColumn("exp_tag", lit("OcpcHiddenAdv")) //
-    feedappRaw.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_20190324b")
-    val feedapp = feedappRaw.select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry", "exp_tag")
 
     // 二类电商
     val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
@@ -50,6 +54,7 @@ object OcpcCollectSuggestData {
     val cpaData = feedapp
       .union(elds)
       .union(wz)
+
 
     // 整理每个网赚广告单元最近24小时ocpc消费的成本和cpm
     val ocpcData = getOcpcData(date, hour, spark)
@@ -430,6 +435,68 @@ object OcpcCollectSuggestData {
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("max_budget", lit(maxBudget))
         .withColumn("industry", lit(industry))
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getAdSlotType(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val mediaSelection = conf.getString("medias.qtt.media_selection")
+
+    // 抽取unitid, adslot_type的数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    unitid,
+         |    adslot_type,
+         |    count(1) as cnt
+         |FROM
+         |    dl_cpc.slim_union_log
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    $mediaSelection
+         |AND
+         |    antispam = 0
+         |AND
+         |    adslot_type in (1,2,3)
+         |AND
+         |    adsrc = 1
+         |AND
+         |    (charge_type is null or charge_type = 1)
+       """.stripMargin
+    println(sqlRequest1)
+    val data = spark.sql(sqlRequest1)
+    data.createOrReplaceTempView("base_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adslot_type,
+         |  cnt,
+         |  row_number() over(partition by unitid, adslot_type order by cnt desc) as seq
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2).filter(s"seq = 1")
 
     resultDF.show(10)
     resultDF
