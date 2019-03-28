@@ -76,7 +76,7 @@ object OcpcBaseDataUnionEvents {
                |    conversion_goal,
                |    charge_type,
                |    conversion_from,
-               |    is_api_callback
+               |    is_api_callback,
                |    `date`,
                |    hour,
                |    media,
