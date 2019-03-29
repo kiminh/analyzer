@@ -75,14 +75,14 @@ object ocpc_elds_ld {
          |select
          | l.cv_unitid_cnt,
          | m.in_unitid_cnt,
-         | m.in_unitid_cnt/l.cv_unitid_cnt as unitid_first_ratio,
+         | round(m.in_unitid_cnt/l.cv_unitid_cnt,4) as unitid_first_ratio,
          | n.yes_unitid_cnt,
-         | n.yes_unitid_cnt/m.in_unitid_cnt as unitid_second_ratio,
-         | l.cv_unitid_cost,
-         | m.in_unitid_cost,
-         | m.in_unitid_cost/l.cv_unitid_cost as cost_first_ratio,
-         | n.yes_ocpc_cost,
-         | n.yes_ocpc_cost/m.in_unitid_cost as cost_second_ratio,
+         | round(n.yes_unitid_cnt/m.in_unitid_cnt,4) as unitid_second_ratio,
+         | round(l.cv_unitid_cost,2) as cv_unitid_cost,
+         | round(m.in_unitid_cost,2) as in_unitid_cost,
+         | round(m.in_unitid_cost/l.cv_unitid_cost,4) as cost_first_ratio,
+         | round(n.yes_ocpc_cost,2) as yes_ocpc_cost,
+         | round(n.yes_ocpc_cost/m.in_unitid_cost,4) as cost_second_ratio,
          | m.day
          |from
          |(select
