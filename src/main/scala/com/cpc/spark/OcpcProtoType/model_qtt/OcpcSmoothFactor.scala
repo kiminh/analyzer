@@ -157,6 +157,8 @@ object OcpcSmoothFactor{
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = '$cvrType'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
