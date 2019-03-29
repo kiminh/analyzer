@@ -11,8 +11,9 @@ object UnitAaReport {
     val df = getBaseData("2019-03-27", "-1", spark)
     df.createOrReplaceTempView("temp_table")
     val sql = "select unitid, (case when length(ocpc_log) > 0 then ocpc_log_dict['cpagiven'] else -1 end) from temp_table limit 10"
-    val dataFrame = spark.sql(sql).collectAsList()
-    println(dataFrame(0))
+    val list = spark.sql(sql).collectAsList()
+    println("-----------")
+    for(item <- list) println(list)
   }
 
   // 首先从base表里获取基础字段
