@@ -113,7 +113,7 @@ object ocpc_elds_ld {
          |(select
          |day,
          |count(distinct unitid) as cv_unitid_cnt,
-         |sum(case when isclick=1 then price else null end) as cv_unitid_cost
+         |sum(case when isclick=1 then price else null end)/100 as cv_unitid_cost
          |from dl_cpc.cpc_basedata_union_events
          |where day ='$date'
          |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
