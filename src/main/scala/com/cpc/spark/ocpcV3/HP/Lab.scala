@@ -213,8 +213,7 @@ object Lab {
          | ) b on a.searchid = b.searchid
          | left join (
          |    select
-         |  identifier,
-         |  if_ocpc
+         |  *
          | from indirectUnit
          | ) c on a.identifier = c.identifier
          | group by c.cost_hottopic,
