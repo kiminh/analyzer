@@ -8,6 +8,8 @@ import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.log4j.{Level, Logger}
+
 
 
 object OcpcPCOCapi {
@@ -19,6 +21,7 @@ object OcpcPCOCapi {
     3. 计算pcoc与jfb
     4. 存储到k值模型表中
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().appName("qtt: OcpcPCOCv1").enableHiveSupport().getOrCreate()
 
     // bash: 2019-01-02 12 24 1 qtt_demo qtt
