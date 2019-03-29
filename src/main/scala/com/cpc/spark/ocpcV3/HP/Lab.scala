@@ -28,7 +28,7 @@ object Lab {
          |  end as dt,
          |  identifier
          | from dl_cpc.ocpc_pb_result_hourly  --该表中的identifier已经去直投了
-         |where ((`date` = '2019-03-18' and hour >= '21') or (`date` = '2019-03-28' and hour < '21'))
+         |where `date` between '2019-03-18' and '2019-03-28'
          |  and version = 'hottopicv1'
        """.stripMargin
 
