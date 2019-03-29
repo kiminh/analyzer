@@ -1,232 +1,228 @@
 package com.cpc.spark.ocpcV3.HP
 
-import com.cpc.spark.qukan.userprofile.SetUserProfileTag.SetUserProfileTagInHiveDaily
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.spark.sql.functions._
-
+import org.apache.spark.sql.SaveMode
+import java.util.Properties
+import java.sql.{Connection, DriverManager}
+import com.typesafe.config.ConfigFactory
 
 object Lab {
   def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().appName("appInstallation").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("directOcpcMonitor").enableHiveSupport().getOrCreate()
     val date = args(0).toString
-    val days = args(1).toInt
 
-    val appCat = getAppCat(spark) // appName, cat
-    println("============================== appCat ===================================")
-    appCat.show(10)
+    val indirect_ocpc_unit = getIndirectOcpcUnit(spark, date) // identifier, if_ocpc
+    indirect_ocpc_unit.write.mode("overwrite").saveAsTable("test.indirect_ocpc_unit_sjq")
+    val indirect_unit = getIndirectUnit(spark, date, indirect_ocpc_unit) // identifier, cost_hottopic, cost_qtt, if_ocpc
+    indirect_unit.write.mode("overwrite").saveAsTable("test.indirect_unit_sjq")
+//    val result = getContrastData(spark, date, indirect_unit)
 
-    val appFreq = getAppFreq(spark, date) // appName0, appName1, appName, count
-    println("============================== appFreq  ======================================")
-    appFreq.show(10)
 
-    val appCat0 = appCat
-      .join(appFreq, Seq("appName"), "left")
-      .select("cat", "appName", "appName0", "count").filter("appName0 is not NULL").distinct()
-      .toDF()
 
-    appCat0.write.mode("overwrite").saveAsTable("test.appCat0_sjq")
 
-    println("appCat0 has " + appCat0.count() + " lines. ")
-    println("==============================  appCat0  ==========================================")
-    appCat0.show(10)
 
-    val uidApp = getUidApp(spark, date, days - 1, appCat0).cache() //"uid", "cat", "date"
+    //    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    //    val jdate1 = sdf.parse(date)
+    //    val calendar = Calendar.getInstance
+    //    calendar.setTime(jdate1)
+    //    calendar.add( Calendar.DATE, -1 )
+    //    val jdate0 = calendar.getTime
+    //    val date0 = sdf.format(jdate0)
 
-    println("uidApp has " + uidApp.count() + " lines. ")
-    println("=============================== uidApp =============================================")
-    uidApp.show(10)
-
-    //    create table if not exists dl_cpc.hottopic_uid_bag
+    //    create table if not exists test.directOcpcMonitor
     //    (
-    //      uid STRING COMMENT '用户id',
-    //      cat STRING COMMENT 'app类别'
+    //      label      STRING COMMENT '直暗投，ocpc/cpc',
+    //    show_n     INT    COMMENT '展示量',
+    //    ctr        FLOAT  COMMENT '点击率',
+    //    click_n    INT    COMMENT '点击数',
+    //    click_cvr  FLOAT  COMMENT '转化率',
+    //    cvr_n      INT    COMMENT '转化数',
+    //    money      FLOAT  COMMENT '收入',
+    //    cpa        FLOAT  COMMENT 'cost per action',
+    //    cpa_given  FLOAT  COMMENT 'cpa_given',
+    //    cpm        FLOAT  COMMENT 'cost per mille',
+    //    total_arpu FLOAT  COMMENT 'arpu',
+    //    acp        FLOAT  COMMENT 'average click price'
     //    )
-    //    comment '段子社交、短视频、直播人群包'
-    //    partitioned by (`date` string);
+    //    COMMENT '热点段子明暗投、ocpc/cpc监控日报'
+    //    PARTITIONED BY (`date` STRING);
+    //
+    //    val sqlRequest =
+    //      s"""
+    //         |  select
+    //         |   case
+    //         |     when c.identifier is not NULL and exptags like "%hot_topic%" and length(ext_string['ocpc_log']) > 0  then '暗投ocpc'
+    //         |     when c.identifier is not NULL and                                length(ext_string['ocpc_log']) = 0  then '暗投cpc'
+    //         |     else '直投'
+    //         |    end as label, --这里的ocpc是指付费方式为cpc下面的ocpc
+    //         |   sum(isshow)                                                                    as show_n,
+    //         |   round(sum(isclick)*100                                   /sum(isshow),      3) as ctr,       --单位：%
+    //         |         sum(isclick)                                                             as click_n,
+    //         |   round(sum(iscvr)*100                                     /sum(isclick),     3) as click_cvr, --单位：%
+    //         |         sum(iscvr)                                                               as cvr_n,
+    //         |   round(sum(case WHEN isclick = 1 then price else 0 end)/100, 3)                 as money,
+    //         |   round(sum(case WHEN isclick = 1 then price else 0 end)   /sum(100*iscvr),   3) as cpa,       --单位：元
+    //         |   round(sum(isclick*float(substring(ocpc_log, locate("cpagiven:", ocpc_log) + 9, locate("pcvr", ocpc_log) - locate(",cpagiven:", ocpc_log) - 11)))/sum(isclick) ) as cpa_given,
+    //         |   round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow),      3) as cpm,       --cpc下面的cpm，单位：元
+    //         |   (sum(case WHEN isclick = 1 and (ext["charge_type"].int_value = 1 or ext["charge_type"] IS NULL ) then price else 0 end)/100
+    //         |  + sum(case when isshow  = 1 and  ext["charge_type"].int_value = 2                                 then price else 0 end)/100000.0 )
+    //         |   /count(distinct uid)                                                           as total_arpu,
+    //         |   round(sum(case WHEN isclick = 1 then price else 0 end)/100, 3)/sum(isclick)    as acp,
+    //         |   '$date'                                                                        as `date`
+    //         |FROM
+    //         |     (  select
+    //         |         ext_string['ocpc_log'] as ocpc_log,
+    //         |         cast(unitid as string) as identifier,
+    //         |         *
+    //         |        from dl_cpc.cpc_hot_topic_union_log
+    //         |       WHERE `date` = '$date'
+    //         |         and isshow = 1 --已经展示
+    //         |         and media_appsid = '80002819'
+    //         |         and ext['antispam'].int_value = 0  --反作弊标记：1作弊，0未作弊
+    //         |         AND userid > 0 -- 广告主id
+    //         |         and adsrc = 1  -- cpc广告（我们这边的广告，非外部广告）
+    //         |         AND ( ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1 ) --charge_type: 计费类型
+    //         |     ) a
+    //         |left join
+    //         |     (
+    //         |       select
+    //         |        searchid,
+    //         |        label2 as iscvr --是否转化
+    //         |       from dl_cpc.ml_cvr_feature_v1
+    //         |      WHERE `date` = '$date'
+    //         |     ) b on a.searchid = b.searchid
+    //         |left join
+    //         |     (
+    //         |        select
+    //         |          identifier
+    //         |        from
+    //         |          dl_cpc.ocpc_pb_result_hourly  --该表中的identifier已经去直投了
+    //         |        where
+    //         |          ((`date` = '$date0' and hour >= '21') or (`date` = '$date' and hour < '21'))
+    //         |          and version = 'hottopicv1'
+    //         |        group by
+    //         |          identifier
+    //         |      ) c on a.identifier = c.identifier
+    //         |GROUP BY
+    //         |   case
+    //         |     when c.identifier is not NULL and exptags like "%hot_topic%" and length(ext_string['ocpc_log']) > 0  then '暗投ocpc'
+    //         |     when c.identifier is not NULL and                                length(ext_string['ocpc_log']) = 0  then '暗投cpc'
+    //         |     else '直投'
+    //         |    end
+    //       """.stripMargin
+    //
+    //    val df = spark.sql(sqlRequest)
+    //    df.write.mode("overwrite").insertInto("test.directOcpcMonitor")
+    //    val df2 = df.select("label", "show_n", "ctr", "click_n", "click_cvr", "cvr_n", "money", "cpa", "cpm", "total_arpu", "acp", "`date`")
 
-    uidApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
-
-    upDate(spark, date)
-
+    //    val reportTable = "report2.direct_ocpc_monitor"
+    //    val deleteSQL = s"delete from $reportTable where date = '$date'"
+    //    update(deleteSQL)
+    //    insert(df2, reportTable)
 
   }
 
-  def getAppCat(spark: SparkSession) = {
-    import spark.implicits._
-    val social = List("挖客", "MOMO陌陌", "比邻", "探探", "MOMO约", "富聊", "抱抱", "UKI", "漂流瓶子", "草莓聊天交友", "百合婚恋", "米聊", "约爱吧", "95爱播", "配配", "桃花洞", "微光", "快猫", "默默聊", "Blued", "花田",
-      "附近语聊约会", "同城爱约", "摇一摇交友", "探约探爱-同城交友约会", "甜友聊天交友", "遇到视频聊天", "雨音-一对一视频", "脉脉", "小恩爱", "啵啵", "聊聊", "在哪", "蜜聊", "语玩语音聊天交友约会", "妇聊", "美聊", "tataUFO",
-      "玩洽", "陌声同城聊天交友", "富聊一对一视频", "黄瓜视频", "美丽约", "陌聊（陌陌聊天交友）", "碰碰交友", "随缘漂流瓶", "乐聊", "知页Pick", "同城追爱", "甜逗")
-    val live = List("火山小视频", "映客", "花椒直播", "石榴直播", "斗鱼直播", "水多直播", "丁香直播", "盒子直播", "深入直播", "一直播", "番茄直播", "快手美女秀", "香蕉直播", "妖娆直播", "小宝贝直播", "易直播", "猫咪视频直播", "快猫直播", "蜜秀直播",
-      "快狐直播", "么么直播", "直播吧", "辣舞直播", "大秀直播", "樱桃直播", "浴火直播", "诱火", "嗨秀秀场", "哇塞直播", "小蛮腰直播", "蜜聊直播", "蜜疯直播", "棉花糖", "陌秀直播", "NOW直播", "夜嗨直播", "蜜兔直播", "花间娱乐美女视频直播交友", "水滴直播",
-      "要播直播", "伊人直播", "NN直播", "红人直播", "Z直播", "比心直播", "来疯直播", "酷咪直播", "九秀美女直播")
-    val shortVideo = List("西瓜视频", "火山小视频", "抖音短视频", "好看视频", "土豆视频", "秒拍", "LIKE短视频", "全民小视频",
-      "姜饼短视频", "前排视频", "快手", "全民短视频", "微视", "美拍", "梨视频", "Yoo视频", "百思不得姐", "娃趣视频")
-    val lb = scala.collection.mutable.ListBuffer[AppCat]()
-    for (app <- social) {
-      lb += AppCat(app, "社交")
-    }
-    for (app <- live) {
-      lb += AppCat(app, "直播")
-    }
-    for (app <- shortVideo) {
-      lb += AppCat(app, "短视频")
-    }
-    lb.toDF()
-  }
-
-  def getAppFreq(spark: SparkSession, date: String) = {
-    import spark.implicits._
-
-    val sql1 =
-      s"""
-         |select
-         | concat_ws(',', app_name) as pkgs1
-         |from dl_cpc.cpc_user_installed_apps a
-         |where load_date = '$date'
-       """.stripMargin
-    val pkgs = spark.sql(sql1)
-    pkgs.show(3)
-
-    val result = pkgs.rdd
-      .map(x => x.getAs[String]("pkgs1"))
-      .flatMap(x => x.split(","))
-      .map(x => (x, 1))
-      .reduceByKey((x, y) => x + y)
-      .map(x => (x._1, x._1.split("-"), x._2))
-      .map(x =>
-        if (x._2.length > 1) {
-          AppCount(x._1, x._2(0), x._2(1), x._3)
-        } else {
-          AppCount(x._1, x._2(0), "", x._3)
-        }
-      ).toDF()
-    result
-  }
-
-  def getUidApp(spark: SparkSession, date: String, days: Int, appCat: DataFrame) = {
-    /** appCat字段： cat, appName, appName0 */
-    import spark.implicits._
-
+  def getIndirectOcpcUnit(spark: SparkSession, date: String) = {
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val jdate1 = sdf.parse(date)
     val calendar = Calendar.getInstance
-    val yesterday = sdf.parse(date)
-    calendar.setTime(yesterday)
-    calendar.add(Calendar.DATE, -days)
-    val firstDay = calendar.getTime
-    val date0 = sdf.format(firstDay)
-
+    calendar.setTime(jdate1)
+    calendar.add(Calendar.DATE, -1)
+    val jdate0 = calendar.getTime
+    val date0 = sdf.format(jdate0)
     val sql =
       s"""
-         | select
-         |  t1.uid,
-         |  t2.pkgs1
-         |from (
-         | select
-         |  dt,
-         |  uid
-         | from dl_cpc.slim_union_log
-         |where dt between '$date0' and '$date'
-         |  and adsrc = 1
-         |  and userid >0
-         |  and isshow = 1
-         |  and antispam = 0
-         |  and media_appsid = '80002819'
-         | group by dt, uid ) t1
-         | join (
-         |   select
-         |    load_date,
-         |    uid,
-         |    concat_ws(',', app_name) as pkgs1
-         |   from dl_cpc.cpc_user_installed_apps
-         |  where load_date between '$date0' and '$date'
-         |  group by load_date, uid, app_name
-         | ) t2
-         | on t1.uid = t2.uid and t1.dt = t2.load_date
-         | group by t1.uid, t2.pkgs1
+         |select
+         |  identifier,
+         |  1 as if_ocpc
+         |from
+         |  dl_cpc.ocpc_pb_result_hourly  --该表中的identifier已经去直投了
+         |where
+         |  ((`date` = '$date0' and hour >= '21') or (`date` = '$date' and hour < '21'))
+         |  and version = 'hottopicv1'
        """.stripMargin
-    println(sql)
-    val df = spark.sql(sql)
-
-    val result = df.rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
-      .flatMap(x => {
-        val uid = x._1
-        val pkgs = x._2
-        val lb = scala.collection.mutable.ListBuffer[UidApp]()
-        for (app <- pkgs) {
-          lb += UidApp(uid, app)
-        }
-        lb
-      }).toDF() // uid, appName0
-      .join(appCat, Seq("appName0"))
-      .select("uid", "cat")
-      .distinct().toDF()
-      .withColumn("date", lit(date))
-
-    result
+    val df = spark.sql(sql).distinct().toDF()
+    df
   }
 
-  def upDate(spark: SparkSession, date: String): Unit = {
-    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    val calendar = Calendar.getInstance
-    val today = sdf.parse(date)
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime()
-    val date0 = sdf.format(yesterday)
-
-    val sqlRequest =
+  def getIndirectUnit(spark: SparkSession, date: String, indrectOcpc: DataFrame) = {
+    val sql =
       s"""
          |select
-         |  coalesce(t1.cat, t2.cat) as cat,
-         |  coalesce(t1.uid, t2.uid) as uid,
-         |  tag0,
-         |  tag1
-         |from
-         |  (
-         |    select
-         |      cat,
-         |      uid,
-         |      1 as tag1
-         |    from
-         |      dl_cpc.hottopic_uid_bag
-         |    where
-         |      `date` = '$date'
-         |  ) t1 full
-         |  outer join (
-         |    select
-         |      cat,
-         |      uid,
-         |      1 as tag0
-         |    from
-         |      dl_cpc.hottopic_uid_bag
-         |    where
-         |      `date` = '$date0'
-         |  ) t2 on t1.cat = t2.cat
-         |  and t1.uid = t2.uid
+         |  cast( unitid as string ) as identifier,
+         |  sum( case when media_appsid =  '80002819' then price else 0 end ) as cost_hottopic,
+         |  sum( case when media_appsid <> '80002819' then price else 0 end ) as cost_qtt
+         |from dl_cpc.slim_union_log a
+         |where dt = '$date'
+         |  and adsrc = 1
+         |  and isshow = 1
+         |  and isclick = 1
+         |  and media_appsid in ("80000001", "80000002", "80002819")
+         |  and (charge_type is NULL or charge_type = 1)
+         |  and userid > 0
+         |  and antispam = 0
+         |group by unitid
        """.stripMargin
 
-    println(sqlRequest)
-    val df = spark.sql(sqlRequest)
-      .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
-      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
-      .select("cat", "uid", "tag0", "tag1", "id", "io")
+    val indirectUnit = spark.sql(sql)
+      .filter("cost_hottopic > 0 and cost_qtt > 0")
 
-    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
-
-    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
-
-    val result = SetUserProfileTagInHiveDaily(rdd1)
-
+    val indirectCpcUnit = indirectUnit
+      .join(indrectOcpc, Seq("identifier"), "left")
+      .select("identifier", "cost_hottopic", "cost_qtt", "if_ocpc")
+      .na.fill(0, Seq("if_ocpc"))
+    indirectCpcUnit
   }
 
-  case class AppCat(var appName: String, var cat: String)
+//  def getContrastData(spark: SparkSession, date: String, indirectUnit: DataFrame): Unit = {
+//    indirectUnit.createOrReplaceTempView("indirectUnit")
+//    val sql =
+//      s"""
+//         |
+//       """.stripMargin
+//  }
 
-  case class AppCount(var appName0: String, var appName1: String, appName: String, var count: Int)
 
-  case class UidApp(var uid: String, var appName0: String)
+  //  def update(sql: String): Unit ={
+  //    val conf = ConfigFactory.load()
+  //    val url      = conf.getString("mariadb.report2_write.url")
+  //    val driver   = conf.getString("mariadb.report2_write.driver")
+  //    val username = conf.getString("mariadb.report2_write.user")
+  //    val password = conf.getString("mariadb.report2_write.password")
+  //    var connection: Connection = null
+  //    try{
+  //      Class.forName(driver) //动态加载驱动器
+  //      connection = DriverManager.getConnection(url, username, password)
+  //      val statement = connection.createStatement
+  //      val rs = statement.executeUpdate(sql)
+  //      println(s"EXECUTE $sql SUCCESS!")
+  //    }
+  //    catch{
+  //      case e: Exception => e.printStackTrace
+  //    }
+  //    connection.close  //关闭连接，释放资源
+  //  }
+  //
+  //  def insert(data:DataFrame, table: String): Unit ={
+  //    val conf = ConfigFactory.load()
+  //    val mariadb_write_prop = new Properties()
+  //
+  //    val url      = conf.getString("mariadb.report2_write.url")
+  //    val driver   = conf.getString("mariadb.report2_write.driver")
+  //    val username = conf.getString("mariadb.report2_write.user")
+  //    val password = conf.getString("mariadb.report2_write.password")
+  //
+  //    mariadb_write_prop.put("user", username)
+  //    mariadb_write_prop.put("password", password)
+  //    mariadb_write_prop.put("driver", driver)
+  //
+  //    data.write.mode(SaveMode.Append)
+  //      .jdbc(url, table, mariadb_write_prop)
+  //    println(s"INSERT INTO $table SUCCESSFULLY!")
+  //
+  //  }
 
 }
 
