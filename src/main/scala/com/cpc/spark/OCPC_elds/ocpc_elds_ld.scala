@@ -106,7 +106,7 @@ object ocpc_elds_ld {
          |(select
          |day,
          |count(distinct unitid) as yes_unitid_cnt,
-         |sum(yes_ocps_cost) as yes_ocpc_cost
+         |sum(yes_ocpc_cost) as yes_ocpc_cost
          |from union
          |group by day )n on m.day=n.day
          |left join
