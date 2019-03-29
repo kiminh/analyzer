@@ -45,7 +45,7 @@ object OcpcSmoothFactor{
   }
 
   def calculatePCOC(rawData: DataFrame, spark: SparkSession) = {
-    val postcvrData = rawData
+    val pcocData = rawData
       .groupBy("unitid")
       .agg(
         sum(col("isclick")).alias("click"),
@@ -55,8 +55,10 @@ object OcpcSmoothFactor{
       .select("unitid", "click", "cv", "pre_cvr")
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .select("unitid", "post_cvr", "pre_cvr")
-//      .withColumn("pcoc", col("pre_cvr") *)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("unitid", "pre_cvr", "post_cvr", "pcoc")
 
+    pcocData
   }
 
   def getBaseData(media: String, cvrType: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
