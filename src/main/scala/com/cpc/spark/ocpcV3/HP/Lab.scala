@@ -164,7 +164,7 @@ object Lab {
        """.stripMargin
 
     val indirectUnit = spark.sql(sql)
-      .filter("cost_hottopic > 0 and cost_qtt > 0")
+      .filter("cost_hottopic > 0")
 
     val indirectCpcUnit = indirectUnit
       .join(indrectOcpc, Seq("identifier"), "left")
@@ -178,10 +178,12 @@ object Lab {
     val sql =
       s"""
          | select
+         |  c.cost_hottopic,
+         |  c.cost_qtt,
          |  c.if_ocpc,
          |  a.tag,
          |  a.if_ocpc_success,
-         |  count(a.identifier)                                                                 as unitidn,
+         |  count(distinct a.identifier)                                                                 as unitidn,
          |     sum(isshow)                                                                    as show_n,
          |     sum(isclick)                                                                   as click_n,
          |     sum(iscvr)                                                                     as cvr_n,
@@ -215,7 +217,9 @@ object Lab {
          |  if_ocpc
          | from indirectUnit
          | ) c on a.identifier = c.identifier
-         | group by c.if_ocpc,
+         | group by c.cost_hottopic,
+         |  c.cost_qtt,
+         |  c.if_ocpc,
          |  a.tag,
          |  a.if_ocpc_success
        """.stripMargin
