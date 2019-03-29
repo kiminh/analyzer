@@ -181,7 +181,7 @@ object Lab {
          |  c.if_ocpc,
          |  a.tag,
          |  a.if_ocpc_success,
-         |  count(identifier)                                                                 as unitidn,
+         |  count(a.identifier)                                                                 as unitidn,
          |     sum(isshow)                                                                    as show_n,
          |     sum(isclick)                                                                   as click_n,
          |     sum(iscvr)                                                                     as cvr_n,
