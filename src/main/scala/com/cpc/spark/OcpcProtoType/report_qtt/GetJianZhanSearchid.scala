@@ -47,6 +47,9 @@ object GetJianZhanSearchid {
           |    adsrc = 1
           |and
           |    (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
+          |group by
+          |   day,
+          |   searchid
         """.stripMargin
       println("--------------------------------")
       println(sql)
