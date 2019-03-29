@@ -41,13 +41,26 @@ object OcpcSmoothFactor{
 
     // 读取配置文件
     val confData = getConfData(spark)
+    var conversionGoal = 1
+    if (cvrType == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrType == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
     val resultDF = result
         .join(confData, Seq("identifier"), "inner")
+        .select("identifier", "pcoc", "jfb")
+        .withColumn("conversion_goal", lit(conversionGoal))
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
 
     resultDF.show()
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
   }
 
   def getConfData(spark: SparkSession) = {
