@@ -1,7 +1,6 @@
 package com.cpc.spark.hottopic
 
 import org.apache.spark.sql.SparkSession
-import org.apache.log4j._
 /**
   * @author Jinbao
   * @date 2019/3/1 19:50
@@ -14,12 +13,8 @@ object HotTopicBaseData {
         val spark = SparkSession.builder()
           .appName(s"HotTopicBaseData day = $day, hour = $hour")
           .enableHiveSupport()
-          .config("spark.ui.showConsoleProgress","true")
           .getOrCreate()
         import spark.implicits._
-
-        spark.sparkContext.setLogLevel("OFF")
-        Logger.getLogger("org.apache.spark.SparkContext").setLevel(Level.INFO)
 
         val sql =
             s"""
