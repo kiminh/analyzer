@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 
 object GetJianZhanSearchid {
   def main(args: Array[String]): Unit = {
-    val dateBuffer = getDate("2019-03-22", "2019-03-28")
+    val dateBuffer = getDate("2019-03-23", "2019-03-28")
     val spark = SparkSession.builder().appName("GetJianZhanSearchid").enableHiveSupport().getOrCreate()
     getSearchid(dateBuffer, spark)
   }
