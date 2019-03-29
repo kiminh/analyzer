@@ -85,7 +85,7 @@ object OcpcSmoothFactor{
     val result = pcocData
         .join(jfbData, Seq("unitid"), "outer")
         .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb")
-        .filter(s"pcoc is not null")
+        .filter(s"pcoc is not null and pcoc != 0")
 
     result
   }
