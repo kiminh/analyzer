@@ -75,7 +75,7 @@ object ocpc_elds_ld {
          |select
          | l.n_unitid_cnt,
          | m.in_unitid_cnt,
-         | concat( cast(n_unitid_cnt*1.0*100/n_unitid_cnt as decimal(10,2)),'%') as unitid_first_ratio,
+         | concat( cast(m.in_unitid_cnt*1.0*100/l.n_unitid_cnt as decimal(10,2)),'%') as unitid_first_ratio,
          | n.yes_unitid_cnt,
          | concat( cast(n.yes_unitid_cnt*1.0*100/m.in_unitid_cnt as decimal(10,2)),'%') as unitid_second_ratio,
          | l.cv_unitid_cost,
@@ -89,6 +89,7 @@ object ocpc_elds_ld {
          | p.day,
          |count(distinct p.unitid) as in_unitid_cnt,
          |sum(p.yes_ocpc_cost) as in_unitid_cost
+         |from
          |(select
          |a.day,
          |a.unitid,
@@ -98,7 +99,8 @@ object ocpc_elds_ld {
          |from union
          |union all
          |select *
-         |from total )a )p
+         |from total )a
+         | group by a.day,a.unitid )p
          |group by p.day )m
          |left join
          |(select
