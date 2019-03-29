@@ -1,5 +1,3 @@
-
-
 package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.io.FileOutputStream

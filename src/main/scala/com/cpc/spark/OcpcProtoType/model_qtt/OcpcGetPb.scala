@@ -272,9 +272,25 @@ object OcpcGetPb {
      */
 
     // ocpc投放的k值
-    val regressionK = getModelK(conversionGoal, version, "regression", date, hour, spark).withColumn("regression_k", col("kvalue"))
+    val regressionInitK = getModelK(conversionGoal, version, "regression", date, hour, spark).withColumn("regression_k", col("kvalue"))
     val pidK = getModelK(conversionGoal, version, "pid", date, hour, spark).withColumn("pid_k", col("kvalue"))
+    val apiPcocK = getModelK(conversionGoal, version, "api_pcoc", date, hour, spark).withColumn("api_pcoc_k", col("kvalue"))
     val prevPb = getPrevPb(conversionGoal, version, date, hour, spark)
+    val middleRegressionK = regressionInitK.join(apiPcocK, Seq("identifier"), "outer")
+    middleRegressionK.createOrReplaceTempView("middle_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  regression_k as k1,
+         |  api_pcoc_k as k2,
+         |  (case when identifier in ('270') and api_pcoc_k is not null then api_pcoc_k
+         |        else regression_k end) as regression_k
+         |FROM
+         |  middle_table
+       """.stripMargin
+    println(sqlRequest)
+    val regressionK = spark.sql(sqlRequest)
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值

@@ -7,6 +7,7 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcSuggestCPA {
@@ -26,6 +27,7 @@ object OcpcSuggestCPA {
     6.
      */
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
@@ -495,13 +497,12 @@ object OcpcSuggestCPA {
          |  post_cvr,
          |  pre_cvr_origin,
          |  post_cvr_cali,
-         |  (1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali as pre_cvr
+         |  ((1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali) as pre_cvr
          |FROM
          |  cali_data
        """.stripMargin
     println(sqlRequest)
     val caliData = spark.sql(sqlRequest)
-    caliData.write.mode("overwrite").saveAsTable("test.check_suggest_cpa20190328new")
 
 
     val finalData = caliData
