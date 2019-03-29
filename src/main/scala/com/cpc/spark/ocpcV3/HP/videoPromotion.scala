@@ -75,10 +75,11 @@ object videoPromotion {
 //    drop table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1;
 //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1
 //    ( userid  int,
-//      adclass2 int,
-//      threshold bigint,
+//      adclass2 int comment '二级行业类目',
+//      threshold bigint comment '视频广告预测转化率阈值',
 //      adtype1 string,
-//      test_tag string,
+//      test_tag string comment '实验标签',
+//      queryn int comment '请求数',
 //      shown int,
 //      clickn int,
 //      cost   double,
@@ -87,10 +88,11 @@ object videoPromotion {
 //      exp_cvr double,
 //      pcoc double,
 //      auc double,
-//      cvr_bigimage_adclass2 double,
+//      cvr_bigimage_adclass2 double comment '大图二级行业转化率',
 //      cpm  double)
-//    comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
-//    partitioned by (`date` string);
+//      comment "group by userid, adclass2, threshold, adtype1, test_tag to summary"
+//      partitioned by (`date` string);
+
     result0.write.mode("overwrite").insertInto( "dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary1" )
 //    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
@@ -121,17 +123,18 @@ object videoPromotion {
 //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_summary2
 //    ( adtype1 string,
 //      test_tag string,
-//      show_n int,
-//      ctr double,
-//      click_n int,
-//      cvr double,
-//      cvr_n int,
-//      total_cost double,
-//      cpm double,
-//      cpa double,
-//      uidn int,
-//      arpu double,
-//      acp double )
+//      query_n int comment '请求数',
+//    show_n int,
+//    ctr double,
+//    click_n int,
+//    cvr double,
+//    cvr_n int,
+//    total_cost double,
+//    cpm double,
+//    cpa double,
+//    uidn int comment '用户数',
+//    arpu double,
+//    acp double )
 //    comment "group by adtype1, test_tag to summary"
 //    partitioned by (`date` string);
 
@@ -195,14 +198,10 @@ object videoPromotion {
 //    ( test_tag string,
 //      userid      int,
 //      adclass2    int,
-//      --clickn_video int,
-//      --cvrn_video  int,
-//      video    double,
-//      --clickn_bigimage int,
-//      --cvrn_bigimage int,
-//      bigimage double,
+//      cvr_video    double,
+//      cvr_bigimage double,
 //      cvr_bigimage_adclass2 double,
-//      bigimage2 double,
+//      cvr_bigimage_final double,
 //      flag int )
 //    comment "group by test_tag, userid, adclass2 to summary"
 //    partitioned by (`date` string);
@@ -220,10 +219,14 @@ object videoPromotion {
         .withColumn("date", lit(date))
         .select( "test_tag", "usern", "video_outstand_usern", "account", "date" )
 
-    //    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account
-    //    ( test_tag string, usern int, video_outstand_usern int,  account double)
-    //    comment "users with good video account"
-    //    partitioned by (`date` string);
+//    drop table   dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account;
+//    create table dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account
+//    ( test_tag string comment '实验标签',
+//    usern int comment '使用策略且有视频广告的广告主数',
+//    video_outstand_usern int comment '视频转化率比大图好的广告主数量',
+//    account double comment 'video_outstand_usern/usern')
+//    comment "users with good video account"
+//    partitioned by (`date` string);
 
     result2.write.mode("overwrite").insertInto("dl_cpc.qtt_shortvideo_cvr_promotion_monitor_good_video_account")
 //    result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
