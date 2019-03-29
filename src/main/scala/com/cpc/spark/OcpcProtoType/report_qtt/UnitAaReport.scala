@@ -33,7 +33,7 @@ object UnitAaReport {
         |    isshow,
         |    price,
         |    exp_cvr,
-        |    ocpc_log
+        |    ocpc_log,
         |    `date`,
         |    hour
         |from
