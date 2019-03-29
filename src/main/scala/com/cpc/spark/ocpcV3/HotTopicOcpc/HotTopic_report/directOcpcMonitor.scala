@@ -99,7 +99,7 @@ object directOcpcMonitor {
          |        group by
          |          identifier
          |        union
-         |        select identifier form indirectUnit
+         |        select identifier from indirectUnit
          |      ) c on a.identifier = c.identifier
          |GROUP BY
          |   case
