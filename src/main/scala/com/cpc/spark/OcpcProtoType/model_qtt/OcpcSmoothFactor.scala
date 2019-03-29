@@ -66,6 +66,8 @@ object OcpcSmoothFactor{
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .select("unitid", "jfb")
 
+    jfbData.show()
+
     jfbData
   }
 
@@ -83,6 +85,8 @@ object OcpcSmoothFactor{
       .select("unitid", "post_cvr", "pre_cvr")
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .select("unitid", "pcoc")
+
+    pcocData.show(10)
 
     pcocData
   }
