@@ -48,7 +48,7 @@ object update_unitid_ratio {
 
     spark.sql(
       s"""
-         |select ta.unitid, case when tb.ratio>1.2 then ta.ratio*1.1 when tb.ratio<1 then ta.ratio*0.9
+         |select ta.unitid, case when tb.ratio>1.2 then ta.ratio*1.15 when tb.ratio<1 then ta.ratio*0.85
          |else ta.ratio end as ratio from
          |(select * from dl_cpc.cpc_recall_bscvr_unitid_ratio where dt='$tardate') ta
          |join bs_union tb
