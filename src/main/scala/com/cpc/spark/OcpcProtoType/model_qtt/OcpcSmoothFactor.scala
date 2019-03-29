@@ -37,11 +37,32 @@ object OcpcSmoothFactor{
     val baseData = getBaseData(media, cvrType, hourInt, date, hour, spark)
 
     // 计算结果
-    val resultDF = calculateSmooth(baseData, spark)
+    val result = calculateSmooth(baseData, spark)
+
+    // 读取配置文件
+    val confData = getConfData(spark)
+    val resultDF = result
+        .join(confData, Seq("identifier"), "inner")
+
     resultDF.show()
 
     resultDF
       .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+  }
+
+  def getConfData(spark: SparkSession) = {
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
+    val rawData = spark.read.format("json").json(confPath)
+
+    val resultDF = rawData
+      .select("identifier", "version", "exp_flag")
+      .filter(s"exp_flag = 2 and version = 'qtt_demo'")
+      .select("identifier")
+      .distinct()
+
+    resultDF
   }
 
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
@@ -49,8 +70,9 @@ object OcpcSmoothFactor{
     val jfbData = calculateJFB(rawData, spark)
 
     val result = pcocData
-      .join(jfbData, Seq("unitid"), "outer")
-      .select("unitid", "pcoc", "jfb")
+        .join(jfbData, Seq("unitid"), "outer")
+        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb")
+        .filter(s"pcoc is not null")
 
     result
   }
