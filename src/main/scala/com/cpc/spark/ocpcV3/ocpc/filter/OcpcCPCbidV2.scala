@@ -89,8 +89,11 @@ object OcpcCPCbidV2 {
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
+
+    val ocpcUnit = cvrGoal
+      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal")
     val result = rawData
-      .join(cvrGoal, Seq("identifier", "conversion_goal"), "inner")
+      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "inner")
       .select("identifier", "cali_value")
 
     result
@@ -114,7 +117,7 @@ object OcpcCPCbidV2 {
     val resultDF = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal")
+      .select("unitid",  "conversion_goal")
       .distinct()
 
     resultDF.show(10)
