@@ -38,6 +38,7 @@ object Lab {
     val sql2 =
       s"""
          |  select
+         |   a.userid,
          |   a.`date`,
          |   a.identifier,
          |   case
@@ -70,6 +71,7 @@ object Lab {
          |        from date_identifier
          |      ) c on a.`date` = c.dt and a.identifier = c.identifier
          |GROUP BY
+         |   a.userid,
          |   a.`date`,
          |   a.identifier,
          |   case
