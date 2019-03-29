@@ -145,7 +145,7 @@ object OcpcGetPb_v2 {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val ocpcUnionlog = spark
-      .table("dl_cpc.ocpc_union_log_hourly")
+      .table("dl_cpc.ocpc_filter_unionlog")
       .where(selectCondition)
       .filter(s"media_appsid = '80002819'")
       .withColumn("identifier", col("unitid"))
