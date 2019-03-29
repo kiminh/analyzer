@@ -11,6 +11,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 
+import org.apache.log4j.{Level, Logger}
 import scala.collection.mutable.ListBuffer
 
 
@@ -28,6 +29,7 @@ object OcpcGetPb {
 
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 1 qtt_demo qtt
@@ -238,11 +240,11 @@ object OcpcGetPb {
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
 
-//    result
-//        .withColumn("date", lit(date))
-//        .withColumn("hour", lit(hour))
-//        .withColumn("version", lit(version))
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+    result
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
 
     println("k smooth strat1:")
     result.show(10)
@@ -277,18 +279,6 @@ object OcpcGetPb {
 
     // cpc投放的k值
     val cpcK = getCpcK(mediaSelection, conversionGoal, 3, date, hour, spark)
-//    val cpcK2raw = getCpcKv2(mediaSelection, conversionGoal, date, hour, spark)
-//    val cpcK1 = cpcK1raw
-//      .withColumn("kvalue1", col("kvalue"))
-//      .select("identifier", "kvalue1", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
-//    val cpcK2 = cpcK2raw
-//      .withColumn("kvalue2", col("kvalue"))
-//      .select("identifier", "kvalue2")
-//    val cpcKraw = cpcK1
-//      .join(cpcK2, Seq("identifier"), "left_outer")
-//    val cpcK = cpcKraw
-//      .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
-//      .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
 
     // 数据外关联
     val ocpcKfinal = ocpcK
@@ -304,7 +294,6 @@ object OcpcGetPb {
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
-    finalK.write.mode("overwrite").saveAsTable("test.check_new_getpb20190325")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
 
@@ -342,12 +331,16 @@ object OcpcGetPb {
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
     // cvr 分区
     var cvrGoal = ""
+    var factor = 0.2
     if (conversionGoal == 1) {
       cvrGoal = "cvr1"
+      factor = 0.2
     } else if (conversionGoal == 2) {
       cvrGoal = "cvr2"
+      factor = 0.5
     } else {
       cvrGoal = "cvr3"
+      factor = 0.2
     }
 
     // 取历史数据
@@ -443,11 +436,30 @@ object OcpcGetPb {
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("identifier", "post_cvr", "post_cvr_cali")
 
-    val caliData = data
+    val caliData1 = data
       .join(cvrData, Seq("identifier"), "left_outer")
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
-      .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
-      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+      .withColumn("pre_cvr_origin", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
+      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr_origin", "post_cvr_cali")
+
+    caliData1.createOrReplaceTempView("cali_data")
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  identifier,
+         |  exp_cvr,
+         |  isclick,
+         |  iscvr,
+         |  post_cvr,
+         |  pre_cvr_origin,
+         |  post_cvr_cali,
+         |  (1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali as pre_cvr
+         |FROM
+         |  cali_data
+       """.stripMargin
+    println(sqlRequest3)
+    val caliData = spark.sql(sqlRequest3)
 
     val resultDF = caliData
       .groupBy("identifier")
