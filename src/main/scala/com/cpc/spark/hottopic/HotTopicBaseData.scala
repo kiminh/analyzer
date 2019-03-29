@@ -8,7 +8,7 @@ import org.apache.log4j._
   */
 object HotTopicBaseData {
     def main(args: Array[String]): Unit = {
-        Logger.getLogger("org.apache.spark.SparkContext").setLevel(Level.INFO)
+
         val day = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()
@@ -17,6 +17,9 @@ object HotTopicBaseData {
           .config("spark.ui.showConsoleProgress","true")
           .getOrCreate()
         import spark.implicits._
+
+        spark.sparkContext.setLogLevel("OFF")
+        Logger.getLogger("org.apache.spark.SparkContext").setLevel(Level.INFO)
 
         val sql =
             s"""
