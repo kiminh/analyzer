@@ -46,14 +46,17 @@ object GetJianZhanSearchid {
           |and
           |    adsrc = 1
           |and
-          |    cast(adclass as string) like "134%" or cast(adclass as string) like "107%"
+          |    (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
         """.stripMargin
+      println("--------------------------------")
+      println(sql)
       val searchidDF = spark.sql(sql)
       searchidDF
         .withColumn("date", lit(date))
         .repartition(50)
         .write.mode("overwrite").insertInto("test.wt_jianzhan_searchids")
       println(date)
+      println("--------------------------------")
     }
   }
 
