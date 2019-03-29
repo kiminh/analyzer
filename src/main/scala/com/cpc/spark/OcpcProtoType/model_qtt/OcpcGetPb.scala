@@ -279,18 +279,6 @@ object OcpcGetPb {
 
     // cpc投放的k值
     val cpcK = getCpcK(mediaSelection, conversionGoal, 3, date, hour, spark)
-//    val cpcK2raw = getCpcKv2(mediaSelection, conversionGoal, date, hour, spark)
-//    val cpcK1 = cpcK1raw
-//      .withColumn("kvalue1", col("kvalue"))
-//      .select("identifier", "kvalue1", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
-//    val cpcK2 = cpcK2raw
-//      .withColumn("kvalue2", col("kvalue"))
-//      .select("identifier", "kvalue2")
-//    val cpcKraw = cpcK1
-//      .join(cpcK2, Seq("identifier"), "left_outer")
-//    val cpcK = cpcKraw
-//      .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
-//      .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
 
     // 数据外关联
     val ocpcKfinal = ocpcK
