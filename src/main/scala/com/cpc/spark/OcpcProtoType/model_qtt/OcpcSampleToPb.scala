@@ -1,5 +1,3 @@
-
-
 package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.io.FileOutputStream
@@ -14,6 +12,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import ocpc.ocpc.{OcpcList, SingleRecord}
 
 import scala.collection.mutable.ListBuffer
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcSampleToPb {
@@ -31,6 +30,7 @@ object OcpcSampleToPb {
     kvalue>0
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // bash: 2019-01-02 12 qtt_demo 1
     val date = args(0).toString

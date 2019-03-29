@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import ocpc.ocpc.{OcpcList, SingleRecord}
 
 import scala.collection.mutable.ListBuffer
-
+import org.apache.log4j.{Level, Logger}
 
 object OcpcSampleToPbFinal {
   def main(args: Array[String]): Unit = {
@@ -25,6 +25,7 @@ object OcpcSampleToPbFinal {
 
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // bash: 2019-01-02 12 1
     val date = args(0).toString

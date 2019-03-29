@@ -247,10 +247,11 @@ object OcpcCPCbidV2 {
       val factor3 = record.getAs[Double]("factor3")
       val cpa_suggest = record.getAs[Double]("cpa_suggest")
       val param_t = record.getAs[Double]("param_t")
+      val caliValue = 1.0
 
 
       if (cnt % 100 == 0) {
-        println(s"unit_id:$unit_id, cpc_bid:$cpc_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3, min_bid:$min_bid, cpa_suggest:$cpa_suggest, param_t:$param_t")
+        println(s"unit_id:$unit_id, cpc_bid:$cpc_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3, min_bid:$min_bid, cpa_suggest:$cpa_suggest, param_t:$param_t, caliValue:$caliValue")
       }
       cnt += 1
 
@@ -268,7 +269,8 @@ object OcpcCPCbidV2 {
         cvGoal3Smooth = factor3,
         minBid = min_bid,
         cpaSuggest = cpa_suggest,
-        paramT = param_t
+        paramT = param_t,
+        cvrCalFactor = caliValue
       )
       list += currentItem
 
