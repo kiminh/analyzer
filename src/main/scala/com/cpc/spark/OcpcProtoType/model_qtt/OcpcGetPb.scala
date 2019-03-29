@@ -63,8 +63,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -240,11 +240,11 @@ object OcpcGetPb {
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
 
-//    result
-//        .withColumn("date", lit(date))
-//        .withColumn("hour", lit(hour))
-//        .withColumn("version", lit(version))
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+    result
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
 
     println("k smooth strat1:")
     result.show(10)
@@ -284,15 +284,13 @@ object OcpcGetPb {
          |  identifier,
          |  regression_k as k1,
          |  api_pcoc_k as k2,
-         |  (case when identifier in ('1918465') and api_pcoc_k is not null then api_pcoc_k
+         |  (case when identifier in () and api_pcoc_k is not null then api_pcoc_k
          |        else regression_k end) as regression_k
          |FROM
          |  middle_table
        """.stripMargin
     println(sqlRequest)
     val regressionK = spark.sql(sqlRequest)
-    // todo
-    regressionK.write.mode("overwrite").saveAsTable("test.ocpc_check_k_data20190329")
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值
