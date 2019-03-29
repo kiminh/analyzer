@@ -55,7 +55,7 @@ object OcpcSmoothFactor{
       .select("unitid", "click", "cv", "pre_cvr")
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .select("unitid", "post_cvr", "pre_cvr")
-      .withColumn("pcoc", col("pre_cvr") *)
+//      .withColumn("pcoc", col("pre_cvr") *)
 
   }
 
