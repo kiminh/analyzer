@@ -17,11 +17,8 @@ object Lab {
     indirect_ocpc_unit.write.mode("overwrite").saveAsTable("test.indirect_ocpc_unit_sjq")
     val indirect_unit = getIndirectUnit(spark, date, indirect_ocpc_unit) // identifier, cost_hottopic, cost_qtt, if_ocpc
     indirect_unit.write.mode("overwrite").saveAsTable("test.indirect_unit_sjq")
-//    val result = getContrastData(spark, date, indirect_unit)
-
-
-
-
+    val result = getContrastData(spark, date, indirect_unit)
+    result.write.mode("overwrite").saveAsTable("test.result_summary_sjq")
 
     //    val sdf = new SimpleDateFormat("yyyy-MM-dd")
     //    val jdate1 = sdf.parse(date)
@@ -176,13 +173,56 @@ object Lab {
     indirectCpcUnit
   }
 
-//  def getContrastData(spark: SparkSession, date: String, indirectUnit: DataFrame): Unit = {
-//    indirectUnit.createOrReplaceTempView("indirectUnit")
-//    val sql =
-//      s"""
-//         |
-//       """.stripMargin
-//  }
+  def getContrastData(spark: SparkSession, date: String, indirectUnit: DataFrame) = {
+    indirectUnit.createOrReplaceTempView("indirectUnit")
+    val sql =
+      s"""
+         | select
+         |  c.if_ocpc,
+         |  a.tag,
+         |  a.if_ocpc_success,
+         |  count(identifier)                                                                 as unitidn,
+         |     sum(isshow)                                                                    as show_n,
+         |     sum(isclick)                                                                   as click_n,
+         |     sum(iscvr)                                                                     as cvr_n,
+         |     round(sum(case WHEN isclick = 1 then price else 0 end)/100, 3)                 as money
+         |    from
+         |   (  select
+         |       --ext_string['ocpc_log'] as ocpc_log,
+         | case when length(ext_string['ocpc_log']) > 0 then 1 else 0 end as if_ocpc_success,
+         |       cast(unitid as string) as identifier,
+         | case when exptags like '%hot_topic%' then 'A' else 'B' end as tag,
+         |       *
+         |      from dl_cpc.cpc_hot_topic_union_log
+         |     WHERE `date` = '$date'
+         |       and isshow = 1 --已经展示
+         |       and media_appsid = '80002819'
+         |       and ext['antispam'].int_value = 0  --反作弊标记：1作弊，0未作弊
+         |       AND userid > 0 -- 广告主id
+         |       and adsrc = 1  -- cpc广告（我们这边的广告，非外部广告）
+         |       AND ( ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1 ) --charge_type: 计费类型
+         | ) a
+         | left join (
+         |          select
+         |               searchid,
+         |               label2 as iscvr --是否转化
+         |              from dl_cpc.ml_cvr_feature_v1
+         |             WHERE `date` = '$date'
+         | ) b on a.searchid = b.searchid
+         | left join (
+         |    select
+         |  identifier,
+         |  if_ocpc
+         | from indirectUnit
+         | ) c on a.identifier = c.identifier
+         | group by c.if_ocpc,
+         |  a.tag,
+         |  a.if_ocpc_success
+       """.stripMargin
+
+    val result = spark.sql(sql)
+    result
+  }
 
 
   //  def update(sql: String): Unit ={
