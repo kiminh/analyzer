@@ -75,14 +75,14 @@ object ocpc_elds_ld {
          |select
          | l.cv_unitid_cnt,
          | m.in_unitid_cnt,
-         | concat( cast(m.in_unitid_cnt*1.0*100/l.cv_unitid_cnt as decimal(10,2)),'%') as unitid_first_ratio,
+         | m.in_unitid_cnt/l.cv_unitid_cnt as unitid_first_ratio,
          | n.yes_unitid_cnt,
-         | concat( cast(n.yes_unitid_cnt*1.0*100/m.in_unitid_cnt as decimal(10,2)),'%') as unitid_second_ratio,
+         | n.yes_unitid_cnt/m.in_unitid_cnt as unitid_second_ratio,
          | l.cv_unitid_cost,
          | m.in_unitid_cost,
-         | concat( cast(m.in_unitid_cost*1.0*100/l.cv_unitid_cost as decimal(10,2)),'%') as cost_first_ratio,
+         | m.in_unitid_cost/l.cv_unitid_cost as cost_first_ratio,
          | n.yes_ocpc_cost,
-         | concat( cast(n.yes_ocpc_cost*1.0*100/m.in_unitid_cost as decimal(10,2)),'%') as cost_second_ratio,
+         | n.yes_ocpc_cost/m.in_unitid_cost as cost_second_ratio,
          | m.day
          |from
          |(select
