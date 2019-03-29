@@ -159,7 +159,6 @@ object OcpcPCOCapi {
         .join(pcocData, Seq("unitid"), "outer")
 
     data.show(10)
-    data.write.mode("overwrite").saveAsTable("test.check_api_unitid_pcoc201909328")
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
       s"""

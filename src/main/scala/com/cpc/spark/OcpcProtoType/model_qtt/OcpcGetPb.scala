@@ -284,7 +284,7 @@ object OcpcGetPb {
          |  identifier,
          |  regression_k as k1,
          |  api_pcoc_k as k2,
-         |  (case when unitid in () and api_pcoc_k is not null then api_pcoc_k
+         |  (case when identifier in ('1918465') and api_pcoc_k is not null then api_pcoc_k
          |        else regression_k end) as regression_k
          |FROM
          |  middle_table
