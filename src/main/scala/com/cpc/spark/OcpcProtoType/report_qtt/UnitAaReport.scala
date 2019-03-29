@@ -53,7 +53,6 @@ object UnitAaReport {
     if("-1".equals(hour.toString) == false) sql +=  s" and hour = '$hour'"
     val dataDF = spark.sql(sql)
     dataDF.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-    dataDF
   }
 
   // 获取suggest_cpa
