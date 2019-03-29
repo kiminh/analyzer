@@ -73,9 +73,9 @@ object ocpc_elds_ld {
     val Sql3 =
       s"""
          |select
-         | l.n_unitid_cnt,
+         | l.cv_unitid_cnt,
          | m.in_unitid_cnt,
-         | concat( cast(m.in_unitid_cnt*1.0*100/l.n_unitid_cnt as decimal(10,2)),'%') as unitid_first_ratio,
+         | concat( cast(m.in_unitid_cnt*1.0*100/l.cv_unitid_cnt as decimal(10,2)),'%') as unitid_first_ratio,
          | n.yes_unitid_cnt,
          | concat( cast(n.yes_unitid_cnt*1.0*100/m.in_unitid_cnt as decimal(10,2)),'%') as unitid_second_ratio,
          | l.cv_unitid_cost,
