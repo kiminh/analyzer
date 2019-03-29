@@ -247,7 +247,7 @@ object OcpcCPCbidV2 {
       val factor3 = record.getAs[Double]("factor3")
       val cpa_suggest = record.getAs[Double]("cpa_suggest")
       val param_t = record.getAs[Double]("param_t")
-      val pcoc = 1.0
+      val caliValue = 1.0
 
 
       if (cnt % 100 == 0) {
@@ -270,7 +270,7 @@ object OcpcCPCbidV2 {
         minBid = min_bid,
         cpaSuggest = cpa_suggest,
         paramT = param_t,
-        pcoc = pcoc
+        cvrCalFactor = caliValue
       )
       list += currentItem
 

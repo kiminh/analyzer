@@ -14,7 +14,7 @@ message SingleOcpcCpcBid {
     double minBid = 10;
     double cpaSuggest = 11;
     double paramT = 12;
-    double pcoc = 13;
+    double cvrCalFactor = 13;
 }
 
 message OcpcCpcBidList {
