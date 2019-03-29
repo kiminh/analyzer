@@ -10,7 +10,7 @@ object UnitAaReport {
     val spark = SparkSession.builder().appName("UnitAaReport").enableHiveSupport().getOrCreate()
     val df = getBaseData("2019-03-27", "-1", spark)
     df.createOrReplaceTempView("temp_table")
-    val sql = "select unitid, ocpc_log_dict['cpagiven'] from temp_table limit 10"
+    val sql = "select unitid, (case when length(ocpc_log) > 0 then ocpc_log_dict['cpagiven'] else -1 end) from temp_table limit 10"
     val dataFrame = spark.sql(sql).collect()
     println(dataFrame)
   }
