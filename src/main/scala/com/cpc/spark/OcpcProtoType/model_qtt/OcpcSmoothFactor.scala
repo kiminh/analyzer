@@ -38,6 +38,7 @@ object OcpcSmoothFactor{
 
     // 计算结果
     val resultDF = calculateSmooth(baseData, spark)
+    resultDF.show()
 
     resultDF
       .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
