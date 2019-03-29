@@ -134,7 +134,7 @@ object ocpc_elds_ld {
     println("result is successful! ")
 
     val tableName1 = "report2.ocpc_elds_ld_data"
-    val deleteSql1 = s"delete from $tableName1 where `date` = '$date' "
+    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
     OperateMySQL.update(deleteSql1) //先删除历史数据
     OperateMySQL.insert(result,tableName1) //插入到MySQL中的report2库中
   }
