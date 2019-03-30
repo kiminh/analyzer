@@ -175,8 +175,8 @@ object ocpc_info {
          |COALESCE(b.suggest_CPA,0)/100 as cpasuggest,
          |a.ocpc_cost/a.ocpc_cvr_cnt as cpareal,
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven >1.2,0,1) as is_control_cost,
-         |a.hidden_budget,
-         |a.ocpc_no_cost/a.hidden_budget as hidden_budget_ratio,
+         |d.hidden_budget,
+         |a.ocpc_no_cost/d.hidden_budget as hidden_budget_ratio,
          |a.day
          |from
          |(select
@@ -194,7 +194,6 @@ object ocpc_info {
          |sum(isshow) as ocpc_show_cnt,
          |sum(case when isclick=1 then cpagiven else null end)/sum(isclick)/100 as cpagiven,
          |sum(iscvr) as ocpc_cvr_cnt,
-         |sum(case when isclick=1 and IsHiddenOcpc='1' then budget else null end)/100/sum(isclick) as hidden_budget
          |from union
          |group by day,userid,unitid,industry,adclass,adslot_type,conversion_goal )a
          |left join
@@ -212,6 +211,15 @@ object ocpc_info {
          |where `date`='$date'
          |and media_appsid in ("80000001", "80000002")
          |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_type=c.adslot_type
+         |left join
+         |(select
+         |userid,
+         |unitid,
+         |conversion_goal,
+         |max(budget) as hidden_budget
+         |from union
+         |where isHiddenOcpc='1'
+         |group by userid,unitid,conversion_goal )d on a.userid=d.userid and a.unitid=d.unitid and a.conversion_goal=d.conversion_goal
 
              """.stripMargin
 
