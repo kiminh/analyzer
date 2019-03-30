@@ -99,7 +99,7 @@ object UnitAaReport {
         |    where
         |        `date` = '$date'
         |    and
-        |        label=1
+        |        label = 1
         |    group by
         |        searchid,
         |        label) as c
@@ -129,23 +129,23 @@ object UnitAaReport {
   }
 
   // 获取suggest_cpa
-  def getSuggestCpa(date: String, hour: String, spark: SparkSession): DataFrame ={
+  def getSuggestCpa(date: String, spark: SparkSession): DataFrame ={
      var subQuery =
        s"""
          |select
          |    unitid,
          |    userid,
          |    cpa,
-         |    row_number() over(partition by unitid, userid order by show desc) as row_num
+         |    row_number() over(partition by unitid, userid order by cost desc) as row_num
          |from
          |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |where
          |   version = 'qtt_demo'
          |and
          |   `date` = '$date'
+         |and
+         |    hour = '06'
        """.stripMargin
-    // 判断当前是否是查询全天的数据
-    if("all".equals(hour) == false) subQuery +=  s" and hour = '$hour'"
 
     val sql =
       s"""
