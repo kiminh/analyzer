@@ -274,9 +274,9 @@ object UnitAaReport {
         |    round(sum(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['kvalue'] as double)
         |                   else 0 end) / sum(isclick), 4) as kvalue,
         |    max(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as double) else 0 end) as budget,
-        |    round(case when max(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as double) else 0 end) = 0 then 0
-        |               else sum(case when isclick = 1 then price else 0 end)
-        |                    / max(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as double) end, 4) as cost_budget_ratio
+        |    round(case when (max(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as double) else 0 end)) = 0 then 0
+        |               else (sum(case when isclick = 1 then price else 0 end)
+        |                    / (max(case when isclick = 1 and length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as double))) end, 4) as cost_budget_ratio
         |from
         |    base_data_table
         |group by
