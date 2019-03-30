@@ -98,14 +98,15 @@ object ocpc_elds_ld {
          |select
          |day,
          |'可获取转化单元' as type,
-         |sum(case when isclick=1 then price else null end)/100 as cost,
-         |sum(isshow) as show_cnt,
-         |sum(isclick) as click_cnt,
-         |sum(iscvr) as cvr_cnt,
-         |count(distinct case when price>0 then userid else null end) as userid_cnt,
-         |count(distinct case when price>0 then unitid else null end) as unitid_cnt
+         |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/100 as ocpc_cost,
+         |sum(case when siteid>0 and isclick=1 then price else null end)/100 as cost,
+         |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/sum(case when siteid>0 and isclick=1 then price else null end) as cost_ratio,
+         |sum(case when siteid>0 then isshow else null end) as show_cnt,
+         |sum(case when siteid>0 then isclick else null end) as click_cnt,
+         |sum(case when siteid>0 the iscvr else null end) as cvr_cnt,
+         |count(distinct case when siteid>0 and price>0 then userid else null end) as userid_cnt,
+         |count(distinct case when siteid>0 and price>0 then unitid else null end) as unitid_cnt
          |from union
-         |where siteid>0
          |group by day,'可获取转化单元'
              """.stripMargin
 
@@ -119,7 +120,9 @@ object ocpc_elds_ld {
          |select
          |q.day,
          |"满足准入单元" as type,
+         |sum(case when q.is_ocpc=1 and length(q.ocpc_log)>0 and q.isclick=1 then q.price else null end)/100 as ocpc_cost,
          |sum(case when q.isclick=1 then q.price else null end)/100 as cost,
+         |sum(case when q.is_ocpc=1 and length(q.ocpc_log)>0 and q.isclick=1 then q.price else null end)/sum(case when q.isclick=1 then q.price else null end) as cost_ratio,
          |sum(q.isshow) as show_cnt,
          |sum(q.isclick) as click_cnt,
          |sum(q.iscvr) as cvr_cnt,
@@ -183,40 +186,14 @@ object ocpc_elds_ld {
 
     val Sql5 =
       s"""
-         |select
-         |a.type,
-         |b.ocpc_cost,
-         |a.cost,
-         |b.ocpc_cost / a.cost as cost_ratio,
-         |a.show_cnt,
-         |a.click_cnt,
-         | a.cvr_cnt,
-         |a.userid_cnt,
-         |a.unitid_cnt,
-         |a.day
-         |from
-         |(
-         | select
-         | *
-         |  from
-         | result1
+         |select *
+         |from result1
          |UNION ALL
-         |select
-         | *
-         |from
-         |result2
-         | ) a
-         |left join (
-         |select
-         | *
-         |from
-         | result3
-         | ) b on a.day = b.day
+         |select *
+         |from result2
          |UNION ALL
-         |select
-         | *
-         |from
-         | result3
+         |select *
+         |from result3
              """.stripMargin
 
     println(Sql5)
