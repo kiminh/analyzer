@@ -193,7 +193,7 @@ object ocpc_info {
          |sum(iscvr) as ocpc_cvr_cnt,
          |sum(case when IsHiddenOcpc='1' then budget else null end)/100 as hidden_budget
          |from union
-         |group by day,userid,unitid,industry,adclass )a
+         |group by day,userid,unitid,industry,adclass,adslot_type,conversion_goal )a
          |left join
          |(select *
          |from total )b on a.unitid=b.unitid and a.userid=b.userid and a.conversion_goal=b.conversion_goal
