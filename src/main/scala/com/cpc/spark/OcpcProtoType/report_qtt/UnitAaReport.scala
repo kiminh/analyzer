@@ -9,17 +9,17 @@ import org.apache.spark.sql.functions._
 
 object UnitAaReport {
   def main(args: Array[String]): Unit = {
-    val date = args(0).toString
-    val hour = args(1).toString
-    val spark = SparkSession.builder().appName("UnitAaReport").enableHiveSupport().getOrCreate()
-    val baseDataDF = getBaseData(date, hour, spark)
-    println("-----has got base data from base unionlog-----")
-    val suggestCpaDF = getSuggestCpa(date, hour, spark)
-    println("-----has got suggest cpa-----")
-    val aucDF = getAuc(date, hour, spark)
-    println("-----has got auc-----")
-    calculateIndexValue(date, hour, baseDataDF, suggestCpaDF, aucDF, spark)
-    println("-----successful------")
+//    val date = args(0).toString
+//    val hour = args(1).toString
+//    val spark = SparkSession.builder().appName("UnitAaReport").enableHiveSupport().getOrCreate()
+//    val baseDataDF = getBaseData(date, hour, spark)
+//    println("-----has got base data from base unionlog-----")
+//    val suggestCpaDF = getSuggestCpa(date, hour, spark)
+//    println("-----has got suggest cpa-----")
+//    val aucDF = getAuc(date, hour, spark)
+//    println("-----has got auc-----")
+//    calculateIndexValue(date, hour, baseDataDF, suggestCpaDF, aucDF, spark)
+//    println("-----successful------")
   }
 
   // 首先从base表里获取基础字段
