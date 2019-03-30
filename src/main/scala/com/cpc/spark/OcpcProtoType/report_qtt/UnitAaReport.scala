@@ -42,7 +42,7 @@ object UnitAaReport {
         |    exp_cvr,
         |    ocpc_log,
         |    `date`,
-        |    hour
+        |    `hour`
         |from
         |    dl_cpc.ocpc_base_unionlog
         |where
@@ -58,6 +58,7 @@ object UnitAaReport {
       """.stripMargin
     // 当hour等于-1时，表示取全天的数据
     if("all".equals(hour) == false) sql +=  s" and hour = '$hour'"
+    println(sql)
     val dataDF = spark.sql(sql)
     val baseDataDF = dataDF.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
     baseDataDF
@@ -93,6 +94,7 @@ object UnitAaReport {
         |where
         |    a.row_num = 1
       """.stripMargin
+    println(sql)
 
     val suggestCpaDF = spark.sql(sql)
     suggestCpaDF
