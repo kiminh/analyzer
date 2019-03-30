@@ -34,7 +34,7 @@ object ocpc_elds_ld {
          |isshow,
          |price,
          |is_ocpc,
-         |ocpc_log_length,
+         |ocpc_log,
          |siteid
          |from dl_cpc.cpc_basedata_union_events
          |where day ='$date'
@@ -137,7 +137,7 @@ object ocpc_elds_ld {
          |UNION
          |select unitid
          |from union
-         |where is_ocpc=1 and ocpc_log_length>0
+         |where is_ocpc=1 and length(ocpc_log)>0
          |group by unitid )a
          |group by a.unitid)p
          |join
@@ -166,9 +166,9 @@ object ocpc_elds_ld {
          |count(distinct case when price>0 then userid else null end) as userid_cnt,
          |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
          |day
-         |from test.dsakfjsla
+         |from union
          |where is_ocpc=1
-         |and ocpc_log_length>0
+         |and length(ocpc_log)>0
          |group by day,"ocpc"
              """.stripMargin
 
