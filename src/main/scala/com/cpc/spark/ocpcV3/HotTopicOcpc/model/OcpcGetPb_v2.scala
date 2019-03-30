@@ -78,10 +78,10 @@ object OcpcGetPb_v2 {
       .join(indirectUnit, Seq("identifier"), "inner")
       .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "kvalue", "date", "hour", "version")
 
-        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
-//    resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
-//    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
 
     savePbPack(resultDF, version)
   }

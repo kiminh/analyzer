@@ -42,8 +42,8 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
-    //    result.write.mode("overwrite").insertInto( tablename )
+    //    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
+    result.write.mode("overwrite").insertInto(tablename)
 
     // 结果表
     val kvalue = getKWithRatio(middleData, date, hour, spark) //返回结果为identifier,k_ratio
@@ -53,8 +53,8 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
-    //    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
+    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
   }
 
@@ -191,8 +191,8 @@ object OcpcRegression {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      //      val targetK = 1.1
-      val targetK = getTargetK(adclassMap, identifier)
+            val targetK = 1.4
+//      val targetK = getTargetK(adclassMap, identifier)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
