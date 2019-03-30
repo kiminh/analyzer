@@ -253,7 +253,7 @@ object UnitAaReport {
         |    industry,
         |    round(sum(case when isclick = 1 then is_ocpc else 0 end) / sum(isclick), 4) as put_type,
         |    adslot_type,
-        |    conversion_goal,
+        |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
         |    sum(iscvr) as cv,
         |    sum(isclick) as click,
         |    sum(isshow) as show,
@@ -285,7 +285,7 @@ object UnitAaReport {
         |    userid,
         |    industry,
         |    adslot_type,
-        |    conversion_goal
+        |    cast(ocpc_log_dict['conversiongoal'] as int)
       """.stripMargin
     val dataFrame = spark.sql(sql)
     println(sql)
