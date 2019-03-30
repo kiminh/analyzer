@@ -142,7 +142,7 @@ object UnitAaReport {
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    if("all".equals(hour) == false) sql1 += s" and a.`hour` = '$hour'"
+    if("all".equals(hour) == false) sql1 += s" and a.hour = '$hour'"
     println("==sql1===")
     println(sql1)
     val dataFrame1 = spark.sql(sql1)
@@ -185,7 +185,7 @@ object UnitAaReport {
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    if("all".equals(hour) == false) sql2 += s" and a.`hour` = '$hour'"
+    if("all".equals(hour) == false) sql2 += s" and a.hour = '$hour'"
     println("==sql2===")
     println(sql2)
     val dataFrame2 = spark.sql(sql2)
@@ -227,9 +227,8 @@ object UnitAaReport {
         |    a.adslot_type in (1, 2, 3)
         |and
         |    a.adsrc = 1
-        |and
       """.stripMargin
-    if("all".equals(hour) == false) sql3 += s" and a.`hour` = '$hour'"
+    if("all".equals(hour) == false) sql3 += s" and a.hour = '$hour'"
     println("==sql3===")
     println(sql3)
     val dataFrame3 = spark.sql(sql3)
