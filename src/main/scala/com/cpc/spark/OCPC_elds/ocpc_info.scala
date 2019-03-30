@@ -171,7 +171,7 @@ object ocpc_info {
          |a.ocpc_show_cnt,
          |a.ocpc_cvr_cnt,
          |a.ocpc_cost/a.ocpc_show_cnt*1000 as ocpc_cpm,
-         |a.cpagiven/100 as cpagiven,
+         |a.cpagiven,
          |COALESCE(b.suggest_CPA,0)/100 as cpasuggest,
          |a.ocpc_cost/a.ocpc_cvr_cnt as cpareal,
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven >1.2,0,1) as is_control_cost,
@@ -188,13 +188,13 @@ object ocpc_info {
          |adslot_type,
          |conversion_goal,
          |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
-         |sum(case when isclick=1 and IsHiddenOcpc='1' then price else null end)/100 as ocpc_yes_cost,
-         |sum(case when isclick=1 and IsHiddenOcpc='0' then price else null end)/100 as ocpc_no_cost,
+         |sum(case when isclick=1 and IsHiddenOcpc='0' then price else null end)/100 as ocpc_yes_cost,
+         |sum(case when isclick=1 and IsHiddenOcpc='1' then price else null end)/100 as ocpc_no_cost,
          |sum(isclick) as ocpc_click_cnt,
          |sum(isshow) as ocpc_show_cnt,
-         |sum(case when isclick=1 then cpagiven else null end)/sum(isclick) as cpagiven,
+         |sum(case when isclick=1 then cpagiven else null end)/sum(isclick)/100 as cpagiven,
          |sum(iscvr) as ocpc_cvr_cnt,
-         |sum(case when IsHiddenOcpc='1' then budget else null end)/100 as hidden_budget
+         |sum(case when isclick=1 and IsHiddenOcpc='1' then budget else null end)/100/sum(isclick) as hidden_budget
          |from union
          |group by day,userid,unitid,industry,adclass,adslot_type,conversion_goal )a
          |left join
