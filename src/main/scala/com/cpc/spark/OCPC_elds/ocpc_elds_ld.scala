@@ -23,6 +23,9 @@ object ocpc_elds_ld {
          |a.isclick,
          |a.isshow,
          |a.price,
+         |a.siteid,
+         |a.is_ocpc,
+         |a.ocpc_log,
          |if(b.searchid is not null,1,0) as iscvr
          |from
          |(select
