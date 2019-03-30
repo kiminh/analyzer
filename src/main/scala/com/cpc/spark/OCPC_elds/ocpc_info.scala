@@ -168,12 +168,13 @@ object ocpc_info {
          |c.total_cost,
          |a.ocpc_click_cnt,
          |a.ocpc_show_cnt,
+         |a.ocpc_cvr_cnt,
          |a.ocpc_cost/a.ocpc_show_cnt*1000 as ocpc_cpm,
          |a.cpagiven,
          |COALESCE(b.suggest_CPA,0) as cpasuggest,
          |a.ocpc_cost/a.ocpc_cvr_cnt as cpareal,
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven >1.2,0,1) as is_control_cost,
-         |a.hidden_budget/a.ocpc_no_cost as hidden_budget_ratio,
+         |a.ocpc_no_cost/a.hidden_budget as hidden_budget_ratio,
          |a.day
          |from
          |(select
