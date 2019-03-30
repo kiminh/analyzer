@@ -205,7 +205,7 @@ object ocpc_elds_ld {
          |from result3 )a
          |left join
          |(select *
-         |from result4 )b on a.day=b.day)p
+         |from result4 )b on a.day=b.day
          |UNION ALL
          |select *
          |from result4 )m
