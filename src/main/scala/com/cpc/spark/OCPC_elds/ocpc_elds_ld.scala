@@ -184,31 +184,39 @@ object ocpc_elds_ld {
     val Sql5 =
       s"""
          |select
-         |*
-         |from
-         |((select
          |a.type,
          |b.ocpc_cost,
          |a.cost,
-         |b.ocpc_cost/a.cost as cost_ratio,
+         |b.ocpc_cost / a.cost as cost_ratio,
          |a.show_cnt,
          |a.click_cnt,
-         |a.cvr_cnt,
+         | a.cvr_cnt,
          |a.userid_cnt,
          |a.unitid_cnt,
          |a.day
          |from
-         |(select *
-         |from result2
+         |(
+         | select
+         | *
+         |  from
+         | result2
          |UNION ALL
-         |select *
-         |from result3 )a
-         |left join
-         |(select *
-         |from result4 )b on a.day=b.day
+         |select
+         | *
+         |from
+         |result3
+         | ) a
+         |left join (
+         |select
+         | *
+         |from
+         | result4
+         | ) b on a.day = b.day
          |UNION ALL
-         |select *
-         |from result4 )m
+         |select
+         | *
+         |from
+         | result4
              """.stripMargin
 
     println(Sql5)
