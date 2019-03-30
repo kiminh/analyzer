@@ -105,7 +105,7 @@ object UnitAaReportHourly {
         |    round((case when cpc_post_cvr != 0 then ocpc_post_cvr / cpc_post_cvr else 0 end), 4) as ocpc_cpc_post_cvr_ratio,
         |    round((case when cpc_cost_of_every_click != 0 then ocpc_cost_of_every_click / cpc_cost_of_every_click else 0 end), 4) as ocpc_cpc_cost_of_every_click,
         |    round((case when cpc_bid_of_every_click != 0 then ocpc_bid_of_every_click / cpc_bid_of_every_click else 0 end), 4) as ocpc_cpc_bid_of_every_click,
-        |    round)(case when cpc_cpa_real != 0 then ocpc_cpa_real / cpc_cpa_real else 0 end), 4) as ocpc_cpc_cpa_real
+        |    round((case when cpc_cpa_real != 0 then ocpc_cpa_real / cpc_cpa_real else 0 end), 4) as ocpc_cpc_cpa_real
         |from
         |    temp_table
       """.stripMargin
