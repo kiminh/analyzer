@@ -128,7 +128,7 @@ object UnitAaReport {
         |on
         |    a.searchid = b.searchid
         |where
-        |    `date` = '$date'
+        |    a.`date` = '$date'
         |and
         |    a.media_appsid  in ("80000001", "80000002")
         |and
@@ -142,7 +142,7 @@ object UnitAaReport {
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    if("all".equals(hour) == false) sql1 += s" and a.hour = '$hour'"
+    if("all".equals(hour) == false) sql1 += s" and a.`hour` = '$hour'"
     println("==sql1===")
     println(sql1)
     val dataFrame1 = spark.sql(sql1)
@@ -154,7 +154,7 @@ object UnitAaReport {
         |    a.userid,
         |    2 as conversion_goal,
         |    a.exp_cvr,
-        |    c.iscvr2 as iscvr
+        |    b.iscvr2 as iscvr
         |from
         |    dl_cpc.ocpc_base_unionlog a
         |left join
@@ -167,11 +167,11 @@ object UnitAaReport {
         |        `date` = '$date'
         |    and
         |        label = 1
-        |    ) as c
+        |    ) as b
         |on
-        |    a.searchid = c.searchid
+        |    a.searchid = b.searchid
         |where
-        |    `date` = '$date'
+        |    a.`date` = '$date'
         |and
         |    a.media_appsid  in ("80000001", "80000002")
         |and
@@ -185,7 +185,7 @@ object UnitAaReport {
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    if("all".equals(hour) == false) sql2 += s" and a.hour = '$hour'"
+    if("all".equals(hour) == false) sql2 += s" and a.`hour` = '$hour'"
     println("==sql2===")
     println(sql2)
     val dataFrame2 = spark.sql(sql2)
@@ -197,7 +197,7 @@ object UnitAaReport {
         |    a.userid,
         |    3 as conversion_goal,
         |    a.exp_cvr,
-        |    d.iscvr3 as iscvr
+        |    b.iscvr3 as iscvr
         |from
         |    dl_cpc.ocpc_base_unionlog a
         |left join
@@ -212,9 +212,9 @@ object UnitAaReport {
         |        ideaid > 0
         |    and
         |        searchid is not null
-        |    ) as d
+        |    ) as b
         |on
-        |    a.searchid = d.searchid
+        |    a.searchid = b.searchid
         |where
         |    `date` = '$date'
         |and
@@ -229,7 +229,7 @@ object UnitAaReport {
         |    a.adsrc = 1
         |and
       """.stripMargin
-    if("all".equals(hour) == false) sql3 += s" and a.hour = '$hour'"
+    if("all".equals(hour) == false) sql3 += s" and a.`hour` = '$hour'"
     println("==sql3===")
     println(sql3)
     val dataFrame3 = spark.sql(sql3)
