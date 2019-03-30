@@ -196,7 +196,7 @@ object ocpc_info {
          |group by day,userid,unitid,industry,adclass )a
          |left join
          |(select *
-         |from table )b on a.unitid=b.unitid and a.userid=b.userid and a.conversion_goal=b.conversion_goal
+         |from total )b on a.unitid=b.unitid and a.userid=b.userid and a.conversion_goal=b.conversion_goal
          |left join
          |(select
          |unitid,
