@@ -81,7 +81,7 @@ object ocpc_elds_ld {
          |        where tmp.isreport=1 --真正的转化
          |        group by tmp.searchid
          |    ) b
-         |    on a.searchid = b.searchid;
+         |    on a.searchid = b.searchid
              """.stripMargin
     println(Sql1)
     val union = spark.sql(Sql1)
