@@ -17,7 +17,7 @@ object UnitAaReportHourly {
         |    userid,
         |    industry,
         |    round((case when sum(case when isclick is null then 0 else 1 end) = 0 then avg(is_ocpc)
-        |                else sum(case when isclick = 1 then is_ocpc else 0 end) / sum(case when isclick is null then 0 else 1) end), 4) as put_type,
+        |                else sum(case when isclick = 1 then is_ocpc else 0 end) / sum(case when isclick is null then 0 else 1 end) end), 4) as put_type,
         |    adslot_type,
         |    conversion_goal,
         |    sum(iscvr) as cv,
