@@ -43,6 +43,7 @@ object GetBaseData {
       """.stripMargin
     // 当hour等于-1时，表示取全天的数据
     if("all".equals(hour) == false) sql1 +=  s" and hour = '$hour'"
+    println("------sql1--------")
     println(sql1)
     spark.sql(sql1)
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
@@ -77,6 +78,8 @@ object GetBaseData {
          |    temp_table1
       """.stripMargin
     spark.sql(sql2).createOrReplaceTempView("temp_table2")
+    println("------sql2--------")
+    println(sql2)
 
     val sql3 =
       s"""
@@ -136,9 +139,9 @@ object GetBaseData {
          |on
          |    a.searchid = d.searchid
       """.stripMargin
-    println("--------------")
-    println(sql2)
-    val baseDataDF = spark.sql(sql2)
+    println("------sql3--------")
+    println(sql3)
+    val baseDataDF = spark.sql(sql3)
     baseDataDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
