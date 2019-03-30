@@ -120,7 +120,7 @@ object ocpc_info {
          |  ) b on a.searchid = b.searchid
              """.stripMargin
     println(Sql1)
-    val  = spark.sql(Sql1)
+    val  union= spark.sql(Sql1)
 
     //保存到临时表里
     union.createOrReplaceTempView("union")
