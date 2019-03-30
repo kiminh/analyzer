@@ -201,13 +201,13 @@ object ocpc_info {
          |(select
          |unitid,
          |userid,
-         |adslot_id,
+         |adslot_type,
          |adclass,
          |conversion_goal,
          |sum(case when isclick=1 then price else null end)/100 as total_cost
          |from dl_cpc.ocpc_basedata_union_events
          |where `date`='$date'
-         |group by unitid,userid )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_id=c.adslot_id
+         |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_type=c.adslot_type
 
              """.stripMargin
 
