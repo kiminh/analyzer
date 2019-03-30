@@ -51,7 +51,7 @@ object GetBaseData {
 
     val sql2 =
       s"""
-         |select
+         |sselect
          |    searchid,
          |    unitid,
          |    userid,
@@ -62,16 +62,18 @@ object GetBaseData {
          |    isshow,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['bid'] as int)
          |          else bid end) as bid,
-         |    (case when length(ocpc_log) = 0 then conversion_goal
-         |          else cast(ocpc_log_dict['conversiongoal'] as int) end) as conversion_goal,
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['conversiongoal'] as int)
+         |          else conversion_goal end) as conversion_goal,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['pcvr'] as double)
          |          else 0 end) as pcvr,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['IsHiddenOcpc'] as int)
          |          else 0 end) as is_hidden,
-         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['kvalue'] as int)
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['kvalue'] as double)
          |          else 0 end) as kvalue,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['budget'] as int)
          |          else 0 end) as budget,
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['cpagiven'] as double)
+         |          else 0 end) as cap_given,
          |    price,
          |    exp_cvr
          |from

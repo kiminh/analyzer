@@ -61,9 +61,9 @@ object UnitAaReportHourly {
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01
         |         / sum(case when is_ocpc = 1 then iscvr else 0 end), 4) as ocpc_cpa_real,
         |    round(sum(case when isclick = 1 and is_ocpc != 1 then price else 0 end) * 0.01
-        |         / sum(case when is_ocpc != 1 then iscvr else 0 end), 4) as cpc_cpa_real,
+        |         / sum(case when is_ocpc != 1 then iscvr else 0 end), 4) as cpc_cpa_real
         |from
-        |    base_data_table
+        |    dl_cpc.ocpc_aa_ab_report_base_data
         |group by
         |    unitid,
         |    userid,
