@@ -189,7 +189,7 @@ object ocpc_info {
          |sum(case when isclick=1 and IsHiddenOcpc='0' then price else null end)/100 as ocpc_no_cost,
          |sum(isclick) as ocpc_click_cnt,
          |sum(isshow) as ocpc_show_cnt,
-         |sum(case when isclick=1 then cpagiven else null end)/sum(isclick) as cpagive,
+         |sum(case when isclick=1 then cpagiven else null end)/sum(isclick) as cpagiven,
          |sum(iscvr) as ocpc_cvr_cnt,
          |sum(case when IsHiddenOcpc='1' then budget else null end)/100 as hidden_budget
          |from union
