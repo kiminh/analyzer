@@ -199,24 +199,24 @@ object ocpc_elds_ld {
          | select
          | *
          |  from
-         | result2
+         | result1
          |UNION ALL
          |select
          | *
          |from
-         |result3
+         |result2
          | ) a
          |left join (
          |select
          | *
          |from
-         | result4
+         | result3
          | ) b on a.day = b.day
          |UNION ALL
          |select
          | *
          |from
-         | result4
+         | result3
              """.stripMargin
 
     println(Sql5)
