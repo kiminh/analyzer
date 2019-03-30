@@ -57,6 +57,7 @@ object ocpc_info {
          |      `date` = '$date'
          |      and is_ocpc = 1
          |      and ocpc_log_length > 0
+         |      and media_appsid in ("80000001", "80000002")
          |  ) a
          |  left join (
          |    select
@@ -170,10 +171,11 @@ object ocpc_info {
          |a.ocpc_show_cnt,
          |a.ocpc_cvr_cnt,
          |a.ocpc_cost/a.ocpc_show_cnt*1000 as ocpc_cpm,
-         |a.cpagiven,
-         |COALESCE(b.suggest_CPA,0) as cpasuggest,
+         |a.cpagiven/100 as cpagiven,
+         |COALESCE(b.suggest_CPA,0)/100 as cpasuggest,
          |a.ocpc_cost/a.ocpc_cvr_cnt as cpareal,
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven >1.2,0,1) as is_control_cost,
+         |a.hidden_budget,
          |a.ocpc_no_cost/a.hidden_budget as hidden_budget_ratio,
          |a.day
          |from
@@ -208,6 +210,7 @@ object ocpc_info {
          |sum(case when isclick=1 then price else null end)/100 as total_cost
          |from dl_cpc.ocpc_basedata_union_events
          |where `date`='$date'
+         |and media_appsid in ("80000001", "80000002")
          |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_type=c.adslot_type
 
              """.stripMargin
@@ -233,7 +236,7 @@ object ocpc_info {
          |sum(ocpc_show_cnt) as ocpc_show_cnt,
          |sum(ocpc_click_cnt) as ocpc_click_cnt,
          |sum(ocpc_cvr_cnt) as ocpc_cvr_cnt,
-         |sum(ocpc_cost)/sum(ocpc_cvr_cnt)*1000 as cpm,
+         |sum(ocpc_cost)/sum(ocpc_show_cnt)*1000 as cpm,
          |sum(ocpc_yes_cost) as ocpc_yes_cost,
          |sum(ocpc_no_cost) as ocpc_no_cost,
          |count(distinct case when ocpc_cost>0 then userid else null end) as ocpc_userid_cnt,
@@ -243,7 +246,7 @@ object ocpc_info {
          |sum(case when is_control_cost=1 then ocpc_cost else null end) as ocpc_control_cost,
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
          |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
-         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then userid else null end) as ocpc_control_unitid_ratio,
+         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
