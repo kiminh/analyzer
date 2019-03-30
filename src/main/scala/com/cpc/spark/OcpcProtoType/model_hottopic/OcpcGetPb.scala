@@ -462,10 +462,10 @@ object OcpcGetPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val ocpcUnionlog = spark
-      .table("dl_cpc.ocpc_union_log_hourly")
+      .table("dl_cpc.ocpc_filter_unionlog")
       .where(selectCondition)
       .filter(mediaSelection)
-      .filter(s"ext_int['is_ocpc'] = 1")
+      .filter(s"is_ocpc = 1")
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
       .selectExpr("searchid", "cast(identifier as string) identifier")
