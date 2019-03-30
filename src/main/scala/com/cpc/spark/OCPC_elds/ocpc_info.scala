@@ -193,7 +193,7 @@ object ocpc_info {
          |sum(isclick) as ocpc_click_cnt,
          |sum(isshow) as ocpc_show_cnt,
          |sum(case when isclick=1 then cpagiven else null end)/sum(isclick)/100 as cpagiven,
-         |sum(iscvr) as ocpc_cvr_cnt,
+         |sum(iscvr) as ocpc_cvr_cnt
          |from union
          |group by day,userid,unitid,industry,adclass,adslot_type,conversion_goal )a
          |left join
