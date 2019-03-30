@@ -16,16 +16,72 @@ object ocpc_elds_ld {
     val tmpDate = date.replace("-", "")
     val Sql1 =
       s"""
-        |select
-        |`date` as day,
-        |identifier as unitid,
-        |sum(cost)/100 as yes_ocpc_cost
-        |from dl_cpc.ocpc_detail_report_hourly_v4
-        |where `date` = '$date'
-        |and hour='23'
-        |and conversion_goal =3
-        |and version = 'qtt_demo'
-        |group by identifier,`date`
+         |select
+         |a.day,
+         |a.unitid,
+         |a.userid,
+         |a.isclick,
+         |a.isshow,
+         |a.price,
+         |if(b.searchid is not null,1,0) as iscvr
+         |from
+         |(select
+         |day,
+         |unitid,
+         |userid,
+         |searchid,
+         |isclick,
+         |isshow,
+         |price,
+         |is_ocpc,
+         |ocpc_log_length,
+         |siteid
+         |from dl_cpc.cpc_basedata_union_events
+         |where day ='$date'
+         |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
+         |and media_appsid  in ("80000001", "80000002")
+         |and isshow=1
+         |and adsrc = 1 )a
+         |left join
+         |    (
+         |        select tmp.searchid
+         |        from
+         |        (
+         |            select
+         |                final.searchid as searchid,
+         |                 case
+         |                    when final.src="elds" and final.label_type=6 then 1
+         |                    when final.src="feedapp" and final.label_type in (4, 5) then 1
+         |                    when final.src="yysc" and final.label_type=12 then 1
+         |                    when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+         |                    when final.src="others" and final.label_type=6 then 1
+         |                    else 0
+         |                end as isreport
+         |            from
+         |            (
+         |                select
+         |                    searchid, media_appsid, uid,
+         |                    planid, unitid, ideaid, adclass,
+         |                    case
+         |                        when (adclass like '134%' or adclass like '107%') then "elds" --二类电商
+         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp" --feedapp
+         |                        when (adslot_type=7 and adclass like '100%') then "yysc"  --应用商城
+         |                        when adclass in (110110100, 125100100) then "wzcp" --网赚
+         |                        else "others"
+         |                    end as src,
+         |                    label_type
+         |                from
+         |                    dl_cpc.ml_cvr_feature_v1
+         |                where
+         |                    `date`='$date'
+         |                    and label2=1
+         |                    and media_appsid in ("80000001", "80000002")
+         |                ) final
+         |            ) tmp
+         |        where tmp.isreport=1 --真正的转化
+         |        group by tmp.searchid
+         |    ) b
+         |    on a.searchid = b.searchid;
              """.stripMargin
     println(Sql1)
     val union = spark.sql(Sql1)
@@ -37,9 +93,38 @@ object ocpc_elds_ld {
     val Sql2 =
       s"""
          |select
-         |b.day,
-         |b.unitid,
-         |b.yes_ocpc_cost
+         |day,
+         |'可获取转化单元' as type,
+         |sum(case when isclick=1 then price else null end)/100 as cost,
+         |sum(isshow) as show_cnt,
+         |sum(isclick) as click_cnt,
+         |sum(iscvr) as cvr_cnt,
+         |count(distinct case when price>0 then userid else null end) as userid_cnt,
+         |count(distinct case when price>0 then unitid else null end) as unitid_cnt
+         |from union
+         |where siteid>0
+         |group by day,'可获取转化单元'
+             """.stripMargin
+
+    println(Sql2)
+    val result1 = spark.sql(Sql2)
+    result1.createOrReplaceTempView("result1")
+    println ("result1 is successful! ")
+
+    val Sql3 =
+      s"""
+         |select
+         |q.day,
+         |"满足准入单元" as type,
+         |sum(case when q.isclick=1 then q.price else null end)/100 as cost,
+         |sum(q.isshow) as show_cnt,
+         |sum(q.isclick) as click_cnt,
+         |sum(q.iscvr) as cvr_cnt,
+         |count(distinct case when q.price>0 then q.userid else null end) as userid_cnt,
+         |count(distinct case when q.price>0 then q.unitid else null end) as unitid_cnt
+         |from
+         |(select
+         |a.unitid
          |from
          |(select
          |unitid
@@ -48,84 +133,83 @@ object ocpc_elds_ld {
          |and hour = '06'
          |and version = 'qtt_demo'
          |and is_recommend=1
+         |group by unitid
+         |UNION
+         |select unitid
+         |from union
+         |where is_ocpc=1 and ocpc_log_length>0
          |group by unitid )a
+         |group by a.unitid)p
          |join
-         |(select
-         |`date` as day,
-         |unitid,
-         |sum(case when isclick=1 then price else null end)/100 as yes_ocpc_cost
-         |from dl_cpc.ocpc_base_unionlog
-         |where `date` ='$date'
-         |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
-         |and media_appsid  in ("80000001", "80000002")
-         |and isshow=1
-         |and antispam = 0
-         |and adsrc = 1
-         |group by unitid,`date` ) b on a.unitid=b.unitid
-         |group by b.unitid,b.yes_ocpc_cost,b.day
-             """.stripMargin
-
-    println(Sql2)
-    val total = spark.sql(Sql2)
-    total.createOrReplaceTempView("total")
-    println ("total is successful! ")
-
-    val Sql3 =
-      s"""
-         |select
-         | l.cv_unitid_cnt,
-         | m.in_unitid_cnt,
-         | round(m.in_unitid_cnt/l.cv_unitid_cnt,4) as unitid_first_ratio,
-         | n.yes_unitid_cnt,
-         | round(n.yes_unitid_cnt/m.in_unitid_cnt,4) as unitid_second_ratio,
-         | round(l.cv_unitid_cost,2) as cv_unitid_cost,
-         | round(m.in_unitid_cost,2) as in_unitid_cost,
-         | round(m.in_unitid_cost/l.cv_unitid_cost,4) as cost_first_ratio,
-         | round(n.yes_ocpc_cost,2) as yes_ocpc_cost,
-         | round(n.yes_ocpc_cost/m.in_unitid_cost,4) as cost_second_ratio,
-         | m.day
-         |from
-         |(select
-         | p.day,
-         |count(distinct p.unitid) as in_unitid_cnt,
-         |sum(p.yes_ocpc_cost) as in_unitid_cost
-         |from
-         |(select
-         |a.day,
-         |a.unitid,
-         |max(a.yes_ocpc_cost) as yes_ocpc_cost
-         |from
          |(select *
-         |from union
-         |union all
-         |select *
-         |from total )a
-         | group by a.day,a.unitid )p
-         |group by p.day )m
-         |left join
-         |(select
-         |day,
-         |count(distinct unitid) as yes_unitid_cnt,
-         |sum(yes_ocpc_cost) as yes_ocpc_cost
-         |from union
-         |group by day )n on m.day=n.day
-         |left join
-         |(select
-         |day,
-         |count(distinct unitid) as cv_unitid_cnt,
-         |sum(case when isclick=1 then price else null end)/100 as cv_unitid_cost
-         |from dl_cpc.cpc_basedata_union_events
-         |where day ='$date'
-         |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
-         |and media_appsid  in ("80000001", "80000002")
-         |and isshow=1
-         |and adsrc = 1
-         |and siteid>0
-         |group by day )l on m.day = l.day
+         |from union )q on p.unitid=q.unitid
+         |group by q.day,"满足准入单元"
              """.stripMargin
 
     println(Sql3)
-    val result = spark.sql(Sql3)
+
+    val result2 = spark.sql(Sql3)
+    result2.createOrReplaceTempView("result2")
+    println ("result2 is successful! ")
+
+
+    val Sql4 =
+      s"""
+         |select
+         |"ocpc" as type,
+         |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
+         |sum(case when isclick=1 then price else null end)/100 as cost,
+         |sum(case when isclick=1 then price else null end)/100/sum(case when isclick=1 then price else null end)/100 as cost_ratio,
+         |sum(isshow) as show_cnt,
+         |sum(isclick) as click_cnt,
+         |sum(iscvr) as cvr_cnt,
+         |count(distinct case when price>0 then userid else null end) as userid_cnt,
+         |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
+         |day
+         |from test.dsakfjsla
+         |where is_ocpc=1
+         |and ocpc_log_length>0
+         |group by day,"ocpc"
+             """.stripMargin
+
+    println(Sql4)
+    val result3 = spark.sql(Sql4)
+    result3.createOrReplaceTempView("result3")
+    println ("result3 is successful! ")
+
+
+    val Sql5 =
+      s"""
+         |select
+         |*
+         |from
+         |((select
+         |a.type,
+         |b.ocpc_cost,
+         |a.cost,
+         |b.ocpc_cost/a.cost as cost_ratio,
+         |a.show_cnt,
+         |a.click_cnt,
+         |a.cvr_cnt,
+         |a.userid_cnt,
+         |a.unitid_cnt,
+         |a.day
+         |from
+         |(select *
+         |from result2
+         |UNION ALL
+         |select *
+         |from result3 )a
+         |left join
+         |(select *
+         |from result4 )b on a.day=b.day)p
+         |UNION ALL
+         |select *
+         |from result4 )m
+             """.stripMargin
+
+    println(Sql5)
+    val result = spark.sql(Sql5)
     result.show(10)
     result.repartition(1)
       .write
@@ -133,9 +217,9 @@ object ocpc_elds_ld {
       .insertInto("dl_cpc.ocpc_elds_ld_data")
     println("result is successful! ")
 
-    val tableName1 = "report2.ocpc_elds_ld_data"
-    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
-    OperateMySQL.update(deleteSql1) //先删除历史数据
-    OperateMySQL.insert(result,tableName1) //插入到MySQL中的report2库中
+//    val tableName1 = "report2.ocpc_elds_ld_data"
+//    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
+//    OperateMySQL.update(deleteSql1) //先删除历史数据
+//    OperateMySQL.insert(result,tableName1) //插入到MySQL中的report2库中
   }
 }
