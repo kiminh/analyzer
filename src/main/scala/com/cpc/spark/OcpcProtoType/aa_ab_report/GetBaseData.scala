@@ -51,7 +51,7 @@ object GetBaseData {
 
     val sql2 =
       s"""
-         |sselect
+         |select
          |    searchid,
          |    unitid,
          |    userid,
