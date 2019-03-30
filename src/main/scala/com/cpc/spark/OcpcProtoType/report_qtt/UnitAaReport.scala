@@ -359,7 +359,7 @@ object UnitAaReport {
       .select("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
                                       "cv", "click", "show", "cost", "cpm", "exp_cvr", "pre_cvr",
                                       "post_cvr", "cost_of_every_click", "bid_of_every_click",
-                                      "cpa_real", "sugget_cpa", "cpa_given", "hidden_cost_ratio", "kvalue",
+                                      "cpa_real", "suggest_cpa", "cpa_given", "hidden_cost_ratio", "kvalue",
                                       "auc", "budget", "cost_budget_ratio")
     val allIndexValueDF = joinIndexValueRingRatio(date, hour, indexValueDF, spark)
     allIndexValueDF
