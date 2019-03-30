@@ -354,8 +354,8 @@ object UnitAaReport {
     val dataFrame = spark.sql(sql)
     println(sql)
     val indexValueDF = dataFrame
-      .join(suggestCpaDF, Seq("unitid", "usrid"), "left")
-      .join(aucDF, Seq("unitid", "usrid", "conversion_goal"), "left")
+      .join(suggestCpaDF, Seq("unitid", "userid"), "left")
+      .join(aucDF, Seq("unitid", "userid", "conversion_goal"), "left")
       .select("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
                                       "cv", "click", "show", "cost", "cpm", "exp_cvr", "pre_cvr",
                                       "post_cvr", "cost_of_every_click", "bid_of_every_click",
