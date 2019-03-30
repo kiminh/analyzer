@@ -27,7 +27,7 @@ object GetBaseData {
          |    conversion_goal,
          |    price,
          |    exp_cvr,
-         |    ocpc_log,
+         |    ocpc_log
          |from
          |    dl_cpc.ocpc_base_unionlog
          |where
