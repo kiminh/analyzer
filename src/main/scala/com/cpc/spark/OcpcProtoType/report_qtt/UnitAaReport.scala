@@ -42,7 +42,7 @@ object UnitAaReport {
         |    exp_cvr,
         |    ocpc_log,
         |    `date`,
-        |    `hour`
+        |    hour
         |from
         |    dl_cpc.ocpc_base_unionlog
         |where
@@ -144,6 +144,8 @@ object UnitAaReport {
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
     if("all".equals(hour) == false) sql1 += s" and hour = '$hour'"
+    println("==sql1===")
+    println(sql1)
     val dataFrame1 = spark.sql(sql1)
 
     var sql2 =
@@ -185,6 +187,8 @@ object UnitAaReport {
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
     if("all".equals(hour) == false) sql2 += s" and hour = '$hour'"
+    println("==sql2===")
+    println(sql2)
     val dataFrame2 = spark.sql(sql2)
 
     var sql3 =
@@ -226,8 +230,9 @@ object UnitAaReport {
         |    a.adsrc = 1
         |and
       """.stripMargin
-    if("all".equals(hour))
     if("all".equals(hour) == false) sql3 += s" and hour = '$hour'"
+    println("==sql3===")
+    println(sql3)
     val dataFrame3 = spark.sql(sql3)
 
     val dataFrame = dataFrame1.union(dataFrame2).union(dataFrame3)
@@ -284,6 +289,7 @@ object UnitAaReport {
         |    conversion_goal
       """.stripMargin
     val dataFrame = spark.sql(sql)
+    println(sql)
     val indexValueDF = dataFrame
       .join(suggestCpaDF, Seq("unitid", "usrid"), "left")
       .join(aucDF, Seq("unitid", "usrid", "conversion_goal"), "left")
