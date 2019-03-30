@@ -84,20 +84,21 @@ object OcpcPIDwithCPA {
 
     val sqlRequest =
       s"""
-         |SELECT
+         | SELECT
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  adclass as adclass,
+         |  ext['adclass'].int_value as adclass,
          |  isshow,
          |  isclick,
          |  price,
+         |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue']   as kvalue,
          |  ocpc_log_dict['cpagiven'] as cpagiven,  --目标cpa
          |  hour
          |FROM
-         |  dl_cpc.ocpc_filter_unionlog
+         |  dl_cpc.ocpc_union_log_hourly
          |WHERE
          |  $selectCondition
          |AND

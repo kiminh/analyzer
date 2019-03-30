@@ -123,7 +123,7 @@ object OcpcRegression {
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['kvalue']   as double) as kvalue
          |FROM
-         |  dl_cpc.ocpc_filter_unionlog
+         |  dl_cpc.ocpc_union_log_hourly
          |WHERE
          |  $selectCondition
          |and
