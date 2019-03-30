@@ -37,6 +37,7 @@ object UnitAaReport {
         |      else 'others' end) as industry,
         |    is_ocpc,
         |    isclick,
+        |    bid,
         |    isshow,
         |    price,
         |    exp_cvr,
