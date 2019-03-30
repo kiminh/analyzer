@@ -23,6 +23,7 @@ object UnitAaReportHourly {
         |    sum(iscvr) as cv,
         |    sum(isclick) as click,
         |    sum(isshow) as show,
+        |    sum(case when isclick = 1 then bid else 0 end) * 0.01 as bid,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as cost,
         |    round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm,
         |    sum(case when isclick = 1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as exp_cvr,
@@ -31,13 +32,13 @@ object UnitAaReportHourly {
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as cost_of_every_click,
         |    round(sum(case when isclick = 1 then bid else 0 end) * 0.01/ sum(isclick), 4) as bid_of_every_click,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr), 4) as cpa_real,
-        |    round(sum(case when isclick = 1 then cpa_given else 0 end) / sum(isclick) * 0.01, 4)  as cpa_given,
-        |    round(sum(case when isclick = 1 and is_hidden = 1 then price else 0 end)
+        |    round(sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick), 4)  as cpa_given,
+        |    round(sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 1.0
         |          / sum(case when isclick = 1 then price else 0 end), 4) hidden_cost_ratio,
-        |    round(sum(case when isclick = 1 then kvalue else 0 end) / sum(isclick), 4) as kvalue,
+        |    round(sum(case when isclick = 1 then kvalue else 0 end) * 1.0 / sum(isclick), 4) as kvalue,
         |    max(case when isclick = 1 then budget * 0.01 else 0 end) as budget,
         |    round(case when (max(case when isclick = 1 then budget * 0.01 else 0 end)) = 0 then 0
-        |               else (sum(case when isclick = 1 then price else 0 end) / max(case when isclick = 1 then budget * 0.01 else 0 end)) end, 4) as cost_budget_ratio,
+        |               else (sum(case when isclick = 1 then price else 0 end) * 1.0 / max(case when isclick = 1 then budget * 0.01 else 0 end)) end, 4) as cost_budget_ratio,
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 10.0
         |          / sum(case when isshow= 1 and is_ocpc = 1 then 1 else 0 end), 4) as ocpc_cpm,
         |    round(sum(case when isclick = 1 and is_ocpc != 1 then price else 0 end) * 10.0
@@ -87,6 +88,7 @@ object UnitAaReportHourly {
         |    cv,
         |    click,
         |    show,
+        |    bid,
         |    cost,
         |    cpm,
         |    exp_cvr,
