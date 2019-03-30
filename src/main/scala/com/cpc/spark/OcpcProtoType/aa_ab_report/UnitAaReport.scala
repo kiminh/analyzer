@@ -1,7 +1,7 @@
 package com.cpc.spark.OcpcProtoType.aa_ab_report
 
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.OcpcProtoType.aa_ab_report.GetBaseData
+//import com.cpc.spark.OcpcProtoType.aa_ab_report.GetBaseData
 object UnitAaReport {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
