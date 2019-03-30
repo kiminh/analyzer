@@ -16,7 +16,7 @@ object UnitAaReportHourly {
         |    unitid,
         |    userid,
         |    industry,
-        |    round((case when sum(case when isclick is null then 0 else 1) = 0 then avg(is_ocpc)
+        |    round((case when sum(case when isclick is null then 0 else 1 end) = 0 then avg(is_ocpc)
         |                else sum(case when isclick = 1 then is_ocpc else 0 end) / sum(case when isclick is null then 0 else 1) end), 4) as put_type,
         |    adslot_type,
         |    conversion_goal,
@@ -39,17 +39,17 @@ object UnitAaReportHourly {
         |    round(case when (max(case when isclick = 1 then budget * 0.01 else 0 end)) = 0 then 0
         |               else (sum(case when isclick = 1 then price else 0 end) / max(max(case when isclick = 1 then budget * 0.01 else 0 end)) end, 4) as cost_budget_ratio,
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 10.0
-        |          / sum(case when isshow= 1 and is_ocpc = 1 then 1 else 0), 4) as ocpc_cpm,
+        |          / sum(case when isshow= 1 and is_ocpc = 1 then 1 else 0 end), 4) as ocpc_cpm,
         |    round(sum(case when isclick = 1 and is_ocpc != 1 then price else 0 end) * 10.0
-        |          / sum(case when isshow= 1 and is_ocpc != 1 then 1 else 0), 4) as cpc_cpm,
+        |          / sum(case when isshow= 1 and is_ocpc != 1 then 1 else 0 end), 4) as cpc_cpm,
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then pcvr else 0 end) * 1.0
-        |         / sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0), 4) as ocpc_pre_cvr,
+        |         / sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end), 4) as ocpc_pre_cvr,
         |    round(sum(case when isclick = 1 and is_ocpc != 1 then pcvr else 0 end) * 1.0
-        |         / sum(case when isclick = 1 and is_ocpc != 1 then 1 else 0), 4) as cpc_pre_cvr,
+        |         / sum(case when isclick = 1 and is_ocpc != 1 then 1 else 0 end), 4) as cpc_pre_cvr,
         |    round(sum(case when is_ocpc = 1 then iscvr else 0 end) * 1.0
-        |         / sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0), 4) as ocpc_post_cvr,
+        |         / sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end), 4) as ocpc_post_cvr,
         |    round(sum(case when is_ocpc != 1 then iscvr else 0 end) * 1.0
-        |         / sum(case when is_ocpc != 1 and isclick = 1 then 1 else 0), 4) as cpc_post_cvr,
+        |         / sum(case when is_ocpc != 1 and isclick = 1 then 1 else 0 end), 4) as cpc_post_cvr,
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01
         |         / sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end), 4) as ocpc_cost_of_every_click,
         |    round(sum(case when isclick = 1 and is_ocpc != 1 then price else 0 end) * 0.01
