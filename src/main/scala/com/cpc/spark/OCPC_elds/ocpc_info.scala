@@ -145,7 +145,7 @@ object ocpc_info {
          | and `hour`='06'
          | and version = 'qtt_demo') t
          | where t.rank = 1
-         | group by t.userid,t.unitid,t.conversion_goal
+         | group by t.userid,t.unitid,t.conversion_goal,t.cpa
              """.stripMargin
 
     println(Sql2)
