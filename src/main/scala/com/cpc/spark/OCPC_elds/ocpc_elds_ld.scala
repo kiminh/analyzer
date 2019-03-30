@@ -103,7 +103,7 @@ object ocpc_elds_ld {
          |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/sum(case when siteid>0 and isclick=1 then price else null end) as cost_ratio,
          |sum(case when siteid>0 then isshow else null end) as show_cnt,
          |sum(case when siteid>0 then isclick else null end) as click_cnt,
-         |sum(case when siteid>0 the iscvr else null end) as cvr_cnt,
+         |sum(case when siteid>0 then iscvr else null end) as cvr_cnt,
          |count(distinct case when siteid>0 and price>0 then userid else null end) as userid_cnt,
          |count(distinct case when siteid>0 and price>0 then unitid else null end) as unitid_cnt
          |from union
