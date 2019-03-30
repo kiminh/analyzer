@@ -71,6 +71,8 @@ object UnitAaReportHourly {
         |    adslot_type,
         |    conversion_goal
       """.stripMargin
+    println("-----sql1------")
+    println(sql1)
     spark.sql(sql1).createOrReplaceTempView("temp_table")
 
     val sql2 =
@@ -107,6 +109,8 @@ object UnitAaReportHourly {
         |from
         |    temp_table
       """.stripMargin
+    println("-----sql2------")
+    println(sql2)
     val aaReportDF = spark.sql(sql2)
     aaReportDF
       .withColumn("date", lit(date))
