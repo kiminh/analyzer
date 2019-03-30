@@ -112,6 +112,8 @@ object prepare_bsCvr_dnnPredictSample_exp {
          |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date>='$day' group by unitid)) ta join
          |(select unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and label=1 group by unitid) tb
          |on ta.unitid=tb.unitid
+         |join (select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt='$day' and ratio<1.5 group by unitid) tc
+         |on ta.unitid=tc.unitid
          |order by ta.cnt desc
          |""".stripMargin
 

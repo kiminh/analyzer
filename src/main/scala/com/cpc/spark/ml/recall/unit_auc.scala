@@ -68,10 +68,15 @@ object unit_auc {
       select($"unitid", $"industry", $"auc", $"count").join(adclassAuc, $"industry"===$"id").select($"unitid", $"industry", $"auc", $"count", $"adclassAuc", $"adclassCount")
 
     detailAuc.repartition(100).createOrReplaceTempView("unitid_table")
+//    spark.sql(
+//      s"""
+//        |insert overwrite table dl_cpc.cpc_id_bscvr_auc partition (day='$tardate', tag='$id_tag')
+//        |select *,case when (auc*1.0/adclassAuc>0.85 or auc>0.75) and auc>0.65 then 1 else 0 end from unitid_table
+//      """.stripMargin)
     spark.sql(
       s"""
-        |insert overwrite table dl_cpc.cpc_id_bscvr_auc partition (day='$tardate', tag='$id_tag')
-        |select *,case when (auc*1.0/adclassAuc>0.85 or auc>0.75) and auc>0.65 then 1 else 0 end from unitid_table
+         |insert overwrite table dl_cpc.cpc_id_bscvr_auc partition (day='$tardate', tag='$id_tag')
+         |select *,case when auc>0.5 then 1 else 0 end from unitid_table
       """.stripMargin)
   }
   case class DetailAuc(var id:String = "",
