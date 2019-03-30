@@ -24,7 +24,7 @@ object UnitAaReport {
 
   // 首先从base表里获取基础字段
   def getBaseData(date: String, hour: String, spark: SparkSession): DataFrame ={
-    var sql =
+    var sql1 =
       s"""
         |select
         |    searchid,
@@ -57,10 +57,73 @@ object UnitAaReport {
         |    `date` = '$date'
       """.stripMargin
     // 当hour等于-1时，表示取全天的数据
-    if("all".equals(hour) == false) sql +=  s" and hour = '$hour'"
-    println(sql)
-    val dataDF = spark.sql(sql)
-    val baseDataDF = dataDF.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    if("all".equals(hour) == false) sql1 +=  s" and hour = '$hour'"
+    println(sql1)
+    spark.sql(sql1)
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .createOrReplaceTempView("temp_table")
+
+    val sql2 =
+      s"""
+        |select
+        |    a.*,
+        |    (case when cast(a.ocpc_log_dict['conversiongoal'] as int) = 1 then b.iscvr1
+        |          when cast(a.ocpc_log_dict['conversiongoal'] as int) = 2 then c.iscvr2
+        |          else d.iscvr3 end) as iscvr
+        |from
+        |    temp_table a
+        |left join
+        |    (select
+        |        searchid,
+        |        label2 as iscvr1
+        |    from
+        |        dl_cpc.ml_cvr_feature_v1
+        |    where
+        |        `date` = '$date'
+        |    and
+        |        label2 = 1
+        |    and
+        |        label_type in (1, 2, 3, 4, 5)
+        |    group by
+        |        searchid,
+        |        label2) as b
+        |on
+        |    a.searchid = b.searchid
+        |left join
+        |    (select
+        |        searchid,
+        |        label as iscvr2
+        |    from
+        |        dl_cpc.ml_cvr_feature_v2
+        |    where
+        |        `date` = '$date'
+        |    and
+        |        label=1
+        |    group by
+        |        searchid,
+        |        label) as c
+        |on
+        |    a.searchid = c.searchid
+        |left join
+        |    (select
+        |        searchid,
+        |        1 as iscvr3
+        |    from
+        |        dl_cpc.site_form_unionlog
+        |    WHERE
+        |        `date` = '$date'
+        |    and
+        |        ideaid > 0
+        |    and
+        |        searchid is not null
+        |    group by
+        |        searchid) as d
+        |on
+        |    a.searchid = d.searchid
+      """.stripMargin
+    println("--------------")
+    println(sql2)
+    val baseDataDF = spark.sql(sql2)
     baseDataDF
   }
 
