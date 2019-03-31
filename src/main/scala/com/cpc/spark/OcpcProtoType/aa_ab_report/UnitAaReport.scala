@@ -9,9 +9,12 @@ object UnitAaReport {
     val spark = SparkSession.builder().appName("UnitAaReport").enableHiveSupport().getOrCreate()
     GetBaseData.getBaseData(date, hour, spark)
     println("inser data success")
-    UnitAaReportHourly.getIndexValue(date, hour, spark)
-    println("has got index value of aa report hourly")
-    UnitAaReportDaily.getIndexValue(date, spark)
-    println("has got index value of aa report daily")
+    if("all".equals(hour) == false){
+      UnitAaReportHourly.getIndexValue(date, hour, spark)
+      println("has got index value of aa report hourly")
+    }else{
+      UnitAaReportDaily.getIndexValue(date, spark)
+      println("has got index value of aa report daily")
+    }
   }
 }
