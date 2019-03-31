@@ -17,9 +17,11 @@ object GetBaseData {
          |    userid,
          |    adslot_type,
          |    (case when (cast(adclass as string) like "134%" or cast(adclass as string) like "107%") then 'elds'
-         |      when cast(adclass as string) like "100%" then 'app'
-         |      when adclass in (110110100, 125100100) then 'wzcp'
-         |      else 'others' end) as industry,
+         |          when cast(adclass as string) like "100%" then 'app'
+         |          when adclass in (110110100, 125100100) then 'wzcp'
+         |          else 'others' end) as industry,
+         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc"
+         |          else "cpc" end) as exptags,
          |    is_ocpc,
          |    isclick,
          |    isshow,
@@ -57,6 +59,7 @@ object GetBaseData {
          |    userid,
          |    adslot_type,
          |    industry,
+         |    exptags,
          |    is_ocpc,
          |    isclick,
          |    isshow,
@@ -152,51 +155,4 @@ object GetBaseData {
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_ab_report_base_data")
   }
 
-  // 获得suggest_cpa，只有天级别的
-  def getSuggestCpa(date: String, spark: SparkSession): DataFrame ={
-    val sql =
-      s"""
-         |select
-         |    a.unitid,
-         |    a.userid,
-         |    round(a.cpa * 0.01, 4) as suggest_cpa
-         |from
-         |    (select
-         |        unitid,
-         |        userid,
-         |        cpa,
-         |        row_number() over(partition by unitid, userid order by cost desc) as row_num
-         |    from
-         |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
-         |    where
-         |       version = 'qtt_demo'
-         |    and
-         |       `date` = '$date'
-         |    and
-         |        hour = '06') a
-         |where
-         |    a.row_num = 1
-      """.stripMargin
-    val suggestCpaDF = spark.sql(sql)
-    suggestCpaDF
-  }
-  // 获取auc，只有天级别的
-  def getAuc(date: String, spark: SparkSession): DataFrame ={
-    val sql =
-      s"""
-         |select
-         |    `date`,
-         |    unitid,
-         |    auc,
-         |    conversion_goal
-         |from
-         |    dl_cpc.ocpc_unitid_auc_daily
-         |where
-         |    `date` = '$date'
-         |and
-         |    version = 'qtt_demo'
-      """.stripMargin
-    val aucDF = spark.sql(sql)
-    aucDF
-  }
 }

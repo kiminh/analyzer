@@ -1,15 +1,18 @@
 package com.cpc.spark.OcpcProtoType.aa_ab_report
 
-import org.apache.spark.sql.SparkSession
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
-object UnitAaReportHourly {
+object UnitAaReportDaily {
   def main(args: Array[String]): Unit = {
 
   }
 
   // 获取统计数据
-  def getIndexValue(date: String, hour: String, spark: SparkSession): Unit ={
+  def getIndexValue(date: String, spark: SparkSession): Unit ={
     val sql1 =
       s"""
         |select
@@ -68,8 +71,6 @@ object UnitAaReportHourly {
         |where
         |    `date` = '$date'
         |and
-        |    hour = '$hour'
-        |and
         |    version = 'qtt_demo'
         |group by
         |    unitid,
@@ -78,7 +79,7 @@ object UnitAaReportHourly {
         |    adslot_type,
         |    conversion_goal
       """.stripMargin
-    println("-----sql1------")
+    println("------get index value sql1-------")
     println(sql1)
     spark.sql(sql1).createOrReplaceTempView("temp_table")
 
@@ -117,15 +118,135 @@ object UnitAaReportHourly {
         |from
         |    temp_table
       """.stripMargin
-    println("-----sql2------")
+    println("------get index value sql2-------")
     println(sql2)
-    val aaReportDF = spark.sql(sql2)
-    aaReportDF
+    // 创建临时表
+    spark.sql(sql2).createOrReplaceTempView("base_index_value_table")
+    getSuggestCpa(date, spark).createOrReplaceTempView("suggest_cpa_table")
+    getAuc(date, spark).createOrReplaceTempView("auc_table")
+    getPreDateData(date, spark).createOrReplaceTempView("yesterday_data_table")
+
+    val sql3 =
+      s"""
+        |select
+        |    a.*,
+        |    b.suggest_cpa,
+        |    c.auc,
+        |    (case when d.cv = 0 then null else round(a.cv / d.cv, 4) end) as cv_ring_ratio,
+        |    (case when d.cost = 0 then null else round(a.cost / d.cost, 4) end) as cost_ring_ratio,
+        |    (case when d.post_cvr = 0 then null else round(a.post_cvr / d.post_cvr, 4) end) as post_cvr_ring_ratio,
+        |    (case when d.cpm = 0 then null else round(a.cpm / d.cpm, 4) end) as cpm_ring_ratio
+        |from
+        |    base_index_value_table a
+        |left join
+        |    suggest_cpa_table b
+        |on
+        |    a.unitid = b.unitid
+        |and
+        |    a.userid = b.userid
+        |left join
+        |    auc_table c
+        |on
+        |    a.unitid = c.unitid
+        |and
+        |    a.conversion_goal = c.conversion_goal
+        |left join
+        |    yesterday_data_table d
+        |on
+        |    a.unitid = d.unitid
+        |and
+        |    a.userid = d.userid
+      """.stripMargin
+    println("------get index value sql3-------")
+    println(sql3)
+    val dataDF = spark.sql(sql3)
+    dataDF
       .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
       .repartition(50)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_report_hourly")
-
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_report_daily")
   }
+
+  // 获得suggest_cpa，只有天级别的
+  def getSuggestCpa(date: String, spark: SparkSession): DataFrame ={
+    val sql =
+      s"""
+         |select
+         |    a.unitid,
+         |    a.userid,
+         |    round(a.cpa * 0.01, 4) as suggest_cpa
+         |from
+         |    (select
+         |        unitid,
+         |        userid,
+         |        cpa,
+         |        row_number() over(partition by unitid, userid order by cost desc) as row_num
+         |    from
+         |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |    where
+         |       version = 'qtt_demo'
+         |    and
+         |       `date` = '$date'
+         |    and
+         |        hour = '06') a
+         |where
+         |    a.row_num = 1
+      """.stripMargin
+    println("------get suggest cpa sql-------")
+    println(sql)
+    val suggestCpaDF = spark.sql(sql)
+    suggestCpaDF
+  }
+  // 获取auc，只有天级别的
+  def getAuc(date: String, spark: SparkSession): DataFrame ={
+    val sql =
+      s"""
+         |select
+         |    unitid,
+         |    auc,
+         |    conversion_goal
+         |from
+         |    dl_cpc.ocpc_unitid_auc_daily
+         |where
+         |    `date` = '$date'
+         |and
+         |    version = 'qtt_demo'
+      """.stripMargin
+    println("------get auc sql-------")
+    println(sql)
+    val aucDF = spark.sql(sql)
+    aucDF
+  }
+
+  // 获取前一天的cv、cost、post_cvr、cpm
+  def getPreDateData(date: String, spark: SparkSession): DataFrame ={
+    // 得到前一天的时间
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val today = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val preDate = sdf.format(yesterday)
+
+    val sql =
+      s"""
+        |select
+        |    unitid,
+        |    userid,
+        |    cv,
+        |    cost,
+        |    post_cvr,
+        |    cpm
+        |from
+        |    dl_cpc.ocpc_aa_report_daily
+        |where
+        |    `date` = '$preDate'
+      """.stripMargin
+    println("------get yesterday's data sql-------")
+    println(sql)
+    val preDateDataDF = spark.sql(sql)
+    preDateDataDF
+  }
+
 }
