@@ -11,7 +11,7 @@ object UnitAaReport {
     println("inser data success")
     UnitAaReportHourly.getIndexValue(date, hour, spark)
     println("has got index value of aa report hourly")
-    UnitAaReportDaily(date, spark)
+    UnitAaReportDaily.getIndexValue(date, spark)
     println("has got index value of aa report daily")
   }
 }
