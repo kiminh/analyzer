@@ -12,7 +12,7 @@ object TestRow {
         |where `date` = '2019-03-27'
         |limit 5
       """.stripMargin
-    val dataList = spark.sql(sql).collectAsList()
+    val dataList = spark.sql(sql).collect()
     for(list <- dataList){
       for(item <- list) print(item + "\t")
       println()
