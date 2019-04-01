@@ -191,21 +191,21 @@ object UnitAaReportDaily {
       x.getAs[Double]("put_type") + "", x.getAs[Int]("adslot_type") + "",
       x.getAs[Int]("conversion_goal") + "", x.getAs[Long]("cv") + "",
       x.getAs[Long]("click") + "", x.getAs[Long]("show") + "",
-      x.getAs[Double]("bid") + "", x.getAs[Double]("cost") + "",
-      x.getAs[Double]("cpm") + "", x.getAs[Double]("exp_cvr") + "",
-      x.getAs[Double]("pre_cvr") + "", x.getAs[Double]("post_cvr")+ "",
-      x.getAs[Double]("cost_of_every_click") + "", x.getAs[Double]("bid_of_every_click") + "",
-      x.getAs[Double]("cpa_real")+ "", x.getAs[Double]("cpa_given") + "",
-      x.getAs[Double]("hidden_cost_ratio") + "", x.getAs[Double]("kvalue") + "",
-      x.getAs[Double]("budget") + "", x.getAs[Double]("cost_budget_ratio") + "",
-      x.getAs[Double]("ocpc_cpc_cpm_ratio") + "", x.getAs[Double]("ocpc_cpc_pre_cvr_ratio") + "",
-      x.getAs[Double]("ocpc_cpc_post_cvr_ratio") + "", x.getAs[Double]("ocpc_cpc_cost_of_every_click") + "",
-      x.getAs[Double]("ocpc_cpc_bid_of_every_click") + "", x.getAs[Double]("ocpc_cpc_cpa_real") + "",
-      x.getAs[Double]("suggest_cpa") + "", x.getAs[Double]("auc") + "",
-      x.getAs[Double]("cv_ring_ratio") + "", x.getAs[Double]("cost_ring_ratio") + "",
-      x.getAs[Double]("post_cvr_ring_ratio") + "", x.getAs[Double]("cpm_ring_ratio") + "").mkString(","))
+      x.getAs[BigDecimal]("bid") + "", x.getAs[BigDecimal]("cost") + "",
+      x.getAs[BigDecimal]("cpm") + "", x.getAs[BigDecimal]("exp_cvr") + "",
+      x.getAs[BigDecimal]("pre_cvr") + "", x.getAs[BigDecimal]("post_cvr")+ "",
+      x.getAs[BigDecimal]("cost_of_every_click") + "", x.getAs[BigDecimal]("bid_of_every_click") + "",
+      x.getAs[BigDecimal]("cpa_real")+ "", x.getAs[BigDecimal]("cpa_given") + "",
+      x.getAs[BigDecimal]("hidden_cost_ratio") + "", x.getAs[BigDecimal]("kvalue") + "",
+      x.getAs[BigDecimal]("budget") + "", x.getAs[BigDecimal]("cost_budget_ratio") + "",
+      x.getAs[BigDecimal]("ocpc_cpc_cpm_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_pre_cvr_ratio") + "",
+      x.getAs[BigDecimal]("ocpc_cpc_post_cvr_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_cost_of_every_click") + "",
+      x.getAs[BigDecimal]("ocpc_cpc_bid_of_every_click") + "", x.getAs[BigDecimal]("ocpc_cpc_cpa_real") + "",
+      x.getAs[BigDecimal]("suggest_cpa") + "", x.getAs[BigDecimal]("auc") + "",
+      x.getAs[BigDecimal]("cv_ring_ratio") + "", x.getAs[BigDecimal]("cost_ring_ratio") + "",
+      x.getAs[BigDecimal]("post_cvr_ring_ratio") + "", x.getAs[BigDecimal]("cpm_ring_ratio") + "").mkString(","))
 
-    data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
+    //data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
 
     /**
       * /www/part-0000
