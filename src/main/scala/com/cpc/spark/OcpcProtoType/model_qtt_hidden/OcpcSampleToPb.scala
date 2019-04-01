@@ -55,6 +55,7 @@ object OcpcSampleToPb {
         .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
         .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+    result.write.mode("overwrite").saveAsTable("test.check_reset_k_flag20190401")
 
     println("result")
     result.show(10)
