@@ -164,7 +164,7 @@ object UnitAaReportDaily {
                       .withColumn("version", lit("qtt_demo"))
     // 首先将aa报表写入hive表
     dataDF
-      .repartition(50)
+      .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
 
 //    val data = dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid").toString,

@@ -63,7 +63,7 @@ object GetBaseData {
          |    is_ocpc,
          |    isclick,
          |    isshow,
-         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['bid'] as int)
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int)
          |          else bid end) as bid,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['conversiongoal'] as int)
          |          else conversion_goal end) as conversion_goal,
@@ -151,7 +151,7 @@ object GetBaseData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(50)
+      .repartition(200)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_ab_report_base_data")
   }
 

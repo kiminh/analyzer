@@ -124,7 +124,7 @@ object UnitAaReportHourly {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(50)
+      .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_hourly")
 
   }
