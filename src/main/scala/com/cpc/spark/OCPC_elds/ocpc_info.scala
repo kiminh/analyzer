@@ -177,7 +177,7 @@ object ocpc_info {
          |a.cpagiven,
          |COALESCE(b.suggest_CPA,0)/100 as cpasuggest,
          |a.ocpc_cost/a.ocpc_cvr_cnt as cpareal,
-         |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven >1.2,0,1) as is_control_cost,
+         |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven <1.2,1,0) as is_control_cost,
          |d.hidden_budget,
          |a.ocpc_no_cost/d.hidden_budget as hidden_budget_ratio,
          |a.day
