@@ -33,13 +33,9 @@ object OcpcCollectSuggestData {
 //      .withColumn("industry", lit(industry))
 
     // 安装类feedapp广告单元
-    val adslot_type = getAdSlotType(date, hour, spark)
-    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 1, 100000, date, hour, spark)
-    val feedapp = feedapp1
-      .join(adslot_type, Seq("unitid"), "left_outer")
-      .filter(s"adslot_type in (1, 2)")
-      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq", "conversion_goal", "max_budget", "industry")
-      .withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//    val adslot_type = getAdSlotType(date, hour, spark)
+    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
     val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
@@ -55,6 +51,7 @@ object OcpcCollectSuggestData {
 
     // 数据串联
     val cpaData = feedapp
+      .union(elds)
       .union(wz)
 
 
@@ -72,15 +69,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
