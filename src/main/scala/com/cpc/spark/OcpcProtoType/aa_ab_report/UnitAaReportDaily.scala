@@ -194,7 +194,6 @@ object UnitAaReportDaily {
       x.getAs[Double]("bid") + "", x.getAs[Double]("cost") + "",
       x.getAs[Double]("cpm") + "", x.getAs[Double]("exp_cvr") + "",
       x.getAs[Double]("pre_cvr") + "", x.getAs[Double]("post_cvr")+ "",
-      x.getAs[Double]("bid") + "", x.getAs[Double]("cost") + "",
       x.getAs[Double]("cost_of_every_click") + "", x.getAs[Double]("bid_of_every_click") + "",
       x.getAs[Double]("cpa_real")+ "", x.getAs[Double]("cpa_given") + "",
       x.getAs[Double]("hidden_cost_ratio") + "", x.getAs[Double]("kvalue") + "",
