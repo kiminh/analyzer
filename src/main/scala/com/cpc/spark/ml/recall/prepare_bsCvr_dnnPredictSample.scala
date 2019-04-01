@@ -127,7 +127,7 @@ object prepare_bsCvr_dnnPredictSample {
          |lateral view explode(split(age,',')) age as age1
          |lateral view explode(split(sex,',')) sex as sex1
          |lateral view explode(split(regions,',')) regions as regions1
-         |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date>='$day' group by unitid)
+         |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date>'$day' group by unitid)
          |and unitid not in ('1910998')
          |""".stripMargin
 
