@@ -221,7 +221,7 @@ object ocpc_info {
          |userid,
          |unitid,
          |conversion_goal,
-         |max(cast(ocpc_log_dict['budget'] as int))/100 as hidden_budget
+         |max(budget)/100 as hidden_budget
          |from union
          |where isHiddenOcpc='1'
          |group by userid,unitid,conversion_goal )d on a.userid=d.userid and a.unitid=d.unitid and a.conversion_goal=d.conversion_goal
