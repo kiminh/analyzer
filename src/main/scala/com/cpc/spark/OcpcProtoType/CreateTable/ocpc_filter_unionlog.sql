@@ -44,3 +44,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_filter_unionlog add columns (charge_type int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (conversion_from int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (is_api_callback int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (siteid int);
