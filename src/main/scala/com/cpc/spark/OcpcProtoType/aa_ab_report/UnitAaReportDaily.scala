@@ -26,7 +26,7 @@ object UnitAaReportDaily {
         |    sum(iscvr) as cv,
         |    sum(isclick) as click,
         |    sum(isshow) as show,
-        |    sum(case when isclick = 1 then bid else 0 end) * 0.01 as bid,
+        |    sum(case when isclick = 1 then bid else 0 end) * 0.01 / sum(isclick) as bid,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as cost,
         |    round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm,
         |    sum(case when isclick = 1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as exp_cvr,
