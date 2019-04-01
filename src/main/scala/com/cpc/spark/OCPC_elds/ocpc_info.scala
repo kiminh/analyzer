@@ -64,64 +64,16 @@ object ocpc_info {
          |  ) a
          |  left join (
          |    select
-         |      tmp.searchid
-         |    from
-         |      (
-         |        select
-         |          final.searchid as searchid,
-         |          case
-         |            when final.src = "elds"
-         |            and final.label_type = 6 then 1
-         |            when final.src = "feedapp"
-         |            and final.label_type in (4, 5) then 1
-         |            when final.src = "yysc"
-         |            and final.label_type = 12 then 1
-         |            when final.src = "wzcp"
-         |            and final.label_type in (1, 2, 3) then 1
-         |            when final.src = "others"
-         |            and final.label_type = 6 then 1
-         |            else 0
-         |          end as isreport
-         |        from
-         |          (
-         |            select
-         |              searchid,
-         |              media_appsid,
-         |              uid,
-         |              planid,
-         |              unitid,
-         |              ideaid,
-         |              adclass,
-         |              case
-         |                when (
-         |                  adclass like '134%'
-         |                  or adclass like '107%'
-         |                ) then "elds" --二类电商
-         |                when (
-         |                  adslot_type <> 7
-         |                  and adclass like '100%'
-         |                ) then "feedapp" --feedapp
-         |                when (
-         |                  adslot_type = 7
-         |                  and adclass like '100%'
-         |                ) then "yysc" --应用商城
-         |                when adclass in (110110100, 125100100) then "wzcp" --网赚
-         |                else "others"
-         |              end as src,
-         |              label_type
-         |            from
-         |              dl_cpc.ml_cvr_feature_v1
-         |            where
-         |              `date` = '$date'
-         |              and label2 = 1
-         |              and media_appsid in ("80000001", "80000002")
-         |          ) final
-         |      ) tmp
-         |    where
-         |      tmp.isreport = 1 --真正的转化
-         |    group by
-         |      tmp.searchid
-         |  ) b on a.searchid = b.searchid
+         |    searchid,
+         |    case when cvr_goal='cvr1' then 1
+         |    when cvr_goal = 'cvr2' then  2
+         |    when cvr_goal = 'cvr3' then 3 end as conversion_goal
+         |     from dl_cpc.ocpc_label_cvr_hourly
+         |     where `date`='$date'
+         |     group by searchiid,case when cvr_goal='cvr1' then 1
+         |    when cvr_goal = 'cvr2' then  2
+         |    when cvr_goal = 'cvr3' then 3 end
+         |  ) b on a.searchid = b.searchid and a.conversion_goal = b.conversion_goal
              """.stripMargin
     println(Sql1)
     val  union= spark.sql(Sql1)
@@ -252,14 +204,14 @@ object ocpc_info {
          |sum(ocpc_cost)/sum(ocpc_show_cnt)*1000 as cpm,
          |sum(ocpc_yes_cost) as ocpc_yes_cost,
          |sum(ocpc_no_cost) as ocpc_no_cost,
-         |count(distinct case when ocpc_cost>0 then userid else null end) as ocpc_userid_cnt,
-         |count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_unitid_cnt,
+         |count(distinct userid) as ocpc_userid_cnt,
+         |count(distinct unitid) as ocpc_unitid_cnt,
          |sum(total_cost) as total_cost,
          |sum(ocpc_cost)/sum(total_cost) as ocpc_cost_ratio,
          |sum(case when is_control_cost=1 then ocpc_cost else null end) as ocpc_control_cost,
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
-         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
-         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
+         |count(distinct case when is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
+         |count(distinct case when is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
