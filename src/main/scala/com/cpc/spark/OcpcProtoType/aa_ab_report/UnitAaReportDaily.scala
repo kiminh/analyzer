@@ -276,7 +276,7 @@ object UnitAaReportDaily {
         |    post_cvr,
         |    cpm
         |from
-        |    dl_cpc.ocpc_aa_report_daily
+        |    dl_cpc.ocpc_unit_aa_report_daily
         |where
         |    `date` = '$preDate'
       """.stripMargin
