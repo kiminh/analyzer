@@ -96,7 +96,6 @@ object ocpc_elds_ld {
     val Sql2 =
       s"""
          |select
-         |day,
          |'可获取转化单元' as type,
          |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/100 as ocpc_cost,
          |sum(case when siteid>0 and isclick=1 then price else null end)/100 as cost,
@@ -105,7 +104,8 @@ object ocpc_elds_ld {
          |sum(case when siteid>0 then isclick else null end) as click_cnt,
          |sum(case when siteid>0 then iscvr else null end) as cvr_cnt,
          |count(distinct case when siteid>0 and price>0 then userid else null end) as userid_cnt,
-         |count(distinct case when siteid>0 and price>0 then unitid else null end) as unitid_cnt
+         |count(distinct case when siteid>0 and price>0 then unitid else null end) as unitid_cnt,
+         |day
          |from union
          |group by day,'可获取转化单元'
              """.stripMargin
@@ -118,7 +118,6 @@ object ocpc_elds_ld {
     val Sql3 =
       s"""
          |select
-         |q.day,
          |"满足准入单元" as type,
          |sum(case when q.is_ocpc=1 and length(q.ocpc_log)>0 and q.isclick=1 then q.price else null end)/100 as ocpc_cost,
          |sum(case when q.isclick=1 then q.price else null end)/100 as cost,
@@ -127,7 +126,8 @@ object ocpc_elds_ld {
          |sum(q.isclick) as click_cnt,
          |sum(q.iscvr) as cvr_cnt,
          |count(distinct case when q.price>0 then q.userid else null end) as userid_cnt,
-         |count(distinct case when q.price>0 then q.unitid else null end) as unitid_cnt
+         |count(distinct case when q.price>0 then q.unitid else null end) as unitid_cnt,
+         |q.day
          |from
          |(select
          |a.unitid
@@ -162,7 +162,7 @@ object ocpc_elds_ld {
     val Sql4 =
       s"""
          |select
-         |"ocpc" as type,
+         |"ocpc单元" as type,
          |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
          |sum(case when isclick=1 then price else null end)/100 as cost,
          |sum(case when isclick=1 then price else null end)/100/sum(case when isclick=1 then price else null end)/100 as cost_ratio,
@@ -175,7 +175,7 @@ object ocpc_elds_ld {
          |from union
          |where is_ocpc=1
          |and length(ocpc_log)>0
-         |group by day,"ocpc"
+         |group by day,"ocpc单元"
              """.stripMargin
 
     println(Sql4)
