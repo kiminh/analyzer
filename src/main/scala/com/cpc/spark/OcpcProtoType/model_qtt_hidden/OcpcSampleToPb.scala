@@ -40,15 +40,85 @@ object OcpcSampleToPb {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
-    val resultDF  = getPbData(version, date, hour, spark)
+    val result1raw  = getPbData(version, date, hour, spark)
+    val result1 = result1raw
+      .withColumn("kvalue1", col("kvalue"))
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1")
+
+    val result2 = getNewK(date, hour, version, spark)
+    val result = result1
+        .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
+        .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+
+    val smoothData = result
+        .filter(s"flag = 1 and kvalue2 is not null")
+        .select("identifier", "conversion_goal", "pcoc", "jfb")
+
+    smoothData
+        .withColumn("version", lit(version))
+        .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+
+    val resultDF = result
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
 
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
 //    savePbPack(resultDF, version, isKnown)
+  }
+
+  def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
+    /*
+    1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
+    2. 计算新的kvalue
+     */
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
+    val rawData = spark.read.format("json").json(confPath)
+
+    val confData = rawData
+      .select("identifier", "version", "exp_flag")
+      .filter(s"exp_flag = 2 and version = 'qtt_demo'")
+      .select("identifier")
+      .distinct()
+
+    // 从表中抽取数据
+    val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  pcoc,
+         |  jfb,
+         |  1.0 / jfb as kvalue2,
+         |  conversion_goal
+         |FROM
+         |  dl_cpc.ocpc_pcoc_jfb_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  version = '$version'
+         |AND
+         |  pcoc > 0
+         |AND
+         |  jfb > 0
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val resultDF  =data
+        .join(confData, Seq("identifier"), "inner")
+        .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
+        .withColumn("flag", lit(1))
+        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
+
+    resultDF
+
   }
 
   def getPbData(version: String, date: String, hour: String, spark: SparkSession) = {
