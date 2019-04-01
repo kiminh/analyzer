@@ -15,15 +15,15 @@ object OcpcUnionlog {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -76,7 +76,8 @@ object OcpcUnionlog {
          |    conversion_goal,
          |    charge_type,
          |    conversion_from,
-         |    is_api_callback
+         |    is_api_callback,
+         |    siteid
          |from
          |    base_data
        """.stripMargin
@@ -191,7 +192,8 @@ object OcpcUnionlog {
          |    usertype,
          |    conversion_goal,
          |    conversion_from,
-         |    is_api_callback
+         |    is_api_callback,
+         |    siteid
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
