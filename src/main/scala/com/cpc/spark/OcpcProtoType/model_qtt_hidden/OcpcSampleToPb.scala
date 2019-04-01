@@ -84,16 +84,16 @@ object OcpcSampleToPb {
     1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
     2. 计算新的kvalue
      */
-    // 媒体选择
-    val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
-    val rawData = spark.read.format("json").json(confPath)
-
-    val confData = rawData
-      .select("identifier", "version", "exp_flag")
-      .filter(s"exp_flag = 2 and version = '$version'")
-      .select("identifier")
-      .distinct()
+//    // 媒体选择
+//    val conf = ConfigFactory.load("ocpc")
+//    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
+//    val rawData = spark.read.format("json").json(confPath)
+//
+//    val confData = rawData
+//      .select("identifier", "version", "exp_flag")
+//      .filter(s"exp_flag = 2 and version = '$version'")
+//      .select("identifier")
+//      .distinct()
 
     // 从表中抽取数据
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
@@ -120,7 +120,6 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     val resultDF  =data
-        .join(confData, Seq("identifier"), "inner")
         .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
         .withColumn("flag", lit(1))
         .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
