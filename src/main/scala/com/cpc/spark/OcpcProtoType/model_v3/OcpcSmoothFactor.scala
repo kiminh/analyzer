@@ -56,20 +56,7 @@ object OcpcSmoothFactor{
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
   }
 
-//  def getConfData(spark: SparkSession) = {
-//    // 媒体选择
-//    val conf = ConfigFactory.load("ocpc")
-//    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
-//    val rawData = spark.read.format("json").json(confPath)
-//
-//    val resultDF = rawData
-//      .select("identifier", "version", "exp_flag")
-//      .filter(s"exp_flag = 2 and version = 'qtt_demo'")
-//      .select("identifier")
-//      .distinct()
-//
-//    resultDF
-//  }
+
 
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
     val pcocData = calculatePCOC(rawData, spark)
