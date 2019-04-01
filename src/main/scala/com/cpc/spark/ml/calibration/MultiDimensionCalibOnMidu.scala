@@ -155,8 +155,8 @@ object MultiDimensionCalibOnMidu {
               name = modelName,
               ir = Option(irModel)
             )
-            califile.addCaliMap((key,config))
-            //califile.caliMap.+((key,config))
+//            califile.addCaliMap((key,config))
+            califile.caliMap.+((key,config))
             config
           }
       }.toList
@@ -239,7 +239,7 @@ object MultiDimensionCalibOnMidu {
   }
 
   def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"calibration-$modelName.mlm"
+    val filename = s"post-calibration-$modelName.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
@@ -248,7 +248,7 @@ object MultiDimensionCalibOnMidu {
   }
 
   def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"calibration-flat-$modelName.txt"
+    val filename = s"post-calibration-flat-$modelName.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
