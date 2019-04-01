@@ -111,12 +111,14 @@ object MultiDimensionCalibOnMidu {
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
-        x => {
-          val l = x.toList
-          val l1 = l.take(l.length - l.length/3)
-          val l2 = l.takeRight(l.length/3)
-          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
-        }
+        x =>
+          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+//        x => {
+//          val l = x.toList
+//          val l1 = l.take(l.length - l.length/3)
+//          val l2 = l.takeRight(l.length/3)
+//          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
+//        }
           )
       .toLocalIterator
       .map {
@@ -126,10 +128,11 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
-          val test = x._2._3
-          val ScoreAndLabel = sc.parallelize(test)
-          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
-          val aucROC = metrics.areaUnderROC
+//          计算testauc
+//          val test = x._2._3
+//          val ScoreAndLabel = sc.parallelize(test)
+//          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+//          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
@@ -143,7 +146,7 @@ object MultiDimensionCalibOnMidu {
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
+//            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
 //            val caliauc = getauccali(test, sc, irModel)
 //            println(s"test auc(before, after): $aucROC,$caliauc")
 //            auc = auc :+ (aucROC,caliauc)
