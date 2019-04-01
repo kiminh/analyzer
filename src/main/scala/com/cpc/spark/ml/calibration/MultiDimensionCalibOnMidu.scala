@@ -141,10 +141,9 @@ object MultiDimensionCalibOnMidu {
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
-            val caliauc = getauccali(test, sc, irModel)
-            println(s"test auc(before, after): $aucROC,$caliauc")
-            auc = auc :+ (aucROC,caliauc)
-
+//            val caliauc = getauccali(test, sc, irModel)
+//            println(s"test auc(before, after): $aucROC,$caliauc")
+//            auc = auc :+ (aucROC,caliauc)
             val key = modelName
             val config = CalibrationConfig(
               name = modelName,
@@ -155,7 +154,7 @@ object MultiDimensionCalibOnMidu {
             config
           }
       }.toList
-    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
+//    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     if (saveToLocal) {
       val model = "novel-ctr-dnn-rawid-v7"
       val localPath = saveProtoToLocal(model, califile)
