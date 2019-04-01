@@ -257,7 +257,7 @@ object MultiDimensionCalibOnMidu {
 
   // input: Seq<(<ectr, click>)
   // return: (Seq(<ctr, ectr, weight>), total count)
-  def binIterable(data: List[(Double, Double)], minBinSize: Int, maxBinCount: Int)
+  def binIterable(data: Iterable[(Double, Double)], minBinSize: Int, maxBinCount: Int)
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
