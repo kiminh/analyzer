@@ -210,6 +210,7 @@ object hottopicBagUsingLive {
     val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
     rdd1.toDF().show(10)
     val result = SetUserProfileTagInHiveDaily(rdd1)
+    println("THIS IS THE END")
 
   }
 
