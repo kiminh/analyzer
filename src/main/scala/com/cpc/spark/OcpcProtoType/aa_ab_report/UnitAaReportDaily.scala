@@ -165,17 +165,43 @@ object UnitAaReportDaily {
     // 首先将aa报表写入hive表
     dataDF
       .repartition(50)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_report_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
 
+    val data = dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid").toString,
+      x.getAs[Int]("userid").toString, x.getAs[String]("industry").toString,
+      x.getAs[Double]("put_type").toString, x.getAs[Int]("adslot_type").toString,
+      x.getAs[Int]("conversion_goal").toString, x.getAs[Int]("cv").toString,
+      x.getAs[Int]("click").toString, x.getAs[Int]("show").toString,
+      x.getAs[Double]("bid").toString, x.getAs[Double]("cost").toString,
+      x.getAs[Double]("cpm").toString, x.getAs[Double]("exp_cvr").toString,
+      x.getAs[Double]("pre_cvr").toString, x.getAs[Double]("post_cvr").toString,x.getAs[Double]("bid").toString, x.getAs[Double]("cost").toString,
+      x.getAs[Double]("cost_of_every_click").toString, x.getAs[Double]("bid_of_every_click").toString,
+      x.getAs[Double]("cpa_real").toString, x.getAs[Double]("cpa_given").toString,
+      x.getAs[Double]("hidden_cost_ratio").toString, x.getAs[Double]("kvalue").toString,
+      x.getAs[Double]("budget").toString, x.getAs[Double]("cost_budget_ratio").toString,
+      x.getAs[Double]("ocpc_cpc_cpm_ratio").toString, x.getAs[Double]("ocpc_cpc_pre_cvr_ratio").toString,
+      x.getAs[Double]("ocpc_cpc_post_cvr_ratio").toString, x.getAs[Double]("ocpc_cpc_cost_of_every_click").toString,
+      x.getAs[Double]("ocpc_cpc_bid_of_every_click").toString, x.getAs[Double]("ocpc_cpc_cpa_real").toString,
+      x.getAs[Double]("suggest_cpa").toString, x.getAs[Double]("auc").toString,
+      x.getAs[Double]("cv_ring_ratio").toString, x.getAs[Double]("cost_ring_ratio").toString,
+      x.getAs[Double]("post_cvr_ring_ratio").toString, x.getAs[Double]("cpm_ring_ratio").toString).mkString(","))
+
+    data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
+
+    /**
+      * /www/part-0000
+      * hadoop fs -copyFromLocal /www/part-000 a.csv
+      *
+      */
     // 然后将aa报表写入csv
-    val filePath = s"/home/cpc/wt/aa_report_daily/aa_report_daily_$date"
-    val headName = List("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
-      "cv", "click", "show", "bid", "cost", "cpm", "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click",
-      "bid_of_every_click", "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget",
-      "cost_budget_ratio", "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
-      "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
-      "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio", "cpm_ring_ratio")
-    WriteCsv.write(dataDF, headName, filePath)
+//    val filePath = s"/home/cpc/wt/aa_report_daily/aa_report_daily_$date"
+//    val headName = List("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
+//      "cv", "click", "show", "bid", "cost", "cpm", "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click",
+//      "bid_of_every_click", "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget",
+//      "cost_budget_ratio", "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
+//      "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
+//      "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio", "cpm_ring_ratio")
+//    WriteCsv.write(dataDF, headName, filePath)
   }
 
   // 获得suggest_cpa，只有天级别的

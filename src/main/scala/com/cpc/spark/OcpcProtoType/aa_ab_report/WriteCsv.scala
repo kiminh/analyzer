@@ -18,7 +18,7 @@ object WriteCsv {
     var bw: BufferedWriter = null
     val rowList = dataDF.collect()
     try{
-      new File(filePath)
+      //val file = new File(filePath)
       out = new FileOutputStream(filePath)
       osw = new OutputStreamWriter(out)
       bw = new BufferedWriter(osw)
