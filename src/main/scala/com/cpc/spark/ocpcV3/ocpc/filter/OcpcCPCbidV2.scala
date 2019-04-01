@@ -55,7 +55,7 @@ object OcpcCPCbidV2 {
       .na.fill(0.5, Seq("factor2"))
 
     val cvrGoal = getConversionGoal(date, hour, spark)
-    val pcoc = getPCOC(cvrGoal, date, hour, spark)
+    val pcoc = getPCOC("qtt_hidden", date, hour, spark)
 
 
     val resultDF = data
@@ -72,29 +72,32 @@ object OcpcCPCbidV2 {
     savePbPack(data, fileName)
   }
 
-  def getPCOC(cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
          |  identifier,
          |  1.0 / pcoc as cali_value,
          |  jfb,
+         |  kvalue,
          |  conversion_goal
          |FROM
-         |  dl_cpc.ocpc_pcoc_jfb_hourly
+         |  dl_cpc.ocpc_kvalue_smooth_strat
          |WHERE
          |  `date` = '$date'
          |AND
          |  `hour` = '$hour'
+         |AND
+         |  version = '$version'
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
 
-    val ocpcUnit = cvrGoal
-      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal")
     val result = rawData
-      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "cali_value")
+        .select("identifier", "cali_value")
+        .groupBy("identifier")
+        .agg(avg(col("cali_value")).alias("cali_value"))
+        .select("identifier", "cali_value")
 
     result
   }
@@ -104,7 +107,7 @@ object OcpcCPCbidV2 {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
