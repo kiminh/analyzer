@@ -58,6 +58,9 @@ object ocpc_info {
          |      and is_ocpc = 1
          |      and ocpc_log_length > 0
          |      and media_appsid in ("80000001", "80000002")
+         |      and isshow=1
+         |      and adsrc=1
+         |      and antispam=0
          |  ) a
          |  left join (
          |    select
@@ -210,13 +213,16 @@ object ocpc_info {
          |from dl_cpc.ocpc_basedata_union_events
          |where `date`='$date'
          |and media_appsid in ("80000001", "80000002")
+         |and adsrc=1
+         |and antispam=0
+         |and isshow=1
          |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_type=c.adslot_type
          |left join
          |(select
          |userid,
          |unitid,
          |conversion_goal,
-         |max(budget) as hidden_budget
+         |max(budget)/100 as hidden_budget
          |from union
          |where isHiddenOcpc='1'
          |group by userid,unitid,conversion_goal )d on a.userid=d.userid and a.unitid=d.unitid and a.conversion_goal=d.conversion_goal
