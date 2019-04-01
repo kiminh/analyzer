@@ -70,7 +70,7 @@ object ocpc_info {
          |    when cvr_goal = 'cvr3' then 3 end as conversion_goal
          |     from dl_cpc.ocpc_label_cvr_hourly
          |     where `date`='$date'
-         |     group by searchiid,case when cvr_goal='cvr1' then 1
+         |     group by searchid,case when cvr_goal='cvr1' then 1
          |    when cvr_goal = 'cvr2' then  2
          |    when cvr_goal = 'cvr3' then 3 end
          |  ) b on a.searchid = b.searchid and a.conversion_goal = b.conversion_goal
