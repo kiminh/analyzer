@@ -79,7 +79,9 @@ object MultiDimensionCalibOnMidu {
           .otherwise(col("group")))
         .withColumn("group",when(col("count2") < 100000,col("ideaid"))
           .otherwise(col("group")))
+        .filter("count3 > 50000")
         .select("user_req_ad_num","adslot_id","ideaid","group").distinct()
+    keygroup.write.mode("overwrite").saveAsTable("test.wy01")
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
 
