@@ -66,10 +66,11 @@ object OcpcCPCbidV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+    resultDF
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, fileName)
+    savePbPack(resultDF, fileName)
   }
 
   def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
