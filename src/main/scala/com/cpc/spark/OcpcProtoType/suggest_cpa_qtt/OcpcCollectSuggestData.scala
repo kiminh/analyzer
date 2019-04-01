@@ -55,7 +55,6 @@ object OcpcCollectSuggestData {
 
     // 数据串联
     val cpaData = feedapp
-      .union(elds)
       .union(wz)
 
 
