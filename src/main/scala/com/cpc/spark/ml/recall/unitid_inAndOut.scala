@@ -51,7 +51,7 @@ object unitid_inAndOut {
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='enabled0.3'
          |and unitid not in ('exp_unitid', 'all')) tb
          |on ta.unitid=tb.unitid
-         |where tb.cpm<6 or ta.cvr>tb.cvr group by ta.unitid
+         |where tb.cpm<8 or ta.cvr>tb.cvr group by ta.unitid
       """.stripMargin).createOrReplaceTempView("bscvr")
 
     spark.sql(
@@ -63,7 +63,7 @@ object unitid_inAndOut {
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='enabled0.3'
          |and unitid not in ('exp_unitid', 'all')) tb
          |on ta.unitid=tb.unitid
-         |where ta.cpm>6 and ta.cvr<=tb.cvr group by ta.unitid
+         |where ta.cpm>8 and ta.cvr<=tb.cvr group by ta.unitid
       """.stripMargin).createOrReplaceTempView("bscvrExp")
 
     spark.sql(
