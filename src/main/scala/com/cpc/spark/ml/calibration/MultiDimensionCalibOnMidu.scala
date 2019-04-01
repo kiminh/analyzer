@@ -98,7 +98,7 @@ object MultiDimensionCalibOnMidu {
     import session.implicits._
     val sc = session.sparkContext
     var auc = Seq[(Double,Double)]()
-    var califile = new PostCalibrations()
+    var califile = PostCalibrations()
     val result = log.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
@@ -150,13 +150,12 @@ object MultiDimensionCalibOnMidu {
 //            val caliauc = getauccali(test, sc, irModel)
 //            println(s"test auc(before, after): $aucROC,$caliauc")
 //            auc = auc :+ (aucROC,caliauc)
-            val key = modelName
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
             )
-//            califile.addCaliMap((key,config))
-            califile.caliMap.+((key,config))
+            califile.addCaliMap((modelName,config))
+//            califile.caliMap.+((key,config))
             config
           }
       }.toList
