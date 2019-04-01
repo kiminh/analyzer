@@ -46,7 +46,7 @@ object OcpcPCOC {
           .withColumn("version", lit(version))
           .withColumn("method", lit("pcoc"))
 
-        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_pcoc_hourly")
+        resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_k_model_hourly")
     }
     def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
         // 抽取基础数据
