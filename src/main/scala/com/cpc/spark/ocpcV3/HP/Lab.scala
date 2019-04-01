@@ -20,6 +20,8 @@ object Lab {
     println("============================== appFreq  ======================================")
     appFreq.show(10)
 
+    appFreq.write.mode("overwrite").saveAsTable("test.appFreq_sjq")
+
     val appCat0 = appCat
       .join(appFreq, Seq("appName"), "left").filter("appName0 is not NULL")
       .select("cat", "appName", "appName1", "appName0").distinct()
@@ -110,6 +112,7 @@ object Lab {
     val sql =
       s"""
          | select
+         |    t1.dt,
          |    t1.uid,
          |    t2.pkgs1
          |from (
@@ -133,90 +136,91 @@ object Lab {
          |      group by load_date, uid, used_pkgs
          |     ) t2
          | on t1.dt = t2.load_date and t1.uid = t2.uid
-         | group by t1.uid, t2.pkgs1
+         | group by t1.dt, t1.uid, t2.pkgs1
        """.stripMargin
     println(sql)
     val df = spark.sql(sql)
 
     val result = df.rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",")))
+      .map(x => ( x.getAs[String]("dt"), x.getAs[String]("uid"), x.getAs[String]("pkgs1").split(",") ))
       .flatMap(x => {
-        val uid = x._1
-        val pkgs = x._2
+        val date = x._1
+        val uid = x._2
+        val pkgs = x._3
         val lb = scala.collection.mutable.ListBuffer[UidApp]()
         for (app <- pkgs) {
-          lb += UidApp(uid, app)
+          lb += UidApp(date, uid, app)
         }
         lb
-      }
-      ).toDF() // uid, appName1
+      })
+      .toDF() // uid, appName1
       .join(appCat, Seq("appName1"))
-      .select("uid", "cat")
-      .distinct().toDF()
-      .withColumn("date", lit(date))
+      .select("uid", "cat", "date")
+      .distinct().toDF().groupBy("cat", "uid")
+      .agg(min(col("date")).alias("firstDate"))
 
     result
   }
 
-  def upDate(spark: SparkSession, date: String): Unit = {
-    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    val calendar = Calendar.getInstance
-    val today = sdf.parse(date)
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime()
-    val date0 = sdf.format(yesterday)
-
-    val sqlRequest =
-      s"""
-         |select
-         |  coalesce(t1.cat, t2.cat) as cat,
-         |  coalesce(t1.uid, t2.uid) as uid,
-         |  tag0,
-         |  tag1
-         |from
-         |  (
-         |    select
-         |      cat,
-         |      uid,
-         |      1 as tag1
-         |    from
-         |      dl_cpc.hottopic_uid_bag
-         |    where
-         |      `date` = '$date'
-         |  ) t1 full
-         |  outer join (
-         |    select
-         |      cat,
-         |      uid,
-         |      1 as tag0
-         |    from
-         |      dl_cpc.hottopic_uid_bag
-         |    where
-         |      `date` = '$date0'
-         |  ) t2 on t1.cat = t2.cat
-         |  and t1.uid = t2.uid
-       """.stripMargin
-
-    println(sqlRequest)
-    val df = spark.sql(sqlRequest)
-      .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
-      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
-      .select("cat", "uid", "tag0", "tag1", "id", "io")
-
-    //    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
-
-    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
-
-    val result = SetUserProfileTagInHiveDaily(rdd1)
-
-  }
+//  def upDate(spark: SparkSession, date: String): Unit = {
+//    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+//    val calendar = Calendar.getInstance
+//    val today = sdf.parse(date)
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -1)
+//    val yesterday = calendar.getTime()
+//    val date0 = sdf.format(yesterday)
+//
+//    val sqlRequest =
+//      s"""
+//         |select
+//         |  coalesce(t1.cat, t2.cat) as cat,
+//         |  coalesce(t1.uid, t2.uid) as uid,
+//         |  tag0,
+//         |  tag1
+//         |from
+//         |  (
+//         |    select
+//         |      cat,
+//         |      uid,
+//         |      1 as tag1
+//         |    from
+//         |      dl_cpc.hottopic_uid_bag
+//         |    where
+//         |      `date` = '$date'
+//         |  ) t1 full
+//         |  outer join (
+//         |    select
+//         |      cat,
+//         |      uid,
+//         |      1 as tag0
+//         |    from
+//         |      dl_cpc.hottopic_uid_bag
+//         |    where
+//         |      `date` = '$date0'
+//         |  ) t2 on t1.cat = t2.cat
+//         |  and t1.uid = t2.uid
+//       """.stripMargin
+//
+//    println(sqlRequest)
+//    val df = spark.sql(sqlRequest)
+//      .withColumn("id", when(col("cat") === "社交", lit(317)).otherwise(when(col("cat") === "短视频", lit(318)).otherwise(lit(319))))
+//      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
+//      .select("cat", "uid", "tag0", "tag1", "id", "io")
+//
+//    //    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
+//
+//    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
+//
+//    val result = SetUserProfileTagInHiveDaily(rdd1)
+//
+//  }
 
   case class AppCat(var appName: String, var cat: String)
 
   case class AppCount(var appName0: String, var appName1: String, appName: String, var count: Int)
 
-  case class UidApp(var uid: String, var appName1: String)
+  case class UidApp(var date: String, var uid: String, var appName1: String)
 
 }
 
