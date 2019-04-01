@@ -208,7 +208,6 @@ object ocpc_info {
          |userid,
          |adslot_type,
          |adclass,
-         |conversion_goal,
          |sum(case when isclick=1 then price else null end)/100 as total_cost
          |from dl_cpc.ocpc_basedata_union_events
          |where `date`='$date'
@@ -216,13 +215,13 @@ object ocpc_info {
          |and adsrc=1
          |and antispam=0
          |and isshow=1
-         |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.conversion_goal=c.conversion_goal and a.adslot_type=c.adslot_type
+         |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.adslot_type=c.adslot_type
          |left join
          |(select
          |userid,
          |unitid,
          |conversion_goal,
-         |max(budget)/100 as hidden_budget
+         |max(cast(ocpc_log_dict['budget'] as int))/100 as hidden_budget
          |from union
          |where isHiddenOcpc='1'
          |group by userid,unitid,conversion_goal )d on a.userid=d.userid and a.unitid=d.unitid and a.conversion_goal=d.conversion_goal
