@@ -159,6 +159,7 @@ object hottopicBagUsingLive {
   }
 
   def upDate(spark: SparkSession, date: String): Unit = {
+    import spark.implicits._
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val calendar = Calendar.getInstance
     val today = sdf.parse(date)
@@ -207,7 +208,7 @@ object hottopicBagUsingLive {
     //    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
 
     val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
-
+    rdd1.toDF().show(10)
     val result = SetUserProfileTagInHiveDaily(rdd1)
 
   }
