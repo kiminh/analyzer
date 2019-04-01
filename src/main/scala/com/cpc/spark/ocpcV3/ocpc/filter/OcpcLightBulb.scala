@@ -31,8 +31,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "test.ocpc_qtt_light_control"
-
+//    val tableName = "test.ocpc_qtt_light_control"
+    val tableName = "test.ocpc_qtt_light_control20190401"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -48,18 +48,18 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
 
-    data
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(date, hour, spark)
-    println(s"############## saving redis database ##########################")
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+//
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(date, hour, spark)
+//    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -88,13 +88,13 @@ object OcpcLightBulb{
          |    cast(ocpc_log_dict['cpagiven'] as double) * 1.0 / 100 as cpa_given,
          |    row_number() over(partition by unitid order by timestamp desc) as seq
          |FROM
-         |    dl_cpc.ocpc_union_log_hourly
+         |    dl_cpc.ocpc_filter_unionlog
          |WHERE
          |    $selectCondition
          |AND
          |    media_appsid  in ("80000001", "80000002")
          |AND
-         |    ext_int['is_ocpc'] = 1
+         |    is_ocpc = 1
          |AND
          |    isclick = 1
        """.stripMargin
