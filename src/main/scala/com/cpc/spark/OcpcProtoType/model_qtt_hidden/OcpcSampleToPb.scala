@@ -56,7 +56,7 @@ object OcpcSampleToPb {
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
         .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
 
-    println(result)
+    println("result")
     result.show(10)
     val smoothData = result
         .filter(s"flag = 1 and kvalue2 is not null")
@@ -90,7 +90,7 @@ object OcpcSampleToPb {
 
     val confData = rawData
       .select("identifier", "version", "exp_flag")
-      .filter(s"exp_flag = 2 and version = 'qtt_demo'")
+      .filter(s"exp_flag = 2 and version = '$version'")
       .select("identifier")
       .distinct()
 
