@@ -45,7 +45,8 @@ object Lab {
     //    //    comment '段子社交、短视频、直播人群包'
     //    //    partitioned by (`date` string);
     //
-    uidUsingSocialApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
+//    uidUsingSocialApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
+    uidUsingSocialApp.write.mode("overwrite").saveAsTable("test.uidUsingSocialApp_sjq")
     //
     //    upDate(spark, date)
 
