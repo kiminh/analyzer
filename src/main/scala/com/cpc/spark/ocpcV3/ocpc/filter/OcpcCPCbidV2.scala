@@ -7,8 +7,8 @@ import java.util.Calendar
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
-
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -17,6 +17,7 @@ import scala.collection.mutable.ListBuffer
 
 object OcpcCPCbidV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
