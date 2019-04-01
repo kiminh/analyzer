@@ -163,9 +163,9 @@ object UnitAaReportDaily {
                       .withColumn("date", lit(date))
                       .withColumn("version", lit("qtt_demo"))
     // 首先将aa报表写入hive表
-//    dataDF
-//      .repartition(50)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
+    dataDF
+      .repartition(50)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
 
 //    val data = dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid").toString,
 //      x.getAs[Int]("userid").toString, x.getAs[String]("industry").toString,
@@ -185,40 +185,38 @@ object UnitAaReportDaily {
 //      x.getAs[Double]("suggest_cpa").toString, x.getAs[Double]("auc").toString,
 //      x.getAs[Double]("cv_ring_ratio").toString, x.getAs[Double]("cost_ring_ratio").toString,
 //      x.getAs[Double]("post_cvr_ring_ratio").toString, x.getAs[Double]("cpm_ring_ratio").toString).mkString(","))
-    val t = spark.sparkContext.parallelize(Seq("1111")).map(x => (x,1))
-
-    val title = spark.sparkContext.parallelize(Seq(Seq("unitid", "userid", "industry", "put_type",
-                "adslot_type", "conversion_goal", "cv", "click", "show", "bid", "cost", "cpm",
-                "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click", "bid_of_every_click",
-                "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget", "cost_budget_ratio",
-                "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
-                "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
-                "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio",
-                "cpm_ring_ratio").mkString(",")))
-      .map(x => (x, 1))
-    val data = title.union(dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid") + "",
-      x.getAs[Int]("userid") + "", x.getAs[String]("industry") + "",
-      x.getAs[Double]("put_type") + "", x.getAs[Int]("adslot_type") + "",
-      x.getAs[Int]("conversion_goal") + "", x.getAs[Long]("cv") + "",
-      x.getAs[Long]("click") + "", x.getAs[Long]("show") + "",
-      x.getAs[BigDecimal]("bid") + "", x.getAs[BigDecimal]("cost") + "",
-      x.getAs[BigDecimal]("cpm") + "", x.getAs[BigDecimal]("exp_cvr") + "",
-      x.getAs[BigDecimal]("pre_cvr") + "", x.getAs[BigDecimal]("post_cvr")+ "",
-      x.getAs[BigDecimal]("cost_of_every_click") + "", x.getAs[BigDecimal]("bid_of_every_click") + "",
-      x.getAs[BigDecimal]("cpa_real")+ "", x.getAs[BigDecimal]("cpa_given") + "",
-      x.getAs[BigDecimal]("hidden_cost_ratio") + "", x.getAs[BigDecimal]("kvalue") + "",
-      x.getAs[BigDecimal]("budget") + "", x.getAs[BigDecimal]("cost_budget_ratio") + "",
-      x.getAs[BigDecimal]("ocpc_cpc_cpm_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_pre_cvr_ratio") + "",
-      x.getAs[BigDecimal]("ocpc_cpc_post_cvr_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_cost_of_every_click") + "",
-      x.getAs[BigDecimal]("ocpc_cpc_bid_of_every_click") + "", x.getAs[BigDecimal]("ocpc_cpc_cpa_real") + "",
-      x.getAs[BigDecimal]("suggest_cpa") + "", x.getAs[BigDecimal]("auc") + "",
-      x.getAs[BigDecimal]("cv_ring_ratio") + "", x.getAs[BigDecimal]("cost_ring_ratio") + "",
-      x.getAs[BigDecimal]("post_cvr_ring_ratio") + "", x.getAs[BigDecimal]("cpm_ring_ratio") + "",
-      x.getAs[String]("date")).mkString(",")).map(x => (x, 2)))
-        .sortBy(_._2)
-        .map(x => x._1)
-
-    data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
+//    val title = spark.sparkContext.parallelize(Seq(Seq("unitid", "userid", "industry", "put_type",
+//                "adslot_type", "conversion_goal", "cv", "click", "show", "bid", "cost", "cpm",
+//                "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click", "bid_of_every_click",
+//                "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget", "cost_budget_ratio",
+//                "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
+//                "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
+//                "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio",
+//                "cpm_ring_ratio").mkString(",")))
+//      .map(x => (x, 1))
+//    val data = title.union(dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid") + "",
+//      x.getAs[Int]("userid") + "", x.getAs[String]("industry") + "",
+//      x.getAs[Double]("put_type") + "", x.getAs[Int]("adslot_type") + "",
+//      x.getAs[Int]("conversion_goal") + "", x.getAs[Long]("cv") + "",
+//      x.getAs[Long]("click") + "", x.getAs[Long]("show") + "",
+//      x.getAs[BigDecimal]("bid") + "", x.getAs[BigDecimal]("cost") + "",
+//      x.getAs[BigDecimal]("cpm") + "", x.getAs[BigDecimal]("exp_cvr") + "",
+//      x.getAs[BigDecimal]("pre_cvr") + "", x.getAs[BigDecimal]("post_cvr")+ "",
+//      x.getAs[BigDecimal]("cost_of_every_click") + "", x.getAs[BigDecimal]("bid_of_every_click") + "",
+//      x.getAs[BigDecimal]("cpa_real")+ "", x.getAs[BigDecimal]("cpa_given") + "",
+//      x.getAs[BigDecimal]("hidden_cost_ratio") + "", x.getAs[BigDecimal]("kvalue") + "",
+//      x.getAs[BigDecimal]("budget") + "", x.getAs[BigDecimal]("cost_budget_ratio") + "",
+//      x.getAs[BigDecimal]("ocpc_cpc_cpm_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_pre_cvr_ratio") + "",
+//      x.getAs[BigDecimal]("ocpc_cpc_post_cvr_ratio") + "", x.getAs[BigDecimal]("ocpc_cpc_cost_of_every_click") + "",
+//      x.getAs[BigDecimal]("ocpc_cpc_bid_of_every_click") + "", x.getAs[BigDecimal]("ocpc_cpc_cpa_real") + "",
+//      x.getAs[BigDecimal]("suggest_cpa") + "", x.getAs[BigDecimal]("auc") + "",
+//      x.getAs[BigDecimal]("cv_ring_ratio") + "", x.getAs[BigDecimal]("cost_ring_ratio") + "",
+//      x.getAs[BigDecimal]("post_cvr_ring_ratio") + "", x.getAs[BigDecimal]("cpm_ring_ratio") + "",
+//      x.getAs[String]("date")).mkString(",")).map(x => (x, 2)))
+//        .sortBy(_._2)
+//        .map(x => x._1)
+//
+//    data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
 
     /**
       * /www/part-0000
@@ -227,12 +225,12 @@ object UnitAaReportDaily {
       */
     // 然后将aa报表写入csv
 //    val filePath = s"/home/cpc/wt/aa_report_daily/aa_report_daily_$date"
-    val headName = List("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
-      "cv", "click", "show", "bid", "cost", "cpm", "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click",
-      "bid_of_every_click", "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget",
-      "cost_budget_ratio", "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
-      "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
-      "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio", "cpm_ring_ratio")
+//    val headName = List("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
+//      "cv", "click", "show", "bid", "cost", "cpm", "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click",
+//      "bid_of_every_click", "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget",
+//      "cost_budget_ratio", "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
+//      "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
+//      "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio", "cpm_ring_ratio")
 //    WriteCsv.write(dataDF, headName, filePath)
   }
 
