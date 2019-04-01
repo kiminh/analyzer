@@ -79,11 +79,10 @@ object MultiDimensionCalibOnMidu {
           .otherwise(col("group")))
         .withColumn("group",when(col("count2") < 100000,col("ideaid"))
           .otherwise(col("group")))
-        .filter("count3 > 50000")
-        .select("user_req_ad_num","adslot_id","ideaid","group").distinct()
+        .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
     keygroup.write.mode("overwrite").saveAsTable("test.wy01")
 
-    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left").filter("count3>50000")
 
     data.write.mode("overwrite").saveAsTable("test.wy00")
 
@@ -158,7 +157,7 @@ object MultiDimensionCalibOnMidu {
       }.toList
 //    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     if (saveToLocal) {
-      val model = "novel-ctr-dnn-rawid-v7"
+      val model = "novel-ctr-dnn-rawid-v7-cali"
       val localPath = saveProtoToLocal(model, califile)
       saveFlatTextFileForDebug(model, califile)
       if (softMode == 0) {
