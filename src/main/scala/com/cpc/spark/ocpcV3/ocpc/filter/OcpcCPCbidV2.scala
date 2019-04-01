@@ -55,7 +55,7 @@ object OcpcCPCbidV2 {
       .na.fill(0.5, Seq("factor2"))
 
     val cvrGoal = getConversionGoal(date, hour, spark)
-    val pcoc = getPCOC("qtt_hidden", date, hour, spark)
+    val pcoc = getPCOC("qtt_hidden", cvrGoal, date, hour, spark)
 
 
     val resultDF = data
@@ -73,7 +73,7 @@ object OcpcCPCbidV2 {
     savePbPack(resultDF, fileName)
   }
 
-  def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(version: String, cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -93,12 +93,22 @@ object OcpcCPCbidV2 {
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
-
-    val result = rawData
         .select("identifier", "cali_value")
         .groupBy("identifier")
         .agg(avg(col("cali_value")).alias("cali_value"))
         .select("identifier", "cali_value")
+
+    val ocpcUnit = cvrGoal
+        .selectExpr("cast(unitid as string) identifier")
+        .withColumn("flag", lit(1))
+        .select("identifier", "flag")
+
+    val result = rawData
+        .join(ocpcUnit, Seq("identifier"), "left_outer")
+        .na.fill(0, Seq("flag"))
+        .filter(s"flag = 0")
+        .select("identifier", "cali_value", "flag")
+
 
     result
   }
