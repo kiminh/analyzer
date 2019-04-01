@@ -333,10 +333,11 @@ object OcpcLightBulb{
     println(sqlRequest)
 
     val result = spark.sql(sqlRequest).select("unitid").distinct()
+    result.printSchema()
 
     var resList = new mutable.ListBuffer[Int]()
     for (row <- result.collect()) {
-      val unitid = row.getAs[Int]("unitid")
+      val unitid = row.getAs[Long]("unitid").toInt
       resList.append(unitid)
     }
     resList.append(1997722)
