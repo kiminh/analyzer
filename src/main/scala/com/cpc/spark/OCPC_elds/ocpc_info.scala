@@ -226,14 +226,14 @@ object ocpc_info {
          |sum(ocpc_cost)/sum(ocpc_show_cnt)*1000 as cpm,
          |sum(ocpc_yes_cost) as ocpc_yes_cost,
          |sum(ocpc_no_cost) as ocpc_no_cost,
-         |count(distinct case when ocpc_cost>0 then userid else null end) as ocpc_userid_cnt,
-         |count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_unitid_cnt,
+         |count(distinct userid) as ocpc_userid_cnt,
+         |count(distinct unitid) as ocpc_unitid_cnt,
          |sum(total_cost) as total_cost,
          |sum(ocpc_cost)/sum(total_cost) as ocpc_cost_ratio,
          |sum(case when is_control_cost=1 then ocpc_cost else null end) as ocpc_control_cost,
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
-         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
-         |count(distinct case when ocpc_cost>0 and is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
+         |count(distinct case when is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
+         |count(distinct case when is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
