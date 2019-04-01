@@ -54,16 +54,49 @@ object OcpcCPCbidV2 {
       .na.fill(0.2, Seq("factor1", "factor3"))
       .na.fill(0.5, Seq("factor2"))
 
+    val cvrGoal = getConversionGoal(date, hour, spark)
+    val pcoc = getPCOC(cvrGoal, date, hour, spark)
+
 
     val resultDF = data
-      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t")
+      .join(pcoc, Seq("identifier"), "left_outer")
+      .na.fill(1.0, Seq("cali_value"))
+      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
+  }
+
+  def getPCOC(cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  1.0 / pcoc as cali_value,
+         |  jfb,
+         |  conversion_goal
+         |FROM
+         |  dl_cpc.ocpc_pcoc_jfb_hourly
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+
+    val ocpcUnit = cvrGoal
+      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal")
+    val result = rawData
+      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "cali_value")
+
+    result
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
@@ -247,7 +280,7 @@ object OcpcCPCbidV2 {
       val factor3 = record.getAs[Double]("factor3")
       val cpa_suggest = record.getAs[Double]("cpa_suggest")
       val param_t = record.getAs[Double]("param_t")
-      val caliValue = 1.0
+      val caliValue = record.getAs[Double]("cali_value")
 
 
       if (cnt % 100 == 0) {

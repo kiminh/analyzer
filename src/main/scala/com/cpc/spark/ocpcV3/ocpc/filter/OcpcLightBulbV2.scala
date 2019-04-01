@@ -139,7 +139,7 @@ object OcpcLightBulbV2{
               valueString = "0"
             }
             println(s"key:$key, value:$valueString")
-            redis.setex(key, 2 * 24 * 60 * 60, valueString)
+            redis.setex(key, 7 * 24 * 60 * 60, valueString)
           }
         }
       }

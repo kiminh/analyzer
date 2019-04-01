@@ -31,8 +31,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
+//    val tableName = "test.ocpc_qtt_light_control"
     val tableName = "test.ocpc_qtt_light_control"
-
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -88,13 +88,13 @@ object OcpcLightBulb{
          |    cast(ocpc_log_dict['cpagiven'] as double) * 1.0 / 100 as cpa_given,
          |    row_number() over(partition by unitid order by timestamp desc) as seq
          |FROM
-         |    dl_cpc.ocpc_union_log_hourly
+         |    dl_cpc.ocpc_filter_unionlog
          |WHERE
          |    $selectCondition
          |AND
          |    media_appsid  in ("80000001", "80000002")
          |AND
-         |    ext_int['is_ocpc'] = 1
+         |    is_ocpc = 1
          |AND
          |    isclick = 1
        """.stripMargin
