@@ -71,6 +71,8 @@ object UnitAaReportDaily {
         |where
         |    `date` = '$date'
         |and
+        |    hour = 'all'
+        |and
         |    version = 'qtt_demo'
         |group by
         |    unitid,
