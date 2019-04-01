@@ -45,7 +45,12 @@ object OcpcSampleToPb {
       .withColumn("kvalue1", col("kvalue"))
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1")
 
+    println("result1")
+    result1.show(10)
+
     val result2 = getNewK(date, hour, version, spark)
+    println(result2)
+    result2.show(10)
     val result = result1
         .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")

@@ -55,7 +55,7 @@ object OcpcCPCbidV2 {
       .na.fill(0.5, Seq("factor2"))
 
     val cvrGoal = getConversionGoal(date, hour, spark)
-    val pcoc = getPCOC(cvrGoal, date, hour, spark)
+    val pcoc = getPCOC("qtt_hidden", date, hour, spark)
 
 
     val resultDF = data
@@ -72,7 +72,7 @@ object OcpcCPCbidV2 {
     savePbPack(data, fileName)
   }
 
-  def getPCOC(cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
