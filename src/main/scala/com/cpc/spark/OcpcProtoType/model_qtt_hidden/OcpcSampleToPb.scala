@@ -49,13 +49,15 @@ object OcpcSampleToPb {
     result1.show(10)
 
     val result2 = getNewK(date, hour, version, spark)
-    println(result2)
+    println("result2")
     result2.show(10)
     val result = result1
         .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
         .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
 
+    println(result)
+    result.show(10)
     val smoothData = result
         .filter(s"flag = 1 and kvalue2 is not null")
         .select("identifier", "conversion_goal", "pcoc", "jfb")
