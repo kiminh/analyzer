@@ -163,9 +163,9 @@ object UnitAaReportDaily {
                       .withColumn("date", lit(date))
                       .withColumn("version", lit("qtt_demo"))
     // 首先将aa报表写入hive表
-    dataDF
-      .repartition(50)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
+//    dataDF
+//      .repartition(50)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_aa_report_daily")
 
 //    val data = dataDF.rdd.map(x => Seq(x.getAs[Int]("unitid").toString,
 //      x.getAs[Int]("userid").toString, x.getAs[String]("industry").toString,
@@ -203,9 +203,10 @@ object UnitAaReportDaily {
       x.getAs[BigDecimal]("ocpc_cpc_bid_of_every_click") + "", x.getAs[BigDecimal]("ocpc_cpc_cpa_real") + "",
       x.getAs[BigDecimal]("suggest_cpa") + "", x.getAs[BigDecimal]("auc") + "",
       x.getAs[BigDecimal]("cv_ring_ratio") + "", x.getAs[BigDecimal]("cost_ring_ratio") + "",
-      x.getAs[BigDecimal]("post_cvr_ring_ratio") + "", x.getAs[BigDecimal]("cpm_ring_ratio") + "").mkString(","))
+      x.getAs[BigDecimal]("post_cvr_ring_ratio") + "", x.getAs[BigDecimal]("cpm_ring_ratio") + "",
+      x.getAs[String]("date")).mkString(","))
 
-    //data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
+    data.repartition(1).saveAsTextFile(s"/user/cpc/wentao/unit_aa_report/aa_report_$date")
 
     /**
       * /www/part-0000
