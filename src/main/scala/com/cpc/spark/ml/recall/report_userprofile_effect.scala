@@ -74,16 +74,14 @@ val sqlRequest1 =
      |  a.interests
      | from
      |      (
-     |        select userid,adslot_type,ideaid,unitid, isshow, isclick, searchid, uid, interests, case when isclick=1 or ext['charge_type'].int_value=2 then price else 0 end as price, ext['charge_type'].int_value as charge_type, ext['adclass'].int_value as adclass
-     |        from dl_cpc.cpc_union_log
-     |        where date='$date'
+     |        select userid,adslot_type,ideaid,unitid, isshow, isclick, searchid, uid, interests, case when isclick=1 or charge_type=2 then price else 0 end as price, charge_type, adclass
+     |        from dl_cpc.cpc_basedata_union_events
+     |        where day='$date'
      |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
      |        and isshow = 1
-     |        and ext['antispam'].int_value = 0
      |        and ideaid > 0
      |        and adsrc = 1
      |        and userid is not null
-     |        and adslot_type in (1,2,3)
      |      ) a
       """.stripMargin
     //charge_type 1 cpc, 2 cpm, 3 cpa, 0 free
