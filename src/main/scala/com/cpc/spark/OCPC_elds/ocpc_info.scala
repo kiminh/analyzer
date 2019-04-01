@@ -215,7 +215,7 @@ object ocpc_info {
          |and adsrc=1
          |and antispam=0
          |and isshow=1
-         |group by unitid,userid,adclass,adslot_type,conversion_goal )c on a.unitid=c.unitid and a.userid=c.userid and a.adslot_type=c.adslot_type
+         |group by unitid,userid,adclass,adslot_type )c on a.unitid=c.unitid and a.userid=c.userid and a.adslot_type=c.adslot_type
          |left join
          |(select
          |userid,
