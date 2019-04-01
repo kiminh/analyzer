@@ -160,11 +160,22 @@ object UnitAaReportDaily {
     println("------get index value sql3-------")
     println(sql3)
     val dataDF = spark.sql(sql3)
+                      .withColumn("date", lit(date))
+                      .withColumn("version", lit("qtt_demo"))
+    // 首先将aa报表写入hive表
     dataDF
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
       .repartition(50)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_report_daily")
+
+    // 然后将aa报表写入csv
+    val filePath = s"/home/cpc/wt/aa_report_daily/aa_report_daily_$date"
+    val headName = List("unitid", "userid", "industry", "put_type", "adslot_type", "conversion_goal",
+      "cv", "click", "show", "bid", "cost", "cpm", "exp_cvr", "pre_cvr", "post_cvr", "cost_of_every_click",
+      "bid_of_every_click", "cpa_real", "cpa_given", "hidden_cost_ratio", "kvalue", "budget",
+      "cost_budget_ratio", "ocpc_cpc_cpm_ratio", "ocpc_cpc_pre_cvr_ratio", "ocpc_cpc_post_cvr_ratio",
+      "ocpc_cpc_cost_of_every_click", "ocpc_cpc_bid_of_every_click", "ocpc_cpc_cpa_real",
+      "suggest_cpa", "auc", "cv_ring_ratio", "cost_ring_ratio","post_cvr_ring_ratio", "cpm_ring_ratio")
+    WriteCsv.write(dataDF, headName, filePath)
   }
 
   // 获得suggest_cpa，只有天级别的
