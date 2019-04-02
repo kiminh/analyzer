@@ -139,7 +139,7 @@ object ocpc_all {
          |from
          |(select
          |type,
-         |count(distinct userid) as usreid_cnt,
+         |count(distinct userid) as userid_cnt,
          |count(distinct unitid) as unitid_cnt,
          |sum(ocpc_cost) as ocpc_cost,
          |sum(ocpc_show_cnt) as ocpc_show_cnt,
