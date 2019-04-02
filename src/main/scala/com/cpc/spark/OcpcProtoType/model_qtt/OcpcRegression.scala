@@ -8,12 +8,14 @@ import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable
 
 object OcpcRegression {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 72 1 qtt_demo qtt
@@ -37,7 +39,6 @@ object OcpcRegression {
 
     val result = calcualteKwithRegression(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
 
-//    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
     val resultDF = result
       .withColumn("kvalue", col("k_ratio"))
@@ -138,23 +139,25 @@ object OcpcRegression {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
+         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
+         |AND
+         |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -185,7 +188,8 @@ object OcpcRegression {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = s"`date` >= '$date1'"
+//    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     // 抽取数据
     val sqlRequest =
@@ -207,40 +211,40 @@ object OcpcRegression {
     resultDF
   }
 
-  def getCvr1Data(mediaSelection: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  searchid,
-         |  label2 as label
-         |FROM
-         |  dl_cpc.ml_cvr_feature_v1
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  label_type!=12
-         |AND
-         |  $mediaSelection
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
-
-    resultDF
-  }
+//  def getCvr1Data(mediaSelection: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+//    val newDate = date + " " + hour
+//    val today = dateConverter.parse(newDate)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.HOUR, -hourCnt)
+//    val yesterday = calendar.getTime
+//    val tmpDate = dateConverter.format(yesterday)
+//    val tmpDateValue = tmpDate.split(" ")
+//    val date1 = tmpDateValue(0)
+//    val hour1 = tmpDateValue(1)
+//    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  label2 as label
+//         |FROM
+//         |  dl_cpc.ml_cvr_feature_v1
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  label_type!=12
+//         |AND
+//         |  $mediaSelection
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+//
+//    resultDF
+//  }
 
 
 
@@ -263,7 +267,8 @@ object OcpcRegression {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      val targetK = 0.95
+      // todo
+      val targetK = 0.98
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)

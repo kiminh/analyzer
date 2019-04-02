@@ -94,6 +94,9 @@ message GroupItem {
 	int32 delivery_type = 37; //配送方式 0：无配送 1：趣头条配送外媒 2: 趣头条配送给小说
 	string adslot_weight = 38;
 	repeated string target_adslot_ids = 39; //定向广告位id
+	int32 is_scpc = 40; //是否为非标大客户广告:0：不是； 1：是
+	int32 is_api_callback = 41; //是否是api回传加金币 弃用
+	int32 not_delivery_pr = 42; //不可配送概率，100表示不可配送，30表示30%不可以配送，0表示100%可配送
 }
 
 message IdeaItem {
@@ -106,6 +109,7 @@ message IdeaItem {
 	MaterialLevel material_level= 7;//素材级别
 	int32 siteid = 8;//建站id，0：非建站
 	int32 white_user_ad_corner = 9;//白名单用户无广告角标，0：关闭，1：开启
+	int32 is_api_callback = 10; //是否是api回传加金币
 }
 
 message IdxItems {

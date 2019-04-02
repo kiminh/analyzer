@@ -58,11 +58,11 @@ object OcpcHourlyReport {
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
-    val reportTableIdea = "report2.report_ocpc_data_detail"
-    val delSQLidea = s"delete from $reportTableIdea where `date` = '$date' and hour = $hourInt"
+    val reportTableUnit = "report2.report_ocpc_data_detail_v2"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLidea) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableIdea) //插入数据
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -79,19 +79,19 @@ object OcpcHourlyReport {
 
   def saveDataToHDFS(dataUnit: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    存储ideaid级别和conversion_goal级别的报表到hdfs
+    存储unitid级别和conversion_goal级别的报表到hdfs
      */
     dataUnit
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v3")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v3")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
 
     dataConversion
       .withColumn("version", lit(version))
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v3")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -132,7 +132,7 @@ object OcpcHourlyReport {
       .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("click_cpa_given", col("cpa_given") * col("click"))
 
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
+//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -382,6 +382,7 @@ object OcpcHourlyReport {
          |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -397,7 +398,7 @@ object OcpcHourlyReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest).filter(s"is_hidden != 1")
 
 
     // 关联转化表

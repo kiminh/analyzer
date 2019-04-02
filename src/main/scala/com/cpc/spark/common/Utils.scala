@@ -12,6 +12,7 @@ import mlmodel.mlmodel.Pack
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.udf
 import spire.math.ULong
 
 import scala.reflect.ClassTag
@@ -151,6 +152,14 @@ object Utils {
     val shuffled = scala.util.Random.shuffle(data)
     return shuffled.toArray[U].slice(0, Math.min(size, data.size))
   }
+
+  def trimModelName = udf((exptags : String) => {
+    if (exptags.toString.indexOf("=") == -1) {
+      exptags.toString.trim
+    } else {
+      exptags.toString.substring(exptags.toString.indexOf("=") + 1).trim
+    }
+  })
 }
 
 

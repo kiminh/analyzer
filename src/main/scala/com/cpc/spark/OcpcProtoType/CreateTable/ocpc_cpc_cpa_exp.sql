@@ -7,3 +7,6 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_cpc_cpa_exp
 )
 PARTITIONED by (`date` string, version string)
 STORED as PARQUET;
+
+
+alter table dl_cpc.ocpc_filter_unionlog add columns (antispam int);

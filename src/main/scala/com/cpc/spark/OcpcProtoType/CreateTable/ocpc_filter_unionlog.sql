@@ -36,3 +36,12 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_filter_unionlog
 )
 PARTITIONED by (`date` STRING, `hour` STRING)
 STORED as PARQUET;
+
+--alter table dl_cpc.ocpc_filter_unionlog add columns (exp_ctr double);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (exp_cvr double);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (antispam int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (conversion_goal int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (charge_type int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (conversion_from int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (is_api_callback int);
+--alter table dl_cpc.ocpc_filter_unionlog add columns (siteid int);

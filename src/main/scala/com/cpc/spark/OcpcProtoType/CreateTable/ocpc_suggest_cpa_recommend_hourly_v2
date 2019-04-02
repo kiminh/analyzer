@@ -1,0 +1,71 @@
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+(
+    unitid                  int,
+    userid                  int,
+    adclass                 int,
+    original_conversion     int,
+    conversion_goal         int,
+    show                    bigint,
+    click                   bigint,
+    cvrcnt                  bigint,
+    cost                    bigint,
+    post_ctr                double,
+    acp                     double,
+    acb                     double,
+    jfb                     double,
+    cpa                     double,
+    pcvr                    double,
+    post_cvr                double,
+    pcoc                    double,
+    cal_bid                 double,
+    auc                     double,
+    kvalue                  double,
+    industry                string,
+    is_recommend            int,
+    ocpc_flag               int,
+    usertype                bigint,
+    pcoc1                   double,
+    pcoc2                   double,
+    zerobid_percent         double,
+    bottom_halfbid_percent  double,
+    top_halfbid_percent     double,
+    largebid_percent        double
+)
+PARTITIONED by (cv_goal int, `date` string, `hour` string, version string)
+STORED as PARQUET;
+
+
+--
+--unitid                  int
+--userid                  int
+--adclass                 int
+--original_conversion     int
+--conversion_goal         int
+--show                    bigint
+--click                   bigint
+--cvrcnt                  bigint
+--cost                    bigint
+--post_ctr                double
+--acp                     double
+--acb                     double
+--jfb                     double
+--cpa                     double
+--pcvr                    double
+--post_cvr                double
+--pcoc                    double
+--cal_bid                 double
+--auc                     double
+--kvalue                  double
+--industry                string
+--is_recommend            int
+--ocpc_flag               int
+--usertype                bigint
+--pcoc1                   double
+--pcoc2                   double
+--zerobid_percent         double
+--bottom_halfbid_percent  double
+--top_halfbid_percent     double
+--largebid_percent        double
+--date                    string
+--hour                    string
+--version                 string
