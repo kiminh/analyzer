@@ -24,7 +24,7 @@ object OcpcProcessUnionlog {
   }
 
   def preprocessUnionlog(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"`date`='$date' and hour = '$hour'"
+    var selectWhere = s"day='$date' and hour = '$hour'"
 
     var sqlRequest =
       s"""
