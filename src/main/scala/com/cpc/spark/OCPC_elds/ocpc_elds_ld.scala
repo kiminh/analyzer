@@ -38,53 +38,26 @@ object ocpc_elds_ld {
          |price,
          |is_ocpc,
          |ocpc_log,
-         |siteid
+         |siteid,
+         |conversion_goal
          |from dl_cpc.cpc_basedata_union_events
          |where day ='$date'
          |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
          |and media_appsid  in ("80000001", "80000002")
          |and isshow=1
          |and adsrc = 1 )a
-         |left join
-         |    (
-         |        select tmp.searchid
-         |        from
-         |        (
-         |            select
-         |                final.searchid as searchid,
-         |                 case
-         |                    when final.src="elds" and final.label_type=6 then 1
-         |                    when final.src="feedapp" and final.label_type in (4, 5) then 1
-         |                    when final.src="yysc" and final.label_type=12 then 1
-         |                    when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-         |                    when final.src="others" and final.label_type=6 then 1
-         |                    else 0
-         |                end as isreport
-         |            from
-         |            (
-         |                select
-         |                    searchid, media_appsid, uid,
-         |                    planid, unitid, ideaid, adclass,
-         |                    case
-         |                        when (adclass like '134%' or adclass like '107%') then "elds" --二类电商
-         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp" --feedapp
-         |                        when (adslot_type=7 and adclass like '100%') then "yysc"  --应用商城
-         |                        when adclass in (110110100, 125100100) then "wzcp" --网赚
-         |                        else "others"
-         |                    end as src,
-         |                    label_type
-         |                from
-         |                    dl_cpc.ml_cvr_feature_v1
-         |                where
-         |                    `date`='$date'
-         |                    and label2=1
-         |                    and media_appsid in ("80000001", "80000002")
-         |                ) final
-         |            ) tmp
-         |        where tmp.isreport=1 --真正的转化
-         |        group by tmp.searchid
-         |    ) b
-         |    on a.searchid = b.searchid
+         |left join (
+         |    select
+         |    searchid,
+         |    case when cvr_goal='cvr1' then 1
+         |    when cvr_goal = 'cvr2' then  2
+         |    when cvr_goal = 'cvr3' then 3 end as conversion_goal
+         |     from dl_cpc.ocpc_label_cvr_hourly
+         |     where `date`='$date'
+         |     group by searchid,case when cvr_goal='cvr1' then 1
+         |    when cvr_goal = 'cvr2' then  2
+         |    when cvr_goal = 'cvr3' then 3 end
+         |  ) b on a.searchid = b.searchid and a.conversion_goal = b.conversion_goal
              """.stripMargin
     println(Sql1)
     val union = spark.sql(Sql1)
@@ -114,6 +87,30 @@ object ocpc_elds_ld {
     val result1 = spark.sql(Sql2)
     result1.createOrReplaceTempView("result1")
     println ("result1 is successful! ")
+
+    val Sql22 =
+      s"""
+         |select
+         |'可获取转化单元-赤兔' as type,
+         |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/100 as ocpc_cost,
+         |sum(case when isclick=1 then price else null end)/100 as cost,
+         |sum(case when is_ocpc=1 and length(ocpc_log)>0 and isclick=1 then price else null end)/sum(case when isclick=1 then price else null end) as cost_ratio,
+         |sum(isshow) as show_cnt,
+         |sum(isclick) as click_cnt,
+         |sum(iscvr) as cvr_cnt,
+         |count(distinct case when price>0 then userid else null end) as userid_cnt,
+         |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
+         |day
+         |from union
+         |where siteid>5000000
+         |group by day,'可获取转化单元-赤兔'
+             """.stripMargin
+
+    println(Sql22)
+    val result11 = spark.sql(Sql22)
+    result1.createOrReplaceTempView("result11")
+    println ("result11 is successful! ")
+
 
     val Sql3 =
       s"""
@@ -158,6 +155,57 @@ object ocpc_elds_ld {
     result2.createOrReplaceTempView("result2")
     println ("result2 is successful! ")
 
+    val Sql33 =
+      s"""
+         |select
+         |"满足准入单元-赤兔" as type,
+         |sum(case when q.is_ocpc=1 and length(q.ocpc_log)>0 and q.isclick=1 then q.price else null end)/100 as ocpc_cost,
+         |sum(case when q.isclick=1 then q.price else null end)/100 as cost,
+         |sum(case when q.is_ocpc=1 and length(q.ocpc_log)>0 and q.isclick=1 then q.price else null end)/sum(case when q.isclick=1 then q.price else null end) as cost_ratio,
+         |sum(q.isshow) as show_cnt,
+         |sum(q.isclick) as click_cnt,
+         |sum(q.iscvr) as cvr_cnt,
+         |count(distinct case when q.price>0 then q.userid else null end) as userid_cnt,
+         |count(distinct case when q.price>0 then q.unitid else null end) as unitid_cnt,
+         |q.day
+         |from
+         |(select
+         |m.unitid
+         |from
+         |(select
+         |unitid
+         |from dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |where `date`='$date'
+         |and hour = '06'
+         |and version = 'qtt_demo'
+         |and is_recommend=1
+         |group by unitid )a
+         |join
+         |(select
+         |unitid
+         |from union
+         |where siteid>5000000
+         |group by unitid) b on a.unitid=b.unitid )
+         |UNION
+         |select unitid
+         |from union
+         |where is_ocpc=1 and length(ocpc_log)>0
+         |and siteid>5000000
+         |group by unitid )m
+         |group by m.unitid)p
+         |join
+         |(select *
+         |from union )q on p.unitid=q.unitid
+         |group by q.day,"满足准入单元-赤兔"
+             """.stripMargin
+
+    println(Sql33)
+
+    val result22 = spark.sql(Sql33)
+    result22.createOrReplaceTempView("result22")
+    println ("result22 is successful! ")
+
+
 
     val Sql4 =
       s"""
@@ -183,6 +231,30 @@ object ocpc_elds_ld {
     result3.createOrReplaceTempView("result3")
     println ("result3 is successful! ")
 
+    val Sql44 =
+      s"""
+         |select
+         |"ocpc单元-赤兔" as type,
+         |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
+         |sum(case when isclick=1 then price else null end)/100 as cost,
+         |sum(case when isclick=1 then price else null end)/100/sum(case when isclick=1 then price else null end)/100 as cost_ratio,
+         |sum(isshow) as show_cnt,
+         |sum(isclick) as click_cnt,
+         |sum(iscvr) as cvr_cnt,
+         |count(distinct case when price>0 then userid else null end) as userid_cnt,
+         |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
+         |day
+         |from union
+         |where is_ocpc=1
+         |and length(ocpc_log)>0
+         |and siteid>5000000
+         |group by day,"ocpc单元-赤兔"
+             """.stripMargin
+
+    println(Sql44)
+    val result33 = spark.sql(Sql44)
+    result33.createOrReplaceTempView("result33")
+    println ("result33 is successful! ")
 
     val Sql5 =
       s"""
@@ -204,6 +276,30 @@ object ocpc_elds_ld {
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_elds_ld_data")
     println("result is successful! ")
+
+    val Sql55 =
+      s"""
+         |select *
+         |from result11
+         |UNION ALL
+         |select *
+         |from result22
+         |UNION ALL
+         |select *
+         |from result33
+             """.stripMargin
+
+    println(Sql55)
+    val result0 = spark.sql(Sql55)
+    result0.show(10)
+    result0.repartition(1)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_elds_ct_ld_data")
+    println("result0 is successful! ")
+
+
+
 
 //    val tableName1 = "report2.ocpc_elds_ld_data"
 //    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
