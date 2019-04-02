@@ -13,10 +13,9 @@ object OcpcUnionlogNovel {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result.show(20)
-    result.printSchema()
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
-//    println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
+    println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
   }
 
   def getOcpcUnionlog(date: String, hour: String, spark: SparkSession) = {
