@@ -33,20 +33,19 @@ object OcpcUnionlogNovel {
          |    bid,
          |    userid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |    adclass,
+         |    exp_cvr* 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow,
          |    exptags,
-         |    ext_int['is_api_callback'] as is_api_callback,
-         |    ext_int['bid_ocpc'] as cpa_given,
-         |    ext_string['ocpc_log'] as ocpc_log
-         |from dl_cpc.cpc_union_log
+         |    is_api_callback,
+         |    bid_ocpc as cpa_given,
+         |    ocpc_log
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and isclick is not null
          |and media_appsid in ("80001098","80001292")
          |and isshow = 1
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
