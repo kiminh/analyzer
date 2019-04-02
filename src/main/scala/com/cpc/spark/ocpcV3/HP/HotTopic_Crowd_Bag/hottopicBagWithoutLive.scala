@@ -33,7 +33,7 @@ object hottopicBagWithoutLive {
 //    uidWithoutLive.write.mode("overwrite").saveAsTable("test.uidWithLive_sjq")
     uidWithoutLive.repartition(10).write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
 
-//    update(spark, date)
+    update(spark, date)
 
   }
 
