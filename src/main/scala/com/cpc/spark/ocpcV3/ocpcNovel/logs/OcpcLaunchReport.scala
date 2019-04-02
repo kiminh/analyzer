@@ -244,8 +244,8 @@ object OcpcLaunchReport {
          |group by
          |  a.day,
          |  choose,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'other' end
          |order by
          |  choose
@@ -314,8 +314,8 @@ object OcpcLaunchReport {
       s"""
          |select
          |  `date`,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'notag' end as adclass,
          |  sum(qtt_money_1) sum_qtt_money_1,
          |  sum(qtt_money_2) sum_qtt_money_2,
@@ -344,8 +344,8 @@ object OcpcLaunchReport {
          |) a
          |group by
          |  `date`,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'notag' end
          """.stripMargin
     println(sql8)
