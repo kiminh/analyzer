@@ -67,7 +67,7 @@ object IndustryAaReportHourly {
         |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as cpa_given,
         |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as cpa_real,
         |        sum(case when isclick = 1 and is_hidden = 1 then cpa_given else 0 end) * 0.01
-        |        / sum(case when isclick = 1 and is_hidden = 1 then 1 else 0 end) as hidden_cpag_iven,
+        |        / sum(case when isclick = 1 and is_hidden = 1 then 1 else 0 end) as hidden_cpa_given,
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01
         |        / sum(case when isclick = 1 and is_hidden = 1 then iscvr else 0 end) as hidden_cpa_real,
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as hidden_cost,
