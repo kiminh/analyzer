@@ -9,6 +9,7 @@ import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import scala.collection.mutable
 
 
 object OcpcLightBulb{
@@ -31,7 +32,7 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-//    val tableName = "test.ocpc_qtt_light_control"
+//    val tableName = "test.ocpc_qtt_light_control20190401"
     val tableName = "test.ocpc_qtt_light_control"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
@@ -295,6 +296,7 @@ object OcpcLightBulb{
   }
 
   def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
     val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
@@ -330,7 +332,17 @@ object OcpcLightBulb{
 
     println(sqlRequest)
 
-    val resultDF = spark.sql(sqlRequest).select("unitid").distinct()
+    val result = spark.sql(sqlRequest).select("unitid").distinct()
+    result.printSchema()
+
+    var resList = new mutable.ListBuffer[Int]()
+    for (row <- result.collect()) {
+      val unitid = row.getAs[Long]("unitid").toInt
+      resList.append(unitid)
+    }
+//    resList.append(1997722)
+
+    val resultDF = resList.toDF("unitid").distinct()
 
     resultDF.show(10)
     resultDF
