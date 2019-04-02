@@ -7,6 +7,7 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 
 
 object OcpcUnionSuggestCPA {
@@ -23,6 +24,23 @@ object OcpcUnionSuggestCPA {
       .appName(s"ocpc suggest cpa v2: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    val baseResult = getSuggestData(version, date, hour, spark)
+    val cvr2Cali = getNewCali(version, date, hour, spark)
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+
+  }
+
+  def getNewCali(version: String, date: String, hour: String, spark: SparkSession) = {
+    val baseData = OcpcSmoothFactor.getBaseData("qtt", "cvr2", 24, date, hour, spark)
+    val data = OcpcSmoothFactor.calculateSmooth(baseData, spark)
+
+
+  }
+
+  def getSuggestData(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -38,7 +56,7 @@ object OcpcUnionSuggestCPA {
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-//    data.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_data20190327")
+    //    data.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_data20190327")
 
     val resultDF = data
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
@@ -47,8 +65,6 @@ object OcpcUnionSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
 }

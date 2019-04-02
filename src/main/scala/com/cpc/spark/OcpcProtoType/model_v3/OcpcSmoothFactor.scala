@@ -144,6 +144,8 @@ object OcpcSmoothFactor{
          |  $selectCondition
          |AND
          |  $mediaSelection
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val base = spark
