@@ -66,7 +66,7 @@ object hottopicBagWithoutLive {
     result
   }
 
-  def getUidWithoutLive(spark: SparkSession, date: String, days: Int, LiveComb: DataFrame) = {
+  def getUidWithoutLive(spark: SparkSession, date: String, days: Int, LiveComb: DataFrame) ={
     import spark.implicits._
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val calendar = Calendar.getInstance()
@@ -97,10 +97,10 @@ object hottopicBagWithoutLive {
          |       select
          |        load_date,
          |        uid,
-         |        concat_ws(',', used_pkgs) as pkgs1
+         |        concat_ws( ',', app_name ) as pkgs1
          |       from dl_cpc.cpc_user_installed_apps
          |      where load_date between '$date0' and '$date'
-         |      group by load_date, uid, used_pkgs
+         |      group by load_date, uid, app_name
          |     ) t2
          | on t1.dt = t2.load_date and t1.uid = t2.uid
          | group by t1.uid, t2.pkgs1
@@ -119,13 +119,10 @@ object hottopicBagWithoutLive {
         }
         lb.distinct
       }).toDF()
-
+      .join(LiveComb, Seq("comb"), "left").distinct()
+      .select("uid", "comb", "appName")
     result.write.mode("overwrite").saveAsTable("test.result_sjq")
-
-//      .join(LiveComb, Seq("comb"), "left").distinct()
-//      .select("uid", "comb", "appName")
-    val result1 = result.join(LiveComb, Seq("comb")).filter("appName is NULL").toDF()
-    result1
+    result
 
   }
 
