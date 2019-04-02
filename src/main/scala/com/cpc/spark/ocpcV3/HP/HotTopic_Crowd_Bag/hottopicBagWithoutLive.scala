@@ -31,9 +31,9 @@ object hottopicBagWithoutLive {
 //    partitioned by (tag Int, `date` string);
 
 //    uidWithoutLive.write.mode("overwrite").saveAsTable("test.uidWithLive_sjq")
-    uidWithoutLive.write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
+    uidWithoutLive.repartition(10).write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
 
-    update(spark, date)
+//    update(spark, date)
 
   }
 
@@ -130,16 +130,16 @@ object hottopicBagWithoutLive {
         lb.distinct
       }).toDF()
       .join(LiveComb, Seq("comb"), "left")
-      .withColumn("tag", when(col("appName").isNotNull, lit(1) ).otherwise(lit(0)))
+      .withColumn("flag", when(col("appName").isNotNull, lit(1) ).otherwise(lit(0)))
       .groupBy("uid")
       .agg(
-        sum("tag").alias("sum_tag")
+        sum("flag").alias("sum_flag")
       )
-      .select("uid", "sum_tag")
+      .select("uid", "sum_flag")
       .withColumn("date", lit(date))
       .withColumn("tag", lit(324))
 //    result.write.mode("overwrite").saveAsTable("test.result_sjq")
-    val result1 = result.filter("sum_tag = 0").select("uid", "tag", "date")
+    val result1 = result.filter("sum_flag = 0").select("uid", "tag", "date")
 
     result1
   }
