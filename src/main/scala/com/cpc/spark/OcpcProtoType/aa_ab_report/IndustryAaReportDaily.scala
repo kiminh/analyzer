@@ -513,7 +513,7 @@ object IndustryAaReportDaily {
       """.stripMargin
     println("------get kt ocpc all cost sql2-----")
     println(sql2)
-    spark.sql(sql1).createOrReplaceTempView("unit_cost_table")
+    spark.sql(sql2).createOrReplaceTempView("unit_cost_table")
 
     // 分行业统计所有可投ocpc的总消费
     val sql3 =
