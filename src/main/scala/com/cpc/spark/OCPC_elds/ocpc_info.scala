@@ -195,7 +195,7 @@ object ocpc_info {
               |select
               |`date` as day,
               |industy as type,
-              |sum(case when isclick=1 then price else null end) as total_cost
+              |sum(case when isclick=1 then price else null end)/100 as total_cost
               |from dl_cpc.ocpc_basedata_union_events
               |where `date`='$date'
               |and media_appsid in ("80000001", "80000002")
