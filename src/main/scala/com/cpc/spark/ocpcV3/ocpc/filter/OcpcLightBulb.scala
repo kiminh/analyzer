@@ -340,7 +340,7 @@ object OcpcLightBulb{
       val unitid = row.getAs[Long]("unitid").toInt
       resList.append(unitid)
     }
-    resList.append(1997722)
+//    resList.append(1997722)
 
     val resultDF = resList.toDF("unitid").distinct()
 
