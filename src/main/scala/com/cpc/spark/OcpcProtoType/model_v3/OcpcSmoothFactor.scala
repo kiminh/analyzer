@@ -26,6 +26,7 @@ object OcpcSmoothFactor{
     val media = args(2).toString
     val hourInt = args(3).toInt
     val cvrType = args(4).toString
+    val version = args(5).toString
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType")
 
@@ -47,7 +48,7 @@ object OcpcSmoothFactor{
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-        .withColumn("version", lit("qtt_hidden"))
+        .withColumn("version", lit(version))
 
     resultDF.show()
 

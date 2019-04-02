@@ -56,7 +56,7 @@ object OcpcCPCbidV2 {
       .na.fill(0.5, Seq("factor2"))
 
     val cvrGoal = getConversionGoal(date, hour, spark)
-    val pcoc = getPCOC("qtt_hidden", date, hour, spark)
+    val pcoc = getPCOC(date, hour, spark)
 
 
     val resultDF = data
@@ -74,7 +74,7 @@ object OcpcCPCbidV2 {
     savePbPack(resultDF, fileName)
   }
 
-  def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -82,7 +82,8 @@ object OcpcCPCbidV2 {
          |  1.0 / pcoc as cali_value,
          |  jfb,
          |  kvalue,
-         |  conversion_goal
+         |  conversion_goal,
+         |  version
          |FROM
          |  dl_cpc.ocpc_kvalue_smooth_strat
          |WHERE
@@ -90,14 +91,14 @@ object OcpcCPCbidV2 {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version = '$version'
+         |  version in ('qtt_hidden', 'qtt_demo')
        """.stripMargin
     println(sqlRequest)
-    val result = spark.sql(sqlRequest)
-        .select("identifier", "cali_value")
-        .groupBy("identifier")
+    val rawData = spark.sql(sqlRequest)
+    val result = rawData
+        .select("identifier", "conversion_goal", "cali_value")
+        .groupBy("identifier", "conversion_goal")
         .agg(avg(col("cali_value")).alias("cali_value"))
-        .select("identifier", "cali_value")
         .select("identifier", "cali_value")
 
 
