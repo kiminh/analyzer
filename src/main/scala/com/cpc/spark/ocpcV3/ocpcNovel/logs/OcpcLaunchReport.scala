@@ -136,7 +136,7 @@ object OcpcLaunchReport {
          |select
          |  a.`date` as `date`,
          |  choose,
-         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  case when length(ocpc_log) > 0 then 'ocpc'
          |  else 'cpc' end as mode,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
@@ -156,9 +156,9 @@ object OcpcLaunchReport {
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose,
-         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  case when length(ocpc_log) > 0 then 'ocpc'
          |  else 'cpc' end
          |order by
          |  choose
@@ -177,16 +177,16 @@ object OcpcLaunchReport {
   val sql5=
     s"""
        |select
-       |  a.`date` as `date`,
+       |  a.day as `date`,
        |  choose,
-       |  ext['usertype'].int_value as usertype,
+       |  usertype,
        |  sum(case WHEN isclick == 1 then price else 0 end) as money,
        |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
        |  if(sum(isclick)>0,round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3),0) as acp,
        |  round(sum(isclick)*100 / sum(isshow),3) as ctr
        |from
        |(
-       |   select *
+       |  select *
        |  from dl_cpc.cpc_novel_union_events
        |  where day = '$date'
        |  and isshow = 1
@@ -198,12 +198,12 @@ object OcpcLaunchReport {
        |left join dl_cpc.OcpcLaunchdata2 b
        |on a.unitid=b.unitid and b.`date` = '$date'
        |group by
-       |  a.`date`,
+       |  a.day,
        |  choose,
-       |  ext['usertype'].int_value
+       |  usertype
        |order by
        |  choose,
-       |  ext['usertype'].int_value
+       |  usertype
          """.stripMargin
     println(sql5)
 
@@ -219,10 +219,10 @@ object OcpcLaunchReport {
     val sql6=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
-         |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
-         |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
+         |  case when round(adclass/1000000) == 100 then 'app'
+         |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'other' end as adclass,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
@@ -242,10 +242,10 @@ object OcpcLaunchReport {
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose,
-         |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
-         |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
+         |  case when round(adclass/1000000) == 100 then 'app'
+         |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'other' end
          |order by
          |  choose
