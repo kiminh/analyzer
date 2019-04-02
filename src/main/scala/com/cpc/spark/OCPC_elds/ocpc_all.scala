@@ -32,7 +32,7 @@ object ocpc_all {
          |`date` as day,
          |case when industy='feedapp' and is_api_callback = 1 then 'app_call_back'
          |when industy='feedapp' and is_api_callback = 0 then 'not_app_call_back'
-         |else industy as type,
+         |else industy end as type,
          |unitid,
          |userid,
          |searchid,
