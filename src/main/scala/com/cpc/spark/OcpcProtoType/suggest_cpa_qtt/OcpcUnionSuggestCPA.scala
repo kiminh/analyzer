@@ -73,7 +73,7 @@ object OcpcUnionSuggestCPA {
     val resultDF = suggestData
       .join(result, Seq("unitid", "conversion_goal"), "inner")
       .select("unitid", "conversion_goal", "cpa", "pre_cvr", "kvalue")
-      .withColumn("cal_bid_new", col("cpal") * col("pre_cvr") * col("kvalue"))
+      .withColumn("cal_bid_new", col("cpa") * col("pre_cvr") * col("kvalue"))
       .withColumn("kvalue_new", col("kvalue"))
       .select("unitid", "conversion_goal", "cal_bid_new", "kvalue_new")
 
