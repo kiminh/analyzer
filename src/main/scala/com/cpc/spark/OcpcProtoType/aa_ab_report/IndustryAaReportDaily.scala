@@ -84,7 +84,7 @@ object IndustryAaReportDaily {
         |on
         |    a.industry = b.industry
         |left join
-        |    control_table c
+        |    control_num_table c
         |on
         |    a.industry = c.industry
         |left join
