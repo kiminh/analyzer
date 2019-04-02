@@ -409,7 +409,7 @@ object IndustryAaReportDaily {
          |        sum(isshow) as show,
          |        round(sum(iscvr) * 1.0 / sum(isclick), 4) as post_cvr,
          |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm,
-         |        sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01 as ocpc_cost,
+         |        sum(case when isclick = 1 then price else 0 end) * 0.01 as ocpc_cost,
          |        round(sum(case when isclick = 1 then price else 0 end)
          |            / sum(case when isclick = 1 then price else 0 end), 4) as ocpc_cost_ratio,
          |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as ocpc_hidden_cost,
