@@ -108,7 +108,7 @@ object ocpc_elds_ld {
 
     println(Sql22)
     val result11 = spark.sql(Sql22)
-    result1.createOrReplaceTempView("result11")
+    result11.createOrReplaceTempView("result11")
     println ("result11 is successful! ")
 
 
@@ -171,7 +171,7 @@ object ocpc_elds_ld {
          |from
          |(select
          |m.unitid
-         |from 
+         |from
          |((select
          |a.unitid
          |from
