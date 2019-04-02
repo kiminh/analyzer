@@ -96,7 +96,7 @@ object IndustryAaReportHourly {
       s"""
         |select
         |    industry,
-        |    sum(iscvr) as cv
+        |    sum(iscvr) as cv,
         |    sum(isclick) as click,
         |    sum(isshow) as show,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as cost,
