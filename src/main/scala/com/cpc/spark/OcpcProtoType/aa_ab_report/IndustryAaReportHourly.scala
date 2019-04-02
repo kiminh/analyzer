@@ -138,7 +138,7 @@ object IndustryAaReportHourly {
       s"""
         |select
         |    industry,
-        |    count(userid) as all_user_num
+        |    count(userid) as ocpc_user_num
         |from
         |    (select
         |        industry,
@@ -167,7 +167,7 @@ object IndustryAaReportHourly {
       s"""
         |select
         |    industry,
-        |    count(unitid) as all_unit_num
+        |    count(unitid) as ocpc_unit_num
         |from
         |    (select
         |        industry,
