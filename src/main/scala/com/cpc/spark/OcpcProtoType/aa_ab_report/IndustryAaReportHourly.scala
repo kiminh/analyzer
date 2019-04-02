@@ -8,7 +8,10 @@ object IndustryAaReportHourly {
     val date = args(0).toString
     val hour = args(0).toString
     val spark = SparkSession.builder().appName("IndustryAaReportHourly").enableHiveSupport().getOrCreate()
+    GetBaseData.getBaseData(date, hour, spark)
+    println("------has got base data-------")
     getIndexValue(date, hour, spark)
+    println("------has got index value-------")
   }
 
   def getIndexValue(date: String, hour: String, spark: SparkSession): Unit ={
@@ -20,7 +23,8 @@ object IndustryAaReportHourly {
         |    count(userid) as ocpc_user_num,
         |    count(unitid) as ocpc_unit_num,
         |    count(case when is_hidden = 1 then 1 else 0 end) as ocpc_hidden_num
-        |from(select
+        |from
+        |    (select
         |        industry,
         |        userid,
         |        unitid,
@@ -28,9 +32,9 @@ object IndustryAaReportHourly {
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
-        |        `date` = '$date'
+        |        `date` = '2019-03-30'
         |    and
-        |        hour = '$hour'
+        |        hour = '10'
         |    and
         |        version = 'qtt_demo'
         |    group by
@@ -38,6 +42,8 @@ object IndustryAaReportHourly {
         |        userid,
         |        unitid,
         |        is_hidden) temp
+        |group by
+        |    industry
       """.stripMargin
 
     // 获取明投暗投控制数
