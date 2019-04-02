@@ -94,7 +94,7 @@ object OcpcLaunchReport {
     val sql3=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
@@ -103,20 +103,18 @@ object OcpcLaunchReport {
          |from
          |(
          |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose
          |order by
          |  choose
@@ -146,16 +144,14 @@ object OcpcLaunchReport {
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp
          |from
          |(
-         |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |   select *
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
@@ -190,16 +186,14 @@ object OcpcLaunchReport {
        |  round(sum(isclick)*100 / sum(isshow),3) as ctr
        |from
        |(
-       |  select *
-       |  from dl_cpc.cpc_novel_union_log
-       |  WHERE `date` = '$date'
+       |   select *
+       |  from dl_cpc.cpc_novel_union_events
+       |  where day = '$date'
        |  and isshow = 1
-       |  and ext['antispam'].int_value = 0
        |  and adsrc = 1
        |  and media_appsid in ("80001098","80001292")
        |  AND userid > 0
-       |  AND (ext["charge_type"] IS NULL
-       |       OR ext["charge_type"].int_value = 1)
+       |  AND (charge_type IS NULL OR charge_type = 1)
        |) a
        |left join dl_cpc.OcpcLaunchdata2 b
        |on a.unitid=b.unitid and b.`date` = '$date'
@@ -236,16 +230,14 @@ object OcpcLaunchReport {
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr
          |from
          |(
-         |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |   select *
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
