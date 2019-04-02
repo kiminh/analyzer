@@ -6,7 +6,7 @@ import org.apache.spark.sql.functions._
 object IndustryAaReportHourly {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
-    val hour = args(0).toString
+    val hour = args(1).toString
     val spark = SparkSession.builder().appName("IndustryAaReportHourly").enableHiveSupport().getOrCreate()
     GetBaseData.getBaseData(date, hour, spark)
     println("------has got base data-------")
@@ -32,9 +32,9 @@ object IndustryAaReportHourly {
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
-        |        `date` = '2019-03-30'
+        |        `date` = '$date'
         |    and
-        |        hour = '10'
+        |        hour = '$hour'
         |    and
         |        version = 'qtt_demo'
         |    group by
@@ -45,35 +45,39 @@ object IndustryAaReportHourly {
         |group by
         |    industry
       """.stripMargin
+    println("--------get index sql1--------")
+    println(sql1)
+    spark.sql(sql1).createOrReplaceTempView("unit_user_num_table")
 
     // 获取明投暗投控制数
     val sql2 =
       s"""
         |select
         |    industry,
-        |    count(case when cpareal < cpagiven * 1.2 then 1 else 0 end) as cpa_control_num,
-        |    count(case when hidden_cpareal < hidden_cpagiven * 1.2 then 1 else 0 end) as hidden_control_num,
+        |    count(case when cpa_real < cpa_given * 1.2 then 1 else 0 end) as cpa_control_num,
+        |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
         |    count(case when hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
         |    avg(hidden_cost) as avg_hidden_cost,
         |    avg(hidden_budget) as avg_hidden_budget
-        |from(select
+        |from
+        |    (select
         |        industry,
         |        unitid,
         |        userid,
-        |        sum(case when isclick = 1 then cpagiven else 0 end) * 0.01 / sum(isclick) as cpagiven,
-        |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as cpareal,
-        |        sum(case when isclick = 1 and is_hidden = 1 then cpagiven else 0 end) * 0.01
-        |        / sum(case when isclick = 1 and is_hidden = 1 then 1 else 0 end) as hidden_cpagiven,
+        |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as cpa_given,
+        |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as cpa_real,
+        |        sum(case when isclick = 1 and is_hidden = 1 then cpa_given else 0 end) * 0.01
+        |        / sum(case when isclick = 1 and is_hidden = 1 then 1 else 0 end) as hidden_cpag_iven,
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01
-        |        / sum(case when isclick = 1 and is_hidden = 1 then iscvr else 0 end) as hidden_cpareal,
+        |        / sum(case when isclick = 1 and is_hidden = 1 then iscvr else 0 end) as hidden_cpa_real,
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as hidden_cost,
         |        max(case when isclick = 1 then budget * 0.01 else 0 end) as hidden_budget
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
-        |        `date` = '$date'
+        |        `date` = '2019-03-20'
         |    and
-        |        hour = '$hour'
+        |        hour = '10'
         |    and
         |        version = 'qtt_demo'
         |    group by
@@ -83,6 +87,9 @@ object IndustryAaReportHourly {
         |group by
         |    industry
       """.stripMargin
+    println("--------get index sql2--------")
+    println(sql2)
+    spark.sql(sql2).createOrReplaceTempView("control_table")
 
     // 从行业整体统计字段
     val sql3 =
@@ -112,15 +119,6 @@ object IndustryAaReportHourly {
         |group by
         |    industry
       """.stripMargin
-
-    println("--------get index sql1--------")
-    println(sql1)
-    spark.sql(sql1).createOrReplaceTempView("unit_user_num_table")
-
-    println("--------get index sql2--------")
-    println(sql2)
-    spark.sql(sql2).createOrReplaceTempView("control_table")
-
     println("--------get index sql3--------")
     println(sql3)
     spark.sql(sql3).createOrReplaceTempView("other_index_table")
@@ -140,7 +138,7 @@ object IndustryAaReportHourly {
         |    a.ocpc_cost,
         |    a.ocpc_cost_ratio,
         |    c.cpa_control_num,
-        |    round(c.cpa_control_num * 1.0/ b.ocpc_unit_num, 4) as cpa_control_ratio,
+        |    round(c.cpa_control_num * 1.0 / b.ocpc_unit_num, 4) as cpa_control_ratio,
         |    b.ocpc_hidden_num,
         |    a.ocpc_hidden_cost,
         |    a.ocpc_hidden_cost_ratio,
