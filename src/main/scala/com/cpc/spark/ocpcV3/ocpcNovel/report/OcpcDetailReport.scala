@@ -75,28 +75,26 @@ object OcpcDetailReport {
          |        searchid,
          |        userid,
          |        unitid,
-         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        exp_ctr * 1.0 / 1000000 as exp_ctr,
+         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
          |        isclick,
          |        isshow,
          |        ideaid,
          |        exptags,
          |        price,
-         |        ext_int['bid_ocpc'] as bid_ocpc,
-         |        ext_int['is_ocpc'] as is_ocpc,
-         |        ext_string['ocpc_log'] as ocpc_log,
+         |        bid_ocpc,
+         |        is_ocpc,
+         |        ocpc_log,
          |        hour
          |    from
-         |        dl_cpc.cpc_novel_union_log
+         |        dl_cpc.cpc_novel_union_events
          |    WHERE
-         |        $selectCondition
-         |    and
-         |        ext['antispam'].int_value = 0
+         |        day='$date' and `hour` <= '$hour'
          |    and adsrc = 1
          |    and adslot_type in (1,2,3)
-         |    and round(ext["adclass"].int_value/1000) != 132101
-         |    and ext_string['ocpc_log'] is not null
-         |    and ext_string['ocpc_log'] != '') a
+         |    and round(adclass/1000) != 132101
+         |    and ocpc_log is not null
+         |    and ocpc_log!= '') a
          |left outer join
          |    (
          |        select
@@ -156,27 +154,25 @@ object OcpcDetailReport {
          |        searchid,
          |        userid,
          |        unitid,
-         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        exp_ctr * 1.0 / 1000000 as exp_ctr,
+         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
          |        isclick,
          |        isshow,
          |        ideaid,
          |        exptags,
          |        price,
-         |        ext_int['bid_ocpc'] as bid_ocpc,
-         |        ext_int['is_ocpc'] as is_ocpc,
-         |        ext_string['ocpc_log'] as ocpc_log,
+         |        bid_ocpc,
+         |        is_ocpc,
+         |        ocpc_log,
          |        hour
          |    from
-         |        dl_cpc.cpc_novel_union_log
+         |        dl_cpc.cpc_novel_union_events
          |    WHERE
-         |        $selectCondition
-         |    and
-         |        ext['antispam'].int_value = 0
+         |        day='$date' and `hour` <= '$hour'
          |    and adsrc = 1
          |    and adslot_type in (1,2,3)
-         |    and round(ext["adclass"].int_value/1000) != 132101
-         |    and (ext_string['ocpc_log'] is null or ext_string['ocpc_log'] = '')) as b
+         |    and round(adclass/1000) != 132101
+         |    and (ocpc_log is null or ocpc_log = '')) as b
          |ON
          |    a.unitid=b.unitid
          |left outer join

@@ -2,7 +2,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import com.cpc.spark.tools.OperateMySQL
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.{col, _}
 import org.apache.spark.sql.types.IntegerType
 
 
@@ -35,7 +35,7 @@ object OcpcHourlyReportV2 {
     val qttCvrData = getQTTcvr(date, hour, spark)
     val dataIdea = dataIdeaWithAUC
       .join(qttCvrData, Seq("unitid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
+      .select("unitid", "userid","new_adclass","conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
@@ -47,6 +47,7 @@ object OcpcHourlyReportV2 {
 
     // 存储数据到mysql
     saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+
   }
 
   def saveDataToMysql(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -283,7 +284,6 @@ object OcpcHourlyReportV2 {
          |  $selectCondition1
          |and media_appsid in ("80000001", "80000002")
          |and isclick = 1
-         |and antispam = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
@@ -372,9 +372,9 @@ object OcpcHourlyReportV2 {
     val resultDF = rawData
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
-      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=1, 1).otherwise(0))
-      .withColumn("is_cpa_ok", when(col("new_adclass")===110110 and col("cpa_ratio")<2,0).otherwise(col("is_cpa_ok")))
+      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 99999.9).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
+      .withColumn("cpa_ratio",when(col("new_adclass")===110110,col("cpa_ratio")*2).otherwise(col("cpa_ratio")))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8 and col("cpa_ratio")<=1.2, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))

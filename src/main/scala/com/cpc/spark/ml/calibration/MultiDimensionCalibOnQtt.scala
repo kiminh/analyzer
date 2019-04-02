@@ -4,22 +4,24 @@ import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import org.apache.spark.mllib.regression.IsotonicRegression
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.HourlyCalibration._
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel}
-import com.cpc.spark.ml.common.{Utils => MUtils}
 import org.apache.spark.SparkContext
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{Row, SparkSession}
 
 
-object HourlyCalibration {
+object MultiDimensionCalibOnQtt {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
-  val newDestDir = "/home/cpc/model_server/calibration/"
-  val MAX_BIN_COUNT = 20
+  val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 10000
 
   def main(args: Array[String]): Unit = {
@@ -47,38 +49,71 @@ object HourlyCalibration {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = Utils.getTimeRangeSql(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql_2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
-                 | select isclick, ext_int['raw_ctr'] as ectr, show_timestamp, ext_string['ctr_model_name'] from dl_cpc.cpc_union_log
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid,
+                 |case when user_req_ad_num = 1 then '1'
+                 |  when user_req_ad_num = 2 then '2'
+                 |  when user_req_ad_num in (3,4) then '4'
+                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_req_ad_num
+                 | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
-                 | and ideaid > 0 and adsrc = 1 and adslot_type in (1, 2, 3) AND userid > 0
+                 | and media_appsid in ('80001098', '80001292') and isshow = 1
+                 | and ctr_model_name = 'novel-ctr-dnn-rawid-v7'
+                 | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
+    log.persist()
 
-    unionLogToConfig(log.rdd, session.sparkContext, softMode,false)
+    val group1 = log.groupBy("user_req_ad_num","adslot_id","ideaid").count().withColumn("count1",col("count"))
+    val group2 = log.groupBy("user_req_ad_num","adslot_id").count().withColumn("count2",col("count"))
+    val group3 = log.groupBy("user_req_ad_num").count().withColumn("count3",col("count"))
+
+    val keygroup = group1.join(group2,Seq("user_req_ad_num","adslot_id"),"left").join(group3,Seq("user_req_ad_num"),"left")
+        .withColumn("group",concat_ws("_",col("user_req_ad_num"),col("adslot_id"),col("ideaid")))
+        .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("user_req_ad_num"),col("adslot_id")))
+          .otherwise(col("group")))
+        .withColumn("group",when(col("count2") < 100000,col("user_req_ad_num"))
+          .otherwise(col("group")))
+        .select("user_req_ad_num","adslot_id","ideaid","group").distinct()
+
+    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+
+    data.write.mode("overwrite").saveAsTable("test.wy00")
+
+    unionLogToConfig2(data.rdd, session, softMode)
   }
 
-  def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
+
+  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, saveToLocal: Boolean = true,
                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
-
+    import session.implicits._
+    val sc=session.sparkContext
+    var auc=Seq[(Double,Double)]()
     val result = log.map( x => {
       var isClick = 0d
-      if (x.get(0) != null) {
-        isClick = x.getInt(0).toDouble
+      if (x.get(3) != null) {
+        isClick = x.getInt(3).toDouble
       }
-      val ectr = x.getLong(1).toDouble / 1e6d
-      // TODO(huazhenhao) not used right now in the first version, should be used as weights
-      val model = x.getString(3)
-      (model, (ectr, isClick))
+      val ectr = x.getLong(4).toDouble / 1e6d
+      val model = x.getString(6)
+      val group = x.getString(7)
+      val key = model+'_'+group
+      (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
-        x =>
-        (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000)))
+        x => {
+          val l = x.toList
+          val l1 = l.take(l.length - l.length/3)
+          val l2 = l.takeRight(l.length/3)
+          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
+        }
+          )
       .toLocalIterator
       .map {
         x =>
@@ -87,6 +122,10 @@ object HourlyCalibration {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
+          val test = x._2._3
+          val ScoreAndLabel = sc.parallelize(test)
+          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
@@ -100,6 +139,11 @@ object HourlyCalibration {
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
+            val caliauc = getauccali(test, sc, irModel)
+            println(s"test auc(before, after): $aucROC,$caliauc")
+            auc = auc :+ (aucROC,caliauc)
+
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
@@ -110,12 +154,13 @@ object HourlyCalibration {
               if (softMode == 0) {
                 val conf = ConfigFactory.load()
                 println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
-                  println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
+                println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
               }
             }
             config
           }
       }.toList
+    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     return result
   }
 
@@ -133,7 +178,22 @@ object HourlyCalibration {
       calibrated += computeCalibration(x._1, irModel)
     })
     return (ectr / click, calibrated / click)
+  }
 
+  def getauccali(samples: Array[(Double, Double)],sc: SparkContext, irModel: IRModel): Double = {
+    //val data=Array(Double, Double)
+    val dataListBuffer = scala.collection.mutable.ListBuffer[(Double,Double)]()
+    samples.foreach(x => {
+      val calibrated = computeCalibration(x._1, irModel)
+      val label = x._2
+      val t = (calibrated,label)
+      dataListBuffer += t
+    })
+    val data = dataListBuffer.toArray
+    val ScoreAndLabel = sc.parallelize(data)
+    val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+    val aucROC = metrics.areaUnderROC
+    return aucROC
   }
 
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
@@ -187,8 +247,8 @@ object HourlyCalibration {
 
   // input: Seq<(<ectr, click>)
   // return: (Seq(<ctr, ectr, weight>), total count)
-  def binIterable(data: Iterable[(Double, Double)], minBinSize: Int, maxBinCount: Int)
-    : (Seq[(Double, Double, Double)], Double, Double) = {
+  def binIterable(data: List[(Double, Double)], minBinSize: Int, maxBinCount: Int)
+  : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
     val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
@@ -200,26 +260,26 @@ object HourlyCalibration {
     var eCtrSum = 0d
     var n = 0
     dataList.sorted.foreach {
-        x =>
-          var ectr = 0.0
-          if (x._1 > 0) {
-            ectr = x._1
-          }
-          eCtrSum = eCtrSum + ectr
-          if (x._2 > 1e-6) {
-            clickSum = clickSum + 1
-            allClickSum = allClickSum + 1
-          }
-          showSum = showSum + 1
-          if (showSum >= binSize) {
-            val ctr = clickSum / showSum
-            bins = bins :+ (ctr, eCtrSum / showSum, 1d)
-            n = n + 1
-            clickSum = 0d
-            showSum = 0d
-            eCtrSum = 0d
-          }
-      }
+      x =>
+        var ectr = 0.0
+        if (x._1 > 0) {
+          ectr = x._1
+        }
+        eCtrSum = eCtrSum + ectr
+        if (x._2 > 1e-6) {
+          clickSum = clickSum + 1
+          allClickSum = allClickSum + 1
+        }
+        showSum = showSum + 1
+        if (showSum >= binSize) {
+          val ctr = clickSum / showSum
+          bins = bins :+ (ctr, eCtrSum / showSum, 1d)
+          n = n + 1
+          clickSum = 0d
+          showSum = 0d
+          eCtrSum = 0d
+        }
+    }
     return (bins, totalSize, allClickSum)
   }
 }
