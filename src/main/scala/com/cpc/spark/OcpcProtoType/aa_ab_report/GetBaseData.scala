@@ -153,7 +153,7 @@ object GetBaseData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
+      .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_ab_report_base_data")
   }
 

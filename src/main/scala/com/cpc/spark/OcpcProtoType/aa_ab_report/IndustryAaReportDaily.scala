@@ -4,13 +4,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 
 object IndustryAaReportDaily {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("IndustryAaReportDaily").enableHiveSupport().getOrCreate()
-    GetBaseData.getBaseData(date, hour, spark)
+//    GetBaseData.getBaseData(date, hour, spark)
     println("-----has got base data--------")
     getIndexValue(date, hour, spark)
     println("-----has got index value--------")
@@ -95,6 +96,14 @@ object IndustryAaReportDaily {
         |on
         |    a.industry = e.industry
       """.stripMargin
+    println("-------get index value--------")
+    val indexValueDF = spark.sql(sql)
+    indexValueDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(400)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_aa_report_daily")
   }
 
   // 统计分行业的总unit、user数，以及ocpc的unit、user、hidden_num数
@@ -513,7 +522,7 @@ object IndustryAaReportDaily {
         |    b.industry,
         |    sum(b.cost) as kt_ocpc_cost
         |from
-        |    recommend_and_ocpc_unit_table a
+        |    all_unitid_table a
         |left join
         |    unit_cost_table b
         |on
