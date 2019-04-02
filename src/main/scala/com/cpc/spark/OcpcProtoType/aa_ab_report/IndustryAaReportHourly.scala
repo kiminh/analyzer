@@ -5,7 +5,10 @@ import org.apache.spark.sql.functions._
 
 object IndustryAaReportHourly {
   def main(args: Array[String]): Unit = {
-
+    val date = args(0).toString
+    val hour = args(0).toString
+    val spark = SparkSession.builder().appName("IndustryAaReportHourly").enableHiveSupport().getOrCreate()
+    getIndexValue(date, hour, spark)
   }
 
   def getIndexValue(date: String, hour: String, spark: SparkSession): Unit ={
@@ -104,8 +107,16 @@ object IndustryAaReportHourly {
         |    industry
       """.stripMargin
 
+    println("--------get index sql1--------")
+    println(sql1)
     spark.sql(sql1).createOrReplaceTempView("unit_user_num_table")
+
+    println("--------get index sql2--------")
+    println(sql2)
     spark.sql(sql2).createOrReplaceTempView("control_table")
+
+    println("--------get index sql3--------")
+    println(sql3)
     spark.sql(sql3).createOrReplaceTempView("other_index_table")
 
     // 统计所有指标值
@@ -145,6 +156,8 @@ object IndustryAaReportHourly {
         |on
         |    a.industry = c.industry
       """.stripMargin
+    println("--------get index sql4--------")
+    println(sql4)
     val dataDF = spark.sql(sql4)
     dataDF
       .withColumn("date", lit(date))

@@ -158,6 +158,8 @@ object UnitAaReportDaily {
         |    a.unitid = d.unitid
         |and
         |    a.userid = d.userid
+        |and
+        |    a.conversion_goal = d.conversion_goal
       """.stripMargin
     println("------get index value sql3-------")
     println(sql3)
@@ -303,6 +305,7 @@ object UnitAaReportDaily {
         |select
         |    unitid,
         |    userid,
+        |    conversion_goal,
         |    cv,
         |    cost,
         |    post_cvr,
