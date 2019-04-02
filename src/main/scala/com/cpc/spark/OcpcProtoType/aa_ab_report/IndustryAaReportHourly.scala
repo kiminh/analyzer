@@ -18,7 +18,7 @@ object IndustryAaReportHourly {
         |select
         |    industry,
         |    count(userid) as ocpc_user_num,
-        |    count(unitid) as ocpc_unit_num
+        |    count(unitid) as ocpc_unit_num,
         |    count(case when is_hidden = 1 then 1 else 0 end) as ocpc_hidden_num
         |from(select
         |        industry,
@@ -46,7 +46,7 @@ object IndustryAaReportHourly {
         |select
         |    industry,
         |    count(case when cpareal < cpagiven * 1.2 then 1 else 0 end) as cpa_control_num,
-        |    count(case when hidden_cpareal < hidden_cpagiven * 1.2 then 1 else 0 end) as hidden_control_num
+        |    count(case when hidden_cpareal < hidden_cpagiven * 1.2 then 1 else 0 end) as hidden_control_num,
         |    count(case when hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
         |    avg(hidden_cost) as avg_hidden_cost,
         |    avg(hidden_budget) as avg_hidden_budget
