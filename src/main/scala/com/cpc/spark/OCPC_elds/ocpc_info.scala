@@ -213,9 +213,6 @@ object ocpc_info {
     val Sql5 =
       s"""
          |select
-         |*
-         |from
-         |(select
          |a.type,
          |a.ocpc_cost,
          |a.ocpc_show_cnt,
@@ -260,9 +257,9 @@ object ocpc_info {
          |sum(total_cost) as total_cost
          |from all
          |where day='$date'
-         |group by day)b on a.day=b.day )p
+         |group by day)b on a.day=b.day
          |UNION ALL
-         |(select
+         |select
          |c.type,
          |c.ocpc_cost,
          |c.ocpc_show_cnt,
@@ -309,7 +306,7 @@ object ocpc_info {
          |sum(total_cost) as total_cost
          |from all
          |where day='$date'
-         |group by day,type )d on c.day=d.day and c.type=d.type )q
+         |group by day,type )d on c.day=d.day and c.type=d.type
              """.stripMargin
 
     println(Sql5)
