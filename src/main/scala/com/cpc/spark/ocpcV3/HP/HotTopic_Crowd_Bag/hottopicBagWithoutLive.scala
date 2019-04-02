@@ -66,7 +66,7 @@ object hottopicBagWithoutLive {
     result
   }
 
-  def getUidWithoutLive(spark: SparkSession, date: String, days: Int, LiveComb: DataFrame) ={
+  def getUidWithoutLive(spark: SparkSession, date: String, days: Int, LiveComb: DataFrame) = {
     import spark.implicits._
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val calendar = Calendar.getInstance()
@@ -119,11 +119,17 @@ object hottopicBagWithoutLive {
         }
         lb.distinct
       }).toDF()
-      .join(LiveComb, Seq("comb"), "left").distinct()
-      .select("uid", "comb", "appName")
+      .join(LiveComb, Seq("comb"), "left")
+      .withColumn("tag", when(col("appName").isNotNull, lit(1) ).otherwise(lit(0)))
+      .groupBy("uid")
+      .agg(
+        sum("tag").alias("sum_tag")
+      )
+      .select("uid", "sum_tag")
+      .withColumn("date", lit(date))
     result.write.mode("overwrite").saveAsTable("test.result_sjq")
-    result
-
+    val result1 = result.filter("sum_tag = 0")
+    result1
   }
 
   case class LiveApp(var appName: String)
