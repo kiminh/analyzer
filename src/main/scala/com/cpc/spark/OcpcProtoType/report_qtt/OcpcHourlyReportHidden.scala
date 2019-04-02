@@ -104,7 +104,7 @@ object OcpcHourlyReportHidden {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_summary_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version='qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version='qtt_hidden'")
       .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
     // 计算报表数据
@@ -271,7 +271,7 @@ object OcpcHourlyReportHidden {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_detail_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version = 'qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version = 'qtt_hidden'")
       .withColumn("unitid", col("identifier"))
       .selectExpr("cast(unitid as int) unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
