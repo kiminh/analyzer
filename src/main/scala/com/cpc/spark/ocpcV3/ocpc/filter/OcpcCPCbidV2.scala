@@ -74,7 +74,7 @@ object OcpcCPCbidV2 {
     savePbPack(resultDF, fileName)
   }
 
-  def getPCOC(version: String, cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
