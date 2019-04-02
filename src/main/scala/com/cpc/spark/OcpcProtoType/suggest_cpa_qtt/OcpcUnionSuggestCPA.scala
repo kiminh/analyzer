@@ -27,9 +27,9 @@ object OcpcUnionSuggestCPA {
     val baseResult = getSuggestData(version, date, hour, spark)
     val cvr2Cali = getNewCali(version, date, hour, spark)
 
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
 
