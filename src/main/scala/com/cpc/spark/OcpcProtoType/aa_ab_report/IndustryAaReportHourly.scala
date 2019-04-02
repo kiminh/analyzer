@@ -32,8 +32,8 @@ object IndustryAaReportHourly {
       s"""
         |select
         |    a.industry,
-        |    a.all_user_num,
-        |    a.all_unit_num,
+        |    b.all_user_num,
+        |    b.all_unit_num,
         |    b.ocpc_user_num,
         |    b.ocpc_unit_num,
         |    a.cv,
