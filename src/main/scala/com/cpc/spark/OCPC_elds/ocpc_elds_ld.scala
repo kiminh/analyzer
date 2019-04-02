@@ -171,6 +171,8 @@ object ocpc_elds_ld {
          |from
          |(select
          |m.unitid
+         |((select
+         |a.unitid
          |from
          |(select
          |unitid
@@ -185,7 +187,8 @@ object ocpc_elds_ld {
          |unitid
          |from union
          |where siteid>5000000
-         |group by unitid) b on a.unitid=b.unitid )
+         |group by unitid) b on a.unitid=b.unitid
+         |group by a.unitid )
          |UNION
          |select unitid
          |from union
