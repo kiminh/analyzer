@@ -116,7 +116,8 @@ object ocpc_all {
          |0 as ocpc_cost_warning,
          |0 as post_cvr_warning,
          |day
-         |from total
+         |from dl_cpc.ocpc_all_detail
+         |where day='$date'
          |group by day,type
              """.stripMargin
     println(Sql3)
