@@ -36,7 +36,7 @@ object hottopicBagWithoutLive {
     for (app <- live) {
       lb += LiveApp(app)
     }
-    lb.distinct.toDF()
+    lb.distinct.toDF("appName")
   }
 
   def getPkgAppMap(spark: SparkSession, date: String) = {
@@ -129,7 +129,7 @@ object hottopicBagWithoutLive {
 
   case class LiveApp(var appName: String)
 
-  case class AppPkgMap(var comb: String, appName: String, var pkg: String, var count: Int)
+  case class AppPkgMap(var comb: String, var pkg: String, appName: String, var count: Int)
 
   case class UidComb(var uid: String, var comb: String)
 
