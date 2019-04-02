@@ -53,7 +53,7 @@ object OcpcSampleToPb {
     val result2 = result2raw
       .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
-      .filter(s"ocpc_flag is not null")
+      .filter(s"cv_flag is not null")
       .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
     println("result2")
     result2.show(10)
