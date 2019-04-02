@@ -16,14 +16,11 @@ object OcpcLabelCvr3 {
     val hour = args(1).toString
 
     val result1 = getLabelFromAdv(date, hour, spark)
-//    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
-    result1
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
-    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
-
-//    val result2 = getLabel(date, hour, spark)
-//    result2.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
+    result1.show(20)
+    result1.printSchema()
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
 //    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
+
   }
 
   def getLabelFromAdv(date: String, hour: String, spark: SparkSession) = {
@@ -40,10 +37,10 @@ object OcpcLabelCvr3 {
          |    bid,
          |    userid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
+         |    adclass,
          |    isclick,
          |    isshow
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
@@ -114,19 +111,18 @@ object OcpcLabelCvr3 {
          |    bid,
          |    userid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
+         |    adclass,
          |    isclick,
          |    isshow
-         |from dl_cpc.cpc_union_log
-         |where $selectWhere
+         |from dl_cpc.cpc_basedata_union_events
+         |where day='$date' and hour = '$hour'
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002")
          |and isshow = 1
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_api_callback']!=1
+         |and is_api_callback!=1
       """.stripMargin
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
