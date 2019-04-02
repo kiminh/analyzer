@@ -179,7 +179,7 @@ object OcpcLaunchReport {
        |select
        |  a.day as `date`,
        |  choose,
-       |  usertype,
+       |  a.usertype,
        |  sum(case WHEN isclick == 1 then price else 0 end) as money,
        |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
        |  if(sum(isclick)>0,round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3),0) as acp,
@@ -200,7 +200,7 @@ object OcpcLaunchReport {
        |group by
        |  a.day,
        |  choose,
-       |  usertype
+       |  a.usertype
        |order by
        |  choose,
        |  usertype
