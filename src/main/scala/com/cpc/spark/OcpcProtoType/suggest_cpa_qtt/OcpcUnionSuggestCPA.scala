@@ -27,10 +27,12 @@ object OcpcUnionSuggestCPA {
     val baseResult = getSuggestData(version, date, hour, spark)
     val cvr2Cali = getNewCali(baseResult, version, date, hour, spark)
 
-    val result = baseResult
+    val updateData = baseResult
       .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
       .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
       .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
+
+    val result = getRecommendLabel(updateData, date, hour, spark)
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_suggest_data20190402")
 
@@ -38,6 +40,18 @@ object OcpcUnionSuggestCPA {
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 //    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getRecommendLabel(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val resultDF = data
+      .withColumn("is_recommend_old", col("is_recommend"))
+      .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
+      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
+
+    resultDF
   }
 
   def getNewCali(suggestData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
