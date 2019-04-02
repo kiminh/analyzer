@@ -134,7 +134,7 @@ object OcpcLaunchReport {
     val sql4=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
          |  case when length(ocpc_log) > 0 then 'ocpc'
          |  else 'cpc' end as mode,
