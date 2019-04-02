@@ -48,7 +48,13 @@ object OcpcSampleToPb {
     println("result1")
     result1.show(10)
 
-    val result2 = getNewK(date, hour, version, spark)
+    val result2raw = getNewK(date, hour, version, spark)
+    val ocpcUnit = getConversionGoal(date, hour, spark)
+    val result2 = result2raw
+        .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
+        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "ocpc_flag")
+        .filter(s"ocpc_flag is null")
+        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
     println("result2")
     result2.show(10)
     val result = result1
@@ -74,28 +80,43 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
 //    savePbPack(resultDF, version, isKnown)
   }
+  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .withColumn("flag", lit(1))
+      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "ocpc_flag")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+  }
+
 
   def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
     /*
     1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
     2. 计算新的kvalue
      */
-//    // 媒体选择
-//    val conf = ConfigFactory.load("ocpc")
-//    val confPath = conf.getString("ocpc_all.ocpc_exp_flag")
-//    val rawData = spark.read.format("json").json(confPath)
-//
-//    val confData = rawData
-//      .select("identifier", "version", "exp_flag")
-//      .filter(s"exp_flag = 2 and version = '$version'")
-//      .select("identifier")
-//      .distinct()
-
     // 从表中抽取数据
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
     val sqlRequest =
