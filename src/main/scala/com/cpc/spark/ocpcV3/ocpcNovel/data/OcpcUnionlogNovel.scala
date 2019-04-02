@@ -13,9 +13,10 @@ object OcpcUnionlogNovel {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
-    println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
+    result.show(20)
+    result.printSchema()
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
+//    println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
   }
 
   def getOcpcUnionlog(date: String, hour: String, spark: SparkSession) = {
@@ -42,8 +43,7 @@ object OcpcUnionlogNovel {
          |    bid_ocpc as cpa_given,
          |    ocpc_log
          |from dl_cpc.cpc_basedata_union_events
-         |where $selectWhere
-         |and isclick is not null
+         |where day='$date' and hour = '$hour'
          |and media_appsid in ("80001098","80001292")
          |and isshow = 1
          |and ideaid > 0
