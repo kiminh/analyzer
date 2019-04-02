@@ -25,7 +25,14 @@ object OcpcUnionSuggestCPA {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(version, date, hour, spark)
+    val cvr2Cali = getNewCali(baseResult, version, date, hour, spark)
+
+    val result = baseResult
+      .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
+      .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
+      .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
+
+    result.write.mode("overwrite").saveAsTable("test.ocpc_suggest_data20190402")
 
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
@@ -33,10 +40,44 @@ object OcpcUnionSuggestCPA {
 
   }
 
-  def getNewCali(version: String, date: String, hour: String, spark: SparkSession) = {
+  def getNewCali(suggestData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     val baseData = OcpcSmoothFactor.getBaseData("qtt", "cvr2", 24, date, hour, spark)
-    val data = OcpcSmoothFactor.calculateSmooth(baseData, spark)
+    val rawData = OcpcSmoothFactor.calculateSmooth(baseData, spark)
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(identifier as int) unitid,
+         |  1.0 / pcoc as cali_value,
+         |  1.0 / jfb as kvalue,
+         |  post_cvr
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest)
+    val cvrData = spark.sql(sqlRequest)
 
+    val data = baseData
+      .join(cvrData, Seq("unitid"), "inner")
+      .withColumn("pre_cvr", col("exp_cvr") * 0.5 * col("cali_value") + col("post_cvr") * 0.5)
+      .select("searchid", "unitid", "pre_cvr")
+      .groupBy("unitid")
+      .agg(avg(col("pre_cvr")).alias("pre_cvr"))
+      .select("unitid", "pre_cvr")
+
+    val result = data
+      .join(cvrData, Seq("unitid"), "inner")
+      .withColumn("conversion_goal", lit(2))
+      .select("unitid", "conversion_goal", "pre_cvr", "kvalue")
+
+    val resultDF = suggestData
+      .join(result, Seq("unitid", "conversion_goal"), "inner")
+      .select("unitid", "conversion_goal", "cpa", "pre_cvr", "kvalue")
+      .withColumn("cal_bid_new", col("cpal") * col("pre_cvr") * col("kvalue"))
+      .withColumn("kvalue_new", col("kvalue"))
+      .select("unitid", "conversion_goal", "cal_bid_new", "kvalue_new")
+
+    resultDF
 
   }
 
@@ -59,7 +100,9 @@ object OcpcUnionSuggestCPA {
     //    data.write.mode("overwrite").saveAsTable("test.check_suggest_cpa_data20190327")
 
     val resultDF = data
-      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+      .withColumn("kvalue_old", col("kvalue"))
+      .withColumn("cal_bid_old", col("cal_bid"))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid_old", "auc", "kvalue_old", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
