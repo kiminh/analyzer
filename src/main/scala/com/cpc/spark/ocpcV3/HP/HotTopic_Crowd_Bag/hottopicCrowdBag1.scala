@@ -51,7 +51,7 @@ object hottopicCrowdBag1 {
     //    comment '段子社交、短视频、直播人群包'
     //    partitioned by (`date` string);
 
-    uidApp.write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
+    uidApp.repartition(10).write.mode("overwrite").insertInto("dl_cpc.hottopic_uid_bag")
 
     upDate(spark, date)
 
@@ -180,7 +180,10 @@ object hottopicCrowdBag1 {
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime()
+    calendar.add(Calendar.DATE, -6)
+    val startday = calendar.getTime()
     val date0 = sdf.format(yesterday)
+    val date_1 = sdf.format(startday)
 
     val sqlRequest =
       s"""
@@ -208,7 +211,8 @@ object hottopicCrowdBag1 {
          |    from
          |      dl_cpc.hottopic_uid_bag
          |    where
-         |      `date` = '$date0'
+         |      `date` between '$date_1' and '$date0'
+         |   group by cat, uid, 1
          |  ) t2 on t1.cat = t2.cat
          |  and t1.uid = t2.uid
        """.stripMargin

@@ -47,7 +47,7 @@ object hottopicBagUsingLive {
     //    comment '过去一段时间用过直播应用的人群包'
     //    partitioned by (`date` string);
 
-    uidUsingLiveApp.write.mode("overwrite").insertInto("dl_cpc.hottopicBagUsingLive_sjq")
+    uidUsingLiveApp.repartition(10).write.mode("overwrite").insertInto("dl_cpc.hottopicBagUsingLive_sjq")
     //    uidUsingLiveApp.write.mode("overwrite").saveAsTable("test.uidUsingLiveApp_sjq")
     upDate(spark, date)
 
@@ -166,7 +166,10 @@ object hottopicBagUsingLive {
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime()
+    calendar.add(Calendar.DATE, -6)
+    val startday = calendar.getTime()
     val date0 = sdf.format(yesterday)
+    val date_1 = sdf.format(startday)
 
     val sqlRequest =
       s"""
@@ -194,7 +197,8 @@ object hottopicBagUsingLive {
          |    from
          |      dl_cpc.hottopicBagUsingLive_sjq
          |    where
-         |      `date` = '$date0'
+         |      `date` between '$date_1' and '$date0'
+         |   group by cat, uid, 1
          |  ) t2 on t1.cat = t2.cat
          |  and t1.uid = t2.uid
          """.stripMargin
