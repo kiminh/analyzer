@@ -104,7 +104,7 @@ object OcpcSampleToPb {
     val resultDF = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .withColumn("flag", lit(1))
+      .withColumn("ocpc_flag", lit(1))
       .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "ocpc_flag")
       .distinct()
 
