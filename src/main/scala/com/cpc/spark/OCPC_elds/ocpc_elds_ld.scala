@@ -217,7 +217,7 @@ object ocpc_elds_ld {
          |"ocpc单元" as type,
          |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
          |sum(case when isclick=1 then price else null end)/100 as cost,
-         |sum(case when isclick=1 then price else null end)/100/sum(case when isclick=1 then price else null end)/100 as cost_ratio,
+         |1.0 as cost_ratio,
          |sum(isshow) as show_cnt,
          |sum(isclick) as click_cnt,
          |sum(iscvr) as cvr_cnt,
@@ -227,7 +227,7 @@ object ocpc_elds_ld {
          |from union
          |where is_ocpc=1
          |and length(ocpc_log)>0
-         |group by day,"ocpc单元"
+         |group by day,"ocpc单元",1.0
              """.stripMargin
 
     println(Sql4)
@@ -241,7 +241,7 @@ object ocpc_elds_ld {
          |"ocpc单元-赤兔" as type,
          |sum(case when isclick=1 then price else null end)/100 as ocpc_cost,
          |sum(case when isclick=1 then price else null end)/100 as cost,
-         |sum(case when isclick=1 then price else null end)/100/sum(case when isclick=1 then price else null end)/100 as cost_ratio,
+         |1.0 as cost_ratio,
          |sum(isshow) as show_cnt,
          |sum(isclick) as click_cnt,
          |sum(iscvr) as cvr_cnt,
@@ -252,7 +252,7 @@ object ocpc_elds_ld {
          |where is_ocpc=1
          |and length(ocpc_log)>0
          |and siteid>5000000
-         |group by day,"ocpc单元-赤兔"
+         |group by day,"ocpc单元-赤兔",1.0
              """.stripMargin
 
     println(Sql44)
