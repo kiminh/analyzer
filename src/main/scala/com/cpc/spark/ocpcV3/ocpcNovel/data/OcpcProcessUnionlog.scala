@@ -17,14 +17,13 @@ object OcpcProcessUnionlog {
     val date = args(0).toString
     val hour = args(1).toString
     val resultDF = preprocessUnionlog(date, hour, spark)
-    resultDF.show(20)
-    resultDF.printSchema()
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
-//    println("successfully save data into table dl_cpc.ocpcv3_ctr_data_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
+    println("successfully save data into table dl_cpc.ocpcv3_ctr_data_hourly")
   }
 
   def preprocessUnionlog(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"day='$date' and hour = '$hour'"
+    var selectWhere = s"day ='$date' and hour = '$hour'"
 
     var sqlRequest =
       s"""
