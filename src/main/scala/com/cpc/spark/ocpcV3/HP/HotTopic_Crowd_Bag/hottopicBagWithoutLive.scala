@@ -21,9 +21,19 @@ object hottopicBagWithoutLive {
 
     liveComb.write.mode("overwrite").saveAsTable("test.liveComb_sjq")
 
-    val uidWithLive = getUidWithoutLive(spark, date, days - 1, liveComb) //
+    val uidWithoutLive = getUidWithoutLive(spark, date, days - 1, liveComb) // uid, tag, date
 
-    uidWithLive.write.mode("overwrite").saveAsTable("test.uidWithLive_sjq")
+//    create table if not exists dl_cpc.hottopic_crowd_bag_collection_sjq
+//    (
+//      uid STRING COMMENT '用户id'
+//    )
+//    comment '段子人群包汇总'
+//    partitioned by (tag Int, `date` string);
+
+//    uidWithoutLive.write.mode("overwrite").saveAsTable("test.uidWithLive_sjq")
+    uidWithoutLive.write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
+
+    update(spark, date)
 
   }
 
@@ -127,9 +137,68 @@ object hottopicBagWithoutLive {
       )
       .select("uid", "sum_tag")
       .withColumn("date", lit(date))
-    result.write.mode("overwrite").saveAsTable("test.result_sjq")
-    val result1 = result.filter("sum_tag = 0")
+      .withColumn("tag", lit(324))
+//    result.write.mode("overwrite").saveAsTable("test.result_sjq")
+    val result1 = result.filter("sum_tag = 0").select("uid", "tag", "date")
+
     result1
+  }
+
+  def update(spark: SparkSession, date: String): Unit ={
+    import spark.implicits._
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    val today = sdf.parse(date)
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime()
+    calendar.add(Calendar.DATE, -6)
+    val startday = calendar.getTime()
+    val date0 = sdf.format(yesterday)
+    val date_1 = sdf.format(startday)
+
+    val sqlRequest =
+      s"""
+         |select
+         |  coalesce(t1.uid, t2.uid) as uid,
+         |  tag0,
+         |  tag1
+         |from
+         |  (
+         |    select
+         |      uid,
+         |      1 as tag1
+         |    from
+         |      dl_cpc.hottopic_crowd_bag_collection_sjq
+         |    where
+         |      `date` = '$date'
+         |	  and tag = 324
+         |	  group by uid, 1
+         |  ) t1 full
+         |  outer join (
+         |    select
+         |      uid,
+         |      1 as tag0
+         |    from
+         |      dl_cpc.hottopic_crowd_bag_collection_sjq
+         |    where
+         |      `date` between '$date_1' and '$date0'
+         |	  and tag = 324
+         |   group by uid, 1
+         |  ) t2 on t1.uid = t2.uid
+         """.stripMargin
+
+    println(sqlRequest)
+    val df = spark.sql(sqlRequest)
+      .withColumn("id", lit(324))
+      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
+      .select("uid", "tag0", "tag1", "id", "io")
+
+    //    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
+
+    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
+    val result = SetUserProfileTagInHiveDaily(rdd1)
+
   }
 
   case class LiveApp(var appName: String)
