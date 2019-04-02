@@ -72,8 +72,8 @@ object OcpcSampleToPb {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
-        .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-//        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+//        .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultDF = result
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
