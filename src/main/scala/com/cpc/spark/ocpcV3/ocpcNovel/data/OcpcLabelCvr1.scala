@@ -19,7 +19,7 @@ object OcpcLabelCvr1 {
   }
 
   def getLabel(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"day='$date' and hour = '$hour'"
+    var selectWhere = s"`date`='$date' and hour = '$hour'"
 
     var sqlRequest1 =
       s"""
@@ -36,7 +36,7 @@ object OcpcLabelCvr1 {
          |    isclick,
          |    isshow
          |from dl_cpc.cpc_basedata_union_events
-         |where $selectWhere
+         |where day='$date' and hour = '$hour'
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
          |and isshow = 1
