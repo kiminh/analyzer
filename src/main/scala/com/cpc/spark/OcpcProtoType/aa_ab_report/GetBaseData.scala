@@ -41,6 +41,8 @@ object GetBaseData {
          |and
          |    adsrc = 1
          |and
+         |    (charge_type = 1 or charge_type is null)
+         |and
          |    `date` = '$date'
       """.stripMargin
     // 当hour等于-1时，表示取全天的数据
