@@ -259,28 +259,19 @@ object IndustryAaReportHourly {
 
   // 获取明投和暗投的控制数等指标
   def getControlNum(date: String, hour: String, spark: SparkSession): DataFrame ={
-    val sql =
+    // 统计明投控制数
+    val sql1 =
       s"""
          |select
          |    industry,
-         |    count(case when cpa_real < cpa_given * 1.2 then 1 else 0 end) as cpa_control_num,
-         |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
-         |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
-         |    avg(hidden_cost) as avg_hidden_cost,
-         |    avg(hidden_budget) as avg_hidden_budget
+         |    count(case when cpa_real < cpa_given * 1.2 then 1 else 0 end) as cpa_control_num
          |from
          |    (select
          |        industry,
          |        unitid,
          |        userid,
          |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as cpa_given,
-         |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as cpa_real,
-         |        sum(case when isclick = 1 and is_hidden = 1 then cpa_given else 0 end) * 0.01
-         |        / sum(case when isclick = 1 and is_hidden = 1 then 1 else 0 end) as hidden_cpa_given,
-         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01
-         |        / sum(case when is_hidden = 1 then iscvr else 0 end) as hidden_cpa_real,
-         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as hidden_cost,
-         |        max(case when isclick = 1 and is_hidden = 1 then budget else 0 end) * 0.01 as hidden_budget
+         |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as cpa_real
          |    from
          |        dl_cpc.ocpc_aa_ab_report_base_data
          |    where
@@ -288,9 +279,9 @@ object IndustryAaReportHourly {
          |    and
          |        hour = '$hour'
          |    and
-         |        is_ocpc = 1
-         |    and
          |        version = 'qtt_demo'
+         |    and
+         |        is_ocpc = 1
          |    group by
          |        industry,
          |        unitid,
@@ -298,9 +289,70 @@ object IndustryAaReportHourly {
          |group by
          |    industry
       """.stripMargin
-    println("--------get mingtou and antou control num--------")
-    println(sql)
-    val controlNumDF = spark.sql(sql)
+    println("--------get mingtou control num--------")
+    println(sql1)
+    spark.sql(sql1).createOrReplaceTempView("mingtou_control_num_table")
+
+    val sql2 =
+      s"""
+        |select
+        |    industry,
+        |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
+        |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
+        |    avg(hidden_cost) as avg_hidden_cost,
+        |    avg(hidden_budget) as avg_hidden_budget
+        |from
+        |    (select
+        |        industry,
+        |        unitid,
+        |        userid,
+        |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as hidden_cpa_given,
+        |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as hidden_cpa_real,
+        |        sum(case when isclick = 1 then price else 0 end) * 0.01 as hidden_cost,
+        |        max(case when isclick = 1 then budget else 0 end) * 0.01 as hidden_budget
+        |    from
+        |        dl_cpc.ocpc_aa_ab_report_base_data
+        |    where
+        |        `date` = '$date'
+        |    and
+        |        hour = '$hour'
+        |    and
+        |        version = 'qtt_demo'
+        |    and
+        |        is_ocpc = 1
+        |    and
+        |        is_hidden = 1
+        |    group by
+        |        industry,
+        |        unitid,
+        |        userid) temp
+        |group by
+        |    industry
+      """.stripMargin
+    println("--------get antou control num--------")
+    println(sql2)
+    spark.sql(sql2).createOrReplaceTempView("antou_control_num_table")
+
+    // 合并明投、暗投的控制数
+    val sql3 =
+      s"""
+        |select
+        |    a.industry,
+        |    a.cpa_control_num,
+        |    b.hidden_control_num,
+        |    b.hit_line_num,
+        |    b.avg_hidden_cost,
+        |    b.avg_hidden_budget
+        |from
+        |    mingtou_control_num_table a
+        |left join
+        |    antou_control_num_table b
+        |on
+        |    a.industry = b.industry
+      """.stripMargin
+    println("--------merge mingtou and antou control num--------")
+    println(sql3)
+    val controlNumDF = spark.sql(sql3)
     controlNumDF
   }
 
