@@ -33,7 +33,6 @@ object UnitAaReportDaily {
         |    round(sum(case when isclick = 1 then pcvr else 0 end) * 1.0 / sum(isclick), 4) as pre_cvr,
         |    round(sum(iscvr) * 1.0 / sum(isclick), 4) as post_cvr,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as cost_of_every_click,
-        |    round(sum(case when isclick = 1 then bid else 0 end) * 0.01/ sum(isclick), 4) as bid_of_every_click,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr), 4) as cpa_real,
         |    round(sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick), 4)  as cpa_given,
         |    round(sum(case when isclick = 1 and is_hidden = 1 then price else 0 end)
@@ -104,7 +103,6 @@ object UnitAaReportDaily {
         |    pre_cvr,
         |    post_cvr,
         |    cost_of_every_click,
-        |    bid_of_every_click,
         |    cpa_real,
         |    cpa_given,
         |    hidden_cost_ratio,
