@@ -107,7 +107,7 @@ object IndustryAaReportHourly {
         |    sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as ocpc_hidden_cost,
         |    round(sum(case when isclick = 1 and is_hidden = 1 then price else 0 end)
         |        / sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end), 4) as ocpc_hidden_cost_ratio,
-        |    round(c.hidden_control_num * 1.0 / b.ocpc_hidden_num, 4) as hidden_control_ratio,
+        |    round(c.hidden_control_num * 1.0 / b.ocpc_hidden_num, 4) as hidden_control_ratio
         |from
         |    dl_cpc.ocpc_aa_ab_report_base_data
         |where
