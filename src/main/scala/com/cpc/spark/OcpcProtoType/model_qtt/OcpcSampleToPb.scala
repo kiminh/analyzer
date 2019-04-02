@@ -70,7 +70,7 @@ object OcpcSampleToPb {
          |  identifier,
          |  conversion_goal,
          |  kvalue,
-         |  cpagiven as cpagiven1,
+         |  cpagiven as cpagiven,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
@@ -82,110 +82,110 @@ object OcpcSampleToPb {
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
-    // 按照实验配置文件给出cpagiven
-    val cpaGivenTable = getCPAgivenV3(date, spark)
-    val cpaGivenConf = getCPAgivenV4(spark)
-    val cpaGiven = cpaGivenTable
-      .join(cpaGivenConf, Seq("identifier", "conversion_goal"), "outer")
-      .withColumn("cpagiven2", when(col("cpagiven2_conf").isNotNull, col("cpagiven2_conf")).otherwise(col("cpagiven2_table")))
-      .select("identifier", "conversion_goal", "cpagiven2")
-
-    // 数据关联
-    val result1 = data
-        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
-        .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    // 数据关联
-    val result2 = result1.filter("cpagiven2 is not null")
-        .withColumn("conversion_goal", lit(0))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    val result = result1.union(result2)
+//    // 按照实验配置文件给出cpagiven
+//    val cpaGivenTable = getCPAgivenV3(date, spark)
+//    val cpaGivenConf = getCPAgivenV4(spark)
+//    val cpaGiven = cpaGivenTable
+//      .join(cpaGivenConf, Seq("identifier", "conversion_goal"), "outer")
+//      .withColumn("cpagiven2", when(col("cpagiven2_conf").isNotNull, col("cpagiven2_conf")).otherwise(col("cpagiven2_table")))
+//      .select("identifier", "conversion_goal", "cpagiven2")
+//
+//    // 数据关联
+//    val result1 = data
+//        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
+//        .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
+//        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
+//
+//    // 数据关联
+//    val result2 = result1.filter("cpagiven2 is not null")
+//        .withColumn("conversion_goal", lit(0))
+//        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
+//
+//    val result = result1.union(result2)
+    val result = data
     result.printSchema()
     result.show(10)
 
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_pb20190317")
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
 
     resultDF
   }
 
-  def getCPAgivenV4(spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "ocpc_all.unitid_abtest_path"
-    val path = conf.getString(conf_key)
-
-    val resultDF = spark
-      .read.format("json").json(path)
-      .select("unitid", "cpa", "conversion_goal")
-      .selectExpr("cast(unitid as string) as identifier", "conversion_goal", "cpa as cpagiven2_conf")
-
-    resultDF.show(10)
-    resultDF
-  }
-
-  def getCPAgivenV3(date: String, spark: SparkSession) = {
-    // 时间分区
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpagiven2_table
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_hourly
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  industry in ('elds', 'feedapp')
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest)
-    result
-  }
-
-  def getCPAgivenV2(spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpagiven2
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_once
-         |WHERE
-         |  industry = 'elds'
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest)
-    result
-  }
-
-  def getCPAgiven(spark: SparkSession) = {
-    // 从实验配置文件读取配置的CPAgiven
-    val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
-    println(expDataPath)
-    val data = spark.read.format("json").json(expDataPath)
-
-    val resultDF = data
-      .select("identifier", "cpa_given", "conversion_goal")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("cpa_given")).alias("cpagiven2"))
-      .select("identifier", "conversion_goal", "cpagiven2")
-
-    resultDF
-  }
+//  def getCPAgivenV4(spark: SparkSession) = {
+//    val conf = ConfigFactory.load("ocpc")
+//    val conf_key = "ocpc_all.unitid_abtest_path"
+//    val path = conf.getString(conf_key)
+//
+//    val resultDF = spark
+//      .read.format("json").json(path)
+//      .select("unitid", "cpa", "conversion_goal")
+//      .selectExpr("cast(unitid as string) as identifier", "conversion_goal", "cpa as cpagiven2_conf")
+//
+//    resultDF.show(10)
+//    resultDF
+//  }
+//
+//  def getCPAgivenV3(date: String, spark: SparkSession) = {
+//    // 时间分区
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -1)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  cast(unitid as string) identifier,
+//         |  conversion_goal,
+//         |  cpa as cpagiven2_table
+//         |FROM
+//         |  dl_cpc.ocpc_auto_budget_hourly
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  industry in ('elds', 'feedapp')
+//       """.stripMargin
+//    println(sqlRequest)
+//    val result = spark.sql(sqlRequest)
+//    result
+//  }
+//
+//  def getCPAgivenV2(spark: SparkSession) = {
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  cast(unitid as string) identifier,
+//         |  conversion_goal,
+//         |  cpa as cpagiven2
+//         |FROM
+//         |  dl_cpc.ocpc_auto_budget_once
+//         |WHERE
+//         |  industry = 'elds'
+//       """.stripMargin
+//    println(sqlRequest)
+//    val result = spark.sql(sqlRequest)
+//    result
+//  }
+//
+//  def getCPAgiven(spark: SparkSession) = {
+//    // 从实验配置文件读取配置的CPAgiven
+//    val conf = ConfigFactory.load("ocpc")
+//    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
+//    println(expDataPath)
+//    val data = spark.read.format("json").json(expDataPath)
+//
+//    val resultDF = data
+//      .select("identifier", "cpa_given", "conversion_goal")
+//      .groupBy("identifier", "conversion_goal")
+//      .agg(avg(col("cpa_given")).alias("cpagiven2"))
+//      .select("identifier", "conversion_goal", "cpagiven2")
+//
+//    resultDF
+//  }
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
     var list = new ListBuffer[SingleRecord]
