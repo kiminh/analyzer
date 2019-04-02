@@ -139,7 +139,7 @@ object OcpcSampleToPb {
          |AND
          |  jfb > 0
          |AND
-         |  conversion_goal != 3
+         |  conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
