@@ -87,7 +87,7 @@ object ocpc_all {
          |0 as post_cvr_warning,
          |day
          |from union
-         |group by day,type,userid,unitid,0,0
+         |group by day,type,userid,unitid
              """.stripMargin
     println(Sql2)
 
@@ -117,7 +117,7 @@ object ocpc_all {
          |0 as post_cvr_warning,
          |day
          |from total
-         |group by day,type,0,0
+         |group by day,type
              """.stripMargin
     println(Sql3)
     val  result2= spark.sql(Sql3)
