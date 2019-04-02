@@ -13,8 +13,6 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import mlmodel.Mlmodel
-import mlmodel.mlmodel.PostCalibrations.CaliMapEntry
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.functions._
 
@@ -100,7 +98,8 @@ object MultiDimensionCalibOnMidu {
     import session.implicits._
     val sc = session.sparkContext
     var auc = Seq[(Double,Double)]()
-    var califile = PostCalibrations()
+//    var califile = PostCalibrations()
+    var calimap=scala.collection.mutable.Map[String,CalibrationConfig]()
     val result = log.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
@@ -156,11 +155,13 @@ object MultiDimensionCalibOnMidu {
               name = modelName,
               ir = Option(irModel)
             )
-//            califile.addCaliMap()
-            califile.caliMap.+((modelName,config))
+            calimap+=((modelName,config))
+//            califile.addCaliMap((modelName,config))
+//            califile.caliMap.+((modelName,config))
             config
           }
       }.toList
+    val califile = PostCalibrations(calimap.toMap)
 //    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     if (saveToLocal) {
       val model = "novel-ctr-dnn-rawid-v7-cali"
