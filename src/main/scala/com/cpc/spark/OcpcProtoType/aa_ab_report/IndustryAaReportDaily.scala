@@ -47,8 +47,8 @@ object IndustryAaReportDaily {
         |    a.cv,
         |    a.click,
         |    a.show,
-        |    a.cost,
         |    a.post_cvr,
+        |    a.cost,
         |    a.cpm,
         |    a.ocpc_cost,
         |    a.ocpc_cost_ratio,
@@ -101,7 +101,6 @@ object IndustryAaReportDaily {
     val indexValueDF = spark.sql(sql)
     indexValueDF
       .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
       .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_aa_report_daily")
