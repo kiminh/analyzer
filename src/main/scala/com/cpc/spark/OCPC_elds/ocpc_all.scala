@@ -248,7 +248,7 @@ object ocpc_all {
     val Sql4 =
       s"""
          |select
-         |n.tpye,
+         |n.type,
          |n.userid_cnt,
          |n.unitid_cnt,
          |n.t_ocpc_cost,
