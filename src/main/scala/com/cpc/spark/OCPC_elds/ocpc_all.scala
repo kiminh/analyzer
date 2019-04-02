@@ -109,10 +109,10 @@ object ocpc_all {
          |sum(ocpc_show_cnt) as ocpc_show_cnt,
          |sum(ocpc_click_cnt) as ocpc_click_cnt,
          |sum(ocpc_convert_cnt) as ocpc_convert_cnt,
-         |sum(ocpc_cost)/sum(ocpc_show_cnt)*1000 as cpm,
-         |sum(ocpc_cost)/sum(ocpc_convert_cnt) as cpa,
          |sum(ocpc_click_cnt) /sum(ocpc_show_cnt) as ctr,
          |sum(ocpc_convert_cnt)/sum(ocpc_click_cnt) as post_cvr,
+         |sum(ocpc_cost)/sum(ocpc_show_cnt)*1000 as cpm,
+         |sum(ocpc_cost)/sum(ocpc_convert_cnt) as cpa,
          |0 as ocpc_cost_warning,
          |0 as post_cvr_warning,
          |day
