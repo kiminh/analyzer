@@ -154,16 +154,16 @@ object OcpcDetailReport {
          |        searchid,
          |        userid,
          |        unitid,
-         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        exp_ctr * 1.0 / 1000000 as exp_ctr,
+         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
          |        isclick,
          |        isshow,
          |        ideaid,
          |        exptags,
          |        price,
-         |        ext_int['bid_ocpc'] as bid_ocpc,
-         |        ext_int['is_ocpc'] as is_ocpc,
-         |        ext_string['ocpc_log'] as ocpc_log,
+         |        bid_ocpc,
+         |        is_ocpc,
+         |        ocpc_log,
          |        hour
          |    from
          |        dl_cpc.cpc_novel_union_events

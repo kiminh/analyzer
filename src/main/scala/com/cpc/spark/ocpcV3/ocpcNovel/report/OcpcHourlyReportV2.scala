@@ -284,7 +284,6 @@ object OcpcHourlyReportV2 {
          |  $selectCondition1
          |and media_appsid in ("80000001", "80000002")
          |and isclick = 1
-         |and antispam = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
