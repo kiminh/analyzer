@@ -48,6 +48,7 @@ object IndustryAaReportDaily {
         |    a.click,
         |    a.show,
         |    a.cost,
+        |    a.post_cvr,
         |    a.cpm,
         |    a.ocpc_cost,
         |    a.ocpc_cost_ratio,
