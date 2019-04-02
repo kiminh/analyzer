@@ -221,8 +221,8 @@ object OcpcLaunchReport {
          |select
          |  a.day as `date`,
          |  choose,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'other' end as adclass,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
