@@ -48,7 +48,13 @@ object OcpcSampleToPb {
     println("result1")
     result1.show(10)
 
-    val result2 = getNewK(date, hour, version, spark)
+    val result2raw = getNewK(date, hour, version, spark)
+    val ocpcUnit = getConversionGoal(date, hour, spark)
+    val result2 = result2raw
+      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
+      .filter(s"ocpc_flag is not null")
+      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
     println("result2")
     result2.show(10)
     val result = result1
@@ -79,6 +85,32 @@ object OcpcSampleToPb {
 //        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
+  }
+
+  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .withColumn("cv_flag", lit(1))
+      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "cv_flag")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
