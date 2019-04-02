@@ -119,11 +119,13 @@ object hottopicBagWithoutLive {
         }
         lb.distinct
       }).toDF()
-      .join(LiveComb, Seq("comb"), "left")
-      .select("uid", "comb", "appName")
 
     result.write.mode("overwrite").saveAsTable("test.result_sjq")
-    result.filter("appName is NULL")
+
+//      .join(LiveComb, Seq("comb"), "left").distinct()
+//      .select("uid", "comb", "appName")
+    val result1 = result.join(LiveComb, Seq("comb")).filter("appName is NULL").toDF()
+    result1
 
   }
 
