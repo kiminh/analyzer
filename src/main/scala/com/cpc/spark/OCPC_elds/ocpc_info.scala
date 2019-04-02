@@ -190,10 +190,49 @@ object ocpc_info {
     println("result1 is successful! ")
 
 
-    val Sql4 =
+        val Sql4 =
+          s"""
+              |select
+              |`date` as day,
+              |industy as type,
+              |sum(case when isclick=1 then price else null end) as total_cost
+              |from dl_cpc.ocpc_basedata_union_events
+              |where `date`='$date'
+              |and media_appsid in ("80000001", "80000002")
+              |and isshow=1
+              |and adsrc=1
+              |and antispam=0
+              |group by `date`,industy
+              |
+            """.stripMargin
+    println(Sql4)
+    val all = spark.sql(Sql4)
+    all.createOrReplaceTempView("all")
+    println ("all is successful! ")
+
+    val Sql5 =
       s"""
          |select
          |*
+         |from
+         |(select
+         |a.type,
+         |a.ocpc_cost,
+         |a.ocpc_show_cnt,
+         |a.ocpc_click_cnt,
+         |a.ocpc_cvr_cnt,
+         |a.cpm,
+         |a.ocpc_yes_cost,
+         |a.ocpc_no_cost,
+         |a.ocpc_userid_cnt,
+         |a.ocpc_unitid_cnt,
+         |b.total_cost,
+         |a.ocpc_cost_ratio,
+         |a.ocpc_control_cost,
+         |a.ocpc_control_cost_ratio,
+         |a.ocpc_control_unitid,
+         |a.ocpc_control_unitid_ratio,
+         |a.day
          |from
          |(select
          |'总体' as type,
@@ -206,7 +245,6 @@ object ocpc_info {
          |sum(ocpc_no_cost) as ocpc_no_cost,
          |count(distinct userid) as ocpc_userid_cnt,
          |count(distinct unitid) as ocpc_unitid_cnt,
-         |sum(total_cost) as total_cost,
          |sum(ocpc_cost)/sum(total_cost) as ocpc_cost_ratio,
          |sum(case when is_control_cost=1 then ocpc_cost else null end) as ocpc_control_cost,
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
@@ -215,9 +253,35 @@ object ocpc_info {
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
-         |group by day,'总体'
+         |group by day,'总体')a
+         |left join
+         |(select
+         |day,
+         |sum(total_cost) as total_cost
+         |from all
+         |where day='$date'
+         |group by day)b on a.day=b.day )p
          |UNION ALL
-         |select
+         |(select
+         |c.type,
+         |c.ocpc_cost,
+         |c.ocpc_show_cnt,
+         |c.ocpc_click_cnt,
+         |c.ocpc_cvr_cnt,
+         |c.cpm,
+         |c.ocpc_yes_cost,
+         |c.ocpc_no_cost,
+         |c.ocpc_userid_cnt,
+         |c.ocpc_unitid_cnt,
+         |d.total_cost,
+         |c.ocpc_cost_ratio,
+         |c.ocpc_control_cost,
+         |c.ocpc_control_cost_ratio,
+         |c.ocpc_control_unitid,
+         |c.ocpc_control_unitid_ratio,
+         |c.day
+         |from
+         |(select
          |industry as type,
          |sum(ocpc_cost) as ocpc_cost,
          |sum(ocpc_show_cnt) as ocpc_show_cnt,
@@ -237,12 +301,19 @@ object ocpc_info {
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
-         |group by day,industry )a
-
+         |group by day,industry )c
+         |left join
+         |(select
+         |day,
+         |type,
+         |sum(total_cost) as total_cost
+         |from all
+         |where day='$date'
+         |group by day,type )d on c.day=d.day and c.type=d.type )q
              """.stripMargin
 
-    println(Sql4)
-    val result2 = spark.sql(Sql4)
+    println(Sql5)
+    val result2 = spark.sql(Sql5)
     result2.show(10)
     result2.repartition(1)
       .write
