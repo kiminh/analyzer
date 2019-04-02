@@ -71,13 +71,13 @@ object IndustryAaReportHourly {
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01
         |        / sum(case when isclick = 1 and is_hidden = 1 then iscvr else 0 end) as hidden_cpa_real,
         |        sum(case when isclick = 1 and is_hidden = 1 then price else 0 end) * 0.01 as hidden_cost,
-        |        max(case when isclick = 1 then budget * 0.01 else 0 end) as hidden_budget
+        |        max(case when isclick = 1 and is_hidden = 1 then budget else 0 end) * 0.01 as hidden_budget
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
-        |        `date` = '2019-03-20'
+        |        `date` = '$date'
         |    and
-        |        hour = '10'
+        |        hour = '$hour'
         |    and
         |        version = 'qtt_demo'
         |    group by
@@ -147,7 +147,8 @@ object IndustryAaReportHourly {
         |    round(c.hit_line_num * 1.0 / b.ocpc_hidden_num, 4) as hidden_hit_line_ratio,
         |    c.avg_hidden_cost,
         |    c.avg_hidden_budget,
-        |    round(c.avg_hidden_cost * 1.0 / c.avg_hidden_budget) as hidden_budget_cost_ratio
+        |    (case when c.avg_hidden_budget > 0 then round(c.avg_hidden_cost * 1.0 / c.avg_hidden_budget, 4)
+        |          else null end) as hidden_budget_cost_ratio
         |from
         |    other_index_table a
         |left join
