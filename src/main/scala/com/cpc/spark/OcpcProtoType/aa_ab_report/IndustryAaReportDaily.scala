@@ -394,6 +394,7 @@ object IndustryAaReportDaily {
          |    a.cv,
          |    a.click,
          |    a.show,
+         |    a.post_cvr,
          |    b.cost,
          |    a.cpm,
          |    a.ocpc_cost,
@@ -406,6 +407,7 @@ object IndustryAaReportDaily {
          |        sum(iscvr) as cv,
          |        sum(isclick) as click,
          |        sum(isshow) as show,
+         |        round(sum(iscvr) * 1.0 / sum(isclick), 4) as post_cvr,
          |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm,
          |        sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01 as ocpc_cost,
          |        round(sum(case when isclick = 1 then price else 0 end)
