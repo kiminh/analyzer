@@ -95,12 +95,10 @@ object OcpcCPCbidV2 {
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
-    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190402")
     val result = rawData
         .select("identifier", "conversion_goal", "cali_value")
-        .groupBy("identifier")
+        .groupBy("identifier", "conversion_goal")
         .agg(avg(col("cali_value")).alias("cali_value"))
-        .select("identifier", "cali_value")
         .select("identifier", "cali_value")
 
 
