@@ -123,8 +123,8 @@ object ocpc_all {
       s"""
          |select
          |a.type,
-         |a.userid,
-         |a.unitid,
+         |a.userid_cnt,
+         |a.unitid_cnt,
          |a.ocpc_cost,
          |a.ocpc_show_cnt,
          |a.ocpc_click_cnt,
