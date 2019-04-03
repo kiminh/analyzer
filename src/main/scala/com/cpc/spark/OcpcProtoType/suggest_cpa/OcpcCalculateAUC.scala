@@ -15,7 +15,7 @@ object OcpcCalculateAUC {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toInt
-    val version = "qtt_demo"
+    val version = args(3).toString
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour, $conversionGoal")
@@ -48,8 +48,8 @@ object OcpcCalculateAUC {
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
-        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+//        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
   def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
