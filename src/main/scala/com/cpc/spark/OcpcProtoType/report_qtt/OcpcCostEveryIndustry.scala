@@ -37,6 +37,8 @@ object OcpcCostEveryIndustry {
         |    antispam = 0
         |and
         |    adsrc = 1
+        |and
+        |    (charge_type = 1 or charge_type is null)
         |group by
         |    `date`,
         |    (case when (cast(adclass as string) like "134%" or cast(adclass as string) like "107%") then 'elds'
