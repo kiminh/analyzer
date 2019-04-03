@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa
+package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_v1
 
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 import org.apache.spark.sql.functions._
