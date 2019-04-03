@@ -72,7 +72,31 @@ object IndustryAaReportHourly {
     spark.sql(sql1).createOrReplaceTempView("index_of_industry_table")
 
     // 统计整体的指标值
+    // 首先统计整体的cpm
     val sql2 =
+      s"""
+        |select
+        |    'all' as industry,
+        |    cpm
+        |from
+        |    (select
+        |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm
+        |    from
+        |        dl_cpc.ocpc_aa_ab_report_base_data
+        |    where
+        |        `date` = '$date'
+        |    and
+        |        hour = '$hour'
+        |    and
+        |        version = 'qtt_demo'
+        |    and
+        |        is_ocpc = 1) temp
+      """.stripMargin
+    println("--------get all index sql2--------")
+    println(sql2)
+    spark.sql(sql2).createOrReplaceTempView("all_cpm_table")
+
+    val sql3 =
       s"""
         |select
         |    temp1.industry,
@@ -141,39 +165,24 @@ object IndustryAaReportHourly {
         |    on
         |        a.industry = c.industry) temp1
         |left join
-        |    (select
-        |        'all' as industry,
-        |        cpm
-        |    from
-        |        (select
-        |            round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm
-        |        from
-        |            dl_cpc.ocpc_aa_ab_report_base_data
-        |        where
-        |            `date` = '$date'
-        |        and
-        |            hour = '$hour'
-        |        and
-        |            version = 'qtt_demo'
-        |        and
-        |            is_ocpc = 1) temp) temp2
+        |    all_cpm_table temp2
         |on
         |    temp1.industry = temp2.industry
       """.stripMargin
-    println("--------get all index sql2--------")
-    println(sql2)
-    spark.sql(sql2).createOrReplaceTempView("index_of_all_table")
+    println("--------get all index sql3--------")
+    println(sql3)
+    spark.sql(sql3).createOrReplaceTempView("index_of_all_table")
 
     // 整体和分行业的指标进行合并
-    val sql3 =
+    val sql4 =
       s"""
         |select * from index_of_all_table
         |union
         |select * from index_of_industry_table
       """.stripMargin
     println("--------get all index sql3--------")
-    println(sql3)
-    val dataDF = spark.sql(sql3)
+    println(sql4)
+    val dataDF = spark.sql(sql4)
 
     dataDF
       .withColumn("date", lit(date))
