@@ -36,7 +36,8 @@ object IndustryAaReportDaily {
     ktOcpcAllCostDF.createOrReplaceTempView("kt_ocpc_cost_table")
     preDataDF.createOrReplaceTempView("pre_data_table")
 
-    val sql =
+    // 统计分行业的所有指标值
+    val sql1 =
       s"""
         |select
         |    a.industry,
@@ -97,9 +98,154 @@ object IndustryAaReportDaily {
         |on
         |    a.industry = e.industry
       """.stripMargin
-    println("-------get index value--------")
-    val indexValueDF = spark.sql(sql)
-    indexValueDF
+    println("-------get index value sql1-------")
+    spark.sql(sql1).createOrReplaceTempView("index_of_industry_table")
+
+    // 统计整体的指标值
+    // 首先统计整体的cpm
+    val sql2 =
+    s"""
+       |select
+       |    'all' as industry,
+       |    cpm
+       |from
+       |    (select
+       |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm
+       |    from
+       |        dl_cpc.ocpc_aa_ab_report_base_data
+       |    where
+       |        `date` = '$date'
+       |    and
+       |        hour = '$hour'
+       |    and
+       |        version = 'qtt_demo'
+       |    and
+       |        is_ocpc = 1) temp
+      """.stripMargin
+    println("--------get all index sql2--------")
+    println(sql2)
+    spark.sql(sql2).createOrReplaceTempView("all_cpm_table")
+
+    // 然后统计其他的整体的指标
+    val sql3 =
+      s"""
+         |select
+         |    'all' as industry,
+         |    sum(b.all_user_num) as all_user_num,
+         |    sum(b.all_unit_num) as all_unit_num,
+         |    sum(b.ocpc_user_num) as ocpc_user_num,
+         |    sum(b.ocpc_unit_num) as ocpc_unit_num,
+         |    sum(a.cv) as cv,
+         |    sum(a.click) as click,
+         |    sum(a.show) as show,
+         |    sum(a.cost) as cost,
+         |    sum(a.ocpc_cost) as ocpc_cost,
+         |    (case when sum(a.cost) > 0 then round(sum(a.ocpc_cost) / sum(a.cost), 4)
+         |          else 0 end)  as ocpc_cost_ratio,
+         |    sum(d.kt_ocpc_cost) as kt_ocpc_cost,
+         |    (case when sum(d.kt_ocpc_cost) > 0 then round(sum(a.ocpc_cost) / sum(d.kt_ocpc_cost) , 4)
+         |          else 0 end) as ocpc_in_kt_ratio,
+         |    sum(c.cpa_control_num) as cpa_control_num,
+         |    (case when sum(b.ocpc_unit_num) > 0 then round(sum(c.cpa_control_num) * 1.0/ sum(b.ocpc_unit_num), 4)
+         |          else 0 end) as cpa_control_ratio,
+         |    sum(b.ocpc_hidden_num) as ocpc_hidden_num,
+         |    sum(a.ocpc_hidden_cost) as ocpc_hidden_cost,
+         |    (case when sum(a.ocpc_hidden_cost) > 0 then round(sum(a.ocpc_hidden_cost) / sum(a.ocpc_cost), 4)
+         |          else 0 end) as ocpc_hidden_cost_ratio,
+         |    sum(c.hidden_control_num) as hidden_control_num,
+         |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hidden_control_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
+         |          else 0 end) as hidden_control_ratio,
+         |    sum(c.hit_line_num) as hit_line_num,
+         |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hit_line_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
+         |          else 0 end)  as hidden_hit_line_ratio,
+         |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.all_hidden_cost) / sum(b.ocpc_hidden_num), 4)
+         |          else 0 end) as avg_hidden_cost,
+         |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.all_hidden_budget) / sum(b.ocpc_hidden_num), 4)
+         |          else 0 end) as avg_hidden_budget
+         |from
+         |    other_index_table a
+         |left join
+         |    unit_user_num_table b
+         |on
+         |    a.industry = b.industry
+         |left join
+         |    control_table c
+         |on
+         |    a.industry = c.industry
+         |left join
+         |    kt_ocpc_cost_table d
+         |on
+         |    a.industry = d.industry
+      """.stripMargin
+    println("--------get all index sql3--------")
+    println(sql3)
+    spark.sql(sql3).createOrReplaceTempView("all_other_index_table")
+
+    val sql4 =
+      s"""
+         |select
+         |    temp1.industry,
+         |    temp1.all_user_num,
+         |    temp1.all_unit_num,
+         |    temp1.ocpc_user_num,
+         |    temp1.ocpc_unit_num,
+         |    temp1.cv,
+         |    temp1.click,
+         |    temp1.show,
+         |    temp1.cost,
+         |    temp2.cpm,
+         |    temp1.ocpc_cost,
+         |    temp1.ocpc_cost_ratio,
+         |    temp1.kt_ocpc_cost,
+         |    temp1.ocpc_in_kt_ratio,
+         |    temp1.cpa_control_num,
+         |    temp1.cpa_control_ratio,
+         |    temp1.ocpc_hidden_num,
+         |    temp1.ocpc_hidden_cost,
+         |    temp1.ocpc_hidden_cost_ratio,
+         |    temp1.hidden_control_num,
+         |    temp1.hidden_control_ratio,
+         |    temp1.hit_line_num,
+         |    temp1.hidden_hit_line_ratio,
+         |    temp1.avg_hidden_cost,
+         |    temp1.avg_hidden_budget,
+         |    (case when temp1.avg_hidden_budget > 0 then round(temp1.avg_hidden_cost * 1.0 / temp1.avg_hidden_budget, 4)
+         |          else null end) as hidden_budget_cost_ratio
+         |from
+         |    all_other_index_table temp1
+         |left join
+         |    all_cpm_table temp2
+         |on
+         |    temp1.industry = temp2.industry
+      """.stripMargin
+    println("--------get all index sql4--------")
+    println(sql4)
+    spark.sql(sql4).createOrReplaceTempView("index_of_all_table")
+
+    // 整体和分行业的指标进行合并
+    val sql5 =
+      s"""
+         |select
+         |    *,
+         |    null as pre_cv,
+         |    null as cv_ring_ratio,
+         |    null as pre_cost,
+         |    null as cost_ring_ratio,
+         |    null as pre_post_cvr,
+         |    null as post_cvr_ring_ratio,
+         |    null as pre_cpm ,
+         |    null as cpm_ring_ratio
+         |from
+         |    index_of_all_table
+         |
+         |union
+         |
+         |select * from index_of_industry_table
+      """.stripMargin
+    println("--------get all index sql5--------")
+    println(sql5)
+    val dataDF = spark.sql(sql5)
+    dataDF
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
       .repartition(400)
