@@ -65,7 +65,7 @@ object OcpcSmoothFactor{
 
     val result = pcocData
         .join(jfbData, Seq("unitid"), "outer")
-        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb")
+        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr")
         .filter(s"pcoc is not null and pcoc != 0")
 
     result
@@ -100,7 +100,7 @@ object OcpcSmoothFactor{
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .select("unitid", "post_cvr", "pre_cvr")
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "pcoc")
+      .select("unitid", "pcoc", "post_cvr")
 
     pcocData.show(10)
 
@@ -144,6 +144,8 @@ object OcpcSmoothFactor{
          |  $selectCondition
          |AND
          |  $mediaSelection
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val base = spark

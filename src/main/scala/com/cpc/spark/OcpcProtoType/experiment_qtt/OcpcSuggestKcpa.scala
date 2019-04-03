@@ -125,7 +125,8 @@ object OcpcSuggestKcpa {
          |    unitid,
          |    userid,
          |    isclick,
-         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -142,6 +143,7 @@ object OcpcSuggestKcpa {
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
+      .filter(s"is_hidden = 0")
       .groupBy("unitid", "conversion_goal")
       .agg(sum(col("isclick")).alias("click"))
       .withColumn("identifier", col("unitid"))
