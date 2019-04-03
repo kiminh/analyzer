@@ -475,7 +475,9 @@ object IndustryAaReportDaily {
          |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
          |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
          |    avg(hidden_cost) as avg_hidden_cost,
-         |    avg(hidden_budget) as avg_hidden_budget
+         |    avg(hidden_budget) as avg_hidden_budget,
+         |    sum(hidden_cost) as all_hidden_cost,
+         |    sum(hidden_budget) as all_hidden_budget
          |from
          |    (select
          |        industry,
@@ -517,7 +519,9 @@ object IndustryAaReportDaily {
          |    b.hidden_control_num,
          |    b.hit_line_num,
          |    b.avg_hidden_cost,
-         |    b.avg_hidden_budget
+         |    b.avg_hidden_budget,
+         |    b.all_hidden_cost,
+         |    b.all_hidden_budget
          |from
          |    mingtou_control_num_table a
          |left join
