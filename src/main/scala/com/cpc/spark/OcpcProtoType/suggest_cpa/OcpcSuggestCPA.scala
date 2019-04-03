@@ -269,8 +269,10 @@ object OcpcSuggestCPA {
          |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark
+    val result = spark
       .sql(sqlRequest)
+
+    val resultDF = result
       .groupBy("unitid")
       .agg(min(col("kvalue")).alias("kvalue"))
       .select("unitid", "kvalue")
@@ -284,11 +286,17 @@ object OcpcSuggestCPA {
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, conversionGoal, date, hour, spark)
-    val tableName = "test.ocpc_suggest_raw_data"
+//    val tableName = "test.ocpc_suggest_raw_data"
+//    baseLog
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("version", lit(version))
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_raw_data")
+
+    val tableName = "dl_cpc.ocpc_suggest_raw_data"
     baseLog
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_raw_data")
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
     // 统计数据
     val resultDF = calculateLog(tableName, version, conversionGoal, date, hour, spark)
