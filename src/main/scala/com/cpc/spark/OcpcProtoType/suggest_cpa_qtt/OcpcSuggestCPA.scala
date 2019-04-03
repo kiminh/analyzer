@@ -77,9 +77,12 @@ object OcpcSuggestCPA {
     resultDF.show(10)
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+//    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
-    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+      .repartition(10).write.mode("overwrite").insertInto("test.test20190403cpa")
+    println("successfully save data into table: test.test20190403cpa")
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, cvrType: String, spark: SparkSession) = {
@@ -255,19 +258,33 @@ object OcpcSuggestCPA {
       conversionGoal = 3
     }
 
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  auc
+//         |FROM
+//         |  dl_cpc.ocpc_unitid_auc_daily
+//         |WHERE
+//         |  `date` = '$date'
+//         |AND
+//         |  version = '$version'
+//         |AND
+//         |  conversion_goal = $conversionGoal
+//       """.stripMargin
     val sqlRequest =
       s"""
-         |SELECT
-         |  unitid,
-         |  auc
-         |FROM
-         |  dl_cpc.ocpc_unitid_auc_daily
-         |WHERE
-         |  `date` = '$date'
-         |AND
-         |  version = '$version'
-         |AND
-         |  conversion_goal = $conversionGoal
+        |SELECT
+        |  unitid,
+        |  auc
+        |FROM
+        |  test.test20190403auc
+        |WHERE
+        |  `date` = '$date'
+        |AND
+        |  version = '$version'
+        |AND
+        |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
