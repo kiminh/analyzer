@@ -108,6 +108,7 @@ object BiReport {
     val total_money = data10.select("money").rdd.map( x => x.getAs[Long]("money")).reduce(_+_).toDouble
     val data1 = data10.withColumn("money_acount", col("money")/total_money)
       .select("direct", "money", "money_acount", "cpm", "acp", "ctr", "`date`")
+      .na.fill(-1)
 
     val report_tb1 = "report2.hottopic_direct_summary"
     val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
@@ -159,6 +160,7 @@ object BiReport {
     val data20 = spark.sql(sql4)
     val data2 = data20.withColumn("money_account", col("money")/total_money)
       .select("direct", "mode", "money", "money_account", "cpm", "acp", "ctr", "`date`")
+      .na.fill(-1)
 
     val report_tb2 = "report2.hottopic_direct_mode_summary"
     val deletesql2 = s"delete from report2.hottopic_direct_mode_summary where date = '$date'"
@@ -206,7 +208,7 @@ object BiReport {
        """.stripMargin
     val data30 = spark.sql(sql5)
     val data3 = data30.withColumn("money_account", col("money")/total_money)
-      .select("direct", "usertype", "money", "money_account", "cpm", "acp", "ctr", "`date`")
+      .select("direct", "usertype", "money", "money_account", "cpm", "acp", "ctr", "`date`").na.fill(-1)
     val report_tb3 = "report2.hottopic_direct_usertype_summary"
     val deletesql3 = s"delete from report2.hottopic_direct_usertype_summary where date = '$date'"
     update(deletesql3)
@@ -261,7 +263,7 @@ object BiReport {
        """.stripMargin
     val data40 = spark.sql(sql6)
     val data4 = data40.withColumn("money_account", col("money")/total_money)
-      .select("direct", "adclass", "money", "money_account", "cpm", "acp", "ctr", "`date`")
+      .select("direct", "adclass", "money", "money_account", "cpm", "acp", "ctr", "`date`").na.fill(-1)
     val report_tb4 = "report2.hottopic_direct_adclass_summary"
     val deletesql4 = s"delete from report2.hottopic_direct_adclass_summary where date = '$date'"
     update(deletesql4)
@@ -313,7 +315,7 @@ object BiReport {
       .select(    "usertype","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
         "unit_ratio_lt50",
         "unit_ratio_et0",
-        "`date`")
+        "`date`").na.fill(-1)
     val report_tb5 = "report2.hottopic_indirect_usertype_ratio_distribution"
     val deletesql5 = s"delete from report2.hottopic_indirect_usertype_ratio_distribution where date = '$date'"
     update(deletesql5)
@@ -366,7 +368,7 @@ object BiReport {
       .select("adclass","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
         "unit_ratio_lt50",
         "unit_ratio_et0",
-        "`date`")
+        "`date`").na.fill(-1)
     val report_tb6 = "report2.hottopic_indirect_adclass_ratio_distribution"
     val deletesql6 = s"delete from report2.hottopic_indirect_adclass_ratio_distribution where date = '$date'"
     update(deletesql6)
