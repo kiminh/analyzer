@@ -96,7 +96,55 @@ object IndustryAaReportHourly {
     println(sql2)
     spark.sql(sql2).createOrReplaceTempView("all_cpm_table")
 
+    // 然后统计其他的整体的指标
     val sql3 =
+      s"""
+        |select
+        |    'all' as industry,
+        |    sum(b.all_user_num) as all_user_num,
+        |    sum(b.all_unit_num) as all_unit_num,
+        |    sum(b.ocpc_user_num) as ocpc_user_num,
+        |    sum(b.ocpc_unit_num) as ocpc_unit_num,
+        |    sum(a.cv) as cv,
+        |    sum(a.click) as click,
+        |    sum(a.show) as show,
+        |    sum(a.cost) as cost,
+        |    sum(a.ocpc_cost) as ocpc_cost,
+        |    (case when sum(a.cost) > 0 round(sum(a.ocpc_cost) / sum(a.cost), 4)
+        |          else 0 end)  as ocpc_cost_ratio,
+        |    sum(c.cpa_control_num) as cpa_control_num,
+        |    (case when sum(b.ocpc_unit_num) > 0 then round(sum(c.cpa_control_num) * 1.0/ sum(b.ocpc_unit_num), 4)
+        |          else 0 end) as cpa_control_ratio,
+        |    sum(b.ocpc_hidden_num) as ocpc_hidden_num,
+        |    sum(a.ocpc_hidden_cost) as ocpc_hidden_cost,
+        |    (case when sum(a.ocpc_hidden_cost) > 0 then round(sum(a.ocpc_hidden_cost) / sum(a.cost), 4)
+        |          else 0 end) as ocpc_hidden_cost_ratio,
+        |    sum(c.hidden_control_num) as hidden_control_num,
+        |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hidden_control_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
+        |          else 0 end) as hidden_control_ratio,
+        |    sum(c.hit_line_num) as hit_line_num,
+        |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hit_line_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
+        |          else 0 end)  as hidden_hit_line_ratio,
+        |    (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_cost) / sum(c.hidden_click), 4)
+        |          else 0 end) as avg_hidden_cost,
+        |    (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_budget) / sum(c.hidden_click), 4)
+        |          else 0 end) as avg_hidden_budget
+        |from
+        |    other_index_table a
+        |left join
+        |    unit_user_num_table b
+        |on
+        |    a.industry = b.industry
+        |left join
+        |    control_table c
+        |on
+        |    a.industry = c.industry
+      """.stripMargin
+    println("--------get all index sql3--------")
+    println(sql3)
+    spark.sql(sql3).createOrReplaceTempView("all_other_index_table")
+
+    val sql4 =
       s"""
         |select
         |    temp1.industry,
@@ -124,65 +172,26 @@ object IndustryAaReportHourly {
         |    (case when temp1.avg_hidden_budget > 0 then round(temp1.avg_hidden_cost * 1.0 / temp1.avg_hidden_budget, 4)
         |          else null end) as hidden_budget_cost_ratio
         |from
-        |    (select
-        |        'all' as industry,
-        |        sum(b.all_user_num) as all_user_num,
-        |        sum(b.all_unit_num) as all_unit_num,
-        |        sum(b.ocpc_user_num) as ocpc_user_num,
-        |        sum(b.ocpc_unit_num) as ocpc_unit_num,
-        |        sum(a.cv) as cv,
-        |        sum(a.click) as click,
-        |        sum(a.show) as show,
-        |        sum(a.cost) as cost,
-        |        sum(a.ocpc_cost) as ocpc_cost,
-        |        (case when sum(a.cost) > 0 round(sum(a.ocpc_cost) / sum(a.cost), 4)
-        |              else 0 end)  as ocpc_cost_ratio,
-        |        sum(c.cpa_control_num) as cpa_control_num,
-        |        (case when sum(b.ocpc_unit_num) > 0 then round(sum(c.cpa_control_num) * 1.0/ sum(b.ocpc_unit_num), 4)
-        |              else 0 end) as cpa_control_ratio,
-        |        sum(b.ocpc_hidden_num) as ocpc_hidden_num,
-        |        sum(a.ocpc_hidden_cost) as ocpc_hidden_cost,
-        |        (case when sum(a.ocpc_hidden_cost) > 0 then round(sum(a.ocpc_hidden_cost) / sum(a.cost), 4)
-        |              else 0 end) as ocpc_hidden_cost_ratio,
-        |        sum(c.hidden_control_num) as hidden_control_num,
-        |        (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hidden_control_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
-        |              else 0 end) as hidden_control_ratio,
-        |        sum(c.hit_line_num) as hit_line_num,
-        |        (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hit_line_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
-        |              else 0 end)  as hidden_hit_line_ratio,
-        |        (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_cost) / sum(c.hidden_click), 4)
-        |              else 0 end) as avg_hidden_cost,
-        |        (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_budget) / sum(c.hidden_click), 4)
-        |              else 0 end) as avg_hidden_budget
-        |    from
-        |        other_index_table a
-        |    left join
-        |        unit_user_num_table b
-        |    on
-        |        a.industry = b.industry
-        |    left join
-        |        control_table c
-        |    on
-        |        a.industry = c.industry) temp1
+        |    all_other_index_table temp1
         |left join
         |    all_cpm_table temp2
         |on
         |    temp1.industry = temp2.industry
       """.stripMargin
-    println("--------get all index sql3--------")
-    println(sql3)
-    spark.sql(sql3).createOrReplaceTempView("index_of_all_table")
+    println("--------get all index sql4--------")
+    println(sql4)
+    spark.sql(sql4).createOrReplaceTempView("index_of_all_table")
 
     // 整体和分行业的指标进行合并
-    val sql4 =
+    val sql5 =
       s"""
         |select * from index_of_all_table
         |union
         |select * from index_of_industry_table
       """.stripMargin
-    println("--------get all index sql3--------")
-    println(sql4)
-    val dataDF = spark.sql(sql4)
+    println("--------get all index sql5--------")
+    println(sql5)
+    val dataDF = spark.sql(sql5)
 
     dataDF
       .withColumn("date", lit(date))
