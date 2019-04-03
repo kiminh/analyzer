@@ -16,7 +16,7 @@ object OcpcUnionSuggestCPA {
     val version = args(2).toString
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc suggest cpa v2: $date, $hour")
+      .appName(s"ocpc suggest cpa v2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
