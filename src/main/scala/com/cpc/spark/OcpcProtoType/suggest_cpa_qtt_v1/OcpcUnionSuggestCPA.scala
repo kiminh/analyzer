@@ -4,10 +4,12 @@ import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.suggest_cpa.OcpcUnionSuggestCPA._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcUnionSuggestCPA {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     将qtt_demo的三种转化目标的表union到一起
      */
