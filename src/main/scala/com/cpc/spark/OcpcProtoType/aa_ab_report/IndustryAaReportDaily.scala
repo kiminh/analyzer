@@ -450,7 +450,7 @@ object IndustryAaReportDaily {
       s"""
          |select
          |    industry,
-         |    count(case when cpa_real < cpa_given * 1.2 then 1 else 0 end) as cpa_control_num
+         |    sum(case when cpa_real < cpa_given * 1.2 then 1 else 0 end) as cpa_control_num
          |from
          |    (select
          |        industry,
@@ -484,8 +484,8 @@ object IndustryAaReportDaily {
       s"""
          |select
          |    industry,
-         |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
-         |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
+         |    sum(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
+         |    sum(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
          |    avg(hidden_cost) as avg_hidden_cost,
          |    avg(hidden_budget) as avg_hidden_budget,
          |    sum(hidden_cost) as all_hidden_cost,
