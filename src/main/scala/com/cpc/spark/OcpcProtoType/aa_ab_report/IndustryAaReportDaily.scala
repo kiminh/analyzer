@@ -230,17 +230,25 @@ object IndustryAaReportDaily {
     val sql5 =
       s"""
          |select
-         |    *,
-         |    null as pre_cv,
-         |    null as cv_ring_ratio,
-         |    null as pre_cost,
-         |    null as cost_ring_ratio,
-         |    null as pre_post_cvr,
-         |    null as post_cvr_ring_ratio,
-         |    null as pre_cpm ,
-         |    null as cpm_ring_ratio
+         |    a.*,
+         |    b.pre_cv as pre_cv,
+         |    (case when b.pre_cv > 0 then round(a.cv * 1.0 / b.pre_cv, 4)
+         |          else 0 end) as cv_ring_ratio,
+         |    b.pre_cost as pre_cost,
+         |    (case when b.pre_cost > 0 then round(a.cost / b.pre_cost, 4)
+         |          else 0 end) as cost_ring_ratio,
+         |    b.pre_post_cvr as pre_post_cvr,
+         |    (case when b.pre_post_cvr > 0 then round(a.post_cvr / b.pre_post_cvr, 4)
+         |          else 0 end) as post_cvr_ring_ratio,
+         |    b.pre_cpm as pre_cpm ,
+         |    (case when b.pre_cpm > 0 then round(a.cpm / b.pre_cpm, 4)
+         |          else 0 end) as cpm_ring_ratio
          |from
-         |    index_of_all_table
+         |    index_of_all_table a
+         |left join
+         |    pre_data_table b
+         |on
+         |    a.industry = b.industry
          |
          |union
          |
