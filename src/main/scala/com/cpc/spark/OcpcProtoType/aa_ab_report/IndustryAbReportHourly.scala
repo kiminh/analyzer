@@ -158,7 +158,7 @@ object IndustryAbReportHourly {
         |  count(distinct uid) as unit_uid_num
         |from
         |  dl_cpc.ocpc_aa_ab_report_base_data
-        |and
+        |where
         |  `date` = '$date'
         |and
         |  hour = '$hour'
