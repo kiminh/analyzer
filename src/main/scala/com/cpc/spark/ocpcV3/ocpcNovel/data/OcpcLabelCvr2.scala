@@ -3,7 +3,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.data
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -17,7 +17,6 @@ object OcpcLabelCvr2 {
 
     // TODO 测试
     val result = getLabelBak(date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly")
     result
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
@@ -84,7 +83,7 @@ object OcpcLabelCvr2 {
          |    ideaid,
          |    unitid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
+         |    adclass,
          |    isclick,
          |    isshow
          |from dl_cpc.cpc_user_api_callback_union_log
@@ -199,7 +198,7 @@ object OcpcLabelCvr2 {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql4(date1, hour1, date, hour)
 
     val sqlRequest1 =
       s"""
@@ -208,15 +207,14 @@ object OcpcLabelCvr2 {
          |    ideaid,
          |    unitid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
+         |    adclass,
          |    isclick,
          |    isshow
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectCondition
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002")
          |and isshow = 1
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)

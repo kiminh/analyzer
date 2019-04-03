@@ -74,6 +74,8 @@ object OcpcSuggestCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
+    resultDF.show(10)
+
 //    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
@@ -509,7 +511,7 @@ object OcpcSuggestCPA {
       .groupBy("unitid")
       .agg(
         sum(col("pre_cvr")).alias("pre_cvr"),
-        sum(col("exp_cvr")).alias("exp_cvr"),
+        sum(col("pre_cvr_origin")).alias("exp_cvr"),
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("conversion")
       )
@@ -519,7 +521,7 @@ object OcpcSuggestCPA {
 
     val resultDF = finalData
       .join(data, Seq("unitid"), "outer")
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("pcoc", col("exp_cvr") * 1.0 / col("post_cvr"))
       .withColumn("pcvr", col("pre_cvr"))
       .select("unitid", "exp_cvr", "pre_cvr", "post_cvr", "pcvr", "pcoc")
 
@@ -642,21 +644,6 @@ object OcpcSuggestCPA {
     data
   }
 
-//  def getTimeRangeSqlCondition(endDate: String, endHour: String, hourCnt: Int): String = {
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-//    val endDay = endDate + " " + endHour
-//    val endDayTime = dateConverter.parse(endDay)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(endDayTime)
-//    calendar.add(Calendar.HOUR, -hourCnt)
-//    val startDateTime = calendar.getTime
-//    val startDateStr = dateConverter.format(startDateTime)
-//    val startDate = startDateStr.split(" ")(0)
-//    val startHour = startDateStr.split(" ")(1)
-//    val timeSelection = getTimeRangeSql(startDate, startHour, endDate, endHour)
-//    println(s"time selection is: $timeSelection")
-//    return timeSelection
-//  }
 
   def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
