@@ -18,7 +18,7 @@ object OcpcCalculateAUC {
     val version = "qtt_demo"
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc unitid auc: $date, $hour, $conversionGoal")
+      .appName(s"ocpc identifier auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
@@ -30,15 +30,15 @@ object OcpcCalculateAUC {
     data
       .repartition(10).write.mode("overwrite").insertInto(tableName)
 
-    // 获取unitid与industry之间的关联表
+    // 获取identifier与industry之间的关联表
     val unitidIndustry = getIndustry(tableName, conversionGoal, version, date, hour, spark)
 
     // 计算auc
     val aucData = getAuc(tableName, conversionGoal, version, date, hour, spark)
 
     val result = aucData
-      .join(unitidIndustry, Seq("unitid"), "left_outer")
-      .select("unitid", "auc", "industry")
+      .join(unitidIndustry, Seq("identifier"), "left_outer")
+      .select("identifier", "auc", "industry")
 
     val conversionGoalInt = conversionGoal.toInt
     val resultDF = result
@@ -73,14 +73,14 @@ object OcpcCalculateAUC {
     val sqlRequest2 =
       s"""
          |SELECT
-         |    t.unitid,
+         |    t.identifier,
          |    t.industry
          |FROM
          |    (SELECT
-         |        unitid,
+         |        identifier,
          |        industry,
          |        cnt,
-         |        row_number() over(partition by unitid order by cnt desc) as seq
+         |        row_number() over(partition by identifier order by cnt desc) as seq
          |    FROM
          |        raw_data) as t
          |WHERE
