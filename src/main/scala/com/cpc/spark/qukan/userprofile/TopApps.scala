@@ -64,7 +64,7 @@ object TopApps {
     //      txt = txt + "%s %s\n".format(t._1, t._2)
     //    }
 
-    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    val b = sendMail(txt, "%s topApps 活跃用户DAU大于2w".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
       "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
       "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net"))
     //val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
