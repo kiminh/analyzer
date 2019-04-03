@@ -274,17 +274,6 @@ object OcpcSuggestCPA {
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, conversionGoal, hourCnt, date, hour, spark)
-////    val tableName = "test.ocpc_suggest_raw_data"
-////    baseLog
-////      .withColumn("conversion_goal", lit(conversionGoal))
-////      .withColumn("version", lit(version))
-////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_raw_data")
-//
-//    val tableName = "dl_cpc.ocpc_suggest_raw_data"
-//    baseLog
-//      .withColumn("conversion_goal", lit(conversionGoal))
-//      .withColumn("version", lit(version))
-//      .repartition(100).write.mode("overwrite").insertInto(tableName)
 
     // 统计数据
     val resultDF = calculateLog(baseLog, conversionGoal, date, hour, spark)
