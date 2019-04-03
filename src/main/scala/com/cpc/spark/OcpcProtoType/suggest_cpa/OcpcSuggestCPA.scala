@@ -53,7 +53,7 @@ object OcpcSuggestCPA {
 
 
     // 取基础数据部分
-    val baseData = getBaseData(media, version, conversionGoal, 72, date, hour, spark)
+    val baseData = getBaseData(media, conversionGoal, 72, date, hour, spark)
 
     // ocpc部分：kvalue
     val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
@@ -268,33 +268,33 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getBaseData(media: String, version: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     抽取基础数据部分：unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, conversionGoal, hourCnt, date, hour, spark)
-//    val tableName = "test.ocpc_suggest_raw_data"
+////    val tableName = "test.ocpc_suggest_raw_data"
+////    baseLog
+////      .withColumn("conversion_goal", lit(conversionGoal))
+////      .withColumn("version", lit(version))
+////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_raw_data")
+//
+//    val tableName = "dl_cpc.ocpc_suggest_raw_data"
 //    baseLog
 //      .withColumn("conversion_goal", lit(conversionGoal))
 //      .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_raw_data")
-
-    val tableName = "dl_cpc.ocpc_suggest_raw_data"
-    baseLog
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("version", lit(version))
-      .repartition(100).write.mode("overwrite").insertInto(tableName)
+//      .repartition(100).write.mode("overwrite").insertInto(tableName)
 
     // 统计数据
-    val resultDF = calculateLog(tableName, version, conversionGoal, date, hour, spark)
+    val resultDF = calculateLog(baseLog, conversionGoal, date, hour, spark)
 
     resultDF
   }
 
-  def calculateLog(tableName: String, version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def calculateLog(data: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取基础数据
-//    data.createOrReplaceTempView("base_data")
+    data.createOrReplaceTempView("base_data")
     val sqlRequest =
       s"""
          |SELECT
@@ -316,11 +316,7 @@ object OcpcSuggestCPA {
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid
          |FROM
-         |    $tableName
-         |WHERE
-         |    version = '$version'
-         |AND
-         |    conversion_goal = $conversionGoal
+         |    base_data
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
