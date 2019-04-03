@@ -20,7 +20,7 @@ object OcpcUnionSuggestCPA {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, version, date, hour, spark)
+    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
 
     val updateData = baseResult
       .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
