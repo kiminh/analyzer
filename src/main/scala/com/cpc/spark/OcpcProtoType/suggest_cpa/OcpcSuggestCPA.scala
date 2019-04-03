@@ -69,14 +69,6 @@ object OcpcSuggestCPA {
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, conversionGoal, spark)
-//    var conversionGoal = 1
-//    if (cvrGoal == "cvr1") {
-//      conversionGoal = 1
-//    } else if (cvrGoal == "cvr2") {
-//      conversionGoal = 2
-//    } else {
-//      conversionGoal = 3
-//    }
 
     val resultDF = result
       .withColumn("cv_goal", lit(conversionGoal))
@@ -86,9 +78,9 @@ object OcpcSuggestCPA {
 
     resultDF.show(10)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
