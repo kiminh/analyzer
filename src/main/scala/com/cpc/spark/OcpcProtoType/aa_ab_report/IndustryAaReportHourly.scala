@@ -423,7 +423,10 @@ object IndustryAaReportHourly {
         |    count(case when hidden_cpa_real < hidden_cpa_given * 1.2 then 1 else 0 end) as hidden_control_num,
         |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
         |    avg(hidden_cost) as avg_hidden_cost,
-        |    avg(hidden_budget) as avg_hidden_budget
+        |    avg(hidden_budget) as avg_hidden_budget,
+        |    sum(click) as hidden_click,
+        |    sum(hidden_cost) as all_hidden_cost,
+        |    sum(hidden_budget) as all_hidden_budget
         |from
         |    (select
         |        industry,
@@ -432,7 +435,8 @@ object IndustryAaReportHourly {
         |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as hidden_cpa_given,
         |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as hidden_cpa_real,
         |        sum(case when isclick = 1 then price else 0 end) * 0.01 as hidden_cost,
-        |        max(case when isclick = 1 then budget else 0 end) * 0.01 as hidden_budget
+        |        max(case when isclick = 1 then budget else 0 end) * 0.01 as hidden_budget,
+        |        sum(isclick) as click
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
@@ -460,12 +464,15 @@ object IndustryAaReportHourly {
     val sql3 =
       s"""
         |select
-        |    a.industry,
+        |     a.industry,
         |    a.cpa_control_num,
         |    b.hidden_control_num,
         |    b.hit_line_num,
         |    b.avg_hidden_cost,
-        |    b.avg_hidden_budget
+        |    b.avg_hidden_budget,
+        |    b.hidden_click,
+        |    b.all_hidden_cost,
+        |    b.all_hidden_budget
         |from
         |    mingtou_control_num_table a
         |left join
