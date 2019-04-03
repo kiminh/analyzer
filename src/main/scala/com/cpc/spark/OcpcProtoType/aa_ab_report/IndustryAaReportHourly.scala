@@ -110,7 +110,7 @@ object IndustryAaReportHourly {
         |    sum(a.show) as show,
         |    sum(a.cost) as cost,
         |    sum(a.ocpc_cost) as ocpc_cost,
-        |    (case when sum(a.cost) > 0 round(sum(a.ocpc_cost) / sum(a.cost), 4)
+        |    (case when sum(a.cost) > 0 then round(sum(a.ocpc_cost) / sum(a.cost), 4)
         |          else 0 end)  as ocpc_cost_ratio,
         |    sum(c.cpa_control_num) as cpa_control_num,
         |    (case when sum(b.ocpc_unit_num) > 0 then round(sum(c.cpa_control_num) * 1.0/ sum(b.ocpc_unit_num), 4)
