@@ -271,7 +271,7 @@ object ocpc_info {
          |c.ocpc_userid_cnt,
          |c.ocpc_unitid_cnt,
          |d.total_cost,
-         |(c.ocpc_cost/d.total_cost) as c.ocpc_cost_ratio,
+         |(c.ocpc_cost/d.total_cost) as ocpc_cost_ratio,
          |c.ocpc_control_cost,
          |c.ocpc_control_cost_ratio,
          |c.ocpc_control_unitid,
