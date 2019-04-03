@@ -10,6 +10,7 @@ object GetBaseData {
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("GetBaseData").enableHiveSupport().getOrCreate()
     getBaseData(date, hour, spark)
+    println(s"-----has got $date $hour data-------")
   }
   def getBaseData(date: String, hour: String, spark: SparkSession): Unit ={
     var sql1 =

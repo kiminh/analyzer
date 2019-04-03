@@ -150,9 +150,9 @@ object IndustryAaReportHourly {
         |        from
         |            dl_cpc.ocpc_aa_ab_report_base_data
         |        where
-        |            `date` = '2019-04-29'
+        |            `date` = '$date'
         |        and
-        |            hour = '14'
+        |            hour = '$hour'
         |        and
         |            version = 'qtt_demo'
         |        and
