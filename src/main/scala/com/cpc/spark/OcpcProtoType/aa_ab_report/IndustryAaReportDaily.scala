@@ -66,7 +66,8 @@ object IndustryAaReportDaily {
         |    round(c.hit_line_num * 1.0 / b.ocpc_hidden_num, 4) as hidden_hit_line_ratio,
         |    c.avg_hidden_cost,
         |    c.avg_hidden_budget,
-        |    round(c.avg_hidden_cost * 1.0 / c.avg_hidden_budget) as hidden_budget_cost_ratio,
+        |    (case when c.avg_hidden_budget > 0 then round(c.avg_hidden_cost * 1.0 / c.avg_hidden_budget, 4)
+        |          else null end) as hidden_budget_cost_ratio,
         |    e.pre_cv,
         |    (case when (e.pre_cv is null or e.pre_cv = 0) then 0
         |          else round(a.cv * 1.0 / e.pre_cv, 4) end) as cv_ring_ratio,
