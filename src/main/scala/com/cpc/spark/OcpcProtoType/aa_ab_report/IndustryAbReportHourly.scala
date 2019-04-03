@@ -60,30 +60,44 @@ object IndustryAbReportHourly {
         |select
         |  unitid,
         |  industry,
-        |  (case when exptags like '%cpcBid' and cast(ocpc_log_dict['cpcBid'] as int) > 0 then 'cpc'
-        |        else 'ocpc' end) as type,
-        |  sum(iscvr) as unit_cv,
-        |  sum(isclick) as unit_click,
-        |  sum(isshow) as unit_show,
-        |  sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
-        |  sum(case when isclick = 1 then pcvr else 0 end) as unit_pcvr,
-        |  sum(case when isclick = 1 then bid else 0 end) as unit_bid,
-        |  sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
-        |  count(distinct uid) as unit_uid_num
+        |  type,
+        |  unit_cv,
+        |  unit_click,
+        |  unit_show,
+        |  unit_cost,
+        |  (case when type = 'ocpc' then pcvr else exp_cvr end) as unit_cvr,
+        |  unit_bid,
+        |  unit_cpa_given,
+        |  unit_uid_num
         |from
-        |  dl_cpc.ocpc_aa_ab_report_base_data
-        |where
-        |  is_ocpc = 1
-        |and
-        |  `date` = '$date'
-        |and
-        |  hour = '$hour'
-        |and
-        |  version = 'qtt_demo'
-        |group by
-        |  unitid,
-        |  industry,
-        |  (case when exptags like '%cpcBid' and cast(ocpc_log_dict['cpcBid'] as int) > 0 then 'cpc' else 'ocpc' end)
+        |  (select
+        |    unitid,
+        |    industry,
+        |    (case when exptags like '%cpcBid' and cast(ocpc_log_dict['cpcBid'] as int) > 0 then 'cpc'
+        |          else 'ocpc' end) as type,
+        |    sum(iscvr) as unit_cv,
+        |    sum(isclick) as unit_click,
+        |    sum(isshow) as unit_show,
+        |    sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
+        |    sum(case when isclick = 1 then pcvr else 0 end) as pcvr,
+        |    sum(case when isclick = 1 then exp_cvr else 0 end) as exp_cvr,
+        |    sum(case when isclick = 1 then bid else 0 end) as unit_bid,
+        |    sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
+        |    count(distinct uid) as unit_uid_num
+        |  from
+        |    dl_cpc.ocpc_aa_ab_report_base_data
+        |  where
+        |    is_ocpc = 1
+        |  and
+        |    `date` = '$date'
+        |  and
+        |    hour = '$hour'
+        |  and
+        |    version = 'qtt_demo'
+        |  group by
+        |    unitid,
+        |    industry,
+        |    (case when exptags like '%cpcBid' and cast(ocpc_log_dict['cpcBid'] as int) > 0 then 'cpc' else 'ocpc' end)) temp
       """.stripMargin
     println("--------get ming tou info sql2--------")
     println(sql2)
@@ -100,7 +114,7 @@ object IndustryAbReportHourly {
         |  b.unit_click,
         |  b.unit_show,
         |  b.unit_cost,
-        |  b.unit_pcvr,
+        |  b.unit_cvr,
         |  b.unit_bid,
         |  b.unit_cpa_given,
         |  b.unit_uid_num
@@ -147,27 +161,43 @@ object IndustryAbReportHourly {
         |select
         |  unitid,
         |  industry,
-        |  (case when is_ocpc = 0 then 'cpc' else 'ocpc' end) as type,
-        |  sum(iscvr) as unit_cv,
-        |  sum(isclick) as unit_click,
-        |  sum(isshow) as unit_show,
-        |  sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
-        |  sum(case when isclick = 1 then pcvr else 0 end) as unit_pcvr,
-        |  sum(case when isclick = 1 then bid else 0 end) as unit_bid,
-        |  sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
-        |  count(distinct uid) as unit_uid_num
+        |  type,
+        |  unit_cv,
+        |  unit_click,
+        |  unit_show,
+        |  unit_cost,
+        |  (case when type = 'ocpc' then pcvr else exp_cvr end) as unit_cvr,
+        |  unit_bid,
+        |  unit_cpa_given,
+        |  unit_uid_num
         |from
-        |  dl_cpc.ocpc_aa_ab_report_base_data
-        |where
-        |  `date` = '$date'
-        |and
-        |  hour = '$hour'
-        |and
-        |  version = 'qtt_demo'
-        |group by
-        |  unitid,
-        |  industry,
-        |  (case when is_ocpc = 0 then 'cpc' else 'ocpc' end)
+        |  (select
+        |    unitid,
+        |    industry,
+        |    (case when is_ocpc = 0 then 'cpc' else 'ocpc' end) as type,
+        |    sum(iscvr) as unit_cv,
+        |    sum(isclick) as unit_click,
+        |    sum(isshow) as unit_show,
+        |    sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
+        |    sum(case when isclick = 1 then pcvr else 0 end) as pcvr,
+        |    sum(case when isclick = 1 then exp_cvr else 0 end) as exp_cvr,
+        |    sum(case when isclick = 1 then bid else 0 end) as unit_bid,
+        |    sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
+        |    count(distinct uid) as unit_uid_num
+        |  from
+        |    dl_cpc.ocpc_aa_ab_report_base_data
+        |  where
+        |    is_ocpc = 1
+        |  and
+        |    `date` = '$date'
+        |  and
+        |    hour = '$hour'
+        |  and
+        |    version = 'qtt_demo'
+        |  group by
+        |    unitid,
+        |    industry,
+        |    (case when is_ocpc = 0 then 'cpc' else 'ocpc' end)) temp
       """.stripMargin
     println("--------get an tou info sql2--------")
     println(sql2)
@@ -184,7 +214,7 @@ object IndustryAbReportHourly {
         |  b.unit_click,
         |  b.unit_show,
         |  b.unit_cost,
-        |  b.unit_pcvr,
+        |  b.unit_cvr,
         |  b.unit_bid,
         |  b.unit_cpa_given,
         |  b.unit_uid_num
@@ -217,7 +247,7 @@ object IndustryAbReportHourly {
         |  sum(unit_cost) as cost,
         |  (case when sum(unit_show) > 0 then round(sum(unit_cost) * 1000.0 / sum(unit_show), 4)
         |        else 0 end) as cpm,
-        |  (case when sum(unit_click) > 0 then round(sum(unit_pcvr) * 1.0 / sum(unit_click), 4)
+        |  (case when sum(unit_click) > 0 then round(sum(unit_cvr) * 1.0 / sum(unit_click), 4)
         |        else 0 end) as pre_cvr,
         |  (case when sum(unit_click) > 0 then round(sum(unit_cv) * 1.0 / sum(unit_click), 4)
         |        else 0 end) as post_cvr,
@@ -255,7 +285,7 @@ object IndustryAbReportHourly {
         |  sum(unit_cost) as cost,
         |  (case when sum(unit_show) > 0 then round(sum(unit_cost) * 1000.0 / sum(unit_show), 4)
         |        else 0 end) as cpm,
-        |  (case when sum(unit_click) > 0 then round(sum(unit_pcvr) * 1.0 / sum(unit_click), 4)
+        |  (case when sum(unit_click) > 0 then round(sum(unit_cvr) * 1.0 / sum(unit_click), 4)
         |        else 0 end) as pre_cvr,
         |  (case when sum(unit_click) > 0 then round(sum(unit_cv) * 1.0 / sum(unit_click), 4)
         |        else 0 end) as post_cvr,
