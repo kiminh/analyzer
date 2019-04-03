@@ -132,11 +132,6 @@ object OcpcCalculateAUC {
     val scoreData = spark.sql(sqlRequest)
 
     // 取历史区间: cvr数据
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.qtt.cv_pt.cvr" + conversionGoal
-    val cvrGoal = conf.getString(conf_key)
-    println(s"conf key is: $conf_key")
-    println(s"cvr partition is: $cvrGoal")
     val selectCondition2 = s"`date`>='$date1'"
     // 根据conversionGoal选择cv的分区
     val cvrType = "cvr" + conversionGoal.toString
