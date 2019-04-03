@@ -45,7 +45,8 @@ object ocpc_elds_ld {
          |and (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
          |and media_appsid  in ("80000001", "80000002")
          |and isshow=1
-         |and adsrc = 1 )a
+         |and adsrc = 1
+         |and ( charge_type = 1 or charge_type IS NULL) )a
          |left join (
          |    select
          |    searchid,
