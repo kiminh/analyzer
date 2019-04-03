@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.suggest_cpa
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql._
@@ -105,7 +105,7 @@ object OcpcCalculateAUC {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
     // 取数据: score数据
     val sqlRequest =
       s"""
