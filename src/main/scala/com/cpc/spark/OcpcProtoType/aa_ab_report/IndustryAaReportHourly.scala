@@ -8,7 +8,7 @@ object IndustryAaReportHourly {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("IndustryAaReportHourly").enableHiveSupport().getOrCreate()
-    GetBaseData.getBaseData(date, hour, spark)
+//    GetBaseData.getBaseData(date, hour, spark)
     println("------has got base data-------")
     getIndexValue(date, hour, spark)
     println("------has got index value-------")
@@ -154,6 +154,7 @@ object IndustryAaReportHourly {
         |    temp1.ocpc_unit_num,
         |    temp1.cv,
         |    temp1.click,
+        |    temp1.show,
         |    temp1.cost,
         |    temp2.cpm,
         |    temp1.ocpc_cost,
