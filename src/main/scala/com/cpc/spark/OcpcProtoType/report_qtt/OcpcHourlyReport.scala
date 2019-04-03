@@ -45,8 +45,8 @@ object OcpcHourlyReport {
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 
-    // 存储数据到mysql
-    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+//    // 存储数据到mysql
+//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
   }
 
@@ -382,6 +382,7 @@ object OcpcHourlyReport {
          |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -397,7 +398,7 @@ object OcpcHourlyReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest).filter(s"is_hidden != 1")
 
 
     // 关联转化表

@@ -7,8 +7,8 @@ import java.util.Calendar
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
-
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -17,6 +17,7 @@ import scala.collection.mutable.ListBuffer
 
 object OcpcCPCbidV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
@@ -55,7 +56,7 @@ object OcpcCPCbidV2 {
       .na.fill(0.5, Seq("factor2"))
 
     val cvrGoal = getConversionGoal(date, hour, spark)
-    val pcoc = getPCOC(cvrGoal, date, hour, spark)
+    val pcoc = getPCOC(date, hour, spark)
 
 
     val resultDF = data
@@ -66,35 +67,40 @@ object OcpcCPCbidV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+    resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, fileName)
+    savePbPack(resultDF, fileName)
   }
 
-  def getPCOC(cvrGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getPCOC(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
          |  identifier,
          |  1.0 / pcoc as cali_value,
          |  jfb,
-         |  conversion_goal
+         |  kvalue,
+         |  conversion_goal,
+         |  version
          |FROM
-         |  dl_cpc.ocpc_pcoc_jfb_hourly
+         |  dl_cpc.ocpc_kvalue_smooth_strat
          |WHERE
          |  `date` = '$date'
          |AND
          |  `hour` = '$hour'
+         |AND
+         |  version in ('qtt_hidden', 'qtt_demo')
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
-
-    val ocpcUnit = cvrGoal
-      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal")
     val result = rawData
-      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "cali_value")
+        .select("identifier", "conversion_goal", "cali_value")
+        .groupBy("identifier", "conversion_goal")
+        .agg(avg(col("cali_value")).alias("cali_value"))
+        .select("identifier", "cali_value")
+
 
     result
   }
@@ -104,7 +110,7 @@ object OcpcCPCbidV2 {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -261,7 +267,7 @@ object OcpcCPCbidV2 {
   def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3", "cast(cpa_suggest as double) cpa_suggest", "cast(param_t as double) param_t")
+    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3", "cast(cpa_suggest as double) cpa_suggest", "cast(param_t as double) param_t", "cast(cali_value as double) cali_value")
     println(resultData.count)
     resultData.show(10)
     resultData.printSchema()

@@ -15,22 +15,20 @@ object AdCategoryShow {
     val sqlRequest =
       s"""
          |select
-         |  ext_int["category"] as category,
+         |  category,
          |  sum(isshow) as imp
          |FROM
-         |  dl_cpc.cpc_union_log
-         |  WHERE `date` = "$date"
+         |  dl_cpc.cpc_basedata_union_events
+         |  WHERE day = "$date"
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and os = 1
-         |  and adslotid in ("7096368","7034978","7453081","7903746","7659152","7132208")
+         |  and adslot_id in ("7096368","7034978","7453081","7903746","7659152","7132208")
          |  and media_appsid in ("80000001","80000002") and adslot_type = 2
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |  GROUP BY
-         |  ext_int["category"]
+         |  category
        """.stripMargin
     println(sqlRequest)
 
