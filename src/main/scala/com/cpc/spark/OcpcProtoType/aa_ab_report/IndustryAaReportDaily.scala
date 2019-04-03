@@ -107,10 +107,12 @@ object IndustryAaReportDaily {
     s"""
        |select
        |    'all' as industry,
-       |    cpm
+       |    cpm,
+       |    post_cvr
        |from
        |    (select
-       |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm
+       |        round(sum(case when isclick = 1 then price else 0 end) * 10.0 / sum(isshow), 4) as cpm,
+       |        round(sum(iscvr) * 1.0 / sum(isclick), 4) as post_cvr
        |    from
        |        dl_cpc.ocpc_aa_ab_report_base_data
        |    where
@@ -124,7 +126,7 @@ object IndustryAaReportDaily {
       """.stripMargin
     println("--------get all index sql2--------")
     println(sql2)
-    spark.sql(sql2).createOrReplaceTempView("all_cpm_table")
+    spark.sql(sql2).createOrReplaceTempView("all_cpm_post_cvr_table")
 
     // 然后统计其他的整体的指标
     val sql3 =
@@ -192,6 +194,7 @@ object IndustryAaReportDaily {
          |    temp1.cv,
          |    temp1.click,
          |    temp1.show,
+         |    temp2.post_cvr,
          |    temp1.cost,
          |    temp2.cpm,
          |    temp1.ocpc_cost,
@@ -214,7 +217,7 @@ object IndustryAaReportDaily {
          |from
          |    all_other_index_table temp1
          |left join
-         |    all_cpm_table temp2
+         |    all_cpm_post_cvr_table temp2
          |on
          |    temp1.industry = temp2.industry
       """.stripMargin
