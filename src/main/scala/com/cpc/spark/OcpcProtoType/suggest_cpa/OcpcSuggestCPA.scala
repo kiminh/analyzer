@@ -284,7 +284,7 @@ object OcpcSuggestCPA {
     baseLog
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+      .repartition(100).write.mode("overwrite").insertInto(tableName)
 
     // 统计数据
     val resultDF = calculateLog(tableName, version, conversionGoal, date, hour, spark)
