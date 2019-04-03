@@ -6,7 +6,10 @@ import org.apache.spark.sql.functions._
 
 object GetBaseData {
   def main(args: Array[String]): Unit = {
-
+    val date = args(0).toString
+    val hour = args(1).toString
+    val spark = SparkSession.builder().appName("GetBaseData").enableHiveSupport().getOrCreate()
+    getBaseData(date, hour, spark)
   }
   def getBaseData(date: String, hour: String, spark: SparkSession): Unit ={
     var sql1 =
