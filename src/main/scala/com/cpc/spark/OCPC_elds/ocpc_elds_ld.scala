@@ -64,8 +64,10 @@ object ocpc_elds_ld {
     val union = spark.sql(Sql1)
 
     //保存到临时表里
-    union.createOrReplaceTempView("union")
-    println ("union is successful! ")
+    union.repartition(1)
+      .write
+      .mode("overwrite")
+      .saveAsTable("test.ocpc_elds_ld_union")
 
     val Sql2 =
       s"""
@@ -80,7 +82,7 @@ object ocpc_elds_ld {
          |count(distinct case when siteid>0 and price>0 then userid else null end) as userid_cnt,
          |count(distinct case when siteid>0 and price>0 then unitid else null end) as unitid_cnt,
          |day
-         |from union
+         |from test.ocpc_elds_ld_union
          |group by day,'可获取转化单元'
              """.stripMargin
 
@@ -102,7 +104,7 @@ object ocpc_elds_ld {
          |count(distinct case when price>0 then userid else null end) as userid_cnt,
          |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
          |day
-         |from union
+         |from test.ocpc_elds_ld_union
          |where siteid>5000000
          |group by day,'可获取转化单元-赤兔'
              """.stripMargin
@@ -140,13 +142,13 @@ object ocpc_elds_ld {
          |group by unitid
          |UNION
          |select unitid
-         |from union
+         |from test.ocpc_elds_ld_union
          |where is_ocpc=1 and length(ocpc_log)>0
          |group by unitid )a
          |group by a.unitid)p
          |join
          |(select *
-         |from union )q on p.unitid=q.unitid
+         |from test.ocpc_elds_ld_union )q on p.unitid=q.unitid
          |group by q.day,"满足准入单元"
              """.stripMargin
 
@@ -187,20 +189,20 @@ object ocpc_elds_ld {
          |join
          |(select
          |unitid
-         |from union
+         |from test.ocpc_elds_ld_union
          |where siteid>5000000
          |group by unitid) b on a.unitid=b.unitid
          |group by a.unitid )
          |UNION
          |select unitid
-         |from union
+         |from test.ocpc_elds_ld_union
          |where is_ocpc=1 and length(ocpc_log)>0
          |and siteid>5000000
          |group by unitid )m
          |group by m.unitid)p
          |join
          |(select *
-         |from union )q on p.unitid=q.unitid
+         |from test.ocpc_elds_ld_union )q on p.unitid=q.unitid
          |group by q.day,"满足准入单元-赤兔"
              """.stripMargin
 
@@ -225,7 +227,7 @@ object ocpc_elds_ld {
          |count(distinct case when price>0 then userid else null end) as userid_cnt,
          |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
          |day
-         |from union
+         |from test.ocpc_elds_ld_union
          |where is_ocpc=1
          |and length(ocpc_log)>0
          |group by day,"ocpc单元",1.0
@@ -249,7 +251,7 @@ object ocpc_elds_ld {
          |count(distinct case when price>0 then userid else null end) as userid_cnt,
          |count(distinct case when price>0 then unitid else null end) as unitid_cnt,
          |day
-         |from union
+         |from test.ocpc_elds_ld_union
          |where is_ocpc=1
          |and length(ocpc_log)>0
          |and siteid>5000000
@@ -306,9 +308,9 @@ object ocpc_elds_ld {
 
 
 
-//    val tableName1 = "report2.ocpc_elds_ld_data"
-//    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
-//    OperateMySQL.update(deleteSql1) //先删除历史数据
-//    OperateMySQL.insert(result,tableName1) //插入到MySQL中的report2库中
+    //    val tableName1 = "report2.ocpc_elds_ld_data"
+    //    val deleteSql1 = s"delete from $tableName1 where day = '$date' "
+    //    OperateMySQL.update(deleteSql1) //先删除历史数据
+    //    OperateMySQL.insert(result,tableName1) //插入到MySQL中的report2库中
   }
 }
