@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_v1
+package com.cpc.spark.OcpcProtoType.suggest_cpa
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -22,7 +22,7 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, version, date, hour, spark)
+    val data = getData(conversionGoal, 72, version, date, hour, spark)
 //    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
@@ -92,14 +92,14 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def getData(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(conversionGoal: Int, hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")

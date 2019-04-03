@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_v1
+package com.cpc.spark.OcpcProtoType.suggest_cpa
 
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 import org.apache.spark.sql.functions._
@@ -16,7 +16,7 @@ object OcpcUnionSuggestCPA {
     val version = args(2).toString
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc suggest cpa v2: $date, $hour")
+      .appName(s"ocpc suggest cpa v2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
