@@ -110,7 +110,7 @@ object IndustryAaReportHourly {
         |    sum(a.show) as show,
         |    sum(a.cost) as cost,
         |    sum(a.ocpc_cost) as ocpc_cost,
-        |    (case when sum(a.cost) > 0 then round(sum(a.ocpc_cost) / sum(a.cost), 4)
+        |    (case when sum(a.cost) > 0 then round(sum(a.ocpc_cost) / sum(a.ocpc_cost), 4)
         |          else 0 end)  as ocpc_cost_ratio,
         |    sum(c.cpa_control_num) as cpa_control_num,
         |    (case when sum(b.ocpc_unit_num) > 0 then round(sum(c.cpa_control_num) * 1.0/ sum(b.ocpc_unit_num), 4)
@@ -125,9 +125,9 @@ object IndustryAaReportHourly {
         |    sum(c.hit_line_num) as hit_line_num,
         |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.hit_line_num) * 1.0 / sum(b.ocpc_hidden_num), 4)
         |          else 0 end)  as hidden_hit_line_ratio,
-        |    (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_cost) / sum(c.hidden_click), 4)
+        |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.all_hidden_cost) / sum(b.ocpc_hidden_num), 4)
         |          else 0 end) as avg_hidden_cost,
-        |    (case when sum(c.hidden_click) > 0 then round(sum(c.all_hidden_budget) / sum(c.hidden_click), 4)
+        |    (case when sum(b.ocpc_hidden_num) > 0 then round(sum(c.all_hidden_budget) / sum(b.ocpc_hidden_num), 4)
         |          else 0 end) as avg_hidden_budget
         |from
         |    other_index_table a
@@ -425,7 +425,6 @@ object IndustryAaReportHourly {
         |    count(case when hidden_cost > 0 and hidden_cost >= hidden_budget then 1 else 0 end) as hit_line_num,
         |    avg(hidden_cost) as avg_hidden_cost,
         |    avg(hidden_budget) as avg_hidden_budget,
-        |    sum(click) as hidden_click,
         |    sum(hidden_cost) as all_hidden_cost,
         |    sum(hidden_budget) as all_hidden_budget
         |from
@@ -436,8 +435,7 @@ object IndustryAaReportHourly {
         |        sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 / sum(isclick) as hidden_cpa_given,
         |        sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr) as hidden_cpa_real,
         |        sum(case when isclick = 1 then price else 0 end) * 0.01 as hidden_cost,
-        |        max(case when isclick = 1 then budget else 0 end) * 0.01 as hidden_budget,
-        |        sum(isclick) as click
+        |        max(case when isclick = 1 then budget else 0 end) * 0.01 as hidden_budget
         |    from
         |        dl_cpc.ocpc_aa_ab_report_base_data
         |    where
@@ -471,7 +469,6 @@ object IndustryAaReportHourly {
         |    b.hit_line_num,
         |    b.avg_hidden_cost,
         |    b.avg_hidden_budget,
-        |    b.hidden_click,
         |    b.all_hidden_cost,
         |    b.all_hidden_budget
         |from
