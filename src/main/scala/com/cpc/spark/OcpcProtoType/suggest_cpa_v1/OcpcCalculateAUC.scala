@@ -48,8 +48,8 @@ object OcpcCalculateAUC {
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
+//        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
   def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
