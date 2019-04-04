@@ -6,7 +6,11 @@ import org.apache.spark.sql.functions._
 
 object GetBaseData {
   def main(args: Array[String]): Unit = {
-
+    val date = args(0).toString
+    val hour = args(1).toString
+    val spark = SparkSession.builder().appName("GetBaseData").enableHiveSupport().getOrCreate()
+    getBaseData(date, hour, spark)
+    println(s"-----has got $date $hour data-------")
   }
   def getBaseData(date: String, hour: String, spark: SparkSession): Unit ={
     var sql1 =
@@ -20,8 +24,7 @@ object GetBaseData {
          |          when cast(adclass as string) like "100%" then 'app'
          |          when adclass in (110110100, 125100100) then 'wzcp'
          |          else 'others' end) as industry,
-         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc"
-         |          else "cpc" end) as exptags,
+         |    exptags,
          |    is_ocpc,
          |    isclick,
          |    isshow,
@@ -29,6 +32,7 @@ object GetBaseData {
          |    conversion_goal,
          |    price,
          |    exp_cvr,
+         |    uid,
          |    ocpc_log
          |from
          |    dl_cpc.ocpc_base_unionlog
@@ -65,6 +69,7 @@ object GetBaseData {
          |    is_ocpc,
          |    isclick,
          |    isshow,
+         |    ocpc_log_dict,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int)
          |          else bid end) as bid,
          |    (case when is_ocpc = 1 then cast(ocpc_log_dict['conversiongoal'] as int)
@@ -80,6 +85,7 @@ object GetBaseData {
          |    (case when is_ocpc = 1 then cast(ocpc_log_dict['cpagiven'] as double)
          |          else 0 end) as cap_given,
          |    price,
+         |    uid,
          |    exp_cvr
          |from
          |    temp_table1
@@ -153,7 +159,7 @@ object GetBaseData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
+      .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_ab_report_base_data")
   }
 
