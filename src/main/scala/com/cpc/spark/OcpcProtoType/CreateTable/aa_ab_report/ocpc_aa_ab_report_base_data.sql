@@ -10,7 +10,7 @@ create table if not exists dl_cpc.ocpc_aa_ab_report_base_data(
     isclick                 int,
     isshow                  int,
     ocpc_log_dict           map<string, string>,
-    bid                     int,
+    bid                     double,
     conversion_goal         int,
     pcvr                    double,
     is_hidden               int,
