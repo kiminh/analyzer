@@ -19,12 +19,18 @@ object OcpcCostEveryIndustry {
         |          when cast(adclass as string) like "100%" then 'app'
         |          when adclass in (110110100, 125100100) then 'wzcp'
         |          else 'others' end) as industry,
-        |    sum(isclick) as click,
-        |    sum(isshow) as show,
+        |    sum(isclick) as all_click,
+        |    sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end) as ocpc_click,
+        |    sum(isshow) as all_show,
+        |    sum(case when isshow = 1 and is_ocpc = 1 then 1 else 0 end) as ocpc_show,
         |    sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01 as ocpc_cost,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as all_cost,
         |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end)
-        |      / sum(case when isclick = 1 then price else 0 end), 3) as ratio
+        |      / sum(case when isclick = 1 then price else 0 end), 3) as ratio,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 10.0
+        |      / sum(isshow), 3) as all_cpm,
+        |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 10.0
+        |      / sum(case when isshow = 1 and is_ocpc = 1 then 1 else 0 end), 3) as ocpc_cpm
         |from
         |    dl_cpc.ocpc_base_unionlog
         |where

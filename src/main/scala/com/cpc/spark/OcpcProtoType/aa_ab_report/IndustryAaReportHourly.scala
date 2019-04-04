@@ -199,7 +199,7 @@ object IndustryAaReportHourly {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
       .repartition(50)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_aa_report_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_aa_report_hourly.sql")
   }
 
   // 统计分行业的总unit、user数，以及ocpc的unit、user、hidden_num数
