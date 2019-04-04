@@ -29,6 +29,8 @@ object Lab {
 
     //3. 查看所有的频繁项集，并且列出它们出现的次数
     println(s"Number of frequent itemsets: ${model.freqItemsets.count()}")
+    println("model.freqItemsets type: " + model.freqItemsets.getClass.getSimpleName())
+    println("model.generateAssociationRules type: " + model.generateAssociationRules())
     model.freqItemsets.collect().foreach{ itemset => println( itemset.items.mkString("[", ",", "]") + "," + itemset.freq ) }
 
     //4. 通过置信度筛选出推荐规则
@@ -42,7 +44,7 @@ object Lab {
       })
 
     //查看规则生成的数量
-    println(model.generateAssociationRules(minConfidence).collect().length)
+    println(model.generateAssociationRules(minConfidence).getClass().getSimpleName() )
   }
 }
 
