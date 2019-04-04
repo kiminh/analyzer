@@ -44,11 +44,12 @@ object OcpcCalculateAUC {
     val resultDF = result
       .withColumn("conversion_goal", lit(conversionGoalInt))
       .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
 //        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
