@@ -116,7 +116,7 @@ object unitid_inAndOut {
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
          |and unitid in (select unit_id from cost_unitid) and date='$tardate' and unitid not in
-         |(select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt='$tardate' and ratio>1.5 group by unitid)
+         |(select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt>='$startdate' group by unitid having avg(ratio)>1.5)
          |and unitid not in ('2013592')
       """.stripMargin).repartition(1).cache()
     data.show(10)
