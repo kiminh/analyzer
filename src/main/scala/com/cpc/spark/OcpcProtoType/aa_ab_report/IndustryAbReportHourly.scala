@@ -24,11 +24,11 @@ object IndustryAbReportHourly {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
+      .repartition(50)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_ab_report_hourly")
+
     val list = dataDF.collect()
     for(item <- list) println(item)
-
-    dataDF.repartition(50)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_ab_report_hourly")
   }
 
   // 首先统计明投的信息
@@ -229,8 +229,8 @@ object IndustryAbReportHourly {
     println("--------get an tou info sql3--------")
     println(sql3)
     val antouDF = spark.sql(sql3)
-    val list = antouDF.collect()
-    for(item <- list) println(item)
+//    val list = antouDF.collect()
+//    for(item <- list) println(item)
     antouDF
   }
 
@@ -275,8 +275,8 @@ object IndustryAbReportHourly {
     println("--------get all index value sql1--------")
     println(sql1)
     spark.sql(sql1).createOrReplaceTempView("industry_index_table")
-    val list = spark.sql(sql1).collect()
-    for(item <- list) println(item)
+//    val list = spark.sql(sql1).collect()
+//    for(item <- list) println(item)
 
     // 2、然后统计整体的
     val sql2 =
@@ -314,8 +314,8 @@ object IndustryAbReportHourly {
     println("--------get all index value sql2--------")
     println(sql2)
     spark.sql(sql2).createOrReplaceTempView("all_index_table")
-    val list2 = spark.sql(sql2).collect()
-    for(item <- list2) println(item)
+//    val list2 = spark.sql(sql2).collect()
+//    for(item <- list2) println(item)
 
     // 合并整体和分行业的
     val sql3 =
