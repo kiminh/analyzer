@@ -84,8 +84,8 @@ object IndustryAbReportHourly {
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
         |    sum(case when isclick = 1 then pcvr else 0 end) as pcvr,
         |    sum(case when isclick = 1 then exp_cvr else 0 end) as exp_cvr,
-        |    sum(case when isclick = 1 then bid else 0 end) as unit_bid,
-        |    sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
+        |    sum(case when isclick = 1 then bid else 0 end) * 0.01 as unit_bid,
+        |    sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 as unit_cpa_given,
         |    count(distinct uid) as unit_uid_num
         |  from
         |    dl_cpc.ocpc_aa_ab_report_base_data
@@ -184,8 +184,8 @@ object IndustryAbReportHourly {
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 as unit_cost,
         |    sum(case when isclick = 1 then pcvr else 0 end) as pcvr,
         |    sum(case when isclick = 1 then exp_cvr else 0 end) as exp_cvr,
-        |    sum(case when isclick = 1 then bid else 0 end) as unit_bid,
-        |    sum(case when isclick = 1 then cpa_given else 0 end) as unit_cpa_given,
+        |    sum(case when isclick = 1 then bid else 0 end) * 0.01 as unit_bid,
+        |    sum(case when isclick = 1 then cpa_given else 0 end) * 0.01 as unit_cpa_given,
         |    count(distinct uid) as unit_uid_num
         |  from
         |    dl_cpc.ocpc_aa_ab_report_base_data
