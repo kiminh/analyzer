@@ -187,8 +187,6 @@ object IndustryAbReportHourly {
         |  from
         |    dl_cpc.ocpc_aa_ab_report_base_data
         |  where
-        |    is_ocpc = 1
-        |  and
         |    `date` = '$date'
         |  and
         |    hour = '$hour'
