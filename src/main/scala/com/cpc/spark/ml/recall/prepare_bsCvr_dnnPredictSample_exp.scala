@@ -45,6 +45,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     val day = getDay(date, 1)
+    val today = getDay(date, 0)
     val dayFeature = getDay(date, 1)
 
     val behavior_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/features/adBehaviorFeature/$dayFeature")
@@ -95,7 +96,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
         |REPLACE(tb.age,'0','0,1,2,3,4') as age,
         |case when tb.sex=0 then '0,1,2' when tb.sex=1 then '1' else '2' end as sex,
         |case when tb.regions>0 then tb.regions else '0' end as regions from
-        |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date>='$day' group by unit_id) ta
+        |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) ta
         |join adv.unit tb on ta.unit_id=tb.id
         |where tb.audience_orient>0) temp
       """.stripMargin
@@ -109,7 +110,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
          |lateral view explode(split(age,',')) age as age1
          |lateral view explode(split(sex,',')) sex as sex1
          |lateral view explode(split(regions,',')) regions as regions1 where unitid
-         |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date>'$day' group by unitid)) ta join
+         |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$today' group by unitid)) ta join
          |(select unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and label=1 group by unitid) tb
          |on ta.unitid=tb.unitid
          |join (select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt='$day' and ratio<1.5 group by unitid) tc
