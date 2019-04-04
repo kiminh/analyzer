@@ -20,12 +20,15 @@ object IndustryAbReportHourly {
     // 统计总的信息
     val dataDF = getAllIndexValue(mingtouDF, antouDF, spark)
     println("------insert into hive--------")
-//    dataDF
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(50)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_ab_report_hourly")
+    dataDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+    val list = dataDF.collect()
+    for(item <- list) println(item)
+
+    dataDF.repartition(50)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_industry_ab_report_hourly")
   }
 
   // 首先统计明投的信息
@@ -324,8 +327,6 @@ object IndustryAbReportHourly {
     println("--------get all index value sql3--------")
     println(sql3)
     val dataDF = spark.sql(sql3)
-    val list3 = dataDF.collect()
-    for(item <- list3) println(item)
     dataDF
   }
 }
