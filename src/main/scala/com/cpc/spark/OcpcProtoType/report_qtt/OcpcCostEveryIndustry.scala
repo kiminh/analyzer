@@ -54,6 +54,7 @@ object OcpcCostEveryIndustry {
         |          else 'others' end)
       """.stripMargin
     println("-------all data sql1--------")
+    println(sql1)
     spark.sql(sql1).createOrReplaceTempView("temp_table1")
 
     // 统建建站和非建站的数据
@@ -95,6 +96,7 @@ object OcpcCostEveryIndustry {
         |          else 'elds_feijianzhan' end)
       """.stripMargin
     println("-------jianzhan and feijianzhan sql2--------")
+    println(sql2)
     spark.sql(sql2).createOrReplaceTempView("temp_table2")
 
     // 统计赤兔的数据
@@ -136,6 +138,7 @@ object OcpcCostEveryIndustry {
         |    'elds_chitu'
       """.stripMargin
     println("-------chitu sql3--------")
+    println(sql3)
     spark.sql(sql3).createOrReplaceTempView("temp_table3")
 
     // 合并总的数据
@@ -151,6 +154,7 @@ object OcpcCostEveryIndustry {
         |    industry
       """.stripMargin
     println("-------merge all data--------")
+    println(sql4)
     val dataDF = spark.sql(sql4)
     dataDF
       .withColumn("date", lit(date))
