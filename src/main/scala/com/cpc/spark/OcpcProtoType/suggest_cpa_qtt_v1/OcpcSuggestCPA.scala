@@ -60,7 +60,7 @@ object OcpcSuggestCPA {
     val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
 
     // 模型部分
-    val aucData = getAucData(version, conversionGoal, date, spark)
+    val aucData = getAucData(version, conversionGoal, date, hour, spark)
 
     // 实时查询ocpc标记（从mysql抽取）
     val ocpcFlag = getOcpcFlag(conversionGoal, spark)

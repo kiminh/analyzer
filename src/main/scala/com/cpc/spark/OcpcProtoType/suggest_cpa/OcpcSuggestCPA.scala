@@ -59,7 +59,7 @@ object OcpcSuggestCPA {
     val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
 
     // 模型部分
-    val aucData = getAucData(version, conversionGoal, date, spark)
+    val aucData = getAucData(version, conversionGoal, date, hour, spark)
 
     // 实时查询ocpc标记（从mysql抽取）
     val ocpcFlag = getOcpcFlag(conversionGoal, spark)
@@ -219,19 +219,21 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getAucData(version: String, conversionGoal: Int, date: String, spark: SparkSession) = {
+  def getAucData(version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     从dl_cpc.ocpc_unitid_auc_daily根据version和conversion_goal来抽取对应unitid的auc
      */
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid,
+         |  cast(identifier as int) unitid,
          |  auc
          |FROM
-         |  dl_cpc.ocpc_unitid_auc_daily
+         |  dl_cpc.ocpc_unitid_auc_hourly
          |WHERE
          |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
          |AND
          |  version = '$version'
          |AND

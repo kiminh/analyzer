@@ -1,5 +1,5 @@
 create table if not exists dl_cpc.ocpc_unitid_auc_hourly(
-    unitid                  string,
+    identifier              string,
     auc                     double,
     industry                string
 )
