@@ -112,7 +112,7 @@ object GetBaseData {
          |    where
          |        `date` = '$date'
          |    and
-         |        cv_goal = 'cv1') as b
+         |        cvr_goal = 'cv1') as b
          |on
          |    a.searchid = b.searchid
          |left join
@@ -124,7 +124,7 @@ object GetBaseData {
          |    where
          |        `date` = '$date'
          |    and
-         |        cv_goal = 'cv2') as c
+         |        cvr_goal = 'cv2') as c
          |on
          |    a.searchid = c.searchid
          |left join
@@ -136,7 +136,7 @@ object GetBaseData {
          |    WHERE
          |        `date` = '$date'
          |    and
-         |        cv_goal = 'cv3') as d
+         |        cvr_goal = 'cv3') as d
          |on
          |    a.searchid = d.searchid
       """.stripMargin
