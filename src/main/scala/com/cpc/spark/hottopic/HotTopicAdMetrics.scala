@@ -22,7 +22,7 @@ object HotTopicAdMetrics {
                |    sum(isshow) as show_num,
                |    sum(isclick) as click_num,
                |    sum(if(b.searchid is not null,1,0)) as convert_num,
-               |    round(sum(isclick)/sum(isshow),6) as ctr
+               |    round(sum(isclick)/sum(isshow),6) as ctr,
                |    round(sum(if(b.searchid is not null,1,0))/sum(isclick),6) as cvr
                |from
                |(
