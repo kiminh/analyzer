@@ -141,7 +141,7 @@ object OcpcSampleToPb {
          |AND
          |  jfb > 0
          |AND
-         |  (conversion_goal = 2 or identifier in ('1988598', '1999027')
+         |  (conversion_goal = 2 or identifier in ('1988598', '1999027'))
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
