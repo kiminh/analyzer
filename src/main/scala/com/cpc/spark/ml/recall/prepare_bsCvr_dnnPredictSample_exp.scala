@@ -114,7 +114,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
          |on ta.unitid=tb.unitid
          |join (select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt='$day' and ratio<1.5 group by unitid) tc
          |on ta.unitid=tc.unitid
-         |where ta.cnt>50000
+         |where ta.cnt>50000 and ta.unitid not in ('2013592')
          |""".stripMargin
 
 
