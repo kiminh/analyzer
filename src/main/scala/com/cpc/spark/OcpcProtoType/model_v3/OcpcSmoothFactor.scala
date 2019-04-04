@@ -165,7 +165,7 @@ object OcpcSmoothFactor{
          |    isshow,
          |    ocpc_log,
          |    ocpc_log_dict,
-         |    (case when length(ocpc_log)>0 then cast(ocpc_log_dict['dynamicbid'] as int) else original_bid end) as bid
+         |    (case when length(ocpc_log)>0 then cast(cast(ocpc_log_dict['dynamicbid'] as double) + 0.5 as int) else original_bid end) as bid
          |from base_table
        """.stripMargin
     println(sqlRequestBase)

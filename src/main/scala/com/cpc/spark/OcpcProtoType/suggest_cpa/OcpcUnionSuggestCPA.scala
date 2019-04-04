@@ -20,7 +20,7 @@ object OcpcUnionSuggestCPA {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, version, date, hour, spark)
+    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
 
     val updateData = baseResult
       .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
@@ -53,7 +53,7 @@ object OcpcUnionSuggestCPA {
     resultDF
   }
 
-  def getNewCali(suggestData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getNewCali(suggestData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = OcpcSmoothFactor.getBaseData("qtt", "cvr2", 24, date, hour, spark)
     val rawData = OcpcSmoothFactor.calculateSmooth(baseData, spark)
     rawData.createOrReplaceTempView("raw_data")

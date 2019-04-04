@@ -8,9 +8,11 @@ import com.cpc.spark.ocpcV3.utils
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.suggest_cpa.OcpcCalculateAUC._
+import org.apache.log4j.{Level, Logger}
 
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
