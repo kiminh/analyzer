@@ -1,50 +1,42 @@
 package com.cpc.spark.ocpcV3.HP
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.fpm.FPGrowth
 
 object Lab {
   def main(args: Array[String]): Unit = {
-    val conf = new SparkConf().setAppName("fpg")
-    val sc = new SparkContext(conf)
-    Logger.getRootLogger.setLevel(Level.WARN)
+    val date = args(0).toString
+    val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
 
-    //1. 读取样本数据
-    val filename = "sample_fpgrowth.txt"
-    val data_path = s"hdfs://emr-cluster/warehouse/sunjianqiang/${filename}"
-    val data = sc.textFile(data_path)
-    val examples = data.map(_.split(" ")).cache()
+    val baseData = getBaseData(spark, date)
+    baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 
-    //2. 建立模型
-    //设置最小支持度
-    val minSupport = 0.2
-    //设置并行分区数
-    val numPartition = 10
-    val model = new FPGrowth()
-      .setMinSupport(minSupport)
-      .setNumPartitions(numPartition)
-      .run(examples)
-
-    //3. 查看所有的频繁项集，并且列出它们出现的次数
-    println(s"Number of frequent itemsets: ${model.freqItemsets.count()}")
-    model.freqItemsets.foreach { itemset => println(itemset.items.getClass.getSimpleName ) }
-    //    model.freqItemsets.collect().foreach{ itemset => println( itemset.items.mkString("[", ",", "]") + "," + itemset.freq ) }
-
-    //4. 通过置信度筛选出推荐规则
-    //antecedent：前项
-    //consequent：后项
-    //confidence：置信度
-    val minConfidence = 0.8
-    model.generateAssociationRules(minConfidence).collect()
-      .foreach(rule => {
-        println(rule.antecedent.mkString(",") + "-->" + rule.consequent.mkString(",") + "-->" + rule.confidence)
-      })
-
-    //查看规则生成的数量
-    println(model.generateAssociationRules(minConfidence).getClass().getSimpleName())
   }
+
+  def getBaseData(spark: SparkSession, date: String)={
+    import spark.implicits._
+    val sqlRequest =
+      s"""
+         |select
+         | concat_ws(',', app_name) as pkgs
+         | from dl_cpc.cpc_user_installed_apps a
+         |where load_date = '$date'
+       """.stripMargin
+
+    val df = spark.sql(sqlRequest).rdd
+      .map(x => x.getAs[String]("pkgs") )
+      .flatMap( x => x.split(",") )
+      .map(x => (x, 1))
+      .reduceByKey((x, y) => x + y)
+      .map( x => (x._1.split("-",2)(0), x._2) )
+      .reduceByKey( (x, y) => x + y )
+      .map( x => AppCount(x._1, x._2)).toDF
+    df
+  }
+
+  case class AppCount(var appName: String, var count: Int)
+
 }
 
 
