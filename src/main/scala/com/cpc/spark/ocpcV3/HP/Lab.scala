@@ -8,8 +8,9 @@ object Lab {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
+    import spark.implicits._
 
-    val baseData = getBaseData(spark, date)
+    val baseData = getBaseData(spark, date).toDF("uid", "apps_valid")//.map()
     baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 
   }
@@ -52,9 +53,12 @@ object Lab {
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
       .filter(s"appName not in ${apps_exception} and  count >= ${countLimit}")
 
-    val df3 = df1.join(df2, Seq("appName"), "left").select("uid", "appName", "count")
+    val df3 = df1.join(df2, Seq("appName"), "left").select("uid", "appName", "count").filter("count is not NULL")
 
-    df3
+    val result = df3.rdd
+      .map(x => (x.getAs[String]("uid"), Array(x.getAs[String]("appName"))))
+      .reduceByKey((appArr1, appArr2) => appArr1 ++ appArr2)
+    result
   }
 
   case class UidComb(var uid: String, var comb: String)
