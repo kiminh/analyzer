@@ -10,8 +10,25 @@ object Lab {
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
     import spark.implicits._
 
-    val baseData = getBaseData(spark, date).toDF("uid", "apps_valid")//.map()
-    baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
+    val baseData = getBaseData(spark, date).map(x => x._2)
+    print("baseData has " + baseData.count() + " elements" )
+
+    val minSupport = 0.4
+    val numPartition = 10
+    val model = new FPGrowth().setMinSupport(minSupport).setNumPartitions(numPartition).run(baseData)
+
+    val freqItemsets = model.freqItemsets.persist()
+    val numFreqItemsets = freqItemsets.count()
+    println("Number of frequent itemsets: "+ numFreqItemsets )
+    freqItemsets.take(30).foreach{ itemset => println( itemset.items.mkString("{", ",", "}") + ", " + itemset.freq ) }
+
+    val minConfidence = 0.8
+    val associationRules = model.generateAssociationRules(minConfidence)
+    val numAssociationRules = associationRules.count()
+    println("Number of association rules: "+ numAssociationRules )
+    associationRules.take(30).foreach{ rule => println(rule.antecedent.mkString( "{", ",", "}") + " => " + rule.consequent.mkString(",") + " : " + rule.confidence ) }
+
+
 
   }
 
@@ -21,13 +38,13 @@ object Lab {
       s"""
          |select
          | uid,
-         | concat_ws(',', app_name) as pkgs
+         | app_name as pkgs
          | from dl_cpc.cpc_user_installed_apps a
          |where load_date = '$date'
        """.stripMargin
 
     val df1 = spark.sql(sqlRequest).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",")))
+      .map(x => (x.getAs[String]("uid"), x.getAs[Array[String]]("pkgs") ))
       .flatMap(x => {
         val uid = x._1
         val pkgs = x._2
@@ -42,7 +59,7 @@ object Lab {
         val uid = x._1
         val arr = x._2.split("-", 2)
         if (arr.size == 2) (uid, arr(1)) else (uid, "")
-      }).toDF("uid", "appName")
+      }).toDF("uid", "appName").persist()
 
     val apps_exception = Array("", "趣头条").mkString("('", "','", "')")
     val countLimit = 100
@@ -54,6 +71,8 @@ object Lab {
       .filter(s"appName not in ${apps_exception} and  count >= ${countLimit}")
 
     val df3 = df1.join(df2, Seq("appName"), "left").select("uid", "appName", "count").filter("count is not NULL")
+
+//    df3.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 
     val result = df3.rdd
       .map(x => (x.getAs[String]("uid"), Array(x.getAs[String]("appName"))))
