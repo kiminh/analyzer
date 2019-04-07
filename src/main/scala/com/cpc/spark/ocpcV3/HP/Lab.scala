@@ -29,7 +29,8 @@ object Lab {
       .flatMap( x => x.split(",") )
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
-      .map( x => (x._1.split("-",2)(1), x._2) )
+      .map( x => { val arr = x._1.split("-",2)
+        if (arr.size == 2) (arr(1), x._2) else ("", x._2)} )
       .reduceByKey( (x, y) => x + y )
       .map( x => AppCount(x._1, x._2)).toDF
     df
