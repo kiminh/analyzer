@@ -29,7 +29,7 @@ object Lab {
       .flatMap( x => x.split(",") )
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
-      .map( x => (x._1.split("-",2)(0), x._2) )
+      .map( x => (x._1.split("-",2)(1), x._2) )
       .reduceByKey( (x, y) => x + y )
       .map( x => AppCount(x._1, x._2)).toDF
     df
