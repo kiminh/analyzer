@@ -40,7 +40,7 @@ object Lab2 {
       val ante = rule.antecedent //Array[String]
       val cons = rule.consequent //Array[String]
       val conf = rule.confidence //Double
-      lb2 += AnteConsConf(ante.sorted.mkString("{", ",", "}"), cons.mkString("{", ",", "}"), conf)
+      lb2 += AnteConsConf(ante.sorted.mkString("{", ",", "}"), cons.sorted.mkString("{", ",", "}"), conf)
     })
     lb2.toDF("ante", "cons", "conf").write.mode("overwrite").saveAsTable("test.AnteConsConf_sjq")
 

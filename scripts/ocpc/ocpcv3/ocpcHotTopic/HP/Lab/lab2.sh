@@ -7,7 +7,7 @@ SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
 date=$1
-minSupport=0.1
+minSupport=0.4
 minConfidence=0.6
 
 jars=(
