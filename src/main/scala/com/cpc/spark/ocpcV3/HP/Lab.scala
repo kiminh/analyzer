@@ -60,7 +60,7 @@ object Lab {
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
 
     val countLower = df20.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
-    val filter_condition = s"appName not like '%小米%' and appName not like '%OPPO%' and  count between ${countLower} and =${countUpper}"
+    val filter_condition = s"appName not like '%小米%' and appName not like '%OPPO%' and  count between ${countLower} and ${countUpper}"
     println(filter_condition)
     val df2 = df20.filter(filter_condition)
     df20.write.mode("overwrite").saveAsTable("test.appCount_sjq")
