@@ -24,11 +24,12 @@ object Lab2 {
     val freqItemsets = model.freqItemsets
     println("note2")
     val lb1 = scala.collection.mutable.ListBuffer[ItemsetFreq]()
-    freqItemsets.collect().foreach(itemset => {
+    freqItemsets.foreach(itemset => {
       val items = itemset.items //Array[String]
       val freq = itemset.freq //Long
       lb1 += ItemsetFreq(items.sorted.mkString("{", ",", "}"), freq)
       println( items.sorted.mkString("{", ",", "}")+" : "+ freq )
+      print("#")
     })
     println("note3")
     lb1.toDF("itemset", "freq").write.mode("overwrite").saveAsTable("test.itemsetfreq_sjq")
@@ -36,12 +37,13 @@ object Lab2 {
     val associationRules = model.generateAssociationRules(minConfidence)
     println("note4")
     val lb2 = scala.collection.mutable.ListBuffer[AnteConsConf]()
-    associationRules.collect.foreach(rule => {
+    associationRules.foreach(rule => {
       val ante = rule.antecedent //Array[String]
       val cons = rule.consequent //Array[String]
       val conf = rule.confidence //Double
       lb2 += AnteConsConf(ante.sorted.mkString("{", ",", "}"), cons.sorted.mkString("{", ",", "}"), conf)
       println( ante.sorted.mkString("{", ",", "}") + "=>" +cons.sorted.mkString("{", ",", "}") + " : " + conf )
+      print("@")
     })
     println("note5")
     lb2.toDF("ante", "cons", "conf").write.mode("overwrite").saveAsTable("test.AnteConsConf_sjq")
