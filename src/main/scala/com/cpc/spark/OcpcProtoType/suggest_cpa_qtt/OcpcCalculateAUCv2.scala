@@ -16,13 +16,14 @@ object OcpcCalculateAUCv2 {
     val hour = args(1).toString
     val conversionGoal = args(2).toInt
     val version = args(3).toString
+    val hourInt = args(4).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, 72, version, date, hour, spark)
+    val data = getData(conversionGoal, hourInt, version, date, hour, spark)
     val tableName = "dl_cpc.ocpc_auc_raw_data"
     data
       .repartition(10).write.mode("overwrite").insertInto(tableName)
