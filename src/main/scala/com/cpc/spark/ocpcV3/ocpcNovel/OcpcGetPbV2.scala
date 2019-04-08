@@ -75,8 +75,6 @@ object OcpcGetPbV2 {
     val PostCvrDF = getPostCvrAndAvgBid(date,hour,spark)
 
     val targetmiduDF = targetmidu(spark)
-    targetmiduDF.printSchema()
-     targetmiduDF.show(5)
 
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
@@ -89,8 +87,8 @@ object OcpcGetPbV2 {
 //        "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
     resultDF.write.mode("overwrite").saveAsTable("test.wy02")
-
-
+//
+//
 //    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
 //    resultDF
