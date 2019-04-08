@@ -17,13 +17,13 @@ PB.targets in Compile := Seq(
   scalapb.gen(javaConversions = true) -> (sourceManaged in Compile).value
 )
 
-addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.15")
+//addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.15")
 
 libraryDependencies ++= Seq(
-  "com.trueaccord.scalapb" %% "compilerplugin" % "0.6.7" exclude ("com.trueaccord.scalapb", "protoc-bridge_2.10"),
+//  "com.trueaccord.scalapb" %% "compilerplugin" % "0.6.7" exclude ("com.trueaccord.scalapb", "protoc-bridge_2.10"),
   "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
   "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
-  "org.apache.spark" %% "spark-mllib" % "2.4.0" % "runtime",
+//  "org.apache.spark" %% "spark-mllib" % "2.4.0" % "runtime",
   "org.json4s" %% "json4s-native" % "3.5.1",
   "com.hankcs" % "hanlp" % "portable-1.3.4",
   "com.github.jurajburian" %% "mailer" % "1.2.1",
