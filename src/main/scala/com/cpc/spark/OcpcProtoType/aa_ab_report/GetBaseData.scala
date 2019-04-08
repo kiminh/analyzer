@@ -70,7 +70,7 @@ object GetBaseData {
          |    isclick,
          |    isshow,
          |    ocpc_log_dict,
-         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int)
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int) + 0.5
          |          else bid end) as bid,
          |    (case when is_ocpc = 1 then cast(ocpc_log_dict['conversiongoal'] as int)
          |          else conversion_goal end) as conversion_goal,
@@ -106,18 +106,13 @@ object GetBaseData {
          |left join
          |    (select
          |        searchid,
-         |        label2 as iscvr1
+         |        label as iscvr1
          |    from
-         |        dl_cpc.ml_cvr_feature_v1
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    where
          |        `date` = '$date'
          |    and
-         |        label2 = 1
-         |    and
-         |        label_type in (1, 2, 3, 4, 5)
-         |    group by
-         |        searchid,
-         |        label2) as b
+         |        cvr_goal = 'cv1') as b
          |on
          |    a.searchid = b.searchid
          |left join
@@ -125,30 +120,23 @@ object GetBaseData {
          |        searchid,
          |        label as iscvr2
          |    from
-         |        dl_cpc.ml_cvr_feature_v2
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    where
          |        `date` = '$date'
          |    and
-         |        label = 1
-         |    group by
-         |        searchid,
-         |        label) as c
+         |        cvr_goal = 'cv2') as c
          |on
          |    a.searchid = c.searchid
          |left join
          |    (select
          |        searchid,
-         |        1 as iscvr3
+         |        label as iscvr3
          |    from
-         |        dl_cpc.site_form_unionlog
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    WHERE
          |        `date` = '$date'
          |    and
-         |        ideaid > 0
-         |    and
-         |        searchid is not null
-         |    group by
-         |        searchid) as d
+         |        cvr_goal = 'cv3') as d
          |on
          |    a.searchid = d.searchid
       """.stripMargin
