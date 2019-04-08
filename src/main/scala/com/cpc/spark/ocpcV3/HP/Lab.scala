@@ -8,13 +8,14 @@ object Lab {
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
     val date = args(0).toString
     val appException = args(1).toString
+    val targetApp = args(2).toString
     import spark.implicits._
 
-    val baseData = getBaseData(spark, date, appException).map(x =>( x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
+    val baseData = getBaseData(spark, date, appException, targetApp).map(x => (x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
     baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
   }
 
-  def getBaseData(spark: SparkSession, date: String, appException: String ) = {
+  def getBaseData(spark: SparkSession, date: String, appException: String, targetApp: String) = {
     import spark.implicits._
     val sqlRequest =
       s"""
@@ -29,7 +30,7 @@ object Lab {
     val t1 = new Date()
     println("T1 is " + t1)
     val df1 = spark.sql(sqlRequest).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",") ))
+      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",")))
       .flatMap(x => {
         val uid = x._1
         val pkgs = x._2
@@ -49,24 +50,26 @@ object Lab {
     val t2 = new Date()
     println("T2 is " + t2)
 
-    val apps_exception = appException.split(","):+""
+    val apps_exception = appException.split(",") :+ ""
     val apps_exception1 = apps_exception.mkString("('", "','", "')")
-    val countLimit = 100
-    val filter_condition = s"appName not in ${apps_exception1} and  count >= ${countLimit}"
-    println( filter_condition )
 
-    val df2 = df1.rdd
+
+    val df20 = df1.rdd
       .map(x => x.getAs[String]("appName"))
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
-      .filter(filter_condition)
+
+    val minCount = df20.where(s"appName = ${targetApp}").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
+    val filter_condition = s"appName not in ${apps_exception1} and  count >= ${minCount}"
+    println(filter_condition)
+    val df2 = df20.filter(filter_condition)
 
     val t3 = new Date()
     println("T3 is " + t3)
 
-    val df3 = df1.join(df2, Seq("appName"), "left").select("uid", "appName", "count").filter("count is not NULL")
+    val df3 = df1.join(df2, Seq("appName") ).select("uid", "appName", "count").filter("count is not NULL")
 
-//    df3.write.mode("overwrite").saveAsTable("test.app_count_sjq")
+    //    df3.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 
     val t4 = new Date()
     println("T4 is " + t4)
