@@ -1,16 +1,11 @@
 package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-@deprecated
-object OcpcUnionSuggestCPA {
+
+object OcpcUnionSuggestCPAv2 {
   def main(args: Array[String]): Unit = {
     /*
     将qtt_demo的三种转化目标的表union到一起
@@ -21,11 +16,11 @@ object OcpcUnionSuggestCPA {
     val version = args(2).toString
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc suggest cpa v2: $date, $hour")
+      .appName(s"ocpc suggest cpa v2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, version, date, hour, spark)
+    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
 
     val updateData = baseResult
       .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
@@ -58,7 +53,7 @@ object OcpcUnionSuggestCPA {
     resultDF
   }
 
-  def getNewCali(suggestData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getNewCali(suggestData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = OcpcSmoothFactor.getBaseData("qtt", "cvr2", 24, date, hour, spark)
     val rawData = OcpcSmoothFactor.calculateSmooth(baseData, spark)
     rawData.createOrReplaceTempView("raw_data")

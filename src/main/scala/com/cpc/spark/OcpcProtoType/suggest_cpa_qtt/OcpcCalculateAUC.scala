@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
+@deprecated
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
