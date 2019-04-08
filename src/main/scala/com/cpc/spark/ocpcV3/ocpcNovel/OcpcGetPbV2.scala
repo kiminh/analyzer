@@ -488,9 +488,10 @@ object OcpcGetPbV2 {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    val table=s"(select cast(id as int) as unitid FROM adv.unit WHERE target_medias ='80001098,80001292,80001539,80002480,80001011' and status=0) as tmp"
+    val table=s"(select id as unitid FROM adv.unit WHERE target_medias ='80001098,80001292,80001539,80002480,80001011' and status=0) as tmp"
       val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
           .withColumn("target",lit(1))
+          .selectExpr("cast(unitid as int)unitid","target")
 
     resultDF
   }
