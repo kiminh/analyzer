@@ -64,7 +64,7 @@ object Lab {
     val filter_condition = s"appName not in ${apps_exception1} and  count >= ${minCount}"
     println(filter_condition)
     val df2 = df20.filter(filter_condition)
-    df2.write.mode("overwrite").saveAsTable("test.appCount_sjq")
+    df20.write.mode("overwrite").saveAsTable("test.appCount_sjq")
 
     val t3 = new Date()
     println("T3 is " + t3)
