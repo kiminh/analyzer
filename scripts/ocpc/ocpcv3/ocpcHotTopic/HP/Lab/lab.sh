@@ -7,8 +7,7 @@ SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
 date=$1
-days=$2
-
+appException=趣头条,微信,支付宝
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -25,4 +24,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ocpcV3.HP.Lab \
-    /home/cpc/sunjianqiang/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $days
+    /home/cpc/sunjianqiang/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $appException
