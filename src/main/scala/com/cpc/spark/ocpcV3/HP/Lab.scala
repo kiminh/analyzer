@@ -38,13 +38,13 @@ object Lab {
       s"""
          |select
          | uid,
-         | app_name as pkgs
+         | concat_ws(',', app_name) as pkgs
          | from dl_cpc.cpc_user_installed_apps a
          |where load_date = '$date'
        """.stripMargin
 
     val df1 = spark.sql(sqlRequest).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[Array[String]]("pkgs") ))
+      .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",") ))
       .flatMap(x => {
         val uid = x._1
         val pkgs = x._2
