@@ -22,8 +22,7 @@ object Lab2 {
     val model = new FPGrowth().setMinSupport(minSupport).setNumPartitions(numPartition).run(baseData)
     println("note1")
     val freqItemsets = model.freqItemsets
-    val numFreqItemsets = freqItemsets.count()
-    println("Number of frequent itemsets: " + numFreqItemsets)
+    println("note2")
     val lb1 = scala.collection.mutable.ListBuffer[ItemsetFreq]()
     freqItemsets.collect().foreach(itemset => {
       val items = itemset.items //Array[String]
@@ -31,11 +30,11 @@ object Lab2 {
       lb1 += ItemsetFreq(items.sorted.mkString("{", ",", "}"), freq)
       println( items.sorted.mkString("{", ",", "}")+" : "+ freq )
     })
+    println("note3")
     lb1.toDF("itemset", "freq").write.mode("overwrite").saveAsTable("test.itemsetfreq_sjq")
 
     val associationRules = model.generateAssociationRules(minConfidence)
-    val numAssociationRules = associationRules.count()
-    println("Number of association rules: " + numAssociationRules)
+    println("note4")
     val lb2 = scala.collection.mutable.ListBuffer[AnteConsConf]()
     associationRules.collect.foreach(rule => {
       val ante = rule.antecedent //Array[String]
@@ -44,6 +43,7 @@ object Lab2 {
       lb2 += AnteConsConf(ante.sorted.mkString("{", ",", "}"), cons.sorted.mkString("{", ",", "}"), conf)
       println( ante.sorted.mkString("{", ",", "}") + "=>" +cons.sorted.mkString("{", ",", "}") + " : " + conf )
     })
+    println("note5")
     lb2.toDF("ante", "cons", "conf").write.mode("overwrite").saveAsTable("test.AnteConsConf_sjq")
 
   }
