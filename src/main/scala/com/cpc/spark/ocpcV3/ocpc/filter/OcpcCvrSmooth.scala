@@ -65,8 +65,8 @@ object OcpcCvrSmooth {
       .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3", "isshow", "bid", "exp_ctr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
-    // data.createOrReplaceTempView("base_data")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth_cvr")
+    data.createOrReplaceTempView("base_data")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth_cvr")
 
     val sqlRequest =
       s"""
@@ -76,7 +76,7 @@ object OcpcCvrSmooth {
          |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
          |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3
          |FROM
-         |  test.ocpc_check_data_smooth_cvr
+         |  base_data
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
