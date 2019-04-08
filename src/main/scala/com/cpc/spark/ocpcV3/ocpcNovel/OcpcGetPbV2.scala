@@ -84,6 +84,7 @@ object OcpcGetPbV2 {
       .join(PostCvrDF,Seq("unitid"),"left")
       .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
       .join(targetmiduDF,Seq("unitid"),"left")
+      .filter("target is null")
 //      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
 //        "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
