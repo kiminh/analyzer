@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_v1
+package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
