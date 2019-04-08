@@ -16,9 +16,9 @@ object OcpcBaseCtrCPC {
     val date = args(0).toString
     val hour = args(1).toString
     val resultDF = preprocessUnionlog(date, hour, spark)
-    resultDF
-      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_cpc_data_hourly")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_cpc_data_hourly")
+//    resultDF
+//      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_cpc_data_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_cpc_data_hourly")
     println("successfully save data into table dl_cpc.ocpc_ctr_cpc_data_hourly")
   }
 
@@ -41,18 +41,18 @@ object OcpcBaseCtrCPC {
          |    adslotid,
          |    adslot_type,
          |    adtype,
-         |    ext['adclass'].int_value as adclass,
-         |    ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |    adclass,
+         |    exp_ctr,
+         |    exp_cvr,
          |    isclick,
          |    isshow
          |from dl_cpc.ocpc_base_unionlog
          |where $selectWhere
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
-         |and length(ext_string['ocpc_log'])<=0
+         |and length(ocpc_log)<=0
          |and isshow = 1
-         |and ext['antispam'].int_value = 0
+         |and antispam = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)

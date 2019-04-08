@@ -15,7 +15,10 @@ object OcpcFilterUnionLog {
     val data = getUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
+      .write.mode("overwrite").saveAsTable("test.filtered_union_log_hourly")
+
+//    data
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
 
     // 按需求增加需要进行抽取的数据表
@@ -24,14 +27,16 @@ object OcpcFilterUnionLog {
     bidData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
+      .write.mode("overwrite").saveAsTable("test.filtered_union_log_bid_hourly")
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
 
     // 增加可供ab对比实验的数据表
     val abData = getAbUnionlog(data, date, hour, spark)
     abData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
+      .write.mode("overwrite").saveAsTable("test.filtered_union_log_exptag_hourly")
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
   }
 
   def getAbUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -54,10 +59,10 @@ object OcpcFilterUnionLog {
          |    exptags,
          |    media_type,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+         |    adclass,
+         |    ocpc_log,
+         |    exp_ctr,
+         |    exp_cvr,
          |    bid as original_bid,
          |    price,
          |    isshow,
