@@ -124,7 +124,7 @@ object OcpcCvrSmooth {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")

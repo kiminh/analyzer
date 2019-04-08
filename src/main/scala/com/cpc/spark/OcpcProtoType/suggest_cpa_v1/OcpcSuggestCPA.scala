@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa
+package com.cpc.spark.OcpcProtoType.suggest_cpa_v1
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -574,8 +574,6 @@ object OcpcSuggestCPA {
          |    adsrc = 1
          |AND
          |    (charge_type is null or charge_type = 1)
-         |AND
-         |    conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))

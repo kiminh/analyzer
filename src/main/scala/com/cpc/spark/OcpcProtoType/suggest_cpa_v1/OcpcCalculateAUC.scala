@@ -1,11 +1,10 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa
+package com.cpc.spark.OcpcProtoType.suggest_cpa_v1
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
@@ -127,7 +126,6 @@ object OcpcCalculateAUC {
          |and media_appsid  in ("80000001", "80000002")
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
-         |and conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
