@@ -125,7 +125,7 @@ object OcpcFilterUnionLog {
          |    exptags,
          |    media_type,
          |    media_appsid,
-         |    adslotid,
+         |    adslot_id as adslotid,
          |    adslot_type,
          |    adtype,
          |    adsrc,
@@ -145,17 +145,17 @@ object OcpcFilterUnionLog {
          |    age,
          |    isshow,
          |    isclick,
-         |    duration,
+         |    0 as duration,
          |    userid,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    ext_string['user_city'] as user_city,
-         |    ext['city_level'].int_value as city_level,
-         |    ext['adclass'].int_value as adclass
+         |    is_ocpc,
+         |    ocpc_log,
+         |    user_city,
+         |    city_level,
+         |    adclass
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
-         |and (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
+         |and (charge_type IS NULL OR charge_type = 1)
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
