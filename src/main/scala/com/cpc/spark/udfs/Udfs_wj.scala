@@ -57,7 +57,7 @@ object Udfs_wj{
     else if (midu.contains((media_appsid)))
       "midu"
     else if (hottopic.contains(media_appsid))
-      "hottopic"
+      "hot_topic"
     else
       "other"
   })
@@ -79,6 +79,20 @@ object Udfs_wj{
       "others"
 
   })
+
+    def udfGetIndustry() = udf((adclass:Int, adslot_type:Int) => {
+        if (adclass/1000000 == 134 || adclass/1000000 == 107)
+            "elds"
+        else if (adslot_type != 7 && adclass/1000000 == 100)
+            "feedapp"
+        else if (adslot_type == 7 && adclass/1000000 == 100)
+            "yysc"
+        else if (adclass == 110110100 || adclass == 125100100)
+            "wzcp"
+        else
+            "others"
+
+    })
 
   def udfStringToMap() = udf((valueLog: String) => {
     var result = mutable.LinkedHashMap[String, String]()
