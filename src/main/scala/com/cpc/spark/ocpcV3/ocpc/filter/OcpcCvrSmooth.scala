@@ -54,9 +54,9 @@ object OcpcCvrSmooth {
 
   def getCvrData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val clickData = getClickData(date, hour, hourInt, spark)
-    val cvr1Data = getCV("cvr1", date, hour, spark)
-    val cvr2Data = getCV("cvr2", date, hour, spark)
-    val cvr3Data = getCV("cvr3", date, hour, spark)
+    val cvr1Data = getCV("cvr1", date, hour, hourInt, spark)
+    val cvr2Data = getCV("cvr2", date, hour, hourInt, spark)
+    val cvr3Data = getCV("cvr3", date, hour, hourInt, spark)
 
     val data = clickData
       .join(cvr1Data, Seq("searchid"), "left_outer")
@@ -87,14 +87,14 @@ object OcpcCvrSmooth {
 
   }
 
-  def getCV(cvType: String, date: String, hour: String, spark: SparkSession) = {
+  def getCV(cvType: String, date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
