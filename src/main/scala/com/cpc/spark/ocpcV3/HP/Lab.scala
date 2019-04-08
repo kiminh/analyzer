@@ -3,6 +3,7 @@ package com.cpc.spark.ocpcV3.HP
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.fpm.FPGrowth
+import java.util.Date
 
 object Lab {
   def main(args: Array[String]): Unit = {
@@ -10,7 +11,7 @@ object Lab {
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
     import spark.implicits._
 
-    val baseData = getBaseData(spark, date).map(x => x._2)
+    val baseData = getBaseData(spark, date).map(x => x._2.distinct)
     print("baseData has " + baseData.count() + " elements" )
 
     val minSupport = 0.4
@@ -43,6 +44,9 @@ object Lab {
          |where load_date = '$date'
        """.stripMargin
 
+    println(sqlRequest)
+    val t1 = new Date()
+    println("Now is " + t1)
     val df1 = spark.sql(sqlRequest).rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",") ))
       .flatMap(x => {
@@ -61,6 +65,9 @@ object Lab {
         if (arr.size == 2) (uid, arr(1)) else (uid, "")
       }).toDF("uid", "appName").persist()
 
+    val t2 = new Date()
+    println("Now is " + t2)
+
     val apps_exception = Array("", "趣头条").mkString("('", "','", "')")
     val countLimit = 100
 
@@ -70,19 +77,25 @@ object Lab {
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
       .filter(s"appName not in ${apps_exception} and  count >= ${countLimit}")
 
+    val t3 = new Date()
+    println("Now is " + t3)
+
     val df3 = df1.join(df2, Seq("appName"), "left").select("uid", "appName", "count").filter("count is not NULL")
 
 //    df3.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 
+    val t4 = new Date()
+    println("Now is " + t4)
+
     val result = df3.rdd
       .map(x => (x.getAs[String]("uid"), Array(x.getAs[String]("appName"))))
       .reduceByKey((appArr1, appArr2) => appArr1 ++ appArr2)
+    val t5 = new Date()
+    println("Now is " + t5)
     result
   }
 
   case class UidComb(var uid: String, var comb: String)
-
-  //  case class AppCount(var appName: String, var count: Int)
 
 }
 
