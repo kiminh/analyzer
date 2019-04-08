@@ -31,7 +31,7 @@ object Lab {
     println("T1 is " + t1)
 
     val df0 = spark.sql(sqlRequest)
-    val countUpper = df0.count()
+    val countUpper = df0.count()*0.2
 
     val df1 = df0.rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",")))
