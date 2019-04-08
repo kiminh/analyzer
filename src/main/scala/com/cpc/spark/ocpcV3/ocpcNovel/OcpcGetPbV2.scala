@@ -29,65 +29,65 @@ object OcpcGetPbV2 {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // 读取数据
-    val base = getCVR(date, hour, spark)
-    val cpaHistory = getCPAhistory(date, hour, spark)
-    val kvalue = getK(base, cpaHistory, date, hour, spark)
-    val adclassCPA = spark
-      .table("dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly")
-      .where(s"`date`='$date' and `hour`='$hour'")
-      .select("new_adclass", "cpa1", "cpa2")
-
-    // 组装数据
-    val data = base
-      .join(cpaHistory, Seq("unitid", "new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt")
-      .join(kvalue, Seq("unitid", "new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt", "kvalue", "conversion_goal")
-      .join(adclassCPA, Seq("new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt", "kvalue", "conversion_goal", "cpa1", "cpa2")
-      .withColumn("adclass_cpa", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
-      .withColumn("cpa_history", when(col("cpa_history").isNull, col("adclass_cpa")).otherwise(col("cpa_history")))
-      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-
-    val result = data
-      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
-      .groupBy("unitid")
-      .agg(
-        avg(col("kvalue")).alias("kvalue"),
-        avg(col("cpa_history")).alias("cpa_history"),
-        sum(col("cvr1cnt")).alias("cvr1cnt"),
-        sum(col("cvr2cnt")).alias("cvr2cnt"),
-        avg(col("conversion_goal")).alias("conversion_goal"))
-      .withColumn("conversion_goal", when(col("conversion_goal")===2, 2).otherwise(1))
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-
-    val mediaCost = getCostByMedia(result, date, hour, spark)
-
-    val FlagDF=getOcpcCpaFlag(date,spark)
-    FlagDF.show(5)
-
-    val PostCvrDF = getPostCvrAndAvgBid(date,hour,spark)
+//    // 读取数据
+//    val base = getCVR(date, hour, spark)
+//    val cpaHistory = getCPAhistory(date, hour, spark)
+//    val kvalue = getK(base, cpaHistory, date, hour, spark)
+//    val adclassCPA = spark
+//      .table("dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly")
+//      .where(s"`date`='$date' and `hour`='$hour'")
+//      .select("new_adclass", "cpa1", "cpa2")
+//
+//    // 组装数据
+//    val data = base
+//      .join(cpaHistory, Seq("unitid", "new_adclass"), "left_outer")
+//      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt")
+//      .join(kvalue, Seq("unitid", "new_adclass"), "left_outer")
+//      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt", "kvalue", "conversion_goal")
+//      .join(adclassCPA, Seq("new_adclass"), "left_outer")
+//      .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt", "kvalue", "conversion_goal", "cpa1", "cpa2")
+//      .withColumn("adclass_cpa", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
+//      .withColumn("cpa_history", when(col("cpa_history").isNull, col("adclass_cpa")).otherwise(col("cpa_history")))
+//      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
+//      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//
+//    val result = data
+//      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
+//      .groupBy("unitid")
+//      .agg(
+//        avg(col("kvalue")).alias("kvalue"),
+//        avg(col("cpa_history")).alias("cpa_history"),
+//        sum(col("cvr1cnt")).alias("cvr1cnt"),
+//        sum(col("cvr2cnt")).alias("cvr2cnt"),
+//        avg(col("conversion_goal")).alias("conversion_goal"))
+//      .withColumn("conversion_goal", when(col("conversion_goal")===2, 2).otherwise(1))
+//      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//
+//    val mediaCost = getCostByMedia(result, date, hour, spark)
+//
+//    val FlagDF=getOcpcCpaFlag(date,spark)
+//    FlagDF.show(5)
+//
+//    val PostCvrDF = getPostCvrAndAvgBid(date,hour,spark)
 
     val targetmiduDF = targetmidu(spark)
     targetmiduDF.printSchema()
      targetmiduDF.show(5)
 
-    val resultDF = result
-      .join(mediaCost, Seq("unitid"), "inner")
-      .join(FlagDF,Seq("unitid"),"left")
-      .join(PostCvrDF,Seq("unitid"),"left")
-      .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
-      .join(targetmiduDF,Seq("unitid"),"left")
-//      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
-//        "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
-
-    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
+//    val resultDF = result
+//      .join(mediaCost, Seq("unitid"), "inner")
+//      .join(FlagDF,Seq("unitid"),"left")
+//      .join(PostCvrDF,Seq("unitid"),"left")
+//      .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
+//      .join(targetmiduDF,Seq("unitid"),"left")
+////      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
+////        "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
+//
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
 //    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
