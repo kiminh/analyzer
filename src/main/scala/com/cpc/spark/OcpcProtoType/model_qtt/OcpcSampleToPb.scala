@@ -72,8 +72,8 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultDF = result
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
@@ -81,8 +81,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -139,7 +139,7 @@ object OcpcSampleToPb {
          |AND
          |  jfb > 0
          |AND
-         |  conversion_goal = 2
+         |  (conversion_goal = 2 or identifier in ('2020307', '2015393', '2014701'))
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
