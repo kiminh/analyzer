@@ -63,7 +63,7 @@ object OcpcFilterUnionLog {
          |    isshow,
          |    isclick
          |FROM
-         |    dl_cpc.cpc_union_log
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectWhere
          |and (isshow>0 or isclick>0)
@@ -147,7 +147,7 @@ object OcpcFilterUnionLog {
          |    ext_string['user_city'] as user_city,
          |    ext['city_level'].int_value as city_level,
          |    ext['adclass'].int_value as adclass
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
          |and (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)

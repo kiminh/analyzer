@@ -46,7 +46,7 @@ object OcpcBaseCtrCPC {
          |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.ocpc_base_unionlog
          |where $selectWhere
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
