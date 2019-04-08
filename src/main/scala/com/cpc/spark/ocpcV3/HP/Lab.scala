@@ -9,6 +9,7 @@ object Lab {
     val date = args(0).toString
     val appException = args(1).toString
     val targetApp = args(2).toString
+    println("date: " + date + "; appException: " + appException + "; targetApp: " + targetApp)
     import spark.implicits._
 
     val baseData = getBaseData(spark, date, appException, targetApp).map(x => (x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
@@ -59,7 +60,7 @@ object Lab {
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
 
-    val minCount = df20.where(s"appName = ${targetApp}").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
+    val minCount = df20.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
     val filter_condition = s"appName not in ${apps_exception1} and  count >= ${minCount}"
     println(filter_condition)
     val df2 = df20.filter(filter_condition)
