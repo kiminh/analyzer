@@ -67,8 +67,13 @@ object Lab {
 
     val t3 = new Date()
     println("T3 is " + t3)
+    //==========================================================================
+    val A = df1.where(s"appName = '${targetApp}'").select("uid").distinct() //含targetApp的uid的集合
+    val B = df1.join(A, Seq("uid")).select("appName").distinct() //A安装的appName的集合
+    val C = df1.join(C, Seq("appName")).select("uid").distinct() //安装B中appName的uid的集合
+    //===========================================================================
 
-    val df3 = df1.join(df2, Seq("appName") ).select("uid", "appName", "count").filter("count is not NULL")
+    val df3 = df1.join(C, Seq("uid")).join(df2, Seq("appName") ).select("uid", "appName", "count").filter("count is not NULL")
 
     //    df3.write.mode("overwrite").saveAsTable("test.app_count_sjq")
 

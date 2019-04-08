@@ -24,7 +24,7 @@ object Lab2 {
     val freqItemsets = model.freqItemsets
     println("note2")
     val lb1 = scala.collection.mutable.ListBuffer[ItemsetFreq]()
-    freqItemsets.foreach(itemset => {
+    freqItemsets.collect.foreach(itemset => {
       val items = itemset.items //Array[String]
       val freq = itemset.freq //Long
       lb1 += ItemsetFreq(items.sorted.mkString("{", ",", "}"), freq)
@@ -37,7 +37,7 @@ object Lab2 {
     val associationRules = model.generateAssociationRules(minConfidence)
     println("note4")
     val lb2 = scala.collection.mutable.ListBuffer[AnteConsConf]()
-    associationRules.foreach(rule => {
+    associationRules.collect.foreach(rule => {
       val ante = rule.antecedent //Array[String]
       val cons = rule.consequent //Array[String]
       val conf = rule.confidence //Double
