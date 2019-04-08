@@ -7,16 +7,15 @@ object Lab {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
     val date = args(0).toString
-    val appException = args(1).toString
-    val targetApp = args(2).toString
-    println("date: " + date + "; appException: " + appException + "; targetApp: " + targetApp)
+    val targetApp = args(1).toString
+    println("date: " + date + "; targetApp: " + targetApp)
     import spark.implicits._
 
-    val baseData = getBaseData(spark, date, appException, targetApp).map(x => (x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
+    val baseData = getBaseData(spark, date, targetApp).map(x => (x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
     baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
   }
 
-  def getBaseData(spark: SparkSession, date: String, appException: String, targetApp: String) = {
+  def getBaseData(spark: SparkSession, date: String, targetApp: String) = {
     import spark.implicits._
     val sqlRequest =
       s"""
@@ -30,7 +29,11 @@ object Lab {
     println(sqlRequest)
     val t1 = new Date()
     println("T1 is " + t1)
-    val df1 = spark.sql(sqlRequest).rdd
+
+    val df0 = spark.sql(sqlRequest)
+    val countUpper = df0.count()
+
+    val df1 = df0.rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[String]("pkgs").split(",")))
       .flatMap(x => {
         val uid = x._1
@@ -51,17 +54,13 @@ object Lab {
     val t2 = new Date()
     println("T2 is " + t2)
 
-    val apps_exception = appException.split(",") :+ ""
-    val apps_exception1 = apps_exception.mkString("('", "','", "')")
-
-
     val df20 = df1.rdd
       .map(x => x.getAs[String]("appName"))
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
 
-    val minCount = df20.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
-    val filter_condition = s"appName not in ${apps_exception1} and  count >= ${minCount}"
+    val countLower = df20.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _)
+    val filter_condition = s"appName not like '%小米%' and appName not like '%OPPO%' and  count between ${countLower} and =${countUpper}"
     println(filter_condition)
     val df2 = df20.filter(filter_condition)
     df20.write.mode("overwrite").saveAsTable("test.appCount_sjq")
