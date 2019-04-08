@@ -48,7 +48,6 @@ object OcpcSampleToPb {
     println("result1")
     result1.show(10)
 
-    // todo 调整代码中
     val result2raw = getNewK(date, hour, version, spark)
     val ocpcUnit = getConversionGoal(date, hour, spark)
     val result2 = result2raw
@@ -73,8 +72,8 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultDF = result
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
@@ -82,8 +81,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -120,7 +119,6 @@ object OcpcSampleToPb {
     2. 计算新的kvalue
      */
     // 从表中抽取数据
-    // todo in test
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
     val sqlRequest =
       s"""
@@ -141,7 +139,7 @@ object OcpcSampleToPb {
          |AND
          |  jfb > 0
          |AND
-         |  (conversion_goal = 2 or identifier in ('1988598', '1999027'))
+         |  conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
