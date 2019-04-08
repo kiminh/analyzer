@@ -1,46 +1,20 @@
 package com.cpc.spark.ocpcV3.HP
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib.fpm.FPGrowth
 import java.util.Date
 
 object Lab {
   def main(args: Array[String]): Unit = {
-    val date = args(0).toString
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
+    val date = args(0).toString
+    val appException = args(1).toString
     import spark.implicits._
 
-    val baseData = getBaseData(spark, date).map(x => x._2.distinct)
-    val t6 = new Date()
-    println("T6 is " + t6)
-    print("baseData has " + baseData.count() + " elements" )
-    val t7 = new Date()
-    println("T7 is " + t7)
-
-    val minSupport = 0.4
-    val numPartition = 10
-    val model = new FPGrowth().setMinSupport(minSupport).setNumPartitions(numPartition).run(baseData)
-    val t8 = new Date()
-    println("T8 is " + t8)
-
-    val freqItemsets = model.freqItemsets.persist()
-    val numFreqItemsets = freqItemsets.count()
-    println("Number of frequent itemsets: "+ numFreqItemsets )
-    freqItemsets.take(30).foreach{ itemset => println( itemset.items.mkString("{", ",", "}") + ", " + itemset.freq ) }
-
-    val minConfidence = 0.8
-    val associationRules = model.generateAssociationRules(minConfidence)
-    val numAssociationRules = associationRules.count()
-    println("Number of association rules: "+ numAssociationRules )
-    associationRules.take(30)
-      .foreach{ rule => println(rule.antecedent.mkString( "{", ",", "}") + " => " + rule.consequent.mkString(",") + " : 1.confidence" + rule.confidence + "; 2.lift" + rule.lift) }
-
-
-
+    val baseData = getBaseData(spark, date, appException).map(x =>( x._1, x._2.distinct.mkString(","))).toDF("uid", "appNames")
+    baseData.write.mode("overwrite").saveAsTable("test.app_count_sjq")
   }
 
-  def getBaseData(spark: SparkSession, date: String) = {
+  def getBaseData(spark: SparkSession, date: String, appException: String ) = {
     import spark.implicits._
     val sqlRequest =
       s"""
@@ -75,14 +49,17 @@ object Lab {
     val t2 = new Date()
     println("T2 is " + t2)
 
-    val apps_exception = Array("", "趣头条").mkString("('", "','", "')")
+    val apps_exception = appException.split(","):+""
+    val apps_exception1 = apps_exception.mkString("('", "','", "')")
     val countLimit = 100
+    val filter_condition = s"appName not in ${apps_exception1} and  count >= ${countLimit}"
+    println( filter_condition )
 
     val df2 = df1.rdd
       .map(x => x.getAs[String]("appName"))
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y).toDF("appName", "count")
-      .filter(s"appName not in ${apps_exception} and  count >= ${countLimit}")
+      .filter(filter_condition)
 
     val t3 = new Date()
     println("T3 is " + t3)
