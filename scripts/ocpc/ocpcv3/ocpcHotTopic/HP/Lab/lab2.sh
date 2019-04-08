@@ -7,8 +7,8 @@ SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
 date=$1
-minSupport=0.4
-minConfidence=0.6
+minSupport=$2
+minConfidence=$3
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"

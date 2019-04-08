@@ -20,7 +20,7 @@ object Lab2 {
 
     val numPartition = 10
     val model = new FPGrowth().setMinSupport(minSupport).setNumPartitions(numPartition).run(baseData)
-
+    println("note1")
     val freqItemsets = model.freqItemsets
     val numFreqItemsets = freqItemsets.count()
     println("Number of frequent itemsets: " + numFreqItemsets)
@@ -29,6 +29,7 @@ object Lab2 {
       val items = itemset.items //Array[String]
       val freq = itemset.freq //Long
       lb1 += ItemsetFreq(items.sorted.mkString("{", ",", "}"), freq)
+      println( items.sorted.mkString("{", ",", "}")+" : "+ freq )
     })
     lb1.toDF("itemset", "freq").write.mode("overwrite").saveAsTable("test.itemsetfreq_sjq")
 
@@ -41,6 +42,7 @@ object Lab2 {
       val cons = rule.consequent //Array[String]
       val conf = rule.confidence //Double
       lb2 += AnteConsConf(ante.sorted.mkString("{", ",", "}"), cons.sorted.mkString("{", ",", "}"), conf)
+      println( ante.sorted.mkString("{", ",", "}") + "=>" +cons.sorted.mkString("{", ",", "}") + " : " + conf )
     })
     lb2.toDF("ante", "cons", "conf").write.mode("overwrite").saveAsTable("test.AnteConsConf_sjq")
 
