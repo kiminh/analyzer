@@ -1,8 +1,8 @@
 package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt
 
-import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcUnionSuggestCPA._
 
 
@@ -12,6 +12,7 @@ object OcpcUnionSuggestCPAv2 {
     将qtt_demo的三种转化目标的表union到一起
      */
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
