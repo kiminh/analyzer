@@ -139,12 +139,15 @@ object Utils {
     val sql = generateSql(str, "redis")
     print(sql)
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
     spark.sql(sql).repartition(20)
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
           //使用pipeline
-          var i = 0
+          /*var i = 0
           val jedis = new Jedis(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
           jedis.auth(conf.getString("ali_redis.auth"))
           val pip = jedis.pipelined()
@@ -157,16 +160,23 @@ object Utils {
               }
           }
           pip.sync()
-          jedis.disconnect()
+          jedis.disconnect()*/
 
-          /*val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+          val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
           redis.auth(conf.getString("ali_redis.auth"))
           p.foreach { rec =>
-            redis.setex(rec._1, 3600 * 24 * 7, rec._2)
+            val succ = redis.setex(rec._1, 3600 * 24 * 7, rec._2)
+            if (succ) acc.add(0L) else acc.add(1L)
           }
-          redis.disconnect*/
+          redis.disconnect
         }
       }
+    val total_num = acc.count
+    val fail_num = acc.sum
+    val ratio = fail_num / total_num
+    println(s"----- ali cloud -----")
+    println(s"Total num = $total_num, Fail num = $fail_num, Fail ratio = $ratio")
+    println("---------------------")
   }
 
   def save2RedisCluster(str: String, prefix: String): Unit = {
@@ -177,17 +187,28 @@ object Utils {
     val sql = generateSql(str, "redis")
     print(sql)
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
     spark.sql(sql).repartition(20)
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
           val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
           p.foreach { rec =>
-            jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            val re = jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            if (re == "OK") acc.add(0L) else acc.add(1L)
           }
           jedis.close()
         }
       }
+
+    val total_num = acc.count
+    val fail_num = acc.sum
+    val ratio = fail_num / total_num
+    println(s"----- cluster -----")
+    println(s"Total num = $total_num, Fail num = $fail_num, Fail ratio = $ratio")
+    println("---------------------")
   }
 
   def evalRedisVol(str: String, prefix: String): Unit = {
