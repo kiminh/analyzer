@@ -11,14 +11,14 @@ object Lab2 {
     val date = args(0).toString
     val minSupport = args(1).toDouble
     val minConfidence = args(2).toDouble
+    val numPartition = args(3).toInt
     val spark = SparkSession.builder().appName("Lab").enableHiveSupport().getOrCreate()
     import spark.implicits._
 
     val baseData0 = getBaseData(spark, date)
-    val baseData = baseData0.rdd.map(x => x.getAs[String]("appNames").split(","))
+    val baseData = baseData0.rdd.map(x => x.getAs[String]("appNames").split(",")).persist()
     print("baseData has " + baseData.count() + " elements")
 
-    val numPartition = 10
     val model = new FPGrowth().setMinSupport(minSupport).setNumPartitions(numPartition).run(baseData)
     println("note1")
     val freqItemsets = model.freqItemsets
