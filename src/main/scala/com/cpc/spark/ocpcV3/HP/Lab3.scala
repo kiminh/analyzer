@@ -19,7 +19,7 @@ object Lab3 {
     val targetUid = getMatchUid(spark, antecedent)
 
     val targetUid2 = getMatchUid2(spark, date, targetUid)
-
+    targetUid2.write.mode("overwrite").saveAsTable("test.targetUid_sjq")
 
   }
 
