@@ -71,10 +71,10 @@ object Lab {
       .select("uid", "appName", "ifused").distinct()
 
     val df21 = if (if_used) {
-      df2.filter("ifused = 1").select("uid", "appName")
+      df2.filter("ifused = 1").select("uid", "appName").distinct()
     }
     else {
-      df2.select("uid", "appName")
+      df2.select("uid", "appName").distinct()
     } //DataFrame: uid, appName
 
     val df3 = df21.groupBy("appName")
@@ -84,8 +84,11 @@ object Lab {
 
     df3.write.mode("overwrite").saveAsTable("test.appCount_sjq")
 
-    val countUpper = df21.agg(countDistinct("uid").alias("uidn")).rdd.map(x => x.getAs[Long]("uidn")).reduce(_ + _) * 0.2
-    val countLower = df3.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Long]("count")).reduce(_ + _) * 0.7
+    val totalLogs = df21.agg(countDistinct("uid").alias("uidn")).rdd.map(x => x.getAs[Long]("uidn")).reduce(_ + _)
+    val targetAppCount = df3.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Long]("count")).reduce(_ + _)
+    println(s"The support of ${targetAppCount} is " + targetAppCount.toDouble / totalLogs.toDouble)
+    val countUpper = totalLogs * 0.2
+    val countLower = targetAppCount * 0.5
     val filter_condition =
       s"""    appName not like '%小米%'
          |and appName not like '%OPPO%'
@@ -98,20 +101,28 @@ object Lab {
          |and appName not like '%时钟%'
          |and appName not like '%录音机%'
          |and appName not like '%扫一扫%'
-         |and appName not in ('计算器', '指南针', '天气', '便签')
+         |and appName <> ''
+         |and appName not in ('计算器', '指南针', '天气', '便签', '趣头条', '米读小说', '老铁视频')
          |and count between ${countLower} and ${countUpper}""".stripMargin
     println(filter_condition)
 
     val df4 = df3.filter(filter_condition) //DataFrame: appName, count
 
+    df4.write.mode("overwrite").saveAsTable("test.appCount2_sjq")
+
     val A = df21.where(s"appName = '${targetApp}'").select("uid").distinct() //含targetApp的uid的集合
+    A.show(20)
+    println(s"Number of uids used ${targetApp} is : " + A.count)
     val B = df21.join(A, Seq("uid")).select("appName").distinct() //A安装的appName的集合
+    B.show(20)
+    println(s"Total number of apps is : " + B.count)
 
     val df5 = df21.join(B, Seq("appName")).select("uid", "appName").join(df4, Seq("appName")).select("uid", "appName") //DataFrame: uid, appName
 
     val result = df5.rdd
       .map(x => (x.getAs[String]("uid"), Array(x.getAs[String]("appName"))))
       .reduceByKey((appArr1, appArr2) => appArr1 ++ appArr2)
+      .map(x => (x._1, x._2.sorted)).distinct()
 
     result
   }
