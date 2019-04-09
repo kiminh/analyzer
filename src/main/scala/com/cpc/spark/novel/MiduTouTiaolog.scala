@@ -20,43 +20,43 @@ object MiduTouTiaolog {
           .enableHiveSupport()
           .getOrCreate()
 
-//        val sql =
-//            s"""
-//               |select
-//               |  opt["imei"] as imei, opt["data"] as opt,day,hour,minute
-//               |from dl_cpc.cpc_basedata_trace_event
-//               |where day='$date' and hour = '$hour' and trace_type ='inform' and opt["chan"] = "midunov"
-//             """.stripMargin
-//
-//        println(sql)
-//        val data = spark.sql(sql)
-//          .withColumn("opt",decode(col("opt")))
-//          .withColumn("opt",unzip(col("opt")))
-//          .filter("opt is not null")
-//          .withColumn("opt_map",strToMap(col("opt")))
-//
-//        data.show(5)
-//        data.createOrReplaceTempView("tmp")
-//        val sql2 =
-//          s"""
-//             |select
-//             |  opt_map,null as appscore,
-//             |  opt_map["ButtonText"] as buttontext,
-//             |  null as commentnum,
-//             |  opt_map["Description"] as description,
-//             |  opt_map["ImageMode"] as Imagemode,
-//             |  opt_map["InteractionType"] as interactiontype,
-//             |  opt_map["Source"] as source,
-//             |  opt_map["Title"] as title,
-//             |  opt_map["imageList"] as imagelist,
-//             |  minute,imei,
-//             |  opt_map["id"] as id,
-//             |  day,hour
-//             |  from tmp
-//               """.stripMargin
-//        val data2 = spark.sql(sql2)
-//        data2.show(10)
-//        data2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+        val sql =
+            s"""
+               |select
+               |  opt["imei"] as imei, opt["data"] as opt,day,hour,minute
+               |from dl_cpc.cpc_basedata_trace_event
+               |where day='$date' and hour = '$hour' and trace_type ='inform' and opt["chan"] = "midunov"
+             """.stripMargin
+
+        println(sql)
+        val data = spark.sql(sql)
+          .withColumn("opt",decode(col("opt")))
+          .withColumn("opt",unzip(col("opt")))
+          .filter("opt is not null")
+          .withColumn("opt_map",strToMap(col("opt")))
+
+        data.show(5)
+        data.createOrReplaceTempView("tmp")
+        val sql2 =
+          s"""
+             |select
+             |  opt_map,null as appscore,
+             |  opt_map["ButtonText"] as buttontext,
+             |  null as commentnum,
+             |  opt_map["Description"] as description,
+             |  opt_map["ImageMode"] as Imagemode,
+             |  opt_map["InteractionType"] as interactiontype,
+             |  opt_map["Source"] as source,
+             |  opt_map["Title"] as title,
+             |  opt_map["imageList"] as imagelist,
+             |  minute,imei,
+             |  opt_map["id"] as id,
+             |  day,hour
+             |  from tmp
+               """.stripMargin
+        val data2 = spark.sql(sql2)
+        data2.show(10)
+        data2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
 //click data
         val sql_click =
           s"""
@@ -80,15 +80,7 @@ object MiduTouTiaolog {
         val sql_click2 =
           s"""
              |select
-             |  opt_map,null as appscore,
-             |  opt_map["ButtonText"] as buttontext,
-             |  null as commentnum,
-             |  opt_map["Description"] as description,
-             |  opt_map["ImageMode"] as Imagemode,
-             |  opt_map["InteractionType"] as interactiontype,
-             |  opt_map["Source"] as source,
-             |  opt_map["Title"] as title,
-             |  opt_map["imageList"] as imagelist,
+             |  opt_map,
              |  minute,imei,
              |  opt_map["id"] as id,
              |  chan,
@@ -98,7 +90,7 @@ object MiduTouTiaolog {
         val data_click2 = spark.sql(sql_click2)
         data_click2.show(10)
         data_click2.repartition(100).write.mode("overwrite")
-          .insertInto("dl_cpc.cpc_midu_toutiao_click2_log")
+          .insertInto("dl_cpc.cpc_midu_toutiao_click_log")
     }
 
     def decode = udf {
