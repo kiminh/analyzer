@@ -1,6 +1,8 @@
 package com.cpc.spark.ocpcV3.HP
 
-import org.apache.spark.sql.{SparkSession, DataFrame}
+import java.util.Calendar
+import java.text.SimpleDateFormat
+import org.apache.spark.sql.{SparkSession, DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions._
 import org.apache.spark.rdd.RDD
 
@@ -14,7 +16,10 @@ object Lab3 {
       .map(x => (x._1.stripPrefix("{").stripSuffix("}").split(","), x._2))
       .map(x => (x._2, x._1, x._1.size))
 
-    getMatchUid(spark, antecedent)
+    val targetUid = getMatchUid(spark, antecedent)
+
+    val targetUid2 = getMatchUid2(spark, date, targetUid)
+
 
   }
 
@@ -91,6 +96,37 @@ object Lab3 {
 
     df1.write.mode("overwrite").saveAsTable("test.if_match_sjq")
 
+    df1.where("if_match = 1").select("uid").distinct()
+
+  }
+
+  def getMatchUid2(spark: SparkSession, date: String, targetUid: Dataset[Row])={
+    import spark.implicits._
+
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    val yesterday = sdf.parse(date)
+    calendar.setTime(yesterday)
+    calendar.add(Calendar.DATE, -7)
+    val firstDay = calendar.getTime
+    val date0 = sdf.format(firstDay)
+
+    val sql1 = s"""
+         | select
+         |  uid
+         | from dl_cpc.slim_union_log
+         |where dt between '$date0' and '$date'
+         |  and adsrc = 1
+         |  and userid >0
+         |  and isshow = 1
+         |  and antispam = 0
+         |  and media_appsid = '80002819'
+         | group by uid
+       """.stripMargin
+
+    val df = spark.sql(sql1)
+    val df1 = df.join(targetUid, "uid").select("uid").withColumn("date", lit(date))
+    df1
   }
 
   case class UidApp(var uid: String, var app: String)
