@@ -51,7 +51,7 @@ object Lab2 {
   }
 
   def getBaseData(spark: SparkSession, date: String) = {
-    val sqlRequest = s"test.associationRule_base_data_sjq"
+    val sqlRequest = s"select * from test.associationRule_base_data_sjq"
     val df = spark.sql(sqlRequest)
     df
   }
