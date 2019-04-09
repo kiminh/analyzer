@@ -22,7 +22,7 @@ object Lab3 {
     val targetUid2 = getMatchUid2(spark, date, targetUid) //DataFrame: uid, date
     //    targetUid2.write.mode("overwrite").saveAsTable("test.targetUid_sjq")
     targetUid2.write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
-//    update(spark, date)
+    update(spark, date)
 
   }
 
