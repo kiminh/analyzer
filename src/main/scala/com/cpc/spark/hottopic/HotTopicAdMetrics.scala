@@ -17,13 +17,10 @@ object HotTopicAdMetrics {
 
         val sql =
             s"""
-               |
                |select ideaid,adclass,adclass2,adclass1,
                |    sum(isshow) as show_num,
                |    sum(isclick) as click_num,
                |    sum(if(b.searchid is not null,1,0)) as convert_num,
-               |    round(sum(isclick)/sum(isshow),6) as ctr,
-               |    round(sum(if(b.searchid is not null,1,0))/sum(isclick),6) as cvr
                |from
                |(
                |    select searchid,ideaid,isshow,isclick,
@@ -45,66 +42,38 @@ object HotTopicAdMetrics {
                |     from
                |     (
                |         select final.searchid as searchid, final.ideaid as ideaid,
-               |                                    case
-               |                                        when final.src="elds" and final.label_type=6 then 1
-               |                                        when final.src="feedapp" and final.label_type in (4, 5) then 1
-               |                                        when final.src="yysc" and final.label_type=12 then 1
-               |                                        when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-               |                                        when final.src="others" and final.label_type=6 then 1
-               |                                        else 0
-               |                                    end as isreport
-               |                                from
-               |                                    (
-               |                                        select
-               |                                            searchid, media_appsid, uid,
-               |                                            planid, unitid, ideaid, adclass,
-               |                                            case
-               |                                                when (adclass like '134%' or adclass like '107%') then "elds"
-               |                                                when (adslot_type<>7 and adclass like '100%') then "feedapp"
-               |                                                when (adslot_type=7 and adclass like '100%') then "yysc"
-               |                                                when adclass in (110110100, 125100100) then "wzcp"
-               |                                                else "others"
-               |                                            end as src,
-               |                                            label_type
-               |                                        from
-               |                                            dl_cpc.ml_cvr_feature_v1
-               |                                        where
-               |                                            `date`='$day'
-               |                                            and label2=1
-               |                                            and media_appsid in ("80002819")
-               |                                    ) final
-               |                            ) tmp
-               |                        where
-               |                            tmp.isreport=1
+               |              case when final.src="elds" and final.label_type=6 then 1
+               |                   when final.src="feedapp" and final.label_type in (4, 5) then 1
+               |                   when final.src="yysc" and final.label_type=12 then 1
+               |                   when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+               |                   when final.src="others" and final.label_type=6 then 1
+               |                   else 0
+               |              end as isreport
+               |        from
+               |        (
+               |            select searchid, media_appsid, uid, planid, unitid, ideaid, adclass,
+               |                   case when (adclass like '134%' or adclass like '107%') then "elds"
+               |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
+               |                        when (adslot_type=7 and adclass like '100%') then "yysc"
+               |                        when adclass in (110110100, 125100100) then "wzcp"
+               |                        else "others"
+               |                  end as src,
+               |                  label_type
+               |            from
+               |                dl_cpc.ml_cvr_feature_v1
+               |            where
+               |                `date`='$day'
+               |                and label2=1
+               |                and media_appsid in ("80002819")
+               |        ) final
+               |      ) tmp
+               |      where tmp.isreport=1
                |) b
                |on a.searchid = b.searchid
                |group by ideaid,adclass,adclass2,adclass1
              """.stripMargin
 
-        val result = spark.sql(sql)
-          .withColumn("show_rank",getShowClickRank()(col("show_num")))
-          .withColumn("click_rank",getShowClickRank()(col("click_num")))
-          .withColumn("ctr_rank",getCtrCvrRank()(col("ctr")))
-          .withColumn("cvr_rank",getCtrCvrRank()(col("cvr")))
-          .withColumn("date",lit(day))
-          .select("ideaid","adclass","adclass2","adclass1","show_rank","click_rank","ctr_rank","cvr_rank","date")
-          .union(spark.sql(s"select ideaid, adclass, adclass2, adclass1, show_rank, click_rank, ctr_rank, cvr_rank, `date` from dl_cpc.cpc_hot_topic_ad_metrics where `date` = '$day'"))
-
-        result.createOrReplaceTempView("result")
-
-        val sql2 =
-            s"""
-               |select ideaid, adclass, adclass2, adclass1, show_rank, click_rank, ctr_rank, cvr_rank, '$day' as `date`
-               |from
-               |(
-               |    select ideaid, adclass, adclass2, adclass1, show_rank, click_rank, ctr_rank, cvr_rank,
-               |        RANK() OVER(PARTITION BY ideaid ORDER BY `date` DESC) as rk
-               |    from result
-               |) final
-               |where final.rk = 1
-             """.stripMargin
-
-        spark.sql(sql2).repartition(1)
+        spark.sql(sql).repartition(1)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_hot_topic_ad_metrics")
@@ -142,6 +111,6 @@ CREATE TABLE IF NOT EXISTS dl_cpc.cpc_hot_topic_ad_metrics
     ctr_rank int,
     cvr_rank int
 )
-PARTITIONED BY (`date` string)
+PARTITIONED BY (`dt` string)
 STORED AS PARQUET;
  */
