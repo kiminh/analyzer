@@ -85,8 +85,8 @@ object MultiDimensionCalibOnMidu {
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
       .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
       .filter("count3>50000")
-
-    data.write.mode("overwrite").saveAsTable("test.wy00")
+//
+//    data.write.mode("overwrite").saveAsTable("test.wy00")
 
     unionLogToConfig2(data.rdd, session, softMode)
   }
@@ -107,7 +107,7 @@ object MultiDimensionCalibOnMidu {
       val ectr = x.getLong(4).toDouble / 1e6d
       val model = x.getString(6)
       val group = x.getString(7)
-      val key = model+'_'+group
+      val key = "novel-ctr-dnn-rawid-v7-postcali_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
