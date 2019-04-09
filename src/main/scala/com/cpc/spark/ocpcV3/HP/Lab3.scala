@@ -96,11 +96,11 @@ object Lab3 {
 
     df1.write.mode("overwrite").saveAsTable("test.if_match_sjq")
 
-    df1.where("if_match = 1").select("uid").distinct()
+    df1.where("if_match = 1").select("uid").distinct().toDF("uid")
 
   }
 
-  def getMatchUid2(spark: SparkSession, date: String, targetUid: Dataset[Row])={
+  def getMatchUid2(spark: SparkSession, date: String, targetUid:DataFrame )={
     import spark.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -124,7 +124,9 @@ object Lab3 {
          | group by uid
        """.stripMargin
 
+    println(sql1)
     val df = spark.sql(sql1)
+    df.show()
     val df1 = df.join(targetUid, "uid").select("uid").withColumn("date", lit(date))
     df1
   }
