@@ -84,8 +84,8 @@ object Lab {
 
     df3.write.mode("overwrite").saveAsTable("test.appCount_sjq")
 
-    val countUpper = df21.agg(countDistinct("uid").alias("uidn")).rdd.map(x => x.getAs[Int]("uidn")).reduce(_ + _) * 0.2
-    val countLower = df3.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Int]("count")).reduce(_ + _) * 0.7
+    val countUpper = df21.agg(countDistinct("uid").alias("uidn")).rdd.map(x => x.getAs[Long]("uidn")).reduce(_ + _) * 0.2
+    val countLower = df3.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Long]("count")).reduce(_ + _) * 0.7
     val filter_condition =
       s"""    appName not like '%小米%'
          |and appName not like '%OPPO%'
