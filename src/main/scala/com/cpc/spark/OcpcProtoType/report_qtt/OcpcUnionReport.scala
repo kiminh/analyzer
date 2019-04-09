@@ -9,12 +9,36 @@ object OcpcUnionReport {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
-    val dataUnit = unionDetailReport(date, hour, spark)
+    // get the unit data
+    val dataUnitRaw = unionDetailReport(date, hour, spark)
+    // get the suggest cpa
+    val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
     println("------union detail report success---------")
     val dataConversion = unionSummaryReport(date, hour, spark)
     println("------union summary report success---------")
     saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
     println("------insert into mysql success----------")
+  }
+
+  def addSuggestCPA(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier as unit_id,
+         |  conversion_goal,
+         |  cpa_suggest
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_k_once
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    // 数据关联
+    val result = rawData
+      .join(data, Seq("unit_id", "conversion_goal"), "left_outer")
+      .na.fill(0.0, Seq("cpa_suggest"))
+
+    result
   }
 
   def unionDetailReport(date: String, hour: String, spark: SparkSession): DataFrame ={
@@ -184,7 +208,7 @@ object OcpcUnionReport {
     val hourInt = hour.toInt
     // 详情表
     val dataUnitMysql = dataUnit
-      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden")
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cpa_suggest")
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))

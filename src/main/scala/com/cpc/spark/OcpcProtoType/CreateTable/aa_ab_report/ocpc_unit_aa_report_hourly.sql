@@ -1,3 +1,4 @@
+drop table if exists dl_cpc.ocpc_unit_aa_report_hourly;
 create table if not exists dl_cpc.ocpc_unit_aa_report_hourly(
     unitid                              int,
     userid                              int,
@@ -15,7 +16,6 @@ create table if not exists dl_cpc.ocpc_unit_aa_report_hourly(
     pre_cvr                             double,
     post_cvr                            double,
     cost_of_every_click                 double,
-    bid_of_every_click                  double,
     cpa_real                            double,
     cpa_given                           double,
     hidden_cost_ratio                   double,

@@ -22,6 +22,7 @@ object OcpcCvrSmooth {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = args(2).toInt
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
@@ -32,7 +33,7 @@ object OcpcCvrSmooth {
     println(s"path is: $expDataPath")
     println(s"fileName is: $fileName")
 
-    val cvrData = getCvrData(date, hour, spark)
+    val cvrData = getCvrData(date, hour, hourInt, spark)
     cvrData.show(10)
 
     val resultDF = cvrData
@@ -51,8 +52,8 @@ object OcpcCvrSmooth {
   }
 
 
-  def getCvrData(date: String, hour: String, spark: SparkSession) = {
-    val clickData = getClickData(date, hour, spark)
+  def getCvrData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val clickData = getClickData(date, hour, hourInt, spark)
     val cvr1Data = getCV("cvr1", date, hour, spark)
     val cvr2Data = getCV("cvr2", date, hour, spark)
     val cvr3Data = getCV("cvr3", date, hour, spark)
@@ -117,14 +118,14 @@ object OcpcCvrSmooth {
     data
   }
 
-  def getClickData(date: String, hour: String, spark: SparkSession) = {
+  def getClickData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")

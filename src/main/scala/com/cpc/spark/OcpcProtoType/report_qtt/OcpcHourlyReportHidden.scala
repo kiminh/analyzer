@@ -334,7 +334,7 @@ object OcpcHourlyReportHidden {
          |  unitid,
          |  userid,
          |  conversion_goal,
-         |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
+         |  1.0 as step2_percent,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pcvr,

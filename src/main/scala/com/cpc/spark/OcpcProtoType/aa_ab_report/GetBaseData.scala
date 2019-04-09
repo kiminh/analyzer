@@ -6,7 +6,11 @@ import org.apache.spark.sql.functions._
 
 object GetBaseData {
   def main(args: Array[String]): Unit = {
-
+    val date = args(0).toString
+    val hour = args(1).toString
+    val spark = SparkSession.builder().appName("GetBaseData").enableHiveSupport().getOrCreate()
+    getBaseData(date, hour, spark)
+    println(s"-----has got $date $hour data-------")
   }
   def getBaseData(date: String, hour: String, spark: SparkSession): Unit ={
     var sql1 =
@@ -20,8 +24,7 @@ object GetBaseData {
          |          when cast(adclass as string) like "100%" then 'app'
          |          when adclass in (110110100, 125100100) then 'wzcp'
          |          else 'others' end) as industry,
-         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc"
-         |          else "cpc" end) as exptags,
+         |    exptags,
          |    is_ocpc,
          |    isclick,
          |    isshow,
@@ -29,6 +32,7 @@ object GetBaseData {
          |    conversion_goal,
          |    price,
          |    exp_cvr,
+         |    uid,
          |    ocpc_log
          |from
          |    dl_cpc.ocpc_base_unionlog
@@ -65,7 +69,8 @@ object GetBaseData {
          |    is_ocpc,
          |    isclick,
          |    isshow,
-         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int)
+         |    ocpc_log_dict,
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as int) + 0.5
          |          else bid end) as bid,
          |    (case when is_ocpc = 1 then cast(ocpc_log_dict['conversiongoal'] as int)
          |          else conversion_goal end) as conversion_goal,
@@ -80,6 +85,7 @@ object GetBaseData {
          |    (case when is_ocpc = 1 then cast(ocpc_log_dict['cpagiven'] as double)
          |          else 0 end) as cap_given,
          |    price,
+         |    uid,
          |    exp_cvr
          |from
          |    temp_table1
@@ -100,18 +106,13 @@ object GetBaseData {
          |left join
          |    (select
          |        searchid,
-         |        label2 as iscvr1
+         |        label as iscvr1
          |    from
-         |        dl_cpc.ml_cvr_feature_v1
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    where
          |        `date` = '$date'
          |    and
-         |        label2 = 1
-         |    and
-         |        label_type in (1, 2, 3, 4, 5)
-         |    group by
-         |        searchid,
-         |        label2) as b
+         |        cvr_goal = 'cvr1') as b
          |on
          |    a.searchid = b.searchid
          |left join
@@ -119,30 +120,23 @@ object GetBaseData {
          |        searchid,
          |        label as iscvr2
          |    from
-         |        dl_cpc.ml_cvr_feature_v2
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    where
          |        `date` = '$date'
          |    and
-         |        label = 1
-         |    group by
-         |        searchid,
-         |        label) as c
+         |        cvr_goal = 'cvr2') as c
          |on
          |    a.searchid = c.searchid
          |left join
          |    (select
          |        searchid,
-         |        1 as iscvr3
+         |        label as iscvr3
          |    from
-         |        dl_cpc.site_form_unionlog
+         |        dl_cpc.ocpc_label_cvr_hourly
          |    WHERE
          |        `date` = '$date'
          |    and
-         |        ideaid > 0
-         |    and
-         |        searchid is not null
-         |    group by
-         |        searchid) as d
+         |        cvr_goal = 'cvr3') as d
          |on
          |    a.searchid = d.searchid
       """.stripMargin
@@ -153,7 +147,7 @@ object GetBaseData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
+      .repartition(400)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_aa_ab_report_base_data")
   }
 
