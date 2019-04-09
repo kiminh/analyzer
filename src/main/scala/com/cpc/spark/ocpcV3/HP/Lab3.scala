@@ -31,7 +31,7 @@ object Lab3 {
          |  itemset = '{${targetApp}}'
        """.stripMargin
     println(sql1)
-    val appFreq = spark.sql(sql1).rdd.map(x => (x.getAs[Long]("freq"))).reduce(_ + _)
+    val appFreq = spark.sql(sql1).rdd.map(x => (x.getAs[Double]("freq"))).reduce(_ + _)
     val support = appFreq.toDouble / totalLogs.toDouble
 
     val sql2 =
