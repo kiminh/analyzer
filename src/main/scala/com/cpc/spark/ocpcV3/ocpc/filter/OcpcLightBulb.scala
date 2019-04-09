@@ -87,6 +87,7 @@ object OcpcLightBulb{
          |    timestamp,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['cpagiven'] as double) * 1.0 / 100 as cpa_given,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    row_number() over(partition by unitid order by timestamp desc) as seq
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -104,6 +105,7 @@ object OcpcLightBulb{
 
     val data = rawData
       .filter(s"seq=1")
+      .filter(s"is_hidden = 0")
       .select("unitid", "conversion_goal", "cpa_given")
 
     val data1 = data.filter(s"conversion_goal=1").withColumn("cpa_given1", col("cpa_given")).select("unitid", "cpa_given1")
