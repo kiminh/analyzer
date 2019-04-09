@@ -89,7 +89,7 @@ object MiduTouTiaolog {
                  """.stripMargin
         val data_click2 = spark.sql(sql_click2)
         data_click2.show(10)
-        data_click2.repartition(100).write.mode("overwrite")
+        data_click2.repartition(1).write.mode("overwrite")
           .insertInto("dl_cpc.cpc_midu_toutiao_click_log")
     }
 
