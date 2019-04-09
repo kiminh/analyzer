@@ -20,7 +20,7 @@ object HotTopicAdMetrics {
                |select ideaid,adclass,adclass2,adclass1,
                |    sum(isshow) as show_num,
                |    sum(isclick) as click_num,
-               |    sum(if(b.searchid is not null,1,0)) as convert_num,
+               |    sum(if(b.searchid is not null,1,0)) as convert_num
                |from
                |(
                |    select searchid,ideaid,isshow,isclick,
