@@ -49,13 +49,14 @@ object MiduTouTiaolog {
              |  opt_map["Source"] as source,
              |  opt_map["Title"] as title,
              |  opt_map["imageList"] as imagelist,
-             |  minute,imei,day,hour
+             |  minute,imei,
+             |  opt_map["id"] as id,
+             |  day,hour
              |  from tmp
                """.stripMargin
         val data2 = spark.sql(sql2)
-        data2.repartition(100).write.mode("overwrite").saveAsTable("test.wy00")
         data2.show(10)
-//        data2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+        data2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
 
     def decode = udf {
