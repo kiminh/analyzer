@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.{SparkSession, DataFrame, Dataset, Row}
 import org.apache.spark.sql.functions._
 import org.apache.spark.rdd.RDD
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag.SetUserProfileTagInHiveDaily
 
 object Lab3 {
   def main(args: Array[String]): Unit = {
@@ -14,12 +15,14 @@ object Lab3 {
 
     val antecedent = getAntecedent(spark, targetApp).zipWithIndex()
       .map(x => (x._1.stripPrefix("{").stripSuffix("}").split(","), x._2))
-      .map(x => (x._2, x._1, x._1.size))
+      .map(x => (x._2, x._1, x._1.size)) //RDD[(Long, Array[String], Int)]
 
-    val targetUid = getMatchUid(spark, antecedent)
+    val targetUid = getMatchUid(spark, antecedent) //DataFrame: uid
 
-    val targetUid2 = getMatchUid2(spark, date, targetUid)
-    targetUid2.write.mode("overwrite").saveAsTable("test.targetUid_sjq")
+    val targetUid2 = getMatchUid2(spark, date, targetUid) //DataFrame: uid, date
+    //    targetUid2.write.mode("overwrite").saveAsTable("test.targetUid_sjq")
+    targetUid2.write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
+//    update(spark, date)
 
   }
 
@@ -92,7 +95,7 @@ object Lab3 {
       .groupBy("uid", "id", "n")
       .agg(
         countDistinct("appName").alias("matchNum")
-      ).withColumn("if_match", when(col("matchNum") === col("n"), lit(1)).otherwise(lit(0)) )
+      ).withColumn("if_match", when(col("matchNum") === col("n"), lit(1)).otherwise(lit(0)))
 
     df1.write.mode("overwrite").saveAsTable("test.if_match_sjq")
 
@@ -100,7 +103,7 @@ object Lab3 {
 
   }
 
-  def getMatchUid2(spark: SparkSession, date: String, targetUid:DataFrame )={
+  def getMatchUid2(spark: SparkSession, date: String, targetUid: DataFrame) = {
     import spark.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -111,7 +114,8 @@ object Lab3 {
     val firstDay = calendar.getTime
     val date0 = sdf.format(firstDay)
 
-    val sql1 = s"""
+    val sql1 =
+      s"""
          | select
          |  uid
          | from dl_cpc.slim_union_log
@@ -125,11 +129,71 @@ object Lab3 {
        """.stripMargin
 
     println(sql1)
-    val df = spark.sql(sql1)
+    val df = spark.sql(sql1).persist()
     df.show()
-    val df1 = df.join(targetUid, "uid").select("uid").withColumn("date", lit(date))
+    val df1 = df.join(targetUid, "uid").select("uid")
+      .withColumn("tag", lit(337))
+      .withColumn("date", lit(date))
+      .select("uid", "tag", "date")
     df1
   }
+
+  def update(spark: SparkSession, date: String): Unit = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    val today = sdf.parse(date)
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime()
+    calendar.add(Calendar.DATE, -6)
+    val startday = calendar.getTime()
+    val date0 = sdf.format(yesterday)
+    val date_1 = sdf.format(startday)
+
+    val sqlRequest =
+      s"""
+         |select
+         |  coalesce(t1.uid, t2.uid) as uid,
+         |  tag0,
+         |  tag1
+         |from
+         |  (
+         |    select
+         |      uid,
+         |      1 as tag1
+         |    from
+         |      dl_cpc.hottopic_crowd_bag_collection_sjq
+         |    where
+         |      `date` = '$date'
+         |	  and tag = 337
+         |	  group by uid, 1
+         |  ) t1 full
+         |  outer join (
+         |    select
+         |      uid,
+         |      1 as tag0
+         |    from
+         |      dl_cpc.hottopic_crowd_bag_collection_sjq
+         |    where
+         |      `date` between '$date_1' and '$date0'
+         |	  and tag = 337
+         |   group by uid, 1
+         |  ) t2 on t1.uid = t2.uid
+         """.stripMargin
+
+    println(sqlRequest)
+    val df = spark.sql(sqlRequest)
+      .withColumn("id", lit(337))
+      .withColumn("io", when(col("tag1").isNotNull, lit(true)).otherwise(lit(false)))
+      .select("uid", "tag0", "tag1", "id", "io")
+
+    //    df.write.mode("overwrite").saveAsTable("test.putOrDrop_sjq")
+
+    val rdd1 = df.select("uid", "id", "io").rdd.map(x => (x.getAs[String]("uid"), x.getAs[Int]("id"), x.getAs[Boolean]("io")))
+    val result = SetUserProfileTagInHiveDaily(rdd1)
+
+  }
+
 
   case class UidApp(var uid: String, var app: String)
 
