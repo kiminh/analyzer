@@ -36,6 +36,8 @@ object MiduTouTiaolog {
         .withColumn("opt_map",strToMap(col("opt")))
 
       data.show(20)
+      data.printSchema()
+      data.write.mode("overwrite").saveAsTable("test.wy00")
 //      data.createOrReplaceTempView("tmp")
 //      val sql2 =
 //        s"""
