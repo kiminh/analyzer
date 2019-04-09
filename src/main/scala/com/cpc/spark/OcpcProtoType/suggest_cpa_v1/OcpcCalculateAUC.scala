@@ -5,12 +5,14 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toInt
@@ -21,7 +23,7 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, 72, version, date, hour, spark)
+    val data = getData(conversionGoal, 24, version, date, hour, spark)
 //    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)

@@ -44,7 +44,7 @@ object OcpcSmoothFactor{
       conversionGoal = 3
     }
     val resultDF = result
-        .select("identifier", "pcoc", "jfb")
+        .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))

@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 
-
+@deprecated
 object OcpcUnionSuggestCPA {
   def main(args: Array[String]): Unit = {
     /*
