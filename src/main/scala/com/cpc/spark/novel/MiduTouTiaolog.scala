@@ -37,7 +37,7 @@ object MiduTouTiaolog {
 
       data.show(20)
       data.printSchema()
-      data.write.mode("overwrite").saveAsTable("test.wy00")
+      data.repartition(100).write.mode("overwrite").saveAsTable("test.wy00")
 //      data.createOrReplaceTempView("tmp")
 //      val sql2 =
 //        s"""
