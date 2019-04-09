@@ -22,7 +22,7 @@ object Lab3 {
     val targetUid2 = getMatchUid2(spark, date, targetUid) //DataFrame: uid, date
     //    targetUid2.write.mode("overwrite").saveAsTable("test.targetUid_sjq")
     targetUid2.write.mode("overwrite").insertInto("dl_cpc.hottopic_crowd_bag_collection_sjq")
-    update(spark, date)
+//    update(spark, date)
 
   }
 
@@ -110,7 +110,7 @@ object Lab3 {
     val calendar = Calendar.getInstance
     val yesterday = sdf.parse(date)
     calendar.setTime(yesterday)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -20)
     val firstDay = calendar.getTime
     val date0 = sdf.format(firstDay)
 
@@ -130,8 +130,14 @@ object Lab3 {
 
     println(sql1)
     val df = spark.sql(sql1).persist()
-    df.show()
-    val df1 = df.join(targetUid, "uid").select("uid")
+
+    val df0 = spark.table("test.uid_with_targetapp_sjq")
+      .select("uid")
+      .withColumn("flag", lit("installed")).select("uid", "flag")
+
+    val df1 = df.join(targetUid, "uid")
+      .join(df0, Seq("uid"), "left")
+      .filter("flag is NULL")
       .withColumn("tag", lit(337))
       .withColumn("date", lit(date))
       .select("uid", "tag", "date")

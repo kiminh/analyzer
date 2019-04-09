@@ -70,6 +70,10 @@ object Lab {
       .withColumn("ifused", when(col("tag") === 1, lit(1)).otherwise(lit(0)))
       .select("uid", "appName", "ifused").distinct()
 
+    df2.where(s"appName = '${targetApp}'")
+      .select("uid", "appName").distinct()
+      .write.mode("overwrite").saveAsTable("test.uid_with_targetapp_sjq")
+
     val df21 = if (if_used) {
       df2.filter("ifused = 1").select("uid", "appName").distinct().persist()
     }
