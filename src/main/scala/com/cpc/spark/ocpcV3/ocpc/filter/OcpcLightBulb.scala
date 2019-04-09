@@ -32,8 +32,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "test.ocpc_qtt_light_control20190401"
-//    val tableName = "test.ocpc_qtt_light_control"
+//    val tableName = "test.ocpc_qtt_light_control20190401"
+    val tableName = "test.ocpc_qtt_light_control"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -49,18 +49,18 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
 
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
-//
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(date, hour, spark)
-//    println(s"############## saving redis database ##########################")
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -87,7 +87,6 @@ object OcpcLightBulb{
          |    timestamp,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['cpagiven'] as double) * 1.0 / 100 as cpa_given,
-         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    row_number() over(partition by unitid order by timestamp desc) as seq
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -105,7 +104,6 @@ object OcpcLightBulb{
 
     val data = rawData
       .filter(s"seq=1")
-      .filter(s"is_hidden = 0")
       .select("unitid", "conversion_goal", "cpa_given")
 
     val data1 = data.filter(s"conversion_goal=1").withColumn("cpa_given1", col("cpa_given")).select("unitid", "cpa_given1")
