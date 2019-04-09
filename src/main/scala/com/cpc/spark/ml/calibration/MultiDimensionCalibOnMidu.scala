@@ -80,15 +80,15 @@ object MultiDimensionCalibOnMidu {
         .withColumn("group",when(col("count2") < 100000,col("ideaid"))
           .otherwise(col("group")))
         .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
-    keygroup.write.mode("overwrite").saveAsTable("test.wy01")
+//    keygroup.write.mode("overwrite").saveAsTable("test.wy01")
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
       .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
       .filter("count3>50000")
 //
-//    data.write.mode("overwrite").saveAsTable("test.wy00")
+    data.write.mode("overwrite").saveAsTable("test.wy00")
 
-    unionLogToConfig2(data.rdd, session, softMode)
+//    unionLogToConfig2(data.rdd, session, softMode)
   }
 
 
