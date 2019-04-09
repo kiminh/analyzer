@@ -29,33 +29,32 @@ object MiduTouTiaolog {
              """.stripMargin
 
         println(sql)
-      val data = spark.sql(sql)
-        .withColumn("opt",decode(col("opt")))
-        .withColumn("opt",unzip(col("opt")))
-        .filter("opt is not null")
-        .withColumn("opt_map",strToMap(col("opt")))
+        val data = spark.sql(sql)
+          .withColumn("opt",decode(col("opt")))
+          .withColumn("opt",unzip(col("opt")))
+          .filter("opt is not null")
+          .withColumn("opt_map",strToMap(col("opt")))
 
-      data.show(20)
-      data.printSchema()
-      data.repartition(100).write.mode("overwrite").saveAsTable("test.wy00")
-//      data.createOrReplaceTempView("tmp")
-//      val sql2 =
-//        s"""
-//           |select
-//           |  opt_map,null as appscore,
-//           |  opt_map["ButtonText"] as buttontext,
-//           |  null as commentnum,
-//           |  opt_map["Description"] as description,
-//           |  opt_map["ImageMode"] as Imagemode,
-//           |  opt_map["InteractionType"] as interactiontype,
-//           |  opt_map["Source"] as source,
-//           |  opt_map["Title"] as title,
-//           |  opt_map["imageList"] as imagelist,
-//           |  minute,imei,day,hour
-//           |  from tmp
-//             """.stripMargin
-//      val data2 = spark.sql(sql2)
-//        data2.show(5)
+        data.show(5)
+        data.createOrReplaceTempView("tmp")
+        val sql2 =
+          s"""
+             |select
+             |  opt_map,null as appscore,
+             |  opt_map["ButtonText"] as buttontext,
+             |  null as commentnum,
+             |  opt_map["Description"] as description,
+             |  opt_map["ImageMode"] as Imagemode,
+             |  opt_map["InteractionType"] as interactiontype,
+             |  opt_map["Source"] as source,
+             |  opt_map["Title"] as title,
+             |  opt_map["imageList"] as imagelist,
+             |  minute,imei,day,hour
+             |  from tmp
+               """.stripMargin
+        val data2 = spark.sql(sql2)
+        data2.repartition(100).write.mode("overwrite").saveAsTable("test.wy00")
+        data2.show(10)
 //        data2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
 
