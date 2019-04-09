@@ -71,22 +71,22 @@ object Lab {
       .select("uid", "appName", "ifused").distinct()
 
     val df21 = if (if_used) {
-      df2.filter("ifused = 1").select("uid", "appName").distinct()
+      df2.filter("ifused = 1").select("uid", "appName").distinct().persist()
     }
     else {
-      df2.select("uid", "appName").distinct()
+      df2.select("uid", "appName").distinct().persist()
     } //DataFrame: uid, appName
 
     val df3 = df21.groupBy("appName")
       .agg(
         countDistinct("uid").alias("count")
-      ).select("appName", "count") // DataFrame: appName, count
+      ).select("appName", "count").persist() // DataFrame: appName, count
 
     df3.write.mode("overwrite").saveAsTable("test.appCount_sjq")
 
     val totalLogs = df21.agg(countDistinct("uid").alias("uidn")).rdd.map(x => x.getAs[Long]("uidn")).reduce(_ + _)
     val targetAppCount = df3.where(s"appName = '${targetApp}'").select("count").rdd.map(x => x.getAs[Long]("count")).reduce(_ + _)
-    println(s"The support of ${targetAppCount} is " + targetAppCount.toDouble / totalLogs.toDouble)
+
     val countUpper = totalLogs * 0.2
     val countLower = targetAppCount * 0.5
     val filter_condition =
@@ -119,10 +119,14 @@ object Lab {
 
     val df5 = df21.join(B, Seq("appName")).select("uid", "appName").join(df4, Seq("appName")).select("uid", "appName") //DataFrame: uid, appName
 
+
     val result = df5.rdd
       .map(x => (x.getAs[String]("uid"), Array(x.getAs[String]("appName"))))
       .reduceByKey((appArr1, appArr2) => appArr1 ++ appArr2)
       .map(x => (x._1, x._2.sorted)).distinct()
+
+    val totalLogs2 = result.count()
+    println(s"The support of ${targetApp} is " + targetAppCount.toDouble / totalLogs2.toDouble)
 
     result
   }
