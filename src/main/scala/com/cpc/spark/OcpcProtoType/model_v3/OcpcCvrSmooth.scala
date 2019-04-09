@@ -211,7 +211,7 @@ object OcpcCvrSmooth {
       param_t double  NULL
       cali_value      double  NULL
      */
-    val result = cvrData
+    val data = cvrData
       .join(factorData, Seq("identifier"), "outer")
       .join(expData, Seq("identifier"), "outer")
       .join(suggestCPA, Seq("identifier"), "outer")
@@ -225,6 +225,10 @@ object OcpcCvrSmooth {
       .na.fill(0.5, Seq("factor2", "factor3"))
       .na.fill(1.0, Seq("cali_value"))
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
+
+    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
+    val result = data
+        .withColumn("factor3", when(col("cali_value") <= 1.3 && col("cali_value") >= 0.769, 0.2).otherwise(0.5))
 
     result
   }
