@@ -21,8 +21,8 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 10g --driver-memory 10g \
     --executor-cores 10 --num-executors 20  \
-    --conf 'spark.yarn.executor.memoryOverhead=4g'\
-    --conf 'spark.dynamicAllocation.maxExecutors=50'\
+    --conf 'spark.yarn.executor.memoryOverhead=5g'\
+    --conf 'spark.dynamicAllocation.maxExecutors=100'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.novel.MiduTouTiaolog \
