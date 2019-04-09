@@ -228,10 +228,22 @@ object OcpcCvrSmooth {
 
     // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
     val result = data
-        .withColumn("factor3", when(col("cali_value") <= 1.3 && col("cali_value") >= 0.769, 0.2).otherwise(0.5))
+        .withColumn("factor3", udfSetFactor3()(col("factor3"), col("cali_value")))
 
     result
   }
+
+  def udfSetFactor3() = udf((factor3: Double, caliValue: Double) => {
+    var factor = 0.5
+    if (caliValue <= 1.3 && caliValue >= 0.769) {
+      factor = 0.2
+    } else if (caliValue <= 2.0 && caliValue >= 0.5) {
+      factor = 0.35
+    } else {
+      factor = 0.5
+    }
+    factor
+  })
 
   def getCaliValue(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
