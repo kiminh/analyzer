@@ -7,4 +7,4 @@ partitioned by (conversion_goal Int, `date` string, `hour` string, version Strin
 stored as parquet;
 
 
-alter table dl_cpc.ocpc_pcoc_jfb_hourly add columns (post_cvr double);
+--alter table dl_cpc.ocpc_pcoc_jfb_hourly add columns (post_cvr double);
