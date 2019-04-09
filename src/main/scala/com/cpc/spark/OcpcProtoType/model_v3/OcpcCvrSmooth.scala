@@ -41,8 +41,7 @@ object OcpcCvrSmooth {
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
-    val hourInt = args(3).toInt
-    val version = args(4).toString
+    val version = args(3).toString
 
     val conf = ConfigFactory.load("ocpc")
     val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
@@ -55,7 +54,7 @@ object OcpcCvrSmooth {
     println(s"suggest cpa path is $suggestCpaPath")
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, version:$version")
+    println(s"date=$date, hour=$hour, media:$media, version:$version")
 
     // 获取postcvr数据
 //    val cv1Data = getBaseData(media, "cvr1", hourInt, date, hour, spark)
