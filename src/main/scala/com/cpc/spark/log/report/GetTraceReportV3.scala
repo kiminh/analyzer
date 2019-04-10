@@ -526,11 +526,6 @@ object GetTraceReportV3 {
       )
     }
 
-    /*val cvr = traceData.filter(_.user_id == 1568339)
-      .map(_.total_num)
-      .sum()
-    println("userid = 1568339", cvr)*/
-
     println("count:" + traceData.count())
     traceData
   }
@@ -571,7 +566,7 @@ object GetTraceReportV3 {
     "(" + dateHourList.mkString(" or ") + ")"
   }
 
-  def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
+  /*def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
       println("~~~~~clearReportHourData~~~~~")
       Class.forName(mariadbProp.getProperty("driver"));
@@ -588,7 +583,7 @@ object GetTraceReportV3 {
     } catch {
       case e: Exception => println("exception caught: " + e);
     }
-  }
+  }*/
 
   def clearReportHourData2(tbl: String, date: String, hour: String): Unit = {
     try {
