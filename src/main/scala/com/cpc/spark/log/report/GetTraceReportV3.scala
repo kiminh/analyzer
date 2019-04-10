@@ -526,10 +526,10 @@ object GetTraceReportV3 {
       )
     }
 
-    val cvr = traceData.filter(_.user_id == 1568339)
+    /*val cvr = traceData.filter(_.user_id == 1568339)
       .map(_.total_num)
       .sum()
-    println("userid = 1568339", cvr)
+    println("userid = 1568339", cvr)*/
 
     println("count:" + traceData.count())
     traceData
