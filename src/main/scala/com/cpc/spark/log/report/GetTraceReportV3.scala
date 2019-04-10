@@ -20,7 +20,7 @@ object GetTraceReportV3 {
 
   var mariadb_amateur_url = ""
   val mariadb_amateur_prop = new Properties()
- 
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -436,6 +436,27 @@ object GetTraceReportV3 {
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println(sql_moti)
 
+    val new_api_sql =
+      s"""
+         |select
+         |   searchid
+         |  ,userid as user_id
+         |  ,planid as plan_id
+         |  ,unitid as unit_id
+         |  ,ideaid as idea_id
+         |  ,activetype as trace_type
+         |  ,"" as trace_op1
+         |  ,0 as duration
+         |  ,0 as auto
+         |  ,0 as isshow
+         |  ,0 as isclick
+         |  ,day as date
+         |  ,hour
+         |from dl_cpc.cpc_basedata_apicallback_event
+         |where day = "$date" and hour="$hour"
+       """.stripMargin
+    println("new_api_sql: " + new_api_sql)
+
     val traceReport1 = ctx.sql(sql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -451,8 +472,9 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
+    val new_api_moti = ctx.sql(new_api_sql).rdd
 
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(new_api_moti).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
@@ -462,21 +484,21 @@ object GetTraceReportV3 {
         ((trace.getAs[String]("searchid"), trace.getAs[Int]("idea_id"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
-    }.map {x =>
+    }.map { x =>
       val trace = x._2
       val trace_op1 = trace.getAs[String]("trace_op1")
 
-        ((trace.getAs[Int]("user_id"),
-          trace.getAs[Int]("plan_id"),
-          trace.getAs[Int]("unit_id"),
-          trace.getAs[Int]("idea_id"),
-          trace.getAs[String]("date"),
-          trace.getAs[String]("hour"),
-          //auto = 1表明强制注入的trace，要区别清楚
-          trace.getAs[Int]("auto")), 1)
+      ((trace.getAs[Int]("user_id"),
+        trace.getAs[Int]("plan_id"),
+        trace.getAs[Int]("unit_id"),
+        trace.getAs[Int]("idea_id"),
+        trace.getAs[String]("date"),
+        trace.getAs[String]("hour"),
+        //auto = 1表明强制注入的trace，要区别清楚
+        trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
-    }.map {x =>
+    }.map { x =>
       val trace = x._1
       AdvTraceReport(
         user_id = trace._1,
