@@ -236,8 +236,8 @@ object report_userprofile_effect {
       """.stripMargin).
       write.mode(SaveMode.Overwrite).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
 
-    unionlog.unpersist()
-    base.unpersist()
+//    unionlog.unpersist()
+//    base.unpersist()
     /**
     val result2 =
       s"""
