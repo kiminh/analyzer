@@ -9,7 +9,8 @@ queue=root.cpc.develop
 date=$1
 hour=$2
 version=hottopic_test
-media=$4
+media=hottopic
+#media=$4
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"

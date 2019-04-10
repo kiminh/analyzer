@@ -10,7 +10,8 @@ date=$1
 hour=$2
 hourCnt=$3
 version=hottopic_test
-media=$5
+media=hottopic
+#media=$5
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
