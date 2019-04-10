@@ -51,8 +51,8 @@ object AutoCoinApiCallBack {
                |(
                |    select searchid
                |    from dl_cpc.cpc_basedata_trace_event
-               |    where day = $day
-               |    and hour = $hour
+               |    where day = '$day'
+               |    and hour = '$hour'
                |    and trace_type = 'active_third'
                |) b
                |on a.searchid = b.searchid
