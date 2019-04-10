@@ -81,7 +81,7 @@ object OcpcGetPb_v2 {
 //        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
     resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
     resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
 
     savePbPack(resultDF, version)
   }
@@ -260,8 +260,7 @@ object OcpcGetPb_v2 {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  media_appsid in ('80002819', '80000001', '80000002')
+         |---AND media_appsid in ('80002819', '80000001', '80000002')
          |GROUP BY (case when media_appsid = '80002819' then 'hottopic' else 'qtt' end), unitid
        """.stripMargin
     println(sqlRequest1)

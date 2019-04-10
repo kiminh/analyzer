@@ -84,7 +84,7 @@ object OcpcPIDwithCPA {
 
     val sqlRequest =
       s"""
-         |SELECT
+         | SELECT
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
@@ -366,7 +366,7 @@ object OcpcPIDwithCPA {
       case _ => valueK
     }
     if(adclassInt == 110110){
-      0.6163*result
+      1.0*result
     }else{
       result
     }
