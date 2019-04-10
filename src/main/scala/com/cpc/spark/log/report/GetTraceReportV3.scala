@@ -448,18 +448,18 @@ object GetTraceReportV3 {
       s"""
          |select
          |   searchid
-         |  ,userid as user_id
-         |  ,planid as plan_id
-         |  ,unitid as unit_id
-         |  ,ideaid as idea_id
+         |  , userid as user_id
+         |  , planid as plan_id
+         |  , unitid as unit_id
+         |  , ideaid as idea_id
          |  , "active_third" as trace_type
-         |  ,"" as trace_op1
-         |  ,0 as duration
-         |  ,0 as auto
-         |  ,0 as isshow
-         |  ,0 as isclick
-         |  ,day as date
-         |  ,hour
+         |  , "" as trace_op1
+         |  , 0 as duration
+         |  , 0 as auto
+         |  , 0 as isshow
+         |  , 0 as isclick
+         |  , day as date
+         |  , hour
          |from dl_cpc.cpc_basedata_apicallback_event
          |where day = "$date" and hour="$hour"
        """.stripMargin
