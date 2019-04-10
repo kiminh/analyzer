@@ -1,8 +1,7 @@
 package com.cpc.spark.qukan.userprofile
 
-import com.cpc.spark.qukan.parser.HdfsParser
-import org.apache.spark.sql.{SaveMode, SparkSession}
 import com.cpc.spark.common.Utils.sendMail
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by roydong on 12/07/2018.
@@ -32,12 +31,13 @@ object TopApps {
     import spark.implicits._
     val pkgs = spark.read.parquet(inpath)
       .rdd
-      .map(x => (x.getString(0), x.getAs[Seq[String]]("pkgs")))
+      .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
+      .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
 
-    pkgs.toDF("pkg", "install_user_num")
+    pkgs.toDF("app_name", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/top_apps/%s".format(date))
@@ -48,19 +48,26 @@ object TopApps {
         | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
       """.stripMargin.format(date, date))
 
-    pkgs.take(100).foreach(println)
+    println("count: " + pkgs.count())
 
-    //topApps 活跃用户数top100
-    val topApps_top100 = pkgs.take(100)
+
+    val iterator = pkgs.toLocalIterator
 
     var txt = ""
-    for (i <- 0 until topApps_top100.length) {
-      val t = topApps_top100(i)
+    while (iterator.hasNext) {
+      val t = iterator.next()
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yishaobin@qutoutiao.net"))
+    //    for (i <- 0 until topApps_top100.length) {
+    //      val t = topApps_top100(i)
+    //      txt = txt + "%s %s\n".format(t._1, t._2)
+    //    }
+
+    val b = sendMail(txt, "%s topApps 活跃用户DAU大于2w".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
+      "yishaobin@qutoutiao.net", "mayinbo@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net"))
+    //val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }

@@ -15,7 +15,7 @@ object bscvr_exp_report {
     val cal1 = Calendar.getInstance()
     cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    cal1.add(Calendar.DATE, -9)
+    cal1.add(Calendar.DATE, -2)
     val startdate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
     spark.sql(s"""SELECT
@@ -47,7 +47,7 @@ object bscvr_exp_report {
          and (charge_type = 1 or charge_type is null)) ta
          join
          (select cast(unitid as bigint) as unitid
-         from dl_cpc.cpc_recall_bsExp_unitid_exp where date>'$startdate' group by unitid) tb on (ta.unitid=tb.unitid)
+         from dl_cpc.cpc_recall_bsExp_unitid_exp where date='$startdate' group by unitid) tb on (ta.unitid=tb.unitid)
          left join
          (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
           and isreport=1 group by searchid,ideaid) tc
@@ -84,7 +84,7 @@ object bscvr_exp_report {
 |         and (charge_type = 1 or charge_type is null)) ta
 |         join
 |         (select cast(unitid as bigint) as unitid
-|         from dl_cpc.cpc_recall_bsExp_unitid_exp where date>'$startdate' group by unitid) tb on (ta.unitid=tb.unitid)
+|         from dl_cpc.cpc_recall_bsExp_unitid_exp where date='$startdate' group by unitid) tb on (ta.unitid=tb.unitid)
 |         left join
 |         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
 |          and isreport=1 group by searchid,ideaid) tc

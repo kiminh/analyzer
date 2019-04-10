@@ -7,6 +7,7 @@ import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcPIDwithCPA {
@@ -22,6 +23,7 @@ object OcpcPIDwithCPA {
     4. 更新k值
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // bash: 2019-01-02 12 24 1 qtt_demo qtt
     val date = args(0).toString
@@ -81,11 +83,9 @@ object OcpcPIDwithCPA {
      */
     val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
-//    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201b")
     val resultDF = result.select("identifier", "k_value", "conversion_goal")
     resultDF
   }
@@ -113,8 +113,8 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
+//    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = s"`date` >= '$date1'"
     // 抽取数据
     val sqlRequest =
       s"""
@@ -156,23 +156,23 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
+         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)

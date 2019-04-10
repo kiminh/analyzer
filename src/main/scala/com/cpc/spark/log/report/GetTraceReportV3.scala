@@ -253,7 +253,11 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
-         |from dl_cpc.logparsed_cpc_trace_minute as tr left join dl_cpc.cpc_motivation_log as un on tr.searchid = un.searchid and tr.opt['ideaid']=un.ideaid
+         |from
+         |  dl_cpc.logparsed_cpc_trace_minute as tr
+         |left join
+         |  dl_cpc.cpc_motivation_log as un
+         |  on tr.searchid = un.searchid and tr.opt['ideaid']=un.ideaid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
       .rdd

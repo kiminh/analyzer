@@ -36,6 +36,50 @@ object Udfs_wj{
     percent
   })
 
+  /**
+    * 获取ocpc_log的长度
+    * @return
+    */
+  def udfGetLength() = udf((ocpc_log: String) => {
+    ocpc_log.length
+  })
+
+  /**
+    * 根据media_appsid获取media
+    * @return
+    */
+  def udfGetMedia() = udf((media_appsid: String) => {
+    val qtt = List("80000001","80000002")
+    val hottopic = List("80002819")
+    val midu = List("80001098","80001292","80001011","80001539","80002480")
+    if (qtt.contains(media_appsid)) //
+      "qtt"
+    else if (midu.contains((media_appsid)))
+      "midu"
+    else if (hottopic.contains(media_appsid))
+      "hottopic"
+    else
+      "other"
+  })
+
+  /**
+    * 获取行业信息
+    * @return
+    */
+  def udfGetIndusty() = udf((adclass:Int, adslot_type:Int) => {
+    if (adclass/1000000 == 134 || adclass/1000000 == 107)
+      "elds"
+    else if (adslot_type != 7 && adclass/1000000 == 100)
+      "feedapp"
+    else if (adslot_type == 7 && adclass/1000000 == 100)
+      "yysc"
+    else if (adclass == 110110100 || adclass == 125100100)
+      "wzcp"
+    else
+      "others"
+
+  })
+
   def udfStringToMap() = udf((valueLog: String) => {
     var result = mutable.LinkedHashMap[String, String]()
     if (valueLog != null && valueLog != "") {
