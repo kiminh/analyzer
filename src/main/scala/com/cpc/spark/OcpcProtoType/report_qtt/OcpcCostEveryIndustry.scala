@@ -141,21 +141,63 @@ object OcpcCostEveryIndustry {
     println(sql3)
     spark.sql(sql3).createOrReplaceTempView("temp_table3")
 
-    // 合并总的数据
+    // 统计app的api_callback数据
     val sql4 =
+      s"""
+        |select
+        |    'app_api_callback' as industry,
+        |    sum(isclick) as all_click,
+        |    sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end) as ocpc_click,
+        |    sum(isshow) as all_show,
+        |    sum(case when isshow = 1 and is_ocpc = 1 then 1 else 0 end) as ocpc_show,
+        |    sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 0.01 as ocpc_cost,
+        |    sum(case when isclick = 1 then price else 0 end) * 0.01 as all_cost,
+        |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end)
+        |      / sum(case when isclick = 1 then price else 0 end), 3) as ratio,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 10.0
+        |      / sum(isshow), 3) as all_cpm,
+        |    round(sum(case when isclick = 1 and is_ocpc = 1 then price else 0 end) * 10.0
+        |      / sum(case when isshow = 1 and is_ocpc = 1 then 1 else 0 end), 3) as ocpc_cpm
+        |from
+        |    dl_cpc.ocpc_base_unionlog
+        |where
+        |    `date` = '$date'
+        |and
+        |    media_appsid  in ("80000001", "80000002")
+        |and
+        |    isshow = 1
+        |and
+        |    antispam = 0
+        |and
+        |    adsrc = 1
+        |and
+        |    (charge_type = 1 or charge_type is null)
+        |and
+        |    (cast(adclass as string) like "100%")
+        |and
+        |    is_api_callback = 1
+      """.stripMargin
+    println("-------api callback sql4--------")
+    println(sql4)
+    spark.sql(sql4).createOrReplaceTempView("temp_table4")
+
+    // 合并总的数据
+    val sql5 =
       s"""
         |select * from
         |    (select * from temp_table1
         |    union
         |    select * from temp_table2
         |    union
-        |    select * from temp_table3)
+        |    select * from temp_table3
+        |    union
+        |    select * from temp_table4)
         |order by
         |    industry
       """.stripMargin
     println("-------merge all data--------")
-    println(sql4)
-    val dataDF = spark.sql(sql4)
+    println(sql5)
+    val dataDF = spark.sql(sql5)
     dataDF
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
