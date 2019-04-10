@@ -169,6 +169,7 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
+    val before1date = fDate.substring(0, 10)
     val before1hour = fDate.substring(11, 13)
 
     val sql =
@@ -216,7 +217,8 @@ object GetTraceReportV3 {
          |      ,trace_op3
          |  ) b
          |  on a.searchid=b.searchid and a.ideaid=b.ideaid
-         |where a.day = "$date" and a.hour >= "$before1hour" and a.hour <= "$hour" and a.isclick=1 and a.adslot_type=7
+         |where (a.day = "$before1date" and a.hour = "$before1hour" or a.day = "$date" and a.hour = "$hour")
+         | and a.isclick=1 and a.adslot_type=7
    """.stripMargin
 
     val motivate = ctx.sql(sql)
