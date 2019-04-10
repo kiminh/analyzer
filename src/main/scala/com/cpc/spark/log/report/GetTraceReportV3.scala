@@ -67,16 +67,16 @@ object GetTraceReportV3 {
       .enableHiveSupport()
       .getOrCreate()
 
-    val traceReport = saveTraceReport(ctx, date, hour)
-    val traceReport_Motivate = saveTraceReport_Motivate(ctx, date, hour) //应用商城（激励下载）
+    // val traceReport = saveTraceReport(ctx, date, hour)
+    // val traceReport_Motivate = saveTraceReport_Motivate(ctx, date, hour) //应用商城（激励下载）
     val traceReport_ApiCallBack = saveTraceReport_ApiCallBack(ctx, date, hour) //用户api回传
 
 
-    val traceReport1 = traceReport
+    /*val traceReport1 = traceReport
       .union(traceReport_Motivate)
-      .union(traceReport_ApiCallBack)
+      .union(traceReport_ApiCallBack)*/
 
-    val traceData = traceReport1.map {
+    val traceData = traceReport_ApiCallBack/*traceReport1*/.map {
       x =>
         (x.key, x)
     }.reduceByKey((x, y) => x.sum(y))
