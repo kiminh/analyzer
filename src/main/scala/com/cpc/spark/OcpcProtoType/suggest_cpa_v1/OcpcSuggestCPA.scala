@@ -252,8 +252,12 @@ object OcpcSuggestCPA {
          |  cast(identifier as int) as unitid,
          |  kvalue
          |FROM
-         |  dl_cpc.ocpc_prev_pb_once
+         |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
