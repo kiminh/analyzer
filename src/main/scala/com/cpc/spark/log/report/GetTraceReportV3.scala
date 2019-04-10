@@ -456,13 +456,18 @@ object GetTraceReportV3 {
          |  , "" as trace_op1
          |  , 0 as duration
          |  , 0 as auto
-         |  , 0 as isshow
-         |  , 0 as isclick
+         |  , 1 as isshow
+         |  , 1 as isclick
          |  , day as date
          |  , hour
-         |from dl_cpc.cpc_basedata_apicallback_event
+         |from dl_cpc.cpc_basedata_apicallback_event a
+         |join dl_cpc.cpc_basedata_union_events b
+         |  on a.searchid=b.searchid
+         |  and a.ideaid=b.ideaid
+         |  and %s
          |where day = "$date" and hour="$hour"
        """.stripMargin
+          .format(get3DaysBeforeForTrident(date, hour))
     println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
     /*val traceReport1 = ctx.sql(sql)
@@ -560,6 +565,26 @@ object GetTraceReportV3 {
       val hourr = formatDate.substring(11, 13)
 
       val dateL = s"(`date`='$datee' and `hour`='$hourr')"
+      dateHourList += dateL
+    }
+
+    "(" + dateHourList.mkString(" or ") + ")"
+  }
+
+  def get3DaysBeforeForTrident(date: String, hour: String): String = {
+    val dateHourList = ListBuffer[String]()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    for (t <- 0 to 72) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val formatDate = dateFormat.format(cal.getTime)
+      val datee = formatDate.substring(0, 10)
+      val hourr = formatDate.substring(11, 13)
+
+      val dateL = s"(`day`='$datee' and `hour`='$hourr')"
       dateHourList += dateL
     }
 
