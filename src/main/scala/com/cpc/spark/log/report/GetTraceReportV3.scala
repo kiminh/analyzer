@@ -21,6 +21,9 @@ object GetTraceReportV3 {
   var mariadb_amateur_url = ""
   val mariadb_amateur_prop = new Properties()
 
+  var mariadb_union_test_url = ""
+  val mariadb_union_test_prop = new Properties()
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -53,6 +56,11 @@ object GetTraceReportV3 {
     mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
+
+    mariadb_union_test_url = conf.getString("mariadb.union_test_write.url")
+    mariadb_union_test_prop.put("user", conf.getString("mariadb.union_test_write.user"))
+    mariadb_union_test_prop.put("password", conf.getString("mariadb.union_test_write.password"))
+    mariadb_union_test_prop.put("driver", conf.getString("mariadb.union_test_write.driver"))
 
     val ctx = SparkSession.builder()
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
@@ -532,13 +540,14 @@ object GetTraceReportV3 {
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
+      .jdbc(mariadb_union_test_url, "union_test.report_trace", mariadb_union_test_prop)
 
-    clearReportHourData2("report_trace", date, hour)
+    // fym 190410 : temporarily commented / modified for testting.
+    /*clearReportHourData2("report_trace", date, hour)
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
+      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)*/
 
   }
 
