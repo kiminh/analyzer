@@ -46,3 +46,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (conversion_from int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (is_api_callback int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (siteid int);
+alter table dl_cpc.ocpc_base_unionlog add columns (cvr_model_name string);

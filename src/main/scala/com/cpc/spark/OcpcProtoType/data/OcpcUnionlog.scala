@@ -77,7 +77,8 @@ object OcpcUnionlog {
          |    charge_type,
          |    conversion_from,
          |    is_api_callback,
-         |    siteid
+         |    siteid,
+         |    cvr_model_name
          |from
          |    base_data
        """.stripMargin
@@ -193,7 +194,8 @@ object OcpcUnionlog {
          |    conversion_goal,
          |    conversion_from,
          |    is_api_callback,
-         |    siteid
+         |    siteid,
+         |    cvr_model_name
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
