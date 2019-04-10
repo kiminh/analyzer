@@ -56,11 +56,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour",    lit(hour)    )
       .withColumn("version", lit(version) )
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
-//    resultDF.repartition(10)
-//      .write
-//      .mode("overwrite" )
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
+    resultDF.repartition(10)
+      .write
+      .mode("overwrite" )
+      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
   }
 
   def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
