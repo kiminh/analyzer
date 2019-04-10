@@ -458,16 +458,16 @@ object GetTraceReportV3 {
          |  , 0 as auto
          |  , 1 as isshow
          |  , 1 as isclick
-         |  , day as date
-         |  , hour
+         |  , a.day as date
+         |  , a.hour
          |from dl_cpc.cpc_basedata_apicallback_event a
          |join dl_cpc.cpc_basedata_union_events b
          |  on a.searchid=b.searchid
          |  and a.ideaid=b.ideaid
          |  and %s
-         |where day = "$date" and hour="$hour"
+         |where a.day = "$date" and a.hour="$hour"
        """.stripMargin
-          .format(get3DaysBeforeForTrident(date, hour))
+          .format(get3DaysBeforeForTrident(date, hour, "b"))
     println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
     /*val traceReport1 = ctx.sql(sql)
@@ -571,7 +571,7 @@ object GetTraceReportV3 {
     "(" + dateHourList.mkString(" or ") + ")"
   }
 
-  def get3DaysBeforeForTrident(date: String, hour: String): String = {
+  def get3DaysBeforeForTrident(date: String, hour: String, table: String): String = {
     val dateHourList = ListBuffer[String]()
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     val cal = Calendar.getInstance()
@@ -584,7 +584,7 @@ object GetTraceReportV3 {
       val datee = formatDate.substring(0, 10)
       val hourr = formatDate.substring(11, 13)
 
-      val dateL = s"(`day`='$datee' and `hour`='$hourr')"
+      val dateL = s"($table.`day`='$datee' and $table.`hour`='$hourr')"
       dateHourList += dateL
     }
 
