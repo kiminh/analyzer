@@ -436,7 +436,7 @@ object GetTraceReportV3 {
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println(sql_moti)
 
-    val new_api_sql =
+    val moti_auto_coin_sql =
       s"""
          |select
          |   searchid
@@ -455,7 +455,7 @@ object GetTraceReportV3 {
          |from dl_cpc.cpc_basedata_apicallback_event
          |where day = "$date" and hour="$hour"
        """.stripMargin
-    println("new_api_sql: " + new_api_sql)
+    println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
     val traceReport1 = ctx.sql(sql)
       .withColumn("date", lit(date))
@@ -472,9 +472,9 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
-    val new_api_moti = ctx.sql(new_api_sql).rdd
+    val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
 
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(new_api_moti).filter {
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
