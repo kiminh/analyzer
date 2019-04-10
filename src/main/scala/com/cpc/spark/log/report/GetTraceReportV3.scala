@@ -355,7 +355,7 @@ object GetTraceReportV3 {
     /*
     trace_log(1h) join api_callback_union_log(3d)
      */
-    val sql =
+    /*val sql =
       s"""
          |select tr.searchid
          |      ,un.userid as user_id
@@ -434,7 +434,7 @@ object GetTraceReportV3 {
          |   ) as un
          |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
-    println(sql_moti)
+    println(sql_moti)*/
 
     val moti_auto_coin_sql =
       s"""
@@ -457,7 +457,7 @@ object GetTraceReportV3 {
        """.stripMargin
     println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
-    val traceReport1 = ctx.sql(sql)
+    /*val traceReport1 = ctx.sql(sql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .rdd
@@ -470,11 +470,12 @@ object GetTraceReportV3 {
     val traceReport_moti = ctx.sql(sql_moti)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .rdd
+      .rdd*/
 
     val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
 
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
+    // fym 190410: temporarily commented for testing.
+    val traceData = moti_auto_coin/*traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin)*/ .filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
