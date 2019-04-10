@@ -235,7 +235,7 @@ object GetTraceReportV3 {
         col("auto")
       )
       .agg(
-        expr("count(distinct appname,adslotid,trace_op3)").alias("total_num")
+        expr("count(distinct appname,adslotid,trace_op3)").cast("int").alias("total_num")
       )
     println("count: " + motivate.count())
 
@@ -246,14 +246,14 @@ object GetTraceReportV3 {
           x.getAs[Int]("user_id"),
           x.getAs[Int]("plan_id"),
           x.getAs[Int]("unit_id"),
-          x.getAs[String]("idea_id").toInt,
+          x.getAs[Int]("idea_id"),
           x.getAs[String]("date"),
           x.getAs[String]("hour"),
           x.getAs[String]("trace_type"),
           x.getAs[String]("trace_op1"),
           x.getAs[Int]("duration"),
           x.getAs[Int]("auto"),
-          x.getAs[Long]("total_num").toInt,
+          x.getAs[Int]("total_num"),
           0,
           0
         )
@@ -478,9 +478,9 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
-    val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
+    //val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
 
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
