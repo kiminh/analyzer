@@ -145,7 +145,7 @@ object OcpcCostEveryIndustry {
     val sql4 =
       s"""
         |select
-        |    'api_callback' as industry,
+        |    'app_api_callback' as industry,
         |    sum(isclick) as all_click,
         |    sum(case when isclick = 1 and is_ocpc = 1 then 1 else 0 end) as ocpc_click,
         |    sum(isshow) as all_show,
