@@ -531,7 +531,7 @@ object GetTraceReportV3 {
   }
 
   def writeToTraceReport(ctx: SparkSession, toResult: RDD[AdvTraceReport], date: String, hour: String): Unit = {
-    clearReportHourData("report_trace", date, hour)
+    // clearReportHourData("report_trace", date, hour)
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
@@ -566,7 +566,7 @@ object GetTraceReportV3 {
     "(" + dateHourList.mkString(" or ") + ")"
   }
 
-  /*def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
+  def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
       println("~~~~~clearReportHourData~~~~~")
       Class.forName(mariadbProp.getProperty("driver"));
@@ -583,7 +583,7 @@ object GetTraceReportV3 {
     } catch {
       case e: Exception => println("exception caught: " + e);
     }
-  }*/
+  }
 
   def clearReportHourData2(tbl: String, date: String, hour: String): Unit = {
     try {
