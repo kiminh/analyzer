@@ -94,6 +94,7 @@ object HotTopicCtrCvrAucGauc {
          |        where tmp.isreport=1
          |    ) b
          |    on a.searchid = b.searchid
+         |    where ctr_model_name not like '%noctr%'
              """.stripMargin
 
     val union = spark.sql(sql).cache()
