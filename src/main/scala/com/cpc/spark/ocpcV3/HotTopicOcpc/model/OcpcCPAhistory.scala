@@ -49,7 +49,8 @@ object OcpcCPAhistory {
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, version, spark) // identifier（unitid）, new_adclass, cpa_src(历史cpa来源), cpa_history（历史cpa）, conversion_goal（全为1）, date, hour, version
     val tableName = "dl_cpc.ocpc_cpa_history_hourly" // 改成一张没有人用的表 dl_cpc.ocpc_cpa_history_hourly
-    result.write.mode("overwrite").insertInto(tableName)
+//    result.write.mode("overwrite").insertInto(tableName)
+    result.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_hourly20190410")
     println(s"save data into table: $tableName")
   }
 
@@ -223,9 +224,9 @@ object OcpcCPAhistory {
       .withColumn("version", lit(version))
 
     val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("test.sjq_ocpc_hottopic_cpahistory")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly20190410")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
@@ -279,12 +280,12 @@ object OcpcCPAhistory {
       .withColumn("cpa_history",    when(col("cpa_src")==="qtt", col("cpa1_history_qtt")).otherwise(when(col("cpa_src")==="hottopic", col("cpa1_history_hottopic")).otherwise(col("cpa1"))))
       .withColumn("cpa_history",    when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))  //cpa_history不得超过50000
 
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable("test.sjq_ocpcv3_cpa_history_v2_final_middle")
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable("test.sjq_ocpcv3_cpa_history_v2_final_middle")
 
     val resultDF = data
       .selectExpr("cast(unitid as string) identifier", "new_adclass", "cpa_src", "cpa_history", "conversion_goal")
