@@ -257,10 +257,10 @@ object OcpcGetPb_v2 {
          |  cast(unitid as string) identifier,
          |  sum(total_price) as cost
          |FROM
-         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
-         |---AND media_appsid in ('80002819', '80000001', '80000002')
+         |AND media_appsid in ('80002819', '80000001', '80000002')
          |GROUP BY (case when media_appsid = '80002819' then 'hottopic' else 'qtt' end), unitid
        """.stripMargin
     println(sqlRequest1)

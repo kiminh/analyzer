@@ -81,7 +81,7 @@ object OcpcCPAhistory {
          |  total_bid   as total_bid,
          |  ctr_cnt
          |FROM
-         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
            and media_appsid in ('80000001', '80000002', '80002819')
