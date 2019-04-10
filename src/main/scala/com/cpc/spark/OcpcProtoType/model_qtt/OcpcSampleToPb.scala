@@ -138,8 +138,6 @@ object OcpcSampleToPb {
          |  pcoc > 0
          |AND
          |  jfb > 0
-         |AND
-         |  (conversion_goal = 2 or identifier in ('2020307', '2015393', '2014701', '2018851', '1995684', '1971569', '1981958', '2010532', '2021852'))
        """.stripMargin
 //    2018851
 //    1995684
