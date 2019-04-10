@@ -182,8 +182,8 @@ object GetTraceReportV3 {
          |  ,a.userid as user_id
          |  ,a.isshow
          |  ,a.isclick
-         |  ,a.day as date
-         |  ,a.hour
+         |  ,b.day as date
+         |  ,b.hour
          |  ,b.appname
          |  ,b.adslotid
          |  ,b.trace_type
@@ -203,6 +203,8 @@ object GetTraceReportV3 {
          |      ,trace_type
          |      ,trace_op1
          |      ,trace_op3
+         |      ,day
+         |      ,hour
          |    from dl_cpc.cpc_basedata_trace_event
          |    where day = "$date" and hour = "$hour"
          |      and trace_type = 'sdk_incite'
@@ -215,6 +217,8 @@ object GetTraceReportV3 {
          |      ,trace_type
          |      ,trace_op1
          |      ,trace_op3
+         |      ,day
+         |      ,hour
          |  ) b
          |  on a.searchid=b.searchid and a.ideaid=b.ideaid
          |where (a.day = "$date_1_hour_ago" and a.hour = "$hour_1_hour_ago" or a.day = "$date" and a.hour = "$hour")
@@ -243,19 +247,19 @@ object GetTraceReportV3 {
       .rdd
       .map(x =>
         AdvTraceReport(
-          x.getAs[Int]("user_id"),
-          x.getAs[Int]("plan_id"),
-          x.getAs[Int]("unit_id"),
-          x.getAs[Int]("idea_id"),
-          x.getAs[String]("date"),
-          x.getAs[String]("hour"),
-          x.getAs[String]("trace_type"),
-          x.getAs[String]("trace_op1"),
-          x.getAs[Int]("duration"),
-          x.getAs[Int]("auto"),
-          x.getAs[Int]("total_num"),
-          0,
-          0
+          user_id = x.getAs[Int]("user_id"),
+          plan_id = x.getAs[Int]("plan_id"),
+          unit_id = x.getAs[Int]("unit_id"),
+          idea_id = x.getAs[Int]("idea_id"),
+          date = x.getAs[String]("date"),
+          hour = x.getAs[String]("hour"),
+          trace_type = x.getAs[String]("trace_type"),
+          trace_op1 = x.getAs[String]("trace_op1"),
+          duration = x.getAs[Int]("duration"),
+          auto = x.getAs[Int]("auto"),
+          total_num = x.getAs[Int]("total_num"),
+          impression = 0,
+          click = 0
         )
       )
 
