@@ -447,11 +447,11 @@ object GetTraceReportV3 {
     val moti_auto_coin_sql =
       s"""
          |select
-         |   searchid
-         |  , userid as user_id
-         |  , planid as plan_id
-         |  , unitid as unit_id
-         |  , ideaid as idea_id
+         |   a.searchid
+         |  , a.userid as user_id
+         |  , a.planid as plan_id
+         |  , a.unitid as unit_id
+         |  , a.ideaid as idea_id
          |  , "active_third" as trace_type
          |  , "" as trace_op1
          |  , 0 as duration
