@@ -56,11 +56,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour",    lit(hour)    )
       .withColumn("version", lit(version) )
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
-    resultDF.repartition(10)
-      .write
-      .mode("overwrite" )
-      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
+//    resultDF.repartition(10)
+//      .write
+//      .mode("overwrite" )
+//      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
   }
 
   def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
@@ -317,7 +317,7 @@ object OcpcPIDwithCPA {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
-    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+//    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
     for(row <- unitidAdclass.collect()) {
