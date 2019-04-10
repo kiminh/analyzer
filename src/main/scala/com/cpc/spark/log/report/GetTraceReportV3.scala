@@ -452,7 +452,7 @@ object GetTraceReportV3 {
          |  ,planid as plan_id
          |  ,unitid as unit_id
          |  ,ideaid as idea_id
-         |  ,activetype as trace_type
+         |  , "active_third" as trace_type
          |  ,"" as trace_op1
          |  ,0 as duration
          |  ,0 as auto
