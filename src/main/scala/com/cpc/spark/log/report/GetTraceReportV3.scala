@@ -169,8 +169,8 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
-    val before1date = fDate.substring(0, 10)
-    val before1hour = fDate.substring(11, 13)
+    val date_1_hour_ago = fDate.substring(0, 10)
+    val hour_1_hour_ago = fDate.substring(11, 13)
 
     val sql =
       s"""
@@ -217,7 +217,7 @@ object GetTraceReportV3 {
          |      ,trace_op3
          |  ) b
          |  on a.searchid=b.searchid and a.ideaid=b.ideaid
-         |where (a.day = "$before1date" and a.hour = "$before1hour" or a.day = "$date" and a.hour = "$hour")
+         |where (a.day = "$date_1_hour_ago" and a.hour = "$hour_1_hour_ago" or a.day = "$date" and a.hour = "$hour")
          | and a.isclick=1 and a.adslot_type=7
    """.stripMargin
 
@@ -352,7 +352,8 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
-    val before1hour = fDate.substring(11, 13)
+    val date_1_hour_ago = fDate.substring(0, 10)
+    val hour_1_hour_ago = fDate.substring(11, 13)
 
     /*
     trace_log(1h) join api_callback_union_log(3d)
@@ -396,10 +397,13 @@ object GetTraceReportV3 {
          |      ,un.isclick
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid, a.isshow, a.isclick from dl_cpc.cpc_union_log a
-         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
-       """.stripMargin.format(date, before1hour, hour, date, hour)
+         |( select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid, a.isshow, a.isclick from dl_cpc.cpc_union_log a
+         |  where (a.`date`="$date_1_hour_ago" and a.hour="$hour_1_hour_ago" or a.`date`="$date" and a.hour="$hour")
+         |  and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1
+         |) as un
+         |on tr.searchid = un.searchid
+         |where  tr.`thedate` = "$date" and tr.`thehour` = "$hour"
+       """.stripMargin
     println(sql2)
 
     /*
