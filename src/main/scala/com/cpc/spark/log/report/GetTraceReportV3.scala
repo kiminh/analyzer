@@ -478,9 +478,9 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
-    val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
+    //val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
 
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
