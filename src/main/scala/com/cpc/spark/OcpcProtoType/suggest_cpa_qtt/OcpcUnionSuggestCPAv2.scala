@@ -23,9 +23,9 @@ object OcpcUnionSuggestCPAv2 {
 
     val baseResult = getSuggestData(version, date, hour, spark)
 //    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
-    val cvr1Cali = getNewCali(baseResult, 1, 48, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, 2, 48, date, hour, spark)
-    val cvr3Cali = getNewCali(baseResult, 3, 48, date, hour, spark)
+    val cvr1Cali = getNewCali("qtt", baseResult, 1, 48, date, hour, spark)
+    val cvr2Cali = getNewCali("qtt", baseResult, 2, 48, date, hour, spark)
+    val cvr3Cali = getNewCali("qtt", baseResult, 3, 48, date, hour, spark)
 
     val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
 

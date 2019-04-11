@@ -20,9 +20,9 @@ object OcpcUnionSuggestCPA {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr1Cali = getNewCali(baseResult, 1, 48, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, 2, 48, date, hour, spark)
-    val cvr3Cali = getNewCali(baseResult, 3, 48, date, hour, spark)
+    val cvr1Cali = getNewCali("qtt", baseResult, 1, 48, date, hour, spark)
+    val cvr2Cali = getNewCali("qtt", baseResult, 2, 48, date, hour, spark)
+    val cvr3Cali = getNewCali("qtt", baseResult, 3, 48, date, hour, spark)
 
     val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
 //    cvrCali.write.mode("overwrite").saveAsTable("test.check_ocpc_new_calidata20190411")
@@ -59,9 +59,9 @@ object OcpcUnionSuggestCPA {
     resultDF
   }
 
-  def getNewCali(suggestData: DataFrame, conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getNewCali(media: String, suggestData: DataFrame, conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     var cvrType = "cvr" + conversionGoal.toString
-    val baseData = OcpcSmoothFactor.getBaseData("qtt", cvrType, hourInt, date, hour, spark)
+    val baseData = OcpcSmoothFactor.getBaseData(media, cvrType, hourInt, date, hour, spark)
     val rawData = OcpcSmoothFactor.calculateSmooth(baseData, spark)
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
