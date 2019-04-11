@@ -456,8 +456,8 @@ object GetTraceReportV3 {
          |  , "" as trace_op1
          |  , 0 as duration
          |  , 0 as auto
-         |  , 1 as isshow
-         |  , 1 as isclick
+         |  , b.isshow as isshow
+         |  , b.isclick as isclick
          |  , a.day as date
          |  , a.hour
          |from dl_cpc.cpc_basedata_apicallback_event a
