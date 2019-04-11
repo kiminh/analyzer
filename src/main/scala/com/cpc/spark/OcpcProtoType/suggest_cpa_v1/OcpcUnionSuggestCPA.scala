@@ -20,10 +20,14 @@ object OcpcUnionSuggestCPA {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
+    val cvr1Cali = getNewCali(baseResult, 1, 48, date, hour, spark)
+    val cvr2Cali = getNewCali(baseResult, 2, 48, date, hour, spark)
+    val cvr3Cali = getNewCali(baseResult, 3, 48, date, hour, spark)
+
+    val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
 
     val updateData = baseResult
-      .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
+      .join(cvrCali, Seq("unitid", "conversion_goal"), "left_outer")
       .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
       .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
 
@@ -36,7 +40,8 @@ object OcpcUnionSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190411")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -53,8 +58,9 @@ object OcpcUnionSuggestCPA {
     resultDF
   }
 
-  def getNewCali(suggestData: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val baseData = OcpcSmoothFactor.getBaseData("qtt", "cvr2", 24, date, hour, spark)
+  def getNewCali(suggestData: DataFrame, conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    var cvrType = "cvr" + conversionGoal.toString
+    val baseData = OcpcSmoothFactor.getBaseData("qtt", cvrType, hourInt, date, hour, spark)
     val rawData = OcpcSmoothFactor.calculateSmooth(baseData, spark)
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
@@ -80,7 +86,7 @@ object OcpcUnionSuggestCPA {
 
     val result = data
       .join(cvrData, Seq("unitid"), "inner")
-      .withColumn("conversion_goal", lit(2))
+      .withColumn("conversion_goal", lit(conversionGoal))
       .select("unitid", "conversion_goal", "pre_cvr", "kvalue")
 
     val resultDF = suggestData
