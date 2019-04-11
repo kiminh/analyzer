@@ -55,10 +55,12 @@ object GetNewOcpcUnitNum {
         |    sum(case when unitid is null then 1 else 0 end) as new_unit
         |from
         |    (select
-        |        b.unitid
+        |        b.unitid,
+        |        b.industry
         |    from
         |        (select
-        |            unitid
+        |            unitid,
+        |            industry
         |        from
         |            base_data_table
         |        where
@@ -69,7 +71,8 @@ object GetNewOcpcUnitNum {
         |            unitid) a
         |    left join
         |        (select
-        |            unitid
+        |            unitid,
+        |            industry
         |        from
         |            base_data_table
         |        where
@@ -79,7 +82,9 @@ object GetNewOcpcUnitNum {
         |        group by
         |            unitid) b
         |    on
-        |        a.unitid = b.unitid) temp
+        |        a.unitid = b.unitid
+        |    and
+        |        a.industry = b.industry) temp
         |group by
         |    'all'
       """.stripMargin
@@ -99,11 +104,12 @@ object GetNewOcpcUnitNum {
         |    sum(case when unitid is null then 1 else 0 end) as new_unit
         |from
         |    (select
-        |        b.unitid
+        |        b.unitid,
+        |        a.industry
         |    from
         |        (select
-        |            industry,
-        |            unitid
+        |            unitid,
+        |            industry
         |        from
         |            base_data_table
         |        where
@@ -111,12 +117,12 @@ object GetNewOcpcUnitNum {
         |        and
         |            is_ocpc = 1
         |        group by
-        |            industry,
-        |            unitid) a
+        |            unitid,
+        |            industry) a
         |    left join
         |        (select
-        |            industry,
-        |            unitid
+        |            unitid,
+        |            industry
         |        from
         |            base_data_table
         |        where
@@ -124,8 +130,8 @@ object GetNewOcpcUnitNum {
         |        and
         |            is_ocpc = 1
         |        group by
-        |            industry,
-        |            unitid) b
+        |            unitid,
+        |            industry) b
         |    on
         |        a.unitid = b.unitid
         |    and
@@ -149,7 +155,8 @@ object GetNewOcpcUnitNum {
         |    sum(case when unitid is null then 1 else 0 end) as new_unit
         |from
         |    (select
-        |        b.unitid
+        |        b.unitid,
+        |        a.industry
         |    from
         |        (select
         |            (case when siteid > 0 then 'elds_jianzhan'
@@ -191,14 +198,15 @@ object GetNewOcpcUnitNum {
         |group by
         |    industry
         |
-        |union
+ |union
         |
-        |select
+ |select
         |    industry,
         |    sum(case when unitid is null then 1 else 0 end) as new_unit
         |from
         |    (select
-        |        b.unitid
+        |        b.unitid,
+        |        a.industry
         |    from
         |        (select
         |            'elds_chitu' as industry,
