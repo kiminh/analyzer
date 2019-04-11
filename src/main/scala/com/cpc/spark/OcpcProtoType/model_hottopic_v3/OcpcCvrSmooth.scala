@@ -38,16 +38,17 @@ object OcpcCvrSmooth {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
+    val fileName = "ocpc_hottopic_test_cvr.pb"
 
-    val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
-    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
-    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
-    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
-    println(s"cpcBid path is: $expDataPath")
-    println(s"fileName is: $fileName")
-    println(s"smooth factor path is $smoothDataPath")
-    println(s"suggest cpa path is $suggestCpaPath")
+//    val conf = ConfigFactory.load("ocpc")
+//    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
+//    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
+//    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
+//    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
+//    println(s"cpcBid path is: $expDataPath")
+//    println(s"fileName is: $fileName")
+//    println(s"smooth factor path is $smoothDataPath")
+//    println(s"suggest cpa path is $suggestCpaPath")
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version")
@@ -86,6 +87,7 @@ object OcpcCvrSmooth {
     resultDF
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+
 
     savePbPack(resultDF, fileName)
 
