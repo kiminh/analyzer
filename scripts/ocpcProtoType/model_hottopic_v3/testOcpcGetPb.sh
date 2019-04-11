@@ -1,8 +1,16 @@
 #!/bin/bash
 
+#sh testOcpcGetPb.sh 2019-03-06 12 1|2|3 hottopicv2 hottopic
+
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
+
+date=$1
+hour=$2
+conversionGoal=$3
+version=$4
+media=$5
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -17,5 +25,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6
+    --class com.cpc.spark.OcpcProtoType.model_hottopic_v3.OcpcGetPb \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour $conversionGoal $version $media

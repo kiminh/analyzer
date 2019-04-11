@@ -1,18 +1,14 @@
-package com.cpc.spark.OcpcProtoType.model_v3
+package com.cpc.spark.OcpcProtoType.model_hottopic_v3
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.io.FileOutputStream
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
+import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor.{getBaseData, calculatePCOC}
+
 import scala.collection.mutable.ListBuffer
-import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
-import java.io.FileOutputStream
 
 object OcpcCvrSmooth {
   def main(args: Array[String]): Unit = {
@@ -42,65 +38,62 @@ object OcpcCvrSmooth {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
+    val fileName = "ocpc_hot_topic.pb"
 
-    val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
-    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
-    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
-    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
-    println(s"cpcBid path is: $expDataPath")
-    println(s"fileName is: $fileName")
-    println(s"smooth factor path is $smoothDataPath")
-    println(s"suggest cpa path is $suggestCpaPath")
+//    val conf = ConfigFactory.load("ocpc")
+//    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
+//    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
+//    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
+//    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
+//    println(s"cpcBid path is: $expDataPath")
+//    println(s"fileName is: $fileName")
+//    println(s"smooth factor path is $smoothDataPath")
+//    println(s"suggest cpa path is $suggestCpaPath")
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version")
 
     // 获取postcvr数据
-//    val cv1Data = getBaseData(media, "cvr1", hourInt, date, hour, spark)
-//    val cv2Data = getBaseData(media, "cvr2", hourInt, date, hour, spark)
-//    val cv3Data = getBaseData(media, "cvr3", hourInt, date, hour, spark)
-    val cvr1 = getPostCvr(1, date, hour, spark)
-    val cvr2 = getPostCvr(2, date, hour, spark)
-    val cvr3 = getPostCvr(3, date, hour, spark)
-//    val cvr1 = calculatePCOC(cv1Data, spark).withColumn("cvr1", col("post_cvr"))
-//    val cvr2 = calculatePCOC(cv2Data, spark).withColumn("cvr2", col("post_cvr"))
-//    val cvr3 = calculatePCOC(cv3Data, spark).withColumn("cvr3", col("post_cvr"))
+    val cvr1 = getPostCvr(version, 1, date, hour, spark)
+    val cvr2 = getPostCvr(version, 2, date, hour, spark)
+    val cvr3 = getPostCvr(version, 3, date, hour, spark)
+
     val cvrData = cvr1
       .join(cvr2, Seq("identifier"), "outer")
       .join(cvr3, Seq("identifier"), "outer")
       .select("identifier", "cvr1", "cvr2", "cvr3")
       .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
 
-    // 获取factor数据
-    val factorData = getCvrAlphaData(smoothDataPath, date, hour, spark)
-
-    // 获取cpc_bid数据
-    val expData = getCpcBidData(expDataPath, date, hour, spark)
-
-    // 获取cpa_suggest和param_t数据
-    val suggestCPA = getCPAsuggestV2(suggestCpaPath, date, hour, spark)
+//    // 获取factor数据
+//    val factorData = getCvrAlphaData(smoothDataPath, date, hour, spark)
+//
+//    // 获取cpc_bid数据
+//    val expData = getCpcBidData(expDataPath, date, hour, spark)
+//
+//    // 获取cpa_suggest和param_t数据
+//    val suggestCPA = getCPAsuggestV2(suggestCpaPath, date, hour, spark)
 
     // 获取cali_value
-    val caliValue = getCaliValue(date, hour, spark)
+    val caliValue = getCaliValue(version, date, hour, spark)
 
     // 组装数据
-    val result = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val result = assemblyData(cvrData, caliValue, spark)
 
     val resultDF = result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("qtt_demo"))
+      .withColumn("version", lit(version))
 
     resultDF
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
+
     savePbPack(resultDF, fileName)
 
   }
 
-  def getPostCvr(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getPostCvr(version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     val cvrType = "cvr" + conversionGoal.toString
     val sqlRequest =
       s"""
@@ -114,7 +107,7 @@ object OcpcCvrSmooth {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('qtt_demo', 'qtt_hidden')
+         |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
        """.stripMargin
@@ -195,7 +188,7 @@ object OcpcCvrSmooth {
   }
 
 
-  def assemblyData(cvrData: DataFrame, factorData: DataFrame, expData: DataFrame, suggestCPA: DataFrame, caliValue: DataFrame, spark: SparkSession) = {
+  def assemblyData(cvrData: DataFrame, caliValue: DataFrame, spark: SparkSession) = {
     /*
       identifier      string  NULL
       min_bid double  NULL
@@ -211,10 +204,13 @@ object OcpcCvrSmooth {
       param_t double  NULL
       cali_value      double  NULL
      */
-    val result = cvrData
-      .join(factorData, Seq("identifier"), "outer")
-      .join(expData, Seq("identifier"), "outer")
-      .join(suggestCPA, Seq("identifier"), "outer")
+    val data = cvrData
+      .withColumn("factor1", lit(0.2))
+      .withColumn("factor2", lit(0.5))
+      .withColumn("factor3", lit(0.5))
+      .withColumn("cpc_bid", lit(0))
+      .withColumn("cpa_suggest", lit(0))
+      .withColumn("param_t", lit(0))
       .join(caliValue, Seq("identifier"), "left_outer")
       .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
       .withColumn("min_bid", lit(0))
@@ -226,9 +222,9 @@ object OcpcCvrSmooth {
       .na.fill(1.0, Seq("cali_value"))
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
-//    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
-//    val result = data
-//        .withColumn("factor3", udfSetFactor3()(col("factor3"), col("cali_value")))
+    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
+    val result = data
+        .withColumn("factor3", udfSetFactor3()(col("factor3"), col("cali_value")))
 
     result
   }
@@ -245,7 +241,7 @@ object OcpcCvrSmooth {
     factor
   })
 
-  def getCaliValue(date: String, hour: String, spark: SparkSession) = {
+  def getCaliValue(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -262,7 +258,7 @@ object OcpcCvrSmooth {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('qtt_hidden', 'qtt_demo')
+         |  version = '$version'
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
