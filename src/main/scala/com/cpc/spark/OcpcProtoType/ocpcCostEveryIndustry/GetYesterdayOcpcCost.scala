@@ -94,9 +94,8 @@ object GetYesterdayOcpcCost {
     val sql =
       s"""
         |select
-        |    (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |          when siteid > 0 then 'elds_jianzhan'
-        |         else 'elds_notjianzhan' end) as industry,
+        |    (case when siteid > 0 then 'elds_jianzhan'
+        |          else 'elds_notjianzhan' end) as industry,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
         |from
         |    base_data_table
@@ -105,9 +104,24 @@ object GetYesterdayOcpcCost {
         |and
         |    industry = 'elds'
         |group by
-        |    (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |          when siteid > 0 then 'elds_jianzhan'
-        |         else 'elds_notjianzhan' end)
+        |    (case when siteid > 0 then 'elds_jianzhan'
+        |          else 'elds_notjianzhan' end)
+        |
+        |union
+        |
+        |select
+        |    'elds_chitu' as industry,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |from
+        |    base_data_table
+        |where
+        |    dt = '$yesterday'
+        |and
+        |    industry = 'elds'
+        |and
+        |    siteid > 5000000
+        |group by
+        |    'elds_chitu'
       """.stripMargin
     println("------ GetYesterdayOcpcCost： get chitu jianzhan notjianzhan yesterday's ocpc cost -------")
     println(sql)

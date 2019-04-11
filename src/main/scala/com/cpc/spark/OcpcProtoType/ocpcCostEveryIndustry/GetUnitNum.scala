@@ -195,8 +195,7 @@ object GetUnitNum {
         |    d.ocpc_unit_today
         |from
         |    (select
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end) as industry,
         |        count(distinct unitid) as all_unit_yesterday
         |    from
@@ -206,13 +205,11 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    group by
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) a
         |left join
         |    (select
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end) as industry,
         |        count(distinct unitid) as all_unit_today
         |    from
@@ -222,15 +219,13 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    group by
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) b
         |on
         |    a.industry = b.industry
         |left join
         |    (select
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end) as industry,
         |        count(distinct unitid) as ocpc_unit_yesterday
         |    from
@@ -242,15 +237,13 @@ object GetUnitNum {
         |    and
         |        is_ocpc = 1
         |    group by
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) c
         |on
         |    a.industry = c.industry
         |left join
         |    (select
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end) as industry,
         |        count(distinct unitid) as ocpc_unit_today
         |    from
@@ -262,9 +255,83 @@ object GetUnitNum {
         |    and
         |        is_ocpc = 1
         |    group by
-        |        (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |              when siteid > 0 then 'elds_jianzhan'
+        |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) d
+        |on
+        |    a.industry = d.industry
+        |
+        |union
+        |
+        |select
+        |    a.industry,
+        |    a.all_unit_yesterday,
+        |    b.all_unit_today,
+        |    c.ocpc_unit_yesterday,
+        |    d.ocpc_unit_today
+        |from
+        |    (select
+        |        'elds_chitu' as industry,
+        |        count(distinct unitid) as all_unit_yesterday
+        |    from
+        |        base_data_table
+        |    where
+        |        dt = '$yesterday'
+        |    and
+        |        industry = 'elds'
+        |    and
+        |        siteid > 5000000
+        |    group by
+        |        'elds_chitu') a
+        |left join
+        |    (select
+        |        'elds_chitu' as industry,
+        |        count(distinct unitid) as all_unit_today
+        |    from
+        |        base_data_table
+        |    where
+        |        dt = '$today'
+        |    and
+        |        industry = 'elds'
+        |    and
+        |        siteid > 5000000
+        |    group by
+        |        'elds_chitu') b
+        |on
+        |    a.industry = b.industry
+        |left join
+        |    (select
+        |        'elds_chitu' as industry,
+        |        count(distinct unitid) as ocpc_unit_yesterday
+        |    from
+        |        base_data_table
+        |    where
+        |        dt = '$yesterday'
+        |    and
+        |        industry = 'elds'
+        |    and
+        |        is_ocpc = 1
+        |    and
+        |        siteid > 5000000
+        |    group by
+        |        'elds_chitu') c
+        |on
+        |    a.industry = c.industry
+        |left join
+        |    (select
+        |        'elds_chitu' as industry,
+        |        count(distinct unitid) as ocpc_unit_today
+        |    from
+        |        base_data_table
+        |    where
+        |        dt = '$today'
+        |    and
+        |        industry = 'elds'
+        |    and
+        |        is_ocpc = 1
+        |    and
+        |        siteid > 5000000
+        |    group by
+        |        'elds_chitu') d
         |on
         |    a.industry = d.industry
       """.stripMargin

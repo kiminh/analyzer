@@ -109,8 +109,7 @@ object GetBaseIndex {
     val sql =
       s"""
         |select
-        |    (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |          when siteid > 0 then 'elds_jianzhan'
+        |    (case when siteid > 0 then 'elds_jianzhan'
         |          else 'elds_notjianzhan' end) as industry,
         |    sum(show) as all_show,
         |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
@@ -129,9 +128,33 @@ object GetBaseIndex {
         |and
         |    industry = 'elds'
         |group by
-        |    (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |          when siteid > 0 then 'elds_jianzhan'
+        |    (case when siteid > 0 then 'elds_jianzhan'
         |          else 'elds_notjianzhan' end)
+        |
+        |union
+        |
+        |select
+        |    'elds_chitu' as industry,
+        |    sum(show) as all_show,
+        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(click) as all_click,
+        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(cost) as all_cost,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
+        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as cost_cpm
+        |from
+        |    base_data_table
+        |where
+        |    dt = '$today'
+        |and
+        |    industry = 'elds'
+        |and
+        |    siteid > 5000000
+        |group by
+        |    'elds_chitu'
       """.stripMargin
     println("------ GetBaseIndex： get chitu jianzhan notjianzhan base index -------")
     println(sql)

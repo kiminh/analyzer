@@ -152,8 +152,7 @@ object GetNewOcpcUnitNum {
         |        b.unitid
         |    from
         |        (select
-        |            (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |                  when siteid > 0 then 'elds_jianzhan'
+        |            (case when siteid > 0 then 'elds_jianzhan'
         |                  else 'elds_notjianzhan' end) as industry,
         |            unitid
         |        from
@@ -165,14 +164,12 @@ object GetNewOcpcUnitNum {
         |        and
         |            industry = 'elds'
         |        group by
-        |            (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |                  when siteid > 0 then 'elds_jianzhan'
+        |            (case when siteid > 0 then 'elds_jianzhan'
         |                  else 'elds_notjianzhan' end),
         |            unitid) a
         |    left join
         |        (select
-        |            (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |                  when siteid > 0 then 'elds_jianzhan'
+        |            (case when siteid > 0 then 'elds_jianzhan'
         |                  else 'elds_notjianzhan' end) as industry,
         |            unitid
         |        from
@@ -184,9 +181,57 @@ object GetNewOcpcUnitNum {
         |        and
         |            industry = 'elds'
         |        group by
-        |            (case when siteid > 0 and siteid > 5000000 then 'elds_chitu'
-        |                  when siteid > 0 then 'elds_jianzhan'
+        |            (case when siteid > 0 then 'elds_jianzhan'
         |                  else 'elds_notjianzhan' end),
+        |            unitid) b
+        |    on
+        |        a.unitid = b.unitid
+        |    and
+        |        a.industry = b.industry) temp
+        |group by
+        |    industry
+        |
+        |union
+        |
+        |select
+        |    industry,
+        |    sum(case when unitid is null then 1 else 0 end) as new_unit
+        |from
+        |    (select
+        |        b.unitid
+        |    from
+        |        (select
+        |            'elds_chitu' as industry,
+        |            unitid
+        |        from
+        |            base_data_table
+        |        where
+        |            dt = '$today'
+        |        and
+        |            is_ocpc = 1
+        |        and
+        |            industry = 'elds'
+        |        and
+        |            siteid > 5000000
+        |        group by
+        |            'elds_chitu',
+        |            unitid) a
+        |    left join
+        |        (select
+        |            'elds_chitu' as industry,
+        |            unitid
+        |        from
+        |            base_data_table
+        |        where
+        |            dt = '$yesterday'
+        |        and
+        |            is_ocpc = 1
+        |        and
+        |            industry = 'elds'
+        |        and
+        |            siteid > 5000000
+        |        group by
+        |            'elds_chitu',
         |            unitid) b
         |    on
         |        a.unitid = b.unitid
