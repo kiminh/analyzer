@@ -56,7 +56,7 @@ object GetUnitNum {
         |    a.all_unit_yesterday,
         |    b.all_unit_today,
         |    c.ocpc_unit_yesterday,
-        |    c.ocpc_unit_today
+        |    d.ocpc_unit_today
         |from
         |    (select
         |        'all' as industry,
@@ -351,7 +351,7 @@ object GetUnitNum {
         |    a.all_unit_yesterday,
         |    b.all_unit_today,
         |    c.ocpc_unit_yesterday,
-        |    c.ocpc_unit_today
+        |    d.ocpc_unit_today
         |from
         |    (select
         |        'app_api_callback' as industry,
