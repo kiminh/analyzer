@@ -53,7 +53,7 @@ object GetYesterdayOcpcCost {
       s"""
         |select
         |    'all' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -74,7 +74,7 @@ object GetYesterdayOcpcCost {
       s"""
         |select
         |    industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -96,7 +96,7 @@ object GetYesterdayOcpcCost {
         |select
         |    (case when siteid > 0 then 'elds_jianzhan'
         |          else 'elds_notjianzhan' end) as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -111,7 +111,7 @@ object GetYesterdayOcpcCost {
         |
         |select
         |    'elds_chitu' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -136,7 +136,7 @@ object GetYesterdayOcpcCost {
       s"""
         |select
         |    'app_api_callback' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday,
+        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
