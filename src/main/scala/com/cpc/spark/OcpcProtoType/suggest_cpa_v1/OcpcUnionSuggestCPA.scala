@@ -25,6 +25,7 @@ object OcpcUnionSuggestCPA {
     val cvr3Cali = getNewCali(baseResult, 3, 48, date, hour, spark)
 
     val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
+    cvrCali.write.mode("overwrite").saveAsTable("test.check_ocpc_new_calidata20190411")
 
     val updateData = baseResult
       .join(cvrCali, Seq("unitid", "conversion_goal"), "left_outer")
