@@ -64,7 +64,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    group by
         |        'all') a
         |left join
@@ -74,7 +74,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    group by
         |        'all') b
         |on
@@ -86,7 +86,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        is_ocpc = 1
         |    group by
@@ -100,7 +100,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        is_ocpc = 1
         |    group by
@@ -132,7 +132,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    group by
         |        industry) a
         |left join
@@ -142,7 +142,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    group by
         |        industry) b
         |on
@@ -154,7 +154,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        is_ocpc = 1
         |    group by
@@ -168,7 +168,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        is_ocpc = 1
         |    group by
@@ -202,7 +202,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        industry = 'elds'
         |    group by
@@ -218,7 +218,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        industry = 'elds'
         |    group by
@@ -236,7 +236,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        industry = 'elds'
         |    and
@@ -256,7 +256,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        industry = 'elds'
         |    and
@@ -292,7 +292,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        industry = 'app'
         |    and
@@ -306,7 +306,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        industry = 'app'
         |    and
@@ -322,7 +322,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$yesterday'
+        |        dt = '$yesterday'
         |    and
         |        is_ocpc = 1
         |    and
@@ -340,7 +340,7 @@ object GetUnitNum {
         |    from
         |        base_data_table
         |    where
-        |        `date` = '$today'
+        |        dt = '$today'
         |    and
         |        is_ocpc = 1
         |    and

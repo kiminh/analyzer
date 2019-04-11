@@ -63,7 +63,7 @@ object GetBaseIndex {
         |from
         |    base_data_table
         |where
-        |    `date` = '$today'
+        |    dt = '$today'
         |group by
         |    'all'
       """.stripMargin
@@ -93,7 +93,7 @@ object GetBaseIndex {
         |from
         |    base_data_table
         |where
-        |    `date` = '$today'
+        |    dt = '$today'
         |group by
         |    industry
       """.stripMargin
@@ -125,7 +125,7 @@ object GetBaseIndex {
         |from
         |    base_data_table
         |where
-        |    `date` = '$today'
+        |    dt = '$today'
         |and
         |    industry = 'elds'
         |group by
@@ -159,7 +159,7 @@ object GetBaseIndex {
         |from
         |    base_data_table
         |where
-        |    `date` = '$today'
+        |    dt = '$today'
         |and
         |    industry = 'app'
         |and

@@ -62,7 +62,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$today'
+        |            dt = '$today'
         |        and
         |            is_ocpc = 1
         |        group by
@@ -73,7 +73,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$yesterday'
+        |            dt = '$yesterday'
         |        and
         |            is_ocpc = 1
         |        group by
@@ -107,7 +107,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$today'
+        |            dt = '$today'
         |        and
         |            is_ocpc = 1
         |        group by
@@ -120,7 +120,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$yesterday'
+        |            dt = '$yesterday'
         |        and
         |            is_ocpc = 1
         |        group by
@@ -159,7 +159,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$today'
+        |            dt = '$today'
         |        and
         |            is_ocpc = 1
         |        and
@@ -178,7 +178,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$yesterday'
+        |            dt = '$yesterday'
         |        and
         |            is_ocpc = 1
         |        and
@@ -217,7 +217,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$today'
+        |            dt = '$today'
         |        and
         |            is_ocpc = 1
         |        and
@@ -232,7 +232,7 @@ object GetNewOcpcUnitNum {
         |        from
         |            base_data_table
         |        where
-        |            `date` = '$yesterday'
+        |            dt = '$yesterday'
         |        and
         |            is_ocpc = 1
         |        and

@@ -57,7 +57,7 @@ object GetYesterdayOcpcCost {
         |from
         |    base_data_table
         |where
-        |    `date` = '$yesterday'
+        |    dt = '$yesterday'
         |group by
         |    'all'
       """.stripMargin
@@ -78,7 +78,7 @@ object GetYesterdayOcpcCost {
         |from
         |    base_data_table
         |where
-        |    `date` = '$yesterday'
+        |    dt = '$yesterday'
         |group by
         |    industry
       """.stripMargin
@@ -101,7 +101,7 @@ object GetYesterdayOcpcCost {
         |from
         |    base_data_table
         |where
-        |    `date` = '$yesterday'
+        |    dt = '$yesterday'
         |and
         |    industry = 'elds'
         |group by
@@ -126,7 +126,7 @@ object GetYesterdayOcpcCost {
         |from
         |    base_data_table
         |where
-        |    `date` = '$yesterday'
+        |    dt = '$yesterday'
         |and
         |    industry = 'app'
         |and
