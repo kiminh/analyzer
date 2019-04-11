@@ -56,7 +56,7 @@ object GetNewOcpcUnitNum {
         |from
         |    (select
         |        b.unitid,
-        |        b.industry
+        |        a.industry
         |    from
         |        (select
         |            unitid,
@@ -68,7 +68,8 @@ object GetNewOcpcUnitNum {
         |        and
         |            is_ocpc = 1
         |        group by
-        |            unitid) a
+        |            unitid,
+        |            industry) a
         |    left join
         |        (select
         |            unitid,
@@ -80,7 +81,8 @@ object GetNewOcpcUnitNum {
         |        and
         |            is_ocpc = 1
         |        group by
-        |            unitid) b
+        |            unitid,
+        |            industry) b
         |    on
         |        a.unitid = b.unitid
         |    and
