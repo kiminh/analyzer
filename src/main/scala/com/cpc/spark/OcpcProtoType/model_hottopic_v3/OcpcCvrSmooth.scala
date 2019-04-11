@@ -38,7 +38,7 @@ object OcpcCvrSmooth {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
-    val fileName = "ocpc_hottopic_test_cvr.pb"
+    val fileName = "ocpc_hot_topic.pb"
 
 //    val conf = ConfigFactory.load("ocpc")
 //    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
