@@ -4,9 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 object GetPreDate {
-  def main(args: Array[String]): Unit = {
-
-  }
   def getPreDate(date: String, n: Int = 1): String ={
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val today = sdf.parse(date)

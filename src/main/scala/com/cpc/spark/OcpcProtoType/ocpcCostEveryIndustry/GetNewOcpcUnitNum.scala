@@ -5,7 +5,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object GetNewOcpcUnitNum {
   def main(args: Array[String]): Unit = {
     val today = args(0).toString
-    val yesterday = GetPreDate(today)
+    val yesterday = GetPreDate.getPreDate(today)
     val spark = SparkSession.builder().appName("GetBaseIndex").enableHiveSupport().getOrCreate()
     getNewOcpcUnitNum(today, yesterday, spark)
   }
