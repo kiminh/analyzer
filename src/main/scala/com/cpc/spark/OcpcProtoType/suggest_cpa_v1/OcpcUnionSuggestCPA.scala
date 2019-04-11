@@ -25,7 +25,7 @@ object OcpcUnionSuggestCPA {
     val cvr3Cali = getNewCali(baseResult, 3, 48, date, hour, spark)
 
     val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
-    cvrCali.write.mode("overwrite").saveAsTable("test.check_ocpc_new_calidata20190411")
+//    cvrCali.write.mode("overwrite").saveAsTable("test.check_ocpc_new_calidata20190411")
 
     val updateData = baseResult
       .join(cvrCali, Seq("unitid", "conversion_goal"), "left_outer")
@@ -41,8 +41,8 @@ object OcpcUnionSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190411")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190411")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
