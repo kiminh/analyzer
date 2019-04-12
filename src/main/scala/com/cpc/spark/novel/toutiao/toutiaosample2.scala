@@ -3,6 +3,7 @@ package com.cpc.spark.novel.toutiao
 import java.io.StringReader
 import au.com.bytecode.opencsv.CSVReader
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 
 object toutiaosample2 {
   def main(args: Array[String]): Unit = {
@@ -23,13 +24,26 @@ object toutiaosample2 {
 
 
     val resultDF= result.map(x => {
-      (x(0).toInt,x(1).toString())
+      (x(0).toString,x(1).toString)
     }).toDF("id", "title")
-        .withColumn("id",when(id=0))
+      .withColumn("id",convert(col("id")))
 
     resultDF.show(10)
 
 //      .repartition(20).write.mode("overwrite").
+  }
 
+  def convert= udf{
+    (x:Any)=> {
+      x match {
+        case 0 => "美容化妆"
+        case 1 => "游戏类"
+        case 2 => "社交网络"
+        case 3 => "游戏类"
+        case 4 => "网上购物"
+        case 5 => "无"
+
+      }
+    }
   }
 }
