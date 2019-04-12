@@ -32,8 +32,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "test.ocpc_qtt_light_control20190401"
-//    val tableName = "test.ocpc_qtt_light_control"
+//    val tableName = "test.ocpc_qtt_light_control20190401"
+    val tableName = "test.ocpc_qtt_light_control"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -49,18 +49,18 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
 
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
-//
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(date, hour, spark)
-//    println(s"############## saving redis database ##########################")
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -265,6 +265,8 @@ object OcpcLightBulb{
            |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
            |    WHERE
            |        date = '$date'
+           |    AND
+           |        `hour` = '06'
            |    and is_recommend = 1
            |    and version = 'qtt_demo'
            |    and industry in ('elds', 'feedapp')) as a
@@ -338,8 +340,8 @@ object OcpcLightBulb{
       val unitid = row.getAs[Long]("unitid").toInt
       resList.append(unitid)
     }
-    // 手动添加广告单元的灯泡逻辑
-    resList.append(2010476)
+//    // 手动添加广告单元的灯泡逻辑
+//    resList.append(2010476)
 
     val resultDF = resList.toDF("unitid").distinct()
 
