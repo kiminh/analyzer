@@ -115,8 +115,7 @@ object GetTraceReportV3 {
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
        """.stripMargin.format(date, hour, date, hour))
-      //      .as[TraceReportLog]
-      .rdd.cache()
+      .rdd
 
     val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
     val unionRdd = ctx.sql(sql1).rdd.map {
