@@ -17,7 +17,8 @@ object GetNewRecommendUnitNum {
       s"""
         |select
         |    unitid,
-        |    industry
+        |    industry,
+        |    conversion_goal
         |from
         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
         |where
@@ -34,7 +35,8 @@ object GetNewRecommendUnitNum {
         |    conversion_goal in (1, 2, 3)
         |group by
         |    unitid,
-        |    industry
+        |    industry,
+        |    conversion_goal
       """.stripMargin
     println("---- GetNewRecommendUnitNum：sql1 ----")
     println(sql1)
