@@ -251,7 +251,7 @@ object GetTraceReportV3 {
           x.getAs[Int]("user_id"),
           x.getAs[Int]("plan_id"),
           x.getAs[Int]("unit_id"),
-          x.getAs[String]("idea_id").toInt,
+          x.getAs[Int]("idea_id"),
           x.getAs[String]("date"),
           x.getAs[String]("hour"),
           x.getAs[String]("trace_type"),
