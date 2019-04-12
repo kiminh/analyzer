@@ -27,8 +27,8 @@ object WriteCsv {
       .map(x => x._1)
     val list = data.collect()
     for(item <- list) println(item)
-//    data
-//      .repartition(1)
-//      .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
+    data
+      .repartition(1)
+      .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
 }
