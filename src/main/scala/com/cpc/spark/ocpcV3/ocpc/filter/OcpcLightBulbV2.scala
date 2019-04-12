@@ -161,8 +161,9 @@ object OcpcLightBulbV2{
     val data2 = rawData
       .groupBy("identifier")
       .agg(
-        min(col("cpa_suggest")).alias("cpa2")
+        min(col("cpa_suggest")).alias("cpa_suggest")
       )
+      .withColumn("cpa2", col("cpa_suggest") * 0.01)
       .withColumn("conversion_goal", lit(0))
       .selectExpr("cast(identifier as bigint) unitid", "cpa2")
 
