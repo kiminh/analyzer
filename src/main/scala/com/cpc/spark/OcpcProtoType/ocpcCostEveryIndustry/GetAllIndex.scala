@@ -8,6 +8,9 @@ object GetAllIndex {
     val today = args(0).toString
     val yesterday = GetPreDate.getPreDate(today)
     val spark = SparkSession.builder().appName("GetAllIndex").enableHiveSupport().getOrCreate()
+    // 先获取基础数据
+    GetBaseData.getBaseData(today, yesterday, spark)
+    println("------- has got base data --------")
     getAllIndex(today, yesterday, spark)
     println("------- has got all index ----------")
   }
