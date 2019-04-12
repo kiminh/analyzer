@@ -12,7 +12,7 @@ object WriteCsv {
     "ocpc_click", "all_click", "ocpc_cost", "all_cost", "cost_ratio", "ocpc_cost_yesterday",
     "ocpc_cost_ring_ratio", "all_unit_yesterday", "all_unit_today", "ocpc_unit_yesterday",
     "ocpc_unit_today", "new_ocpc_unit", "recommend_unit", "date").mkString(",")).map(x => (x.toString, 1))
-    val sortDataDF = dataDF.sort("industry").na.fill(0)
+    val sortDataDF = dataDF.na.fill(0)
     val data = title.union(sortDataDF.rdd.map(x => Seq(x.getAs[String]("industry").toString,
       x.getAs[Int]("ocpc_show").toString, x.getAs[Int]("all_show").toString,
       x.getAs[Int]("ocpc_click").toString, x.getAs[Int]("all_click").toString,
@@ -25,6 +25,9 @@ object WriteCsv {
       .map(x => (x, 2)))
       .sortBy(_._2)
       .map(x => x._1)
+    val list = data.collect()
+    for(item <- list) println(item)
+    data
       .repartition(1)
       .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
