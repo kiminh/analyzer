@@ -124,8 +124,6 @@ object OcpcLightBulb{
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_k_once
-         |WHERE
-         |  duration <= 3
        """.stripMargin
     println(sqlRequets1)
     val suggestDataRaw = spark.sql(sqlRequets1)
@@ -267,6 +265,8 @@ object OcpcLightBulb{
            |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
            |    WHERE
            |        date = '$date'
+           |    AND
+           |        `hour` = '06'
            |    and is_recommend = 1
            |    and version = 'qtt_demo'
            |    and industry in ('elds', 'feedapp')) as a
@@ -340,7 +340,8 @@ object OcpcLightBulb{
       val unitid = row.getAs[Long]("unitid").toInt
       resList.append(unitid)
     }
-//    resList.append(1997722)
+//    // 手动添加广告单元的灯泡逻辑
+//    resList.append(2010476)
 
     val resultDF = resList.toDF("unitid").distinct()
 

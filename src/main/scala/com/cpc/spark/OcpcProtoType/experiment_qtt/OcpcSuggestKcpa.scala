@@ -171,6 +171,8 @@ object OcpcSuggestKcpa {
          |WHERE
          |  `date`='$date'
          |AND
+         |  `hour` = '06'
+         |AND
          |  version='$version'
          |AND
          |  is_recommend = 1
@@ -184,6 +186,8 @@ object OcpcSuggestKcpa {
         avg("kvalue").alias("kvalue")
       )
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal")
+
+
 
     data
   }
@@ -224,6 +228,7 @@ object OcpcSuggestKcpa {
       .withColumn("prev_duration", col("duration"))
       .select("identifier", "prev_cpa", "prev_k", "conversion_goal", "prev_duration")
 
+
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
     val result = newData
       .join(prevData, Seq("identifier", "conversion_goal"), "outer")
@@ -233,7 +238,6 @@ object OcpcSuggestKcpa {
       .withColumn("kvalue", when(col("is_update") === 1, col("new_k")).otherwise(col("prev_k")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
 
-    result.write.mode("overwrite").saveAsTable("test.check_new_k_data20190301")
 
     val resultDF = result.select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration")
     resultDF
