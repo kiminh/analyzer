@@ -17,13 +17,13 @@ object toutiaosample2 {
 
     val input = spark.sparkContext.textFile("/user/cpc/wy/prediction.csv")
     val result = input.map{ line =>
-      val reader = new CSVReader(new StringReader(line));
+      val reader = new CSVReader(new StringReader(line))
       reader.readNext()
     }
     println("alldata:"+result.count())
 
     val resultDF= result.map(x => {
-      (x(0).toString(),x(1).toString())
+      (x(0).toString,x(1).toString)
     }).toDF("id", "title")
       .withColumn("id",convert(col("id")))
 
