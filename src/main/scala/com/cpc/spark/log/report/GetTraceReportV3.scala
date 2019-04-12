@@ -460,7 +460,7 @@ object GetTraceReportV3 {
         auto = trace.getAs[Int]("auto"),
         total_num = 1,
         impression = trace.getAs[Int]("isshow"),
-        click = trace.getAs[Int]("click")
+        click = trace.getAs[Int]("isclick")
       )
 
       (traceReport.key, traceReport)
