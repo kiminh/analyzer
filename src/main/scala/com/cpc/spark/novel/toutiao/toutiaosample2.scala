@@ -22,9 +22,8 @@ object toutiaosample2 {
     }
     println("alldata:"+result.count())
 
-
     val resultDF= result.map(x => {
-      (x(0).toString,x(1).toString)
+      (x(0).toString(),x(1).toString())
     }).toDF("id", "title")
       .withColumn("id",convert(col("id")))
 
