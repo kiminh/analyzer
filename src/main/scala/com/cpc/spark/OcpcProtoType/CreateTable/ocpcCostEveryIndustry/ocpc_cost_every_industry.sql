@@ -14,7 +14,8 @@ create table if not exists dl_cpc.ocpc_cost_every_industry(
     all_unit_today              int,
     ocpc_unit_yesterday         int,
     ocpc_unit_today             int,
-    new_ocpc_unit               int
+    new_ocpc_unit               int,
+    recommend_unit              int
 )
 partitioned by (`date` string)
 stored as parquet;

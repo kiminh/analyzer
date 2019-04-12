@@ -16,6 +16,7 @@ object GetAllIndex {
     GetUnitNum.getUnitNum(today, yesterday, spark).createOrReplaceTempView("unit_num_table")
     GetNewOcpcUnitNum.getNewOcpcUnitNum(today, yesterday, spark).createOrReplaceTempView("new_ocpc_unit_num_table")
     GetYesterdayOcpcCost.getYesterdayOcpcCost(today, yesterday, spark).createOrReplaceTempView("yesterday_ocpc_cost_table")
+    GetNewRecommendUnitNum.getNewRecommendUnitNum(today, spark).createOrReplaceTempView("new_recommend_unit_num_table")
 
     val sql =
       s"""
@@ -34,7 +35,8 @@ object GetAllIndex {
         |    b.all_unit_today,
         |    b.ocpc_unit_yesterday,
         |    b.ocpc_unit_today,
-        |    c.new_unit as new_ocpc_unit
+        |    c.new_unit as new_ocpc_unit,
+        |    e.recommend_unit
         |from
         |    base_index_table a
         |left join
@@ -49,6 +51,10 @@ object GetAllIndex {
         |    yesterday_ocpc_cost_table d
         |on
         |    a.industry = d.industry
+        |left join
+        |    new_recommend_unit_num_table e
+        |on
+        |    a.industry = e.industry
       """.stripMargin
     println("--------- GetAllIndex：get all index -----------")
     println(sql)
