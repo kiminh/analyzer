@@ -124,8 +124,6 @@ object OcpcLightBulb{
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_k_once
-         |WHERE
-         |  duration <= 3
        """.stripMargin
     println(sqlRequets1)
     val suggestDataRaw = spark.sql(sqlRequets1)
