@@ -314,7 +314,7 @@ object OcpcCvrSmooth {
       s"""
          |SELECT
          |  cast(unitid as string) identifier,
-         |  cpa as cpa_suggest,
+         |  cpa * 100 as cpa_suggest,
          |  10 as param_t
          |FROM
          |  test.ocpc_qtt_light_control_v2
