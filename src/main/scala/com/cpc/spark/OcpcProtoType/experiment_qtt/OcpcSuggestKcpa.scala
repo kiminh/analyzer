@@ -33,23 +33,18 @@ object OcpcSuggestKcpa {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa与kvalue
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
-//    suggestCPA.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412a")
 
     // 读取最近72小时是否有ocpc广告记录，并加上flag
     val ocpcFlag = getOcpcFlag(media, date, hour, spark)
-//    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412b")
 
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
-//    newData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412c")
 
     // 读取前一天的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
-//    prevData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412d")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
-    val result = updateCPAsuggest(version, newData, prevData, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412e")
+    val result = updateCPAsuggest(newData, prevData, spark)
 
     val resultDF = result
       // kvalue表示刚进入ocpc时的cpc阶段算出来的k值，
@@ -211,7 +206,7 @@ object OcpcSuggestKcpa {
 //    selectCondition
 //  }
 
-  def updateCPAsuggest(version: String, newDataRaw: DataFrame, prevDataRaw: DataFrame, spark: SparkSession) = {
+  def updateCPAsuggest(newDataRaw: DataFrame, prevDataRaw: DataFrame, spark: SparkSession) = {
     /*
     数据关联，并更新字段cpa，kvalue以及day_cnt字段
     1. 数据关联
@@ -237,7 +232,6 @@ object OcpcSuggestKcpa {
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
     val result = newData
       .join(prevData, Seq("identifier", "conversion_goal"), "outer")
-//      .join(confData, Seq("identifier", "conversion_goal"), "outer")
       .select("identifier", "conversion_goal", "new_cpa", "prev_cpa", "prev_duration", "new_k", "prev_k")
       .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
