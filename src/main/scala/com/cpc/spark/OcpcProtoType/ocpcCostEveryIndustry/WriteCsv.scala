@@ -8,10 +8,10 @@ object WriteCsv {
   }
 
   def writeCsv(today: String, dataDF: DataFrame, spark: SparkSession): Unit ={
-    val title = spark.sparkContext.parallelize(Seq("industry", "ocpc_show", "all_show",
+    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_show", "all_show",
     "ocpc_click", "all_click", "ocpc_cost", "all_cost", "cost_ratio", "ocpc_cost_yesterday",
     "ocpc_cost_ring_ratio", "all_unit_yesterday", "all_unit_today", "ocpc_unit_yesterday",
-    "ocpc_unit_today", "new_ocpc_unit", "recommend_unit", "date").mkString(",")).map(x => (x.toString, 1))
+    "ocpc_unit_today", "new_ocpc_unit", "recommend_unit", "date").mkString(","))).map(x => (x, 1))
     val sortDataDF = dataDF.na.fill(0)
     val data = title.union(sortDataDF.rdd.map(x => Seq(x.getAs[String]("industry").toString,
       x.getAs[Int]("ocpc_show").toString, x.getAs[Int]("all_show").toString,
@@ -25,10 +25,11 @@ object WriteCsv {
       .map(x => (x, 2)))
       .sortBy(_._2)
       .map(x => x._1)
+      .sortBy(x => x)
     val list = data.collect()
     for(item <- list) println(item)
-    data
-      .repartition(1)
-      .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
+//    data
+//      .repartition(1)
+//      .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
 }
