@@ -101,7 +101,7 @@ object GetNewRecommendUnitNum {
     println("---- GetNewRecommendUnitNum：sql2 ----")
     println(sql2)
     val newRecommendUnitNumDF = spark.sql(sql2)
-    newRecommendUnitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table5")
+//    newRecommendUnitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table5")
     newRecommendUnitNumDF
   }
 }

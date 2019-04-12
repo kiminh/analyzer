@@ -42,7 +42,7 @@ object GetYesterdayOcpcCost {
     println("------ GetYesterdayOcpcCost： get yesterday ocpc cost sql2 -------")
     println(sql2)
     val yesterdayOcpcCostDF = spark.sql(sql2)
-    yesterdayOcpcCostDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table4")
+//    yesterdayOcpcCostDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table4")
     yesterdayOcpcCostDF
   }
 

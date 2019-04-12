@@ -25,7 +25,7 @@ object WriteCsv {
       .map(x => (x, 2)))
       .sortBy(_._2)
       .map(x => x._1)
-      .repartition(5)
+      .repartition(1)
       .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
 }

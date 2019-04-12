@@ -40,7 +40,7 @@ object GetBaseIndex {
     println("------ GetBaseIndex： get base index sql2 -------")
     println(sql2)
     val baseIndexDF = spark.sql(sql2)
-    baseIndexDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table1")
+//    baseIndexDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table1")
     baseIndexDF
   }
   // 统计总体的指标：show、click、cost等

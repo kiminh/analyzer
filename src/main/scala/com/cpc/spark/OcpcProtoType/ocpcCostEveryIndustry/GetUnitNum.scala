@@ -42,7 +42,7 @@ object GetUnitNum {
     println("------ GetUnitNum： get unit num sql2 -------")
     println(sql2)
     val unitNumDF = spark.sql(sql2)
-    unitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table2")
+//    unitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table2")
     unitNumDF
   }
 

@@ -41,7 +41,7 @@ object GetNewOcpcUnitNum {
     println("------ GetNewOcpcUnitNum： get unit num sql2 -------")
     println(sql2)
     val newOcpcUnitNumDF = spark.sql(sql2)
-    newOcpcUnitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table3")
+//    newOcpcUnitNumDF.write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_table3")
     newOcpcUnitNumDF
   }
 

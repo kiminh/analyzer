@@ -55,9 +55,9 @@ object GetBaseData {
     println("----- get base data sql -------")
     println(sql)
     val data = spark.sql(sql)
-    data
-      .withColumn("date", lit(today))
-      .write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_base_data")
+//    data
+//      .withColumn("date", lit(today))
+//      .write.mode("overwrite").saveAsTable("test.wt_ocpc_cost_every_industry_base_data")
     data
       .withColumn("date", lit(today))
       .repartition(2)
