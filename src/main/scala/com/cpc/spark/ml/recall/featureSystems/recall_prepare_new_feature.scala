@@ -40,7 +40,7 @@ object recall_prepare_new_feature {
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid, null, used_pkgs, $featureName from usedApp
+           |select uid, null, used_pkgs, "$featureName" from usedApp
        """.stripMargin)
     } else if (featureName == "deleteApp"){
       print("prepare delete APP")
