@@ -33,23 +33,23 @@ object OcpcSuggestKcpa {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa与kvalue
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
-    suggestCPA.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412a")
+//    suggestCPA.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412a")
 
     // 读取最近72小时是否有ocpc广告记录，并加上flag
     val ocpcFlag = getOcpcFlag(media, date, hour, spark)
-    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412b")
+//    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412b")
 
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
-    newData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412c")
+//    newData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412c")
 
     // 读取前一天的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
-    prevData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412d")
+//    prevData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412d")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
     val result = updateCPAsuggest(version, newData, prevData, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412e")
+//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412e")
 
     val resultDF = result
       // kvalue表示刚进入ocpc时的cpc阶段算出来的k值，
@@ -59,9 +59,9 @@ object OcpcSuggestKcpa {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
-//    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_suggest_cpa_k_once")
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_suggest_cpa_k_once")
 
 
   }
@@ -233,36 +233,17 @@ object OcpcSuggestKcpa {
       .withColumn("prev_duration", col("duration"))
       .select("identifier", "prev_cpa", "prev_k", "conversion_goal", "prev_duration")
 
-    // 从配置文件读取数据
-    val conf = ConfigFactory.load("ocpc")
-    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path_v2")
-    val rawData = spark.read.format("json").json(suggestCpaPath)
-    val confData = rawData
-      .select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration", "version")
-      .filter(s"version = '$version'")
-      .groupBy("identifier", "conversion_goal", "version")
-      .agg(
-        min(col("cpa_suggest")).alias("conf_cpa"),
-        min(col("kvalue")).alias("conf_k"),
-        min(col("duration")).alias("conf_duration")
-      )
-      .select("identifier", "conf_cpa", "conf_k", "conversion_goal", "conf_duration")
 
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
     val result = newData
       .join(prevData, Seq("identifier", "conversion_goal"), "outer")
-      .join(confData, Seq("identifier", "conversion_goal"), "outer")
-      .select("identifier", "conversion_goal", "new_cpa", "prev_cpa", "prev_duration", "new_k", "prev_k", "conf_cpa", "conf_k", "conf_duration")
+//      .join(confData, Seq("identifier", "conversion_goal"), "outer")
+      .select("identifier", "conversion_goal", "new_cpa", "prev_cpa", "prev_duration", "new_k", "prev_k")
       .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
       .withColumn("kvalue", when(col("is_update") === 1, col("new_k")).otherwise(col("prev_k")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
-      .withColumn("cpa_suggest", when(col("conf_cpa").isNotNull && col("conf_cpa") > 0, col("conf_cpa")).otherwise(col("cpa_suggest")))
-      .withColumn("kvalue", when(col("conf_k").isNotNull && col("conf_k") > 0, col("conf_k")).otherwise(col("kvalue")))
-      .withColumn("duration", when(col("conf_duration").isNotNull && col("conf_duration") > 0, col("conf_duration")).otherwise(col("duration")))
 
-
-//    result.write.mode("overwrite").saveAsTable("test.check_new_k_data20190301")
 
     val resultDF = result.select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration")
     resultDF
