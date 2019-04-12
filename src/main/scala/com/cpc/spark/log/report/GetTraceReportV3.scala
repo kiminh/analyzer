@@ -199,7 +199,18 @@ object GetTraceReportV3 {
          |  ,0 as duration
          |  ,0 as auto
          |from
-         |  dl_cpc.cpc_basedata_union_events a
+         |  ( select
+         |       searchid
+         |      ,ideaid
+         |      ,unitid
+         |      ,planid
+         |      ,userid
+         |      ,isshow
+         |      ,isclick
+         |    from dl_cpc.cpc_basedata_union_events
+         |    where (day = "$date_1_hour_ago" and hour = "$hour_1_hour_ago" or day = "$date" and hour = "$hour")
+         |      and isclick=1 and adslot_type=7
+         |  ) a
          |  join
          |  (
          |    select
@@ -228,8 +239,6 @@ object GetTraceReportV3 {
          |      ,hour
          |  ) b
          |  on a.searchid=b.searchid and a.ideaid=b.ideaid
-         |where (a.day = "$date_1_hour_ago" and a.hour = "$hour_1_hour_ago" or a.day = "$date" and a.hour = "$hour")
-         | and a.isclick=1 and a.adslot_type=7
    """.stripMargin
 
     val motivate = ctx.sql(sql)
