@@ -14,7 +14,7 @@ object toutiaosample2 {
 
     import spark.implicits._
 
-    val input = spark.sparkContext.textFile("home/cpc/wy/prediction.csv")
+    val input = spark.sparkContext.textFile("/user/cpc/wy/prediction.csv")
     val result = input.map{ line =>
       val reader = new CSVReader(new StringReader(line));
       reader.readNext()
@@ -25,6 +25,7 @@ object toutiaosample2 {
     val resultDF= result.map(x => {
       (x(0).toInt,x(1).toString())
     }).toDF("id", "title")
+        .withColumn("id",when(id=0))
 
     resultDF.show(10)
 
