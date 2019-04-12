@@ -381,7 +381,7 @@ object GetTraceReportV3 {
       s"""
          |select
          |   a.searchid
-         |  , a.userid as user_id
+         |  , cast(a.userid as int) as user_id
          |  , a.planid as plan_id
          |  , a.unitid as unit_id
          |  , a.ideaid as idea_id
