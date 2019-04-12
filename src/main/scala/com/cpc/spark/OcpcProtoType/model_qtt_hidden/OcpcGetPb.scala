@@ -37,6 +37,7 @@ object OcpcGetPb {
     val version = args(3).toString
     val media = args(4).toString
 
+    // 加载配置文件，获取媒体类型
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -259,6 +260,9 @@ object OcpcGetPb {
       .join(cpcKfinal, Seq("identifier"), "outer")
       .select("identifier", "ocpc_k", "cpc_k", "history_ocpc_flag")
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
+      // 如果前3天中有ocpc的消费，即history_ocpc_flag ！= 0 ，则使用ocpc方式计算出来的K值
+      // 否则使用cpc方式计算出来的k值，之所以是前3天是因为为了和前端保持一致，
+      // 因为前端规定会如果一个单元在3天内如果开启了ocpc，但是没有消费，则会关闭它的ocpc，
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 //    finalK.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
@@ -420,7 +424,10 @@ object OcpcGetPb {
   def getPrevPb(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     var hourCnt=1
     var prevTable = getPrevK(conversionGoal, version, date, hour, hourCnt, spark)
+    // 获取上一次pb文件，当前一小时对应的pb文件为空时，则获取前2小时的，
+    // 以此类推，如果在10次之类都没有数据，则将上一次pb文件看成为空
     while (hourCnt < 11) {
+      // 统计上一次pb文件中是否有数据，即是否存在点击（click > 0）
       val cnt = prevTable.count()
       println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
       if (cnt>0) {

@@ -78,7 +78,11 @@ object OcpcUnionlog {
          |    conversion_from,
          |    is_api_callback,
          |    siteid,
-         |    cvr_model_name
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from
          |    base_data
        """.stripMargin
@@ -195,7 +199,11 @@ object OcpcUnionlog {
          |    conversion_from,
          |    is_api_callback,
          |    siteid,
-         |    cvr_model_name
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

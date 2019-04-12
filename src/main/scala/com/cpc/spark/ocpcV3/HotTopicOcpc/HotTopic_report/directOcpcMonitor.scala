@@ -11,7 +11,7 @@ import java.sql.{Connection, DriverManager}
 import com.typesafe.config.ConfigFactory
 
 object directOcpcMonitor {
-  def main(args: Array[String]): Unit ={
+  def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("directOcpcMonitor").enableHiveSupport().getOrCreate()
     val date = args(0).toString
 
@@ -19,27 +19,29 @@ object directOcpcMonitor {
     val jdate1 = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(jdate1)
-    calendar.add( Calendar.DATE, -1 )
+    calendar.add(Calendar.DATE, -1)
     val jdate0 = calendar.getTime
     val date0 = sdf.format(jdate0)
 
-//    create table if not exists test.directOcpcMonitor
-//    (
-//      label      STRING COMMENT '直暗投，ocpc/cpc',
-//    show_n     INT    COMMENT '展示量',
-//    ctr        FLOAT  COMMENT '点击率',
-//    click_n    INT    COMMENT '点击数',
-//    click_cvr  FLOAT  COMMENT '转化率',
-//    cvr_n      INT    COMMENT '转化数',
-//    money      FLOAT  COMMENT '收入',
-//    cpa        FLOAT  COMMENT 'cost per action',
-//    cpa_given  FLOAT  COMMENT 'cpa_given',
-//    cpm        FLOAT  COMMENT 'cost per mille',
-//    total_arpu FLOAT  COMMENT 'arpu',
-//    acp        FLOAT  COMMENT 'average click price'
-//    )
-//    COMMENT '热点段子明暗投、ocpc/cpc监控日报'
-//    PARTITIONED BY (`date` STRING);
+    //    create table if not exists test.directOcpcMonitor
+    //    (
+    //      label      STRING COMMENT '直暗投，ocpc/cpc',
+    //    show_n     INT    COMMENT '展示量',
+    //    ctr        FLOAT  COMMENT '点击率',
+    //    click_n    INT    COMMENT '点击数',
+    //    click_cvr  FLOAT  COMMENT '转化率',
+    //    cvr_n      INT    COMMENT '转化数',
+    //    money      FLOAT  COMMENT '收入',
+    //    cpa        FLOAT  COMMENT 'cost per action',
+    //    cpa_given  FLOAT  COMMENT 'cpa_given',
+    //    cpm        FLOAT  COMMENT 'cost per mille',
+    //    total_arpu FLOAT  COMMENT 'arpu',
+    //    acp        FLOAT  COMMENT 'average click price'
+    //    )
+    //    COMMENT '热点段子明暗投、ocpc/cpc监控日报'
+    //    PARTITIONED BY (`date` STRING);
+    val indirectUnit = getIndirectUnit(spark, date)
+    indirectUnit.createOrReplaceTempView("indirectUnit")
 
     val sqlRequest =
       s"""
@@ -90,12 +92,14 @@ object directOcpcMonitor {
          |        select
          |          identifier
          |        from
-         |          dl_cpc.ocpc_pb_result_hourly
+         |          dl_cpc.ocpc_pb_result_hourly  --该表中的identifier已经去直投了
          |        where
          |          ((`date` = '$date0' and hour >= '21') or (`date` = '$date' and hour < '21'))
          |          and version = 'hottopicv1'
          |        group by
          |          identifier
+         |        union
+         |        select identifier from indirectUnit
          |      ) c on a.identifier = c.identifier
          |GROUP BY
          |   case
@@ -116,32 +120,56 @@ object directOcpcMonitor {
 
   }
 
-  def update(sql: String): Unit ={
+  def getIndirectUnit(spark: SparkSession, date: String) = {
+    val sql =
+      s"""
+         |select
+         |  cast( unitid as string ) as identifier,
+         |  sum( case when media_appsid =  '80002819' then price else 0 end ) as cost_hottopic,
+         |  sum( case when media_appsid <> '80002819' then price else 0 end ) as cost_qtt
+         |from dl_cpc.slim_union_log a
+         |where dt = '$date'
+         |  and adsrc = 1
+         |  and isshow = 1
+         |  and isclick = 1
+         |  and media_appsid in ("80000001", "80000002", "80002819")
+         |  and (charge_type is NULL or charge_type = 1)
+         |  and userid > 0
+         |  and antispam = 0
+         |group by unitid
+       """.stripMargin
+    val indirectUnit = spark.sql(sql)
+      .filter("cost_hottopic > 0 and cost_qtt > 0")
+      .select("identifier")
+    indirectUnit
+  }
+
+  def update(sql: String): Unit = {
     val conf = ConfigFactory.load()
-    val url      = conf.getString("mariadb.report2_write.url")
-    val driver   = conf.getString("mariadb.report2_write.driver")
+    val url = conf.getString("mariadb.report2_write.url")
+    val driver = conf.getString("mariadb.report2_write.driver")
     val username = conf.getString("mariadb.report2_write.user")
     val password = conf.getString("mariadb.report2_write.password")
     var connection: Connection = null
-    try{
+    try {
       Class.forName(driver) //动态加载驱动器
       connection = DriverManager.getConnection(url, username, password)
       val statement = connection.createStatement
       val rs = statement.executeUpdate(sql)
       println(s"EXECUTE $sql SUCCESS!")
     }
-    catch{
+    catch {
       case e: Exception => e.printStackTrace
     }
-    connection.close  //关闭连接，释放资源
+    connection.close //关闭连接，释放资源
   }
 
-  def insert(data:DataFrame, table: String): Unit ={
+  def insert(data: DataFrame, table: String): Unit = {
     val conf = ConfigFactory.load()
     val mariadb_write_prop = new Properties()
 
-    val url      = conf.getString("mariadb.report2_write.url")
-    val driver   = conf.getString("mariadb.report2_write.driver")
+    val url = conf.getString("mariadb.report2_write.url")
+    val driver = conf.getString("mariadb.report2_write.driver")
     val username = conf.getString("mariadb.report2_write.user")
     val password = conf.getString("mariadb.report2_write.password")
 

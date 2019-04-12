@@ -22,10 +22,16 @@ object OcpcUnionSuggestCPAv2 {
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
+//    val cvr2Cali = getNewCali(baseResult, date, hour, spark)
+    val cvr1Cali = getNewCali("qtt", baseResult, 1, 48, date, hour, spark)
+    val cvr2Cali = getNewCali("qtt", baseResult, 2, 48, date, hour, spark)
+    val cvr3Cali = getNewCali("qtt", baseResult, 3, 48, date, hour, spark)
+
+    val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
+
 
     val updateData = baseResult
-      .join(cvr2Cali, Seq("unitid", "conversion_goal"), "left_outer")
+      .join(cvrCali, Seq("unitid", "conversion_goal"), "left_outer")
       .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
       .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
 

@@ -35,7 +35,7 @@ object OcpcPCOC {
         val cvData = getCvData(media, hourInt, date, hour, conversionGoal, baseData, spark)
         // cvr平滑后的pcoc
         val pcocData = calculatePCOC(baseData, clickData, cvData, conversionGoal, spark)
-        // 计算pcoc与jfb
+        // 计算pcoc与jfb（计费比）
         val result = calculateK(jfbData, pcocData, spark)
         val resultDF = result
           .select("identifier", "kvalue")

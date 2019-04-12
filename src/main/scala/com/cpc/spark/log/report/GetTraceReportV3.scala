@@ -21,6 +21,9 @@ object GetTraceReportV3 {
   var mariadb_amateur_url = ""
   val mariadb_amateur_prop = new Properties()
 
+  var mariadb_union_test_url = ""
+  val mariadb_union_test_prop = new Properties()
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -53,6 +56,11 @@ object GetTraceReportV3 {
     mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
+
+    mariadb_union_test_url = conf.getString("mariadb.union_test_write.url")
+    mariadb_union_test_prop.put("user", conf.getString("mariadb.union_test_write.user"))
+    mariadb_union_test_prop.put("password", conf.getString("mariadb.union_test_write.password"))
+    mariadb_union_test_prop.put("driver", conf.getString("mariadb.union_test_write.driver"))
 
     val ctx = SparkSession.builder()
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
@@ -93,7 +101,6 @@ object GetTraceReportV3 {
   */
 
     writeToTraceReport(ctx, traceData, date, hour)
-
 
     println("GetTraceReport_done")
   }
@@ -266,82 +273,6 @@ object GetTraceReportV3 {
     result
   }
 
-  /*def saveTraceReport_Motivate2(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
-    val sql =
-      s"""
-         |select b.userid as user_id, b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
-         |from (
-         |        select   ta.idea_id
-         |                ,ta.appname
-         |                ,ta.adslotid
-         |                ,ta.trace_type
-         |                ,ta.trace_op1
-         |                ,sum(if(ta.num > 0, 1, ta.num)) as total_num
-         |        from (
-         |                select opt["appname"] as appname
-         |                    ,trace_type
-         |                    ,trace_op1
-         |                    ,opt['ideaid'] as idea_id
-         |                    ,trace_op3
-         |                    ,opt['adslotid'] as adslotid
-         |                    ,count(1) as num
-         |                from dl_cpc.logparsed_cpc_trace_minute cut1
-         |                where `thedate` = "%s" and thehour = "%s"
-         |                  and trace_type = 'sdk_incite'
-         |                  and trace_op1 in ('DOWNLOAD_START','DOWNLOAD_FINISH','INSTALL_FINISH','OPEN_APP','INSTALL_HIJACK')
-         |                group by  opt["appname"]
-         |                   ,trace_type
-         |                   ,trace_op1
-         |                   ,opt['ideaid']
-         |                   ,trace_op3
-         |                   ,opt['adslotid']
-         |        ) ta
-         |        group by ta.idea_id, ta.appname, ta.adslotid, ta.trace_type, ta.trace_op1
-         |    ) a
-         |join (
-         |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
-         |    from (
-         |            select userid, planid, unitid, ideaid, `date`, hour
-         |            from dl_cpc.cpc_motivation_log
-         |            where `date` = "%s" and hour = "%s" and isclick = 1
-         |            group by userid, planid, unitid, ideaid, `date`, hour
-         |        ) a
-         |        join
-         |        (
-         |            select ideaid , sum(isshow) as show, sum(isclick) as click
-         |            from dl_cpc.cpc_motivation_log
-         |            where `date` = "%s" and hour = "%s"
-         |            group by ideaid
-         |        ) b on a.ideaid = b.ideaid
-         |    ) b
-         |on a.idea_id = b.ideaid
-      """.stripMargin.format(date, hour, date, hour, date, hour)
-
-    val toResult = ctx.sql(sql)
-      .rdd
-      .map(x =>
-        AdvTraceReport(x.getAs[Int]("user_id"),
-          x.getAs[Int]("plan_id"),
-          x.getAs[Int]("unit_id"),
-          x.getAs[String]("idea_id").toInt,
-          x.getAs[String]("date"),
-          x.getAs[String]("hour"),
-          x.getAs[String]("trace_type"),
-          x.getAs[String]("trace_op1"),
-          x.getAs[Int]("duration"),
-          x.getAs[Int]("auto"),
-          x.getAs[Long]("total_num").toInt,
-          x.getAs[Long]("show").toInt,
-          x.getAs[Long]("click").toInt
-        )
-      )
-
-    println("motivate count:" + toResult.count())
-    toResult
-
-  }*/
-
-
   /**
     * 用户api回传
     *
@@ -449,22 +380,48 @@ object GetTraceReportV3 {
     val moti_auto_coin_sql =
       s"""
          |select
-         |   searchid
-         |  ,userid as user_id
-         |  ,planid as plan_id
-         |  ,unitid as unit_id
-         |  ,ideaid as idea_id
-         |  ,activetype as trace_type
-         |  ,"" as trace_op1
-         |  ,0 as duration
-         |  ,0 as auto
-         |  ,0 as isshow
-         |  ,0 as isclick
-         |  ,day as date
-         |  ,hour
-         |from dl_cpc.cpc_basedata_apicallback_event
-         |where day = "$date" and hour="$hour"
+         |   a.searchid
+         |  , a.userid as user_id
+         |  , a.planid as plan_id
+         |  , a.unitid as unit_id
+         |  , a.ideaid as idea_id
+         |  , "active_third" as trace_type
+         |  , "" as trace_op1
+         |  , 0 as duration
+         |  , 0 as auto
+         |  , 0 as isshow
+         |  , 0 as isclick
+         |  , a.day as date
+         |  , a.hour
+         |from dl_cpc.cpc_basedata_apicallback_event a
+         |where a.day = "$date" and a.hour="$hour"
        """.stripMargin
+        .format(get3DaysBeforeForTrident(date, hour, "b"))
+
+    /*val moti_auto_coin_sql =
+      s"""
+         |select
+         |   a.searchid
+         |  , a.userid as user_id
+         |  , a.planid as plan_id
+         |  , a.unitid as unit_id
+         |  , a.ideaid as idea_id
+         |  , "active_third" as trace_type
+         |  , "" as trace_op1
+         |  , 0 as duration
+         |  , 0 as auto
+         |  , b.isshow as isshow
+         |  , b.isclick as isclick
+         |  , a.day as date
+         |  , a.hour
+         |from dl_cpc.cpc_basedata_apicallback_event a
+         |join dl_cpc.cpc_basedata_union_events b
+         |  on a.searchid=b.searchid
+         |  and a.ideaid=b.ideaid
+         |  and %s
+         |where a.day = "$date" and a.hour="$hour"
+       """.stripMargin
+          .format(get3DaysBeforeForTrident(date, hour, "b"))*/
     println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
     val traceReport1 = ctx.sql(sql)
@@ -482,9 +439,10 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
-    //val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
-
-    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
+    val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
+    
+    // fym 190410: temporarily commented for testing.
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
@@ -498,7 +456,7 @@ object GetTraceReportV3 {
       val trace = x._2
       val trace_op1 = trace.getAs[String]("trace_op1")
 
-      ((trace.getAs[Int]("user_id"),
+      ((trace.getAs[String]("user_id").toInt,
         trace.getAs[Int]("plan_id"),
         trace.getAs[Int]("unit_id"),
         trace.getAs[Int]("idea_id"),
@@ -526,11 +484,6 @@ object GetTraceReportV3 {
         click = 0
       )
     }
-
-    val cvr = traceData.filter(_.user_id == 1568339)
-      .map(_.total_num)
-      .sum()
-    println("userid = 1568339", cvr)
 
     println("count:" + traceData.count())
     traceData
@@ -565,6 +518,26 @@ object GetTraceReportV3 {
       val hourr = formatDate.substring(11, 13)
 
       val dateL = s"(`date`='$datee' and `hour`='$hourr')"
+      dateHourList += dateL
+    }
+
+    "(" + dateHourList.mkString(" or ") + ")"
+  }
+
+  def get3DaysBeforeForTrident(date: String, hour: String, table: String): String = {
+    val dateHourList = ListBuffer[String]()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    for (t <- 0 to 72) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val formatDate = dateFormat.format(cal.getTime)
+      val datee = formatDate.substring(0, 10)
+      val hourr = formatDate.substring(11, 13)
+
+      val dateL = s"($table.`day`='$datee' and $table.`hour`='$hourr')"
       dateHourList += dateL
     }
 

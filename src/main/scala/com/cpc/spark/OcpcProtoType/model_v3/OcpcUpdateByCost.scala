@@ -19,5 +19,7 @@ object OcpcUpdateByCost {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version")
+
+
   }
 }
