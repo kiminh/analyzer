@@ -47,6 +47,9 @@ object OcpcSuggestKcpa {
     val result = updateCPAsuggest(newData, prevData, spark)
 
     val resultDF = result
+      // kvalue表示刚进入ocpc时的cpc阶段算出来的k值，
+      // duration表示进入ocpc的天数
+      // 要获取刚进入ocpc阶段的信息时，这张表常用
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))

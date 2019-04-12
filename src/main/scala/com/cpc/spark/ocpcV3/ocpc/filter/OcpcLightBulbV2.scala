@@ -153,7 +153,7 @@ object OcpcLightBulbV2{
       .filter(s"cpa is not null")
       .select("unitid", "conversion_goal", "cpa")
 
-    result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
     val resultDF = result.filter("cpa >= 0")
     resultDF
   }
