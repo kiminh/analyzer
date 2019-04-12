@@ -440,7 +440,7 @@ object GetTraceReportV3 {
       .rdd
 
     val moti_auto_coin = ctx.sql(moti_auto_coin_sql).rdd
-    
+
     // fym 190410: temporarily commented for testing.
     val traceData = traceReport1.union(traceReport2).union(traceReport_moti).union(moti_auto_coin).filter {
       trace =>
@@ -456,7 +456,7 @@ object GetTraceReportV3 {
       val trace = x._2
       val trace_op1 = trace.getAs[String]("trace_op1")
 
-      ((trace.getAs[String]("user_id").toInt,
+      ((trace.getAs[Int]("user_id"),
         trace.getAs[Int]("plan_id"),
         trace.getAs[Int]("unit_id"),
         trace.getAs[Int]("idea_id"),
