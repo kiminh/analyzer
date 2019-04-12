@@ -58,10 +58,14 @@ object GetAllIndex {
       """.stripMargin
     println("--------- GetAllIndex：get all index -----------")
     println(sql)
-    val dataDF = spark.sql(sql)
+    val dataDF = spark.sql(sql).withColumn("date", lit(today))
+    // 存hive表
     dataDF
-      .withColumn("date", lit(today))
       .repartition(10)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_cost_every_industry")
+    println("------ save into hive success -----")
+    // 存hadoop文件
+    WriteCsv.writeCsv(today, dataDF, spark)
+    println("------ save into hadoop success -----")
   }
 }

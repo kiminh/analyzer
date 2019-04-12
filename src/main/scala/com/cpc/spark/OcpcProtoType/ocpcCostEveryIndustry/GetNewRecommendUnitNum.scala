@@ -46,7 +46,11 @@ object GetNewRecommendUnitNum {
       s"""
         |select
         |    'all' as industry,
-        |    count(unitid) as recommend_unit
+        |    sum(case when industry = 'elds' and conversion_goal = 3 then 1
+        |             when industry = 'feedapp' and conversion_goal = 2 then 1
+        |             when industry = 'wzcp' and conversion_goal = 1 then 1
+        |             when industry = 'others' and conversion_goal = 1 then 1
+        |             else 0 end) as recommend_unit
         |from
         |    base_data_table
         |group by
