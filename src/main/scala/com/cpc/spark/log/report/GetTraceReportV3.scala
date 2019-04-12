@@ -446,7 +446,7 @@ object GetTraceReportV3 {
       val trace = x._2
       val trace_op1 = trace.getAs[String]("trace_op1")
 
-
+      // fym 190412 : added sum logic for impression / click.
       val traceReport = AdvTraceReport(
         user_id = trace.getAs[Int]("user_id"),
         plan_id = trace.getAs[Int]("plan_id"),
