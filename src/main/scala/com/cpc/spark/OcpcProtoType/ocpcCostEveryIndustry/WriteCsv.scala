@@ -23,12 +23,11 @@ object WriteCsv {
       x.getAs[Int]("ocpc_unit_today").toString, x.getAs[Int]("new_ocpc_unit").toString,
       x.getAs[Int]("recommend_unit").toString, x.getAs[String]("date").toString).mkString(","))
       .map(x => (x, 2)))
+      .repartition(1)
       .sortBy(x => (x._2, x._1))
       .map(x => x._1)
     val list = data.collect()
     for(item <- list) println(item)
-    data
-      .repartition(1)
-      .saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
+    data.saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
 }
