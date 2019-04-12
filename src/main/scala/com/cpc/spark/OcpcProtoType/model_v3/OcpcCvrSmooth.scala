@@ -79,7 +79,7 @@ object OcpcCvrSmooth {
     val expData = getCpcBidData(expDataPath, date, hour, spark)
 
     // 获取cpa_suggest和param_t数据
-    val suggestCPA = getCPAsuggestV2(suggestCpaPath, date, hour, spark)
+    val suggestCPA = getCPAsuggestV3(suggestCpaPath, date, hour, spark)
 
     // 获取cali_value
     val caliValue = getCaliValue(date, hour, spark)
@@ -298,6 +298,37 @@ object OcpcCvrSmooth {
       .distinct()
 
     resultDF.show(10)
+    resultDF
+  }
+
+  def getCPAsuggestV3(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    两条来源：
+    1. 从mysql读取实时正在跑ocpc的广告单元和对应转化目标，按照unitid和conversion_goal设置对应推荐cpa
+    2. 从配置文件读取推荐cpa
+    3. 数据关联，优先配置文件的推荐cpa
+     */
+
+    // 从推荐cpa表中读取：dl_cpc.ocpc_suggest_cpa_k_once
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpa_suggest,
+         |  10 as param_t
+         |FROM
+         |  test.ocpc_qtt_light_control_v2
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF  = spark
+        .sql(sqlRequest)
+        .groupBy("identifier")
+        .agg(
+          min(col("cpa_suggest")).alias("cpa_suggest"),
+          min(col("param_t")).alias("param_t")
+        )
+        .select("identifier", "cpa_suggest", "param_t")
+
     resultDF
   }
 
