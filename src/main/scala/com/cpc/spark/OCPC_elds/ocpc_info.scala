@@ -132,7 +132,7 @@ object ocpc_info {
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven <1.2,1,0) as is_control_cost,
          |d.hidden_budget,
          |a.ocpc_no_cost/d.hidden_budget as hidden_budget_ratio,
-         |（a.ocpc_cost/a.ocpc_cvr_cnt）- a.cpagiven*1.2 as payment,
+         |(a.ocpc_cost/a.ocpc_cvr_cnt)- a.cpagiven*1.2 as payment,
          |a.day
          |from
          |(select
