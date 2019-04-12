@@ -36,12 +36,12 @@ object toutiaosample2 {
   def convert= udf{
     (x:Any)=> {
       x match {
-        case 0 => "美容化妆"
-        case 1 => "游戏类"
-        case 2 => "社交网络"
-        case 3 => "游戏类"
-        case 4 => "网上购物"
-        case 5 => "无"
+        case '0' => "美容化妆"
+        case '1' => "游戏类"
+        case '2' => "社交网络"
+        case '3' => "游戏类"
+        case '4' => "网上购物"
+        case '5' => "无"
 
       }
     }
