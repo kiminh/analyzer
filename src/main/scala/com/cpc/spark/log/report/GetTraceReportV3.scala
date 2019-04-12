@@ -251,7 +251,7 @@ object GetTraceReportV3 {
           x.getAs[Int]("user_id"),
           x.getAs[Int]("plan_id"),
           x.getAs[Int]("unit_id"),
-          x.getAs[String]("idea_id").toInt,
+          x.getAs[Int]("idea_id"),
           x.getAs[String]("date"),
           x.getAs[String]("hour"),
           x.getAs[String]("trace_type"),
@@ -367,11 +367,11 @@ object GetTraceReportV3 {
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println(sql_moti)
 
-    val moti_auto_coin_sql =
+    /*val moti_auto_coin_sql =
       s"""
          |select
          |   a.searchid
-         |  , a.userid as user_id
+         |  , cast(a.userId as int) as user_id
          |  , a.planid as plan_id
          |  , a.unitid as unit_id
          |  , a.ideaid as idea_id
@@ -386,13 +386,13 @@ object GetTraceReportV3 {
          |from dl_cpc.cpc_basedata_apicallback_event a
          |where a.day = "$date" and a.hour="$hour"
        """.stripMargin
-        .format(get3DaysBeforeForTrident(date, hour, "b"))
+        .format(get3DaysBeforeForTrident(date, hour, "b"))*/
 
-    /*val moti_auto_coin_sql =
+    val moti_auto_coin_sql =
       s"""
          |select
          |   a.searchid
-         |  , a.userid as user_id
+         |  , cast(a.userid as int) as user_id
          |  , a.planid as plan_id
          |  , a.unitid as unit_id
          |  , a.ideaid as idea_id
@@ -411,7 +411,7 @@ object GetTraceReportV3 {
          |  and %s
          |where a.day = "$date" and a.hour="$hour"
        """.stripMargin
-          .format(get3DaysBeforeForTrident(date, hour, "b"))*/
+          .format(get3DaysBeforeForTrident(date, hour, "b"))
     println("moti_auto_coin_sql: " + moti_auto_coin_sql)
 
     val traceReport1 = ctx.sql(sql)
@@ -446,17 +446,36 @@ object GetTraceReportV3 {
       val trace = x._2
       val trace_op1 = trace.getAs[String]("trace_op1")
 
-      ((trace.getAs[String]("user_id").toInt,
+      // fym 190412 : added sum logic for impression / click.
+      val traceReport = AdvTraceReport(
+        user_id = trace.getAs[Int]("user_id"),
+        plan_id = trace.getAs[Int]("plan_id"),
+        unit_id = trace.getAs[Int]("unit_id"),
+        idea_id = trace.getAs[Int]("idea_id"),
+        date = trace.getAs[String]("date"),
+        hour = trace.getAs[String]("hour"),
+        trace_type = "active_third",
+        trace_op1 = "",
+        duration = 0,
+        auto = trace.getAs[Int]("auto"),
+        total_num = 1,
+        impression = trace.getAs[Int]("isshow"),
+        click = trace.getAs[Int]("isclick")
+      )
+
+      (traceReport.key, traceReport)
+
+      /*((trace.getAs[Int]("user_id"),
         trace.getAs[Int]("plan_id"),
         trace.getAs[Int]("unit_id"),
         trace.getAs[Int]("idea_id"),
         trace.getAs[String]("date"),
         trace.getAs[String]("hour"),
         //auto = 1表明强制注入的trace，要区别清楚
-        trace.getAs[Int]("auto")), 1)
+        trace.getAs[Int]("auto")), 1)*/
     }.reduceByKey {
-      case (x, y) => (x + y)
-    }.map { x =>
+      case (x, y) => x.sum(y)
+    }.map(_._2)/*.map { x =>
       val trace = x._1
       AdvTraceReport(
         user_id = trace._1,
@@ -473,7 +492,7 @@ object GetTraceReportV3 {
         impression = 0,
         click = 0
       )
-    }
+    }*/
 
     println("count:" + traceData.count())
     traceData
