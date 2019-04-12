@@ -33,18 +33,23 @@ object OcpcSuggestKcpa {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa与kvalue
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
+    suggestCPA.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412a")
 
     // 读取最近72小时是否有ocpc广告记录，并加上flag
     val ocpcFlag = getOcpcFlag(media, date, hour, spark)
+    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412b")
 
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
+    newData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412c")
 
     // 读取前一天的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
+    prevData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412d")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
     val result = updateCPAsuggest(newData, prevData, spark)
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190412e")
 
     val resultDF = result
       // kvalue表示刚进入ocpc时的cpc阶段算出来的k值，
@@ -54,8 +59,8 @@ object OcpcSuggestKcpa {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
-    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
+//    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_suggest_cpa_k_once")
 
 
@@ -171,6 +176,8 @@ object OcpcSuggestKcpa {
          |WHERE
          |  `date`='$date'
          |AND
+         |  `hour` = '06'
+         |AND
          |  version='$version'
          |AND
          |  is_recommend = 1
@@ -184,6 +191,8 @@ object OcpcSuggestKcpa {
         avg("kvalue").alias("kvalue")
       )
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal")
+
+
 
     data
   }
