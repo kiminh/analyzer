@@ -36,11 +36,11 @@ object recall_prepare_new_feature {
   def getFeature(spark: SparkSession, date: String, featureName: String): Unit = {
     if(featureName == "activeApp"){
       val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
-      uidApp.select("uid", "used_pkgs").distinct().repartition(200).createOrReplaceTempView("usedApp")
+      uidApp.select("uid","used_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid, null, used_pkgs, "$featureName" from usedApp
+           |select uid, null, used_pkgs, "$featureName" from temptable where used_pkgs[0] is not null
        """.stripMargin)
     } else if (featureName == "deleteApp"){
       print("prepare delete APP")
