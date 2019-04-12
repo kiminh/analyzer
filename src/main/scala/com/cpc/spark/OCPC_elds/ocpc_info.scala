@@ -132,6 +132,7 @@ object ocpc_info {
          |if((a.ocpc_cost/a.ocpc_cvr_cnt)/a.cpagiven <1.2,1,0) as is_control_cost,
          |d.hidden_budget,
          |a.ocpc_no_cost/d.hidden_budget as hidden_budget_ratio,
+         |（a.ocpc_cost/a.ocpc_cvr_cnt）- a.cpagiven*1.2 as payment,
          |a.day
          |from
          |(select
@@ -195,7 +196,7 @@ object ocpc_info {
               |select
               |`date` as day,
               |industy as type,
-              |(sum( case WHEN isclick = 1 and ( charge_type = 1 or charge_type IS NULL ) then price else 0 end )
+              |(sum( case WHEN isclick = 1 and ( charge_type IS NULL or charge_type = 1) then price else 0 end )
               | +sum( case when  charge_type = 2 then price else 0 end )/1000.0 )/100 as total_cost
               |from dl_cpc.ocpc_basedata_union_events
               |where `date`='$date'
@@ -230,6 +231,7 @@ object ocpc_info {
          |a.ocpc_control_cost_ratio,
          |a.ocpc_control_unitid,
          |a.ocpc_control_unitid_ratio,
+         |a.payment,
          |a.day
          |from
          |(select
@@ -247,6 +249,7 @@ object ocpc_info {
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
          |count(distinct case when is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
          |count(distinct case when is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
+         |sum(payment) as payment,
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
@@ -276,6 +279,7 @@ object ocpc_info {
          |c.ocpc_control_cost_ratio,
          |c.ocpc_control_unitid,
          |c.ocpc_control_unitid_ratio,
+         |c.payment,
          |c.day
          |from
          |(select
@@ -293,6 +297,7 @@ object ocpc_info {
          |sum(case when is_control_cost=1 then ocpc_cost else null end)/sum(ocpc_cost) as ocpc_control_cost_ratio,
          |count(distinct case when is_control_cost=1 then unitid else null end) as ocpc_control_unitid,
          |count(distinct case when is_control_cost=1 then unitid else null end)/count(distinct case when ocpc_cost>0 then unitid else null end) as ocpc_control_unitid_ratio,
+         |sum(payment) as payment,
          |day
          |from dl_cpc.ocpc_basedata_info
          |where day='$date'
