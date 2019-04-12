@@ -74,16 +74,21 @@ object recall_prepare_training_samples {
     val new_feature = spark.sql(
       s"""
          |select uid, feature_onehot, feature_multihot from dl_cpc.recall_test_feature where dt='$date'
-       """.stripMargin).select($"uid",
-      hash("f25")($"uid").alias("uidhash"),
+       """.stripMargin).select($"uid", hash("f25")($"uid").alias("uidhash"),$"feature_onehot", $"feature_multihot").
+      join(original_sample, Seq("uidhash"), "right_outer").
+      select($"uid", $"uidhash",
       hash("f" + onehot_feature_number)($"feature_onehot").alias("onehot"),
-      array(hashSeq("m" + multihot_feature_number, "string")($"feature_multihot")).alias("multihot")).
-      select($"uid", $"uidhash", $"onehot", mkSparseFeature_m(multihot_feature_number)($"multihot").alias("sparse")).
+      array(hashSeq("m" + multihot_feature_number, "string")($"feature_multihot")).alias("multihot"),
+        $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").
+      select($"uid", $"uidhash", $"onehot", mkSparseFeature_m(multihot_feature_number)($"multihot").alias("sparse"),
+        $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").
       select($"uid", $"uidhash", array($"onehot").alias("dense_new"),$"sparse".getField("_1").alias("idx0_new"),
         $"sparse".getField("_2").alias("idx1_new"),
         $"sparse".getField("_3").alias("idx2_new"),
-        $"sparse".getField("_4").alias("id_arr_new"))
-    val newFeature_sample = original_sample.join(new_feature, Seq("uidhash"), "left_outer").rdd.map{
+        $"sparse".getField("_4").alias("id_arr_new"),
+        $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense")
+//    val newFeature_sample = original_sample.join(new_feature, Seq("uidhash"), "left_outer")
+    new_feature.rdd.map{
       r =>
         val uid = r.getAs[String]("uid")
         val sample_idx = r.getAs[Long]("sample_idx")
@@ -98,9 +103,8 @@ object recall_prepare_training_samples {
         val idx2_new = r.getAs[Seq[Long]]("idx2_new")
         val id_arr_new = r.getAs[Seq[Long]]("id_arr_new")
         val dense_new = r.getAs[Seq[Long]]("dense_new")
-        (sample_idx, label, dense ++ dense_new, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
+          (sample_idx, label, dense ++ dense_new, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-    newFeature_sample
   }
   private def mkSparseFeature_m(origin_num: Int) = udf {
     features: Seq[Seq[Long]] =>
