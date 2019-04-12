@@ -115,8 +115,7 @@ object GetTraceReportV3 {
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
        """.stripMargin.format(date, hour, date, hour))
-      //      .as[TraceReportLog]
-      .rdd.cache()
+      .rdd
 
     val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
     val unionRdd = ctx.sql(sql1).rdd.map {
@@ -176,7 +175,8 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
-    val before1hour = fDate.substring(11, 13)
+    val date_1_hour_ago = fDate.substring(0, 10)
+    val hour_1_hour_ago = fDate.substring(11, 13)
 
     val sql =
       s"""
@@ -188,8 +188,8 @@ object GetTraceReportV3 {
          |  ,a.userid as user_id
          |  ,a.isshow
          |  ,a.isclick
-         |  ,a.day as date
-         |  ,a.hour
+         |  ,b.day as date
+         |  ,b.hour
          |  ,b.appname
          |  ,b.adslotid
          |  ,b.trace_type
@@ -198,7 +198,18 @@ object GetTraceReportV3 {
          |  ,0 as duration
          |  ,0 as auto
          |from
-         |  dl_cpc.cpc_basedata_union_events a
+         |  ( select
+         |       searchid
+         |      ,ideaid
+         |      ,unitid
+         |      ,planid
+         |      ,userid
+         |      ,isshow
+         |      ,isclick
+         |    from dl_cpc.cpc_basedata_union_events
+         |    where (day = "$date_1_hour_ago" and hour = "$hour_1_hour_ago" or day = "$date" and hour = "$hour")
+         |      and isclick=1 and adslot_type=7
+         |  ) a
          |  join
          |  (
          |    select
@@ -209,6 +220,8 @@ object GetTraceReportV3 {
          |      ,trace_type
          |      ,trace_op1
          |      ,trace_op3
+         |      ,day
+         |      ,hour
          |    from dl_cpc.cpc_basedata_trace_event
          |    where day = "$date" and hour = "$hour"
          |      and trace_type = 'sdk_incite'
@@ -221,9 +234,10 @@ object GetTraceReportV3 {
          |      ,trace_type
          |      ,trace_op1
          |      ,trace_op3
+         |      ,day
+         |      ,hour
          |  ) b
          |  on a.searchid=b.searchid and a.ideaid=b.ideaid
-         |where a.day = "$date" and a.hour >= "$before1hour" and a.hour <= "$hour" and a.isclick=1 and a.adslot_type=7
    """.stripMargin
 
     val motivate = ctx.sql(sql)
@@ -240,7 +254,7 @@ object GetTraceReportV3 {
         col("auto")
       )
       .agg(
-        expr("count(distinct appname,adslotid,trace_op3)").alias("total_num")
+        expr("count(distinct appname,adslotid,trace_op3)").cast("int").alias("total_num")
       )
     println("count: " + motivate.count())
 
@@ -258,7 +272,7 @@ object GetTraceReportV3 {
           x.getAs[String]("trace_op1"),
           x.getAs[Int]("duration"),
           x.getAs[Int]("auto"),
-          x.getAs[Long]("total_num").toInt,
+          x.getAs[Int]("total_num"),
           0,
           0
         )
@@ -281,7 +295,8 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
-    val before1hour = fDate.substring(11, 13)
+    val date_1_hour_ago = fDate.substring(0, 10)
+    val hour_1_hour_ago = fDate.substring(11, 13)
 
     /*
     trace_log(1h) join api_callback_union_log(3d)
@@ -325,10 +340,13 @@ object GetTraceReportV3 {
          |      ,un.isclick
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid, a.isshow, a.isclick from dl_cpc.cpc_union_log a
-         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
-       """.stripMargin.format(date, before1hour, hour, date, hour)
+         |( select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid, a.isshow, a.isclick from dl_cpc.cpc_union_log a
+         |  where (a.`date`="$date_1_hour_ago" and a.hour="$hour_1_hour_ago" or a.`date`="$date" and a.hour="$hour")
+         |  and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1
+         |) as un
+         |on tr.searchid = un.searchid
+         |where  tr.`thedate` = "$date" and tr.`thehour` = "$hour"
+       """.stripMargin
     println(sql2)
 
     /*
@@ -371,7 +389,11 @@ object GetTraceReportV3 {
       s"""
          |select
          |   a.searchid
+<<<<<<< HEAD
+         |  , cast(a.userid as int) as user_id
+=======
          |  , cast(a.userId as int) as user_id
+>>>>>>> 31edac2609cdb334943a45e7c6a61df063d70c24
          |  , a.planid as plan_id
          |  , a.unitid as unit_id
          |  , a.ideaid as idea_id
