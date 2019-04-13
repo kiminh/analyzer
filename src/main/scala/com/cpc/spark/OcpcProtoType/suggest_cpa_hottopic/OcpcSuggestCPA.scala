@@ -28,11 +28,18 @@ object OcpcSuggestCPA {
      */
     // 计算日期周期
     Logger.getRootLogger.setLevel(Level.WARN)
+//    val date = args(0).toString
+//    val hour = args(1).toString
+//    val media = args(2).toString
+//    val conversionGoal = args(3).toInt
+//    val version = args(4).toString
+//    val hourInt = args(5).toInt
     val date = args(0).toString
     val hour = args(1).toString
-    val media = args(2).toString
-    val conversionGoal = args(3).toInt
-    val version = args(4).toString
+    val conversionGoal = args(2).toInt
+    val version = args(3).toString
+    val media = args(4).toString
+    val hourInt = args(5).toInt
 
 
     val spark = SparkSession
@@ -53,7 +60,7 @@ object OcpcSuggestCPA {
 
 
     // 取基础数据部分
-    val baseData = getBaseData(media, conversionGoal, 72, date, hour, spark)
+    val baseData = getBaseData(media, conversionGoal, hourInt, date, hour, spark)
 
     // ocpc部分：kvalue
     val kvalue = getKvalue(version, conversionGoal, date, hour, spark)

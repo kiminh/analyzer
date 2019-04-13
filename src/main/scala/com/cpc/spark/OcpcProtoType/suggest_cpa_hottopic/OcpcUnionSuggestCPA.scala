@@ -15,15 +15,16 @@ object OcpcUnionSuggestCPA {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
+    val hourInt = args(4).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc suggest cpa v2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
     val baseResult = getSuggestData(version, date, hour, spark)
-    val cvr1Cali = getNewCali(media, baseResult, 1, 48, date, hour, spark)
-    val cvr2Cali = getNewCali(media, baseResult, 2, 48, date, hour, spark)
-    val cvr3Cali = getNewCali(media, baseResult, 3, 48, date, hour, spark)
+    val cvr1Cali = getNewCali(media, baseResult, 1, hourInt, date, hour, spark)
+    val cvr2Cali = getNewCali(media, baseResult, 2, hourInt, date, hour, spark)
+    val cvr3Cali = getNewCali(media, baseResult, 3, hourInt, date, hour, spark)
 
     val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
 //    cvrCali.write.mode("overwrite").saveAsTable("test.check_ocpc_new_calidata20190411")
