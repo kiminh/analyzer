@@ -36,14 +36,14 @@ object toutiaosample2 {
     (x:String)=> {
       var y = ""
       x match {
-        case "0" =>  y = "美容化妆"
-        case "1" =>  y = "游戏类"
-        case "2" =>  y = "社交网络"
-        case "3" =>  y = "网上购物"
-        case "4" =>  y = "二类电商"
-        case "5" =>  y = "成人用品"
-        case "6" =>  y = "生活服务"
-        case "7" =>  y = "无"
+        case "0.0" =>  y = "美容化妆"
+        case "1.0" =>  y = "游戏类"
+        case "2.0" =>  y = "社交网络"
+        case "3.0" =>  y = "网上购物"
+        case "4.0" =>  y = "二类电商"
+        case "5.0" =>  y = "成人用品"
+        case "6.0" =>  y = "生活服务"
+        case "7.0" =>  y = "无"
 
       }
       y
