@@ -43,7 +43,6 @@ object toutiaosample2 {
         case "5" => "无"
 
       }
-      x
     }
   }
 }
