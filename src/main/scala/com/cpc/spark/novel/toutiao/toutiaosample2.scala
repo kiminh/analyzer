@@ -17,33 +17,25 @@ object toutiaosample2 {
 
     import spark.implicits._
 
-    val filename = "/home/cpc/wy/prediction.txt"
-    val path = s"/user/cpc/wy/prediction.txt"
-    val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
-    movefiletohdfs !
-    val title= spark.sparkContext.textFile(path)
-      .filter(x=>x.split("$").length>0)
-      .map(x=>x.split("$")).map(x=> Row(x(0),x(1),"GBK"))
-
-    val schema: StructType = (new StructType)
-      .add("id", StringType)
-      .add("title", StringType)
-
-    //根据rdd和schema信息创建DataFrame
-    val titleDF: DataFrame = spark.createDataFrame(title, schema)
 //    val input = spark.sparkContext.textFile("/user/cpc/wy/prediction.csv")
 //    val result = input.map{ line =>
 //      val reader = new CSVReader(new StringReader(line))
 //      reader.readNext()
 //    }
 //    println("alldata:"+result.count())
+    val df = spark.read.format("com.databricks.spark.csv")
+      .option("header", "false")
+      .option("inferSchema", "false") //是否自动推到内容的类型
+      .option("delimiter","\001")  //分隔符，默认为 ,
+      .load("/user/cpc/wy/prediction.csv")
+      df.show(50)
 
-    val resultDF= titleDF
-      .withColumn("category",convert(col("id")))
-      .select("title","category")
-
-       resultDF.show(10)
-      resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
+//    val resultDF= titleDF
+//      .withColumn("category",convert(col("id")))
+//      .select("title","category")
+//
+//       resultDF.show(10)
+//      resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
   }
 
   def convert= udf{
