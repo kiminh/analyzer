@@ -25,7 +25,8 @@ object toutiaosample2 {
     val resultDF= result.map(x => {
       (x(0).toString,x(1).toString)
     }).toDF("id", "title")
-      .withColumn("id",convert(col("id")))
+      .withColumn("category",convert(col("id")))
+      .select("title","category")
       .repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
   }
 
@@ -38,7 +39,9 @@ object toutiaosample2 {
         case "2.0" =>  y = "社交网络"
         case "3.0" =>  y = "网上购物"
         case "4.0" =>  y = "二类电商"
-        case "5.0" =>  y = "无"
+        case "5.0" =>  y = "成人用品"
+        case "6.0" =>  y = "生活服务"
+        case "7.0" =>  y = "无"
 
       }
       y
