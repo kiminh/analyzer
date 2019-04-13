@@ -41,3 +41,9 @@ report目录的趣头条版本
 
 ## model_hottopic_v3
 热点段子明投新版代码
+
+## suggest_cpa
+按转化目标过滤后计算推荐cpa
+
+## suggest_cpa_v1
+不按转化目标过滤计算推荐cpa
