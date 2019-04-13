@@ -31,7 +31,13 @@ object OcpcHourlyReport {
     println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // 拉取点击、消费、转化等基础数据
-    val baseData = getBaseData(media, date, hour, spark)
+    var isHidden = 0
+    if (version == "qtt_demo") {
+      isHidden = 0
+    } else {
+      isHidden = 1
+    }
+    val baseData = getBaseData(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 分ideaid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
@@ -398,7 +404,7 @@ object OcpcHourlyReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest).filter(s"is_hidden != 1")
+    val rawData = spark.sql(sqlRequest)
 
 
     // 关联转化表
@@ -436,7 +442,7 @@ object OcpcHourlyReport {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr", "is_hidden")
 
     resultDF.show(10)
 
