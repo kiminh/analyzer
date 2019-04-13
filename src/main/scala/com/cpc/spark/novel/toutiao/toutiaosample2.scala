@@ -17,12 +17,6 @@ object toutiaosample2 {
 
     import spark.implicits._
 
-//    val input = spark.sparkContext.textFile("/user/cpc/wy/prediction.csv")
-//    val result = input.map{ line =>
-//      val reader = new CSVReader(new StringReader(line))
-//      reader.readNext()
-//    }
-//    println("alldata:"+result.count())
     val df = spark.read.format("com.databricks.spark.csv")
       .option("header", "false")
       .option("inferSchema", "false") //是否自动推到内容的类型
@@ -30,12 +24,12 @@ object toutiaosample2 {
       .load("/user/cpc/wy/prediction.csv")
       df.show(50)
 
-//    val resultDF= titleDF
-//      .withColumn("category",convert(col("id")))
-//      .select("title","category")
-//
-//       resultDF.show(10)
-//      resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
+    val resultDF= df.select($"_c0".alias("id"),$"_c1".alias("title"))
+      .withColumn("category",convert(col("id")))
+      .select("title","category")
+
+       resultDF.show(10)
+      resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
   }
 
   def convert= udf{
