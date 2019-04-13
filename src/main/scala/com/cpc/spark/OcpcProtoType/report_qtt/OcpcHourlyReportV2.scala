@@ -5,9 +5,11 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyReport._
+import org.apache.log4j.{Level, Logger}
 
 object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     新版报表程序
     1. 从ocpc_unionlog拉取ocpc广告记录
