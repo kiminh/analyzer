@@ -91,21 +91,21 @@ object OcpcHourlyReport {
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
 
     dataUnit
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
 
 
     dataConversion
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -170,7 +170,7 @@ object OcpcHourlyReport {
       .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.2)
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
-    unitidData.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190413")
+//    unitidData.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190413")
     unitidData.createOrReplaceTempView("unitid_data")
 
     val sqlRequest2 =
