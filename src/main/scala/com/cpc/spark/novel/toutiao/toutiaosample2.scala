@@ -25,9 +25,10 @@ object toutiaosample2 {
     val resultDF= result.map(x => {
       (x(0).toString,x(1).toString)
     }).toDF("id", "title")
-      .withColumn("id",convert(col("id")))
+//      .withColumn("id",convert(col("id")))
 
     resultDF.show(10)
+    resultDF.printSchema()
 
 //      .repartition(20).write.mode("overwrite").
   }
