@@ -13,11 +13,12 @@ object OcpcUnionReport {
     val dataUnitRaw = unionDetailReport(date, hour, spark)
     // get the suggest cpa
     val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
-    println("------union detail report success---------")
-    val dataConversion = unionSummaryReport(date, hour, spark)
-    println("------union summary report success---------")
-    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-    println("------insert into mysql success----------")
+    dataUnit.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190413a")
+//    println("------union detail report success---------")
+//    val dataConversion = unionSummaryReport(date, hour, spark)
+//    println("------union summary report success---------")
+//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+//    println("------insert into mysql success----------")
   }
 
   def addSuggestCPA(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -26,16 +27,23 @@ object OcpcUnionReport {
          |SELECT
          |  identifier as unit_id,
          |  conversion_goal,
+         |  version,
          |  cpa_suggest
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_k_once
+         |  dl_cpc.ocpc_cali_detail_report_hourly
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version in ('qtt_demo', 'qtt_hidden')
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
     // 数据关联
     val result = rawData
-      .join(data, Seq("unit_id", "conversion_goal"), "left_outer")
+      .join(data, Seq("unit_id", "conversion_goal", "version"), "left_outer")
       .na.fill(0.0, Seq("cpa_suggest"))
 
     result
