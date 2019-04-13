@@ -51,8 +51,8 @@ object OcpcHourlyReport {
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 
-//    // 存储数据到mysql
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+    // 存储数据到mysql
+    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
   }
 
