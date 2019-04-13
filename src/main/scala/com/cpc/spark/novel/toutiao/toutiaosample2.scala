@@ -26,11 +26,7 @@ object toutiaosample2 {
       (x(0).toString,x(1).toString)
     }).toDF("id", "title")
       .withColumn("id",convert(col("id")))
-
-    resultDF.show(10)
-    resultDF.printSchema()
-
-//      .repartition(20).write.mode("overwrite").
+      .repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
   }
 
   def convert= udf{
