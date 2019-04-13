@@ -26,10 +26,9 @@ object OcpcSuggestKcpa {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
-    val expTag = "cpa_suggest"
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media, expTag=$expTag")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa与kvalue
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
@@ -55,8 +54,8 @@ object OcpcSuggestKcpa {
       .withColumn("version", lit(version))
 
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
-    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_suggest_cpa_k_version")
+//    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k_version")
 
 
   }
@@ -70,7 +69,7 @@ object OcpcSuggestKcpa {
     calendar.add(Calendar.DATE, -1)
     val yesterday1 = calendar.getTime
     val date1 = dateConverter.format(yesterday1)
-    val selectCondition = s"`date` = '$date1' and version = 'qtt_demo'"
+    val selectCondition = s"`date` = '$date1' and version = '$version'"
 
     val sqlRequest =
       s"""
@@ -146,7 +145,7 @@ object OcpcSuggestKcpa {
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
-      .filter(s"is_hidden = 0")
+      .filter(s"is_hidden is null or is_hidden = 0")
       .groupBy("unitid", "conversion_goal")
       .agg(sum(col("isclick")).alias("click"))
       .withColumn("identifier", col("unitid"))
