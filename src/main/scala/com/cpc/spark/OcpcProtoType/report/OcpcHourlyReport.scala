@@ -96,7 +96,7 @@ object OcpcHourlyReport {
 
     dataUnit
       .withColumn("identifier", col("unitid"))
-      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "date", "hour")
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
       .withColumn("version", lit(version))
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
 
@@ -308,7 +308,7 @@ object OcpcHourlyReport {
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "date", "hour")
+      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
 
     resultDF.show(10)
 
@@ -361,7 +361,8 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cali_value else 0 end) * 1.0 / sum(isclick) as cali_value,
          |  sum(case when isclick=1 then cali_pcvr else 0 end) * 1.0 / sum(isclick) as cali_pcvr,
          |  sum(case when isclick=1 then cali_postcvr else 0 end) * 1.0 / sum(isclick) as cali_postcvr,
-         |  sum(case when isclick=1 then smooth_factor else 0 end) * 1.0 / sum(isclick) as smooth_factor
+         |  sum(case when isclick=1 then smooth_factor else 0 end) * 1.0 / sum(isclick) as smooth_factor,
+         |  sum(cpa_suggest) * 1.0 / count(1) as cpa_suggest
          |FROM
          |  raw_data
          |GROUP BY unitid, userid, conversion_goal
@@ -402,6 +403,7 @@ object OcpcHourlyReport {
          |    cast(ocpc_log_dict['pcvr'] as double) as cali_pcvr,
          |    cast(ocpc_log_dict['postCvr'] as double) as cali_postcvr,
          |    cast(ocpc_log_dict['smoothFactor'] as double) as smooth_factor,
+         |    cast(ocpc_log_dict['CpaSuggest'] as double) as cpa_suggest,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -455,7 +457,7 @@ object OcpcHourlyReport {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest")
 
     resultDF.show(10)
 
