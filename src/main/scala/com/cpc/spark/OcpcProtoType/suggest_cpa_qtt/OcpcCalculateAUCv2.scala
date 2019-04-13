@@ -25,7 +25,7 @@ object OcpcCalculateAUCv2 {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, hourInt, version, date, hour, spark)
+    val data = getData("qtt", conversionGoal, hourInt, version, date, hour, spark)
     val tableName = "dl_cpc.ocpc_auc_raw_data"
     data
       .repartition(10).write.mode("overwrite").insertInto(tableName)

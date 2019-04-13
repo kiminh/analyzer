@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
@@ -23,7 +24,7 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, 24, version, date, hour, spark)
+    val data = getData("qtt", conversionGoal, 24, version, date, hour, spark)
 //    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
@@ -94,7 +95,7 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def getData(conversionGoal: Int, hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(media: String, conversionGoal: Int, hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -108,6 +109,11 @@ object OcpcCalculateAUC {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
+
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -125,7 +131,7 @@ object OcpcCalculateAUC {
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
          |and isclick = 1
-         |and media_appsid  in ("80000001", "80000002")
+         |and $mediaSelection
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
        """.stripMargin

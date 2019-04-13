@@ -24,7 +24,7 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(conversionGoal, 24, version, date, hour, spark)
+    val data = getData("hottopic", conversionGoal, 72, version, date, hour, spark)
 //    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
