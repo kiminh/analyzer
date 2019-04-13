@@ -56,7 +56,7 @@ object GetBaseIndex {
         |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
         |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
         |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
@@ -86,7 +86,7 @@ object GetBaseIndex {
         |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
         |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
         |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
@@ -117,7 +117,7 @@ object GetBaseIndex {
         |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
         |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
         |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
@@ -141,7 +141,7 @@ object GetBaseIndex {
         |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
         |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
         |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
@@ -175,7 +175,7 @@ object GetBaseIndex {
         |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
         |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 2) as cost_ratio,
+        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
         |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
         |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
