@@ -42,32 +42,36 @@ object OcpcLightBulb{
 
     // 抽取数据
     val cpcData = getRecommendationAd(version, date, hour, spark)
-    val ocpcData = getOcpcRecord(media, date, hour, spark)
-    val ocpcUnit = getCPAgiven(date, hour, spark)
-    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
+    val cvUnit = getCPAgiven(date, hour, spark)
+
 
     val data = cpcData
-        .join(ocpcRecord, Seq("unitid"), "outer")
-        .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
-        .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
+        .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
+        .select("unitid", "conversion_goal", "cpa1", "cpa2")
+        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
+        .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+        .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
+        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
 
     data
+      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
 
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, date, hour, spark)
-
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, date, hour, spark)
+//
     // 存入redis
-    saveDataToRedis(date, hour, spark)
+    saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
-  def getOcpcRecord(media: String, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     抽取最近三天所有广告单元的投放记录
      */
@@ -86,7 +90,7 @@ object OcpcLightBulb{
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |    unitid,
@@ -102,62 +106,30 @@ object OcpcLightBulb{
          |AND
          |    isclick = 1
        """.stripMargin
-    println(sqlRequest)
-    val rawData = spark.sql(sqlRequest).distinct()
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1).distinct()
 
-    val data = rawData
-      .filter(s"seq=1")
-      .select("unitid", "conversion_goal", "cpa_given")
-
-    val data1 = data.filter(s"conversion_goal=1").withColumn("cpa_given1", col("cpa_given")).select("unitid", "cpa_given1")
-    val data2 = data.filter(s"conversion_goal=2").withColumn("cpa_given2", col("cpa_given")).select("unitid", "cpa_given2")
-    val data3 = data.filter(s"conversion_goal=3").withColumn("cpa_given3", col("cpa_given")).select("unitid", "cpa_given3")
-
-    val cpaGivenData = data1
-        .join(data2, Seq("unitid"), "outer")
-        .join(data3, Seq("unitid"), "outer")
-        .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3")
-//        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3"))
-
-    val sqlRequets1 =
+    val sqlRequets2 =
       s"""
          |SELECT
-         |  identifier as unitid,
+         |  cast(identifier as int) as unitid,
          |  conversion_goal,
-         |  cpa_suggest * 1.0 / 100 as cpa_suggest
+         |  cpa_suggest * 1.0 / 100 as cpa2
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_k_once
+         |  dl_cpc.ocpc_suggest_cpa_k_version
+         |WHERE
+         |  version = '$version'
        """.stripMargin
-    println(sqlRequets1)
-    val suggestDataRaw = spark.sql(sqlRequets1)
-    val suggestData1 = suggestDataRaw
-      .filter(s"conversion_goal=1")
-      .withColumn("cpa_suggest1", col("cpa_suggest"))
-      .select("unitid", "cpa_suggest1")
-    val suggestData2 = suggestDataRaw
-      .filter(s"conversion_goal=2")
-      .withColumn("cpa_suggest2", col("cpa_suggest"))
-      .select("unitid", "cpa_suggest2")
-    val suggestData3 = suggestDataRaw
-      .filter(s"conversion_goal=3")
-      .withColumn("cpa_suggest3", col("cpa_suggest"))
-      .select("unitid", "cpa_suggest3")
-    val suggestData = suggestData1
-        .join(suggestData2, Seq("unitid"), "outer")
-        .join(suggestData3, Seq("unitid"), "outer")
-        .select("unitid", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
-//        .na.fill(-1, Seq("cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
+    println(sqlRequets2)
+    val suggestDataRaw = spark.sql(sqlRequets2)
 
-    val result = cpaGivenData
-        .join(suggestData, Seq("unitid"), "left_outer")
-        .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
-        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
-        .withColumn("ocpc_cpa1", when(col("cpa_given1") === -1, -1).otherwise(when(col("cpa_suggest1") === -1, 0).otherwise(col("cpa_suggest1"))))
-        .withColumn("ocpc_cpa2", when(col("cpa_given2") === -1, -1).otherwise(when(col("cpa_suggest2") === -1, 0).otherwise(col("cpa_suggest2"))))
-        .withColumn("ocpc_cpa3", when(col("cpa_given3") === -1, -1).otherwise(when(col("cpa_suggest3") === -1, 0).otherwise(col("cpa_suggest3"))))
+    val result = rawData
+        .join(suggestDataRaw, Seq("unitid", "conversion_goal"), "left_outer")
+        .select("unitid", "conversion_goal", "cpa2")
+        .na.fill(0, Seq("cpa2"))
 
     result.show(10)
-    val resultDF = result.select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+    val resultDF = result.select("unitid", "conversion_goal", "cpa2")
 
     resultDF
   }
@@ -183,9 +155,7 @@ object OcpcLightBulb{
       iterator.foreach{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
-          var key = "algorithm_unit_ocpc_" + identifier
-          val json = new JSONObject()
-          val value = json.toString
+          var key = "new_algorithm_unit_ocpc_" + identifier
           redis.del(key)
         }
       }
@@ -193,18 +163,12 @@ object OcpcLightBulb{
     })
   }
 
-  def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark
-      .table("dl_cpc.ocpc_qtt_light_control")
-      .where(s"`date`='$date' and version='qtt_demo'")
+  def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_qtt_light_control_v2")
+      .where(s"`date`='$date' and version='$version'")
       .repartition(2)
 
-    val data = rawData
-        .withColumn("cpa1", when(col("ocpc_cpa1") === -1, col("cpc_cpa1")).otherwise(col("ocpc_cpa1")))
-        .withColumn("cpa2", when(col("ocpc_cpa2") === -1, col("cpc_cpa2")).otherwise(col("ocpc_cpa2")))
-        .withColumn("cpa3", when(col("ocpc_cpa3") === -1, col("cpc_cpa3")).otherwise(col("ocpc_cpa3")))
-        .selectExpr("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3", "cast(round(cpa1, 2) as double) as cpa1", "cast(round(cpa2, 2) as double) as cpa2", "cast(round(cpa3, 2) as double) as cpa3")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_data_redis")
     data.show(10)
     data.printSchema()
     val cnt = data.count()
@@ -216,33 +180,40 @@ object OcpcLightBulb{
     println(s"host: $host")
     println(s"port: $port")
 
-    data.foreachPartition(iterator => {
-      val redis = new RedisClient(host, port)
-      redis.auth(auth)
-      iterator.foreach{
-        record => {
-          val identifier = record.getAs[Int]("unitid").toString
-          val cpa1 = record.getAs[Double]("cpa1")
-          val cpa2 = record.getAs[Double]("cpa2")
-          val cpa3 = record.getAs[Double]("cpa3")
-          println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
-          var key = "algorithm_unit_ocpc_" + identifier
-          val json = new JSONObject()
-          if (cpa1 >= 0) {
-            json.put("download_cpa", cpa1)
-          }
-          if (cpa2 >= 0) {
-            json.put("appact_cpa", cpa2)
-          }
-          if (cpa3 >= 0) {
-            json.put("formsubmit_cpa", cpa3)
-          }
-          val value = json.toString
-          redis.setex(key, 2 * 24 * 60 * 60, value)
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
         }
+        println(s"key:$key, value:$valueString")
       }
-      redis.disconnect
-    })
+    }
+
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          val valueDouble = record.getAs[Double]("cpa")
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          if (valueDouble >= 0) {
+//            var valueString = valueDouble.toString
+//            if (valueString == "0.0") {
+//              valueString = "0"
+//            }
+//            println(s"key:$key, value:$valueString")
+//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+//          }
+//        }
+//      }
+//      redis.disconnect
+//    })
   }
 
   def getRecommendationAd(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -260,7 +231,7 @@ object OcpcLightBulb{
            |select
            |    a.unitid,
            |	    a.original_conversion as conversion_goal,
-           |    a.cpa / 100.0 as cpa
+           |    a.cpa / 100.0 as cpa1
            |FROM
            |    (SELECT
            |        *
@@ -295,7 +266,7 @@ object OcpcLightBulb{
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -308,7 +279,7 @@ object OcpcLightBulb{
     val base = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .select("unitid", "userid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+      .select("unitid", "conversion_goal")
 
 
     base.createOrReplaceTempView("base_table")
@@ -317,27 +288,14 @@ object OcpcLightBulb{
       s"""
          |SELECT
          |    unitid,
-         |    userid,
-         |    conversion_goal
-         |    status
+         |    cast(conversion_goal as int) as conversion_goal
          |FROM
          |    base_table
        """.stripMargin
 
     println(sqlRequest)
 
-    val result = spark.sql(sqlRequest).select("unitid").distinct()
-    result.printSchema()
-
-    var resList = new mutable.ListBuffer[Int]()
-    for (row <- result.collect()) {
-      val unitid = row.getAs[Long]("unitid").toInt
-      resList.append(unitid)
-    }
-//    // 手动添加广告单元的灯泡逻辑
-//    resList.append(2010476)
-
-    val resultDF = resList.toDF("unitid").distinct()
+    val resultDF = spark.sql(sqlRequest).distinct()
 
     resultDF.show(10)
     resultDF
