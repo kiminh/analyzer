@@ -25,7 +25,7 @@ object toutiaosample2 {
     val resultDF= result.map(x => {
       (x(0).toString,x(1).toString)
     }).toDF("id", "title")
-//      .withColumn("id",convert(col("id")))
+      .withColumn("id",convert(col("id")))
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -37,12 +37,12 @@ object toutiaosample2 {
     (x:String)=> {
       var y = ""
       x match {
-        case "0" =>  y = "美容化妆"
-        case "1" =>  y = "游戏类"
-        case "2" =>  y = "社交网络"
-        case "3" =>  y = "游戏类"
-        case "4" =>  y = "网上购物"
-        case "5" =>  y = "无"
+        case "0.0" =>  y = "美容化妆"
+        case "1.0" =>  y = "游戏类"
+        case "2.0" =>  y = "社交网络"
+        case "3.0" =>  y = "游戏类"
+        case "4.0" =>  y = "网上购物"
+        case "5.0" =>  y = "无"
 
       }
       y
