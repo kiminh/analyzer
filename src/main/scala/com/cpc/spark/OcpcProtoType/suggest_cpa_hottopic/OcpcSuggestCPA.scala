@@ -56,7 +56,7 @@ object OcpcSuggestCPA {
     val baseData = getBaseData(media, conversionGoal, 72, date, hour, spark)
 
     // ocpc部分：kvalue
-    val kvalue = getKvalue("qtt_demo", conversionGoal, date, hour, spark)
+    val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
 
     // 模型部分
     val aucData = getAucData(version, conversionGoal, date, hour, spark)
