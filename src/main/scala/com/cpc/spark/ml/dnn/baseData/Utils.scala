@@ -190,7 +190,7 @@ object Utils {
     val acc = new LongAccumulator
     spark.sparkContext.register(acc)
 
-    # 增加推到物理机上的redis集群
+//     增加推到物理机上的redis集群
     val acc_phy = new LongAccumulator
     spark.sparkContext.register(acc_phy)
 
@@ -199,7 +199,7 @@ object Utils {
       .foreachPartition {
         p => {
           val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
-          # 物理机redis集群连接
+//          物理机redis集群连接
           val jedis_phy = new JedisCluster(new HostAndPort("192.168.86.106", 7001))
 
           p.foreach { rec =>
