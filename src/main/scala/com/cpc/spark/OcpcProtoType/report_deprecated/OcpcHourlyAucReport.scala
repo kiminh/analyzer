@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.report
+package com.cpc.spark.OcpcProtoType.report_deprecated
 
 import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
@@ -8,6 +8,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
 
+@deprecated
 object OcpcHourlyAucReport {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
@@ -74,7 +75,6 @@ object OcpcHourlyAucReport {
          |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    price
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -90,7 +90,7 @@ object OcpcHourlyAucReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val ctrData = spark.sql(sqlRequest).filter(s"is_hidden != 1")
+    val ctrData = spark.sql(sqlRequest)
 
     // cvr1Data
     val sqlRequest1 =
