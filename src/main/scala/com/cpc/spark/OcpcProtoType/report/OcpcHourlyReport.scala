@@ -170,6 +170,7 @@ object OcpcHourlyReport {
       .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.2)
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
+    unitidData.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190413")
     unitidData.createOrReplaceTempView("unitid_data")
 
     val sqlRequest2 =
