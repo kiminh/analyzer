@@ -22,7 +22,7 @@ object toutiaosample2 {
     val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
     movefiletohdfs !
     val title= spark.sparkContext.textFile(path)
-      .filter(x=>x.split("$").length>1)
+      .filter(x=>x.split("$").length>0)
       .map(x=>x.split("$")).map(x=> Row(x(0),x(1),"GBK"))
 
     val schema: StructType = (new StructType)
