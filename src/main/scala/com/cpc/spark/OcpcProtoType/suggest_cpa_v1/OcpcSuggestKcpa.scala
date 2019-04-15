@@ -24,8 +24,8 @@ object OcpcSuggestKcpa {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
-    val media = args(2).toString
-    val version = args(3).toString
+    val version = args(2).toString
+    val media = args(3).toString
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, media=$media")
