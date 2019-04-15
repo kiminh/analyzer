@@ -51,6 +51,10 @@ object OcpcLightBulb{
         .select("unitid", "conversion_goal", "cpa1", "cpa2")
         .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
         .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+
+    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_check_suggest_cpa20190415")
+
+    val resultDF = data
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
         .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
 
