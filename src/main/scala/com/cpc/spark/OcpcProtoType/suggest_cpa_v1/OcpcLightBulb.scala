@@ -34,7 +34,7 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "dl_cpc.ocpc_qtt_light_control_version"
+    val tableName = "dl_cpc.ocpc_light_control_version"
 //    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
@@ -64,7 +64,7 @@ object OcpcLightBulb{
     resultDF.show(10)
 
     resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
 
     // 清除redis里面的数据
     println(s"############## cleaning redis database ##########################")
