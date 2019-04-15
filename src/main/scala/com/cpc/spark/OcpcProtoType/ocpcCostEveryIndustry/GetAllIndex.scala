@@ -7,18 +7,20 @@ object GetAllIndex {
   def main(args: Array[String]): Unit = {
     val today = args(0).toString
     val yesterday = GetPreDate.getPreDate(today)
+    val days7ago = GetPreDate.getPreDate(today, 7)
+    println("parimeter : today = " + today + " , yesterday = " + yesterday + " , days7ago = " +days7ago)
     val spark = SparkSession.builder().appName("GetAllIndex").enableHiveSupport().getOrCreate()
     // 先获取基础数据
-    GetBaseData.getBaseData(today, yesterday, spark)
+    GetBaseData.getBaseData(today, yesterday, days7ago, spark)
     println("------- has got base data --------")
-    getAllIndex(today, yesterday, spark)
+    getAllIndex(today, yesterday, days7ago, spark)
     println("------- has got all index ----------")
   }
-  def getAllIndex(today: String, yesterday: String, spark: SparkSession): Unit ={
+  def getAllIndex(today: String, yesterday: String, days7ago: String, spark: SparkSession): Unit ={
     GetBaseIndex.getBaseIndex(today, spark).createOrReplaceTempView("base_index_table")
     GetUnitNum.getUnitNum(today, yesterday, spark).createOrReplaceTempView("unit_num_table")
     GetNewOcpcUnitNum.getNewOcpcUnitNum(today, yesterday, spark).createOrReplaceTempView("new_ocpc_unit_num_table")
-    GetYesterdayOcpcCost.getYesterdayOcpcCost(today, yesterday, spark).createOrReplaceTempView("yesterday_ocpc_cost_table")
+    GetPreOcpcCost.getYesterdayOcpcCost(today, yesterday, days7ago, spark).createOrReplaceTempView("yesterday_ocpc_cost_table")
     GetNewRecommendUnitNum.getNewRecommendUnitNum(today, spark).createOrReplaceTempView("new_recommend_unit_num_table")
 
     val sql =
@@ -32,8 +34,14 @@ object GetAllIndex {
         |    round(a.ocpc_cost, 2) as ocpc_cost,
         |    round(a.all_cost, 2) as all_cost,
         |    round(a.cost_ratio, 3) as cost_ratio,
+        |    round(d.all_cost_yesterday, 2) as all_cost_yesterday,
+        |    round(a.all_cost / d.all_cost_yesterday, 3) as all_cost_yesterday_ratio,
+        |    round(d.all_cost_days7ago, 2) as all_cost_days7ago,
+        |    round(a.all_cost / d.all_cost_days7ago, 3) as all_cost_days7ago_ratio,
         |    round(d.ocpc_cost_yesterday, 2) as ocpc_cost_yesterday,
-        |    round(a.ocpc_cost / d.ocpc_cost_yesterday, 3) as ocpc_cost_ring_ratio,
+        |    round(a.ocpc_cost / d.ocpc_cost_yesterday, 3) as ocpc_cost_yesterday_ratio,
+        |    round(d.ocpc_cost_days7ago, 2) as ocpc_cost_days7ago,
+        |    round(a.ocpc_cost / d.ocpc_cost_days7ago, 3) as ocpc_cost_days7ago_ratio,
         |    b.all_unit_yesterday,
         |    b.all_unit_today,
         |    b.ocpc_unit_yesterday,
