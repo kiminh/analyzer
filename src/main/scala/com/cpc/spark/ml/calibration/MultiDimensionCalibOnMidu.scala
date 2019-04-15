@@ -62,7 +62,7 @@ object MultiDimensionCalibOnMidu {
                  | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name = 'novel-ctr-dnn-rawid-v7-cali'
+                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
