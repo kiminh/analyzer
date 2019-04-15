@@ -229,9 +229,9 @@ object OcpcLightBulb{
     val sqlRequest =
       s"""
          |SELECT
-         |    a.unitid,
-         |    a.conversion_goal,
-         |    a.cpa * 1.0 / 100 as cpa1
+         |    unitid,
+         |    conversion_goal,
+         |    cpa * 1.0 / 100 as cpa1
          |FROM
          |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
