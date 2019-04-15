@@ -167,6 +167,7 @@ object OcpcHourlyReport {
     println(sqlRequest1)
     val unitidData = spark
       .sql(sqlRequest1)
+      .na.fill(0, Seq("conversion"))
       .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.2)
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
@@ -296,7 +297,7 @@ object OcpcHourlyReport {
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")<= 1.2, 1).otherwise(0))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")<= 1.2 && col("cvr_cnt") > 0, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))
