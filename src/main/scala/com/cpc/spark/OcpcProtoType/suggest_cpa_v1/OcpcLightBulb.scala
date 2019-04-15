@@ -56,7 +56,7 @@ object OcpcLightBulb{
 
     val resultDF = data
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
-        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
+        .select("unitid", "conversion_goal", "cpa")
 
 //    data
 //      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
