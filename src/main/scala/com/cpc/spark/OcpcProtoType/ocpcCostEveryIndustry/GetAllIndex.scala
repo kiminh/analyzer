@@ -8,6 +8,7 @@ object GetAllIndex {
     val today = args(0).toString
     val yesterday = GetPreDate.getPreDate(today)
     val days7ago = GetPreDate.getPreDate(today, 7)
+    println("parimeter : today = " + today + " , yesterday = " + yesterday + " , days7ago = " +days7ago)
     val spark = SparkSession.builder().appName("GetAllIndex").enableHiveSupport().getOrCreate()
     // 先获取基础数据
     GetBaseData.getBaseData(today, yesterday, days7ago, spark)
