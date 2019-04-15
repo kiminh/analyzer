@@ -72,7 +72,7 @@ object OcpcLightBulb{
 //    saveDataToRedis(version, date, hour, spark)
 //    println(s"############## saving redis database ##########################")
 
-    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
