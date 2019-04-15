@@ -43,8 +43,8 @@ object WriteCsv {
       .repartition(1)
       .sortBy(x => (x._2, x._1))
       .map(x => x._1)
-//    val list = data.collect()
-//    for(item <- list) println(item)
-    data.saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
+    val list = data.collect()
+    for(item <- list) println(item + " " + item.length)
+//    data.saveAsTextFile(s"/user/cpc/wentao/ocpc_cost_every_industry_report/$today")
   }
 }
