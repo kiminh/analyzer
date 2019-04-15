@@ -227,32 +227,49 @@ object OcpcLightBulb{
     val date1 = dateConverter.format(yesterday)
 
     val sqlRequest =
-        s"""
-           |select
-           |    a.unitid,
-           |	    a.original_conversion as conversion_goal,
-           |    a.cpa / 100.0 as cpa1
-           |FROM
-           |    (SELECT
-           |        *
-           |    FROM
-           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
-           |    WHERE
-           |        date = '$date'
-           |    AND
-           |        `hour` = '06'
-           |    and is_recommend = 1
-           |    and version = '$version'
-           |    and industry in ('elds', 'feedapp')) as a
-           |INNER JOIN
-           |    (
-           |        select distinct unitid, adslot_type
-           |        FROM dl_cpc.ocpc_ctr_data_hourly
-           |        where date >= '$date1'
-           |    ) as b
-           |ON
-           |    a.unitid=b.unitid
-         """.stripMargin
+      s"""
+         |SELECT
+         |    a.unitid,
+         |    a.conversion_goal,
+         |    a.cpa * 1.0 / 100 as cpa1
+         |FROM
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |    date = '$date'
+         |AND
+         |    `hour` = '06'
+         |and is_recommend = 1
+         |and version = '$version'
+         |and industry in ('elds', 'feedapp')
+       """.stripMargin
+
+//    val sqlRequest =
+//        s"""
+//           |select
+//           |    a.unitid,
+//           |	    a.original_conversion as conversion_goal,
+//           |    a.cpa / 100.0 as cpa1
+//           |FROM
+//           |    (SELECT
+//           |        *
+//           |    FROM
+//           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
+//           |    WHERE
+//           |        date = '$date'
+//           |    AND
+//           |        `hour` = '06'
+//           |    and is_recommend = 1
+//           |    and version = '$version'
+//           |    and industry in ('elds', 'feedapp')) as a
+//           |INNER JOIN
+//           |    (
+//           |        select distinct unitid, adslot_type
+//           |        FROM dl_cpc.ocpc_ctr_data_hourly
+//           |        where date >= '$date1'
+//           |    ) as b
+//           |ON
+//           |    a.unitid=b.unitid
+//         """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
 
