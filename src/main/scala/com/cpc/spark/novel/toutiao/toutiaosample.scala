@@ -30,7 +30,7 @@ object toutiaosample {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    data.write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample")
+    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample")
 
     //穿山甲dsp
     val sql2 =
@@ -45,6 +45,6 @@ object toutiaosample {
              """.stripMargin
     println(sql2)
     val data2 = spark.sql(sql2)
-    data.write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample2")
+    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample2")
   }
 }
