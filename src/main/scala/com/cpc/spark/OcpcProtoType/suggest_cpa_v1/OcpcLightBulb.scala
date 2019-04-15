@@ -58,11 +58,11 @@ object OcpcLightBulb{
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
         .select("unitid", "conversion_goal", "cpa")
 
-//    data
-//      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+    resultDF
+      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
 
 //    // 清除redis里面的数据
 //    println(s"############## cleaning redis database ##########################")
