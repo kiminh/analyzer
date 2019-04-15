@@ -172,7 +172,7 @@ object OcpcLightBulb{
 
   def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .table("dl_cpc.ocpc_qtt_light_control_v2")
+      .table("dl_cpc.ocpc_light_control_daily")
       .where(s"`date`='$date' and version='$version'")
       .repartition(2)
 
