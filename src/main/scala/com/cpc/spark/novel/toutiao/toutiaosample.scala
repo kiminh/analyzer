@@ -45,6 +45,6 @@ object toutiaosample {
              """.stripMargin
     println(sql2)
     val data2 = spark.sql(sql2)
-    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample2")
+    data2.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample2")
   }
 }
