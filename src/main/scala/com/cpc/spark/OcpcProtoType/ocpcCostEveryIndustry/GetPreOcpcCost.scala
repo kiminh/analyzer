@@ -152,7 +152,7 @@ object GetPreOcpcCost {
         |and
         |    is_api_callback = 1
         |group by
-        |    'app_api_callback''
+        |    'app_api_callback'
       """.stripMargin
     println("------ GetYesterdayOcpcCost： get api callback yesterday's ocpc cost -------")
     println(sql)
