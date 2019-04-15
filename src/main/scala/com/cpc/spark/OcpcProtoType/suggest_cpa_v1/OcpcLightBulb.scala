@@ -54,8 +54,6 @@ object OcpcLightBulb{
 
     data.show(10)
 
-//    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_check_suggest_cpa20190415")
-
     val resultDF = data
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
         .select("unitid", "conversion_goal", "cpa")
