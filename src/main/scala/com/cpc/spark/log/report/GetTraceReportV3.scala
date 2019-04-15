@@ -12,7 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.functions._
 
-
+@deprecated
 object GetTraceReportV3 {
   var mariadbUrl = ""
 
@@ -389,11 +389,7 @@ object GetTraceReportV3 {
       s"""
          |select
          |   a.searchid
-<<<<<<< HEAD
          |  , cast(a.userid as int) as user_id
-=======
-         |  , cast(a.userId as int) as user_id
->>>>>>> 31edac2609cdb334943a45e7c6a61df063d70c24
          |  , a.planid as plan_id
          |  , a.unitid as unit_id
          |  , a.ideaid as idea_id
