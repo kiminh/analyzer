@@ -68,13 +68,13 @@ object OcpcLightBulb{
     resultDF
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
 
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(version, date, hour, spark)
-//    println(s"############## saving redis database ##########################")
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, version, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
 //    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
     resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
@@ -143,11 +143,11 @@ object OcpcLightBulb{
     resultDF
   }
 
-  def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
+  def cleanRedis(tableName: String, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     将对应key的值设成空的json字符串
      */
-    val data = spark.table(tableName).repartition(2)
+    val data = spark.table(tableName).where(s"version = '$version'").repartition(2)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
