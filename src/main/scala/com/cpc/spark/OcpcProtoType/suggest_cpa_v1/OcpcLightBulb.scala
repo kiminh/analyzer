@@ -34,8 +34,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-//    val tableName = "test.ocpc_qtt_light_control20190401"
-    val tableName = "test.ocpc_qtt_light_control_version20190415"
+    val tableName = "dl_cpc.ocpc_qtt_light_control_version"
+//    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -59,13 +59,13 @@ object OcpcLightBulb{
     val resultDF = data
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
         .select("unitid", "conversion_goal", "cpa")
+        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+        .withColumn("date", lit(date))
+        .withColumn("version", lit(version))
 
     resultDF.show(10)
 
     resultDF
-      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
 
 //    // 清除redis里面的数据
@@ -76,7 +76,8 @@ object OcpcLightBulb{
 //    saveDataToRedis(version, date, hour, spark)
 //    println(s"############## saving redis database ##########################")
 
-    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
   def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
