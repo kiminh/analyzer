@@ -34,13 +34,13 @@ object recall_prepare_training_samples {
       .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$oneday")
 
     cal1.add(Calendar.DATE, -1)
-//    val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-//    getSample(spark, model_version, twoday).repartition(1000)
-//      .write
-//      .mode("overwrite")
-//      .format("tfrecords")
-//      .option("recordType", "Example")
-//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$twoday")
+    val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    getSample(spark, model_version, twoday).repartition(1000)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$twoday")
 
     cal1.add(Calendar.DATE, -1)
     val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
