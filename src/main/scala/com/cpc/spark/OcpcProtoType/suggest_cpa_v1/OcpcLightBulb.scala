@@ -25,7 +25,7 @@ object OcpcLightBulb{
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val media = args(4).toString
+    val media = args(3).toString
 
 
     val spark = SparkSession
