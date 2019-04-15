@@ -35,7 +35,7 @@ object OcpcLightBulb{
 
 
 //    val tableName = "test.ocpc_qtt_light_control20190401"
-    val tableName = "test.ocpc_qtt_light_control_version"
+    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -54,19 +54,19 @@ object OcpcLightBulb{
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
         .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
 
-    data
-      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+//    data
+//      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
 
 //    // 清除redis里面的数据
 //    println(s"############## cleaning redis database ##########################")
 //    cleanRedis(tableName, date, hour, spark)
 //
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ##########################")
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
