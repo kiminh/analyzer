@@ -32,6 +32,7 @@ object InsertReport2HdRedirectPV {
     val argDay = args(0).toString
     val argHour = args(1).toString
     val argMinute = args(2).toString
+    val eminute = args(3).toString
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
@@ -40,19 +41,32 @@ object InsertReport2HdRedirectPV {
     report2Prop.put("password", conf.getString("mariadb.report2_write.password"))
     report2Prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    val ctx = SparkSession.builder()
+    val spark = SparkSession.builder()
       .appName("InsertReport2HdRedirectPVLog date " + argDay + " ,hour " + argHour + " ,minute " + argMinute)
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
+    import spark.implicits._
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
-    var cfgLog = ctx.read
-      .parquet("/warehouse/dl_cpc.db/logparsed_cpc_cfg_minute/%s/%s/%s".format(argDay, argHour, argMinute))
+    val sql =
+      s"""
+         |select *
+         |from dl_cpc.cpc_basedata_cfg_event
+         |where day='$argDay' and hour='$argHour' and minute>='$argMinute' and minute<='$eminute'
+       """.stripMargin
+    println("sql: " + sql)
+
+    var cfgLog = spark.sql(sql)
       .as[CfgLog2]
       .rdd
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
+
+    //    var cfgLog = spark.read
+    //      .parquet("/warehouse/dl_cpc.db/logparsed_cpc_cfg_minute/%s/%s/%s".format(argDay, argHour, argMinute))
+    //      .as[CfgLog2]
+    //      .rdd
+    //      .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
     cfgLog.take(1).foreach(x => println(x))
 
@@ -78,22 +92,22 @@ object InsertReport2HdRedirectPV {
       .filter(x => x.search_timestamp > middleDate && x.search_timestamp <= endDate)
 
     //前5min cfg计算pv数写入mysql
-    writeToMysql(ctx, cfgLog1, argDay, createTime1)
+    writeToMysql(spark, cfgLog1, argDay, createTime1)
     //后5min cfg计算pv数写入mysql
-    writeToMysql(ctx, cfgLog2, argDay, createTime2)
+    writeToMysql(spark, cfgLog2, argDay, createTime2)
 
-    ctx.stop()
+    spark.stop()
 
   }
 
   /**
     * 每5min统计每个adslotid 的pv数
     *
-    * @param ctx
+    * @param spark
     * @param cfgLog cfgRDD
     * @param argDay
     */
-  def writeToMysql(ctx: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
+  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
 
     var toResult = cfgLog
       .map(x => (x.aid, 1))
@@ -105,7 +119,7 @@ object InsertReport2HdRedirectPV {
 
     println("count:" + toResult.count())
 
-    val insertDataFrame = ctx.createDataFrame(toResult).toDF("adslot_id", "date", "pv", "create_time")
+    val insertDataFrame = spark.createDataFrame(toResult).toDF("adslot_id", "date", "pv", "create_time")
 
     insertDataFrame.show(10)
 
