@@ -51,7 +51,19 @@ object InsertReport2HdRedirectPV {
 
     val sql =
       s"""
-         |select *
+         |select
+         |  , aid
+         |  , cast(search_timestamp as int) as search_timestamp
+         |  , log_type
+         |  , request_url
+         |  , resp_body
+         |  , redirect_url
+         |  , template_conf
+         |  , adslot_conf
+         |  , day as date
+         |  , hour
+         |  , ip
+         |  , ua
          |from dl_cpc.cpc_basedata_cfg_event
          |where day='$argDay' and hour='$argHour' and minute>='$argMinute' and minute<='$eminute'
        """.stripMargin
@@ -178,7 +190,7 @@ object InsertReport2HdRedirectPV {
 
   case class CfgLog2(
                       aid: String = "",
-                      search_timestamp: Long = 0,
+                      search_timestamp: Int = 0,
                       log_type: String = "", // req/tpl/hdjump
                       request_url: String = "",
                       resp_body: String = "",
