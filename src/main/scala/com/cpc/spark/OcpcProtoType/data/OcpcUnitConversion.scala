@@ -19,7 +19,7 @@ object OcpcUnitConversion {
     result
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_unit_label_cvr_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_label_cvr_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_unit_label_cvr_hourly")
   }
 
   def getLabel3(date: String, hour: String, spark: SparkSession) = {
