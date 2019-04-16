@@ -2,15 +2,16 @@ package com.cpc.spark.OcpcProtoType.ocpcCostEveryIndustry
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object GetYesterdayOcpcCost {
+object GetPreOcpcCost {
   def main(args: Array[String]): Unit = {
     val today = args(0).toString
     val yesterday = GetPreDate.getPreDate(today)
+    val days7ago = GetPreDate.getPreDate(today, 7)
     val spark = SparkSession.builder().appName("GetYesterdayOcpcCost").enableHiveSupport().getOrCreate()
-    getYesterdayOcpcCost(today, yesterday, spark)
+    getYesterdayOcpcCost(today, yesterday, days7ago, spark)
   }
 
-  def getYesterdayOcpcCost(today: String, yesterday: String, spark: SparkSession): DataFrame ={
+  def getYesterdayOcpcCost(today: String, yesterday: String, days7ago: String, spark: SparkSession): DataFrame ={
     val sql1 =
       s"""
          |select
@@ -24,10 +25,10 @@ object GetYesterdayOcpcCost {
     println(sql1)
     val baseDataDF = spark.sql(sql1)
 
-    getAllYesterdayOcpcCost(yesterday, baseDataDF, spark).createOrReplaceTempView("temp_table1")
-    getIndustryYesterdayOcpcCost(yesterday, baseDataDF, spark).createOrReplaceTempView("temp_table2")
-    getChiTuEtcYesterdayOcpcCost(yesterday, baseDataDF, spark).createOrReplaceTempView("temp_table3")
-    getApiCallBackYesterdayOcpcCost(yesterday, baseDataDF, spark).createOrReplaceTempView("temp_table4")
+    getAllYesterdayOcpcCost(yesterday, days7ago, baseDataDF, spark).createOrReplaceTempView("temp_table1")
+    getIndustryYesterdayOcpcCost(yesterday, days7ago, baseDataDF, spark).createOrReplaceTempView("temp_table2")
+    getChiTuEtcYesterdayOcpcCost(yesterday, days7ago, baseDataDF, spark).createOrReplaceTempView("temp_table3")
+    getApiCallBackYesterdayOcpcCost(yesterday, days7ago, baseDataDF, spark).createOrReplaceTempView("temp_table4")
 
     val sql2 =
       s"""
@@ -47,17 +48,18 @@ object GetYesterdayOcpcCost {
   }
 
   // 昨天整体的ocpc消费
-  def getAllYesterdayOcpcCost(yesterday: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame ={
+  def getAllYesterdayOcpcCost(yesterday: String, days7ago: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame ={
     baseDataDF.createOrReplaceTempView("base_data_table")
     val sql =
       s"""
         |select
         |    'all' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
+        |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
+        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
-        |where
-        |    dt = '$yesterday'
         |group by
         |    'all'
       """.stripMargin
@@ -68,17 +70,18 @@ object GetYesterdayOcpcCost {
   }
 
   // 昨天分行业的ocpc消费
-  def getIndustryYesterdayOcpcCost(yesterday: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
+  def getIndustryYesterdayOcpcCost(yesterday: String, days7ago: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
     baseDataDF.createOrReplaceTempView("base_data_table")
     val sql =
       s"""
         |select
         |    industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
+        |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
+        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
-        |where
-        |    dt = '$yesterday'
         |group by
         |    industry
       """.stripMargin
@@ -89,19 +92,20 @@ object GetYesterdayOcpcCost {
   }
 
   // 昨天赤兔、建站、非建站的ocpc消费
-  def getChiTuEtcYesterdayOcpcCost(yesterday: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
+  def getChiTuEtcYesterdayOcpcCost(yesterday: String, days7ago: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
     baseDataDF.createOrReplaceTempView("base_data_table")
     val sql =
       s"""
         |select
         |    (case when siteid > 0 then 'elds_jianzhan'
         |          else 'elds_notjianzhan' end) as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
+        |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
+        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
-        |    dt = '$yesterday'
-        |and
         |    industry = 'elds'
         |group by
         |    (case when siteid > 0 then 'elds_jianzhan'
@@ -111,12 +115,13 @@ object GetYesterdayOcpcCost {
         |
         |select
         |    'elds_chitu' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
+        |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
+        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
-        |    dt = '$yesterday'
-        |and
         |    industry = 'elds'
         |and
         |    siteid > 5000000
@@ -130,18 +135,19 @@ object GetYesterdayOcpcCost {
   }
 
   // 昨天app的 api_callback 的ocpc消费
-  def getApiCallBackYesterdayOcpcCost(yesterday: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
+  def getApiCallBackYesterdayOcpcCost(yesterday: String, days7ago: String, baseDataDF: DataFrame, spark: SparkSession): DataFrame = {
     baseDataDF.createOrReplaceTempView("base_data_table")
     val sql =
       s"""
         |select
         |    'app_api_callback' as industry,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
+        |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
+        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
-        |    dt = '$yesterday'
-        |and
         |    industry = 'app'
         |and
         |    is_api_callback = 1

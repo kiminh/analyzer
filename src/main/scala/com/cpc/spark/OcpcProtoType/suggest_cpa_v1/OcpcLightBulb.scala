@@ -25,7 +25,7 @@ object OcpcLightBulb{
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val media = args(4).toString
+    val media = args(3).toString
 
 
     val spark = SparkSession
@@ -34,8 +34,8 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-//    val tableName = "test.ocpc_qtt_light_control20190401"
-    val tableName = "test.ocpc_qtt_light_control_version"
+    val tableName = "dl_cpc.ocpc_light_control_version"
+//    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -51,24 +51,31 @@ object OcpcLightBulb{
         .select("unitid", "conversion_goal", "cpa1", "cpa2")
         .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
         .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+
+    data.show(10)
+
+    val resultDF = data
         .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
-        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
+        .select("unitid", "conversion_goal", "cpa")
+        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+        .withColumn("date", lit(date))
+        .withColumn("version", lit(version))
 
-    data
-      .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+    resultDF.show(10)
 
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
+    resultDF
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, version, date, hour, spark)
+
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ##########################")
 
-    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
   def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -134,11 +141,11 @@ object OcpcLightBulb{
     resultDF
   }
 
-  def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
+  def cleanRedis(tableName: String, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     将对应key的值设成空的json字符串
      */
-    val data = spark.table(tableName).repartition(2)
+    val data = spark.table(tableName).where(s"version = '$version'").repartition(2)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
@@ -165,7 +172,7 @@ object OcpcLightBulb{
 
   def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .table("dl_cpc.ocpc_qtt_light_control_v2")
+      .table("dl_cpc.ocpc_light_control_daily")
       .where(s"`date`='$date' and version='$version'")
       .repartition(2)
 
@@ -180,40 +187,40 @@ object OcpcLightBulb{
     println(s"host: $host")
     println(s"port: $port")
 
-    for (record <- data.collect()) {
-      val identifier = record.getAs[Int]("unitid").toString
-      val valueDouble = record.getAs[Double]("cpa")
-      var key = "new_algorithm_unit_ocpc_" + identifier
-      if (valueDouble >= 0) {
-        var valueString = valueDouble.toString
-        if (valueString == "0.0") {
-          valueString = "0"
-        }
-        println(s"key:$key, value:$valueString")
-      }
-    }
-
-
-//    data.foreachPartition(iterator => {
-//      val redis = new RedisClient(host, port)
-//      redis.auth(auth)
-//      iterator.foreach{
-//        record => {
-//          val identifier = record.getAs[Int]("unitid").toString
-//          val valueDouble = record.getAs[Double]("cpa")
-//          var key = "new_algorithm_unit_ocpc_" + identifier
-//          if (valueDouble >= 0) {
-//            var valueString = valueDouble.toString
-//            if (valueString == "0.0") {
-//              valueString = "0"
-//            }
-//            println(s"key:$key, value:$valueString")
-//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
-//          }
+//    for (record <- data.collect()) {
+//      val identifier = record.getAs[Int]("unitid").toString
+//      val valueDouble = record.getAs[Double]("cpa")
+//      var key = "new_algorithm_unit_ocpc_" + identifier
+//      if (valueDouble >= 0) {
+//        var valueString = valueDouble.toString
+//        if (valueString == "0.0") {
+//          valueString = "0"
 //        }
+//        println(s"key:$key, value:$valueString")
 //      }
-//      redis.disconnect
-//    })
+//    }
+
+
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          val valueDouble = record.getAs[Double]("cpa")
+          var key = "new_algorithm_unit_ocpc_" + identifier
+          if (valueDouble >= 0) {
+            var valueString = valueDouble.toString
+            if (valueString == "0.0") {
+              valueString = "0"
+            }
+            println(s"key:$key, value:$valueString")
+            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+          }
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def getRecommendationAd(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -227,32 +234,49 @@ object OcpcLightBulb{
     val date1 = dateConverter.format(yesterday)
 
     val sqlRequest =
-        s"""
-           |select
-           |    a.unitid,
-           |	    a.original_conversion as conversion_goal,
-           |    a.cpa / 100.0 as cpa1
-           |FROM
-           |    (SELECT
-           |        *
-           |    FROM
-           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
-           |    WHERE
-           |        date = '$date'
-           |    AND
-           |        `hour` = '06'
-           |    and is_recommend = 1
-           |    and version = '$version'
-           |    and industry in ('elds', 'feedapp')) as a
-           |INNER JOIN
-           |    (
-           |        select distinct unitid, adslot_type
-           |        FROM dl_cpc.ocpc_ctr_data_hourly
-           |        where date >= '$date1'
-           |    ) as b
-           |ON
-           |    a.unitid=b.unitid
-         """.stripMargin
+      s"""
+         |SELECT
+         |    unitid,
+         |    conversion_goal,
+         |    cpa * 1.0 / 100 as cpa1
+         |FROM
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |    date = '$date'
+         |AND
+         |    `hour` = '06'
+         |and is_recommend = 1
+         |and version = '$version'
+         |and industry in ('elds', 'feedapp')
+       """.stripMargin
+
+//    val sqlRequest =
+//        s"""
+//           |select
+//           |    a.unitid,
+//           |	    a.original_conversion as conversion_goal,
+//           |    a.cpa / 100.0 as cpa1
+//           |FROM
+//           |    (SELECT
+//           |        *
+//           |    FROM
+//           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
+//           |    WHERE
+//           |        date = '$date'
+//           |    AND
+//           |        `hour` = '06'
+//           |    and is_recommend = 1
+//           |    and version = '$version'
+//           |    and industry in ('elds', 'feedapp')) as a
+//           |INNER JOIN
+//           |    (
+//           |        select distinct unitid, adslot_type
+//           |        FROM dl_cpc.ocpc_ctr_data_hourly
+//           |        where date >= '$date1'
+//           |    ) as b
+//           |ON
+//           |    a.unitid=b.unitid
+//         """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
 

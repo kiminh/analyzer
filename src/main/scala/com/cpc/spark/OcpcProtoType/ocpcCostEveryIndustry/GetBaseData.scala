@@ -7,11 +7,12 @@ object GetBaseData {
   def main(args: Array[String]): Unit = {
     val today = args(0).toString
     val yesterday = GetPreDate.getPreDate(today)
+    val days7ago = GetPreDate.getPreDate(today, 7)
     val spark = SparkSession.builder().appName("GetBaseData").enableHiveSupport().getOrCreate()
-    getBaseData(today, yesterday, spark)
+    getBaseData(today, yesterday, days7ago, spark)
     println("------ has got base data -------")
   }
-  def getBaseData(today: String, yesterday: String, spark: SparkSession): Unit ={
+  def getBaseData(today: String, yesterday: String, days7ago: String, spark: SparkSession): Unit ={
     val sql =
       s"""
         |select
@@ -30,7 +31,7 @@ object GetBaseData {
         |from
         |    dl_cpc.ocpc_base_unionlog
         |where
-        |    `date` between '$yesterday' and '$today'
+        |    `date` in ('$days7ago', '$yesterday', '$today')
         |and
         |    media_appsid  in ("80000001", "80000002")
         |and

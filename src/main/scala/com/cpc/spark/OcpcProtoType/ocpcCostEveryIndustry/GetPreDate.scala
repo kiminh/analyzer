@@ -9,7 +9,7 @@ object GetPreDate {
     val today = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -n)
     val yesterday = sdf.format(calendar.getTime)
     yesterday
   }
