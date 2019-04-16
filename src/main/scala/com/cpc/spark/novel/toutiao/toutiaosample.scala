@@ -18,7 +18,7 @@ object toutiaosample {
          |  (select title,description,ButtonText,row_number() over(partition by title order by description) rk
          |      from
          |      (select distinct title,description,ButtonText from dl_cpc.cpc_midu_toutiao_log
-         |       where `date` > date_add('$date', 30)
+         |       where `date` > date_sub('$date', 30)
          |       ) a
          |   ) b
          |   where rk<10
