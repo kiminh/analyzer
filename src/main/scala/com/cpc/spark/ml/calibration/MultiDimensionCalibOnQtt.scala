@@ -85,7 +85,7 @@ object MultiDimensionCalibOnQtt {
     keygroup.write.mode("overwrite").saveAsTable("test.calikeyqtt")
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
+      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
       .filter("count3>50000")
 
     unionLogToConfig(data.rdd, session, softMode,calimodelname)
@@ -105,8 +105,8 @@ object MultiDimensionCalibOnQtt {
         isClick = x.getInt(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(6)
-      val group = x.getString(7)
+      val model = x.getString(5)
+      val group = x.getString(6)
       val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
