@@ -6,8 +6,7 @@ import java.util.{Calendar, Properties}
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
 /**
   * 每5min统计每个adslotid 的pv数
@@ -45,6 +44,7 @@ object InsertReport2HdRedirectPV2 {
       .appName("InsertReport2HdRedirectPVLog date " + argDay + " ,hour " + argHour + " ,minute " + argMinute)
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
@@ -90,14 +90,10 @@ object InsertReport2HdRedirectPV2 {
 
 
     val cfgLog1 = spark.sql(sql).repartition(100)
-      .as[CfgLog2]
-      .rdd
-      .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
+      .filter($"log_type" === "/hdjump" || $"log_type" === "/reqhd")
 
     val cfgLog2 = spark.sql(sql2).repartition(100)
-      .as[CfgLog2]
-      .rdd
-      .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
+      .filter($"log_type" === "/hdjump" || $"log_type" === "/reqhd")
 
 
     println("cfgLog1 count: " + cfgLog1.count())
@@ -133,10 +129,11 @@ object InsertReport2HdRedirectPV2 {
     * @param cfgLog cfgRDD
     * @param argDay
     */
-  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
+  def writeToMysql(spark: SparkSession, cfgLog: Dataset[Row], argDay: String, createTime: String): Unit = {
 
     var toResult = cfgLog
-      .map(x => (x.aid, 1))
+      .rdd
+      .map { x =>(x.getAs[String]("aid"), 1)}
       .reduceByKey((x, y) => x + y)
       .map {
         case (adslotId, count) =>
@@ -202,19 +199,5 @@ object InsertReport2HdRedirectPV2 {
   }
 
 
-  case class CfgLog2(
-                      aid: String = "",
-                      search_timestamp: Int = 0,
-                      log_type: String = "", // req/tpl/hdjump
-                      request_url: String = "",
-                      resp_body: String = "",
-                      redirect_url: String = "",
-                      template_conf: String = "",
-                      adslot_conf: String = "",
-                      date: String = "",
-                      hour: String = "",
-                      ip: String = "",
-                      ua: String = ""
-                    )
 
 }
