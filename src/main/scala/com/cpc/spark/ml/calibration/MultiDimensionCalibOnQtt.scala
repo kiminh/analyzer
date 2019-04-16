@@ -78,18 +78,20 @@ object MultiDimensionCalibOnQtt {
 
     val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
       .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .withColumn("num",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
       .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
         .otherwise(col("group")))
+      .withColumn("num",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
       .withColumn("group",when(col("count2") < 100000,col("ideaid"))
         .otherwise(col("group")))
-      .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
+//      .select("user_req_ad_num","adslot_id","ideaid","group","num").distinct()
     keygroup.write.mode("overwrite").saveAsTable("test.calikeyqtt")
 
-    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
-      .filter("count3>50000")
-
-    unionLogToConfig(data.rdd, session, softMode,calimodelname)
+//    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+//      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","num")
+//      .filter("num>50000")
+//
+//    unionLogToConfig(data.rdd, session, softMode,calimodelname)
   }
 
 
