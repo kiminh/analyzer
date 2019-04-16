@@ -64,7 +64,7 @@ object MultiDimensionCalibOnQtt {
                  | from dl_cpc.cpc_basedata_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
-                 | and ctr_model_name = $modelname
+                 | and ctr_model_name = '$modelname'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
        """.stripMargin
     println(s"sql:\n$sql")
