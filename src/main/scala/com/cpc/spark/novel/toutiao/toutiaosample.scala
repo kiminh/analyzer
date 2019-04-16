@@ -2,10 +2,6 @@ package com.cpc.spark.novel.toutiao
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import com.cpc.spark.streaming.tools.Gzip.decompress
-import com.alibaba.fastjson.{JSON, JSONArray, JSONObject}
-import scala.collection.JavaConversions._
-import scala.collection.mutable
 
 object toutiaosample {
   def main(args: Array[String]): Unit = {
