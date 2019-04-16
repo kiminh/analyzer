@@ -64,6 +64,7 @@ object MultiDimensionCalibOnMidu {
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
                  | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
