@@ -12,7 +12,6 @@ jars=(
 
 date=$1
 hour=$2
-conversionGoal=$3
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
