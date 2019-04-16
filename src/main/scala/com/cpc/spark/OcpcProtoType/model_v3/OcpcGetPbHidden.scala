@@ -70,11 +70,9 @@ object OcpcGetPbHidden {
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
 //    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
     val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
-//    val kvalue2 = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
-//    val kvalue = setKvalueByUnitid(kvalue2, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
-      .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
+      .withColumn("cvrcnt", lit(0))
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
