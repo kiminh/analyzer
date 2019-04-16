@@ -81,7 +81,7 @@ object MultiDimensionCalibOnQtt {
       .withColumn("num",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
       .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
         .otherwise(col("group")))
-      .withColumn("num",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
+      .withColumn("num",when(col("count2") < 100000,col("count3")).otherwise(col("num")))
       .withColumn("group",when(col("count2") < 100000,col("ideaid"))
         .otherwise(col("group")))
       .select("user_req_ad_num","adslot_id","ideaid","group","count1","count2","count3","num").distinct()
