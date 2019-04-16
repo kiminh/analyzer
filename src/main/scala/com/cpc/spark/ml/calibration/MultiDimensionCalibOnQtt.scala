@@ -88,7 +88,7 @@ object MultiDimensionCalibOnQtt {
     keygroup.write.mode("overwrite").saveAsTable("test.calikeyqtt")
 
     val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
+      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","num")
       .filter("num>50000")
 
     unionLogToConfig(data.rdd, session, softMode,calimodelname)
