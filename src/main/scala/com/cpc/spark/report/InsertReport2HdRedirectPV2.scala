@@ -79,7 +79,7 @@ object InsertReport2HdRedirectPV2 {
          |, redirect_url
          |, template_conf
          |, adslot_conf
-         |, date as date
+         |, day as date
          |, hour
          |, ip
          |, ua
