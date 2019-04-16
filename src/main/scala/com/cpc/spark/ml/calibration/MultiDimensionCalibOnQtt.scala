@@ -102,7 +102,7 @@ object MultiDimensionCalibOnQtt {
     val result = log.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
-        isClick = x.getInt(3).toDouble
+        isClick = x.getLong(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
       val model = x.getString(5)
