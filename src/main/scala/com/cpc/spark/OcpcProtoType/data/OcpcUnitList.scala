@@ -19,7 +19,7 @@ object OcpcUnitList {
     val unitList = getOcpcUnit(date, hour, spark)
     unitList.write.mode("overwrite").saveAsTable("test.ocpc_unit_list_hourly")
 //    unitList
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_given_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_list_hourly")
   }
 
   def getOcpcUnit(date: String, hour: String, spark: SparkSession) = {
@@ -27,7 +27,7 @@ object OcpcUnitList {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, DATE(last_ocpc_opentime) as ocpc_last_open_date, HOUR(last_ocpc_opentime) as ocpc_last_open_hour, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select id, user_id, target_medias, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, DATE_FORMAT(last_ocpc_opentime, \"%Y-%m-%d\") as ocpc_last_open_date, DATE_FORMAT(last_ocpc_opentime,\"%H\") as ocpc_last_open_hour, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -40,7 +40,7 @@ object OcpcUnitList {
     val base = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .select("unitid", "userid", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "ocpc_last_open_date", "ocpc_last_open_hour", "status")
+      .select("unitid", "userid", "target_medias", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "ocpc_last_open_date", "ocpc_last_open_hour", "status")
 
     base.createOrReplaceTempView("base_data")
 
@@ -49,14 +49,15 @@ object OcpcUnitList {
          |SELECT
          |    unitid,
          |    userid,
+         |    target_medias,
          |    ocpc_bid as cpa_given,
          |    cast(conversion_goal as int) as conversion_goal,
          |    ocpc_bid_update_time as update_timestamp,
          |    from_unixtime(ocpc_bid_update_time) as update_time,
          |    from_unixtime(ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
          |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour,
-         |    ocpc_last_open_date,
-         |    ocpc_last_open_hour,
+         |    cast(ocpc_last_open_date as string) as ocpc_last_open_date,
+         |    cast(ocpc_last_open_hour as string) as ocpc_last_open_hour,
          |    status
          |FROM
          |    base_data
