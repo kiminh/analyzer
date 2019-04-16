@@ -55,8 +55,8 @@ object OcpcGetPbHidden {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -68,7 +68,7 @@ object OcpcGetPbHidden {
     3. 计算k
      */
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
-    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
+//    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
     val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
 //    val kvalue2 = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 //    val kvalue = setKvalueByUnitid(kvalue2, mediaSelection, conversionGoal, version, date, hour, spark)
@@ -460,81 +460,81 @@ object OcpcGetPbHidden {
   }
 
 
-  def getOcpcCVR(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
-    /*
-    根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
-     */
-    // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
-
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val startdate = calendar.getTime
-    val date1 = dateConverter.format(startdate)
-    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
-
-    val sqlRequestOcpcRecord =
-      s"""
-         |SELECT
-         |  searchid,
-         |  cast(unitid as string) identifier,
-         |  isclick,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) is_hidden
-         |FROM
-         |  dl_cpc.ocpc_filter_unionlog
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  $mediaSelection
-         |AND
-         |  is_ocpc=1
-       """.stripMargin
-    println(sqlRequestOcpcRecord)
-    val ocpcUnionlog = spark
-      .sql(sqlRequestOcpcRecord)
-      .filter(s"is_hidden != 1")
-      .filter("isclick=1")
-      .select("searchid", "identifier")
-
-    // cvr data
-    // 抽取数据
-    val sqlRequest =
-    s"""
-       |SELECT
-       |  searchid,
-       |  label
-       |FROM
-       |  dl_cpc.ocpc_label_cvr_hourly
-       |WHERE
-       |  ($selectCondition)
-       |AND
-       |  (cvr_goal = '$cvrGoal')
-       """.stripMargin
-    println(sqlRequest)
-    val rawCvr = spark.sql(sqlRequest)
-
-    // 数据汇总
-    val resultDF = ocpcUnionlog
-      .join(rawCvr, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
-      .agg(sum(col("label")).alias("cvrcnt"))
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .na.fill(0, Seq("cvrcnt"))
-      .select("identifier", "cvrcnt", "conversion_goal")
-
-    resultDF
-  }
+//  def getOcpcCVR(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+//    /*
+//    根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
+//     */
+//    // cvr 分区
+//    var cvrGoal = ""
+//    if (conversionGoal == 1) {
+//      cvrGoal = "cvr1"
+//    } else if (conversionGoal == 2) {
+//      cvrGoal = "cvr2"
+//    } else {
+//      cvrGoal = "cvr3"
+//    }
+//
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -7)
+//    val startdate = calendar.getTime
+//    val date1 = dateConverter.format(startdate)
+//    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+//
+//    val sqlRequestOcpcRecord =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  cast(unitid as string) identifier,
+//         |  isclick,
+//         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) is_hidden
+//         |FROM
+//         |  dl_cpc.ocpc_filter_unionlog
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  $mediaSelection
+//         |AND
+//         |  is_ocpc=1
+//       """.stripMargin
+//    println(sqlRequestOcpcRecord)
+//    val ocpcUnionlog = spark
+//      .sql(sqlRequestOcpcRecord)
+//      .filter(s"is_hidden != 1")
+//      .filter("isclick=1")
+//      .select("searchid", "identifier")
+//
+//    // cvr data
+//    // 抽取数据
+//    val sqlRequest =
+//    s"""
+//       |SELECT
+//       |  searchid,
+//       |  label
+//       |FROM
+//       |  dl_cpc.ocpc_label_cvr_hourly
+//       |WHERE
+//       |  ($selectCondition)
+//       |AND
+//       |  (cvr_goal = '$cvrGoal')
+//       """.stripMargin
+//    println(sqlRequest)
+//    val rawCvr = spark.sql(sqlRequest)
+//
+//    // 数据汇总
+//    val resultDF = ocpcUnionlog
+//      .join(rawCvr, Seq("searchid"), "left_outer")
+//      .groupBy("identifier")
+//      .agg(sum(col("label")).alias("cvrcnt"))
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .na.fill(0, Seq("cvrcnt"))
+//      .select("identifier", "cvrcnt", "conversion_goal")
+//
+//    resultDF
+//  }
 
 }
 
