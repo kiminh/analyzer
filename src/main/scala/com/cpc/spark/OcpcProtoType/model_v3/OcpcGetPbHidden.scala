@@ -44,9 +44,7 @@ object OcpcGetPbHidden {
       mediaSelection = s"media_appsid = '80002819'"
     }
 
-//    // 明投：可以有重复identifier
-//    dl_cpc.ocpc_pb_result_hourly_v2
-//    dl_cpc.ocpc_prev_pb_once
+    // 明投：可以有重复identifier
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
     val resultDF = result
         .withColumn("cpagiven", lit(1))
