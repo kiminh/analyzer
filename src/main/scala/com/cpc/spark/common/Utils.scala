@@ -120,6 +120,15 @@ object Utils {
       s"or (day > '$startDate' and day < '$endDate'))"
   }
 
+  def getTimeRangeSql_3(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(dt = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
+    }
+    return s"((dt = '$startDate' and hour >= '$startHour') " +
+      s"or (dt = '$endDate' and hour <= '$endHour') " +
+      s"or (dt > '$startDate' and dt < '$endDate'))"
+  }
+
   def djb2Hash(str: String): ULong = {
     var hash = new ULong(5381)
     str.foreach(c => {

@@ -51,7 +51,7 @@ object MultiDimensionCalibOnQtt {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = Utils.getTimeRangeSql_2(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
