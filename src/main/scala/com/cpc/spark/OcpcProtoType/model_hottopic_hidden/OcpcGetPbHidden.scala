@@ -21,8 +21,6 @@ object OcpcGetPbHidden {
     double cpagiven = 4;
     int64 cvrcnt = 5;
     对于明投广告，cpagiven=1， cvrcnt使用ocpc广告记录进行关联，k需要进行计算，每个conversiongoal都需要进行计算
-
-
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
