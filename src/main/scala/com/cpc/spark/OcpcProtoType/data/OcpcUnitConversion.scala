@@ -17,8 +17,8 @@ object OcpcUnitConversion {
 
     val result = cv1.union(cv2).union(cv3)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_unit_label_cvr_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_label_cvr_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_unit_label_cvr_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_label_cvr_hourly")
     println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
   }
 
