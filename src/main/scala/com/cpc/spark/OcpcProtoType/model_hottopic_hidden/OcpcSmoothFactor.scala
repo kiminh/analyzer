@@ -58,7 +58,7 @@ object OcpcSmoothFactor{
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
+        .withColumn("version", lit(saveVersion))
 
     resultDF.show()
 
