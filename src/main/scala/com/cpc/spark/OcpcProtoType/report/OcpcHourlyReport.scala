@@ -41,12 +41,12 @@ object OcpcHourlyReport {
 
     // 分ideaid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
-    val dataUnit = getDataByUnit(rawDataUnit, date, hour, spark)
+    val dataUnit = getDataByUnit(rawDataUnit, version, date, hour, spark)
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
@@ -108,7 +108,7 @@ object OcpcHourlyReport {
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
-  def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -118,7 +118,7 @@ object OcpcHourlyReport {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_summary_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version='qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version='$version'")
       .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
     // 计算报表数据
@@ -276,7 +276,7 @@ object OcpcHourlyReport {
     resultDF
   }
 
-  def getDataByUnit(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByUnit(rawData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -286,7 +286,7 @@ object OcpcHourlyReport {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_detail_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version = 'qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version = '$version'")
       .withColumn("unitid", col("identifier"))
       .selectExpr("cast(unitid as int) unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
