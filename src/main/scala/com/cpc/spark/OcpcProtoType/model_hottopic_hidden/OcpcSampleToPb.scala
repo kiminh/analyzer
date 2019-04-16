@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_hottopic_v3
+package com.cpc.spark.OcpcProtoType.model_hottopic_hidden
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
