@@ -4,7 +4,6 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{CfgLog, LogParser}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
@@ -51,7 +50,19 @@ object InsertReport2HdRedirectPV2 {
 
     val sql =
       s"""
-         |select *
+         |select
+         |  aid
+         |, search_timestamp
+         |, log_type
+         |, request_url
+         |, resp_body
+         |, redirect_url
+         |, template_conf
+         |, adslot_conf
+         |, day as date
+         |, hour
+         |, ip
+         |, ua
          |from dl_cpc.cpc_basedata_cfg_event_test
          |where day='$argDay' and hour='$argHour' and (minute between $argMinute and %s)
        """.stripMargin.format(argMinute.toInt + 4)
@@ -59,7 +70,19 @@ object InsertReport2HdRedirectPV2 {
 
     val sql2 =
       s"""
-         |select *
+         |select
+         |  aid
+         |, search_timestamp
+         |, log_type
+         |, request_url
+         |, resp_body
+         |, redirect_url
+         |, template_conf
+         |, adslot_conf
+         |, date as date
+         |, hour
+         |, ip
+         |, ua
          |from dl_cpc.cpc_basedata_cfg_event_test
          |where day='$argDay' and hour='$argHour' and (minute between %s and $eminute)
        """.stripMargin.format(argMinute.toInt + 5)
@@ -67,19 +90,13 @@ object InsertReport2HdRedirectPV2 {
 
 
     val cfgLog1 = spark.sql(sql).repartition(100)
+      .as[CfgLog2]
       .rdd
-      .map { x =>
-        val raw = x.getAs[String]("raw")
-        LogParser.parseCfgLog_v2(raw)
-      }
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
     val cfgLog2 = spark.sql(sql2).repartition(100)
+      .as[CfgLog2]
       .rdd
-      .map { x =>
-        val raw = x.getAs[String]("raw")
-        LogParser.parseCfgLog_v2(raw)
-      }
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
 
@@ -116,7 +133,7 @@ object InsertReport2HdRedirectPV2 {
     * @param cfgLog cfgRDD
     * @param argDay
     */
-  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog], argDay: String, createTime: String): Unit = {
+  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
 
     var toResult = cfgLog
       .map(x => (x.aid, 1))
