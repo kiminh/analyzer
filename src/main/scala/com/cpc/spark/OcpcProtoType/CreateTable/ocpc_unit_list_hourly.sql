@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_unit_list_hourly
 (
-    unitid                  bigint
-    userid                  bigint
+    unitid                  bigint,
+    userid                  bigint,
     target_medias           string,
     cpa_given               bigint,
     conversion_goal         int,

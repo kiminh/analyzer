@@ -17,9 +17,9 @@ object OcpcUnitList {
 
     // 链接adv数据库
     val unitList = getOcpcUnit(date, hour, spark)
-    unitList.write.mode("overwrite").saveAsTable("test.ocpc_unit_list_hourly")
-//    unitList
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_list_hourly")
+//    unitList.write.mode("overwrite").saveAsTable("test.ocpc_unit_list_hourly")
+    unitList
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_list_hourly")
   }
 
   def getOcpcUnit(date: String, hour: String, spark: SparkSession) = {
