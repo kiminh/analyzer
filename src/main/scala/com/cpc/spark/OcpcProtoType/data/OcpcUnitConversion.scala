@@ -38,6 +38,7 @@ object OcpcUnitConversion {
          |and access_channel="site"
          |and a in ('ctsite_form', 'site_form')
          |and (adclass like '134%' or adclass like '107%')
+         |and adslot_type != 7
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
@@ -55,6 +56,8 @@ object OcpcUnitConversion {
          |  $selectCondition
          |AND
          |  label=1
+         |AND
+         |  adslot_type != 7
          |AND
          |  (adclass like '134%' or adclass like '107%')
        """.stripMargin
@@ -90,6 +93,8 @@ object OcpcUnitConversion {
          |  $selectCondition
          |AND
          |  label=1
+         |AND
+         |  adslot_type != 7
          |GROUP BY searchid, unitid, planid, userid
        """.stripMargin
 
