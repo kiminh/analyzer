@@ -55,7 +55,7 @@ object InsertReport2HdRedirectPV {
          |from dl_cpc.cpc_basedata_cfg_log
          |where day='$argDay' and hour='$argHour' and (minute between '$argMinute' and '$eminute')
        """.stripMargin
-    println("sql: " + sql)
+    println("sql: " + sql, "count1: " + spark.sql(sql).count())
 
     val cfgLog = spark.sql(sql).repartition(1000)
       .rdd
@@ -71,6 +71,7 @@ object InsertReport2HdRedirectPV {
     //      .rdd
     //      .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
+    println("count2: " + cfgLog.count())
     cfgLog.take(1).foreach(x => println(x))
 
 
