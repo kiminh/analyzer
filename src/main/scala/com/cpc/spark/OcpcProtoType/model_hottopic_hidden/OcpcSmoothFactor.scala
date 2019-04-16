@@ -51,6 +51,8 @@ object OcpcSmoothFactor{
     } else {
       conversionGoal = 3
     }
+
+    val saveVersion = version + "_" + hourInt.toString
     val resultDF = result
         .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
@@ -61,8 +63,8 @@ object OcpcSmoothFactor{
     resultDF.show()
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
   }
 
 
