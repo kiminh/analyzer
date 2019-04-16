@@ -33,7 +33,7 @@ object toutiaosample {
       s"""
          |SELECT
          |distinct
-         |adid, adsrc, title
+         |adid, title
          |FROM dl_cpc.slim_union_log
          |WHERE dt= '$date' and adid != '' and adsrc = 22
          |and media_appsid in ("80001098", "80001292")
