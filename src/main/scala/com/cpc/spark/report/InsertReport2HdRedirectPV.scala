@@ -178,7 +178,7 @@ object InsertReport2HdRedirectPV {
 
   case class CfgLog2(
                       aid: String = "",
-                      search_timestamp: Int = 0,
+                      search_timestamp: Long = 0,
                       log_type: String = "", // req/tpl/hdjump
                       request_url: String = "",
                       resp_body: String = "",
