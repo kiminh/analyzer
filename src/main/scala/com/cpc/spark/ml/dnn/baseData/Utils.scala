@@ -222,7 +222,7 @@ object Utils {
 
     val total_num_phy = acc_phy.count
     val fail_num_phy = acc_phy.sum
-    val ratio_phy = total_num_phy / fail_num_phy
+    val ratio_phy = fail_num_phy / total_num_phy
     println(s"----- cluster -----")
     println(s"Total num = $total_num_phy, Fail num = $fail_num_phy, Fail ratio = $ratio_phy")
     println("---------------------")
