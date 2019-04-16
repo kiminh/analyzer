@@ -4,6 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.log.parser.{CfgLog, LogParser}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
@@ -45,33 +46,23 @@ object InsertReport2HdRedirectPV {
       .appName("InsertReport2HdRedirectPVLog date " + argDay + " ,hour " + argHour + " ,minute " + argMinute)
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     val sql =
       s"""
-         |select
-         |    aid
-         |  , cast(search_timestamp as int) as search_timestamp
-         |  , log_type
-         |  , request_url
-         |  , resp_body
-         |  , redirect_url
-         |  , template_conf
-         |  , adslot_conf
-         |  , day as date
-         |  , hour
-         |  , ip
-         |  , ua
-         |from dl_cpc.cpc_basedata_cfg_event
-         |where day='$argDay' and hour='$argHour' and minute>='$argMinute' and minute<='$eminute'
+         |select raw
+         |from dl_cpc.cpc_basedata_cfg_log
+         |where day='$argDay' and hour='$argHour' and (minute between '$argMinute' and '$eminute')
        """.stripMargin
     println("sql: " + sql)
 
-    var cfgLog = spark.sql(sql)
-      .as[CfgLog2]
+    val cfgLog = spark.sql(sql).repartition(1000)
       .rdd
+      .map { x =>
+        val raw = x.getAs[String]("raw")
+        LogParser.parseCfgLog_v2(raw)
+      }
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
     //    var cfgLog = spark.read
@@ -119,7 +110,7 @@ object InsertReport2HdRedirectPV {
     * @param cfgLog cfgRDD
     * @param argDay
     */
-  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
+  def writeToMysql(spark: SparkSession, cfgLog: RDD[CfgLog], argDay: String, createTime: String): Unit = {
 
     var toResult = cfgLog
       .map(x => (x.aid, 1))
@@ -199,7 +190,6 @@ object InsertReport2HdRedirectPV {
                       adslot_conf: String = "",
                       date: String = "",
                       hour: String = "",
-                      //ext: collection.Map[String, ExtValue] = null,    2018-08-09 16
                       ip: String = "",
                       ua: String = ""
                     )
