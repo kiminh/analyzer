@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
@@ -12,7 +12,8 @@ import org.tensorflow.hadoop.io.TFRecordFileOutputFormat
 import sys.process._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.LongAccumulator
-import redis.clients.jedis.{HostAndPort, JedisCluster}
+import redis.clients.jedis.{HostAndPort, Jedis, JedisCluster}
+
 import scala.util.Random
 
 /**
@@ -61,7 +62,7 @@ object Utils {
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
-    s"echo ${acc.sum}" #> new File(s"$fileName") !
+    writeNum2File(fileName, acc.sum)
 
     s"hadoop fs -put $fileName $path/count" !
 
@@ -113,7 +114,7 @@ object Utils {
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
-    s"echo ${acc.sum}" #> new File(s"$fileName") !
+    writeNum2File(fileName, acc.sum)
 
     s"hadoop fs -put $fileName $path/count" !
 
@@ -138,18 +139,44 @@ object Utils {
     val sql = generateSql(str, "redis")
     print(sql)
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
     spark.sql(sql).repartition(20)
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
+          //使用pipeline
+          /*var i = 0
+          val jedis = new Jedis(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+          jedis.auth(conf.getString("ali_redis.auth"))
+          val pip = jedis.pipelined()
+          p.foreach {
+            rec =>
+              pip.setex(rec._1, 3600 * 24 * 7, rec._2.toString)
+              i += 1
+              if (i % 100 == 0) {
+                pip.sync()
+              }
+          }
+          pip.sync()
+          jedis.disconnect()*/
+
           val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
           redis.auth(conf.getString("ali_redis.auth"))
           p.foreach { rec =>
-            redis.setex(rec._1, 3600 * 24 * 7, rec._2)
+            val succ = redis.setex(rec._1, 3600 * 24 * 7, rec._2)
+            if (succ) acc.add(0L) else acc.add(1L)
           }
           redis.disconnect
         }
       }
+    val total_num = acc.count
+    val fail_num = acc.sum
+    val ratio = fail_num / total_num
+    println(s"----- ali cloud -----")
+    println(s"Total num = $total_num, Fail num = $fail_num, Fail ratio = $ratio")
+    println("---------------------")
   }
 
   def save2RedisCluster(str: String, prefix: String): Unit = {
@@ -160,17 +187,45 @@ object Utils {
     val sql = generateSql(str, "redis")
     print(sql)
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
+//     增加推到物理机上的redis集群
+    val acc_phy = new LongAccumulator
+    spark.sparkContext.register(acc_phy)
+
     spark.sql(sql).repartition(20)
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
           val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+//          物理机redis集群连接
+          val jedis_phy = new JedisCluster(new HostAndPort("192.168.86.106", 7001))
+
           p.foreach { rec =>
-            jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            val re = jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            if (re == "OK") acc.add(0L) else acc.add(1L)
+            val re_phy = jedis_phy.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            if (re_phy == "OK") acc_phy.add(0L) else acc_phy.add(1L)
           }
           jedis.close()
+          jedis_phy.close()
         }
       }
+
+    val total_num = acc.count
+    val fail_num = acc.sum
+    val ratio = fail_num / total_num
+    println(s"----- cluster -----")
+    println(s"Total num = $total_num, Fail num = $fail_num, Fail ratio = $ratio")
+    println("---------------------")
+
+    val total_num_phy = acc_phy.count
+    val fail_num_phy = acc_phy.sum
+    val ratio_phy = fail_num_phy / total_num_phy
+    println(s"----- cluster -----")
+    println(s"Total num = $total_num_phy, Fail num = $fail_num_phy, Fail ratio = $ratio_phy")
+    println("---------------------")
   }
 
   def evalRedisVol(str: String, prefix: String): Unit = {
@@ -207,5 +262,11 @@ object Utils {
     else if (t == "redis") s"select key, dnnmultihot from $table where $condition"
     else if (t == "gauc_example") s"select example, uid from $table where $condition"
     else ""
+  }
+
+  def writeNum2File(file: String, num: Long): Unit = {
+    val writer = new PrintWriter(new File(file))
+    writer.write(num.toString)
+    writer.close()
   }
 }
