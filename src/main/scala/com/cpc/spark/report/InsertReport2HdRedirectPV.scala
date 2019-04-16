@@ -52,7 +52,7 @@ object InsertReport2HdRedirectPV {
     val sql =
       s"""
          |select
-         |  , aid
+         |    aid
          |  , cast(search_timestamp as int) as search_timestamp
          |  , log_type
          |  , request_url
