@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_hottopic_hidden
+package com.cpc.spark.OcpcProtoType.suggest_cpa_hottopic
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
