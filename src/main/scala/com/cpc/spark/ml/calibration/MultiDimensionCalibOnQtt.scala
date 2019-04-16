@@ -84,15 +84,14 @@ object MultiDimensionCalibOnQtt {
       .withColumn("num",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
       .withColumn("group",when(col("count2") < 100000,col("ideaid"))
         .otherwise(col("group")))
-      .select("user_req_ad_num","adslot_id","ideaid","group","count1","count2","count3","num")
-//      .distinct()
+      .select("user_req_ad_num","adslot_id","ideaid","group","num").distinct()
     keygroup.write.mode("overwrite").saveAsTable("test.calikeyqtt")
 
-//    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-//      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","num")
-//      .filter("num>50000")
-//
-//    unionLogToConfig(data.rdd, session, softMode,calimodelname)
+    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
+      .filter("num>50000")
+
+    unionLogToConfig(data.rdd, session, softMode,calimodelname)
   }
 
 
