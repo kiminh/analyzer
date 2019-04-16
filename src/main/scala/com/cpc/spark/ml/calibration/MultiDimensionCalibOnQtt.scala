@@ -55,13 +55,13 @@ object MultiDimensionCalibOnQtt {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 | from dl_cpc.cpc_basedata_union_events
+                 | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
                  | and ctr_model_name = '$modelname'
