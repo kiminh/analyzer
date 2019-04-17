@@ -71,25 +71,34 @@ object MultiDimensionCalibOnMidu {
     log.persist()
 
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
+        .withColumn("group1",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+        .select("ideaid","user_req_ad_num","adslot_id","group1","count1")
+    group1.show(5)
+    group1.write.mode("overwrite").saveAsTable("test.wy00")
+    val group2 = log.join(group1,Seq("ideaid","user_req_ad_num","adslot_id"),"left")
+      .filter("count1<100000")
+      .groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group2",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .select("ideaid","user_req_ad_num","group2","count2")
+    val group3 = log.join(group1,Seq("ideaid","user_req_ad_num"),"left")
+      .filter("count2<100000")
+      .groupBy("ideaid").count().withColumn("count3",col("count"))
+      .select("ideaid","group3","count3")
+
 
     val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
-        .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-        .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
-          .otherwise(col("group")))
-        .withColumn("group",when(col("count2") < 100000,col("ideaid"))
-          .otherwise(col("group")))
+        .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
+        .withColumn("group",when(col("count2") < 100000,col("group3")).otherwise(col("group")))
         .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
       keygroup.write.mode("overwrite").saveAsTable("test.calikey")
 
       val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
-        .filter("count3>50000")
+        .filter("count3>10000")
   //
   //    data.write.mode("overwrite").saveAsTable("test.wy00")
-
-      unionLogToConfig2(data.rdd, session, softMode)
+//
+//      unionLogToConfig2(data.rdd, session, softMode)
   }
 
 
