@@ -91,13 +91,13 @@ object MultiDimensionCalibOnMidu {
     keygroup.write.mode("overwrite").saveAsTable("test.calikey")
     keygroup.show(20)
 
-      val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-        .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
-        .filter("count3>10000")
-  //
-      data.write.mode("overwrite").saveAsTable("test.wy01")
-
-      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
+//      val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+//        .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
+//        .filter("count3>10000")
+//  //
+//      data.write.mode("overwrite").saveAsTable("test.wy01")
+//
+//      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
 
 
