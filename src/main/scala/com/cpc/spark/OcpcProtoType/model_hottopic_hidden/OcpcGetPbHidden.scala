@@ -45,7 +45,17 @@ object OcpcGetPbHidden {
     }
 
     // 明投：可以有重复identifier
-    val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
+    val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
+    val kvalue = getKvalue(conversionGoal, version, date, hour, spark)
+
+    val result = base
+      .withColumn("cvrcnt", lit(0))
+      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
+      .na.fill(0, Seq("cvrcnt", "kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
+
+
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue")
