@@ -52,18 +52,18 @@ object OcpcSampleToPbHidden {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultDF = result
       .withColumn("cvrcnt", lit(0))
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .selectExpr("identifier", "conversion_goal", "cpagiven", "cast(cvrcnt as long) cvrcnt", "kvalue")
 
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -87,7 +87,7 @@ object OcpcSampleToPbHidden {
 //         |  cost,
 //         |  row_number() over(partition by unitid order by cost desc) as seq
 //         |FROM
-//         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+//         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
 //         |WHERE
 //         |  `date` = '$date1'
 //         |AND
@@ -97,7 +97,7 @@ object OcpcSampleToPbHidden {
 //         |AND
 //         |  industry = '$industry'
 //         |AND
-//         |  cv_goal = $conversionGoal
+//         |  conversion_goal = $conversionGoal
 //         |AND
 //         |  is_recommend = 1
 //       """.stripMargin
@@ -110,7 +110,7 @@ object OcpcSampleToPbHidden {
 //    resultDF
 //  }
 //
-//  def getKvalue(date: String, hour: String, version: String, spark: SparkSession) = {
+//  def getKvalue(version: String, date: String, hour: String, spark: SparkSession) = {
 //    /*
 //    1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
 //    2. 计算新的kvalue
