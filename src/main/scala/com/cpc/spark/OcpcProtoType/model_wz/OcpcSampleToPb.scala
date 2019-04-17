@@ -45,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190317")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190317")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -86,17 +86,77 @@ object OcpcSampleToPb {
     val cpaGiven = getCPAgivenV3(date, spark)
 
     // 数据关联
-    val result = data
+    val result1 = data
         .join(cpaGiven, Seq("identifier"), "left_outer")
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
         .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_wz_pb20190317")
+    // 调整数据关联
+    val blackFlag = getUserBlackFlag(date, hour, spark)
+    val result2 = result1
+        .join(blackFlag, Seq("identifier"), "left_outer")
+        .na.fill(0, Seq("black_flag"))
+
+    result2.write.mode("overwrite").saveAsTable("test.check_ocpc_wz_pb20190317")
+
+    val result = result2
+        .filter(s"black_flag = 0")
+        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
     result.printSchema()
     result.show(10)
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
+
+    resultDF
+  }
+
+  def getUserBlackFlag(date: String, hour: String, spark: SparkSession) ={
+    // 从实验配置文件读取配置的CPAgiven
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_wz.ocpc_wz_user_blacklist")
+    val confData = spark.read.format("json").json(expDataPath)
+    confData.show(10)
+
+    val userid = confData.filter(s"flag = 1").select("userid")
+
+    // 从mysql抽取对应的unitid
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id from adv.unit where ideas is not null) as tmp"
+
+    val unitData = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = unitData
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "userid")
+
+    base.createOrReplaceTempView("base_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    cast(unitid as string) as identifier,
+         |    cast(userid as int) as userid
+         |FROM
+         |    base_table
+       """.stripMargin
+    println(sqlRequest)
+    val identifierList = spark.sql(sqlRequest).distinct()
+
+    // 数据关联
+    val resultDF = identifierList
+      .join(userid, Seq("userid"), "inner")
+      .withColumn("black_flag", lit(1))
+    resultDF.show(10)
 
     resultDF
   }
