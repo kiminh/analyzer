@@ -168,7 +168,7 @@ object MultiDimensionCalibOnMidu {
     val califile = PostCalibrations(calimap.toMap)
 //    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
     if (saveToLocal) {
-      val model = "novel-ctr-dnn-rawid-v7-cali"
+      val model = "novel-ctr-dnn-rawid-v7-cali-v2"
       val localPath = saveProtoToLocal(model, califile)
       saveFlatTextFileForDebug(model, califile)
       if (softMode == 0) {
