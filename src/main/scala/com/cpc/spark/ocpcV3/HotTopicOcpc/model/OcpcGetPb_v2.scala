@@ -35,18 +35,18 @@ object OcpcGetPb_v2 {
 
     // 读取数据
     val base = getBaseData(date, hour, spark)
-    base.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_base")
+//    base.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_base")
     val cvrData = getCVR(date, hour, spark)
-    cvrData.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cvrData")
+//    cvrData.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cvrData")
     val cpaHistory = getCPAgiven(version, date, hour, spark)
-    cpaHistory.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cpaHistory")
+//    cpaHistory.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cpaHistory")
     val kvalue = getK( version, date, hour, spark)
-    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_kvalue")
+//    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_kvalue")
     val adclassCPA = spark
       .table("dl_cpc.ocpc_cpa_history_adclass_hourly")
       .where(s"`date`='$date' and `hour`='$hour' and `version`='$version'")
       .select("new_adclass", "cpa_adclass")
-    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_adclassCPA")
+//    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_adclassCPA")
 
     // 组装数据
     val data = base
@@ -56,7 +56,7 @@ object OcpcGetPb_v2 {
       .withColumn("conversion_goal", when(col("cpa_history").isNull && col("conversion_goal").isNull, lit(1)).otherwise(col("conversion_goal")))
       .withColumn("cpa_given", when(col("cpa_history").isNull && col("conversion_goal") === 1, col("cpa_adclass")).otherwise(col("cpa_history")))
       .filter("cpa_given is not null and conversion_goal is not null")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_data")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_data")
 
     val resultDF0 = data
       .groupBy("identifier", "conversion_goal")
@@ -81,7 +81,7 @@ object OcpcGetPb_v2 {
 //        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
     resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
     resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly20190410")
 
     savePbPack(resultDF, version)
   }
@@ -257,11 +257,10 @@ object OcpcGetPb_v2 {
          |  cast(unitid as string) identifier,
          |  sum(total_price) as cost
          |FROM
-         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  media_appsid in ('80002819', '80000001', '80000002')
+         |AND media_appsid in ('80002819', '80000001', '80000002')
          |GROUP BY (case when media_appsid = '80002819' then 'hottopic' else 'qtt' end), unitid
        """.stripMargin
     println(sqlRequest1)

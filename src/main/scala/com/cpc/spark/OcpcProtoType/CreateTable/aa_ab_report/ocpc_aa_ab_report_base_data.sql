@@ -1,3 +1,4 @@
+drop table if exists dl_cpc.ocpc_aa_ab_report_base_data;
 create table if not exists dl_cpc.ocpc_aa_ab_report_base_data(
     searchid                string,
     unitid                  int,
@@ -8,7 +9,8 @@ create table if not exists dl_cpc.ocpc_aa_ab_report_base_data(
     is_ocpc                 int,
     isclick                 int,
     isshow                  int,
-    bid                     int,
+    ocpc_log_dict           map<string, string>,
+    bid                     double,
     conversion_goal         int,
     pcvr                    double,
     is_hidden               int,
@@ -16,6 +18,7 @@ create table if not exists dl_cpc.ocpc_aa_ab_report_base_data(
     budget                  int,
     cpa_given               double,
     price                   int,
+    uid                     string,
     exp_cvr                 double,
     iscvr                   int
 )

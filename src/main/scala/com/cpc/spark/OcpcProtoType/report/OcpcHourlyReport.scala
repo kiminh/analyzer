@@ -31,16 +31,22 @@ object OcpcHourlyReport {
     println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // 拉取点击、消费、转化等基础数据
-    val baseData = getBaseData(media, date, hour, spark)
+    var isHidden = 0
+    if (version == "qtt_demo") {
+      isHidden = 0
+    } else {
+      isHidden = 1
+    }
+    val baseData = getBaseData(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 分ideaid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
-    val dataUnit = getDataByUnit(rawDataUnit, date, hour, spark)
+    val dataUnit = getDataByUnit(rawDataUnit, version, date, hour, spark)
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
@@ -58,11 +64,11 @@ object OcpcHourlyReport {
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
-    val reportTableIdea = "report2.report_ocpc_data_detail"
-    val delSQLidea = s"delete from $reportTableIdea where `date` = '$date' and hour = $hourInt"
+    val reportTableUnit = "report2.report_ocpc_data_detail_v2"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLidea) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableIdea) //插入数据
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -79,22 +85,30 @@ object OcpcHourlyReport {
 
   def saveDataToHDFS(dataUnit: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    存储ideaid级别和conversion_goal级别的报表到hdfs
+    存储unitid级别和conversion_goal级别的报表到hdfs
      */
     dataUnit
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v3")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v3")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
+
+    dataUnit
+      .withColumn("identifier", col("unitid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
+      .withColumn("version", lit(version))
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
+
 
     dataConversion
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v3")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
-  def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -104,7 +118,7 @@ object OcpcHourlyReport {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_summary_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version='qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version='$version'")
       .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
     // 计算报表数据
@@ -132,7 +146,6 @@ object OcpcHourlyReport {
       .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("click_cpa_given", col("cpa_given") * col("click"))
 
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -154,9 +167,11 @@ object OcpcHourlyReport {
     println(sqlRequest1)
     val unitidData = spark
       .sql(sqlRequest1)
-      .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.0 / 0.8)
+      .na.fill(0, Seq("conversion"))
+      .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.2)
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
+//    unitidData.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190413")
     unitidData.createOrReplaceTempView("unitid_data")
 
     val sqlRequest2 =
@@ -261,7 +276,7 @@ object OcpcHourlyReport {
     resultDF
   }
 
-  def getDataByUnit(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByUnit(rawData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -271,7 +286,7 @@ object OcpcHourlyReport {
     // 获取新增数据如auc
     val aucData = spark
       .table("dl_cpc.ocpc_auc_report_detail_hourly")
-      .where(s"`date`='$date' and `hour`='$hour' and version = 'qtt_demo'")
+      .where(s"`date`='$date' and `hour`='$hour' and version = '$version'")
       .withColumn("unitid", col("identifier"))
       .selectExpr("cast(unitid as int) unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
@@ -281,8 +296,8 @@ object OcpcHourlyReport {
       .withColumn("user_id", col("userid"))
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
-      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
+      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")<= 1.2 && col("cvr_cnt") > 0, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))
@@ -295,9 +310,8 @@ object OcpcHourlyReport {
       .withColumn("hour", lit(hour))
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
-//      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
 
     resultDF.show(10)
 
@@ -334,7 +348,7 @@ object OcpcHourlyReport {
          |  unitid,
          |  userid,
          |  conversion_goal,
-         |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
+         |  1.0 as step2_percent,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pcvr,
@@ -346,7 +360,12 @@ object OcpcHourlyReport {
          |  sum(isclick) as ctr_cnt,
          |  sum(iscvr) as cvr_cnt,
          |  sum(case when isclick=1 then kvalue else 0 end) * 1.0 / sum(isclick) as avg_k,
-         |  sum(case when isclick=1 and hr='$hour' then kvalue else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as recent_k
+         |  sum(case when isclick=1 and hr='$hour' then kvalue else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as recent_k,
+         |  sum(case when isclick=1 then cali_value else 0 end) * 1.0 / sum(isclick) as cali_value,
+         |  sum(case when isclick=1 then cali_pcvr else 0 end) * 1.0 / sum(isclick) as cali_pcvr,
+         |  sum(case when isclick=1 then cali_postcvr else 0 end) * 1.0 / sum(isclick) as cali_postcvr,
+         |  sum(case when isclick=1 then smooth_factor else 0 end) * 1.0 / sum(isclick) as smooth_factor,
+         |  sum(cpa_suggest) * 1.0 / count(1) as cpa_suggest
          |FROM
          |  raw_data
          |GROUP BY unitid, userid, conversion_goal
@@ -382,6 +401,12 @@ object OcpcHourlyReport {
          |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |    cast(ocpc_log_dict['cvrCalFactor'] as double) as cali_value,
+         |    cast(ocpc_log_dict['pcvr'] as double) as cali_pcvr,
+         |    cast(ocpc_log_dict['postCvr'] as double) as cali_postcvr,
+         |    cast(ocpc_log_dict['smoothFactor'] as double) as smooth_factor,
+         |    cast(ocpc_log_dict['CpaSuggest'] as double) as cpa_suggest,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -435,7 +460,7 @@ object OcpcHourlyReport {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest")
 
     resultDF.show(10)
 

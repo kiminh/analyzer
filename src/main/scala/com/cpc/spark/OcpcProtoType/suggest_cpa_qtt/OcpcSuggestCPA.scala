@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.log4j.{Level, Logger}
 
-
+@deprecated
 object OcpcSuggestCPA {
   def main(args: Array[String]): Unit = {
     /*
@@ -644,21 +644,6 @@ object OcpcSuggestCPA {
     data
   }
 
-//  def getTimeRangeSqlCondition(endDate: String, endHour: String, hourCnt: Int): String = {
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-//    val endDay = endDate + " " + endHour
-//    val endDayTime = dateConverter.parse(endDay)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(endDayTime)
-//    calendar.add(Calendar.HOUR, -hourCnt)
-//    val startDateTime = calendar.getTime
-//    val startDateStr = dateConverter.format(startDateTime)
-//    val startDate = startDateStr.split(" ")(0)
-//    val startHour = startDateStr.split(" ")(1)
-//    val timeSelection = getTimeRangeSql(startDate, startHour, endDate, endHour)
-//    println(s"time selection is: $timeSelection")
-//    return timeSelection
-//  }
 
   def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {

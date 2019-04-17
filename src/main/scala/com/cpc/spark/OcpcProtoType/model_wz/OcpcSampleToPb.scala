@@ -91,8 +91,6 @@ object OcpcSampleToPb {
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
         .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_wz_pb20190317")
-
     result.printSchema()
     result.show(10)
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
@@ -100,6 +98,58 @@ object OcpcSampleToPb {
 
     resultDF
   }
+
+//  def getUserBlackFlag(date: String, hour: String, spark: SparkSession) ={
+//    // 从实验配置文件读取配置的CPAgiven
+//    val conf = ConfigFactory.load("ocpc")
+//    val expDataPath = conf.getString("ocpc_wz.ocpc_wz_user_blacklist")
+//    val confData = spark.read.format("json").json(expDataPath)
+//    confData.show(10)
+//
+//    val userid = confData.filter(s"flag = 1").select("userid")
+//
+//    // 从mysql抽取对应的unitid
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+//    val table = "(select id, user_id from adv.unit where ideas is not null) as tmp"
+//
+//    val unitData = spark.read.format("jdbc")
+//      .option("url", url)
+//      .option("driver", driver)
+//      .option("user", user)
+//      .option("password", passwd)
+//      .option("dbtable", table)
+//      .load()
+//
+//    val base = unitData
+//      .withColumn("unitid", col("id"))
+//      .withColumn("userid", col("user_id"))
+//      .select("unitid", "userid")
+//
+//    base.createOrReplaceTempView("base_table")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    cast(unitid as string) as identifier,
+//         |    cast(userid as int) as userid
+//         |FROM
+//         |    base_table
+//       """.stripMargin
+//    println(sqlRequest)
+//    val identifierList = spark.sql(sqlRequest).distinct()
+//
+//    // 数据关联
+//    val resultDF = identifierList
+//      .join(userid, Seq("userid"), "inner")
+//      .withColumn("black_flag", lit(1))
+//    resultDF.show(10)
+//
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_unitid_userid_blacklist20190417")
+//
+//    resultDF
+//  }
 
   def getCPAgivenV3(date: String, spark: SparkSession) = {
     // 时间分区

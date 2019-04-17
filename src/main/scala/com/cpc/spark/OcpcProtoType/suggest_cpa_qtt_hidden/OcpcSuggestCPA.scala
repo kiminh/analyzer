@@ -102,6 +102,10 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
+      // zerobid_percent：根据kvalue、cpa、pre_cvr算出来的动态bid，取整后
+      // 有多少动态bid = 0
+      // bottom_halfbid_percent：根据kvalue、cpa、pre_cvr算出来的动态bid，取整后
+      // 有多少动态bid在原本的 cpc 的 bid 的 1/2 区间内
       .withColumn("zerobid_percent", lit(0.0))
       .withColumn("bottom_halfbid_percent", lit(0.0))
       .withColumn("top_halfbid_percent", lit(0.0))
