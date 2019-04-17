@@ -94,6 +94,7 @@ object MultiDimensionCalibOnMidu {
         .filter("count3>10000")
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
       data.show(10)
+    data.write.mode("overwrite").saveAsTable("test.wy03")
 
       unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
