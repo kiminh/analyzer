@@ -40,16 +40,6 @@ object OcpcCvrSmooth {
     val version = args(3).toString
     val fileName = "ocpc_hot_topic.pb"
 
-//    val conf = ConfigFactory.load("ocpc")
-//    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
-//    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
-//    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
-//    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
-//    println(s"cpcBid path is: $expDataPath")
-//    println(s"fileName is: $fileName")
-//    println(s"smooth factor path is $smoothDataPath")
-//    println(s"suggest cpa path is $suggestCpaPath")
-
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version")
 
