@@ -85,15 +85,15 @@ object MultiDimensionCalibOnMidu {
       .select("ideaid","group3","count3")
 
     val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
-//        .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
-//        .withColumn("group",when(col("count2") < 100000 && col("count2") isNotNull,col("group3")).otherwise(col("group")))
-//        .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
+        .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
+        .withColumn("group",when(col("count2") < 100000,col("group3")).otherwise(col("group")))
+        .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
     keygroup.write.mode("overwrite").saveAsTable("test.calikey")
     keygroup.show(20)
 
-//      val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-//        .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
-//        .filter("count3>10000")
+      val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+        .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
+        .filter("count3>10000")
 //  //
 //      data.write.mode("overwrite").saveAsTable("test.wy01")
 //
