@@ -54,8 +54,8 @@ object OcpcGetPbHidden {
         .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -130,8 +130,6 @@ object OcpcGetPbHidden {
       .select("identifier", "kvalue1", "kvalue2")
       .withColumn("kvalue", udfSelectK()(col("kvalue1"), col("kvalue2")))
       .select("identifier", "kvalue1", "kvalue2", "kvalue")
-
-    data.write.mode("overwrite").saveAsTable("test.check_ocpc_kvalue20190417")
 
     val resultDF = data.select("identifier", "kvalue").filter(s"kvalue > 0")
     resultDF
