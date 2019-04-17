@@ -158,6 +158,8 @@ object OcpcSampleToPb {
       .withColumn("black_flag", lit(1))
     resultDF.show(10)
 
+    resultDF.write.mode("overwrite").saveAsTable("test.check_unitid_userid_blacklist20190417")
+
     resultDF
   }
 
