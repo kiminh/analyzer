@@ -81,13 +81,13 @@ object OcpcGetPbHidden {
   }
 
   def getKvalue(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    // 24小时数据
-    val version1 = version + "_24"
+    // 48小时数据
+    val version1 = version + "_48"
     val sqlRequest1 =
       s"""
          |SELECT
          |  identifier,
-         |  1.0 / jfb as kvalue
+         |  1.0 / jfb as kvalue1
          |FROM
          |  dl_cpc.ocpc_pcoc_jfb_hourly
          |WHERE
@@ -102,13 +102,13 @@ object OcpcGetPbHidden {
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
 
-    // 48小时数据
-    val version2 = version + "_48"
+    // 72小时数据
+    val version2 = version + "_72"
     val sqlRequest2 =
       s"""
          |SELECT
          |  identifier,
-         |  1.0 / jfb as kvalue
+         |  1.0 / jfb as kvalue2
          |FROM
          |  dl_cpc.ocpc_pcoc_jfb_hourly
          |WHERE
@@ -123,39 +123,31 @@ object OcpcGetPbHidden {
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
-    // 72小时数据
-    val version3 = version + "_72"
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |  identifier,
-         |  1.0 / jfb as kvalue
-         |FROM
-         |  dl_cpc.ocpc_pcoc_jfb_hourly
-         |WHERE
-         |  `date` = '$date'
-         |AND
-         |  `hour` = '$hour'
-         |AND
-         |  version = '$version3'
-         |AND
-         |  conversion_goal = $conversionGoal
-       """.stripMargin
-    println(sqlRequest3)
-    val data3 = spark.sql(sqlRequest3)
-
     // 数据关联
     val data = data1
-      .union(data2)
-      .union(data3)
-      .filter(s"kvalue is not null and kvalue > 0")
-      .groupBy("identifier")
-      .agg(avg(col("kvalue")).alias("kvalue"))
-      .select("identifier", "kvalue")
+      .join(data2, Seq("identifier"), "outer")
+      .na.fill(0.0, Seq("kvalue1", "kvalue2"))
+      .select("identifier", "kvalue1", "kvalue2")
+      .withColumn("kvalue", udfSelectK()(col("kvalue1"), col("kvalue2")))
+      .select("identifier", "kvalue1", "kvalue2", "kvalue")
 
-    val resultDF = data.select("identifier", "kvalue")
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_kvalue20190417")
+
+    val resultDF = data.select("identifier", "kvalue").filter(s"kvalue > 0")
     resultDF
   }
+
+  def udfSelectK() = udf((kvalue1: Double, kvalue2: Double) => {
+    var kvalue = 0.0
+    if (kvalue1 == 0.0) {
+      kvalue = kvalue2
+    } else {
+      kvalue = kvalue1
+    }
+
+    kvalue
+
+  })
 
   def getBaseData(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
