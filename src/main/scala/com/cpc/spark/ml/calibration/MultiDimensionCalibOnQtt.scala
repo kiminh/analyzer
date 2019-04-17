@@ -132,7 +132,7 @@ object MultiDimensionCalibOnQtt {
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (size < 10000) {
+          if (bins._1.size < minBinCount) {
             println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
@@ -251,7 +251,7 @@ object MultiDimensionCalibOnQtt {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d
