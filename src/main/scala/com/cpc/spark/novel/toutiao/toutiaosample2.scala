@@ -22,11 +22,21 @@ object toutiaosample2 {
       .option("inferSchema", "false") //是否自动推到内容的类型
       .option("delimiter","\001")  //分隔符，默认为 ,
       .load("/user/cpc/wy/prediction.csv")
-      df.show(50)
+      df.show(10)
 
-    val resultDF= df.select($"_c0".alias("id"),$"_c1".alias("title"))
+    val df2 = spark.read.format("com.databricks.spark.csv")
+      .option("header", "false")
+      .option("inferSchema", "false") //是否自动推到内容的类型
+      .option("delimiter","\001")  //分隔符，默认为 ,
+      .load("/user/cpc/wy/prediction_dsp.csv")
+    df2.show(10)
+
+    val adid=spark.sql("select * from dl_cpc.midu_toutiao_sample2")
+
+    val resultDF= df.union(df2).select($"_c0".alias("id"),$"_c1".alias("title"))
       .withColumn("category",convert(col("id")))
       .select("title","category")
+      .join(adid,Seq("title"),"left")
 
        resultDF.show(10)
       resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
@@ -43,7 +53,8 @@ object toutiaosample2 {
         case "4.0" =>  y = "二类电商"
         case "5.0" =>  y = "成人用品"
         case "6.0" =>  y = "生活服务"
-        case "7.0" =>  y = "无"
+        case "7.0" =>  y = "短视频"
+        case "8.0" =>  y = "无"
 
       }
       y
