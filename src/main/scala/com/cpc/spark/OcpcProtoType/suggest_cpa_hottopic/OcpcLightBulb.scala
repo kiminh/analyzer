@@ -34,48 +34,48 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "dl_cpc.ocpc_light_control_version"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
-    println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
-
-
-    // 抽取数据
-    val cpcData = getRecommendationAd(version, date, hour, spark)
-    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
-    val cvUnit = getCPAgiven(date, hour, spark)
-
-
-    val data = cpcData
-        .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
-        .select("unitid", "conversion_goal", "cpa1", "cpa2")
-        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
-        .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
-
-    data.show(10)
-
-    val resultDF = data
-        .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
-        .select("unitid", "conversion_goal", "cpa")
-        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-        .withColumn("date", lit(date))
-        .withColumn("version", lit(version))
-
-    resultDF.show(10)
-
-    resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
+//    val tableName = "dl_cpc.ocpc_light_control_version"
+////    val tableName = "test.ocpc_qtt_light_control_version20190415"
+//    println("parameters:")
+//    println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
+//
+//
+//    // 抽取数据
+//    val cpcData = getRecommendationAd(version, date, hour, spark)
+//    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
+//    val cvUnit = getCPAgiven(date, hour, spark)
+//
+//
+//    val data = cpcData
+//        .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
+//        .select("unitid", "conversion_goal", "cpa1", "cpa2")
+//        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
+//        .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+//
+//    data.show(10)
+//
+//    val resultDF = data
+//        .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
+//        .select("unitid", "conversion_goal", "cpa")
+//        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+//        .withColumn("date", lit(date))
+//        .withColumn("version", lit(version))
+//
+//    resultDF.show(10)
+//
+//    resultDF
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+//
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, version, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ##########################")
 
-//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
-    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
+////    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
 
