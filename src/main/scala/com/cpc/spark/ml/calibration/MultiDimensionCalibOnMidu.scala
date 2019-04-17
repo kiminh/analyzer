@@ -93,10 +93,10 @@ object MultiDimensionCalibOnMidu {
         .withColumn("count3",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
         .filter("count3>10000")
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
-//  //
+    data.show(5)
 //      data.write.mode("overwrite").saveAsTable("test.wy01")
 //
-//      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
+      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
 
 
