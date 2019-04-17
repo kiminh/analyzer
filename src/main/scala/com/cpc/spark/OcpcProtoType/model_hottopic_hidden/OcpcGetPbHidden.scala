@@ -1,15 +1,9 @@
 package com.cpc.spark.OcpcProtoType.model_hottopic_hidden
-
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcGetPbHidden._
-
 
 object OcpcGetPbHidden {
   def main(args: Array[String]): Unit = {
@@ -44,32 +38,81 @@ object OcpcGetPbHidden {
       mediaSelection = s"media_appsid = '80002819'"
     }
 
-    // 明投：可以有重复identifier
-    val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
-    val kvalue = getKvalue(conversionGoal, version, date, hour, spark)
+    val data1raw = getPcocJFB(version, 48, conversionGoal, date, hour, spark)
+    val data1 = data1raw
+      .withColumn("pcoc1", col("pcoc"))
+      .withColumn("jfb1", col("jfb"))
+      .withColumn("post_cvr1", col("post_cvr"))
+      .select("identifier", "pcoc1", "jfb1", "post_cvr1")
+    val data2raw = getPcocJFB(version, 72, conversionGoal, date, hour, spark)
+    val data2 = data2raw
+      .withColumn("pcoc2", col("pcoc"))
+      .withColumn("jfb2", col("jfb"))
+      .withColumn("post_cvr2", col("post_cvr"))
+      .select("identifier", "pcoc2", "jfb2", "post_cvr2")
 
-    val result = base
-      .withColumn("cvrcnt", lit(0))
-      .join(kvalue, Seq("identifier"), "inner")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
-      .na.fill(0, Seq("cvrcnt", "kvalue"))
-      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
+    val data = data1
+      .join(data2, Seq("identifier"), "outer")
+      .select("identifier", "pcoc1", "jfb1", "post_cvr1", "pcoc2", "jfb2", "post_cvr2")
+      .na.fill(0.0, Seq("pcoc1", "jfb1", "post_cvr1", "pcoc2", "jfb2", "post_cvr2"))
+      .withColumn("flag", when(col("pcoc1") > 0 && col("jfb1") > 0 && col("post_cvr1") > 0, 1).otherwise(2))
 
-
-    val resultDF = result
-        .withColumn("cpagiven", lit(1))
-        .select("identifier", "cpagiven", "cvrcnt", "kvalue")
+    val resultDF = data
+        .withColumn("pcoc", udfSelectByFlag()(col("pcoc1"), col("pcoc2"), col("flag")))
+        .withColumn("jfb", udfSelectByFlag()(col("jfb1"), col("jfb2"), col("flag")))
+        .withColumn("post_cvr", udfSelectByFlag()(col("post_cvr1"), col("post_cvr2"), col("post_cvr")))
+        .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
+
+//  def udfSelectByFlag() = udf((value1: Double, value2: Double, flag: Int) => {
+//    var result = 0.0
+//    if (flag == 1) {
+//      result = value1
+//    } else {
+//      result = value2
+//    }
+//    result
+//  })
+//
+//  def getPcocJFB(version: String, hourInt: Int, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+//    /*
+//    抽取数据
+//     */
+//    val realVersion = version + "_" + hourInt.toString
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  identifier,
+//         |  pcoc,
+//         |  jfb,
+//         |  post_cvr
+//         |FROM
+//         |  dl_cpc.ocpc_pcoc_jfb_hourly
+//         |WHERE
+//         |  `date` = '$date'
+//         |AND
+//         |  `hour` = '$hour'
+//         |AND
+//         |  version = '$realVersion'
+//         |AND
+//         |  conversion_goal = $conversionGoal
+//       """.stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    data.show(10)
+//
+//    data
+//
+//  }
 
 }
 
