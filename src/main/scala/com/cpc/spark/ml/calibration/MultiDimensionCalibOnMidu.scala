@@ -100,7 +100,7 @@ object MultiDimensionCalibOnMidu {
 
 
   def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, calimodelname: String, saveToLocal: Boolean = true,
-                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 1): List[CalibrationConfig] = {
+                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
     val sc = session.sparkContext
@@ -142,7 +142,7 @@ object MultiDimensionCalibOnMidu {
 //          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (size < 10000) {
+          if (bins._1.size < minBinCount) {
             println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
@@ -152,7 +152,6 @@ object MultiDimensionCalibOnMidu {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-            println(s"boundary size: ${irModel.boundaries.size}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
 //            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
 //            val caliauc = getauccali(test, sc, irModel)
@@ -268,7 +267,7 @@ object MultiDimensionCalibOnMidu {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d
