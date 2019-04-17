@@ -50,7 +50,8 @@ object OcpcGetPbHidden {
 
     val result = base
       .withColumn("cvrcnt", lit(0))
-      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+      .join(kvalue, Seq("identifier"), "inner")
+      .withColumn("conversion_goal", lit(conversionGoal))
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
