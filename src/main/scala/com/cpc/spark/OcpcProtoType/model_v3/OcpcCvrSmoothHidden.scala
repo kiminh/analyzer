@@ -35,9 +35,9 @@ object OcpcCvrSmoothHidden {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val media = args(2).toString
-    val version = args(3).toString
-    val fileName = "ocpc_hot_topic.pb"
+    val version = args(2).toString
+    val media = args(3).toString
+    val fileName = "ocpc_hot_topic_hidden.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version")
