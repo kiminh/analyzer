@@ -22,7 +22,7 @@ object MultiDimensionCalibOnQtt {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
-  val MIN_BIN_SIZE = 10000
+  val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
 
@@ -73,23 +73,28 @@ object MultiDimensionCalibOnQtt {
     log.persist()
 
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
+      .withColumn("group1",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .select("ideaid","user_req_ad_num","adslot_id","group1","count1")
+    val data2 = log.join(group1,Seq("ideaid","user_req_ad_num","adslot_id"),"left")
+      .filter("count1<100000")
+    val group2 = data2.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group2",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .select("ideaid","user_req_ad_num","group2","count2")
+    val group3 = data2.join(group2,Seq("ideaid","user_req_ad_num"),"left")
+      .filter("count2<100000")
+      .groupBy("ideaid").count().withColumn("count3",col("count"))
+      .withColumn("group3",col("ideaid"))
+      .select("ideaid","group3","count3")
 
-    val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-      .withColumn("num",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
-      .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
-        .otherwise(col("group")))
-      .withColumn("num",when(col("count2") < 100000,col("count3")).otherwise(col("num")))
-      .withColumn("group",when(col("count2") < 100000,col("ideaid"))
-        .otherwise(col("group")))
-      .select("user_req_ad_num","adslot_id","ideaid","group","count1","count2","count3","num").distinct()
-    keygroup.write.mode("overwrite").saveAsTable("test.calikeyqtt")
-
-    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","num")
-      .filter("num>50000")
+    val data = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+      .join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
+      .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
+      .withColumn("count2",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
+      .withColumn("group",when(col("count2") < 100000,col("group3")).otherwise(col("group")))
+      .withColumn("count3",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
+      .filter("count3>10000")
+      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
+    data.show(10)
 
     unionLogToConfig(data.rdd, session, softMode,calimodelname)
   }
@@ -127,7 +132,7 @@ object MultiDimensionCalibOnQtt {
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (bins._1.size <= minBinCount) {
+          if (size < 10000) {
             println("bin number too small, don't output the calibration")
             CalibrationConfig()
           } else {
