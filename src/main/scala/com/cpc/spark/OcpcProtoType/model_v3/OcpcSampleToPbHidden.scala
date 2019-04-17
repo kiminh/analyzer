@@ -111,7 +111,7 @@ object OcpcSampleToPbHidden {
     resultDF
   }
 
-  def getKvalue(date: String, hour: String, version: String, spark: SparkSession) = {
+  def getKvalue(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
     2. 计算新的kvalue
