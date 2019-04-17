@@ -191,7 +191,7 @@ object OcpcCvrSmoothHidden {
       .withColumn("cpc_bid", lit(0))
       .withColumn("cpa_suggest", lit(0))
       .withColumn("param_t", lit(0))
-      .join(caliValue, Seq("identifier"), "left_outer")
+      .join(caliValue, Seq("identifier"), "inner")
       .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
       .withColumn("min_bid", lit(0))
       .withColumn("min_cpm", lit(0))
