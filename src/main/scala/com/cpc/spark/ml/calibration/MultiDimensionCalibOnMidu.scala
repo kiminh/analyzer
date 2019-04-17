@@ -31,6 +31,7 @@ object MultiDimensionCalibOnMidu {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
+    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -84,6 +85,7 @@ object MultiDimensionCalibOnMidu {
     val group3 = data2.join(group2,Seq("ideaid","user_req_ad_num"),"left")
       .filter("count2<100000")
       .groupBy("ideaid").count().withColumn("count3",col("count"))
+      .withColumn("group3",col("ideaid"))
       .select("ideaid","group3","count3")
     group3.show(20)
 
@@ -97,13 +99,13 @@ object MultiDimensionCalibOnMidu {
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
         .filter("count3>10000")
   //
-  //    data.write.mode("overwrite").saveAsTable("test.wy00")
-//
-//      unionLogToConfig2(data.rdd, session, softMode)
+      data.write.mode("overwrite").saveAsTable("test.wy00")
+
+      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
 
 
-  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, saveToLocal: Boolean = true,
+  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, calimodelname: String, saveToLocal: Boolean = true,
                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 1): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
@@ -118,7 +120,7 @@ object MultiDimensionCalibOnMidu {
       val ectr = x.getLong(4).toDouble / 1e6d
       val model = x.getString(6)
       val group = x.getString(7)
-      val key = "novel-ctr-dnn-rawid-v7-postcali_" + group
+      val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
@@ -146,8 +148,8 @@ object MultiDimensionCalibOnMidu {
 //          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (size < 10000) {
-            println("bin number too small, don't output the calibration")
+          if (size < minBinSize) {
+            println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
