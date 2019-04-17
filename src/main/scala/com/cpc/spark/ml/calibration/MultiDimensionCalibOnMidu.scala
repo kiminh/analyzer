@@ -99,7 +99,7 @@ object MultiDimensionCalibOnMidu {
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
         .filter("count3>10000")
   //
-      data.write.mode("overwrite").saveAsTable("test.wy00")
+      data.write.mode("overwrite").saveAsTable("test.wy01")
 
       unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
