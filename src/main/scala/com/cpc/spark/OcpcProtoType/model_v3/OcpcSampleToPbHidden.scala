@@ -1,7 +1,10 @@
 package com.cpc.spark.OcpcProtoType.model_v3
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
 import ocpc.ocpc.{OcpcList, SingleRecord}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -35,13 +38,11 @@ object OcpcSampleToPbHidden {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
-    val result1raw  = getPbData(version, date, hour, spark)
-    val result1 = result1raw
-      .withColumn("kvalue1", col("kvalue"))
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1")
-
-    println("result1")
-    result1.show(10)
+    val rawData = getPbData(version, date, hour, spark)
+    val suggestUnit = getListFromSuggest("feedapp", 1, version, date, hour, spark)
+    val result = rawData
+      .join(suggestUnit, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "conversion_goal")
 
     val result2raw = getNewK(date, hour, version, spark)
     val ocpcUnit = getConversionGoal(date, hour, spark)
@@ -82,74 +83,52 @@ object OcpcSampleToPbHidden {
     savePbPack(resultDF, version, isKnown)
   }
 
-  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+  def getListFromSuggest(industry: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    从推荐cpa表中按照版本号抽取数据：dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .withColumn("cv_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "cv_flag")
-      .distinct()
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa,
+         |  conversion_goal,
+         |  cost,
+         |  row_number() over(partition by unitid order by cost desc) as seq
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+         |WHERE
+         |  `date` = '$date1'
+         |AND
+         |  `hour` = '06'
+         |AND
+         |  version = '$version'
+         |AND
+         |  industry = '$industry'
+         |AND
+         |  cv_goal = $conversionGoal
+         |AND
+         |  is_recommend = 1
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+        .sql(sqlRequest)
+        .filter(s"seq = 1")
+        .select("identifier", "cpa", "conversion_goal")
 
     resultDF.show(10)
     resultDF
   }
 
-  def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
-    /*
-    1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
-    2. 计算新的kvalue
-     */
-    // 从表中抽取数据
-    val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  identifier,
-         |  pcoc,
-         |  jfb,
-         |  1.0 / jfb as kvalue2,
-         |  conversion_goal
-         |FROM
-         |  dl_cpc.ocpc_pcoc_jfb_hourly
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  version = '$version'
-         |AND
-         |  pcoc > 0
-         |AND
-         |  jfb > 0
-       """.stripMargin
-//    2018851
-//    1995684
-//    1971569
-//    1981958
-//    2010532
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-
-    val resultDF  =data
-      .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
-      .withColumn("flag", lit(1))
-      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
-
-    resultDF
-
-  }
 
   def getPbData(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
@@ -170,7 +149,6 @@ object OcpcSampleToPbHidden {
          |  identifier,
          |  conversion_goal,
          |  kvalue,
-         |  cpagiven as cpagiven,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
@@ -186,7 +164,7 @@ object OcpcSampleToPbHidden {
     result.printSchema()
     result.show(10)
 
-    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
+    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cvrcnt")
 
 
     resultDF
