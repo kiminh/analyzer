@@ -62,8 +62,6 @@ object OcpcGetPbHidden {
         .withColumn("jfb", udfSelectByFlag()(col("jfb1"), col("jfb2"), col("flag")))
         .withColumn("post_cvr", udfSelectByFlag()(col("post_cvr1"), col("post_cvr2"), col("flag")))
 
-    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data_cvr20190417")
-
     val resultDF = result
         .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
@@ -72,51 +70,10 @@ object OcpcGetPbHidden {
         .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
 
   }
-
-//  def udfSelectByFlag() = udf((value1: Double, value2: Double, flag: Int) => {
-//    var result = 0.0
-//    if (flag == 1) {
-//      result = value1
-//    } else {
-//      result = value2
-//    }
-//    result
-//  })
-//
-//  def getPcocJFB(version: String, hourInt: Int, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
-//    /*
-//    抽取数据
-//     */
-//    val realVersion = version + "_" + hourInt.toString
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  identifier,
-//         |  pcoc,
-//         |  jfb,
-//         |  post_cvr
-//         |FROM
-//         |  dl_cpc.ocpc_pcoc_jfb_hourly
-//         |WHERE
-//         |  `date` = '$date'
-//         |AND
-//         |  `hour` = '$hour'
-//         |AND
-//         |  version = '$realVersion'
-//         |AND
-//         |  conversion_goal = $conversionGoal
-//       """.stripMargin
-//    println(sqlRequest)
-//    val data = spark.sql(sqlRequest)
-//    data.show(10)
-//
-//    data
-//
-//  }
 
 }
 
