@@ -153,7 +153,7 @@ object MultiDimensionCalibOnMidu {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
 //            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
 //            val caliauc = getauccali(test, sc, irModel)
 //            println(s"test auc(before, after): $aucROC,$caliauc")

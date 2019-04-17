@@ -101,7 +101,7 @@ object MultiDimensionCalibOnQtt {
 
 
   def unionLogToConfig(log: RDD[Row], session: SparkSession, softMode: Int, calimodelname: String, saveToLocal: Boolean = true,
-                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
+                        minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
     val sc = session.sparkContext
@@ -142,7 +142,7 @@ object MultiDimensionCalibOnQtt {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
