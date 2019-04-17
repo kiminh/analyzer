@@ -86,7 +86,9 @@ object MultiDimensionCalibOnMidu {
 
     val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
         .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
+        .withColumn("count2",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
         .withColumn("group",when(col("count2") < 100000,col("group3")).otherwise(col("group")))
+        .withColumn("count3",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
         .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
     keygroup.write.mode("overwrite").saveAsTable("test.calikey")
     keygroup.show(20)
