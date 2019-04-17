@@ -22,7 +22,7 @@ object MultiDimensionCalibOnMidu {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
-  val MIN_BIN_SIZE = 10000
+  val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
 
@@ -93,9 +93,8 @@ object MultiDimensionCalibOnMidu {
         .withColumn("count3",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
         .filter("count3>10000")
         .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
-    data.show(5)
-//      data.write.mode("overwrite").saveAsTable("test.wy01")
-//
+      data.show(10)
+
       unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
 
@@ -143,7 +142,7 @@ object MultiDimensionCalibOnMidu {
 //          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (size < minBinSize) {
+          if (size < 10000) {
             println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
