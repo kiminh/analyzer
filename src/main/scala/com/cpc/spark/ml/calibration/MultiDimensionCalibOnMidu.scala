@@ -232,7 +232,7 @@ object MultiDimensionCalibOnMidu {
       return 0.0
     }
     var index = binarySearch(prob, irModel.boundaries)
-    if (index <= 1) {
+    if (index == 0) {
       return Math.max(0.0, irModel.predictions(0) * (prob - irModel.boundaries(0)))
     }
     if (index == irModel.boundaries.size) {
