@@ -69,7 +69,6 @@ object MultiDimensionCalibOnMidu {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    log.persist()
 
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
         .withColumn("group1",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
