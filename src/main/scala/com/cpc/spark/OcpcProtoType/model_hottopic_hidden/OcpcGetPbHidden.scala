@@ -57,10 +57,14 @@ object OcpcGetPbHidden {
       .na.fill(0.0, Seq("pcoc1", "jfb1", "post_cvr1", "pcoc2", "jfb2", "post_cvr2"))
       .withColumn("flag", when(col("pcoc1") > 0 && col("jfb1") > 0 && col("post_cvr1") > 0, 1).otherwise(2))
 
-    val resultDF = data
+    val result = data
         .withColumn("pcoc", udfSelectByFlag()(col("pcoc1"), col("pcoc2"), col("flag")))
         .withColumn("jfb", udfSelectByFlag()(col("jfb1"), col("jfb2"), col("flag")))
-        .withColumn("post_cvr", udfSelectByFlag()(col("post_cvr1"), col("post_cvr2"), col("post_cvr")))
+        .withColumn("post_cvr", udfSelectByFlag()(col("post_cvr1"), col("post_cvr2"), col("flag")))
+
+    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data_cvr20190417")
+
+    val resultDF = result
         .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
