@@ -58,7 +58,7 @@ object OcpcSampleToPbHidden {
 
     val resultDF = result
       .withColumn("cvrcnt", lit(0))
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .selectExpr("identifier", "conversion_goal", "cpagiven", "cast(cvrcnt as long) cvrcnt", "kvalue")
 
     resultDF
         .withColumn("version", lit(version))
