@@ -88,7 +88,7 @@ object OcpcSampleToPbHidden {
          |  cost,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
          |  `date` = '$date1'
          |AND
@@ -98,7 +98,7 @@ object OcpcSampleToPbHidden {
          |AND
          |  industry = '$industry'
          |AND
-         |  cv_goal = $conversionGoal
+         |  conversion_goal = $conversionGoal
          |AND
          |  is_recommend = 1
        """.stripMargin
