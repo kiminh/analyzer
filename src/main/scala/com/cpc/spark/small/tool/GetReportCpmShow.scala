@@ -37,17 +37,20 @@ object GetReportCpmShow {
       .getOrCreate()
 
 
+    println("small tool GetReportCpmShow %s".format(day))
+
     val unionLog = ctx.sql(
       """
-        |SELECT isshow,bid,ctr,adslot_type FROM dl_cpc.cpc_union_log WHERE `date`="%s" AND isshow=1
+        |SELECT isshow,bid,ctr,adslot_type FROM dl_cpc.cpc_basedata_union_events WHERE `day`="%s" AND isshow=1
       """.stripMargin.format(day)).rdd
       .map {
         x =>
-          val bid = x.getInt(1).toFloat
-          val ctr = x.getLong(2).toFloat
+          val bid = x.getAs[Int](1).toFloat
+          val ctr = x.getAs[Long](2).toFloat
           val cpm = (bid * ctr / 10000).toInt * 10
-          (cpm.toString + x.getInt(3).toLong, (cpm, x.getInt(0).toLong, x.getInt(3)))
+          (cpm.toString + x.getAs[Int](3).toLong, (cpm, x.getAs[Int](0).toLong, x.getAs[Int](3)))
       }
+      .repartition(50)
       .reduceByKey {
         (a, b) =>
           (a._1, a._2 + b._2, a._3)
@@ -56,11 +59,18 @@ object GetReportCpmShow {
         x =>
           CpmShow(x._2._1, x._2._2, x._2._3, day)
       }
+
+
     //.cache()
 
     //unionLog.take(10).foreach(println)
     println("unionLog.count()", unionLog.count())
-    clearDataByDay(day)
+
+    if (unionLog.count() > 0) {
+      clearDataByDay(day)
+      println("mariadbUrl is",mariadbUrl)
+    }
+
 
     ctx.createDataFrame(unionLog)
       .write

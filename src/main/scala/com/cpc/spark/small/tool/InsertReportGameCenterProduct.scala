@@ -38,8 +38,8 @@ object InsertReportGameCenterProduct {
     val traceData = ctx.sql(
       """
         |SELECT catl.trace_type,catl.trace_op1,catl.trace_op2,catl.trace_op3,opt["game_source"]
-        |FROM dl_cpc.logparsed_cpc_trace_minute catl
-        |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
+        |FROM dl_cpc.cpc_basedata_trace_event catl
+        |WHERE catl.day="%s" AND catl.hour="%s" AND catl.trace_type IS NOT NULL
         |AND catl.trace_op1 IS NOT NULL AND catl.trace_op2 IS NOT NULL
       """.stripMargin.format(argDay, argHour))
       .rdd

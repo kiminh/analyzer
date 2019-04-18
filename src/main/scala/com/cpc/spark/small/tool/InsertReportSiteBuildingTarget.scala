@@ -137,27 +137,27 @@ object InsertReportSiteBuildingTarget {
     val unionData = ctx
       .sql(
         """
-          |SELECT searchid,ideaid,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
-          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
-          |ext_int["siteid"],interests
-          |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND (isshow+isclick)>0 AND ext_int["siteid"]>0
+          |SELECT searchid,ideaid,isshow,isclick,sex,age,os,province,phone_level,hour,
+          |network,coin,qukan_new_user,adslot_type,media_appsid,adslot_id,ext_string['brand'],browser_type,
+          |siteid,interests
+          |FROM dl_cpc.cpc_basedata_union_events
+          |WHERE day="%s" AND isshow>0 AND siteid>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val ideaid = x.getInt(1)
-          val isshow = if (x.getInt(3) > 0) 1 else x.get(2).toString.toLong
-          val isclick = x.get(3).toString.toLong
-          val sex = x.getInt(4)
-          val age = x.getInt(5)
-          val os = x.getInt(6)
-          val province = x.getInt(7)
-          val phoneLevel = x.getInt(8)
-          val hour = x.getString(9).toInt
-          val network = x.getInt(10)
-          val coin = x.getInt(11)
+          val searchid = x.getAs[String](0)
+          val ideaid = x.getAs[Int](1)
+          val isshow = if (x.getAs[Int](3) > 0) 1 else x.getAs[Int](2).toLong
+          val isclick = x.getAs[Int](3).toLong
+          val sex = x.getAs[Int](4)
+          val age = x.getAs[Int](5)
+          val os = x.getAs[Int](6)
+          val province = x.getAs[Int](7)
+          val phoneLevel = x.getAs[Int](8)
+          val hour = x.getAs[String](9).toInt
+          val network = x.getAs[Int](10)
+          val coin = x.getAs[Int](11)
           //coin
           var userLevel = 0
           if (coin == 0) {
@@ -170,16 +170,16 @@ object InsertReportSiteBuildingTarget {
             userLevel = 4
           }
 
-          val qukanNewUser = x.getInt(12)
-          val adslotType = x.getInt(13)
-          val mediaId = x.getString(14).toInt
-          val adslotid = x.getString(15).toInt
-          val brand = if (x.get(16) != null) x.get(16).toString else ""
-          val browserType = x.get(17).toString.toInt
+          val qukanNewUser = x.getAs[Int](12)
+          val adslotType = x.getAs[Int](13)
+          val mediaId = x.getAs[String](14).toInt
+          val adslotid = x.getAs[String](15).toInt
+          val brand = x.getAs[String](16)
+          val browserType = x.getAs[Int](17)
 
-          val siteid = x.get(18).toString.toInt
-          val interests = x.get(19).toString
-          val isStudent = if (interests.contains("224=")) 1 else if (interests.contains("225=")) 2 else 0
+          val siteid = x.getAs[Int](18)
+
+          val isStudent =  0
 
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
             network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType, isStudent)))
@@ -190,16 +190,16 @@ object InsertReportSiteBuildingTarget {
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,cutl.trace_op1,cul.ext_int["siteid"]
-        |FROM dl_cpc.cpc_union_trace_log cutl
-        |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0 AND cul.ext_int["siteid"]>0
+        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,cutl.trace_op1,cul.siteid
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0 AND cul.siteid>0
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val trace_type = x.getString(1)
+          val searchid = x.getAs[String](0)
+          val trace_type = x.getAs[String](1)
           var load = 0
           var active = 0
           if ((trace_type == "active1") || (trace_type == "active2") || (trace_type == "active3") || (trace_type == "active4") || (trace_type == "active5")) {
@@ -220,7 +220,7 @@ object InsertReportSiteBuildingTarget {
           val ctsite_active2 = if (trace_type == "ctsite_active2") 1 else 0
           val ctsite_active15 = if (trace_type == "ctsite_active15") 1 else 0
 
-          var traceOp1 = x.getString(3)
+          var traceOp1 = x.getAs[String](3)
           var landpage_ok = 0
           var stayinwx = 0
           if (trace_type == "lpload") {
@@ -230,7 +230,7 @@ object InsertReportSiteBuildingTarget {
               landpage_ok = 1
             }
           }
-          val siteid = x.get(4).toString.toInt
+          val siteid = x.getAs[Int](4)
 
           (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx, 0, "", 0, 0,
             active1, active2, active15, ctsite_active2, ctsite_active15)))
