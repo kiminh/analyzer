@@ -251,7 +251,7 @@ object OcpcCvrSmooth {
          |  kvalue,
          |  conversion_goal,
          |  version,
-         |  row_number() over (partition by identifie order by conversion_goal) as seq
+         |  row_number() over (partition by identifier order by conversion_goal) as seq
          |FROM
          |  dl_cpc.ocpc_kvalue_smooth_strat
          |WHERE
