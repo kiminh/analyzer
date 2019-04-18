@@ -34,7 +34,7 @@ object OcpcCharge {
   def filterData(baseData: DataFrame, ocpcOpenTime: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val rawData = baseData
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
-      .select("searchid", "unitid", "conversion_goal", "isshow", "isclick", "price", "ocpc_last_open_date", "ocpc_last_open_hour", "date", "hour")
+      .select("searchid", "unitid", "userid", "conversion_goal", "isshow", "isclick", "price", "ocpc_last_open_date", "ocpc_last_open_hour", "date", "hour")
       .filter(s"ocpc_last_open_date is not null and ocpc_last_open_hour is not null")
       .withColumn("flag", udfCmpTime()(col("date"), col("hour"), col("ocpc_last_open_date"), col("ocpc_last_open_hour")))
 
@@ -84,6 +84,7 @@ object OcpcCharge {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isshow,
