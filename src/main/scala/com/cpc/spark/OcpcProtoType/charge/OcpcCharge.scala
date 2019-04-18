@@ -23,7 +23,7 @@ object OcpcCharge {
     val media = args(3).toString
     val dayCnt = args(4).toInt
 
-    val ocpcOpenTime = getOcpcOpenTime(date, hour, spark)
+    val ocpcOpenTime = getOcpcOpenTime(4, date, hour, spark)
 
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
@@ -111,29 +111,54 @@ object OcpcCharge {
     data
   }
 
-  def getOcpcOpenTime(date: String, hour: String, spark: SparkSession) = {
+  def getOcpcOpenTime(dayCnt: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     从dl_cpc.ocpc_unit_list_hourly抽取每个单元最后一次打开oCPC的时间
      */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
     // 抽取最后打开时间
     val sqlRequest =
       s"""
          |SELECT
-         |    unitid,
+         |    unit_id as unitid,
          |    conversion_goal,
-         |    ocpc_last_open_date,
-         |    ocpc_last_open_hour
+         |    last_ocpc_opentime,
+         |    to_date(last_ocpc_opentime) as ocpc_open_date,
+         |    hour(last_ocpc_opentime) as ocpc_open_hour
          |FROM
-         |    dl_cpc.ocpc_unit_list_hourly
+         |    qttdw.dim_unit_ds
          |WHERE
-         |    `date` = '$date'
+         |    dt = '$date1'
          |AND
-         |    `hour` = '$hour'
+         |    is_ocpc = 1
+         |AND
+         |    last_ocpc_opentime is not null
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+
+    val data = rawData
+      .withColumn("ocpc_open_hour", udfConvertHour2String()(col("ocpc_open_hour")))
+      .select("unitid", "conversion_goal", "last_ocpc_opentime", "ocpc_open_date", "ocpc_open_hour")
+      .filter(s"ocpc_open_date = '$date1'")
 
     data
-
   }
+
+  def udfConvertHour2String() = udf((hourInt: Int) => {
+    var result = ""
+    if (hourInt < 10) {
+      result = "0" + hourInt.toString
+    } else {
+      result = hourInt.toString
+    }
+    result
+  })
 }
