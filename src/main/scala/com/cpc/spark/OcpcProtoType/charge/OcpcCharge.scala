@@ -24,8 +24,10 @@ object OcpcCharge {
     val dayCnt = args(4).toInt
 
     val ocpcOpenTime = getOcpcOpenTime(3, date, hour, spark)
+    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
 
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
+    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
 
     filterData(baseData, ocpcOpenTime, date, hour, spark)
 
@@ -39,7 +41,7 @@ object OcpcCharge {
       .withColumn("flag", udfCmpTime()(col("date"), col("hour"), col("ocpc_last_open_date"), col("ocpc_last_open_hour")))
 
     rawData
-      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ocpc_payback_cost20190418")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
 
   }
 
