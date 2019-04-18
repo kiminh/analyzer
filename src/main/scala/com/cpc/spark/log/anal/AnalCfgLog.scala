@@ -3,20 +3,17 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.common.Utils
-import com.cpc.spark.log.anal.AnalClickLog.srcRoot
-import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
+import com.cpc.spark.log.parser.LogParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
-import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
-import scala.collection.mutable
 import scala.sys.process._
 
 /**
   * Created by Roy on 2017/4/18.
   */
+@deprecated
 object AnalCfgLog {
 
   //  var srcRoot = "/gobblin/source/cpc"
@@ -45,7 +42,6 @@ object AnalCfgLog {
       .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
     //    val cfgData = prepareSource(spark, "cpc_cfg", hourBefore, 1)
     val cfgData = prepareSourceString(spark, "cpc_cfg", "src_cpc_cfg_minute", hourBefore, 1)
     if (cfgData == null) {
