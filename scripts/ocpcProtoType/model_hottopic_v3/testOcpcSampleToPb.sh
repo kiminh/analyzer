@@ -8,7 +8,7 @@ queue=root.cpc.develop
 
 date=$1
 hour=$2
-version=hottopic_test
+version=hottopicv2
 isKnown=1
 
 jars=(

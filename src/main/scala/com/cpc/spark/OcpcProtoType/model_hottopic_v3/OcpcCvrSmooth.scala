@@ -250,7 +250,8 @@ object OcpcCvrSmooth {
          |  jfb,
          |  kvalue,
          |  conversion_goal,
-         |  version
+         |  version,
+         |  row_number() over (partition by identifier order by conversion_goal) as seq
          |FROM
          |  dl_cpc.ocpc_kvalue_smooth_strat
          |WHERE
@@ -259,14 +260,20 @@ object OcpcCvrSmooth {
          |  `hour` = '$hour'
          |AND
          |  version = '$version'
+         |AND
+         |  pcoc is not null
+         |AND
+         |  jfb is not null
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
-    val result = rawData
+      .filter(s"seq = 1")
       .select("identifier", "conversion_goal", "cali_value")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("cali_value")).alias("cali_value"))
-      .select("identifier", "cali_value")
+
+    val result = rawData
+        .groupBy("identifier")
+        .agg(avg(col("cali_value")).alias("cali_value"))
+        .select("identifier", "cali_value")
 
     result
   }
