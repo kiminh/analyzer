@@ -49,18 +49,12 @@ object OcpcSampleToPb {
     result1.show(10)
 
     val result2 = getNewK(date, hour, version, spark)
-//    val ocpcUnit = getConversionGoal(date, hour, spark)
-//    val result2 = result2raw
-//      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
-//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
-//      .filter(s"cv_flag is not null")
-//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
-//    println("result2")
-//    result2.show(10)
     val result = result1
-      .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
+      .join(result2, Seq("identifier", "conversion_goal"), "outer")
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
+      .na.fill(0.0, Seq("cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb"))
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .filter(s"kvalue > 0")
 
     println("result")
     result.show(10)
