@@ -27,7 +27,7 @@ object OcpcCharge {
     ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
 
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
 
     filterData(baseData, ocpcOpenTime, date, hour, spark)
 
