@@ -9,17 +9,17 @@ object OcpcLaunchReport {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val date = args(0)
     //监控小说ocpc成本控制
-    val sql =
-      s"""
-         |select
-         |case when cpa_ratio<0.8 then '<0.8'
-         |when cpa_ratio>1.2 then '>1.2'
-         |else 'ok' end as tag,count(*),sum(cost/100) from dl_cpc.ocpc_detail_report_hourly_v3
-         |where cost >100000 and version='novel_v1' and `date`='2019-03-14' and `hour`='23'
-         |group by case when cpa_ratio<0.8 then '<0.8'
-         |when cpa_ratio>1.2 then '>1.2'
-         |else 'ok' end
-       """.stripMargin
+//    val sql =
+//      s"""
+//         |select
+//         |case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end as tag,count(*),sum(cost/100) from dl_cpc.ocpc_detail_report_hourly_v3
+//         |where cost >100000 and version='novel_v1' and `date`='2019-03-14' and `hour`='23'
+//         |group by case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end
+//       """.stripMargin
 
     // 生成基础数据
     val sql1=
@@ -54,9 +54,6 @@ object OcpcLaunchReport {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-//    val data0=spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
-//      "isshow_byunit","`date`")
-//    data0.printSchema()
     spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
       "isshow_byunit","`date`")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
