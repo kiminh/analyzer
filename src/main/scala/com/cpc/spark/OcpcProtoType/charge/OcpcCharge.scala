@@ -24,10 +24,13 @@ object OcpcCharge {
     val dayCnt = args(4).toInt
 
     val ocpcOpenTime = getOcpcOpenTime(3, date, hour, spark)
-    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
+//    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
-    val completeData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
+    val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
+    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
+
+//    val prevData = getPrevData(date, hour, spark)
 
   }
 
@@ -37,7 +40,7 @@ object OcpcCharge {
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
       .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "date", "hour")
 
-    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+//    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
 
     // 取转化数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -91,11 +94,17 @@ object OcpcCharge {
     val summaryData1 = spark
       .sql(sqlRequest2)
       .withColumn("pred_cost", col("cv") * col("cpagiven") * 1.2)
-//      .withColumn("pay", udfCalculatePay()(col()))
+      .withColumn("pay", udfCalculatePay()(col("cost"), col("pred_cost")))
 
+    val summaryData2 = baseData
+      .filter(s"seq = 1")
+      .select("unitid", "ocpc_time")
 
+    val summaryData = summaryData1
+      .join(summaryData2, Seq("unitid"), "left_outer")
+      .select("unitid", "cost", "cv", "pay", "ocpc_time")
 
-
+    summaryData
   }
 
   def udfCalculatePay() = udf((cost: Double, pred_cost: Double) => {
