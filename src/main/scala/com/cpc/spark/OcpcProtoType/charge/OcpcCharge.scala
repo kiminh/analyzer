@@ -95,6 +95,7 @@ object OcpcCharge {
       .sql(sqlRequest2)
       .withColumn("pred_cost", col("cv") * col("cpagiven") * 1.2)
       .withColumn("pay", udfCalculatePay()(col("cost"), col("pred_cost")))
+      .withColumn("cpareal", col("cost") * 1.0 / col("cv"))
 
     val summaryData2 = baseData
       .filter(s"seq = 1")
@@ -102,7 +103,7 @@ object OcpcCharge {
 
     val summaryData = summaryData1
       .join(summaryData2, Seq("unitid"), "left_outer")
-      .select("unitid", "cost", "cv", "pay", "ocpc_time", "cpagiven")
+      .select("unitid", "cost", "cv", "pay", "ocpc_time", "cpagiven", "cpareal")
 
     summaryData
   }
