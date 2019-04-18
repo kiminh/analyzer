@@ -98,7 +98,7 @@ object OcpcCharge {
          |AND
          |  is_ocpc = 1
          |AND
-         |  isshow=1
+         |  isclick=1
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).filter(s"is_hidden = 0")
