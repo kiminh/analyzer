@@ -25,41 +25,104 @@ object OcpcCharge {
 
     val ocpcOpenTime = getOcpcOpenTime(3, date, hour, spark)
     ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
-
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
-//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
 
-    filterData(baseData, ocpcOpenTime, date, hour, spark)
+    val completeData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
 
   }
 
-  def filterData(baseData: DataFrame, ocpcOpenTime: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val rawData = baseData
+  def assemblyData(dayCnt: Int, rawData: DataFrame, ocpcOpenTime: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // 取点击数据
+    val clickData = rawData
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
-      .select("searchid", "unitid", "userid", "conversion_goal", "isshow", "isclick", "price", "ocpc_last_open_date", "ocpc_last_open_hour", "date", "hour")
-      .filter(s"ocpc_last_open_date is not null and ocpc_last_open_hour is not null")
-      .withColumn("flag", udfCmpTime()(col("date"), col("hour"), col("ocpc_last_open_date"), col("ocpc_last_open_hour")))
+      .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "date", "hour")
 
-    rawData
-      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
+    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+
+    // 取转化数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr3'
+       """.stripMargin
+    println(sqlRequest1)
+    val cvData = spark.sql(sqlRequest1)
+
+    // 数据关联
+    val baseData = clickData
+        .join(cvData, Seq("searchid"), "left_outer")
+        .na.fill(0, Seq("iscvr"))
+        .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "iscvr", "date", "hour")
+        .withColumn("ocpc_time", concat_ws(" ", col("date"), col("hour")))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    // 数据汇总
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  sum(case when isclick=1 then price else 0 end) as cost,
+         |  sum(iscvr) as cv,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as cpagiven
+         |FROM
+         |  base_data
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest2)
+    val summaryData1 = spark
+      .sql(sqlRequest2)
+      .withColumn("pred_cost", col("cv") * col("cpagiven") * 1.2)
+      .withColumn("pay", udfCalculatePay()(col()))
+
+
+
 
   }
 
-  def udfCmpTime() = udf((date: String, hour: String, open_date: String, open_hour: String) => {
-    var flag = 0
-    if (date < open_date) {
-      flag = 0
-    } else if (date > open_date) {
-      flag = 1
+  def udfCalculatePay() = udf((cost: Double, pred_cost: Double) => {
+    var result = 0.0
+    if (cost <= pred_cost) {
+      result = 0.0
     } else {
-      if (hour < open_hour) {
-        flag = 0
-      } else {
-        flag = 1
-      }
+      result = cost - pred_cost
     }
-    flag
-  })
+    result
+   })
+
+//  def udfCmpTime() = udf((date: String, hour: String, open_date: String, open_hour: String) => {
+//    var flag = 0
+//    if (date < open_date) {
+//      flag = 0
+//    } else if (date > open_date) {
+//      flag = 1
+//    } else {
+//      if (hour < open_hour) {
+//        flag = 0
+//      } else {
+//        flag = 1
+//      }
+//    }
+//    flag
+//  })
 
   def getOcpcData(media: String, dayCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
@@ -85,13 +148,15 @@ object OcpcCharge {
       s"""
          |SELECT
          |  searchid,
+         |  timestamp,
          |  unitid,
          |  userid,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
-         |  isshow,
          |  isclick,
          |  price,
+         |  row_number() over(partition by unitid order by timstamp) as seq,
          |  date,
          |  hour
          |FROM
@@ -108,7 +173,9 @@ object OcpcCharge {
          |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest).filter(s"is_hidden = 0")
+    val data = spark
+        .sql(sqlRequest)
+        .filter(s"is_hidden = 0 and conversion_goal = 3")
 
     data
   }

@@ -126,7 +126,7 @@ object OcpcSampleToPb {
          |and version = '$version'
          |and industry = 'feedapp'
          |and conversion_goal = $conversionGoal
-         |and unitid in (2059113, 2009502)
+         |and unitid in (2008738,2061698)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
