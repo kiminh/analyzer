@@ -40,8 +40,17 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190215")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190215")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+
+    resultDF
+      .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("hottopic_v3"))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -62,7 +71,6 @@ object OcpcSampleToPb {
          |  identifier,
          |  conversion_goal,
          |  kvalue,
-         |  cpagiven,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
@@ -74,7 +82,19 @@ object OcpcSampleToPb {
     println(sqlRequest)
     val result1 = spark.sql(sqlRequest)
 
-    val result2 = getCPAgivenFromSuggest(date, hour, spark)
+    val result2 = getCPAgivenFromSuggest("hottopic_test", 1, date, hour, spark)
+
+    val resultJoin = result1
+        .join(result2, Seq("identifier", "conversion_goal"), "inner")
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+        .withColumn("conversion_goal", lit(0))
+
+    val resultNew = result1
+      .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .na.fill(1.0, Seq("cpagiven"))
+
+    val resultDF = resultNew.union(resultJoin)
 
     resultDF.printSchema()
     resultDF.show(10)
@@ -82,7 +102,7 @@ object OcpcSampleToPb {
     resultDF
   }
 
-  def getCPAgivenFromSuggest(date: String, hour: String, spark: SparkSession) = {
+  def getCPAgivenFromSuggest(version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -92,6 +112,27 @@ object OcpcSampleToPb {
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
 
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    cast(unitid as string) as identifier,
+         |    conversion_goal,
+         |    cpa * 1.0 as cpagiven
+         |FROM
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |    date = '$date1'
+         |AND
+         |    `hour` = '06'
+         |and is_recommend = 1
+         |and version = '$version'
+         |and industry = 'feedapp'
+         |and conversion_goal = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
