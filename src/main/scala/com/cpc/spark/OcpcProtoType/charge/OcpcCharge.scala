@@ -91,7 +91,7 @@ object OcpcCharge {
     val summaryData1 = spark
       .sql(sqlRequest2)
       .withColumn("pred_cost", col("cv") * col("cpagiven") * 1.2)
-      .withColumn("pay", udfCalculatePay()(col()))
+//      .withColumn("pay", udfCalculatePay()(col()))
 
 
 
