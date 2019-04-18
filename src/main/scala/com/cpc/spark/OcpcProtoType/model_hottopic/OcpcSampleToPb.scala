@@ -48,8 +48,8 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("hottopic_v3"))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
 
     savePbPack(resultDF, version, isKnown)
@@ -80,7 +80,7 @@ object OcpcSampleToPb {
          |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
-    val result1 = spark.sql(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
 
     val result2 = getCPAgivenFromSuggest("hottopic_test", 1, date, hour, spark)
 
