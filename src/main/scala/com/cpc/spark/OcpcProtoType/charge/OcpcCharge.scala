@@ -21,11 +21,11 @@ object OcpcCharge {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
-    val hourInt = args(4).toInt
+    val dayCnt = args(4).toInt
 
     val ocpcOpenTime = getOcpcOpenTime(date, hour, spark)
 
-    val baseData = getOcpcData(media, hourInt, date, hour, spark)
+    val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
     val correctData = filterData(baseData, ocpcOpenTime, date, hour, spark)
 
