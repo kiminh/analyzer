@@ -72,12 +72,26 @@ object OcpcSampleToPb {
          |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val result1 = spark.sql(sqlRequest)
+
+    val result2 = getCPAgivenFromSuggest(date, hour, spark)
 
     resultDF.printSchema()
     resultDF.show(10)
 
     resultDF
+  }
+
+  def getCPAgivenFromSuggest(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val startdate = calendar.getTime
+    val date1 = dateConverter.format(startdate)
+
   }
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
