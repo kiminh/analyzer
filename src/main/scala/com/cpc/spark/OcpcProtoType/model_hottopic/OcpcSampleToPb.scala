@@ -80,7 +80,7 @@ object OcpcSampleToPb {
          |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val result1 = spark.sql(sqlRequest)
 
     val result2 = getCPAgivenFromSuggest("hottopic_test", 1, date, hour, spark)
 
