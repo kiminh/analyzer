@@ -102,7 +102,7 @@ object OcpcCharge {
 
     val summaryData = summaryData1
       .join(summaryData2, Seq("unitid"), "left_outer")
-      .select("unitid", "cost", "cv", "pay", "ocpc_time")
+      .select("unitid", "cost", "cv", "pay", "ocpc_time", "cpagiven")
 
     summaryData
   }
