@@ -23,7 +23,7 @@ object OcpcCharge {
     val media = args(3).toString
     val dayCnt = args(4).toInt
 
-    val ocpcOpenTime = getOcpcOpenTime(4, date, hour, spark)
+    val ocpcOpenTime = getOcpcOpenTime(3, date, hour, spark)
 
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
@@ -130,8 +130,8 @@ object OcpcCharge {
          |    unit_id as unitid,
          |    conversion_goal,
          |    last_ocpc_opentime,
-         |    to_date(last_ocpc_opentime) as ocpc_open_date,
-         |    hour(last_ocpc_opentime) as ocpc_open_hour
+         |    to_date(last_ocpc_opentime) as ocpc_last_open_date,
+         |    hour(last_ocpc_opentime) as ocpc_last_open_hour
          |FROM
          |    qttdw.dim_unit_ds
          |WHERE
@@ -145,9 +145,11 @@ object OcpcCharge {
     val rawData = spark.sql(sqlRequest)
 
     val data = rawData
-      .withColumn("ocpc_open_hour", udfConvertHour2String()(col("ocpc_open_hour")))
-      .select("unitid", "conversion_goal", "last_ocpc_opentime", "ocpc_open_date", "ocpc_open_hour")
-      .filter(s"ocpc_open_date = '$date1'")
+      .withColumn("ocpc_last_open_hour", udfConvertHour2String()(col("ocpc_last_open_hour")))
+      .select("unitid", "conversion_goal", "last_ocpc_opentime", "ocpc_last_open_date", "ocpc_last_open_hour")
+      .filter(s"ocpc_last_open_date = '$date1'")
+
+    data.show(10)
 
     data
   }
