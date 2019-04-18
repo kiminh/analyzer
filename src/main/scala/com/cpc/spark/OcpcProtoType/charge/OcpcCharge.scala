@@ -37,7 +37,8 @@ object OcpcCharge {
       .select("searchid", "unitid", "conversion_goal", "isshow", "isclick", "price", "ocpc_last_open_date", "ocpc_last_open_hour", "date", "hour")
       .withColumn("flag", udfCmpTime()(col("date"), col("hour"), col("ocpc_last_open_date"), col("ocpc_last_open_hour")))
 
-    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_payback_cost20190418")
+    rawData
+      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ocpc_payback_cost20190418")
 
   }
 
