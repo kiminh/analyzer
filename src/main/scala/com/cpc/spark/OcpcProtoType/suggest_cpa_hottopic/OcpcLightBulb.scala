@@ -34,14 +34,14 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "dl_cpc.ocpc_light_control_version"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
+//    val tableName = "dl_cpc.ocpc_light_control_version"
+    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
 
     // 抽取数据
-    val cpcData = getRecommendationAd(version, date, hour, spark)
+    val cpcData = getRecommendationAdV2(version, date, hour, spark)
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
     val cvUnit = getCPAgiven(date, hour, spark)
 
@@ -63,19 +63,80 @@ object OcpcLightBulb{
 
     resultDF.show(10)
 
+//    resultDF
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+//
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ##########################")
+
+    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
+  }
+
+  def getRecommendationAdV2(version: String, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    conversion_goal,
+         |    cpa * 1.0 / 100 as cpa1
+         |FROM
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |    date = '$date'
+         |AND
+         |    `hour` = '06'
+         |and is_recommend = 1
+         |and version = '$version'
+         |and industry = 'feedapp'
+       """.stripMargin
+
+    //    val sqlRequest =
+    //        s"""
+    //           |select
+    //           |    a.unitid,
+    //           |	    a.original_conversion as conversion_goal,
+    //           |    a.cpa / 100.0 as cpa1
+    //           |FROM
+    //           |    (SELECT
+    //           |        *
+    //           |    FROM
+    //           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
+    //           |    WHERE
+    //           |        date = '$date'
+    //           |    AND
+    //           |        `hour` = '06'
+    //           |    and is_recommend = 1
+    //           |    and version = '$version'
+    //           |    and industry in ('elds', 'feedapp')) as a
+    //           |INNER JOIN
+    //           |    (
+    //           |        select distinct unitid, adslot_type
+    //           |        FROM dl_cpc.ocpc_ctr_data_hourly
+    //           |        where date >= '$date1'
+    //           |    ) as b
+    //           |ON
+    //           |    a.unitid=b.unitid
+    //         """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
     resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ##########################")
-
-//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
-    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
 
