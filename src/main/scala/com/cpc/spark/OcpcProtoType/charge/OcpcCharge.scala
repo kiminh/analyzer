@@ -35,6 +35,7 @@ object OcpcCharge {
     val rawData = baseData
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
       .select("searchid", "unitid", "conversion_goal", "isshow", "isclick", "price", "ocpc_last_open_date", "ocpc_last_open_hour", "date", "hour")
+      .filter(s"ocpc_last_open_date is not null and ocpc_last_open_hour is not null")
       .withColumn("flag", udfCmpTime()(col("date"), col("hour"), col("ocpc_last_open_date"), col("ocpc_last_open_hour")))
 
     rawData
