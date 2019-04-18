@@ -40,8 +40,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190215")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190215")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     resultDF
       .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
