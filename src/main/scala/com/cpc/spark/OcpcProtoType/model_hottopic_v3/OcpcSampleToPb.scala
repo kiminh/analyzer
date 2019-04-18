@@ -76,7 +76,7 @@ object OcpcSampleToPb {
 //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultData1 = result
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
     val resultData2 = getCPAgivenFromSuggest("hottopic_test", 1, date, hour, spark)
 
     val resultJoin = resultData1
