@@ -85,7 +85,7 @@ object OcpcCharge {
          |  unitid,
          |  sum(case when isclick=1 then price else 0 end) as cost,
          |  sum(iscvr) as cv,
-         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as cpagiven
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
          |GROUP BY unitid
