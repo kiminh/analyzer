@@ -59,20 +59,20 @@ object InsertReportAdslotVideoDownload {
     val unionLogDataByZQDownSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
           |WHERE cul.isfill>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1
-          |AND cul.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value IN("NATIVESDK","JSSDK")
+          |AND cul.day="%s" AND usertype=2 AND client_type IN("NATIVESDK","JSSDK")
         """.stripMargin.format(argDay))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -81,6 +81,7 @@ object InsertReportAdslotVideoDownload {
           (Info(a.mediaId, a.adslotId, a.adslotType, a.req + b.req, a.isfill + b.isfill, a.isshow + b.isshow, a.isclick + b.isclick))
       }
       .map(_._2)
+      .repartition(50)
       .cache()
     println("unionLogDataByZQDownSdk count is", unionLogDataByZQDownSdk.count())
 
@@ -88,22 +89,23 @@ object InsertReportAdslotVideoDownload {
     val jsTraceDataByZQDownSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,cutl.trace_op1,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cul.searchid=cutl.searchid
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,cutl.trace_op1,cutl.trace_op1
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cul.searchid=cutl.searchid
           |WHERE
-          |cul.isclick>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1 -- AND cutl.trace_type in("apkdown")
-          |AND cul.date="%s" AND cutl.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value IN("NATIVESDK","JSSDK")
+          |cul.isclick>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1
+          |AND cul.day="%s" AND cutl.day="%s" AND usertype=2 AND cul.client_type IN("NATIVESDK","JSSDK")
         """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5).replaceAll("[\\ud800\\udc00-\\udbff\\udfff\\ud800-\\udfff]", "*")
           var total = 1.toLong
+
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
       .reduceByKey {
@@ -112,6 +114,7 @@ object InsertReportAdslotVideoDownload {
       }
       .filter(_._1._2.length < 200)
       .map(_._2)
+      .repartition(50)
       .cache()
     println("jsTraceDataByZQDownSdk count is", jsTraceDataByZQDownSdk.count())
 

@@ -50,14 +50,14 @@ object InsertReportGameCenter {
     val traceData = ctx.sql(
       """
         |SELECT catl.trace_type,opt["game_source"]
-        |FROM dl_cpc.logparsed_cpc_trace_minute catl
-        |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
+        |FROM dl_cpc.cpc_basedata_trace_event catl
+        |WHERE catl.day="%s" AND catl.hour="%s" AND catl.trace_type IS NOT NULL
       """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val traceType = x.getString(0)
-          val gameSource = if (x.get(1) != null && x.getString(1).length > 0) x.getString(1) else "qtt"
+          val traceType = x.getAs[String](0)
+          val gameSource = if (!x.isNullAt(1) && x.getAs[String](1).length > 0) x.getAs[String](1) else "qtt"
           var total = 0
           if (traceType.startsWith("load_gameCenter") || traceType.startsWith("active_game")) {
             total = 1
@@ -85,16 +85,16 @@ object InsertReportGameCenter {
     val uvSeq = ctx.sql(
       """
         |SELECT DISTINCT catl.trace_type,opt["device"],opt["game_source"]
-        |FROM dl_cpc.logparsed_cpc_trace_minute catl
-        |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
+        |FROM dl_cpc.cpc_basedata_trace_event catl
+        |WHERE catl.day="%s" AND catl.hour="%s" AND catl.trace_type IS NOT NULL
         |AND catl.trace_op1 IS NOT NULL AND catl.trace_op2 IS NOT NULL
         |AND catl.ip IS NOT NULL AND catl.trace_type="load_gameCenter"
       """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val device = if (x.get(1) != null) x.getString(1) else ""
-          val gameSource = if (x.get(2) != null && x.getString(2).length > 0) x.getString(2) else "qtt"
+          //val device = if (!x.isNullAt(2)) x.getAs[String](1) else ""
+          val gameSource = if (!x.isNullAt(2) && x.getAs[String](2).length > 0) x.getAs[String](2) else "qtt"
           ((gameSource), (1.toLong))
       }
       .reduceByKey {
