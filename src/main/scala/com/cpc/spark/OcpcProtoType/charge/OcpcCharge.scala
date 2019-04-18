@@ -165,7 +165,7 @@ object OcpcCharge {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isclick,
          |  price,
-         |  row_number() over(partition by unitid order by timstamp) as seq,
+         |  row_number() over(partition by unitid order by timestamp) as seq,
          |  date,
          |  hour
          |FROM
