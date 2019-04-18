@@ -48,15 +48,15 @@ object OcpcSampleToPb {
     println("result1")
     result1.show(10)
 
-    val result2raw = getNewK(date, hour, version, spark)
-    val ocpcUnit = getConversionGoal(date, hour, spark)
-    val result2 = result2raw
-      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
-      .filter(s"cv_flag is not null")
-      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
-    println("result2")
-    result2.show(10)
+    val result2 = getNewK(date, hour, version, spark)
+//    val ocpcUnit = getConversionGoal(date, hour, spark)
+//    val result2 = result2raw
+//      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
+//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
+//      .filter(s"cv_flag is not null")
+//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
+//    println("result2")
+//    result2.show(10)
     val result = result1
       .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
@@ -72,19 +72,69 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
-    val resultDF = result
+    val resultData1 = result
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+    val resultData2 = getCPAgivenFromSuggest("hottopic_test", 1, date, hour, spark)
+
+    val resultJoin = resultData1
+      .join(resultData2, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .withColumn("conversion_goal", lit(0))
+
+    val resultNew = resultData1
+      .join(resultData2, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .na.fill(1.0, Seq("cpagiven"))
+
+    val resultDF = resultNew
+      .union(resultJoin)
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+
+//    val resultDF = resultNew.union(resultJoin)
 
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
+  }
+
+  def getCPAgivenFromSuggest(version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val startdate = calendar.getTime
+    val date1 = dateConverter.format(startdate)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    cast(unitid as string) as identifier,
+         |    conversion_goal,
+         |    cpa * 1.0 as cpagiven
+         |FROM
+         |    dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |    date = '$date1'
+         |AND
+         |    `hour` = '06'
+         |and is_recommend = 1
+         |and version = '$version'
+         |and industry = 'feedapp'
+         |and conversion_goal = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
