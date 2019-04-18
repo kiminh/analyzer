@@ -84,6 +84,8 @@ object OcpcSampleToPb {
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
       .withColumn("conversion_goal", lit(0))
 
+    resultJoin.write.mode("overwrite").saveAsTable("test.check_data_table20190418")
+
     val resultNew = resultData1
       .join(resultData2, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")

@@ -266,7 +266,7 @@ object OcpcCvrSmooth {
       .select("identifier", "conversion_goal", "cali_value")
       .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cali_value")).alias("cali_value"))
-      .select("identifier", "cali_value")
+      .select("identifier", "conversion_goal", "cali_value")
 
     result
   }
