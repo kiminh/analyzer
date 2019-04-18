@@ -47,19 +47,19 @@ object InsertReportSpecifiedMedia {
       .sql(
         """
           |SELECT searchid,userid,unitid,ideaid,isshow,isclick,hour
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s" AND cul.media_appsid="80000001" AND cul.adslot_type=1 AND cul.isshow>0
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s" AND cul.media_appsid="80000001" AND cul.adslot_type=1 AND cul.isshow>0
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val userid = x.getInt(1)
-          val unitid = x.getInt(2)
-          val ideaid = x.getInt(3)
-          val isshow = x.getInt(4)
-          val isclick = x.getInt(5)
-          val hour = x.getString(6).toInt
+          val searchid = x.getAs[String](0)
+          val userid = x.getAs[Int](1)
+          val unitid = x.getAs[Int](2)
+          val ideaid = x.getAs[Int](3)
+          val isshow = x.getAs[Int](4)
+          val isclick = x.getAs[Int](5)
+          val hour = x.getAs[String](6).toInt
           ((ideaid), UnionLogInfo(searchid, userid, unitid, ideaid, isshow, isclick, "", 0, hour))
 
       }
@@ -75,21 +75,21 @@ object InsertReportSpecifiedMedia {
       """
         |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,cutl.hour,
         |cul.userid, cul.unitid,cul.ideaid
-        |FROM dl_cpc.cpc_union_trace_log cutl
-        |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s"  AND cutl.hour="%s" AND cul.hour="%s"
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s"  AND cutl.hour="%s" AND cul.hour="%s"
         |AND cul.media_appsid="80000001" AND cul.adslot_type=1 AND cul.isclick>0
       """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val duration = x.getInt(2)
-          val trace_type = if (x.getString(1) == "stay") "%s%d".format(x.getString(1), x.getInt(2)) else x.getString(1)
-          val hour = x.getString(3).toInt
-          val userid = x.getInt(4)
-          val unitid = x.getInt(5)
-          val ideaid = x.getInt(6)
+          val searchid = x.getAs[String](0)
+          val duration = x.getAs[Int](2)
+          val trace_type = if (x.getAs[String](1) == "stay") "%s%d".format(x.getAs[String](1), x.getAs[Int](2)) else x.getAs[String](1)
+          val hour = x.getAs[String](3).toInt
+          val userid = x.getAs[Int](4)
+          val unitid = x.getAs[Int](5)
+          val ideaid = x.getAs[Int](6)
           ((ideaid, trace_type), UnionLogInfo(searchid, userid, unitid, ideaid, 0, 0, trace_type, 1, hour))
       }
       .reduceByKey {

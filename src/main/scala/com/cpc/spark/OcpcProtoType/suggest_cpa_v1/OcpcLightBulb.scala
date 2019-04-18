@@ -174,6 +174,7 @@ object OcpcLightBulb{
     val data = spark
       .table("dl_cpc.ocpc_light_control_daily")
       .where(s"`date`='$date' and version='$version'")
+      .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
       .repartition(2)
 
     data.show(10)

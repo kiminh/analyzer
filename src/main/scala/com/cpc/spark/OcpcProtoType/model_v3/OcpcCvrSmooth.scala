@@ -57,15 +57,9 @@ object OcpcCvrSmooth {
     println(s"date=$date, hour=$hour, media:$media, version:$version")
 
     // 获取postcvr数据
-//    val cv1Data = getBaseData(media, "cvr1", hourInt, date, hour, spark)
-//    val cv2Data = getBaseData(media, "cvr2", hourInt, date, hour, spark)
-//    val cv3Data = getBaseData(media, "cvr3", hourInt, date, hour, spark)
-    val cvr1 = getPostCvr(1, date, hour, spark)
-    val cvr2 = getPostCvr(2, date, hour, spark)
-    val cvr3 = getPostCvr(3, date, hour, spark)
-//    val cvr1 = calculatePCOC(cv1Data, spark).withColumn("cvr1", col("post_cvr"))
-//    val cvr2 = calculatePCOC(cv2Data, spark).withColumn("cvr2", col("post_cvr"))
-//    val cvr3 = calculatePCOC(cv3Data, spark).withColumn("cvr3", col("post_cvr"))
+    val cvr1 = getPostCvr(1, version, date, hour, spark)
+    val cvr2 = getPostCvr(2, version, date, hour, spark)
+    val cvr3 = getPostCvr(3, version, date, hour, spark)
     val cvrData = cvr1
       .join(cvr2, Seq("identifier"), "outer")
       .join(cvr3, Seq("identifier"), "outer")
@@ -100,7 +94,7 @@ object OcpcCvrSmooth {
 
   }
 
-  def getPostCvr(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getPostCvr(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     val cvrType = "cvr" + conversionGoal.toString
     val sqlRequest =
       s"""
@@ -114,7 +108,7 @@ object OcpcCvrSmooth {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('qtt_demo', 'qtt_hidden')
+         |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
        """.stripMargin

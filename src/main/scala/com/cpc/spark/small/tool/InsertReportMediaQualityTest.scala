@@ -46,20 +46,20 @@ object InsertReportMediaQualityTest {
     val unionLogData = ctx
       .sql(
         """
-          |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,planid
-          |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND ext["adclass"].int_value=132102100 AND userid=1001028 AND isshow>0 AND planid>0
+          |SELECT searchid,media_appsid,adslot_id,adslot_type,isshow,isclick,planid
+          |FROM dl_cpc.cpc_basedata_union_events
+          |WHERE day="%s" AND adclass=132102100 AND userid=1001028 AND isshow>0 AND planid>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val mediaid = x.getString(1)
-          val adslotid = x.getString(2)
-          val adslot_type = x.getInt(3)
-          val isshow = x.getInt(4)
-          val isclick = x.getInt(5)
-          val planid = x.getInt(6)
+          val searchid = x.getAs[String](0)
+          val mediaid = x.getAs[String](1)
+          val adslotid = x.getAs[String](2)
+          val adslot_type = x.getAs[Int](3)
+          val isshow = x.getAs[Int](4)
+          val isclick = x.getAs[Int](5)
+          val planid = x.getAs[Int](6)
           ((adslotid, planid), (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, "", 0, planid)))
       }
       .reduceByKey {
@@ -72,21 +72,21 @@ object InsertReportMediaQualityTest {
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,cutl.trace_type,cutl.duration,cul.planid
-        |FROM dl_cpc.cpc_union_trace_log cutl
-        |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value=132102100 AND cul.userid=1001028 AND cul.isclick>0
+        |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,cutl.trace_type,cutl.duration,cul.planid
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s" AND cul.adclass=132102100 AND cul.userid=1001028 AND cul.isclick>0
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val mediaid = x.getString(1)
-          val adslotid = x.getString(2)
-          val adslot_type = x.getInt(3)
-          val duration = x.getInt(5)
-          val trace_type = if (x.getString(4) == "stay") "%s%d".format(x.getString(4), x.getInt(5)) else x.getString(4)
-          val planid = x.getInt(6)
+          val searchid = x.getAs[String](0)
+          val mediaid = x.getAs[String](1)
+          val adslotid = x.getAs[String](2)
+          val adslot_type = x.getAs[Int](3)
+          val duration = x.getAs[Int](5)
+          val trace_type = if (x.getAs[String](4) == "stay") "%s%d".format(x.getAs[String](4), x.getAs[Int](5)) else x.getAs[String](4)
+          val planid = x.getAs[Int](6)
           ((adslotid, planid, trace_type), (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, 0, 0, trace_type, 1, planid)))
       }
       .reduceByKey {

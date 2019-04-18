@@ -64,37 +64,37 @@ object InsertReportCategoryTarget {
     val unionLogData = ctx
       .sql(
         """
-          |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,
-          |hour,ext["adclass"].int_value,isfill,price,network,coin,ext['qukan_new_user'].int_value,ext['city_level'].int_value,
+          |SELECT searchid,media_appsid,adslot_id,adslot_type,isshow,isclick,sex,age,os,province,phone_level,
+          |hour,adclass,isfill,price,network,coin,qukan_new_user,city_level,
           |interests
-          |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND ext["adclass"].int_value>0 -- AND (isshow+isclick)>1
+          |FROM dl_cpc.cpc_basedata_union_events
+          |WHERE day="%s" AND adclass>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val mediaid = x.getString(1)
-          val adslotid = x.getString(2)
-          val adslot_type = x.getInt(3)
-          val isshow = x.getInt(4)
-          val isclick = x.getInt(5)
-          val sex = x.getInt(6)
-          val age = x.getInt(7)
-          val os = x.getInt(8)
-          val province = x.getInt(9)
-          val phone_level = if (x.get(10) == null) 0 else x.getInt(10)
-          val hour = x.getString(11).toInt
-          val adclass = if (x.get(12) == null) 0 else x.getInt(12)
+          val searchid = x.getAs[String](0)
+          val mediaid = x.getAs[String](1)
+          val adslotid = x.getAs[String](2)
+          val adslot_type = x.getAs[Int](3)
+          val isshow = x.getAs[Int](4)
+          val isclick = x.getAs[Int](5)
+          val sex = x.getAs[Int](6)
+          val age = x.getAs[Int](7)
+          val os = x.getAs[Int](8)
+          val province = x.getAs[Int](9)
+          val phone_level = x.getAs[Int](10)
+          val hour = x.getAs[String](11).toInt
+          val adclass = x.getAs[Int](12)
           val req = 1
-          val isfull = x.getInt(13)
-          val price = if (isclick > 0) x.getInt(14) else 0
+          val isfull = x.getAs[Int](13)
+          val price = if (isclick > 0) x.getAs[Int](14) else 0
 
           val load = 0
           val active = 0
 
-          val network = x.getInt(15)
-          val coin = x.getInt(16)
+          val network = x.getAs[Int](15)
+          val coin = x.getAs[Int](16)
           //coin
           var user_level = 0
           if (coin == 0) {
@@ -107,10 +107,9 @@ object InsertReportCategoryTarget {
             user_level = 4
           }
 
-          val qukan_new_user = x.getInt(17)
-          val city_level = if (x.get(18) == null) 0 else x.getInt(18)
-          val interests = x.get(19).toString
-          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
+          val qukan_new_user = x.getAs[Int](17)
+          val city_level = x.getAs[Int](18)
+          val isStudent = 0
 
           val mtype = if (quMedia.filter(_ == mediaid).length > 0) 1 else 0
           val qu_adslot_type = if (mtype == 1) adslot_type else 0
@@ -126,16 +125,16 @@ object InsertReportCategoryTarget {
     val traceData = ctx.sql(
       """
         |SELECT DISTINCT cutl.searchid,cutl.trace_type
-        |FROM dl_cpc.cpc_union_trace_log cutl
-        |LEFT JOIN dl_cpc.cpc_union_log cul ON cul.searchid=cutl.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value>0 AND cul.isclick>0
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |LEFT JOIN dl_cpc.cpc_basedata_union_events cul ON cul.searchid=cutl.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s" AND cul.adclass>0 AND cul.isclick>0
         |AND cutl.trace_type IN("load","active1","active2","active3","active4","active5","disactive")
       """.stripMargin.format(argDay,argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val trace_type = x.getString(1)
+          val searchid = x.getAs[String](0)
+          val trace_type = x.getAs[String](1)
           var load = 0
           var active = 0
 
@@ -246,7 +245,7 @@ object InsertReportCategoryTarget {
       }
     val adslotData = getTargetData(inputAdslotData, argDay, "adslot")
     //println("adslotData count is", adslotData.count())
-    insertData = insertData.union(adslotData)
+    insertData = insertData.union(adslotData).repartition(50)
     println("1",insertData.count())
 
     val inputAdslotTypeData = allData
@@ -320,7 +319,7 @@ object InsertReportCategoryTarget {
       }
     val osData = getTargetData(inputOsData, argDay, "os")
     //println("osData count is", osData.count())
-    insertData = insertData.union(osData)
+    insertData = insertData.union(osData).repartition(50)
 
     val inputProvinceData = allData
       .map {
@@ -430,7 +429,7 @@ object InsertReportCategoryTarget {
       }
     val cityLevelData = getTargetData(inputCityLevelData, argDay, "city_level")
     //println("cityLevelData count is", cityLevelData.count())
-    insertData = insertData.union(cityLevelData)
+    insertData = insertData.union(cityLevelData).repartition(50)
 
     val inputQuAdslotTypeData = allData
       .filter(_._2.qu_adslot_type > 0)
