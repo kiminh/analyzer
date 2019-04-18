@@ -1,4 +1,5 @@
-package com.cpc.spark.OcpcProtoType.model_hottopic_hidden
+package com.cpc.spark.OcpcProtoType.model_hottopic_hidden_new
+
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession

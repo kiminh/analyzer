@@ -1,6 +1,4 @@
-
-
-package com.cpc.spark.OcpcProtoType.model_hottopic_hidden
+package com.cpc.spark.OcpcProtoType.model_hottopic_hidden_new
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -14,6 +12,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import ocpc.ocpc.{OcpcList, SingleRecord}
 
 import scala.collection.mutable.ListBuffer
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcSampleToPb {
@@ -31,8 +30,9 @@ object OcpcSampleToPb {
     kvalue>0
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
-    // bash: 2019-01-02 12 qtt_demo 1
+    // bash: 2019-01-02 12 hottopic_test 1
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
@@ -51,32 +51,32 @@ object OcpcSampleToPb {
     val result2raw = getNewK(date, hour, version, spark)
     val ocpcUnit = getConversionGoal(date, hour, spark)
     val result2 = result2raw
-        .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
-        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "ocpc_flag")
-        .filter(s"ocpc_flag is null")
-        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
+      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
+      .filter(s"cv_flag is not null")
+      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
     println("result2")
     result2.show(10)
     val result = result1
-        .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
-        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
-        .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
+      .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
 
     println("result")
     result.show(10)
     val smoothData = result
-        .filter(s"flag = 1 and kvalue2 is not null")
-        .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal")
+      .filter(s"flag = 1 and kvalue2 is not null")
+      .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal")
 
     smoothData
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-//        .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultDF = result
-        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
 
     resultDF
         .withColumn("version", lit(version))
@@ -84,14 +84,15 @@ object OcpcSampleToPb {
 //        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
-//    savePbPack(resultDF, version, isKnown)
+    savePbPack(resultDF, version, isKnown)
   }
+
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
     val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -104,14 +105,13 @@ object OcpcSampleToPb {
     val resultDF = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .withColumn("ocpc_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "ocpc_flag")
+      .withColumn("cv_flag", lit(1))
+      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "cv_flag")
       .distinct()
 
     resultDF.show(10)
     resultDF
   }
-
 
   def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
     /*
@@ -138,16 +138,19 @@ object OcpcSampleToPb {
          |  pcoc > 0
          |AND
          |  jfb > 0
-         |AND
-         |  conversion_goal = 2
        """.stripMargin
+//    2018851
+//    1995684
+//    1971569
+//    1981958
+//    2010532
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
     val resultDF  =data
-        .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
-        .withColumn("flag", lit(1))
-        .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
+      .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
+      .withColumn("flag", lit(1))
+      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
 
     resultDF
 
@@ -164,67 +167,32 @@ object OcpcSampleToPb {
     2. 按照实验配置文件给出cpagiven
      */
     // 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
-    val selectCondition1 = s"`date`='$date' and `hour`='$hour' and version='$version'"
+    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version'"
 
-    val sqlRequest1 =
+    val sqlRequest =
       s"""
          |SELECT
          |  identifier,
          |  conversion_goal,
-         |  kvalue as kvalue1,
-         |  cpagiven as cpagiven1,
+         |  kvalue,
+         |  cpagiven as cpagiven,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
-         |  $selectCondition1
+         |  $selectCondition
          |AND
          |  kvalue > 0
        """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1)
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
 
-
-    // 时间分区
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition2 = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpagiven2,
-         |  kvalue as kvalue2
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_hourly
-         |WHERE
-         |  $selectCondition2
-         |AND
-         |  industry in ('elds', 'feedapp')
-       """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2)
-
-    // 数据关联
-    val result = data2
-      .join(data1, Seq("identifier", "conversion_goal"), "left_outer")
-      .withColumn("cpagiven", col("cpagiven2"))
-      .withColumn("kvalue", when(col("kvalue1").isNotNull, col("kvalue1")).otherwise(col("kvalue2")))
-      .select("identifier", "conversion_goal", "cpagiven1", "cpagiven2", "cvrcnt", "kvalue1", "kvalue2", "cpagiven", "kvalue")
-
-
+    val result = data
     result.printSchema()
     result.show(10)
 
-    val resultDF = result
-      .na.fill(0, Seq("cvrcnt"))
-      .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
+    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
+
 
     resultDF
   }
