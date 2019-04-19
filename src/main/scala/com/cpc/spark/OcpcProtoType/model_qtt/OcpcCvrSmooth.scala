@@ -75,7 +75,7 @@ object OcpcCvrSmooth {
     val caliValue = getCaliValue(date, hour, spark)
 
     // 组装数据
-    val result = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val result = assemblyDataV2(cvrData, factorData, expData, suggestCPA, caliValue, spark)
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -83,8 +83,8 @@ object OcpcCvrSmooth {
       .withColumn("version", lit("qtt_demo"))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
@@ -185,43 +185,44 @@ object OcpcCvrSmooth {
 //  }
 //
 //
-//  def assemblyData(cvrData: DataFrame, factorData: DataFrame, expData: DataFrame, suggestCPA: DataFrame, caliValue: DataFrame, spark: SparkSession) = {
-//    /*
-//      identifier      string  NULL
-//      min_bid double  NULL
-//      cvr1    double  NULL
-//      cvr2    double  NULL
-//      cvr3    double  NULL
-//      min_cpm double  NULL
-//      factor1 double  NULL
-//      factor2 double  NULL
-//      factor3 double  NULL
-//      cpc_bid double  NULL
-//      cpa_suggest     double  NULL
-//      param_t double  NULL
-//      cali_value      double  NULL
-//     */
-//    val result = cvrData
-//      .join(factorData, Seq("identifier"), "outer")
-//      .join(expData, Seq("identifier"), "outer")
-//      .join(suggestCPA, Seq("identifier"), "outer")
-//      .join(caliValue, Seq("identifier"), "left_outer")
-//      .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
-//      .withColumn("min_bid", lit(0))
-//      .withColumn("min_cpm", lit(0))
-//      .na.fill(0, Seq("min_bid", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
-//      .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
-//      .na.fill(0.2, Seq("factor1"))
-//      .na.fill(0.5, Seq("factor2", "factor3"))
-//      .na.fill(1.0, Seq("cali_value"))
-//      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
-//
-////    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
-////    val result = data
-////        .withColumn("factor3", udfSetFactor3()(col("factor3"), col("cali_value")))
-//
-//    result
-//  }
+  def assemblyDataV2(cvrData: DataFrame, factorData: DataFrame, expData: DataFrame, suggestCPA: DataFrame, caliValue: DataFrame, spark: SparkSession) = {
+    /*
+      identifier      string  NULL
+      min_bid double  NULL
+      cvr1    double  NULL
+      cvr2    double  NULL
+      cvr3    double  NULL
+      min_cpm double  NULL
+      factor1 double  NULL
+      factor2 double  NULL
+      factor3 double  NULL
+      cpc_bid double  NULL
+      cpa_suggest     double  NULL
+      param_t double  NULL
+      cali_value      double  NULL
+     */
+    val result = cvrData
+      .join(factorData, Seq("identifier"), "outer")
+      .join(expData, Seq("identifier"), "outer")
+      .join(suggestCPA, Seq("identifier"), "outer")
+      .join(caliValue, Seq("identifier"), "left_outer")
+      .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
+      .withColumn("min_bid", lit(0))
+      .withColumn("min_cpm", lit(0))
+      .na.fill(0, Seq("min_bid", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
+      .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
+      .na.fill(0.2, Seq("factor1"))
+      .na.fill(0.5, Seq("factor2", "factor3"))
+      .na.fill(1.0, Seq("cali_value"))
+      .withColumn("factor3", when(col("identifier") === "2041214", 0.3).otherwise(col("factor3")))
+      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
+
+//    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
+//    val result = data
+//        .withColumn("factor3", udfSetFactor3()(col("factor3"), col("cali_value")))
+
+    result
+  }
 //
 //  def udfSetFactor3() = udf((factor3: Double, caliValue: Double) => {
 //    var factor = 0.5

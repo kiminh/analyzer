@@ -385,6 +385,7 @@ object OcpcHourlyReport {
     val mediaSelection = conf.getString(conf_key)
 
     // 抽取基础数据：所有跑ocpc的广告主
+    // todo
     val sqlRequest =
       s"""
          |SELECT
