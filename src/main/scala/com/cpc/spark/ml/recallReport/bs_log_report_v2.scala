@@ -142,12 +142,11 @@ object bs_log_report_v2 {
       "group_content_category_num", "group_black_install_pkg_num", "group_white_install_pkg_num", "group_show_count_num",
       "group_click_count_num","matched_group_num", "len_groups",
       "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags", "adslot_type", "req_io_time", "process_time",
-      "ad_slot_id", "media_class", "hostname","group_age_num","group_gender_num","group_gender_num","group_network_num",
-      "group_ad_slot_type_num","group_map_match_count_num","groups_hit_media_ids","groups_hit_age_ids","groups_hit_gender_ids",
-      "groups_hit_net_work_ids","groups_hit_ad_slot_type_ids","groups_hit_media_class_ids","groups_hit_media_class_ids",
-      "groups_hit_regional_ids","groups_hit_user_level_ids","groups_hit_phone_level_ids","groups_hit_os_type_ids",
-      "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids","groups_hit_content_category_ids",
-      "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
+      "ad_slot_id", "media_class", "hostname","group_age_num","group_gender_num","group_network_num", "group_ad_slot_type_num",
+      "group_map_match_count_num","groups_hit_media_ids","groups_hit_age_ids","groups_hit_gender_ids", "groups_hit_net_work_ids",
+      "groups_hit_ad_slot_type_ids","groups_hit_media_class_ids", "groups_hit_regional_ids","groups_hit_user_level_ids",
+      "groups_hit_phone_level_ids","groups_hit_os_type_ids", "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids",
+      "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
 //    pbData.createOrReplaceTempView("temp_table")
 //    println(excp.value)
 //    val insertIntoTable =
