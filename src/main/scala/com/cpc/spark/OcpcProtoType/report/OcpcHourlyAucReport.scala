@@ -69,6 +69,7 @@ object OcpcHourlyAucReport {
     val selectCondition = s"`date` = '$date' and `hour` <= '$hour'"
 
     // ctrData
+    // todo
     val sqlRequest =
       s"""
          |SELECT
@@ -88,7 +89,7 @@ object OcpcHourlyAucReport {
          |WHERE
          |    $selectCondition
          |and is_ocpc=1
-         |and $mediaSelection
+         |and media_appsid in ('80000001', '80000002', '80002819')
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0

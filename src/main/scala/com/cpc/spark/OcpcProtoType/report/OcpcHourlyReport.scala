@@ -413,7 +413,7 @@ object OcpcHourlyReport {
          |WHERE
          |    `date`='$date' and `hour` <= '$hour'
          |and is_ocpc=1
-         |and $mediaSelection
+         |and media_appsid in ('80000001', '80000002', '80002819')
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0
