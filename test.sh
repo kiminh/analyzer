@@ -25,5 +25,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ocpcV3.ocpcNovel.logs.OcpcLaunchReport \
+    --class com.cpc.spark.ml.recallReport.bs_log_report_v2 \
     /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-04-19 12
