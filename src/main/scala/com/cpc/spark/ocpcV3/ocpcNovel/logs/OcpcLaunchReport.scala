@@ -162,7 +162,8 @@ object OcpcLaunchReport {
        """.stripMargin
 
     println(sql4)
-    val data4result=spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data4result=spark.sql(sql4).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
@@ -204,7 +205,8 @@ object OcpcLaunchReport {
          """.stripMargin
     println(sql5)
 
-    val data5result=spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data5result=spark.sql(sql5).filter("choose is not null")
+          .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table3 = "report2.midu_ocpc_launch_usertype"
@@ -250,7 +252,8 @@ object OcpcLaunchReport {
 
     println(sql6)
 
-    val data6result=spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data6result=spark.sql(sql6).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table4 = "report2.midu_ocpc_launch_adclass"
