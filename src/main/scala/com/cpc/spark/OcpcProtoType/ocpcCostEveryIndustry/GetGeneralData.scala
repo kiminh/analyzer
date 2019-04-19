@@ -18,9 +18,8 @@ object GetGeneralData {
          |SELECT
          |  industry,
          |  ocpc_cost,
-         |  cost_ratio,
-         |  ocpc_cost_yesterday,
-         |  (ocpc_cost - ocpc_cost_yesterday) * 1.0 / ocpc_cost_yesterday as cost_cmp
+         |  (ocpc_cost - ocpc_cost_yesterday) * 1.0 / ocpc_cost_yesterday as cost_cmp,
+         |  cost_ratio
          |FROM
          |  dl_cpc.ocpc_cost_every_industry
          |WHERE
@@ -38,14 +37,13 @@ object GetGeneralData {
   }
 
   def writeCsv(date: String, dataDF: DataFrame, spark: SparkSession): Unit ={
-    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_cost", "cost_ratio", "ocpc_cost_yesterday", "cost_cmp").mkString(","))).map(x => (x, 1))
+    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_cost", "cost_cmp", "cost_ratio").mkString(","))).map(x => (x, 1))
     val sortDataDF = dataDF.na.fill(0)
     val data = title.union(sortDataDF.rdd.map(x => Seq(
       x.getAs[String]("industry").toString,
       x.getAs[Int]("ocpc_cost").toString,
-      x.getAs[Int]("cost_ratio").toString,
-      x.getAs[Int]("ocpc_cost_yesterday").toString,
-      x.getAs[Int]("cost_cmp").toString).mkString(","))
+      x.getAs[Int]("cost_cmp").toString,
+      x.getAs[Int]("cost_ratio").toString).mkString(","))
       .map(x => (x, 2)))
       .repartition(1)
       .sortBy(x => (x._2, x._1))
