@@ -66,8 +66,8 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 
     val resultData1 = result
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
@@ -94,8 +94,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -126,10 +126,19 @@ object OcpcSampleToPb {
          |and version = '$version'
          |and industry = 'feedapp'
          |and conversion_goal = $conversionGoal
-         |and unitid in (2008738, 2061698, 2059113, 2009502)
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data1 = spark.sql(sqlRequest)
+
+    val conf = ConfigFactory.load("ocpc")
+    val idList = conf.getString("medias.hottopic.hidden_test")
+    val data2 = spark
+        .read.format("json").json(idList)
+        .select("identifier").distinct()
+
+    val data = data1
+        .join(data2, Seq("identifier"), "inner")
+        .select("identifier", "conversion_goal", "cpagiven")
 
 
     data
