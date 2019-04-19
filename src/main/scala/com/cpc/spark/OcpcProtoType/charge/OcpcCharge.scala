@@ -1,12 +1,12 @@
 package com.cpc.spark.OcpcProtoType.charge
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcCharge {
@@ -30,8 +30,71 @@ object OcpcCharge {
     val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
     costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
 
-//    val prevData = getPrevData(date, hour, spark)
+    val prevData = getDataFromMysql(spark)
+    val data = costData
+      .join(prevData, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
+    data.show(10)
+
+//    saveDataToMysql(data, spark)
+//
+//    val result = data
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+
+
+
+
+
+  }
+
+  def saveDataToMysql(data: DataFrame, spark: SparkSession) = {
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc.ocpc_pay_mysql")
+    val mariadb_write_prop = new Properties()
+//    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+//    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+//    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+//    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    val tableName = "adv_test.ocpc_compensate"
+    val mariadb_write_url = conf.getString("test.url")
+    mariadb_write_prop.put("user", conf.getString("test.user"))
+    mariadb_write_prop.put("password", conf.getString("test.password"))
+    mariadb_write_prop.put("driver", conf.getString("mariadb.test.driver"))
+
+    data.write.mode(SaveMode.Append)
+      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+    println(s"insert into $tableName success!")
+  }
+
+  def getDataFromMysql(spark: SparkSession) = {
+    import spark.implicits._
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc.ocpc_pay_mysql")
+    val url = conf.getString("test.url")
+    val user = conf.getString("test.user")
+    val passwd = conf.getString("test.password")
+    val driver = conf.getString("test.driver")
+    val table = "(select unit_id from adv_test.ocpc_compensate) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("flag", lit(1))
+      .select("unitid", "flag").distinct()
+
+    base
   }
 
   def assemblyData(dayCnt: Int, rawData: DataFrame, ocpcOpenTime: DataFrame, date: String, hour: String, spark: SparkSession) = {
