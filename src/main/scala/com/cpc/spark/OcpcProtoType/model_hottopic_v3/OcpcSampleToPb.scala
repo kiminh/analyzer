@@ -140,6 +140,7 @@ object OcpcSampleToPb {
         .join(data2, Seq("identifier"), "inner")
         .select("identifier", "conversion_goal", "cpagiven")
 
+    data.show(10)
 
     data
   }
