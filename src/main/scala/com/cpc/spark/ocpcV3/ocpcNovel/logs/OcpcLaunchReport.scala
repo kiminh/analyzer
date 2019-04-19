@@ -118,7 +118,7 @@ object OcpcLaunchReport {
        """.stripMargin
 
     println(sql3)
-        val data3=spark.sql(sql3)
+        val data3=spark.sql(sql3).filter("choose is null")
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
         val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
