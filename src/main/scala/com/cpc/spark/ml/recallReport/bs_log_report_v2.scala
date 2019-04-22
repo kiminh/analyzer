@@ -25,8 +25,7 @@ object bs_log_report_v2 {
     val excp = spark.sparkContext.longAccumulator
     val pbData = spark.sql(stmt)
       .select(f($"raw"))
-      .toDF()
-      .filter(expr("exptags like '%%bsfilterdetail%%'"))
+//      .filter(expr("exptags like '%%bsfilterdetail%%'"))
       .withColumn("`date`",lit(s"$tardate"))
     pbData.write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
