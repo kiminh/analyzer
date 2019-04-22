@@ -44,7 +44,7 @@ object ReportAutoCoinUseridMetrics {
                |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
                |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
                |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
-               |    COALESCE(auc,0) as auc
+               |    COALESCE(auc,0) as auc,
                |    '$date' as `date`
                |from
                |(
