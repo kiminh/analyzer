@@ -40,8 +40,8 @@ object CvrRatio {
         val unionSql =
             s"""
                |select media_appsid,
-               |sum(ext["exp_cvr"].int_value) / count(*) as exp_cvr
-               |from dl_cpc.cpc_union_log
+               |sum(exp_cvr) / count(*) as exp_cvr
+               |from dl_cpc.cpc_basedata_union_events
                |where ($datelist)
                |and media_appsid not in ('80000001','80000002')
                |and isclick = 1
