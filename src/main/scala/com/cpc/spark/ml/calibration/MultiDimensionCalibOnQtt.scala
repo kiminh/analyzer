@@ -217,7 +217,7 @@ object MultiDimensionCalibOnQtt {
     }
     var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return Math.max(0.0, irModel.predictions(0) * (prob - irModel.boundaries(0)))
+      return  Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
     }
     if (index == irModel.boundaries.size) {
       index = index - 1
