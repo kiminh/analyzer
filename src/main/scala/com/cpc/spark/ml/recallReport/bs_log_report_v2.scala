@@ -10,15 +10,12 @@ import org.apache.spark.sql.functions._
 
 object bs_log_report_v2 {
   def main(args: Array[String]): Unit = {
-    //val beforeNdays = args(0).toInt
     val spark = SparkSession.builder()
       .appName("bs log report")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -1)
-    val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    val tardate = args(0)
 
     val stmt: String =
       s"""
@@ -147,7 +144,7 @@ object bs_log_report_v2 {
       "groups_hit_ad_slot_type_ids","groups_hit_media_class_ids", "groups_hit_regional_ids","groups_hit_user_level_ids",
       "groups_hit_phone_level_ids","groups_hit_os_type_ids", "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids",
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
-      .filter("exptags like '%%bsfilterdetail%%'")
+//      .filter("exptags like '%%bsfilterdetail%%'")
       .withColumn("`date`",lit(s"$tardate"))
     pbData.repartition(1000).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
