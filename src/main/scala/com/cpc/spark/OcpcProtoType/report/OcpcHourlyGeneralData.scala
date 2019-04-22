@@ -107,7 +107,7 @@ object OcpcHourlyGeneralData {
 
     val baseData = data
       .withColumn("pred_cost", col("cv") * col("cpagiven"))
-      .withColumn("high_cost", col("cost") -  col("pred_cost") * 1.2)
+      .withColumn("high_cost", col("ocpc_cost") -  col("pred_cost") * 1.2)
       .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
 
     baseData.createOrReplaceTempView("base_data")
