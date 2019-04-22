@@ -126,8 +126,8 @@ object bs_log_report_v2 {
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
       .withColumn("`date`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
-    pbData.show(10)
-    pbData.repartition(100).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
+//    pbData.repartition(100).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
+    pbData.write.mode("overwrite").saveAsTable("test.bslog")
   }
   case class BsLog1(
                      var searchid: String="",
