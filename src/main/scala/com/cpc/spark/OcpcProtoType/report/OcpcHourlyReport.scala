@@ -91,21 +91,21 @@ object OcpcHourlyReport {
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
 
     dataUnit
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
 
 
     dataConversion
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
   def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -311,7 +311,7 @@ object OcpcHourlyReport {
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "date", "hour")
+      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr", "date", "hour")
 
     resultDF.show(10)
 
@@ -365,11 +365,23 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cali_pcvr else 0 end) * 1.0 / sum(isclick) as cali_pcvr,
          |  sum(case when isclick=1 then cali_postcvr else 0 end) * 1.0 / sum(isclick) as cali_postcvr,
          |  sum(case when isclick=1 then smooth_factor else 0 end) * 1.0 / sum(isclick) as smooth_factor,
-         |  sum(cpa_suggest) * 1.0 / count(1) as cpa_suggest
+         |  sum(cpa_suggest) * 1.0 / count(1) as cpa_suggest,
+         |  sum(case when isclick=1 and hr='$hour' then exp_cvr else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as hourly_expcvr,
+         |  sum(case when isclick=1 and hr='$hour' then cali_value else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as hourly_calivalue,
+         |  sum(case when isclick=1 and hr='$hour' then cali_pcvr else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as hourly_calipcvr,
+         |  sum(case when isclick=1 and hr='$hour' then cali_postcvr else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as hourly_calipostcvr
          |FROM
          |  raw_data
          |GROUP BY unitid, userid, conversion_goal
        """.stripMargin
+//    `cali_value`            "平均校准系数"
+//    `cali_pcvr`             "平均校准预估cvr"
+//    `cali_postcvr`          "平均校准后验cvr"
+//    `smooth_factor`         "校准平滑系数"
+//    `hourly_expcvr`         "小时级预估cvr"
+//    `hourly_calivalue`      "小时级校准系数"
+//    `hourly_calipcvr`       "小时级校准预估cvr"
+//    `hourly_calipostcvr`    "小时级校准后验cvr"
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
 
