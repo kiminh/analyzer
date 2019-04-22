@@ -53,7 +53,7 @@ object bs_log_report_v2 {
           val group_network_num = up.getGroupStats.getGroupNetworkNum
           val group_ad_slot_type_num = up.getGroupStats.getGroupAdSlotTypeNum
           val group_map_match_count_num = up.getGroupStats.getGroupMapMatchCountNum
-          val groups_hit_media_ids = up.getGroupStats.getGroupsHitMediaIdsList.asScala.toArray
+          val groups_hit_media_ids = up.getGroupStats.getGroupsHitMediaIdsList.asScala.toArray[Int]
           val groups_hit_age_ids = up.getGroupStats.getGroupsHitAgeIdsList.asScala.toArray
           val groups_hit_gender_ids = up.getGroupStats.getGroupsHitGenderIdsList.asScala.toArray
           val groups_hit_net_work_ids = up.getGroupStats.getGroupsHitNetWorkIdsList.asScala.toArray
@@ -127,6 +127,7 @@ object bs_log_report_v2 {
 //      .withColumn("`date`",lit(s"$tardate"))
 //      .withColumn("`hour`",lit(s"$hour"))
 //    pbData.repartition(100).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
+    pbData.createOrReplaceTempView("temp_table")
 val insertIntoTable =
 s"""
    |insert overwrite table dl_cpc.recall_filter_number_report_v2 partition (`date`='$tardate',hour='$hour')
