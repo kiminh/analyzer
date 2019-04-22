@@ -26,7 +26,6 @@ object bs_log_report_v2 {
     val pbData = spark.sql(stmt).rdd.map{
       r =>
         val pb = r.getAs[String]("raw")
-        try{
           val up = NoticeLogBody.parseFrom(Encoding.base64Decoder(pb).toArray).toBuilder
           val exptags = up.getExptagsList.toString
           val searchid = up.getSearchid
@@ -118,10 +117,6 @@ object bs_log_report_v2 {
             groups_hit_new_user_ids = groups_hit_new_user_ids,
             groups_hit_acc_user_type_ids = groups_hit_acc_user_type_ids
           )
-        } catch {
-          case ex: Exception => excp.add(1); null
-        }
-
     }.filter(_ != null).toDF("searchid", "group_media_num", "group_region_num", "group_l_v_num", "group_os_type_num",
       "group_p_l_num", "group_acc_user_type_num", "group_new_user_num", "group_content_category_num",
       "group_black_install_pkg_num", "group_white_install_pkg_num","matched_group_num", "len_groups",
@@ -131,7 +126,7 @@ object bs_log_report_v2 {
       "groups_hit_ad_slot_type_ids","groups_hit_media_class_ids", "groups_hit_regional_ids","groups_hit_user_level_ids",
       "groups_hit_phone_level_ids","groups_hit_os_type_ids", "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids",
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
-      .filter("exptags like '%%bsfilterdetail%%'")
+//      .filter("exptags like '%%bsfilterdetail%%'")
       .withColumn("`date`",lit(s"$tardate"))
     pbData.write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
