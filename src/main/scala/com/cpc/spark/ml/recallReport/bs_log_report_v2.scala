@@ -151,7 +151,7 @@ object bs_log_report_v2 {
 //    println(excp.value)
 //    val insertIntoTable =
 //      s"""
-//         |insert overwrite table dl_cpc.recall_filter_number_report partition (`date`='$tardate')
+//         |insert overwrite table dl_cpc.recall_filter_number_report_v2 partition (`date`='$tardate')
 //         |select * from temp_table
 //      """.stripMargin
 //    spark.sql(insertIntoTable)

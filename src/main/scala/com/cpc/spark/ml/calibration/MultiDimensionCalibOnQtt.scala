@@ -142,7 +142,7 @@ object MultiDimensionCalibOnQtt {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
