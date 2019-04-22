@@ -55,62 +55,23 @@ object InsertReportSiteBuilding {
 
     println("InsertReportSiteBuilding is run day is %s".format(argDay))
 
-
-    //    var ideaData = ctx.read.jdbc(mariaAdvdbUrl,
-    //      """
-    //        |(
-    //        | SELECT DISTINCT(c.idea_id),i.clk_site_id,i.user_id
-    //        | FROM cost c
-    //        | INNER JOIN idea i ON i.id=c.idea_id
-    //        | WHERE c.date="%s" AND i.clk_site_id>0
-    //        |) xidea
-    //      """.stripMargin.format(argDay), mariaAdvdbProp)
-    //      .rdd
-    //      .map(
-    //        x =>
-    //          (x.get(0), x.get(1), x.get(2))
-    //      )
-    //      .map {
-    //        x =>
-    //          val ideaid = x._1.toString.toInt
-    //          val siteid = x._2.toString.toInt
-    //          val userid = x._3.toString.toInt
-    //          (UnionLogInfo("", userid, 0, ideaid, 0, 0, "", 0, siteid))
-    //      }
-    //      .cache()
-    //    println("ideaData count", ideaData.count())
-    //
-    //    var ideaMaps: Map[Int, UnionLogInfo] = Map()
-    //    ideaData
-    //      .map {
-    //        x =>
-    //          (x.ideaid, x)
-    //      }
-    //      .take(ideaData.count().toInt)
-    //      .foreach {
-    //        x =>
-    //          ideaMaps += (x._1 -> x._2)
-    //      }
-    //
-    //    val broadcastIdeaMaps = ctx.sparkContext.broadcast(ideaMaps)
-
     val unionLogData = ctx
       .sql(
         """
-          |SELECT searchid,userid,unitid,ideaid,isshow,isclick,price,ext_int["siteid"]
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND (cul.isshow+cul.isclick)>0 AND cul.ext_int["siteid"]>0
+          |SELECT searchid,userid,unitid,ideaid,isshow,isclick,price,siteid
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.isshow>0 AND cul.siteid>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val userid = x.getInt(1)
-          val unitid = x.getInt(2)
-          val ideaid = x.getInt(3)
-          val isshow = if (x.getInt(5) > 0) 1 else x.getInt(4)
-          val isclick = x.getInt(5)
-          val price = if (isclick > 0) x.getInt(6) else 0
+          val searchid = x.getAs[String](0)
+          val userid = x.getAs[Int](1)
+          val unitid = x.getAs[Int](2)
+          val ideaid = x.getAs[Int](3)
+          val isshow = if (x.getAs[Int](5) > 0) 1 else x.getAs[Int](4)
+          val isclick = x.getAs[Int](5)
+          val price = if (isclick > 0) x.getAs[Int](6) else 0
           val siteid = x.get(7).toString.toInt
           ((siteid), UnionLogInfo(searchid, userid, unitid, ideaid, isshow, isclick, "", 0, siteid, price))
 
@@ -127,25 +88,25 @@ object InsertReportSiteBuilding {
     val traceData = ctx.sql(
       """
         |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,
-        |cul.userid, cul.unitid,cul.ideaid,cutl.trace_op1,ext_int["siteid"]
-        |FROM dl_cpc.cpc_union_trace_log cutl
-        |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0 AND cul.ext_int["siteid"]>0
+        |cul.userid, cul.unitid,cul.ideaid,cutl.trace_op1,siteid
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0 AND cul.siteid>0
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val duration = x.getInt(2)
-          val trace_type = if (x.getString(1) == "stay") "%s%d".format(x.getString(1), x.getInt(2)) else x.getString(1)
-          val userid = x.getInt(3)
-          val unitid = x.getInt(4)
-          val ideaid = x.getInt(5)
+          val searchid = x.getAs[String](0)
+          val duration = x.getAs[Int](2)
+          val trace_type = if (x.getAs[String](1) == "stay") "%s%d".format(x.getAs[String](1), x.getAs[Int](2)) else x.getAs[String](1)
+          val userid = x.getAs[Int](3)
+          val unitid = x.getAs[Int](4)
+          val ideaid = x.getAs[Int](5)
           var traceOp1 = ""
           if ((trace_type == "apkdown") || (trace_type == "lpload")) {
-            traceOp1 = x.getString(6)
+            traceOp1 = x.getAs[String](6)
           }
-          val siteid = x.get(7).toString.toInt
+          val siteid = x.getAs[Int](7)
           ((siteid, trace_type), UnionLogInfo(searchid, userid, unitid, ideaid, 0, 0, trace_type, 1, siteid, 0, traceOp1))
       }
       .map {

@@ -10,6 +10,8 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
+
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 20g \
@@ -17,5 +19,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.model_hottopic_hidden.OcpcCvrSmooth \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 hottopic hottopic_test
+    --class com.cpc.spark.OcpcProtoType.charge.OcpcCharge \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 qtt_demo qtt $3

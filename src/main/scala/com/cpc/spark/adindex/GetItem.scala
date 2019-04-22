@@ -48,7 +48,7 @@ object GetItem {
       media_class = groupItem.getMediaClassList.toArray.mkString(","),
 
       phonelevel = groupItem.getPhonelevelList.toArray.mkString(","),
-      cvr_threshold = groupItem.getChagetypeValue,
+      cvr_threshold = groupItem.getCvrThreshold,
       balance = groupItem.getBalance,
       new_user = groupItem.getNewUser,
       user_weight = groupItem.getUserWeight,
