@@ -64,7 +64,7 @@ object MultiDimensionCalibOnQtt {
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
-                 | and ctr_model_name = '$modelname'
+                 | and ctr_model_name in ('$modelname','$calimodelname')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
