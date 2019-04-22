@@ -75,6 +75,10 @@ object OcpcHourlyGeneralData {
       .withColumn("cost_ratio", col("ocpc_cost") * 1.0 / col("cost"))
       .withColumn("cost_low", col("low_cost"))
       .withColumn("cost_high", col("high_cost"))
+
+    result.show(10)
+
+    val resultDF = result
       .withColumn("cost", col("ocpc_cost"))
       .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt")
       .withColumn("date", lit(date))
