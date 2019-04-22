@@ -3,12 +3,8 @@ package com.cpc.spark.ml.recall.elds
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import java.sql.DriverManager
-
-import org.apache.spark.sql.functions._
 
 object recall_elds_userprofile_gdt {
   var mariaReportdbUrl = ""
