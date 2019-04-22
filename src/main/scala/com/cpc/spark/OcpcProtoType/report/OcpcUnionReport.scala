@@ -13,12 +13,12 @@ object OcpcUnionReport {
     val dataUnitRaw = unionDetailReport(date, hour, spark)
     // get the suggest cpa
     val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
-    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
+//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
     println("------union detail report success---------")
-//    val dataConversion = unionSummaryReport(date, hour, spark)
-//    println("------union summary report success---------")
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-//    println("------insert into mysql success----------")
+    val dataConversion = unionSummaryReport(date, hour, spark)
+    println("------union summary report success---------")
+    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+    println("------insert into mysql success----------")
   }
 
   def addSuggestCPA(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {

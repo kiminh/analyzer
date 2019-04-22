@@ -98,7 +98,9 @@ object OcpcHourlyAucReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val ctrData = spark.sql(sqlRequest)
+    val ctrData = spark
+      .sql(sqlRequest)
+      .withColumn("conversion_goal", when(col("conversion_goal") === 0, 1).otherwise(col("conversion_goal")))
 
     // cvr1Data
     val sqlRequest1 =
