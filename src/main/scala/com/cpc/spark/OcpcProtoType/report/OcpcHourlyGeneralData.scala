@@ -79,6 +79,7 @@ object OcpcHourlyGeneralData {
       .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
 
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry")
