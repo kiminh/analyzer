@@ -1,7 +1,5 @@
 package com.cpc.spark.ml.recallReport
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
 import bslog.Bslog.NoticeLogBody
 import com.cpc.spark.streaming.tools.Encoding
 import org.apache.spark.sql.SparkSession
@@ -16,13 +14,13 @@ object bs_log_report_v2 {
       .getOrCreate()
     import spark.implicits._
     val tardate = args(0)
+    val hour = args(1)
 
     val stmt: String =
       s"""
         |select trim(split(raw, '\\\\*')[1]) as raw from dl_cpc.cpc_basedata_recall_log
-        |where day='$tardate' and length(trim(split(raw, '\\\\*')[1]))>0
+        |where day='$tardate' and hour='$hour' and length(trim(split(raw, '\\\\*')[1]))>0
       """.stripMargin
-    val excp = spark.sparkContext.longAccumulator
     val pbData = spark.sql(stmt).rdd.map{
       r =>
         val pb = r.getAs[String]("raw")
@@ -128,6 +126,7 @@ object bs_log_report_v2 {
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
       .where("exptags like '%%bsfilterdetail%%'")
       .withColumn("`date`",lit(s"$tardate"))
+      .withColumn("`hour`",lit(s"$hour"))
     pbData.write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
   case class BsLog1(
