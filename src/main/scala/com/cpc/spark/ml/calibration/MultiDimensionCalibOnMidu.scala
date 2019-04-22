@@ -22,7 +22,7 @@ object MultiDimensionCalibOnMidu {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
-  val MIN_BIN_SIZE = 10000
+  val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
 
@@ -31,6 +31,7 @@ object MultiDimensionCalibOnMidu {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
+    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -62,38 +63,45 @@ object MultiDimensionCalibOnMidu {
                  | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name = 'novel-ctr-dnn-rawid-v7-cali'
+                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
     log.persist()
 
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
+        .withColumn("group1",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+        .select("ideaid","user_req_ad_num","adslot_id","group1","count1")
+    val data2 = log.join(group1,Seq("ideaid","user_req_ad_num","adslot_id"),"left")
+      .filter("count1<100000")
+    val group2 = data2.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group2",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .select("ideaid","user_req_ad_num","group2","count2")
+    val group3 = data2.join(group2,Seq("ideaid","user_req_ad_num"),"left")
+      .filter("count2<100000")
+      .groupBy("ideaid").count().withColumn("count3",col("count"))
+      .withColumn("group3",col("ideaid"))
+      .select("ideaid","group3","count3")
 
-    val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
-        .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-        .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
-          .otherwise(col("group")))
-        .withColumn("group",when(col("count2") < 100000,col("ideaid"))
-          .otherwise(col("group")))
-        .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
-    keygroup.write.mode("overwrite").saveAsTable("test.wy01")
+    val data = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
+        .join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
+        .withColumn("group",when(col("count1") < 100000,col("group2")).otherwise(col("group1")))
+        .withColumn("count2",when(col("count1") < 100000,col("count2")).otherwise(col("count1")))
+        .withColumn("group",when(col("count2") < 100000,col("group3")).otherwise(col("group")))
+        .withColumn("count3",when(col("count2") < 100000,col("count3")).otherwise(col("count2")))
+        .filter("count3>10000")
+        .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group","count3")
+      data.show(10)
+//    data.write.mode("overwrite").saveAsTable("test.wy03")
 
-    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
-      .filter("count3>50000")
-
-    data.write.mode("overwrite").saveAsTable("test.wy00")
-
-    unionLogToConfig2(data.rdd, session, softMode)
+      unionLogToConfig2(data.rdd, session, softMode, calimodelname)
   }
 
 
-  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, saveToLocal: Boolean = true,
-                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
+  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, calimodelname: String, saveToLocal: Boolean = true,
+                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
     val sc = session.sparkContext
@@ -105,9 +113,9 @@ object MultiDimensionCalibOnMidu {
         isClick = x.getInt(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(6)
-      val group = x.getString(7)
-      val key = model+'_'+group
+      val model = x.getString(5)
+      val group = x.getString(6)
+      val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
@@ -135,8 +143,8 @@ object MultiDimensionCalibOnMidu {
 //          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (bins._1.size <= minBinCount) {
-            println("bin number too small, don't output the calibration")
+          if (bins._1.size < minBinCount) {
+            println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
@@ -226,7 +234,7 @@ object MultiDimensionCalibOnMidu {
     }
     var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return Math.max(0.0, irModel.predictions(0) * (prob - irModel.boundaries(0)))
+      return Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
     }
     if (index == irModel.boundaries.size) {
       index = index - 1
@@ -260,7 +268,7 @@ object MultiDimensionCalibOnMidu {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d

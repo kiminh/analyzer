@@ -9,17 +9,17 @@ object OcpcLaunchReport {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val date = args(0)
     //监控小说ocpc成本控制
-    val sql =
-      s"""
-         |select
-         |case when cpa_ratio<0.8 then '<0.8'
-         |when cpa_ratio>1.2 then '>1.2'
-         |else 'ok' end as tag,count(*),sum(cost/100) from dl_cpc.ocpc_detail_report_hourly_v3
-         |where cost >100000 and version='novel_v1' and `date`='2019-03-14' and `hour`='23'
-         |group by case when cpa_ratio<0.8 then '<0.8'
-         |when cpa_ratio>1.2 then '>1.2'
-         |else 'ok' end
-       """.stripMargin
+//    val sql =
+//      s"""
+//         |select
+//         |case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end as tag,count(*),sum(cost/100) from dl_cpc.ocpc_detail_report_hourly_v3
+//         |where cost >100000 and version='novel_v1' and `date`='2019-03-14' and `hour`='23'
+//         |group by case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end
+//       """.stripMargin
 
     // 生成基础数据
     val sql1=
@@ -54,9 +54,6 @@ object OcpcLaunchReport {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-//    val data0=spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
-//      "isshow_byunit","`date`")
-//    data0.printSchema()
     spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
       "isshow_byunit","`date`")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
@@ -121,7 +118,7 @@ object OcpcLaunchReport {
        """.stripMargin
 
     println(sql3)
-        val data3=spark.sql(sql3)
+        val data3=spark.sql(sql3).filter("choose is not null")
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
         val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
@@ -165,7 +162,8 @@ object OcpcLaunchReport {
        """.stripMargin
 
     println(sql4)
-    val data4result=spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data4result=spark.sql(sql4).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
@@ -207,7 +205,8 @@ object OcpcLaunchReport {
          """.stripMargin
     println(sql5)
 
-    val data5result=spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data5result=spark.sql(sql5).filter("choose is not null")
+          .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table3 = "report2.midu_ocpc_launch_usertype"
@@ -253,7 +252,8 @@ object OcpcLaunchReport {
 
     println(sql6)
 
-    val data6result=spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data6result=spark.sql(sql6).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table4 = "report2.midu_ocpc_launch_adclass"
