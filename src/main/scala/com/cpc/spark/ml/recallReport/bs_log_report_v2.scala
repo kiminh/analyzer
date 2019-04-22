@@ -149,7 +149,7 @@ object bs_log_report_v2 {
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
       .filter("exptags like '%%bsfilterdetail%%")
       .withColumn("`date`",lit(s"$tardate"))
-    pbData.repartition(1000).write.mode("overwrite").saveAsTable("dl_cpc.recall_filter_number_report_v2")
+    pbData.repartition(1000).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
   case class BsLog1(
                      var searchid: String="",
