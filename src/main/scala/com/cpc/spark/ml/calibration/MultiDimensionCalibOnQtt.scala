@@ -180,22 +180,6 @@ object MultiDimensionCalibOnQtt {
     return (ectr / click, calibrated / click)
   }
 
-  def getauccali(samples: Array[(Double, Double)],sc: SparkContext, irModel: IRModel): Double = {
-    //val data=Array(Double, Double)
-    val dataListBuffer = scala.collection.mutable.ListBuffer[(Double,Double)]()
-    samples.foreach(x => {
-      val calibrated = computeCalibration(x._1, irModel)
-      val label = x._2
-      val t = (calibrated,label)
-      dataListBuffer += t
-    })
-    val data = dataListBuffer.toArray
-    val ScoreAndLabel = sc.parallelize(data)
-    val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
-    val aucROC = metrics.areaUnderROC
-    return aucROC
-  }
-
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
     if (num < boundaries(0)) {
       return 0
