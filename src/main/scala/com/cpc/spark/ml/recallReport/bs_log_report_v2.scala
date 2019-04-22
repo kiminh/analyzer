@@ -127,7 +127,7 @@ object bs_log_report_v2 {
       .where("exptags like '%%bsfilterdetail%%'")
       .withColumn("`date`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
-    pbData.write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
+    pbData.repartition(10).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
   case class BsLog1(
                      var searchid: String="",
