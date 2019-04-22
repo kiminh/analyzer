@@ -128,6 +128,7 @@ object bs_log_report_v2 {
 //      .withColumn("`hour`",lit(s"$hour"))
 //    pbData.repartition(100).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
     pbData.createOrReplaceTempView("temp_table")
+    pbData.printSchema()
 val insertIntoTable =
 s"""
    |insert overwrite table dl_cpc.recall_filter_number_report_v2 partition (`date`='$tardate',hour='$hour')
