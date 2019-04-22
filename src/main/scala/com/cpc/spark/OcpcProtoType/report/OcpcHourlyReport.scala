@@ -435,7 +435,9 @@ object OcpcHourlyReport {
          |and searchid is not null
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark
+      .sql(sqlRequest)
+      .withColumn("conversion_goal", when(col("conversion_goal") === 0, 1).otherwise(col("conversion_goal")))
 
 
     // 关联转化表
