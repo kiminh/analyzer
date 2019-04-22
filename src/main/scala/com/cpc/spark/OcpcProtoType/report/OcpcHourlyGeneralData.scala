@@ -82,7 +82,7 @@ object OcpcHourlyGeneralData {
       .withColumn("version", lit(version))
 
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry")
 
 
   }
