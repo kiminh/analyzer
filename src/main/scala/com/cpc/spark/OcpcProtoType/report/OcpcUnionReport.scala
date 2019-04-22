@@ -13,11 +13,12 @@ object OcpcUnionReport {
     val dataUnitRaw = unionDetailReport(date, hour, spark)
     // get the suggest cpa
     val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
+    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
     println("------union detail report success---------")
-    val dataConversion = unionSummaryReport(date, hour, spark)
-    println("------union summary report success---------")
-    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-    println("------insert into mysql success----------")
+//    val dataConversion = unionSummaryReport(date, hour, spark)
+//    println("------union summary report success---------")
+//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+//    println("------insert into mysql success----------")
   }
 
   def addSuggestCPA(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -27,7 +28,15 @@ object OcpcUnionReport {
          |  identifier as unit_id,
          |  conversion_goal,
          |  version,
-         |  cpa_suggest
+         |  cpa_suggest,
+         |  cali_value,
+         |  cali_pcvr,
+         |  cali_postcvr,
+         |  smooth_factor,
+         |  hourly_expcvr,
+         |  hourly_calivalue,
+         |  hourly_calipcvr,
+         |  hourly_calipostcvr
          |FROM
          |  dl_cpc.ocpc_cali_detail_report_hourly
          |WHERE
@@ -215,8 +224,8 @@ object OcpcUnionReport {
     val hourInt = hour.toInt
     // 详情表
     val dataUnitMysql = dataUnit
-      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cpa_suggest")
-      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr")
+      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
     val reportTableUnit = "report2.report_ocpc_data_detail_v2"
