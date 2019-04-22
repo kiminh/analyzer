@@ -47,27 +47,105 @@ object OcpcHourlyGeneralData {
     println(s"date=$date, hour=$hour, version=$version, media=$media")
 
 
-    val clickData = getClickData(media, date, hour, spark)
+    val clickCpcData = getCpcClickData(media, date, hour, spark)
+    val clickOcpcData = getOcpcClickData(media, date, hour, spark)
     val cvData1 = getConversionData("cvr1", date, hour, spark)
     val cvData2 = getConversionData("cvr2", date, hour, spark)
     val cvData3 = getConversionData("cvr3", date, hour, spark)
 
-//    searchid,
-//    unitid,
-//    userid,
-//    isshow,
-//    isclick,
-//    price,
-//    exp_cvr,
-//    conversion_goal,
-//    is_ocpc
-    val data = clickData
+    val rawData = clickOcpcData
       .join(cvData1, Seq("searchid"), "left_outer")
       .join(cvData2, Seq("searchid"), "left_outer")
       .join(cvData3, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "userid", "isshow", "isclick", "price", "exp_cvr", "conversion_goal", "is_ocpc", "iscvr1", "iscvr2", "iscvr3")
-      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")))
+      .select("searchid", "unitid", "userid", "isshow", "isclick", "price", "conversion_goal", "cpagiven", "is_api_callback", "industry", "iscvr1", "iscvr2", "iscvr3")
+      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
 
+    rawData.show(10)
+
+    // 统计汇总数据
+    val cpcData = getCPCstats(clickCpcData, date, hour, spark)
+    val ocpcData = getOCPCstats(rawData, date, hour, spark)
+
+    val joinData = ocpcData
+      .join(cpcData, Seq("industry"), "inner")
+
+    // 计算前一天数据
+    val result = joinData
+      .withColumn("cost_cmp", lit(0.1))
+      .withColumn("cost_ratio", col("ocpc_cost") * 1.0 / col("cost"))
+      .withColumn("cost_low", col("low_cost"))
+      .withColumn("cost_high", col("high_cost"))
+      .withColumn("cost", col("ocpc_cost"))
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry")
+
+
+  }
+
+  def getOCPCstats(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  industry,
+         |  unitid,
+         |  userid,
+         |  sum(case when isclick=1 then price else 0 end) as ocpc_cost,
+         |  sum(iscvr) as cv,
+         |  sum(case when isclick=1 then cpagiven else 0 end) as cpagiven
+         |FROM
+         |  raw_data
+         |GROUP BY industry, unitid, userid
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val baseData = data
+      .withColumn("pred_cost", col("cv") * col("cpagiven"))
+      .withColumn("high_cost", col("cost") -  col("pred_cost") * 1.2)
+      .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
+
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  industry,
+         |  sum(ocpc_cost) as ocpc_cost,
+         |  sum(high_cost) as high_cost,
+         |  count(distinct unitid) as unitid_cnt,
+         |  count(distinct userid) as userid_cnt
+         |FROM
+         |  base_data
+         |GROUP BY industry
+       """.stripMargin
+    println(sqlRequest2)
+    val result = spark
+      .sql(sqlRequest2)
+      .withColumn("low_cost", col("ocpc_cost") - col("high_cost"))
+
+    result
+
+  }
+
+  def getCPCstats(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  industry,
+         |  sum(case when isclick=1 then price else 0 end) as cost
+         |FROM
+         |  raw_data
+         |GROUP BY industry
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def getConversionData(cvrType: String, date: String, hour: String, spark: SparkSession) = {
@@ -92,7 +170,7 @@ object OcpcHourlyGeneralData {
     data
   }
 
-  def getClickData(media: String, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcClickData(media: String, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
@@ -110,9 +188,63 @@ object OcpcHourlyGeneralData {
          |  isshow,
          |  isclick,
          |  price,
-         |  exp_cvr,
-         |  conversion_goal,
-         |  is_ocpc
+         |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  is_api_callback,
+         |  (case
+         |    when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |    when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |    when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |    when adclass in (110110100, 125100100) then "wzcp"
+         |    else "others"
+         |  end) as industry
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  isclick = 1
+         |AND
+         |  is_ocpc = 1
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val appData = data.filter(s"is_api_callback = 1 and industry = 'feedapp' and conversion_goal = 2")
+    val eldsData = data.filter(s"industry = 'elds' and conversion_goal = 3")
+    val resultDF = appData.union(eldsData)
+
+    resultDF
+  }
+
+  def getCpcClickData(media: String, date: String, hour: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val selectCondition = s"`date` = '$date' and `hour` <= '$hour'"
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  isshow,
+         |  isclick,
+         |  price,
+         |  is_api_callback,
+         |  (case
+         |    when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |    when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |    when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |    when adclass in (110110100, 125100100) then "wzcp"
+         |    else "others"
+         |  end) as industry
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -122,8 +254,12 @@ object OcpcHourlyGeneralData {
          |AND
          |  isclick = 1
        """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val data = spark.sql(sqlRequest1)
+
+    val appData = data.filter(s"is_api_callback = 1 and industry = 'feedapp'")
+    val eldsData = data.filter(s"industry = 'elds'")
+    val resultDF = appData.union(eldsData)
 
     resultDF
   }
