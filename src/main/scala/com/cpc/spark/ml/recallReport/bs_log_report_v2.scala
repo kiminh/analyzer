@@ -149,7 +149,7 @@ object bs_log_report_v2 {
     val insertIntoTable =
       s"""
          |insert overwrite table dl_cpc.recall_filter_number_report_v2 partition (`date`='$tardate')
-         |select * from temp_table where exptags like '%%bsfilterdetail%%'
+         |select * from temp_table
       """.stripMargin
     spark.sql(insertIntoTable)
 //    pbData.repartition(1000).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
