@@ -155,7 +155,7 @@ object bs_log_report_v2 {
 //         |select * from temp_table
 //      """.stripMargin
 //    spark.sql(insertIntoTable)
-    pbData.write.mode("overwrite").saveAsTable("test.bslog")
+    pbData.repartition(1000).write.mode("overwrite").saveAsTable("test.bslog")
   }
   case class BsLog1(
                      var searchid: String="",
