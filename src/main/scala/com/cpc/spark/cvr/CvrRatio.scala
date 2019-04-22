@@ -31,7 +31,7 @@ object CvrRatio {
             val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             val dd = sf.format(cal.getTime())
             val d1 = dd.substring(0, 10)
-            val datecond = s"`date` = '$d1'"
+            val datecond = s"`day` = '$d1'"
             dateList += datecond
         }
 

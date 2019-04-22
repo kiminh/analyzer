@@ -25,7 +25,7 @@ object OcpcCost {
                |        ocpc_log,
                |        media_appsid
                |    from dl_cpc.cpc_basedata_union_events
-               |    where `date`='$date' and hour = '$hour'
+               |    where `day`='$date' and hour = '$hour'
                |    and media_appsid in ('80000001', '80000002', '80001098', '80001292')
                |    and isclick = 1
                |) a
