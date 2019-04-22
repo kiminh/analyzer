@@ -84,7 +84,7 @@ object OcpcPIDwithCPA {
 
     val sqlRequest =
       s"""
-         |SELECT
+         | SELECT
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
@@ -317,7 +317,7 @@ object OcpcPIDwithCPA {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
-    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+//    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
     for(row <- unitidAdclass.collect()) {
@@ -366,7 +366,7 @@ object OcpcPIDwithCPA {
       case _ => valueK
     }
     if(adclassInt == 110110){
-      0.6163*result
+      1.0*result
     }else{
       result
     }

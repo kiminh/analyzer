@@ -50,22 +50,22 @@ object InsertReportSdkVersionTrace {
     val unionLogDataByAll = ctx
       .sql(
         """
-          |SELECT cul.searchid,adslotid,ext["client_version"].string_value,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("1027423","1029077","1024335","1018971","7268884")
-          |AND cul.adsrc in(0,1) AND ext["client_version"].string_value IS NOT NULL
-          |AND ext["client_version"].string_value <>"" AND ext["client_version"].string_value <>"0.0.0.0"
+          |SELECT cul.searchid,adslot_id,client_version,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s" AND cul.client_type="NATIVESDK"
+          |AND cul.adslot_id in("1027423","1029077","1024335","1018971","7268884")
+          |AND cul.adsrc in(0,1) AND client_version IS NOT NULL
+          |AND client_version<>"" AND client_version <>"0.0.0.0"
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val adslotId = x.getString(1)
-          val clientVersion = x.getString(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val searchid = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val clientVersion = x.getAs[String](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId, clientVersion), (adslotId, clientVersion, "All", req, isfill, isshow, isclick))
       }
@@ -111,24 +111,24 @@ object InsertReportSdkVersionTrace {
     val traceDataByAll = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,adslotid,ext["client_version"].string_value,cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s"
+          |SELECT DISTINCT cutl.searchid,cul.adslot_id,client_version,cutl.trace_type,cutl.trace_op1
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s"
           |AND cutl.hour="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("1027423","1029077","1024335","1018971","7268884")
-          |AND ext["client_version"].string_value IS NOT NULL AND ext["client_version"].string_value <>""
-          |AND ext["client_version"].string_value <>"0.0.0.0"
+          |AND cul.client_type="NATIVESDK"
+          |AND cul.adslot_id in("1027423","1029077","1024335","1018971","7268884")
+          |AND client_version IS NOT NULL AND client_version <>""
+          |AND client_version <>"0.0.0.0"
           |AND cul.isclick>0 AND cul.adsrc=1 AND cutl.trace_type in("lpload","apkdown")
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val adslotid = x.getString(1)
-          val clientVersion = x.getString(2)
-          var traceType = x.getString(3)
-          var traceOp1 = x.getString(4)
+          val adslotid = x.getAs[String](1)
+          val clientVersion = x.getAs[String](2)
+          var traceType = x.getAs[String](3)
+          var traceOp1 = x.getAs[String](4)
           var total = 1.toLong
           ((adslotid, clientVersion, traceType, traceOp1), (Info(adslotid, clientVersion, "All", traceType, traceOp1, total, argDay, argHour.toInt)))
       }
@@ -143,24 +143,23 @@ object InsertReportSdkVersionTrace {
     val motivationUnionDataByAll = ctx
       .sql(
         """
-          |SELECT searchid,adslotid,ext["client_version"].string_value,m.isfill,m.isshow,m.isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |lateral view explode(motivation) b as m
-          |WHERE cul.date="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("7732880")
-          |AND cul.adsrc in(0,1) AND ext["client_version"].string_value IS NOT NULL
-          |AND ext["client_version"].string_value <>"" AND ext["client_version"].string_value <>"0.0.0.0"
+          |SELECT searchid,adslot_id,client_version,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s"
+          |AND cul.client_type="NATIVESDK"
+          |AND cul.adslot_id in("7732880")
+          |AND cul.adsrc in(0,1) AND client_version IS NOT NULL
+          |AND client_version <>"" AND client_version <>"0.0.0.0"
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val searchid = x.getString(0)
-          val adslotId = x.getString(1)
-          val clientVersion = x.getString(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val searchid = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val clientVersion = x.getAs[String](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId, clientVersion), (adslotId, clientVersion, "All", req, isfill, isshow, isclick))
       }
@@ -204,25 +203,24 @@ object InsertReportSdkVersionTrace {
 
     val motivationTraceDataByAll = ctx.sql(
       """
-        |SELECT DISTINCT cutl.searchid,adslotid,client_version,cutl.trace_type,cutl.trace_op1
-        |FROM dl_cpc.cpc_union_trace_log cutl
+        |SELECT DISTINCT cutl.searchid,cul.adslot_id,client_version,cutl.trace_type,cutl.trace_op1
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
         |INNER JOIN (
-        |   SELECT searchid,adslotid,ext["client_version"].string_value AS client_version
-        |   FROM dl_cpc.cpc_union_log cul
-        |   lateral view explode(motivation) b as m
-        |   WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value="NATIVESDK"
-        |   AND cul.adslotid in("7732880") AND cul.adsrc in(1) AND ext["client_version"].string_value IS NOT NULL
-        |   AND ext["client_version"].string_value <>"" AND ext["client_version"].string_value <>"0.0.0.0" AND m.isclick>0
+        |   SELECT searchid,adslot_id,client_version AS client_version
+        |   FROM dl_cpc.cpc_basedata_union_events cul
+        |   WHERE cul.day="%s" AND cul.hour="%s" AND cul.client_type="NATIVESDK"
+        |   AND cul.adslot_id in("7732880") AND cul.adsrc in(1) AND client_version IS NOT NULL
+        |   AND client_version <>"" AND client_version <>"0.0.0.0" AND isclick>0
         |) cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cutl.hour="%s" AND cutl.trace_type in("sdk_incite")
+        |WHERE cutl.day="%s" AND cutl.hour="%s" AND cutl.trace_type in("sdk_incite")
       """.stripMargin.format(argDay, argHour, argDay, argHour))
       .rdd
       .map {
         x =>
-          val adslotid = x.getString(1)
-          val clientVersion = x.getString(2)
-          var traceType = x.getString(3)
-          var traceOp1 = x.getString(4)
+          val adslotid = x.getAs[String](1)
+          val clientVersion = x.getAs[String](2)
+          var traceType = x.getAs[String](3)
+          var traceOp1 = x.getAs[String](4)
           var total = 1.toLong
           ((adslotid, clientVersion, traceType, traceOp1), (Info(adslotid, clientVersion, "All", traceType, traceOp1, total, argDay, argHour.toInt)))
       }

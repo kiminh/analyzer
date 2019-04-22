@@ -21,7 +21,14 @@ object OcpcHourlyAucReport {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
 
-    val rawData = getOcpcLog(media, date, hour, spark)
+    var isHidden = 0
+    if (version == "qtt_demo") {
+      isHidden = 0
+    } else {
+      isHidden = 1
+    }
+
+    val rawData = getOcpcLog(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 详情表数据
     val unitData1 = calculateByUnitid(rawData, date, hour, spark)
@@ -74,6 +81,7 @@ object OcpcHourlyAucReport {
          |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    price
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -144,9 +152,9 @@ object OcpcHourlyAucReport {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr1", "iscvr2", "iscvr3")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr1", "iscvr2", "iscvr3", "is_hidden")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr", "is_hidden")
       .na.fill(0, Seq("iscvr"))
 
     resultDF

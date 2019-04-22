@@ -14,6 +14,9 @@ object OcpcFilterUnionLog {
 
     val data = getUnionlog(date, hour, spark)
 
+//    data
+//      .write.mode("overwrite").saveAsTable("test.filtered_union_log_hourly")
+
     data
       .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
@@ -24,6 +27,7 @@ object OcpcFilterUnionLog {
     bidData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+//      .write.mode("overwrite").saveAsTable("test.filtered_union_log_bid_hourly")
       .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
 
     // 增加可供ab对比实验的数据表
@@ -31,6 +35,7 @@ object OcpcFilterUnionLog {
     abData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+//      .write.mode("overwrite").saveAsTable("test.filtered_union_log_exptag_hourly")
       .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
   }
 
@@ -54,16 +59,16 @@ object OcpcFilterUnionLog {
          |    exptags,
          |    media_type,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+         |    adclass,
+         |    ocpc_log,
+         |    exp_ctr,
+         |    exp_cvr,
          |    bid as original_bid,
          |    price,
          |    isshow,
          |    isclick
          |FROM
-         |    dl_cpc.cpc_union_log
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectWhere
          |and (isshow>0 or isclick>0)
@@ -108,7 +113,7 @@ object OcpcFilterUnionLog {
 
 
   def getUnionlog(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"(`date`='$date' and hour = '$hour')"
+    var selectWhere = s"(day ='$date' and hour = '$hour')"
 
     // 拿到基础数据
     var sqlRequest =
@@ -120,7 +125,7 @@ object OcpcFilterUnionLog {
          |    exptags,
          |    media_type,
          |    media_appsid,
-         |    adslotid,
+         |    adslot_id as adslotid,
          |    adslot_type,
          |    adtype,
          |    adsrc,
@@ -140,17 +145,17 @@ object OcpcFilterUnionLog {
          |    age,
          |    isshow,
          |    isclick,
-         |    duration,
+         |    0 as duration,
          |    userid,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    ext_string['user_city'] as user_city,
-         |    ext['city_level'].int_value as city_level,
-         |    ext['adclass'].int_value as adclass
-         |from dl_cpc.cpc_union_log
+         |    is_ocpc,
+         |    ocpc_log,
+         |    user_city,
+         |    city_level,
+         |    adclass
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
-         |and (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
+         |and (charge_type IS NULL OR charge_type = 1)
       """.stripMargin
     println(sqlRequest)
     val rawData = spark

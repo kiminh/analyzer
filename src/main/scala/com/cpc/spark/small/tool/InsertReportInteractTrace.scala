@@ -39,8 +39,8 @@ object InsertReportInteractTrace {
     val allData = ctx.sql(
       """
         |SELECT trace_op1,count(*)
-        |FROM dl_cpc.logparsed_cpc_trace_minute
-        |WHERE thedate="%s" AND trace_type LIKE "%s"
+        |FROM dl_cpc.cpc_basedata_trace_event
+        |WHERE day="%s" AND trace_type LIKE "%s"
         |GROUP BY trace_op1
       """.stripMargin.format(argDay, "hd_load_%"))
       .rdd

@@ -7,9 +7,21 @@ import com.cpc.spark.tools.OperateMySQL
 object OcpcLaunchReport {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    val date = args(0)
+    //监控小说ocpc成本控制
+//    val sql =
+//      s"""
+//         |select
+//         |case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end as tag,count(*),sum(cost/100) from dl_cpc.ocpc_detail_report_hourly_v3
+//         |where cost >100000 and version='novel_v1' and `date`='2019-03-14' and `hour`='23'
+//         |group by case when cpa_ratio<0.8 then '<0.8'
+//         |when cpa_ratio>1.2 then '>1.2'
+//         |else 'ok' end
+//       """.stripMargin
 
     // 生成基础数据
-    val date = args(0)
     val sql1=
       s"""
          |select
@@ -42,9 +54,6 @@ object OcpcLaunchReport {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-//    val data0=spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
-//      "isshow_byunit","`date`")
-//    data0.printSchema()
     spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
       "isshow_byunit","`date`")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
@@ -82,7 +91,7 @@ object OcpcLaunchReport {
     val sql3=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
@@ -91,27 +100,25 @@ object OcpcLaunchReport {
          |from
          |(
          |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose
          |order by
          |  choose
        """.stripMargin
 
     println(sql3)
-        val data3=spark.sql(sql3)
+        val data3=spark.sql(sql3).filter("choose is not null")
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
         val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
@@ -124,9 +131,9 @@ object OcpcLaunchReport {
     val sql4=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
-         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  case when length(ocpc_log) > 0 then 'ocpc'
          |  else 'cpc' end as mode,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
@@ -134,30 +141,29 @@ object OcpcLaunchReport {
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp
          |from
          |(
-         |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |   select *
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose,
-         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  case when length(ocpc_log) > 0 then 'ocpc'
          |  else 'cpc' end
          |order by
          |  choose
        """.stripMargin
 
     println(sql4)
-    val data4result=spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data4result=spark.sql(sql4).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
@@ -169,9 +175,9 @@ object OcpcLaunchReport {
   val sql5=
     s"""
        |select
-       |  a.`date` as `date`,
+       |  a.day as `date`,
        |  choose,
-       |  ext['usertype'].int_value as usertype,
+       |  a.usertype,
        |  sum(case WHEN isclick == 1 then price else 0 end) as money,
        |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
        |  if(sum(isclick)>0,round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3),0) as acp,
@@ -179,29 +185,28 @@ object OcpcLaunchReport {
        |from
        |(
        |  select *
-       |  from dl_cpc.cpc_novel_union_log
-       |  WHERE `date` = '$date'
+       |  from dl_cpc.cpc_novel_union_events
+       |  where day = '$date'
        |  and isshow = 1
-       |  and ext['antispam'].int_value = 0
        |  and adsrc = 1
        |  and media_appsid in ("80001098","80001292")
        |  AND userid > 0
-       |  AND (ext["charge_type"] IS NULL
-       |       OR ext["charge_type"].int_value = 1)
+       |  AND (charge_type IS NULL OR charge_type = 1)
        |) a
        |left join dl_cpc.OcpcLaunchdata2 b
        |on a.unitid=b.unitid and b.`date` = '$date'
        |group by
-       |  a.`date`,
+       |  a.day,
        |  choose,
-       |  ext['usertype'].int_value
+       |  a.usertype
        |order by
        |  choose,
-       |  ext['usertype'].int_value
+       |  usertype
          """.stripMargin
     println(sql5)
 
-    val data5result=spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data5result=spark.sql(sql5).filter("choose is not null")
+          .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
           .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table3 = "report2.midu_ocpc_launch_usertype"
@@ -213,10 +218,10 @@ object OcpcLaunchReport {
     val sql6=
       s"""
          |select
-         |  a.`date` as `date`,
+         |  a.day as `date`,
          |  choose,
-         |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
-         |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'other' end as adclass,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
@@ -224,24 +229,22 @@ object OcpcLaunchReport {
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr
          |from
          |(
-         |  select *
-         |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = '$date'
+         |   select *
+         |  from dl_cpc.cpc_novel_union_events
+         |  where day = '$date'
          |  and isshow = 1
-         |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
          |  and media_appsid in ("80001098","80001292")
          |  AND userid > 0
-         |  AND (ext["charge_type"] IS NULL
-         |       OR ext["charge_type"].int_value = 1)
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |) a
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
-         |  a.`date`,
+         |  a.day,
          |  choose,
-         |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
-         |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'other' end
          |order by
          |  choose
@@ -249,7 +252,8 @@ object OcpcLaunchReport {
 
     println(sql6)
 
-    val data6result=spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
+    val data6result=spark.sql(sql6).filter("choose is not null")
+      .withColumn("sum_money_ratio",round(col("money")/money_overall*100,3))
       .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
 
     val table4 = "report2.midu_ocpc_launch_adclass"
@@ -310,8 +314,8 @@ object OcpcLaunchReport {
       s"""
          |select
          |  `date`,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'notag' end as adclass,
          |  sum(qtt_money_1) sum_qtt_money_1,
          |  sum(qtt_money_2) sum_qtt_money_2,
@@ -340,8 +344,8 @@ object OcpcLaunchReport {
          |) a
          |group by
          |  `date`,
-         |  case when round(adclass/1000000) == 100 then 'app'
-         |  when round(adclass/1000) == 110110 then 'wz'
+         |  case when round(a.adclass/1000000) == 100 then 'app'
+         |  when round(a.adclass/1000) == 110110 then 'wz'
          |  else 'notag' end
          """.stripMargin
     println(sql8)

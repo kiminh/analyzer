@@ -1,13 +1,13 @@
 package com.cpc.spark.hottopic
 
 import org.apache.spark.sql.SparkSession
-
 /**
   * @author Jinbao
   * @date 2019/3/1 19:50
   */
 object HotTopicBaseData {
     def main(args: Array[String]): Unit = {
+
         val day = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()

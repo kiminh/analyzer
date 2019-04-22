@@ -181,7 +181,7 @@ object OcpcRegressionV2 {
     val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
     if (cpasrc == "110110") {
-      targetK = 0.60
+      targetK = 0.50
     } else {
       targetK = 0.95
     }

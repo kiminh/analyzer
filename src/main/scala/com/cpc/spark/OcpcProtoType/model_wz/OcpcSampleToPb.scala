@@ -45,7 +45,7 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190317")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV2(spark)
+    val cpaGiven = getCPAgivenV3(date, spark)
 
     // 数据关联
     val result = data
@@ -97,6 +97,86 @@ object OcpcSampleToPb {
 
 
     resultDF
+  }
+
+//  def getUserBlackFlag(date: String, hour: String, spark: SparkSession) ={
+//    // 从实验配置文件读取配置的CPAgiven
+//    val conf = ConfigFactory.load("ocpc")
+//    val expDataPath = conf.getString("ocpc_wz.ocpc_wz_user_blacklist")
+//    val confData = spark.read.format("json").json(expDataPath)
+//    confData.show(10)
+//
+//    val userid = confData.filter(s"flag = 1").select("userid")
+//
+//    // 从mysql抽取对应的unitid
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+//    val table = "(select id, user_id from adv.unit where ideas is not null) as tmp"
+//
+//    val unitData = spark.read.format("jdbc")
+//      .option("url", url)
+//      .option("driver", driver)
+//      .option("user", user)
+//      .option("password", passwd)
+//      .option("dbtable", table)
+//      .load()
+//
+//    val base = unitData
+//      .withColumn("unitid", col("id"))
+//      .withColumn("userid", col("user_id"))
+//      .select("unitid", "userid")
+//
+//    base.createOrReplaceTempView("base_table")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    cast(unitid as string) as identifier,
+//         |    cast(userid as int) as userid
+//         |FROM
+//         |    base_table
+//       """.stripMargin
+//    println(sqlRequest)
+//    val identifierList = spark.sql(sqlRequest).distinct()
+//
+//    // 数据关联
+//    val resultDF = identifierList
+//      .join(userid, Seq("userid"), "inner")
+//      .withColumn("black_flag", lit(1))
+//    resultDF.show(10)
+//
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_unitid_userid_blacklist20190417")
+//
+//    resultDF
+//  }
+
+  def getCPAgivenV3(date: String, spark: SparkSession) = {
+    // 时间分区
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpagiven2
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  industry in ('wzcp')
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result
   }
 
   def getCPAgivenV2(spark: SparkSession) = {
