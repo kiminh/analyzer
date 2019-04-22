@@ -53,21 +53,21 @@ object bs_log_report_v2 {
           val group_network_num = up.getGroupStats.getGroupNetworkNum
           val group_ad_slot_type_num = up.getGroupStats.getGroupAdSlotTypeNum
           val group_map_match_count_num = up.getGroupStats.getGroupMapMatchCountNum
-          val groups_hit_media_ids = up.getGroupStats.getGroupsHitMediaIdsList.asScala.toList
-          val groups_hit_age_ids = up.getGroupStats.getGroupsHitAgeIdsList.asScala.toList
-          val groups_hit_gender_ids = up.getGroupStats.getGroupsHitGenderIdsList.asScala.toList
-          val groups_hit_net_work_ids = up.getGroupStats.getGroupsHitNetWorkIdsList.asScala.toList
-          val groups_hit_ad_slot_type_ids =  up.getGroupStats.getGroupsHitAdSlotTypeIdsList.asScala.toList
-          val groups_hit_media_class_ids =  up.getGroupStats.getGroupsHitMediaClassIdsList.asScala.toList
-          val groups_hit_regional_ids = up.getGroupStats.getGroupsHitRegionalIdsList.asScala.toList
-          val groups_hit_user_level_ids = up.getGroupStats.getGroupsHitUserLevelIdsList.asScala.toList
-          val groups_hit_phone_level_ids = up.getGroupStats.getGroupsHitPhoneLevelIdsList.asScala.toList
-          val groups_hit_os_type_ids = up.getGroupStats.getGroupsHitOsTypeIdsList.asScala.toList
-          val groups_hit_black_install_pkg_ids = up.getGroupStats.getGroupsHitBlackInstallPkgIdsList.asScala.toList
-          val groups_hit_white_install_pkg_ids = up.getGroupStats.getGroupsHitWhiteInstallPkgIdsList.asScala.toList
-          val groups_hit_content_category_ids = up.getGroupStats.getGroupsHitContentCategoryIdsList.asScala.toList
-          val groups_hit_new_user_ids = up.getGroupStats.getGroupsHitNewUserIdsList.asScala.toList
-          val groups_hit_acc_user_type_ids = up.getGroupStats.getGroupsHitAccUserTypeIdsList.asScala.toList
+          val groups_hit_media_ids = up.getGroupStats.getGroupsHitMediaIdsList.asScala.toArray
+          val groups_hit_age_ids = up.getGroupStats.getGroupsHitAgeIdsList.asScala.toArray
+          val groups_hit_gender_ids = up.getGroupStats.getGroupsHitGenderIdsList.asScala.toArray
+          val groups_hit_net_work_ids = up.getGroupStats.getGroupsHitNetWorkIdsList.asScala.toArray
+          val groups_hit_ad_slot_type_ids =  up.getGroupStats.getGroupsHitAdSlotTypeIdsList.asScala.toArray
+          val groups_hit_media_class_ids =  up.getGroupStats.getGroupsHitMediaClassIdsList.asScala.toArray
+          val groups_hit_regional_ids = up.getGroupStats.getGroupsHitRegionalIdsList.asScala.toArray
+          val groups_hit_user_level_ids = up.getGroupStats.getGroupsHitUserLevelIdsList.asScala.toArray
+          val groups_hit_phone_level_ids = up.getGroupStats.getGroupsHitPhoneLevelIdsList.asScala.toArray
+          val groups_hit_os_type_ids = up.getGroupStats.getGroupsHitOsTypeIdsList.asScala.toArray
+          val groups_hit_black_install_pkg_ids = up.getGroupStats.getGroupsHitBlackInstallPkgIdsList.asScala.toArray
+          val groups_hit_white_install_pkg_ids = up.getGroupStats.getGroupsHitWhiteInstallPkgIdsList.asScala.toArray
+          val groups_hit_content_category_ids = up.getGroupStats.getGroupsHitContentCategoryIdsList.asScala.toArray
+          val groups_hit_new_user_ids = up.getGroupStats.getGroupsHitNewUserIdsList.asScala.toArray
+          val groups_hit_acc_user_type_ids = up.getGroupStats.getGroupsHitAccUserTypeIdsList.asScala.toArray
 
 
           BsLog1(
@@ -158,20 +158,20 @@ object bs_log_report_v2 {
                      var group_network_num: Int=0,
                      var group_ad_slot_type_num : Int=0,
                      var group_map_match_count_num: Int=0,
-                     var groups_hit_media_ids: List[Integer]=List(),
-                     var groups_hit_age_ids: List[Integer]=List(),
-                     var groups_hit_gender_ids: List[Integer]=List(),
-                     var groups_hit_net_work_ids: List[Integer]=List(),
-                     var groups_hit_ad_slot_type_ids: List[Integer]=List(),
-                     var groups_hit_media_class_ids: List[Integer]=List(),
-                     var groups_hit_regional_ids: List[Integer]=List(),
-                     var groups_hit_user_level_ids: List[Integer]=List(),
-                     var groups_hit_phone_level_ids: List[Integer]=List(),
-                     var groups_hit_os_type_ids: List[Integer]=List(),
-                     var groups_hit_black_install_pkg_ids: List[Integer]=List(),
-                     var groups_hit_white_install_pkg_ids: List[Integer]=List(),
-                     var groups_hit_content_category_ids: List[Integer]=List(),
-                     var groups_hit_new_user_ids: List[Integer]=List(),
-                     var groups_hit_acc_user_type_ids: List[Integer]=List()
+                     var groups_hit_media_ids: Array[Integer]=Array(),
+                     var groups_hit_age_ids: Array[Integer]=Array(),
+                     var groups_hit_gender_ids: Array[Integer]=Array(),
+                     var groups_hit_net_work_ids: Array[Integer]=Array(),
+                     var groups_hit_ad_slot_type_ids: Array[Integer]=Array(),
+                     var groups_hit_media_class_ids: Array[Integer]=Array(),
+                     var groups_hit_regional_ids: Array[Integer]=Array(),
+                     var groups_hit_user_level_ids: Array[Integer]=Array(),
+                     var groups_hit_phone_level_ids: Array[Integer]=Array(),
+                     var groups_hit_os_type_ids: Array[Integer]=Array(),
+                     var groups_hit_black_install_pkg_ids: Array[Integer]=Array(),
+                     var groups_hit_white_install_pkg_ids: Array[Integer]=Array(),
+                     var groups_hit_content_category_ids: Array[Integer]=Array(),
+                     var groups_hit_new_user_ids: Array[Integer]=Array(),
+                     var groups_hit_acc_user_type_ids: Array[Integer]=Array()
                    )
 }
