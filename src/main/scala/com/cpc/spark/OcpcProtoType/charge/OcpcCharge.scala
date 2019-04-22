@@ -74,11 +74,11 @@ object OcpcCharge {
     import spark.implicits._
 
     // 媒体选择
-    val conf = ConfigFactory.load("ocpc.ocpc_pay_mysql.test")
-    val url = conf.getString("url")
-    val user = conf.getString("user")
-    val passwd = conf.getString("password")
-    val driver = conf.getString("driver")
+    val conf = ConfigFactory.load("ocpc")
+    val url = conf.getString("ocpc_pay_mysql.test.url")
+    val user = conf.getString("ocpc_pay_mysql.test.user")
+    val passwd = conf.getString("ocpc_pay_mysql.test.password")
+    val driver = conf.getString("ocpc_pay_mysql.test.driver")
     val table = "(select unit_id from adv_test.ocpc_compensate) as tmp"
 
     val data = spark.read.format("jdbc")
