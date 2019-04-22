@@ -37,21 +37,21 @@ object OcpcCollectSuggestData {
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // 二类电商
-    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
-    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//    // 二类电商
+//    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
+//    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
     feedapp.printSchema()
-    elds.printSchema()
+//    elds.printSchema()
     wz.printSchema()
 
     // 数据串联
     val cpaData = feedapp
-      .union(elds)
+//      .union(elds)
       .union(wz)
 
 
@@ -69,15 +69,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
