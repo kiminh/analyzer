@@ -281,7 +281,7 @@ object AutoCoinStrategy {
                          p1:Double, p2:Double, date:String, hour:String):RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val apiUnionLogSql =
             s"""
-               |select ideaid,ext["exp_cvr"].int_value as exp_cvr
+               |select ideaid,exp_cvr
                |from dl_cpc.api_basedata_union_events
                |where ($dateHourFilter)
                |and media_appsid in ('80000001','80000002')
