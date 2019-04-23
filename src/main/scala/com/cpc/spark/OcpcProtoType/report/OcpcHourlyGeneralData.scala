@@ -156,7 +156,7 @@ object OcpcHourlyGeneralData {
   }
 
   def getConversionData(cvrType: String, date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`date` >= '$date' and cvr_goal = '$cvrType'"
+    val selectCondition = s"`date` = '$date' and `hour` <= '$hour' and cvr_goal = '$cvrType'"
 
     val sqlRequest =
       s"""
