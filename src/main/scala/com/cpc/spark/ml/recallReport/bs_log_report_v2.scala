@@ -124,11 +124,10 @@ object bs_log_report_v2 {
       "groups_hit_ad_slot_type_ids","groups_hit_media_class_ids", "groups_hit_regional_ids","groups_hit_user_level_ids",
       "groups_hit_phone_level_ids","groups_hit_os_type_ids", "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids",
       "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
-//      .filter("exptags like '%%bsfilterdetail%%'")
+      .where("exptags like '%%bsfilterdetail%%'")
       .withColumn("`date`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
-    pbData.show(10)
-    pbData.repartition(100).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
+    pbData.repartition(500).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
   }
   case class BsLog1(
                      var searchid: String="",
