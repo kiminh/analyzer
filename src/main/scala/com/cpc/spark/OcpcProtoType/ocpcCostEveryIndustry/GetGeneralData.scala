@@ -17,33 +17,41 @@ object GetGeneralData {
       s"""
          |SELECT
          |  industry,
-         |  ocpc_cost,
-         |  (ocpc_cost - ocpc_cost_yesterday) * 1.0 / ocpc_cost_yesterday as cost_cmp,
-         |  cost_ratio
+         |  cost as ocpc_cost,
+         |  cost_cmp,
+         |  cost_ratio,
+         |  low_unit_percent,
+         |  pay_percent
          |FROM
-         |  dl_cpc.ocpc_cost_every_industry
+         |  dl_cpc.ocpc_general_data_industry
          |WHERE
          |  `date` = '$date'
          |AND
-         |  industry in ('elds', 'app_api_callback')
+         |  `hour` = '06'
+         |AND
+         |  version = 'qtt_demo'
+         |AND
+         |  industry in ('elds', 'feedapp')
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
     data.show(10)
 
-    writeCsv(date, data, spark)
+//    writeCsv(date, data, spark)
 
   }
 
   def writeCsv(date: String, dataDF: DataFrame, spark: SparkSession): Unit ={
-    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_cost", "cost_cmp", "cost_ratio").mkString(","))).map(x => (x, 1))
+    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_cost", "cost_cmp", "cost_ratio", "low_unit_percent", "pay_percent").mkString(","))).map(x => (x, 1))
     val sortDataDF = dataDF.na.fill(0)
     val data = title.union(sortDataDF.rdd.map(x => Seq(
       x.getAs[String]("industry").toString,
-      x.getAs[Int]("ocpc_cost").toString,
-      x.getAs[Int]("cost_cmp").toString,
-      x.getAs[Int]("cost_ratio").toString).mkString(","))
+      x.getAs[Double]("ocpc_cost").toString,
+      x.getAs[Double]("cost_cmp").toString,
+      x.getAs[Double]("cost_ratio").toString,
+      x.getAs[Double]("low_unit_percent").toString,
+      x.getAs[Double]("pay_percent").toString).mkString(","))
       .map(x => (x, 2)))
       .repartition(1)
       .sortBy(x => (x._2, x._1))
