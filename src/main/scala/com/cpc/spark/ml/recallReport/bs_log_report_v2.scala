@@ -131,7 +131,7 @@ object bs_log_report_v2 {
     pbData.createOrReplaceTempView("temp_table")
     val insertIntoTable =
       s"""
-         |insert overwrite table dl_cpc.recall_filter_number_report partition (`date`='$tardate',hour='$hour')
+         |insert overwrite table dl_cpc.recall_filter_number_report_v2 partition (`date`='$tardate',hour='$hour')
          |select * from temp_table where exptags like '%%bsfilterdetail%%'
       """.stripMargin
     spark.sql(insertIntoTable)
