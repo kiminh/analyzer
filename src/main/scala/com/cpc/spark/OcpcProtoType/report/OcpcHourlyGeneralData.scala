@@ -83,7 +83,7 @@ object OcpcHourlyGeneralData {
     val result2 = result1
         .join(prevData, Seq("industry"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
-        .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("cost") * 100.0 - col("cost_yesterday")) / col("cost_yesterday")))
+        .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("ocpc_cost") * 0.01 - col("cost_yesterday")) / col("cost_yesterday")))
     val result = result2
 
     result.show(10)
