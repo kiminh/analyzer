@@ -18,4 +18,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ocpcV3.ocpc.filter.OcpcSuggestCpa \
-    /home/cpc/lixuejian/git_file/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2
+    /home/cpc/lixuejian/git_file/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 qtt_test

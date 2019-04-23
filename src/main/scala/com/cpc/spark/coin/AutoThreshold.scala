@@ -15,10 +15,11 @@ object AutoThreshold {
           .getOrCreate()
         import spark.implicits._
 
-        val min_p = args(1).toDouble    //0.7
-        val max_p = args(2).toDouble    //1.0
-        val default_p = args(3).toDouble    //0.8
-        val default_alpha = args(4).toDouble    //0.02
+        val min_p = args(1).toDouble            //0.6
+        val max_p = args(2).toDouble            //1.0
+        val default_p = args(3).toDouble        //0.8
+        val negative_alpha = args(4).toDouble    //0.02
+        val positive_alpha = args(5).toDouble   //0.04
 
         val sql =
             s"""
@@ -39,8 +40,8 @@ object AutoThreshold {
                |    $min_p as min_p,
                |    $max_p as max_p,
                |    if(a.p is null, $default_p, a.p) as p,
-               |    case when b.flag = 0 then $default_alpha
-               |         when b.flag = 1 then 0-$default_alpha
+               |    case when b.flag = 0 then $negative_alpha
+               |         when b.flag = 1 then 0-$positive_alpha
                |         else 0 end as alpha,
                |    b.flag as flag
                |  from

@@ -6,7 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.udfs.Udfs_wj.udfSqrt
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.typesafe.config.ConfigFactory
-import org.apache.commons.math3.fitting.{ PolynomialCurveFitter, WeightedObservedPoints }
+import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, Row, SparkSession, DataFrame}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql3
@@ -27,7 +27,7 @@ object OcpcRegression {
     var mediaSelection = s"media_appsid in ('80000001', '80000002')"
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if(media == "novel"){
+    } else if (media == "novel") {
       mediaSelection = s"media_appsid in ('80001098','80001292')"
     } else {
       mediaSelection = s"media_appsid = '80002819'"
@@ -38,22 +38,22 @@ object OcpcRegression {
     val tablename = "dl_cpc.ocpc_regression_middle_hourly"
     val result = middleData
       .withColumn("conversion_goal", lit(1))
-      .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal" )
+      .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
-    result.write.mode("overwrite").insertInto( tablename )
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
+    result.write.mode("overwrite").insertInto(tablename)
 
     // 结果表
-    val kvalue = getKWithRatio( middleData, date, hour, spark ) //返回结果为identifier,k_ratio
+    val kvalue = getKWithRatio(middleData, date, hour, spark) //返回结果为identifier,k_ratio
     val resultDF = kvalue
-      .withColumn("conversion_goal", lit(1) )
+      .withColumn("conversion_goal", lit(1))
       .select("identifier", "k_ratio", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
   }
@@ -62,13 +62,13 @@ object OcpcRegression {
     // 获取并关联数据
     /**
       * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的identifier,k_ratio,cpagiven,cpa, ratio, click_cnt, cvr_cnt
-      * */
-    val ctrData = getCtrData(  mediaSelection, hourCnt, date, hour, spark ) //返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid, unitid, identifier, isclick, price, cpagiven, kvalue
-    val cvrData = getCvr1Data( mediaSelection, hourCnt, date, hour, spark ) //返回ml_cvr_feature_v1中排除应用商城后的search_id及其对应的转化情况label2
-    val rawData = ctrData  // identifier, kvalue, cpagiven, isclick, price, label
-      .join( cvrData, Seq("searchid"), "left_outer" )
-      .na.fill(0, Seq("label") )
-      .select("identifier", "kvalue", "cpagiven", "isclick", "price", "label" )
+      **/
+    val ctrData = getCtrData(mediaSelection, hourCnt, date, hour, spark) //返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid, unitid, identifier, isclick, price, cpagiven, kvalue
+    val cvrData = getCvr1Data(mediaSelection, hourCnt, date, hour, spark) //返回ml_cvr_feature_v1中排除应用商城后的search_id及其对应的转化情况label2
+    val rawData = ctrData // identifier, kvalue, cpagiven, isclick, price, label
+      .join(cvrData, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("label"))
+      .select("identifier", "kvalue", "cpagiven", "isclick", "price", "label")
 
     rawData.createOrReplaceTempView("base_table")
     val sqlRequest =
@@ -96,12 +96,12 @@ object OcpcRegression {
 
   def getCtrData(mediaSelection: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
-    /***
+    /** *
       * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid,unitid, identifier,isclick, price, cpagiven,kvalue
       */
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
-    val today = dateConverter.parse( newDate )
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     calendar.add(Calendar.HOUR, -hourCnt)
@@ -136,7 +136,7 @@ object OcpcRegression {
 
   def getCvr1Data(mediaSelection: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
-    /***
+    /** *
       * 返回ml_cvr_feature_v1中排除应用商城后的search_id及其对应的转化情况label2
       */
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -173,30 +173,30 @@ object OcpcRegression {
 
   def getKWithRatio(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
 
-    val res = baseData  // Array
+    val res = baseData // Array
       .filter(s"ratio is not null")
-      .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")) ) //concat_ws使用" "做为连接符，将后面3个字段的值连接成一行
-      .groupBy("identifier" )
-      .agg( collect_set("str").as("liststr" ) ) // 将数据按identifier分组后，对每组中"str"中的值去重后放入一个列表中，并重命名为liststr
+      .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt"))) //concat_ws使用" "做为连接符，将后面3个字段的值连接成一行
+      .groupBy("identifier")
+      .agg(collect_set("str").as("liststr")) // 将数据按identifier分组后，对每组中"str"中的值去重后放入一个列表中，并重命名为liststr
       .select("identifier", "liststr").collect()
     //    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_regression20190103")
 
     //    val res = rawData.collect()
     val adclassMap = getAdclassMap(baseData, date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double)]()
-    for ( row <- res ){  //每个identifier创建一个线性回归方程
+    for (row <- res) { //每个identifier创建一个线性回归方程
       val identifier = row(0).toString
-      val pointList  = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map( x => {
+      val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
-      } )
-      val coffList = fitPoints( pointList.toList )
-//      val targetK = 1.1
-      val targetK = getTargetK(adclassMap, identifier)
+      })
+      val coffList = fitPoints(pointList.toList)
+            val targetK = 1.1
+//      val targetK = getTargetK(adclassMap, identifier)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
-      if (coffList(1)>0 && realk > 0) {
+      if (coffList(1) > 0 && realk > 0) {
         resList.append((identifier, realk))
       }
     }
@@ -206,7 +206,7 @@ object OcpcRegression {
     data
   }
 
-  def fitPoints( pointsWithCount: List[(Double, Double, Int)] ): List[Double] = {
+  def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
     var count = 0
     for ((x, y, n) <- pointsWithCount) {
@@ -248,12 +248,12 @@ object OcpcRegression {
 
   def getAdclassMap(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
-    /***
+    /** *
       * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid,unitid, identifier,isclick, price, cpagiven,kvalue
       */
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
-    val today = dateConverter.parse( newDate )
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     calendar.add(Calendar.HOUR, -72)
@@ -304,10 +304,10 @@ object OcpcRegression {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
-//    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+    //    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
-    for(row <- unitidAdclass.collect()) {
+    for (row <- unitidAdclass.collect()) {
       val unitid = row.getAs[Int]("unitid").toString
       val adclass = row.getAs[Int]("adclass")
       adclassMap += (unitid -> adclass)

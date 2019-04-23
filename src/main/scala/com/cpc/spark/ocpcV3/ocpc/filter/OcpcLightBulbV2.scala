@@ -47,7 +47,7 @@ object OcpcLightBulbV2{
 
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_20190305new")
+
     cpaSuggest
       .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
       .withColumn("date", lit(date))
@@ -61,6 +61,7 @@ object OcpcLightBulbV2{
     // 存储redis数据
     saveDataToRedis(date, hour, spark)
     println(s"############## saving redis database ##########################")
+
     // 存储结果表
     cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -139,7 +140,7 @@ object OcpcLightBulbV2{
               valueString = "0"
             }
             println(s"key:$key, value:$valueString")
-            redis.setex(key, 2 * 24 * 60 * 60, valueString)
+            redis.setex(key, 7 * 24 * 60 * 60, valueString)
           }
         }
       }
@@ -148,13 +149,33 @@ object OcpcLightBulbV2{
   }
 
   def getCPAsuggest(completeData: DataFrame, conversionGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val result = conversionGoal
+    val data1 = conversionGoal
       .join(completeData, Seq("unitid", "conversion_goal"), "left_outer")
       .filter(s"cpa is not null")
-      .select("unitid", "conversion_goal", "cpa")
+      .withColumn("cpa1", col("cpa"))
+      .select("unitid", "conversion_goal", "cpa1")
+
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
+    val rawData = spark.read.format("json").json(suggestCpaPath)
+    val data2 = rawData
+      .groupBy("identifier")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest")
+      )
+      .withColumn("cpa2", col("cpa_suggest") * 0.01)
+      .withColumn("conversion_goal", lit(0))
+      .selectExpr("cast(identifier as bigint) unitid", "cpa2")
+
+    val result = data1
+      .join(data2, Seq("unitid"), "outer")
+      .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
+      .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa")
+      .na.fill(0, Seq("conversion_goal"))
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
-    val resultDF = result.filter("cpa >= 0")
+    val resultDF = result.filter("cpa >= 0").select("unitid", "conversion_goal", "cpa")
     resultDF
   }
 

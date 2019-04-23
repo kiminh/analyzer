@@ -74,7 +74,15 @@ object OcpcUnionlog {
          |    exp_cvr,
          |    antispam,
          |    conversion_goal,
-         |    charge_type
+         |    charge_type,
+         |    conversion_from,
+         |    is_api_callback,
+         |    siteid,
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from
          |    base_data
        """.stripMargin
@@ -187,7 +195,15 @@ object OcpcUnionlog {
          |    charge_type,
          |    (case when antispam_score < 10000 and isclick=1 then 1 else 0 end) as antispam,
          |    usertype,
-         |    conversion_goal
+         |    conversion_goal,
+         |    conversion_from,
+         |    is_api_callback,
+         |    siteid,
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

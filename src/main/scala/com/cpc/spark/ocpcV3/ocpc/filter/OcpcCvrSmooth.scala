@@ -9,6 +9,7 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import ocpcCpcBid.Ocpccpcbid
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -17,9 +18,11 @@ import scala.collection.mutable.ListBuffer
 
 object OcpcCvrSmooth {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = args(2).toInt
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
@@ -30,7 +33,7 @@ object OcpcCvrSmooth {
     println(s"path is: $expDataPath")
     println(s"fileName is: $fileName")
 
-    val cvrData = getCvrData(date, hour, spark)
+    val cvrData = getCvrData(date, hour, hourInt, spark)
     cvrData.show(10)
 
     val resultDF = cvrData
@@ -49,11 +52,11 @@ object OcpcCvrSmooth {
   }
 
 
-  def getCvrData(date: String, hour: String, spark: SparkSession) = {
-    val clickData = getClickData(date, hour, spark)
-    val cvr1Data = getCV("cvr1", date, hour, spark)
-    val cvr2Data = getCV("cvr2", date, hour, spark)
-    val cvr3Data = getCV("cvr3", date, hour, spark)
+  def getCvrData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val clickData = getClickData(date, hour, hourInt, spark)
+    val cvr1Data = getCV("cvr1", date, hour, hourInt, spark)
+    val cvr2Data = getCV("cvr2", date, hour, hourInt, spark)
+    val cvr3Data = getCV("cvr3", date, hour, hourInt, spark)
 
     val data = clickData
       .join(cvr1Data, Seq("searchid"), "left_outer")
@@ -62,8 +65,8 @@ object OcpcCvrSmooth {
       .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3", "isshow", "bid", "exp_ctr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
-    // data.createOrReplaceTempView("base_data")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth_cvr")
+    data.createOrReplaceTempView("base_data")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth_cvr")
 
     val sqlRequest =
       s"""
@@ -73,7 +76,7 @@ object OcpcCvrSmooth {
          |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
          |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3
          |FROM
-         |  test.ocpc_check_data_smooth_cvr
+         |  base_data
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
@@ -84,14 +87,14 @@ object OcpcCvrSmooth {
 
   }
 
-  def getCV(cvType: String, date: String, hour: String, spark: SparkSession) = {
+  def getCV(cvType: String, date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -115,14 +118,14 @@ object OcpcCvrSmooth {
     data
   }
 
-  def getClickData(date: String, hour: String, spark: SparkSession) = {
+  def getClickData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")

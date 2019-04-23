@@ -47,6 +47,9 @@ object OcpcSuggestKcpa {
     val result = updateCPAsuggest(newData, prevData, spark)
 
     val resultDF = result
+      // kvalue表示刚进入ocpc时的cpc阶段算出来的k值，
+      // duration表示进入ocpc的天数
+      // 要获取刚进入ocpc阶段的信息时，这张表常用
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
@@ -125,7 +128,8 @@ object OcpcSuggestKcpa {
          |    unitid,
          |    userid,
          |    isclick,
-         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -142,6 +146,7 @@ object OcpcSuggestKcpa {
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
+      .filter(s"is_hidden = 0")
       .groupBy("unitid", "conversion_goal")
       .agg(sum(col("isclick")).alias("click"))
       .withColumn("identifier", col("unitid"))
@@ -166,6 +171,8 @@ object OcpcSuggestKcpa {
          |WHERE
          |  `date`='$date'
          |AND
+         |  `hour` = '06'
+         |AND
          |  version='$version'
          |AND
          |  is_recommend = 1
@@ -179,6 +186,8 @@ object OcpcSuggestKcpa {
         avg("kvalue").alias("kvalue")
       )
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal")
+
+
 
     data
   }
@@ -219,6 +228,7 @@ object OcpcSuggestKcpa {
       .withColumn("prev_duration", col("duration"))
       .select("identifier", "prev_cpa", "prev_k", "conversion_goal", "prev_duration")
 
+
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
     val result = newData
       .join(prevData, Seq("identifier", "conversion_goal"), "outer")
@@ -228,7 +238,6 @@ object OcpcSuggestKcpa {
       .withColumn("kvalue", when(col("is_update") === 1, col("new_k")).otherwise(col("prev_k")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
 
-    result.write.mode("overwrite").saveAsTable("test.check_new_k_data20190301")
 
     val resultDF = result.select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration")
     resultDF

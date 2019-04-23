@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
 object OcpcCollectSuggestData {
   def main(args: Array[String]): Unit = {
     /*
-    从dl_cpc.ocpc_suggest_cpa_recommend_hourly中抽取需要的字段
+    从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2中抽取需要的字段
      */
     // 计算日期周期
     val date = args(0).toString
@@ -22,22 +22,38 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    // api回传的feedapp广告
-    val feedapp1 = getSuggestData("qtt_demo", "feedapp", 2, 100000, date, hour, spark)
+//    unitid,
+//    |  cpa,
+//    |  kvalue,
+//    |  cost,
+//    |  cast(0.5 * acb as int) as last_bid,
+//    |  row_number() over(partition by unitid order by cost desc) as seq
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("max_budget", lit(maxBudget))
+//      .withColumn("industry", lit(industry))
+
+    // 安装类feedapp广告单元
+//    val adslot_type = getAdSlotType(date, hour, spark)
+    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
-    val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
+    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
+    feedapp.printSchema()
+    elds.printSchema()
+    wz.printSchema()
+
     // 数据串联
     val cpaData = feedapp
       .union(elds)
       .union(wz)
+
 
     // 整理每个网赚广告单元最近24小时ocpc消费的成本和cpm
     val ocpcData = getOcpcData(date, hour, spark)
@@ -285,13 +301,13 @@ object OcpcCollectSuggestData {
   def joinData(cpaData: DataFrame, costData: DataFrame, ocpcData: DataFrame, prevBudget: DataFrame, spark: SparkSession) ={
     val data = cpaData
       .join(costData, Seq("unitid"), "inner")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
       .join(ocpcData, Seq("unitid", "industry"), "left_outer")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "last_bid")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent")
-      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(0.2))
-      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(0.05))
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent", "last_bid")
+      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.2)))
+      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.05)))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -315,7 +331,8 @@ object OcpcCollectSuggestData {
          |  bottom_percent,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
          |        when prev_percent is null or cpa_flag is null then bottom_percent
-         |        else prev_percent end) as percent
+         |        else prev_percent end) as percent,
+         |  last_bid
          |FROM
          |  base_data
        """.stripMargin
@@ -330,7 +347,7 @@ object OcpcCollectSuggestData {
     result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent", "last_bid")
 
     resultDF
 
@@ -393,9 +410,10 @@ object OcpcCollectSuggestData {
          |  cpa,
          |  kvalue,
          |  cost,
+         |  cast(0.5 * acb as int) as last_bid,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
@@ -405,7 +423,7 @@ object OcpcCollectSuggestData {
          |AND
          |  industry = '$industry'
          |AND
-         |  original_conversion = $conversionGoal
+         |  cv_goal = $conversionGoal
          |AND
          |  is_recommend = 1
        """.stripMargin
@@ -416,6 +434,122 @@ object OcpcCollectSuggestData {
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("max_budget", lit(maxBudget))
         .withColumn("industry", lit(industry))
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getAdSlotType(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val mediaSelection = conf.getString("medias.qtt.media_selection")
+
+    // 抽取unitid, adslot_type的数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    unitid,
+         |    adslot_type,
+         |    count(1) as cnt
+         |FROM
+         |    dl_cpc.slim_union_log
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    $mediaSelection
+         |AND
+         |    antispam = 0
+         |AND
+         |    adslot_type in (1,2,3)
+         |AND
+         |    adsrc = 1
+         |AND
+         |    (charge_type is null or charge_type = 1)
+         |GROUP BY unitid, adslot_type
+       """.stripMargin
+    println(sqlRequest1)
+    val data = spark.sql(sqlRequest1)
+    data.createOrReplaceTempView("base_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adslot_type,
+         |  cnt,
+         |  row_number() over(partition by unitid, adslot_type order by cnt desc) as seq
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2).filter(s"seq = 1").select("unitid", "adslot_type")
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getAPIunitid(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val mediaSelection = conf.getString("medias.qtt.media_selection")
+
+    // 抽取apicallback的数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid
+         |FROM
+         |    dl_cpc.slim_union_log
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    $mediaSelection
+         |AND
+         |    antispam = 0
+         |AND
+         |    adslot_type in (1,2,3)
+         |AND
+         |    adsrc = 1
+         |AND
+         |    (charge_type is null or charge_type = 1)
+         |AND
+         |    is_api_callback = 1
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .select("unitid")
+      .distinct()
+      .withColumn("api_flag", lit(1))
 
     resultDF.show(10)
     resultDF

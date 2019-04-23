@@ -37,16 +37,14 @@ object OcpcGetPb {
     val version = args(3).toString
     val media = args(4).toString
 
+    // 加载配置文件，获取媒体类型
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if (media == "novel") {
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"media selection: $mediaSelection")
 
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
@@ -76,73 +74,16 @@ object OcpcGetPb {
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
     val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
     val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
-    val kvalue2 = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
-    val kvalue = setKvalueByUnitid(kvalue2, mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
-      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
+      .withColumn("max_k", when(col("conversion_goal") === 1, 300.0).otherwise(15.0))
+      .withColumn("kvalue", when(col("kvalue") > col("max_k"), col("max_k")).otherwise(col("kvalue")))
 
-
-    resultDF
-  }
-
-  def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    // set the unitid that we need to reset
-//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
-//
-//    // time span
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  cast(unitid as string) identifier,
-//         |  2 as conversion_goal,
-//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
-//         |FROM
-//         |  dl_cpc.ocpc_filter_unionlog
-//         |WHERE
-//         |  `date` = '2019-03-13'
-//         |AND
-//         |  `hour` between '0' and '17'
-//         |AND
-//         |  $mediaSelection
-//         |AND
-//         |  antispam = 0
-//         |AND
-//         |  isclick = 1
-//         |AND
-//         |  $unitidSelection
-//         |AND
-//         |  is_ocpc = 1
-//       """.stripMargin
-//    println(sqlRequest)
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "ocpc_all.ocpc_reset_k"
-    val expDataPath = conf.getString(conf_key)
-    val rawData = spark.read.format("json").json(expDataPath)
-    val data = rawData
-      .filter(s"kvalue > 0")
-      .select("identifier", "conversion_goal", "kvalue")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("kvalue")).alias("kvalue_bak"))
-      .select("identifier", "conversion_goal", "kvalue_bak")
-    data.show(10)
-
-    val result = kvalue
-      .withColumn("kvalue_ori", col("kvalue"))
-      .join(data, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "kvalue_ori", "conversion_goal", "kvalue_bak")
-      .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
-      .filter(s"kvalue is not null")
-
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
-
-    val resultDF = result
-      .select("identifier", "kvalue", "conversion_goal")
 
     resultDF
   }
@@ -319,11 +260,14 @@ object OcpcGetPb {
       .join(cpcKfinal, Seq("identifier"), "outer")
       .select("identifier", "ocpc_k", "cpc_k", "history_ocpc_flag")
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
+      // 如果前3天中有ocpc的消费，即history_ocpc_flag ！= 0 ，则使用ocpc方式计算出来的K值
+      // 否则使用cpc方式计算出来的k值，之所以是前3天是因为为了和前端保持一致，
+      // 因为前端规定会如果一个单元在3天内如果开启了ocpc，但是没有消费，则会关闭它的ocpc，
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
+//    finalK.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
@@ -480,7 +424,10 @@ object OcpcGetPb {
   def getPrevPb(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     var hourCnt=1
     var prevTable = getPrevK(conversionGoal, version, date, hour, hourCnt, spark)
+    // 获取上一次pb文件，当前一小时对应的pb文件为空时，则获取前2小时的，
+    // 以此类推，如果在10次之类都没有数据，则将上一次pb文件看成为空
     while (hourCnt < 11) {
+      // 统计上一次pb文件中是否有数据，即是否存在点击（click > 0）
       val cnt = prevTable.count()
       println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
       if (cnt>0) {

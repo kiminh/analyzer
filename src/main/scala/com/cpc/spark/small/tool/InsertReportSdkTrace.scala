@@ -60,22 +60,22 @@ object InsertReportSdkTrace {
     val unionLogDataByAllNoSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value<>"NATIVESDK"
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s" AND cul.client_type<>"NATIVESDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
-          |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
+          |AND cul.adslot_id in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
           |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077") AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -94,20 +94,20 @@ object InsertReportSdkTrace {
     val unionLogDataByAllSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s"
+          |AND cul.client_type="NATIVESDK" AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -128,23 +128,23 @@ object InsertReportSdkTrace {
     val unionLogDataByWzNoSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value<>"NATIVESDK"
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s" AND cul.client_type<>"NATIVESDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
-          |AND cul.ext["adclass"].int_value=110110100
-          |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
+          |AND cul.adclass=110110100
+          |AND cul.adslot_id in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
           |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077") AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -160,27 +160,27 @@ object InsertReportSdkTrace {
     val jsTraceDataByWzNoSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,
           |cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s"
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s"
           |AND cutl.hour="%s" AND cul.hour="%s" AND cutl.trace_type in("load","active5","disactive")
-          |AND cul.ext["client_type"].string_value<>"NATIVESDK"
+          |AND cul.client_type<>"NATIVESDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
-          |AND cul.ext["adclass"].int_value=110110100
-          |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
+          |AND cul.adclass=110110100
+          |AND cul.adslot_id in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
           |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077")
           |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5)
           var total = 1.toLong
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
@@ -200,21 +200,21 @@ object InsertReportSdkTrace {
     val unionLogDataByWzSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.ext["adclass"].int_value=110110100 AND cul.adsrc=1
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s"
+          |AND cul.client_type="NATIVESDK"
+          |AND cul.adclass=110110100 AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -230,25 +230,25 @@ object InsertReportSdkTrace {
     val jsTraceDataByWzSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,
           |cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s"
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s"
           |AND cutl.hour="%s" AND cul.hour="%s"
           |AND cutl.trace_type in("lpload","load","active5","disactive","active_auto")
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.ext["adclass"].int_value=110110100
+          |AND cul.client_type="NATIVESDK"
+          |AND cul.adclass=110110100
           |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5)
           if (traceType == "load" || traceType == "active5" || traceType == "active_auto" || traceType == "disactive") {
             traceOp1 = ""
           }
@@ -272,21 +272,21 @@ object InsertReportSdkTrace {
     val unionLogDataByDownSdk = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
-          |FROM dl_cpc.cpc_union_log cul
-          |WHERE cul.date="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
+          |SELECT media_appsid,adslot_id,adslot_type,isfill,isshow,isclick
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE cul.day="%s" AND cul.hour="%s"
+          |AND cul.client_type="NATIVESDK"
           |AND cul.interaction=2 AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(0)
-          val adslotId = x.getString(1)
-          val adslotType = x.getInt(2)
-          val isfill = x.get(3).toString.toLong
-          val isshow = x.get(4).toString.toLong
-          val isclick = x.get(5).toString.toLong
+          val mediaId = x.getAs[String](0)
+          val adslotId = x.getAs[String](1)
+          val adslotType = x.getAs[Int](2)
+          val isfill = x.getAs[Int](3).toLong
+          val isshow = x.getAs[Int](4).toLong
+          val isclick = x.getAs[Int](5).toLong
           val req = 1.toLong
           ((adslotId), (Info(mediaId, adslotId, adslotType, req, isfill, isshow, isclick)))
       }
@@ -302,24 +302,24 @@ object InsertReportSdkTrace {
     val jsTraceDataByDownSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,
           |cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s"
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s"
           |AND cutl.hour="%s" AND cul.hour="%s" AND cutl.trace_type in("apkdown")
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
+          |AND cul.client_type="NATIVESDK"
           |AND cul.interaction=2
           |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5)
           var total = 1.toLong
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
@@ -336,26 +336,25 @@ object InsertReportSdkTrace {
     val jsTraceDataByType2WzSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,
           |cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.hour="%s" AND cul.hour="%s"
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s" AND cutl.hour="%s" AND cul.hour="%s"
           |AND cutl.trace_type in("lpload")
-          |AND cul.ext["adclass"].int_value=110110100
+          |AND cul.adclass=110110100
           |AND cul.isclick>0 AND cul.adsrc=1
-          |AND cul.ext["client_type"].string_value="JSSDK"
+          |AND cul.client_type="JSSDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
-          |-- AND (cul.adslot_type=2 OR cul.adslotid in("7568984","7412553","7167188","7338626","7648822","7867058","7189096","7443868"))
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5)
           var total = 1.toLong
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
@@ -372,25 +371,24 @@ object InsertReportSdkTrace {
     val jsTraceDataByType2DownSdk = ctx
       .sql(
         """
-          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,
+          |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,
           |cutl.trace_type,cutl.trace_op1
-          |FROM dl_cpc.cpc_union_trace_log cutl
-          |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-          |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.hour="%s" AND cul.hour="%s"
+          |FROM dl_cpc.cpc_basedata_trace_event cutl
+          |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+          |WHERE cutl.day="%s" AND cul.day="%s" AND cutl.hour="%s" AND cul.hour="%s"
           |AND cutl.trace_type in("apkdown") AND cul.interaction=2
           |AND cul.isclick>0 AND cul.adsrc=1
-          |AND cul.ext["client_type"].string_value="JSSDK"
+          |AND cul.client_type="JSSDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
-          |-- AND cul.adslot_type=2 OR cul.adslotid in("7568984","7412553","7167188","7338626","7648822","7867058","7189096","7443868"))
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
         x =>
-          val mediaId = x.getString(1)
-          val adslotId = x.getString(2)
-          val adslotType = x.getInt(3)
-          var traceType = x.getString(4)
-          var traceOp1 = x.getString(5)
+          val mediaId = x.getAs[String](1)
+          val adslotId = x.getAs[String](2)
+          val adslotType = x.getAs[Int](3)
+          var traceType = x.getAs[String](4)
+          var traceOp1 = x.getAs[String](5)
           var total = 1.toLong
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
@@ -605,32 +603,6 @@ object InsertReportSdkTrace {
     allData = allData.union(wzSdkType2Lpload)
     allData = allData.union(downSdkType2Apkdown)
 
-
-
-    //    var allData = wzSdkType2Lpload.union(downSdkType2Apkdown)
-    //    var allData = allSdkReq
-    //      .union(allSdkFill)
-    //      .union(allSdkShow)
-    //      .union(allSdkClick)
-    //      .union(allNoSdkReq)
-    //      .union(allNoSdkFill)
-    //      .union(allNoSdkShow)
-    //      .union(allNoSdkClick)
-    //      .union(wzNoSdkFill)
-    //      .union(wzNoSdkShow)
-    //      .union(wzNoSdkClick)
-    //      .union(wzNoSdkLoad)
-    //      .union(wzSdkFill)
-    //      .union(wzSdkShow)
-    //      .union(wzSdkClick)
-    //      .union(wzSdkLoad)
-    //      .union(wzSdkLpload)
-    //      .union(downSdkFill)
-    //      .union(downSdkShow)
-    //      .union(downSdkClick)
-    //      .union(downSdkApkdown)
-    //      .union(wzSdkType2Lpload)
-    //      .union(downSdkType2Apkdown)
 
     val allDataFrame =
       ctx.createDataFrame(allData.filter(_._5.length < 200))

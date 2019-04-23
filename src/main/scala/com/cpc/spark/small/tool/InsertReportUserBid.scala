@@ -57,13 +57,13 @@ object InsertReportUserBid {
           |SELECT userid,adslot_type,
           |    SUM(
           |        CASE
-          |    	   WHEN ext_int["cvr_threshold_by_user"] = 200 THEN ext["cvr_real_bid"].int_value
-          |    	   WHEN ext_int["cvr_threshold_by_user"] >0 THEN 0
+          |    	   WHEN user_cvr_threshold = 200 THEN cvr_real_bid
+          |    	   WHEN user_cvr_threshold >0 THEN 0
           |    	   ELSE 0
           |        END) as sum_cvr_real_bid,
           |	CASE
-          |	   WHEN ext_int["cvr_threshold_by_user"] = 200 THEN "cvr2"
-          |	   WHEN ext_int["cvr_threshold_by_user"] >0 THEN "cvr1"
+          |	   WHEN user_cvr_threshold = 200 THEN "cvr2"
+          |	   WHEN user_cvr_threshold >0 THEN "cvr1"
           |	   ELSE "nocvr"
           |	END cvr_type,
           |	SUM(bid) sum_bid,
@@ -75,30 +75,30 @@ object InsertReportUserBid {
           | SUM(isfill) fill,
           |	SUM(isshow) imp,
           |	SUM(isclick) clk
-          |FROM dl_cpc.cpc_union_log
-          |WHERE `date`='%s' AND hour="%s"
+          |FROM dl_cpc.cpc_basedata_union_events
+          |WHERE day='%s' AND hour="%s"
           |	AND media_appsid in ('80000001','80000002','80000006','800000062','80000064','80000066','80000141')
-          |	AND ext['antispam'].int_value=0 AND ideaid>0 AND userid>0
-          |	AND adsrc=1 AND ext["charge_type"].int_value=1
+          |	AND ideaid>0 AND userid>0
+          |	AND adsrc=1 AND charge_type=1
           |GROUP BY userid,adslot_type,
           |         CASE
-          |           WHEN ext_int["cvr_threshold_by_user"]=200 THEN "cvr2"
-          |           WHEN ext_int["cvr_threshold_by_user"]>0 THEN "cvr1"
+          |           WHEN user_cvr_threshold=200 THEN "cvr2"
+          |           WHEN user_cvr_threshold>0 THEN "cvr1"
           |           ELSE "nocvr"
           |       END
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
         x =>
-          val userid = x.getInt(0)
-          val adslot_type = x.getInt(1)
-          val sum_cvr_real_bid = x.get(2).toString.toLong
-          val cvr_type = x.getString(3)
-          val sum_bid = x.get(4).toString.toLong
-          val cost = x.get(5).toString.toLong
-          val isfill = x.get(6).toString.toLong
-          val isshow = x.get(7).toString.toLong
-          val isclick = x.get(8).toString.toLong
+          val userid = x.getAs[Int](0)
+          val adslot_type = x.getAs[Int](1)
+          val sum_cvr_real_bid = x.getAs[Long](2)
+          val cvr_type = x.getAs[String](3)
+          val sum_bid = x.getAs[Long](4)
+          val cost = x.getAs[Long](5)
+          val isfill = x.getAs[Long](6)
+          val isshow = x.getAs[Long](7)
+          val isclick = x.getAs[Long](8)
           val date = argDay
           val hour = argHour.toInt
           Info(userid, adslot_type, sum_cvr_real_bid, cvr_type, sum_bid, cost, isfill, isshow, isclick, date, hour)

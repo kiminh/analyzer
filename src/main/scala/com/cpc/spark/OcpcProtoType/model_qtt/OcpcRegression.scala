@@ -8,12 +8,14 @@ import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable
 
 object OcpcRegression {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 72 1 qtt_demo qtt
@@ -37,7 +39,6 @@ object OcpcRegression {
 
     val result = calcualteKwithRegression(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
 
-//    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
     val resultDF = result
       .withColumn("kvalue", col("k_ratio"))
@@ -145,6 +146,7 @@ object OcpcRegression {
          |  ocpc_log_dict,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  hour
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -186,7 +188,8 @@ object OcpcRegression {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = s"`date` >= '$date1'"
+//    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     // 抽取数据
     val sqlRequest =

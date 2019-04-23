@@ -5,7 +5,6 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
 import com.cpc.spark.ocpcV3.utils
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
@@ -19,40 +18,38 @@ object OcpcCalculateAUCv2 {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toString
-    val version = "qtt_demo"
+    val version = args(3).toString
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc unitid auc: $date, $hour, $conversionGoal")
+      .appName(s"ocpc userid auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
     val data = getData(conversionGoal, version, date, hour, spark)
-    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
+    // val tableName1 = "test.ocpc_auc_raw_conversiongoal_bak_" + conversionGoal.toString
+    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
     data
-      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
-//    data
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+      // .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
+     .repartition(10).write.mode("overwrite").insertInto(tableName1)
 
-    // 获取unitid与industry之间的关联表
-    val unitidIndustry = getIndustry(date, hour, spark)
+    // 获取userid与industry之间的关联表
+    val useridIndustry = getIndustry(date, hour, spark)
 
     // 计算auc
-    val aucData = getAuc(tableName, conversionGoal, version, date, hour, spark)
+    val aucData = getAuc(tableName1, conversionGoal, version, date, hour, spark)
 
     val result = aucData
-      .join(unitidIndustry, Seq("unitid"), "left_outer")
-      .select("unitid", "auc", "industry")
+      .join(useridIndustry, Seq("userid"), "left_outer")
+      .select("userid", "auc", "industry")
 
-    val conversionGoalInt = conversionGoal.toInt
     val resultDF = result
-      .withColumn("conversion_goal", lit(conversionGoalInt))
+      .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
-
-    val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
+    //    test.ocpc_check_auc_data20190104_bak
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
-//        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily_v2")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily_v2")
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
@@ -73,7 +70,7 @@ object OcpcCalculateAUCv2 {
     val sqlRequest =
       s"""
          |select
-         |    unitid,
+         |    userid,
          |    industry,
          |    count(distinct searchid) as cnt
          |from dl_cpc.slim_union_log
@@ -82,7 +79,7 @@ object OcpcCalculateAUCv2 {
          |and media_appsid  in ("80000001", "80000002")
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
-         |group by unitid, industry
+         |group by userid, industry
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
@@ -91,14 +88,14 @@ object OcpcCalculateAUCv2 {
     val sqlRequest2 =
       s"""
          |SELECT
-         |    t.unitid,
+         |    t.userid,
          |    t.industry
          |FROM
          |    (SELECT
-         |        unitid,
+         |        userid,
          |        industry,
          |        cnt,
-         |        row_number() over(partition by unitid order by cnt desc) as seq
+         |        row_number() over(partition by userid order by cnt desc) as seq
          |    FROM
          |        raw_data) as t
          |WHERE
@@ -139,7 +136,7 @@ object OcpcCalculateAUCv2 {
       s"""
          |select
          |    searchid,
-         |    unitid,
+         |    userid,
          |    exp_cvr as score
          |from dl_cpc.slim_union_log
          |where $selectCondition1
@@ -151,26 +148,24 @@ object OcpcCalculateAUCv2 {
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
 
-    // 取历史区间: cvr数据
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.qtt.cv_pt.cvr" + conversionGoal
-    val cvrGoal = conf.getString(conf_key)
-    println(s"conf key is: $conf_key")
-    println(s"cvr partition is: $cvrGoal")
+    //    // 取历史区间: cvr数据
+    //    calendar.add(Calendar.DATE, 2)
+    //    val secondDay = calendar.getTime
+    //    val date2 = dateConverter.format(secondDay)
     val selectCondition2 = s"`date`>='$date1'"
     // 根据conversionGoal选择cv的sql脚本
-    // 抽取数据
+    val cvrPt = "cvr" + conversionGoal.toString
     val sqlRequest2 =
-    s"""
-       |SELECT
-       |  searchid,
-       |  label
-       |FROM
-       |  dl_cpc.ocpc_label_cvr_hourly
-       |WHERE
-       |  ($selectCondition2)
-       |AND
-       |  (cvr_goal = '$cvrGoal')
+      s"""
+         |SELECT
+         |  searchid,
+         |  label
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  cvr_goal = '$cvrPt'
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)
@@ -179,13 +174,13 @@ object OcpcCalculateAUCv2 {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "score", "label")
+      .select("searchid", "userid", "score", "label")
       .na.fill(0, Seq("label"))
-      .select("searchid", "unitid", "score", "label")
+      .select("searchid", "userid", "score", "label")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
-
+    //    resultDF.show(10)
     resultDF
   }
 
@@ -221,18 +216,59 @@ object OcpcCalculateAUCv2 {
     import spark.implicits._
 
     val newData = data
-      .selectExpr("cast(unitid as string) unitid", "cast(score as int) score", "label")
+      .selectExpr("cast(userid as string) userid", "cast(score as int) score", "label")
       .coalesce(400)
 
-    val result = utils.getGauc(spark, newData, "unitid")
+    val result = utils.getGauc(spark, newData, "userid")
     val resultRDD = result.rdd.map(row => {
       val identifier = row.getAs[String]("name")
       val auc = row.getAs[Double]("auc")
       (identifier, auc)
     })
-    val resultDF = resultRDD.toDF("unitid", "auc")
+    val resultDF = resultRDD.toDF("userid", "auc")
     resultDF
   }
 
-
+  //  def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
+  //    import spark.implicits._
+  //    //获取模型标签
+  //
+  //    val data = spark
+  //      .table(tableName)
+  //      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+  //
+  //
+  //    val aucList = new mutable.ListBuffer[(String, Double)]()
+  //    val useridList = data.select("userid").distinct().cache()
+  //    val useridCnt = useridList.count()
+  //    data.printSchema()
+  //    println(s"################ count of userid list: $useridCnt ################")
+  //
+  //    //按userid遍历
+  //    var cnt = 0
+  //    for (row <- useridList.collect()) {
+  //      val userid = row.getAs[Int]("userid").toString
+  //      println(s"############### userid=$userid, cnt=$cnt ################")
+  //      cnt += 1
+  //      val userData = data.filter(s"userid=$userid")
+  //      val scoreAndLabel = userData
+  //        .select("score", "label")
+  //        .rdd
+  //        .map(x=>(x.getAs[Long]("score").toDouble, x.getAs[Int]("label").toDouble))
+  //      val scoreAndLabelNum = scoreAndLabel.count()
+  //      if (scoreAndLabelNum > 0) {
+  //        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
+  //        val aucROC = metrics.areaUnderROC
+  //        aucList.append((userid, aucROC))
+  //
+  //      }
+  //    }
+  //
+  //    useridList.unpersist()
+  //    val resultDF = spark
+  //      .createDataFrame(aucList)
+  //      .toDF("userid", "auc")
+  //
+  //    resultDF
+  //  }
 }

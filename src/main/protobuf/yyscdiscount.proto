@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package yyscdiscount;
+
+message discount {
+    string uid = 1;
+    double price = 2;
+    double coin = 3;
+}
+
+message yyscDiscount {
+    repeated discount dis = 1;
+}

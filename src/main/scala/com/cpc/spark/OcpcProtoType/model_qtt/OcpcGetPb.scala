@@ -11,6 +11,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 
+import org.apache.log4j.{Level, Logger}
 import scala.collection.mutable.ListBuffer
 
 
@@ -28,6 +29,7 @@ object OcpcGetPb {
 
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // 计算日期周期
     // bash: 2019-01-02 12 1 qtt_demo qtt
@@ -92,34 +94,6 @@ object OcpcGetPb {
 
   def setKvalueByUnitid(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     // set the unitid that we need to reset
-//    val unitidSelection = s"unitid in (1974640, 1970124, 1888967, 1927786)"
-//
-//    // time span
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  cast(unitid as string) identifier,
-//         |  2 as conversion_goal,
-//         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
-//         |FROM
-//         |  dl_cpc.ocpc_filter_unionlog
-//         |WHERE
-//         |  `date` = '2019-03-13'
-//         |AND
-//         |  `hour` between '0' and '17'
-//         |AND
-//         |  $mediaSelection
-//         |AND
-//         |  antispam = 0
-//         |AND
-//         |  isclick = 1
-//         |AND
-//         |  $unitidSelection
-//         |AND
-//         |  is_ocpc = 1
-//       """.stripMargin
-//    println(sqlRequest)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "ocpc_all.ocpc_reset_k"
     val expDataPath = conf.getString(conf_key)
@@ -139,7 +113,6 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue_bak").isNotNull, col("kvalue_bak")).otherwise(col("kvalue_ori")))
       .filter(s"kvalue is not null")
 
-//    result.write.mode("overwrite").saveAsTable("test.set_kvalue_by_unitid20190318")
 
     val resultDF = result
       .select("identifier", "kvalue", "conversion_goal")
@@ -299,13 +272,29 @@ object OcpcGetPb {
      */
 
     // ocpc投放的k值
-    val regressionK = getModelK(conversionGoal, version, "regression", date, hour, spark).withColumn("regression_k", col("kvalue"))
+    val regressionInitK = getModelK(conversionGoal, version, "regression", date, hour, spark).withColumn("regression_k", col("kvalue"))
     val pidK = getModelK(conversionGoal, version, "pid", date, hour, spark).withColumn("pid_k", col("kvalue"))
+    val apiPcocK = getModelK(conversionGoal, version, "api_pcoc", date, hour, spark).withColumn("api_pcoc_k", col("kvalue"))
     val prevPb = getPrevPb(conversionGoal, version, date, hour, spark)
+    val middleRegressionK = regressionInitK.join(apiPcocK, Seq("identifier"), "outer")
+    middleRegressionK.createOrReplaceTempView("middle_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  regression_k as k1,
+         |  api_pcoc_k as k2,
+         |  (case when identifier in ('1888967') and api_pcoc_k is not null then api_pcoc_k
+         |        else regression_k end) as regression_k
+         |FROM
+         |  middle_table
+       """.stripMargin
+    println(sqlRequest)
+    val regressionK = spark.sql(sqlRequest)
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值
-    val cpcK = getCpcK(mediaSelection, conversionGoal, date, hour, spark)
+    val cpcK = getCpcK(mediaSelection, conversionGoal, 3, date, hour, spark)
 
     // 数据外关联
     val ocpcKfinal = ocpcK
@@ -323,13 +312,32 @@ object OcpcGetPb {
       .withColumn("conversion_goal", lit(conversionGoal))
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
   }
 
-  def getCpcK(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCpcKv2(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_all.unitid_abtest_path"
+    val path = conf.getString(conf_key)
+
+    val unitidList = spark
+      .read.format("json").json(path)
+      .select("unitid", "conversion_goal")
+      .filter(s"conversion_goal = $conversionGoal")
+      .selectExpr("cast(unitid as string) identifier")
+
+
+    val cpcK = getCpcK(mediaSelection, conversionGoal, 1, date, hour, spark)
+    val resultDF = cpcK
+      .join(unitidList, Seq("identifier"), "inner")
+      .select("identifier", "kvalue")
+
+    resultDF
+  }
+
+  def getCpcK(mediaSelection: String, conversionGoal: Int, dayCnt: Int, date: String, hour: String, spark: SparkSession) = {
     /*
      通过slim_union_log关联的方式获取前72小时中的k值
      1. 以searchid关联的方式关联k值与cvr
@@ -339,12 +347,16 @@ object OcpcGetPb {
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
     // cvr 分区
     var cvrGoal = ""
+    var factor = 0.2
     if (conversionGoal == 1) {
       cvrGoal = "cvr1"
+      factor = 0.2
     } else if (conversionGoal == 2) {
       cvrGoal = "cvr2"
+      factor = 0.5
     } else {
       cvrGoal = "cvr3"
+      factor = 0.2
     }
 
     // 取历史数据
@@ -352,7 +364,7 @@ object OcpcGetPb {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -3)
+    calendar.add(Calendar.DATE, -dayCnt)
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
     val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
@@ -369,6 +381,7 @@ object OcpcGetPb {
          |SELECT
          |  searchid,
          |  cast(unitid as string) as identifier,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  1 as history_ocpc_flag
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -382,6 +395,7 @@ object OcpcGetPb {
     println(sqlRequest1)
     val ocpcHistoryData = spark
       .sql(sqlRequest1)
+      .filter(s"is_hidden != 1")
       .select("identifier", "history_ocpc_flag")
       .distinct()
 
@@ -438,11 +452,30 @@ object OcpcGetPb {
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("identifier", "post_cvr", "post_cvr_cali")
 
-    val caliData = data
+    val caliData1 = data
       .join(cvrData, Seq("identifier"), "left_outer")
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
-      .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
-      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+      .withColumn("pre_cvr_origin", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
+      .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr_origin", "post_cvr_cali")
+
+    caliData1.createOrReplaceTempView("cali_data")
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  identifier,
+         |  exp_cvr,
+         |  isclick,
+         |  iscvr,
+         |  post_cvr,
+         |  pre_cvr_origin,
+         |  post_cvr_cali,
+         |  (1 - $factor) * pre_cvr_origin + $factor * post_cvr_cali as pre_cvr
+         |FROM
+         |  cali_data
+       """.stripMargin
+    println(sqlRequest3)
+    val caliData = spark.sql(sqlRequest3)
 
     val resultDF = caliData
       .groupBy("identifier")
@@ -640,14 +673,28 @@ object OcpcGetPb {
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
+    val sqlRequestOcpcRecord =
+      s"""
+         |SELECT
+         |  searchid,
+         |  cast(unitid as string) identifier,
+         |  isclick,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) is_hidden
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc=1
+       """.stripMargin
+    println(sqlRequestOcpcRecord)
     val ocpcUnionlog = spark
-      .table("dl_cpc.ocpc_filter_unionlog")
-      .where(selectCondition)
-      .filter(mediaSelection)
-      .filter(s"is_ocpc = 1")
-      .withColumn("identifier", col("unitid"))
+      .sql(sqlRequestOcpcRecord)
+      .filter(s"is_hidden != 1")
       .filter("isclick=1")
-      .selectExpr("searchid", "cast(identifier as string) identifier")
+      .select("searchid", "identifier")
 
     // cvr data
     // 抽取数据

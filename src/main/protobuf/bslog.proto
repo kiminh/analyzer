@@ -26,6 +26,7 @@ enum MaterialType {
     MATERIAL_BANNER = 9; //横幅广告
     MATERIAL_MOTIVATE = 10; //激励广告
     MATERIAL_VERTICAL_VIDEO = 11; //竖屏视频广告
+    MATERIAL_NON_STANDARD  = 12; //非标支持碧桂园
 }
 
 enum Interaction {
@@ -91,6 +92,26 @@ message GroupStats {
     required int32 group_click_count_num = 16;
     required int32 matched_group_num = 17;
     required int32 involved_group_num = 18;
+    required int32 group_age_num = 19;
+    required int32 group_gender_num = 20;
+    required int32 group_network_num = 21;
+    required int32 group_ad_slot_type_num = 22;
+    required int32 group_map_match_count_num = 23;
+    repeated int32 groups_hit_media_ids = 24;
+    repeated int32 groups_hit_age_ids = 25;
+    repeated int32 groups_hit_gender_ids = 26;
+    repeated int32 groups_hit_net_work_ids = 27;
+    repeated int32 groups_hit_ad_slot_type_ids = 28;
+    repeated int32 groups_hit_media_class_ids = 29;
+    repeated int32 groups_hit_regional_ids = 30;
+    repeated int32 groups_hit_user_level_ids = 31;
+    repeated int32 groups_hit_phone_level_ids = 32;
+    repeated int32 groups_hit_os_type_ids = 33;
+    repeated int32 groups_hit_black_install_pkg_ids = 34;
+    repeated int32 groups_hit_white_install_pkg_ids = 35;
+    repeated int32 groups_hit_content_category_ids = 36;
+    repeated int32 groups_hit_new_user_ids = 37;
+    repeated int32 groups_hit_acc_user_type_ids = 38;
 };
 
 message NoticeLogBody {
@@ -111,4 +132,5 @@ message NoticeLogBody {
     required GroupStats group_stats = 15;
     required string hostname = 16;
     repeated string exptags = 17;
+    optional int32 ad_num_of_delivery = 18;
 };
