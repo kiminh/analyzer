@@ -84,9 +84,9 @@ object OcpcHourlyGeneralData {
         .join(prevData, Seq("industry"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
         .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("cost") * 100.0 - col("cost_yesterday")) / col("cost_yesterday")))
-    val result = result2.cache()
+    val result = result2
 
-    result.show(10)
+//    result.show(10)
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost") * 0.01)
@@ -94,7 +94,10 @@ object OcpcHourlyGeneralData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .cache()
 
+    resultDF.show(10)
+    
     resultDF
 //      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
