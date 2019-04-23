@@ -28,21 +28,21 @@ object OcpcCollectSuggestData {
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // 二类电商：50~60
-    val elds1raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 50, 60, date, hour, spark)
-    val elds1 = elds1raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    // 二类电商：30~60
+    val elds1 = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 60, date, hour, spark)
+    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // 二类电商：40~50
-    val elds2raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 40, 50, date, hour, spark)
-    val elds2 = elds2raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-
-    // 二类电商：30~40
-    val elds3raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 40, date, hour, spark)
-    val elds3 = elds3raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-
-    val elds = elds1
-      .union(elds2)
-      .union(elds3)
+//    // 二类电商：40~50
+//    val elds2raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 40, 50, date, hour, spark)
+//    val elds2 = elds2raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//
+//    // 二类电商：30~40
+//    val elds3raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 40, date, hour, spark)
+//    val elds3 = elds3raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//
+//    val elds = elds1
+//      .union(elds2)
+//      .union(elds3)
 //    elds.write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once20190423a")
 
     // 从网赚推荐cpa抽取数据
@@ -73,15 +73,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold1: Int, cvThreshold2: Int, date: String, hour: String, spark: SparkSession) = {
