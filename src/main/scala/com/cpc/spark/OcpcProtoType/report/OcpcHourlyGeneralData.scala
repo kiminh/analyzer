@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
 import com.cpc.spark.tools.OperateMySQL
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
@@ -70,13 +71,20 @@ object OcpcHourlyGeneralData {
       .join(cpcData, Seq("industry"), "inner")
 
     // 计算前一天数据
-    val result = joinData
+    val result1 = joinData
       .withColumn("cost_cmp", lit(0.1))
       .withColumn("cost_ratio", col("ocpc_cost") * 1.0 / col("cost"))
       .withColumn("cost_low", col("low_cost") * 0.01)
       .withColumn("cost_high", col("high_cost") * 0.01)
       .withColumn("low_unit_percent", col("low_unitid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("pay_percent", col("high_cost") * 1.0 / col("ocpc_cost"))
+
+    val prevData = getPrevData(date, hour, spark)
+    val result2 = result1
+        .join(prevData, Seq("industry"), "left_outer")
+        .na.fill(0.0, Seq("cost_yesterday"))
+        .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("cost") * 100.0 - col("cost_yesterday")) / col("cost_yesterday")))
+    val result = result2
 
     result.show(10)
 
@@ -88,9 +96,36 @@ object OcpcHourlyGeneralData {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
+//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
+  }
+
+  def getPrevData(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = 'qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  industry,
+         |  cost as cost_yesterday
+         |FROM
+         |  dl_cpc.ocpc_general_data_industry
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def getOCPCstats(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
