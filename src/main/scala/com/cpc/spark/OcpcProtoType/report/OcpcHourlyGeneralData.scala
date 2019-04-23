@@ -94,7 +94,7 @@ object OcpcHourlyGeneralData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .cache()
+//      .cache()
 
     resultDF.show(10)
 
