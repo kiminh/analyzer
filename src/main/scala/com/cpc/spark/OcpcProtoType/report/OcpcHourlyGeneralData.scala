@@ -61,7 +61,7 @@ object OcpcHourlyGeneralData {
       .select("searchid", "unitid", "userid", "isshow", "isclick", "price", "conversion_goal", "cpagiven", "is_api_callback", "industry", "iscvr1", "iscvr2", "iscvr3")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
 
-    rawData.show(10)
+//    rawData.show(10)
 
     // 统计汇总数据
     val cpcData = getCPCstats(clickCpcData, date, hour, spark)
@@ -84,7 +84,7 @@ object OcpcHourlyGeneralData {
         .join(prevData, Seq("industry"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
         .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("cost") * 100.0 - col("cost_yesterday")) / col("cost_yesterday")))
-    val result = result2
+    val result = result2.cache()
 
     result.show(10)
 
