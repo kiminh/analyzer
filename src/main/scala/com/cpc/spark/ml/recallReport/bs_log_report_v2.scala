@@ -15,6 +15,7 @@ object bs_log_report_v2 {
     import spark.implicits._
     val tardate = args(0)
     val hour = args(1)
+    val excp = spark.sparkContext.longAccumulator
 
     val stmt: String =
       s"""
@@ -22,9 +23,10 @@ object bs_log_report_v2 {
         |where day='$tardate' and hour='$hour' and length(trim(split(raw, '\\\\*')[1]))>0
       """.stripMargin
     println(stmt)
-    val pbData = spark.sql(stmt).rdd.map{
+    val pbData = spark.sql(stmt).rdd.map {
       r =>
         val pb = r.getAs[String]("raw")
+        try {
           val up = NoticeLogBody.parseFrom(Encoding.base64Decoder(pb).toArray).toBuilder
           val exptags = up.getExptagsList.toString
           val searchid = up.getSearchid
@@ -58,8 +60,8 @@ object bs_log_report_v2 {
           val groups_hit_age_ids = up.getGroupStats.getGroupsHitAgeIdsList.asScala.toList.mkString(",")
           val groups_hit_gender_ids = up.getGroupStats.getGroupsHitGenderIdsList.asScala.toList.mkString(",")
           val groups_hit_net_work_ids = up.getGroupStats.getGroupsHitNetWorkIdsList.asScala.toList.mkString(",")
-          val groups_hit_ad_slot_type_ids =  up.getGroupStats.getGroupsHitAdSlotTypeIdsList.asScala.toList.mkString(",")
-          val groups_hit_media_class_ids =  up.getGroupStats.getGroupsHitMediaClassIdsList.asScala.toList.mkString(",")
+          val groups_hit_ad_slot_type_ids = up.getGroupStats.getGroupsHitAdSlotTypeIdsList.asScala.toList.mkString(",")
+          val groups_hit_media_class_ids = up.getGroupStats.getGroupsHitMediaClassIdsList.asScala.toList.mkString(",")
           val groups_hit_regional_ids = up.getGroupStats.getGroupsHitRegionalIdsList.asScala.toList.mkString(",")
           val groups_hit_user_level_ids = up.getGroupStats.getGroupsHitUserLevelIdsList.asScala.toList.mkString(",")
           val groups_hit_phone_level_ids = up.getGroupStats.getGroupsHitPhoneLevelIdsList.asScala.toList.mkString(",")
@@ -70,55 +72,58 @@ object bs_log_report_v2 {
           val groups_hit_new_user_ids = up.getGroupStats.getGroupsHitNewUserIdsList.asScala.toList.mkString(",")
           val groups_hit_acc_user_type_ids = up.getGroupStats.getGroupsHitAccUserTypeIdsList.asScala.toList.mkString(",")
 
-          if(exptags.contains("bsfilterdetail")){
-        BsLog1(
-          searchid=searchid,
-          group_media_num=group_media_num.toInt,
-          group_region_num=group_region_num.toInt,
-          group_l_v_num=group_l_v_num.toInt,
-          group_os_type_num=group_os_type_num.toInt,
-          group_p_l_num=group_p_l_num.toInt,
-          group_acc_user_type_num=group_acc_user_type_num.toInt,
-          group_new_user_num=group_new_user_num.toInt,
-          group_content_category_num=group_content_category_num.toInt,
-          group_black_install_pkg_num=group_black_install_pkg_num.toInt,
-          group_white_install_pkg_num=group_white_install_pkg_num.toInt,
-          matched_group_num=matched_group_num.toInt,
-          len_groups=len_groups.toInt,
-          involved_idea_num=involved_idea_num.toInt,
-          matched_idea_num=matched_idea_num.toInt,
-          rnd_idea_num=rnd_idea_num.toInt,
-          exptags=exptags.substring(1, exptags.length()-1),
-          adslot_type=adslot_type.toString,
-          req_io_time=req_io_time.toInt,
-          process_time=process_time.toInt,
-          ad_slot_id=ad_slot_id.toString,
-          media_class=media_class.substring(1, media_class.length()-1),
-          hostname=hostname.toString,
-          group_age_num = group_age_num,
-          group_gender_num = group_gender_num,
-          group_network_num = group_network_num,
-          group_ad_slot_type_num = group_ad_slot_type_num,
-          group_map_match_count_num = group_map_match_count_num,
-          groups_hit_media_ids = groups_hit_media_ids,
-          groups_hit_age_ids = groups_hit_age_ids,
-          groups_hit_gender_ids = groups_hit_gender_ids,
-          groups_hit_net_work_ids = groups_hit_net_work_ids,
-          groups_hit_ad_slot_type_ids =  groups_hit_ad_slot_type_ids,
-          groups_hit_media_class_ids =  groups_hit_media_class_ids,
-          groups_hit_regional_ids = groups_hit_regional_ids,
-          groups_hit_user_level_ids = groups_hit_user_level_ids,
-          groups_hit_phone_level_ids =  groups_hit_phone_level_ids,
-          groups_hit_os_type_ids = groups_hit_os_type_ids,
-          groups_hit_black_install_pkg_ids = groups_hit_black_install_pkg_ids,
-          groups_hit_white_install_pkg_ids = groups_hit_white_install_pkg_ids,
-          groups_hit_content_category_ids = groups_hit_content_category_ids,
-          groups_hit_new_user_ids = groups_hit_new_user_ids,
-          groups_hit_acc_user_type_ids = groups_hit_acc_user_type_ids
-        )
-      }
-      else null
-    }.filter(_ != null).toDF("searchid", "group_media_num", "group_region_num", "group_l_v_num", "group_os_type_num",
+          if (exptags.contains("bsfilterdetail")) {
+            BsLog1(
+              searchid = searchid,
+              group_media_num = group_media_num.toInt,
+              group_region_num = group_region_num.toInt,
+              group_l_v_num = group_l_v_num.toInt,
+              group_os_type_num = group_os_type_num.toInt,
+              group_p_l_num = group_p_l_num.toInt,
+              group_acc_user_type_num = group_acc_user_type_num.toInt,
+              group_new_user_num = group_new_user_num.toInt,
+              group_content_category_num = group_content_category_num.toInt,
+              group_black_install_pkg_num = group_black_install_pkg_num.toInt,
+              group_white_install_pkg_num = group_white_install_pkg_num.toInt,
+              matched_group_num = matched_group_num.toInt,
+              len_groups = len_groups.toInt,
+              involved_idea_num = involved_idea_num.toInt,
+              matched_idea_num = matched_idea_num.toInt,
+              rnd_idea_num = rnd_idea_num.toInt,
+              exptags = exptags.substring(1, exptags.length() - 1),
+              adslot_type = adslot_type.toString,
+              req_io_time = req_io_time.toInt,
+              process_time = process_time.toInt,
+              ad_slot_id = ad_slot_id.toString,
+              media_class = media_class.substring(1, media_class.length() - 1),
+              hostname = hostname.toString,
+              group_age_num = group_age_num,
+              group_gender_num = group_gender_num,
+              group_network_num = group_network_num,
+              group_ad_slot_type_num = group_ad_slot_type_num,
+              group_map_match_count_num = group_map_match_count_num,
+              groups_hit_media_ids = groups_hit_media_ids,
+              groups_hit_age_ids = groups_hit_age_ids,
+              groups_hit_gender_ids = groups_hit_gender_ids,
+              groups_hit_net_work_ids = groups_hit_net_work_ids,
+              groups_hit_ad_slot_type_ids = groups_hit_ad_slot_type_ids,
+              groups_hit_media_class_ids = groups_hit_media_class_ids,
+              groups_hit_regional_ids = groups_hit_regional_ids,
+              groups_hit_user_level_ids = groups_hit_user_level_ids,
+              groups_hit_phone_level_ids = groups_hit_phone_level_ids,
+              groups_hit_os_type_ids = groups_hit_os_type_ids,
+              groups_hit_black_install_pkg_ids = groups_hit_black_install_pkg_ids,
+              groups_hit_white_install_pkg_ids = groups_hit_white_install_pkg_ids,
+              groups_hit_content_category_ids = groups_hit_content_category_ids,
+              groups_hit_new_user_ids = groups_hit_new_user_ids,
+              groups_hit_acc_user_type_ids = groups_hit_acc_user_type_ids
+            )
+          }
+          else null
+        } catch {
+          case ex: Exception => excp.add(1); null
+        }
+    } .filter(_ != null).toDF("searchid", "group_media_num", "group_region_num", "group_l_v_num", "group_os_type_num",
       "group_p_l_num", "group_acc_user_type_num", "group_new_user_num", "group_content_category_num",
       "group_black_install_pkg_num", "group_white_install_pkg_num","matched_group_num", "len_groups",
       "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags", "adslot_type", "req_io_time", "process_time",
