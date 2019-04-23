@@ -27,7 +27,7 @@ object GetGeneralData {
          |WHERE
          |  `date` = '$date'
          |AND
-         |  `hour` = '06'
+         |  `hour` = '23'
          |AND
          |  version = 'qtt_demo'
          |AND
