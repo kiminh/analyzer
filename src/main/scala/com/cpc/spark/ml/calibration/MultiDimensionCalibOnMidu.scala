@@ -80,7 +80,7 @@ object MultiDimensionCalibOnMidu {
       .select("ideaid","user_req_ad_num","group")
     val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
       .filter("count3>10000")
-      .withColumn("group",col("ideaid"))
+      .withColumn("group",col("ideaid").cast(String))
       .select("ideaid","group")
 
     val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
