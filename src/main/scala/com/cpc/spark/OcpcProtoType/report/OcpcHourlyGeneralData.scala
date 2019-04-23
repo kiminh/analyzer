@@ -97,7 +97,7 @@ object OcpcHourlyGeneralData {
       .cache()
 
     resultDF.show(10)
-    
+
     resultDF
 //      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
@@ -114,6 +114,8 @@ object OcpcHourlyGeneralData {
       .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
+
+    dataMysql.printSchema()
     val reportTableUnit = "report2.report_ocpc_general_data"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
