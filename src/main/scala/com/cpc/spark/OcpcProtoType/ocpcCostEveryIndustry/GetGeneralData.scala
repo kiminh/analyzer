@@ -38,7 +38,7 @@ object GetGeneralData {
 
     data.show(10)
 
-//    writeCsv(date, data, spark)
+    writeCsv(date, data, spark)
 
   }
 

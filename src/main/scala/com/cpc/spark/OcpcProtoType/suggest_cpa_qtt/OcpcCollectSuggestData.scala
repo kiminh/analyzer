@@ -22,24 +22,13 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-//    unitid,
-//    |  cpa,
-//    |  kvalue,
-//    |  cost,
-//    |  cast(0.5 * acb as int) as last_bid,
-//    |  row_number() over(partition by unitid order by cost desc) as seq
-//      .withColumn("conversion_goal", lit(conversionGoal))
-//      .withColumn("max_budget", lit(maxBudget))
-//      .withColumn("industry", lit(industry))
-
     // 安装类feedapp广告单元
-//    val adslot_type = getAdSlotType(date, hour, spark)
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-//    // 二类电商
-//    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
-//    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    // 二类电商
+    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
+    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
@@ -78,6 +67,48 @@ object OcpcCollectSuggestData {
       .withColumn("verion", lit("qtt_demo"))
       .repartition(5)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+  }
+
+  def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold: Int, date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  cpa,
+         |  kvalue,
+         |  cost,
+         |  cast(0.5 * acb as int) as last_bid,
+         |  cvrcnt,
+         |  row_number() over(partition by unitid order by cost desc) as seq
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version = '$version'
+         |AND
+         |  industry = '$industry'
+         |AND
+         |  conversion_goal = $conversionGoal
+         |AND
+         |  is_recommend = 0
+         |AND
+         |  auc > 0.65
+         |AND
+         |  cvrcnt <= 60
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    val resultDF = data
+      .filter(s"seq = 1")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("max_budget", lit(maxBudget))
+      .withColumn("industry", lit(industry))
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
