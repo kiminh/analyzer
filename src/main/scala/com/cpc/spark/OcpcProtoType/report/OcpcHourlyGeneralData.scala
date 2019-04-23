@@ -73,21 +73,21 @@ object OcpcHourlyGeneralData {
     val result = joinData
       .withColumn("cost_cmp", lit(0.1))
       .withColumn("cost_ratio", col("ocpc_cost") * 1.0 / col("cost"))
-      .withColumn("cost_low", col("low_cost"))
-      .withColumn("cost_high", col("high_cost"))
+      .withColumn("cost_low", col("low_cost") * 0.01)
+      .withColumn("cost_high", col("high_cost") * 0.01)
       .withColumn("low_unit_percent", col("low_unitid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("pay_percent", col("high_cost") * 1.0 / col("ocpc_cost"))
 
     result.show(10)
 
     val resultDF = result
-      .withColumn("cost", col("ocpc_cost"))
+      .withColumn("cost", col("ocpc_cost") * 0.01)
       .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    result
+    resultDF
       .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
 //      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
