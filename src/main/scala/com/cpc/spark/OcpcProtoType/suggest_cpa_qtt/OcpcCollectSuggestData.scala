@@ -6,6 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
@@ -15,6 +16,7 @@ object OcpcCollectSuggestData {
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2中抽取需要的字段
      */
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession
@@ -26,21 +28,34 @@ object OcpcCollectSuggestData {
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // 二类电商
-    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
-    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    // 二类电商：50~60
+    val elds1raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 50, 60, date, hour, spark)
+    val elds1 = elds1raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
+    // 二类电商：40~50
+    val elds2raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 40, 50, date, hour, spark)
+    val elds2 = elds2raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
+    // 二类电商：30~40
+    val elds3raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 40, date, hour, spark)
+    val elds3 = elds3raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
+    val elds = elds1
+      .union(elds2)
+      .union(elds3)
+    elds.write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once20190423a")
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
     feedapp.printSchema()
-//    elds.printSchema()
+    elds.printSchema()
     wz.printSchema()
 
     // 数据串联
     val cpaData = feedapp
-//      .union(elds)
+      .union(elds)
       .union(wz)
 
 
@@ -58,18 +73,18 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
-  def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold: Int, date: String, hour: String, spark: SparkSession) = {
+  def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold1: Int, cvThreshold2: Int, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -79,6 +94,8 @@ object OcpcCollectSuggestData {
          |  cost,
          |  cast(0.5 * acb as int) as last_bid,
          |  cvrcnt,
+         |  cal_bid,
+         |  acb,
          |  row_number() over(partition by unitid order by cost desc) as seq
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
@@ -97,11 +114,32 @@ object OcpcCollectSuggestData {
          |AND
          |  auc > 0.65
          |AND
-         |  cvrcnt <= 60
+         |  cvrcnt is not null
+         |AND
+         |  cal_bid is not null
+         |AND
+         |  acb is not null
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"cvrcnt <= $cvThreshold2 and cvrcnt > $cvThreshold1")
+      .filter(s"cal_bid * 1.0 / acb >= 0.7")
+      .filter(s"cal_bid * 1.0 / acb <= 1.3")
+    data.show(10)
+
+//    unitid,
+//    cpa,
+//    kvalue,
+//    cost,
+//    cast(0.5 * acb as int) as last_bid,
+//    row_number() over(partition by unitid order by cost desc) as seq
+//    withColumn("conversion_goal", lit(conversionGoal))
+//    withColumn("max_budget", lit(maxBudget))
+//    withColumn("industry", lit(industry))
+
     val resultDF = data
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq")
       .filter(s"seq = 1")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("max_budget", lit(maxBudget))
