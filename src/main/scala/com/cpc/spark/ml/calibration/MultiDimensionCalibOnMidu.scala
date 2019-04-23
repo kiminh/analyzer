@@ -54,7 +54,7 @@ object MultiDimensionCalibOnMidu {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -80,7 +80,7 @@ object MultiDimensionCalibOnMidu {
       .select("ideaid","user_req_ad_num","group")
     val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
       .filter("count3>10000")
-      .withColumn("group",col("ideaid").cast(String))
+      .withColumn("group",col("ideaid"))
       .select("ideaid","group")
 
     val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
