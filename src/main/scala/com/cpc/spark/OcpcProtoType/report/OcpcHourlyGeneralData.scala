@@ -5,7 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
-import com.cpc.spark.tools.OperateMySQL
+import com.cpc.spark.tools._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
@@ -110,8 +110,8 @@ object OcpcHourlyGeneralData {
     val hourInt = hour.toInt
     // 详情表
     val dataMysql = data
-      .withColumn("cost", col("cost") * 0.0001)
-      .selectExpr("industry", "cast(round(cost, 4) as double) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(round(cost_low, 2) as double) as cost_low", "cast(round(cost_high, 2) as double) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt")
+      .withColumn("cost", col("cost") * 100)
+      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(round(cost_low, 2) as double) as cost_low", "cast(round(cost_high, 2) as double) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt")
       .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
@@ -120,8 +120,8 @@ object OcpcHourlyGeneralData {
     val reportTableUnit = "report2.report_ocpc_general_data"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLunit) //先删除历史数据
-    OperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
+    testOperateMySQL.update(delSQLunit) //先删除历史数据
+    testOperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
   }
 
   def getPrevData(date: String, hour: String, spark: SparkSession) = {
