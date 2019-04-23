@@ -3,9 +3,8 @@
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
-#date=`date +"%Y-%m-%d" -d "-1day"`
-day=$1
-hour=$2
+day=`date +"%Y-%m-%d" -d "-2 hour"`
+hour=`date +"%H" -d "-2 hour"`
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
