@@ -75,12 +75,13 @@ object OcpcHourlyGeneralData {
       .withColumn("cost_ratio", col("ocpc_cost") * 1.0 / col("cost"))
       .withColumn("cost_low", col("low_cost"))
       .withColumn("cost_high", col("high_cost"))
+      .withColumn("unit_percent", col("low_unitid_cnt") * 1.0 / col("unitid_cnt"))
 
     result.show(10)
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost"))
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "unit_percent")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -114,7 +115,7 @@ object OcpcHourlyGeneralData {
       .withColumn("high_cost", col("ocpc_cost") -  col("pred_cost") * 1.2)
       .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
 
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423a")
+//    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
