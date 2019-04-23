@@ -111,7 +111,9 @@ object OcpcHourlyGeneralData {
     // 详情表
     val dataMysql = data
       .withColumn("cost", col("cost") * 100)
-      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(round(cost_low, 2) as double) as cost_low", "cast(round(cost_high, 2) as double) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt")
+      .withColumn("cost_low", col("cost_low") * 100)
+      .withColumn("cost_high", col("cost_high") * 100)
+      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(cost_low as int) as cost_low", "cast(cost_high as int) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt")
       .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
