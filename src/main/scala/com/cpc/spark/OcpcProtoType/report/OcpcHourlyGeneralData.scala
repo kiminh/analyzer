@@ -88,7 +88,7 @@ object OcpcHourlyGeneralData {
 
     result
       .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
   }
 
@@ -223,6 +223,7 @@ object OcpcHourlyGeneralData {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
+         |and (charge_type = 1 or charge_type is null)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -274,6 +275,7 @@ object OcpcHourlyGeneralData {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
+         |and (charge_type = 1 or charge_type is null)
        """.stripMargin
     println(sqlRequest1)
     val data = spark.sql(sqlRequest1)
