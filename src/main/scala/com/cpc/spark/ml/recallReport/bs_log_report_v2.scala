@@ -21,6 +21,7 @@ object bs_log_report_v2 {
         |select trim(split(raw, '\\\\*')[1]) as raw from dl_cpc.cpc_basedata_recall_log
         |where day='$tardate' and hour='$hour' and length(trim(split(raw, '\\\\*')[1]))>0
       """.stripMargin
+    println(stmt)
     val pbData = spark.sql(stmt).rdd.map{
       r =>
         val pb = r.getAs[String]("raw")
