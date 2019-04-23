@@ -18,10 +18,10 @@ object GetGeneralData {
          |SELECT
          |  industry,
          |  cost as ocpc_cost,
-         |  cost_cmp,
-         |  cost_ratio,
-         |  low_unit_percent,
-         |  pay_percent
+         |  cast(round(cost_cmp, 2) as double) as cost_cmp,
+         |  cast(round(cost_ratio, 2) as double) as cost_ratio,
+         |  cast(round(low_unit_percent, 2) as double) as low_unit_percent,
+         |  cast(round(pay_percent, 2) as double) as pay_percent
          |FROM
          |  dl_cpc.ocpc_general_data_industry
          |WHERE
