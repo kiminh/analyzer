@@ -123,7 +123,8 @@ object OcpcHourlyGeneralData {
          |  industry,
          |  sum(ocpc_cost) as ocpc_cost,
          |  sum(high_cost) as high_cost,
-         |  count(distinct unitid) as unitid_cnt,
+         |  sum(case when high_cost = 0.0 then 1 else 0 end) as low_unitid_cnt,
+         |  count(unitid) as unitid_cnt,
          |  count(distinct userid) as userid_cnt
          |FROM
          |  base_data
