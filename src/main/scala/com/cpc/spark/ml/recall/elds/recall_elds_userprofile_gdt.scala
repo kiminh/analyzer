@@ -1,22 +1,19 @@
 package com.cpc.spark.ml.recall.elds
 
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
+import java.util.Properties
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
 object recall_elds_userprofile_gdt {
-  var mariaReportdbUrl = ""
-  val mariaReportdbProp = new Properties()
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().appName("recall_elds_userprofile_gdt").enableHiveSupport().getOrCreate()
-    val cal = Calendar.getInstance()
-    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
-    cal.add(Calendar.DATE, -1)
-    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+//    val cal = Calendar.getInstance()
+    val today = args(0)
+    val hour = args(2)
+//    cal.add(Calendar.DATE, -1)
+    val yesterday = args(1)
     //连接mysql的report2
     val jdbcProp = new Properties()
     val jdbcUrl = "jdbc:mysql://rm-2zemny6nzg818jcdn.mysql.rds.aliyuncs.com:3306/report2"
