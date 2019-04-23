@@ -31,6 +31,7 @@ object MultiDimensionCalibOnMidu {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
+    val model = "novel-ctr-dnn-rawid-v7-cali"
     val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
 
 
@@ -69,10 +70,6 @@ object MultiDimensionCalibOnMidu {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-      unionLogToConfig2(data, session, softMode, calimodelname)
-  }
-
-  def unionLogTogroup(log:DataFrame)={
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
       .filter("count1>100000")
@@ -90,17 +87,28 @@ object MultiDimensionCalibOnMidu {
     val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
     val data3 = log.join(group3,Seq("ideaid"),"inner")
 
+    //create cali pb
+    val calimap1 = GroupToConfig(data1, session,calimodelname)
+    val calimap2 = GroupToConfig(data2, session,calimodelname)
+    val calimap3 = GroupToConfig(data3, session,calimodelname)
+    val calimap = calimap1 ++ calimap2 ++ calimap3
+    val califile = PostCalibrations(calimap.toMap)
+    val localPath = saveProtoToLocal(model, califile)
+    saveFlatTextFileForDebug(model, califile)
+    if (softMode == 0) {
+      val conf = ConfigFactory.load()
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
+    }
   }
 
-
-  def unionLogToConfig2(log:DataFrame, session: SparkSession, softMode: Int, calimodelname: String, saveToLocal: Boolean = true,
-                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): List[CalibrationConfig] = {
+  def GroupToConfig(data:DataFrame, session: SparkSession, calimodelname: String, minBinSize: Int = MIN_BIN_SIZE,
+                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
     val sc = session.sparkContext
-    var auc = Seq[(Double,Double)]()
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = log.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
@@ -115,12 +123,6 @@ object MultiDimensionCalibOnMidu {
       .mapValues(
         x =>
           (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-//        x => {
-//          val l = x.toList
-//          val l1 = l.take(l.length - l.length/3)
-//          val l2 = l.takeRight(l.length/3)
-//          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
-//        }
           )
       .toLocalIterator
       .map {
@@ -130,11 +132,6 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
-//          计算testauc
-//          val test = x._2._3
-//          val ScoreAndLabel = sc.parallelize(test)
-//          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
-//          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size < minBinCount) {
@@ -148,10 +145,6 @@ object MultiDimensionCalibOnMidu {
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-//            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
-//            val caliauc = getauccali(test, sc, irModel)
-//            println(s"test auc(before, after): $aucROC,$caliauc")
-//            auc = auc :+ (aucROC,caliauc)
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
@@ -160,18 +153,7 @@ object MultiDimensionCalibOnMidu {
             config
           }
       }.toList
-    val califile = PostCalibrations(calimap.toMap)
-    if (saveToLocal) {
-      val model = "novel-ctr-dnn-rawid-v7-cali"
-      val localPath = saveProtoToLocal(model, califile)
-      saveFlatTextFileForDebug(model, califile)
-      if (softMode == 0) {
-        val conf = ConfigFactory.load()
-        println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
-        println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
-      }
-    }
-    return result
+    return calimap
   }
 
   // input: (<ectr, click>)
