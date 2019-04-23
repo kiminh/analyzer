@@ -99,6 +99,23 @@ object OcpcHourlyGeneralData {
 //      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
+    saveDataToMysql(resultDF, date, hour, spark)
+
+  }
+
+  def saveDataToMysql(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+    // 详情表
+    val dataMysql = data
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt")
+      .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableUnit = "report2.report_ocpc_general_data"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
+
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
   }
 
   def getPrevData(date: String, hour: String, spark: SparkSession) = {
