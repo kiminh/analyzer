@@ -14,6 +14,7 @@ object recall_elds_userprofile_gdt {
     val spark = SparkSession.builder().appName("recall_elds_userprofile_gdt").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     cal.add(Calendar.DATE, -1)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     //连接mysql的report2
@@ -32,14 +33,14 @@ object recall_elds_userprofile_gdt {
     spark.sql(
       s"""
          |select ta.uid,tb.* from
-         |(select uid,adid_str from dl_cpc.cpc_basedata_union_events where day = '2019-01-30'
+         |(select uid,adid_str from dl_cpc.cpc_basedata_union_events where day = '$yesterday'
          |and adsrc=7 and adid_str is not null and isclick>0) ta
          |join (select * from temp_gdt) tb
          |on ta.adid_str = tb.adid_str
        """.stripMargin).repartition(20).createOrReplaceTempView("temp_result")
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_userprofile_tag_daily partition(`date`='$today', tag='351')
+         |insert overwrite table dl_cpc.cpc_userprofile_tag_hourly partition(`date`='$today', hour = '$hour', tag='351')
          |select uid,true
          |from temp_result group by uid
       """.stripMargin)
