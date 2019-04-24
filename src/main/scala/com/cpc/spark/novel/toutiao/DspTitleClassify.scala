@@ -7,7 +7,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.functions._
 import scala.sys.process._
 
-object toutiaosample2 {
+object DspTitleClassify {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val spark = SparkSession.builder()

@@ -1,16 +1,15 @@
 package com.cpc.spark.novel.toutiao
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
 
-object toutiaosample {
+object DspTitleSample {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val spark = SparkSession.builder()
       .appName(s"midu_sample")
       .enableHiveSupport()
       .getOrCreate()
-    //穿山甲直投
+    //穿山甲直投米读
     val sql =
       s"""
          |select title,concat_ws(' ',collect_set(ButtonText)) ButtonText,concat_ws(' ',collect_set(description)) as description
@@ -35,7 +34,7 @@ object toutiaosample {
          |distinct
          |adid, title
          |FROM dl_cpc.slim_union_log
-         |WHERE dt= '$date' and adid != '' and adsrc = 22
+         |WHERE dt> date_sub('$date', 7) and adid != '' and adsrc = 22
          |and media_appsid in ("80001098", "80001292")
          |and title != ''
              """.stripMargin

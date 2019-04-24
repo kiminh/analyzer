@@ -3,8 +3,8 @@
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
-day=`date +"%Y-%m-%d" -d "-2 hour"`
-hour=`date +"%H" -d "-2 hour"`
+#day=`date +"%Y-%m-%d" -d "-2 hour"`
+#hour=`date +"%H" -d "-2 hour"`
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -26,4 +26,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.novel.NovelUnionEvents\
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day $hour
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-04-24 04
