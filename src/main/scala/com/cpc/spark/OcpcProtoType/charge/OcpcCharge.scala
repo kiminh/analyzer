@@ -90,7 +90,7 @@ object OcpcCharge {
       .load()
 
     val base = data
-      .withColumn("unitid", col("id"))
+      .withColumn("unitid", col("unit_id"))
       .withColumn("flag", lit(1))
       .select("unitid", "flag").distinct()
 
