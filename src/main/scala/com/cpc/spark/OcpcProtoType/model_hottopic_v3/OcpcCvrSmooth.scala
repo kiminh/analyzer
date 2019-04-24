@@ -205,7 +205,7 @@ object OcpcCvrSmooth {
       cali_value      double  NULL
      */
     val data = cvrData
-      .withColumn("factor1", lit(0.2))
+      .withColumn("factor1", lit(0.5))
       .withColumn("factor2", lit(0.5))
       .withColumn("factor3", lit(0.5))
       .withColumn("cpc_bid", lit(0))
