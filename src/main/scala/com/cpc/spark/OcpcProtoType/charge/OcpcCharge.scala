@@ -38,11 +38,11 @@ object OcpcCharge {
 
     data.show(10)
 
-//    saveDataToMysql(data, spark)
-//
-//    val result = data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
+    saveDataToMysql(data, spark)
+
+    val result = data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
 
 
 
@@ -52,20 +52,23 @@ object OcpcCharge {
 
   def saveDataToMysql(data: DataFrame, spark: SparkSession) = {
     // 媒体选择
-    val conf = ConfigFactory.load("ocpc.ocpc_pay_mysql")
+    val conf = ConfigFactory.load("ocpc")
     val mariadb_write_prop = new Properties()
 //    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
 //    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
 //    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
 //    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    val tableName = "adv_test.ocpc_compensate"
-    val mariadb_write_url = conf.getString("test.url")
-    mariadb_write_prop.put("user", conf.getString("test.user"))
-    mariadb_write_prop.put("password", conf.getString("test.password"))
-    mariadb_write_prop.put("driver", conf.getString("mariadb.test.driver"))
+    val tableName = "adv.ocpc_compensate"
+    val mariadb_write_url = conf.getString("ocpc_pay_mysql.test.url")
+    mariadb_write_prop.put("user", conf.getString("ocpc_pay_mysql.test.user"))
+    mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
+    mariadb_write_prop.put("driver", conf.getString("ocpc_pay_mysql.mariadb.test.driver"))
 
-    data.write.mode(SaveMode.Append)
+    val result = data
+        .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+    result.write.mode(SaveMode.Append)
       .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
     println(s"insert into $tableName success!")
   }
