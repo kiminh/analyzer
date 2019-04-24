@@ -79,7 +79,7 @@ object OcpcCharge {
     val user = conf.getString("ocpc_pay_mysql.test.user")
     val passwd = conf.getString("ocpc_pay_mysql.test.password")
     val driver = conf.getString("ocpc_pay_mysql.test.driver")
-    val table = "(select unit_id from adv_test.ocpc_compensate) as tmp"
+    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
