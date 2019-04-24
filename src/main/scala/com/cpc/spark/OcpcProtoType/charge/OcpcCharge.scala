@@ -71,7 +71,7 @@ object OcpcCharge {
       s"""
          |SELECT
          |  cast(unitid as int) unit_id,
-         |  cast(cost as double) as double,
+         |  cast(cost as double) as cost,
          |  cast(conversion as int) as conversion,
          |  cast(pay as double) as pay,
          |  cast(cpagiven as double) as cpagiven,
