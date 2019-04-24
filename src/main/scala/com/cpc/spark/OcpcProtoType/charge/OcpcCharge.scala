@@ -66,8 +66,25 @@ object OcpcCharge {
     mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
     mariadb_write_prop.put("driver", conf.getString("ocpc_pay_mysql.test.driver"))
 
-    val result = data
-        .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as int) unit_id,
+         |  cast(cost as double) as double,
+         |  conversion,
+         |  pay,
+         |  cpagiven,
+         |  cpareal,
+         |  ocpc_time as ocpc_charge_time
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+
+//    val result = data
+//        .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "", "cpagiven", "cpareal")
 
     result.write.mode(SaveMode.Append)
       .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
