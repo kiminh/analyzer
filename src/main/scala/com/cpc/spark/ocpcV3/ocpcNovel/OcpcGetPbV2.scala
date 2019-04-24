@@ -89,10 +89,10 @@ object OcpcGetPbV2 {
 //    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
 
     savePbPack(resultDF)
@@ -399,7 +399,21 @@ object OcpcGetPbV2 {
     println(sqlRequest3)
     val labelData2 = spark.sql(sqlRequest3).distinct()
 
-    val resultDF=clickdata.join(labelData1,Seq("searchid"),"left")
+    //qtt maxbid
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  sum(total_bid)/sum(show_cnt) as qtt_avgbid
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  where $selectCondition and media_appsid in ('80000001','80000002')
+       """.stripMargin
+    println(sqlRequest4)
+    val qttavgbid = spark.sql(sqlRequest4)
+
+    val result=clickdata.join(labelData1,Seq("searchid"),"left")
         .join(labelData2,Seq("searchid"),"left")
         .groupBy("unitid")
         .agg(avg(col("price")).alias("avgbid"),
@@ -408,9 +422,12 @@ object OcpcGetPbV2 {
         .withColumn("postcvr2",when(col("postcvr3") isNotNull,col("postcvr3")).otherwise(col("postcvr2")))
         .withColumn("maxbid",col("avgbid")*3)
 
+    val resultDF=qttavgbid.join(result,Seq("unitid"),"outer")
+        .withColumn("maxbid",when(col("qtt_avgbid")<col("maxbid"),col("qtt_avgbid")).otherwise(col("maxbid")))
+
     // 返回结果
     resultDF.show(10)
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
     resultDF
 
   }
