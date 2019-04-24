@@ -86,11 +86,9 @@ object Udfs_wj{
       val logs = valueLog.split(",")
       for (log <- logs) {
         val splits = log.split(":")
-        if (splits.length == 2) {
-          val key = splits(0)
-          val value = splits(1)
-          result += (key -> value)
-        }
+        val key = splits(0)
+        val value = splits(1)
+        result += (key -> value)
       }
       result
     } else {

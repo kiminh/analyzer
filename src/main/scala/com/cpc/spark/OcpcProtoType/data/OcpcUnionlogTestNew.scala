@@ -30,7 +30,7 @@ object OcpcUnionlogTestNew {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = data
         .filter(s"length(ocpc_log)>0")
-        .withColumn("flag", udfStringToMapCheck()(col("ocpc_log")))
+        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -70,7 +70,7 @@ object OcpcUnionlogTestNew {
          |    city_level,
          |    adclass,
          |    ocpc_log,
-         |    flag,
+         |    ocpc_log_dict,
          |    exp_ctr,
          |    exp_cvr,
          |    antispam,
@@ -209,6 +209,7 @@ object OcpcUnionlogTestNew {
          |where `day` = '2019-04-23' and `hour` = '21' and `minute` = '14'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
+         |and length(searchid) > 0
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
