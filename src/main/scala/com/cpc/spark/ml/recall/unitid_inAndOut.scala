@@ -126,7 +126,7 @@ object unitid_inAndOut {
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$today')
-         |select unitid from confidence_unitid
+         |select unitid from confidence_unitid group by unitid
       """.stripMargin)
   }
 }
