@@ -63,7 +63,7 @@ object OcpcCharge {
     val mariadb_write_url = conf.getString("ocpc_pay_mysql.test.url")
     mariadb_write_prop.put("user", conf.getString("ocpc_pay_mysql.test.user"))
     mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
-    mariadb_write_prop.put("driver", conf.getString("ocpc_pay_mysql.mariadb.test.driver"))
+    mariadb_write_prop.put("driver", conf.getString("ocpc_pay_mysql.test.driver"))
 
     val result = data
         .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
