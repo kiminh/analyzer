@@ -60,6 +60,13 @@ object recall_prepare_new_feature {
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
            |select uid, null, add_pkgs, "$featureName" from temptable where add_pkgs[0] is not null
        """.stripMargin)
+    } else if (featureName == "frequentPoi_1"){
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
+           |select uid,poi_type_featur1,null,"$featureName" from dl_cpc.user_frequent_poi where dt='$date'
+         """.stripMargin
+      ).repartition(200)
     }
   }
 }
