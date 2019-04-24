@@ -27,7 +27,7 @@ object recall_prepare_training_samples {
     val cal1 = Calendar.getInstance()
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, oneday).repartition(1000)
+    getSample(spark, model_version, featureName, oneday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -36,7 +36,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, twoday).repartition(1000)
+    getSample(spark, model_version, featureName, twoday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -45,7 +45,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, threeday).repartition(1000)
+    getSample(spark, model_version, featureName, threeday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -54,7 +54,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, fourday).repartition(1000)
+    getSample(spark, model_version, featureName, fourday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
