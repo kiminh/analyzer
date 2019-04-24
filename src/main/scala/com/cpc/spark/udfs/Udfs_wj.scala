@@ -99,16 +99,16 @@ object Udfs_wj{
   })
 
   def udfStringToMapCheck() = udf((valueLog: String) => {
-    var flag = 0
+    var result = 0
     if (valueLog != null && valueLog != "") {
       val logs = valueLog.split(",")
       for (log <- logs) {
         val splits = log.split(":")
         if (splits.length != 2) {
-          flag = 1
+          result = 1
         }
       }
-      flag
+      result
     } else {
       null
     }
