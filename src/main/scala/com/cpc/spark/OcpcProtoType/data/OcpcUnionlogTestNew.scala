@@ -1,10 +1,10 @@
 package com.cpc.spark.OcpcProtoType.data
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlog {
+object OcpcUnionlogTestNew {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -22,8 +22,8 @@ object OcpcUnionlog {
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -205,7 +205,7 @@ object OcpcUnionlog {
          |    is_new_ad,
          |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
-         |where $selectWhere
+         |where `day` = '2019-04-23' and `hour` = '21' and `minute` <= '30'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
       """.stripMargin
