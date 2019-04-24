@@ -206,7 +206,6 @@ object OcpcUnionlog {
          |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
-         |and `minute` != '14'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
       """.stripMargin
