@@ -98,6 +98,22 @@ object Udfs_wj{
     }
   })
 
+  def udfStringToMapCheck() = udf((valueLog: String) => {
+    var flag = 0
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        if (splits.length != 2) {
+          flag = 1
+        }
+      }
+      flag
+    } else {
+      null
+    }
+  })
+
   def udfCalculateWeightByHour(hour: String) = udf((valueHour: String) => {
     val currentHour = hour.toInt + 1
     val tableHour = valueHour.toInt
