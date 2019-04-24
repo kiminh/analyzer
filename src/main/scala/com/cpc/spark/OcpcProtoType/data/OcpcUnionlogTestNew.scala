@@ -208,7 +208,6 @@ object OcpcUnionlogTestNew {
          |where `day` = '2019-04-23' and `hour` = '21' and `minute` = '14'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
-         |and media_appsid in ('80000001', '80000002')
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
