@@ -277,7 +277,6 @@ val sqlRequest2 =
 
   def clearReportData(date: String): Unit = {
     try {
-      Class.forName(mariaReport2dbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariaReport2dbUrl,
         mariaReport2dbProp.getProperty("user"),
@@ -285,7 +284,7 @@ val sqlRequest2 =
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from report2.report_adslot_video_download where `date` = "%s"
+          |delete from report2.cpc_profiletag_report where `date` = "%s"
         """.stripMargin.format(date)
       stmt.executeUpdate(sql);
     } catch {
