@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType.data
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcUnionlog {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
