@@ -73,15 +73,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold1: Int, cvThreshold2: Int, date: String, hour: String, spark: SparkSession) = {
@@ -375,8 +375,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "last_bid")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent", "last_bid")
-      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.2)))
-      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.05)))
+      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.1)))
+      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.1)))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
