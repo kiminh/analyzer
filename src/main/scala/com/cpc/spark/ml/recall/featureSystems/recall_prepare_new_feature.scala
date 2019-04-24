@@ -50,8 +50,7 @@ object recall_prepare_new_feature {
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
            |select uid,poi_type_feature1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
-         """.stripMargin
-      ).repartition(200)
+       """.stripMargin).repartition(200)
     }
   }
 }
