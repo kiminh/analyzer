@@ -19,6 +19,27 @@ object ReportAutoCoinUseridMetrics {
           .getOrCreate()
         import spark.implicits._
 
+      val unionSql =
+        s"""
+            |select userid,
+            |sum(show_num) as show_num,
+            |sum(coin_show_num) as coin_show_num,
+            |sum(click_num) as click_num,
+            |sum(coin_click_num) as coin_click_num,
+            |sum(convert_num) as convert_num,
+            |sum(coin_convert_num) as coin_convert_num,
+            |sum(click_total_price) as click_total_price,
+            |sum(coin_click_total_price) as coin_click_total_price,
+            |sum(uid_num) as uid_num
+            |from dl_cpc.cpc_report_auto_coin_ideaid_metrics
+            |where `date`='$date'
+            |group by userid
+             """.stripMargin
+
+      val union = spark.sql(unionSql)
+
+      union.createOrReplaceTempView("union")
+
         val sql =
             s"""
                |select
@@ -44,24 +65,9 @@ object ReportAutoCoinUseridMetrics {
                |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
                |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
                |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
-               |    auc,
+               |    COALESCE(auc,0) as auc,
                |    '$date' as `date`
-               |from
-               |(
-               |    select userid,
-               |        sum(show_num) as show_num,
-               |        sum(coin_show_num) as coin_show_num,
-               |        sum(click_num) as click_num,
-               |        sum(coin_click_num) as coin_click_num,
-               |        sum(convert_num) as convert_num,
-               |        sum(coin_convert_num) as coin_convert_num,
-               |        sum(click_total_price) as click_total_price,
-               |        sum(coin_click_total_price) as coin_click_total_price,
-               |        sum(uid_num) as uid_num
-               |    from dl_cpc.cpc_report_auto_coin_ideaid_metrics
-               |    where `date`='$date'
-               |    group by userid
-               |) a
+               |from (select * from union) a
                |left join
                |(
                |    select userid, auc
