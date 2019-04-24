@@ -30,7 +30,7 @@ object OcpcUnionlogTestNew {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = data
         .filter(s"length(ocpc_log)>0")
-        .withColumn("flag", udfStringToMap()(col("ocpc_log")))
+        .withColumn("flag", udfStringToMapCheck()(col("ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
