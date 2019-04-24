@@ -409,6 +409,7 @@ object OcpcGetPbV2 {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  where $selectCondition and media_appsid in ('80000001','80000002')
+         |  group by unitid
        """.stripMargin
     println(sqlRequest4)
     val qttavgbid = spark.sql(sqlRequest4)
