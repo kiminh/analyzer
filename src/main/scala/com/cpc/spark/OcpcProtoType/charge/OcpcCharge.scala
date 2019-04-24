@@ -72,16 +72,17 @@ object OcpcCharge {
          |SELECT
          |  cast(unitid as int) unit_id,
          |  cast(cost as double) as double,
-         |  conversion,
-         |  pay,
-         |  cpagiven,
-         |  cpareal,
+         |  cast(conversion as int) as conversion,
+         |  cast(pay as double) as pay,
+         |  cast(cpagiven as double) as cpagiven,
+         |  cast(cpareal as double) as cpareal,
          |  ocpc_time as ocpc_charge_time
          |FROM
          |  base_data
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest)
+    result.printSchema()
 
 //    val result = data
 //        .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "", "cpagiven", "cpareal")
