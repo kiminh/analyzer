@@ -110,7 +110,7 @@ object Udfs_wj{
       }
       result
     } else {
-      0
+      null
     }
   })
 
