@@ -205,7 +205,7 @@ object OcpcUnionlogTestNew {
          |    is_new_ad,
          |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
-         |where `day` = '2019-04-23' and `hour` = '21' and `minute` > '10' and minute <= '15'
+         |where `day` = '2019-04-23' and `hour` = '21' and `minute` > '15' and minute <= '20'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
       """.stripMargin
