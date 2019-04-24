@@ -71,7 +71,7 @@ object OcpcUnionSuggestCPA {
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
-    data.write.mode("overwrite").saveAsTable("test.test_check_data20190424a")
+    resultDF.write.mode("overwrite").saveAsTable("test.test_check_data20190424a")
 
     resultDF
   }
