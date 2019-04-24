@@ -14,9 +14,9 @@ object OcpcUnionlogTestNew {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-//    data
+    data
 //      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -205,7 +205,7 @@ object OcpcUnionlogTestNew {
          |    is_new_ad,
          |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
-         |where `day` = '2019-04-23' and `hour` = '21' and `minute` <= '30'
+         |where `day` = '2019-04-23' and `hour` = '21' and `minute` <= '10'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
       """.stripMargin
