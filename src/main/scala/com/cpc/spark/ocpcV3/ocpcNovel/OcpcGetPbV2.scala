@@ -424,7 +424,7 @@ object OcpcGetPbV2 {
         .withColumn("maxbid",col("avgbid")*3)
 
     val resultDF=qttavgbid.join(result,Seq("unitid"),"outer")
-        .withColumn("maxbid",when(col("qtt_avgbid")<col("maxbid"),col("qtt_avgbid")).otherwise(col("maxbid")))
+        .withColumn("maxbid",when(col("qtt_avgbid")<col("maxbid") and col("maxbid").isNotNull ,col("qtt_avgbid")).otherwise(col("maxbid")))
 
     // 返回结果
     resultDF.show(10)
