@@ -45,13 +45,12 @@ object recall_prepare_new_feature {
            |if(addedApp[0]=null, null, addedApp),
            |"$featureName" from temptable where used_pkgs[0] is not null
        """.stripMargin)
-    } else if (featureName == "frequentPoi_1"){
+    } else if (featureName == "frequent_poi_1"){
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid,poi_type_featur1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
-         """.stripMargin
-      ).repartition(200)
+           |select uid,poi_type_feature1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
+       """.stripMargin).repartition(200)
     }
   }
 }
