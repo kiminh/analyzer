@@ -1,6 +1,6 @@
 package com.cpc.spark.OcpcProtoType.data
 
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -30,7 +30,7 @@ object OcpcUnionlogTestNew {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = data
         .filter(s"length(ocpc_log)>0")
-        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+        .withColumn("flag", udfStringToMapCheck()(col("ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -69,7 +69,8 @@ object OcpcUnionlogTestNew {
          |    user_city,
          |    city_level,
          |    adclass,
-         |    ocpc_log_dict,
+         |    ocpc_log,
+         |    flag,
          |    exp_ctr,
          |    exp_cvr,
          |    antispam,
