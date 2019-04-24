@@ -37,12 +37,14 @@ object NovelUnionEvents {
                |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
          """.stripMargin.trim)
 
-      spark.sql(
-        s"""
-           |ALTER TABLE dl_cpc.cpc_basedata_union_events
-           | add if not exists PARTITION(`day` = "$date", `hour` = "$hour")
-           | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_basedata_union_events/day=$date/hour=$hour'
-      """.stripMargin.trim)
+      spark.sql("msck repair table dl_cpc.cpc_novel_union_events")
+
+//      spark.sql(
+//        s"""
+//           |ALTER TABLE dl_cpc.cpc_basedata_union_events
+//           | add if not exists PARTITION(`day` = "$date", `hour` = "$hour")
+//           | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_basedata_union_events/day=$date/hour=$hour'
+//      """.stripMargin.trim)
         println(" -- write cpc_basedata_union_events to hive successfully -- ")
     }
 }
