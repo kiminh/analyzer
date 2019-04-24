@@ -34,37 +34,22 @@ object recall_prepare_new_feature {
 
   }
   def getFeature(spark: SparkSession, date: String, featureName: String): Unit = {
-    if(featureName == "activeApp"){
+    if(featureName == "active_remove_add_app"){
       val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
-      uidApp.select("uid","used_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
+      uidApp.select("uid","used_pkgs","remove_pkgs","addedApp").distinct().repartition(200).createOrReplaceTempView("temptable")
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid, null, used_pkgs, "$featureName" from temptable where used_pkgs[0] is not null
-       """.stripMargin)
-    } else if (featureName == "deletedApp"){
-      print("prepare delete APP")
-      val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
-      uidApp.select("uid","remove_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
-      spark.sql(
-        s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid, null, remove_pkgs, "$featureName" from temptable where remove_pkgs[0] is not null
-       """.stripMargin)
-    } else if (featureName == "addedApp"){
-      print("prepare add APP")
-      val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
-      uidApp.select("uid","add_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
-      spark.sql(
-        s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid, null, add_pkgs, "$featureName" from temptable where add_pkgs[0] is not null
+           |select uid, null, null, null, if(used_pkgs[0]=null,null, used_pkgs),
+           |if(remove_pkgs[0]=null, null, remove_pkgs),
+           |if(addedApp[0]=null, null, addedApp),
+           |"$featureName" from temptable where used_pkgs[0] is not null
        """.stripMargin)
     } else if (featureName == "frequentPoi_1"){
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid,poi_type_featur1,null,"$featureName" from dl_cpc.user_frequent_poi where dt='$date'
+           |select uid,poi_type_featur1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
          """.stripMargin
       ).repartition(200)
     }
