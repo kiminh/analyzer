@@ -34,6 +34,7 @@ object OcpcCharge {
     val data = costData
       .join(prevData, Seq("unitid"), "left_outer")
       .filter(s"flag is null")
+      .filter(s"conversion > 30")
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
     data.show(10)
