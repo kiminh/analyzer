@@ -93,9 +93,7 @@ object OcpcGetPbV2 {
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto(tableName)
-
-
-    savePbPack(resultDF)
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -404,7 +402,7 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  unitid,
-         |  sum(total_bid)/sum(show_cnt) as qtt_avgbid
+         |  sum(total_bid)/sum(ctr_cnt) as qtt_avgbid
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
