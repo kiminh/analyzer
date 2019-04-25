@@ -86,11 +86,11 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    savePbPack(resultDF)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -347,6 +347,7 @@ object OcpcGetPbV2 {
          |SELECT
          |  searchid,
          |  unitid,
+         |  adclass,
          |  price,
          |  isclick
          |FROM
@@ -358,7 +359,7 @@ object OcpcGetPbV2 {
          |  and isclick=1
        """.stripMargin
     println(sqlRequest1)
-    val clickdata = spark.sql(sqlRequest1)
+    val clickdata = spark.sql(sqlRequest1).withColumn("new_adclass", col("adclass")/1000)
 
     // cvr1：安装类
     val sqlRequest2 =
@@ -417,6 +418,8 @@ object OcpcGetPbV2 {
           (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
         .withColumn("postcvr2",when(col("postcvr3") isNotNull,col("postcvr3")).otherwise(col("postcvr2")))
         .withColumn("maxbid",col("avgbid")*3)
+        .withColumn("maxbid",when(col("new_adclass")===110110,(col("maxbid")*10))
+        .otherwise(col("maxbid")))
 
     val resultDF=qttavgbid.join(result,Seq("unitid"),"outer")
       .withColumn("maxbid",when(col("maxbid").isNull,col("qtt_avgbid")).otherwise(col("maxbid")))
@@ -424,7 +427,7 @@ object OcpcGetPbV2 {
 
     // 返回结果
     resultDF.show(10)
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
     resultDF
 
   }
