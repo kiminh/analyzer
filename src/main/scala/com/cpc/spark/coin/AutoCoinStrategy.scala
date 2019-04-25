@@ -62,19 +62,19 @@ object AutoCoinStrategy {
         //正企userid白名单，出自动金币
         val userWhiteList =
             """
-              |1522853,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587, 1553711, 1552154, 1559014, 1551248, 1538486, 1551950, 1559495, 1550108, 1551707, 1548568, 1558766, 1558705, 1559522, 1556256, 1548521, 1558838, 1559266, 1560432, 1559076, 1557344, 1540595, 1560225
+              |0
             """.stripMargin
 
         val mlFeatureNth = calcThreshold(spark,ml_cvr_feature_v1,dateHourFilter,ideaBlacklist,
             lowAucUseridFilter,userWhiteList,unKnownIdeaidList,
             p1,p2,
             date,hour)
-        val apiUnionNth = calcApiThreshold(spark,cpc_api_union_log,dateHourFilter,ideaBlacklist,
+        val apiUnionNth = calcApiThreshold(spark,cpc_api_union_log,dateHourFilter.replace("date","day"),ideaBlacklist,
             lowAucUseridFilter,userWhiteList,unKnownIdeaidList,
             p1,p2,
             date,hour)
-        println("mlFeatureNth 's count is " + mlFeatureNth.count())
-        println("apiUnionNth 's count is " + apiUnionNth.count())
+        println("mlFeatureNth 's count" + mlFeatureNth.count())
+        println("apiUnionNth 's count" + apiUnionNth.count())
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)   //两个数据组合
           .map(x => {
             val label = x._2._1.orNull
@@ -142,7 +142,7 @@ object AutoCoinStrategy {
                     hour = hour.toString)
             }
         })
-          .filter(x => x.api_num >= 30 || x.label_num >= 30)    //过滤数据量小于等于30
+          //          .filter(x => x.api_num >= 30 || x.label_num >= 30)    //过滤数据量小于等于30
           .toDS()
           .coalesce(1)
 
@@ -259,8 +259,8 @@ object AutoCoinStrategy {
         val l0 = List("0")
 
 //        val lowAucUseridFilter = lowAucUserid:::l0  //增加一个默认值，防止空list
-
         val lowAucUseridFilter = l0
+
         lowAucUseridFilter.mkString(",")
     }
 
@@ -282,18 +282,17 @@ object AutoCoinStrategy {
                          p1:Double, p2:Double, date:String, hour:String):RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val apiUnionLogSql =
             s"""
-               |select ideaid,ext["exp_cvr"].int_value as exp_cvr
-               |from $cpc_api_union_log
+               |select ideaid,exp_cvr
+               |from dl_cpc.api_basedata_union_events
                |where ($dateHourFilter)
-               |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
                |and adslot_type in (1, 2)
-               |and round(ext['adclass'].int_value/1000000) != 107 and round(ext['adclass'].int_value/1000000) != 134
-               |and ((adslot_type<>7 and ext['adclass'].int_value like '100%') or (ext['adclass'].int_value in (110110100, 125100100)))
+               |and round(adclass/1000000) != 107 and round(adclass/1000000) != 134
+               |and ((adslot_type<>7 and adclass like '100%') or (adclass in (110110100, 125100100)))
                |and ideaid not in ($ideaBlacklist)
                |and userid not in ($lowAucUseridFilter)
-               |and (userid in ($userWhiteList) or ext['usertype'].int_value != 2)
+               |and (userid in ($userWhiteList) or usertype != 2)
              """.stripMargin
         println(apiUnionLogSql)
 
