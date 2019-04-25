@@ -277,6 +277,8 @@ object OcpcCharge {
         .sql(sqlRequest)
         .filter(s"is_hidden = 0 and conversion_goal = 3")
 
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425b")
+
     data
   }
 
@@ -319,6 +321,7 @@ object OcpcCharge {
       .filter(s"ocpc_last_open_date = '$date1'")
 
     data.show(10)
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")
 
     data
   }
