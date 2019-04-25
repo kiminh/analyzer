@@ -142,7 +142,7 @@ object AutoCoinStrategy {
                     hour = hour.toString)
             }
         })
-          //          .filter(x => x.api_num >= 30 || x.label_num >= 30)    //过滤数据量小于等于30
+          .filter(x => x.api_num >= 30 || x.label_num >= 30)    //过滤数据量小于等于30
           .toDS()
           .coalesce(1)
 
