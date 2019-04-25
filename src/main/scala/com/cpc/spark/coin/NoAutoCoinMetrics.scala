@@ -25,7 +25,11 @@ object NoAutoCoinMetrics {
                | if (b.searchid is null,0,1) as label2
                |from
                |(
-               |    select searchid, userid, ideaid, isshow, isclick, price, uid, is_auto_coin, exp_cvr, exp_style
+               |    select searchid, userid, ideaid, isshow, isclick,
+               |    case when (isclick=1 and antispam_score=10000 and (charge_type is null or charge_type = 1)) then price
+               |         when (isshow=1 and charge_type=2 ) then price/1000
+               |    else 0  as price,
+               |    uid, is_auto_coin, exp_cvr, exp_style
                |    from dl_cpc.cpc_basedata_union_events
                |    where day = '$date'
                |    and media_appsid in ("80000001", "80000002", "80000006", "80000064", "80000066")
