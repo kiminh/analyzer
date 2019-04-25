@@ -71,11 +71,11 @@ object OcpcCharge {
       s"""
          |SELECT
          |  cast(unitid as int) unit_id,
-         |  cast(cost as double) as cost,
+         |  cast(round(cost, 2) as double) as cost,
          |  cast(conversion as int) as conversion,
-         |  cast(pay as double) as pay,
-         |  cast(cpagiven as double) as cpagiven,
-         |  cast(cpareal as double) as cpareal,
+         |  cast(round(pay, 2) as double) as pay,
+         |  cast(round(cpagiven, 2) as double) as cpagiven,
+         |  cast(round(cpareal, 2) as double) as cpareal,
          |  ocpc_time as ocpc_charge_time
          |FROM
          |  base_data
