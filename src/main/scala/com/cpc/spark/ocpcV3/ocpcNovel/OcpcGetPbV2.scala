@@ -424,7 +424,7 @@ object OcpcGetPbV2 {
 
     // 返回结果
     resultDF.show(10)
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
     resultDF
 
   }
