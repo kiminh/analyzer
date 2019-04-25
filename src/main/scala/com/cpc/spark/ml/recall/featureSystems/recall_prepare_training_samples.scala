@@ -148,7 +148,7 @@ object recall_prepare_training_samples {
         $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").createOrReplaceTempView("temp_feature")
     var new_feature: DataFrame = null
     var newSample: DataFrame = null
-    if(feature_multihot!="" && feature_multihot!=""){
+    if(feature_multihot!="" && feature_onehot!=""){
       new_feature = spark.sql(
         s"""
            |select uid, uidhash,
@@ -179,16 +179,19 @@ object recall_prepare_training_samples {
           val dense_new = r.getAs[Seq[Long]]("dense_new")
           (sample_idx, label, dense ++ dense_new, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
       }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-    } else if (feature_onehot!="") {
+    } else if (feature_multihot!="") {
       new_feature = spark.sql(
         s"""
            |select uid, uidhash,
            |$feature,
            | sample_idx, idx0, idx1, idx2, id_arr, label, dense from temp_feature
        """.stripMargin).
-        select($"uid", $"uidhash", $"one_hot",
+        select($"uid", $"uidhash", mkSparseFeature_m(multihot_feature_number)($"multi_hot").alias("sparse"),
           $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").
-        select($"uid", $"uidhash", $"one_hot".alias("dense_new"),
+        select($"uid", $"uidhash",$"sparse".getField("_1").alias("idx0_new"),
+          $"sparse".getField("_2").alias("idx1_new"),
+          $"sparse".getField("_3").alias("idx2_new"),
+          $"sparse".getField("_4").alias("id_arr_new"),
           $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense")
       newSample = new_feature.rdd.map{
         r =>
@@ -204,8 +207,7 @@ object recall_prepare_training_samples {
           val idx1_new = r.getAs[Seq[Long]]("idx1_new")
           val idx2_new = r.getAs[Seq[Long]]("idx2_new")
           val id_arr_new = r.getAs[Seq[Long]]("id_arr_new")
-          val dense_new = r.getAs[Seq[Long]]("dense_new")
-          (sample_idx, label, dense ++ dense_new, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
+          (sample_idx, label, dense, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
       }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
     } else if (feature_onehot!="") {
       new_feature = spark.sql(
