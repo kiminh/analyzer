@@ -28,7 +28,7 @@ object NoAutoCoinMetrics {
                |    select searchid, userid, ideaid, isshow, isclick,
                |    case when (isclick=1 and antispam_score=10000 and (charge_type is null or charge_type = 1)) then price
                |         when (isshow=1 and charge_type=2 ) then price/1000
-               |    else 0  as price,
+               |    else 0 end as price,
                |    uid, is_auto_coin, exp_cvr, exp_style
                |    from dl_cpc.cpc_basedata_union_events
                |    where day = '$date'
