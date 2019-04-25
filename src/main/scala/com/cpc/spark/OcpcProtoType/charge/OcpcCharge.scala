@@ -39,7 +39,7 @@ object OcpcCharge {
 
     data.show(10)
 
-//    saveDataToMysql(data, spark)
+    saveDataToMysql(data, spark)
 
     val result = data
       .withColumn("date", lit(date))
