@@ -33,8 +33,8 @@ object OcpcLightBulbV2{
       .enableHiveSupport().getOrCreate()
 
 
-//    val tableName = "test.ocpc_qtt_light_control_v2"
-    val tableName = "test.ocpc_qtt_light_control_v2_20190314"
+    val tableName = "test.ocpc_qtt_light_control_v2"
+//    val tableName = "test.ocpc_qtt_light_control_v2_20190314"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
@@ -48,19 +48,19 @@ object OcpcLightBulbV2{
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
 
-//    cpaSuggest
-//      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
-//
-//    // 清除redis数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
-//    // 存储redis数据
-//    saveDataToRedis(date, hour, spark)
-//    println(s"############## saving redis database ##########################")
+    cpaSuggest
+      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+
+    // 清除redis数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
+    // 存储redis数据
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
     // 存储结果表
     cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
