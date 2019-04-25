@@ -1,12 +1,12 @@
 package com.cpc.spark.OcpcProtoType.charge
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcCharge {
@@ -28,10 +28,100 @@ object OcpcCharge {
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
     val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
-    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
+//    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
 
-//    val prevData = getPrevData(date, hour, spark)
+    val prevData = getDataFromMysql(spark)
+    val data = costData
+      .join(prevData, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .filter(s"conversion > 30")
+      .filter(s"pay > 0")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
+    data.show(10)
+
+    saveDataToMysql(data, spark)
+
+    val result = data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+
+    result
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+
+
+
+
+
+  }
+
+  def saveDataToMysql(data: DataFrame, spark: SparkSession) = {
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val mariadb_write_prop = new Properties()
+//    val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+//    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+//    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+//    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    val tableName = "adv.ocpc_compensate"
+    val mariadb_write_url = conf.getString("ocpc_pay_mysql.test.url")
+    mariadb_write_prop.put("user", conf.getString("ocpc_pay_mysql.test.user"))
+    mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
+    mariadb_write_prop.put("driver", conf.getString("ocpc_pay_mysql.test.driver"))
+
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as int) unit_id,
+         |  cast(round(cost * 0.01, 2) as double) as cost,
+         |  cast(conversion as int) as conversion,
+         |  cast(round(pay * 0.01, 2) as double) as pay,
+         |  cast(round(cpagiven * 0.01, 2) as double) as cpagiven,
+         |  cast(round(cpareal * 0.01, 2) as double) as cpareal,
+         |  ocpc_time as ocpc_charge_time
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result.printSchema()
+
+//    val result = data
+//        .selectExpr("cast(unitid as int) unit_id", "cast(cost as double) as cost", "conversion", "pay", "", "cpagiven", "cpareal")
+
+    result.write.mode(SaveMode.Append)
+      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+    println(s"insert into $tableName success!")
+  }
+
+  def getDataFromMysql(spark: SparkSession) = {
+    import spark.implicits._
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val url = conf.getString("ocpc_pay_mysql.test.url")
+    val user = conf.getString("ocpc_pay_mysql.test.user")
+    val passwd = conf.getString("ocpc_pay_mysql.test.password")
+    val driver = conf.getString("ocpc_pay_mysql.test.driver")
+    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("unit_id"))
+      .withColumn("flag", lit(1))
+      .select("unitid", "flag").distinct()
+
+    base
   }
 
   def assemblyData(dayCnt: Int, rawData: DataFrame, ocpcOpenTime: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -167,7 +257,6 @@ object OcpcCharge {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isclick,
          |  price,
-         |  row_number() over(partition by unitid order by timestamp) as seq,
          |  date,
          |  hour
          |FROM
@@ -184,9 +273,24 @@ object OcpcCharge {
          |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
-    val data = spark
-        .sql(sqlRequest)
-        .filter(s"is_hidden = 0 and conversion_goal = 3")
+    val rawData = spark
+      .sql(sqlRequest)
+      .filter(s"is_hidden = 0 and conversion_goal = 3")
+
+    rawData.createOrReplaceTempView("raw_data")
+
+//        .filter(s"is_hidden = 0 and conversion_goal = 3")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  *,
+         |  row_number() over(partition by unitid order by timestamp) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val data = spark.sql(sqlRequest2)
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425b")
 
     data
   }
@@ -230,6 +334,7 @@ object OcpcCharge {
       .filter(s"ocpc_last_open_date = '$date1'")
 
     data.show(10)
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")
 
     data
   }

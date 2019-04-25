@@ -1,13 +1,11 @@
 package com.cpc.spark.OcpcProtoType.data
 
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlog {
+object OcpcUnionlogTestNew {
   def main(args: Array[String]): Unit = {
-    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -17,15 +15,15 @@ object OcpcUnionlog {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -71,6 +69,7 @@ object OcpcUnionlog {
          |    user_city,
          |    city_level,
          |    adclass,
+         |    ocpc_log,
          |    ocpc_log_dict,
          |    exp_ctr,
          |    exp_cvr,
@@ -207,7 +206,7 @@ object OcpcUnionlog {
          |    is_new_ad,
          |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
-         |where $selectWhere
+         |where `day` = '2019-04-23' and `hour` = '21' and `minute` = '14'
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
          |and length(searchid) > 0

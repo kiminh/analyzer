@@ -12,6 +12,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import ocpc.ocpc.{OcpcList, SingleRecord}
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable.ListBuffer
 
@@ -30,6 +31,7 @@ object OcpcSampleToPb {
     将文件从dl_cpc.ocpc_pb_result_hourly_v2表中抽出，存入pb文件，需要过滤条件：
     kvalue>0
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // bash: 2019-01-02 12 qtt_demo 1
@@ -139,7 +141,7 @@ object OcpcSampleToPb {
          |AND
          |  jfb > 0
          |AND
-         |  conversion_goal = 2
+         |  conversion_goal in (2, 3)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

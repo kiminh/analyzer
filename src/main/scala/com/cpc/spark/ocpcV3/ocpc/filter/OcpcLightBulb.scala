@@ -248,7 +248,7 @@ object OcpcLightBulb{
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -3)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
