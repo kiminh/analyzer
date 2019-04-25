@@ -73,7 +73,8 @@ object AutoCoinStrategy {
             lowAucUseridFilter,userWhiteList,unKnownIdeaidList,
             p1,p2,
             date,hour)
-
+        println("mlFeatureNth 's count" + mlFeatureNth.count())
+        println("apiUnionNth 's count" + apiUnionNth.count())
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)   //两个数据组合
           .map(x => {
               val label = x._2._1.orNull
