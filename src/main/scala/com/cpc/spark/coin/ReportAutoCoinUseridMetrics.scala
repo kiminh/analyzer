@@ -64,9 +64,10 @@ object ReportAutoCoinUseridMetrics {
                |) a
                |left join
                |(
-               |    select userid, auc
+               |    select userid, max(auc) as auc
                |    from dl_cpc.cpc_coin_userid_auc
                |    where `date` = '$date'
+               |    group by userid
                |) b
                |on a.userid = b.userid
              """.stripMargin
