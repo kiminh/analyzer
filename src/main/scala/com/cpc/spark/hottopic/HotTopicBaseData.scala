@@ -27,18 +27,27 @@ object HotTopicBaseData {
 
         val result = spark.sql(sql)
         val tableName = "dl_cpc.cpc_hot_topic_basedata_union_events"
-        //result.repartition(1).write.mode("overwrite").insertInto(tableName)
+        result.repartition(1).write.mode("overwrite").insertInto(tableName)
         println(s"insert into $tableName at date = $day, hour = $hour success !")
-
-        result.toDF
-          .repartition(1)
-          .write
-          .partitionBy("day", "hour", "minute")
-          .mode(SaveMode.Append) // 修改为Append
-          .parquet(
-            s"""
-               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/
-            """.stripMargin.trim)
-        println(s"insert into $tableName at date = $day, hour = $hour success !")
+//
+//        result.toDF
+//          .repartition(1)
+//          .write
+//          .partitionBy("day", "hour", "minute")
+//          .mode(SaveMode.Append) // 修改为Append
+//          .parquet(
+//            s"""
+//               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/
+//            """.stripMargin.trim)
+//        println(s"insert into $tableName at date = $day, hour = $hour success !")
+//
+//        val sqlStmt =
+//            """
+//              |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%s")  LOCATION
+//              |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s/minute%s'
+//              |
+//                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+//        println(sqlStmt)
+//        spark.sql(sqlStmt)
     }
 }
