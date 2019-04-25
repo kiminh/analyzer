@@ -39,17 +39,17 @@ object recall_prepare_new_feature {
       uidApp.select("uid","used_pkgs","remove_pkgs","add_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
       spark.sql(
         s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
            |select uid, null, null, null, if(used_pkgs[0]=null,null, used_pkgs),
            |if(remove_pkgs[0]=null, null, remove_pkgs),
-           |if(add_pkgs[0]=null, null, add_pkgs),
-           |"$featureName" from temptable
+           |if(add_pkgs[0]=null, null, add_pkgs)
+           | from temptable
        """.stripMargin)
     } else if (featureName == "frequentPoi_1"){
       spark.sql(
         s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
-           |select uid,poi_type_featur1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select uid,poi_type_featur1, null, null, null, null, null from dl_cpc.user_frequent_poi where dt='$date'
          """.stripMargin
       ).repartition(200)
     }
