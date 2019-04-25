@@ -71,6 +71,7 @@ object bs_log_report_v2 {
           val groups_hit_content_category_ids = up.getGroupStats.getGroupsHitContentCategoryIdsList.asScala.toList.mkString(",")
           val groups_hit_new_user_ids = up.getGroupStats.getGroupsHitNewUserIdsList.asScala.toList.mkString(",")
           val groups_hit_acc_user_type_ids = up.getGroupStats.getGroupsHitAccUserTypeIdsList.asScala.toList.mkString(",")
+          val media_appsid = up.getSearchCond.getAppsid
 
           if (exptags.contains("bsfilterdetail")) {
             BsLog1(
@@ -116,7 +117,8 @@ object bs_log_report_v2 {
               groups_hit_white_install_pkg_ids = groups_hit_white_install_pkg_ids,
               groups_hit_content_category_ids = groups_hit_content_category_ids,
               groups_hit_new_user_ids = groups_hit_new_user_ids,
-              groups_hit_acc_user_type_ids = groups_hit_acc_user_type_ids
+              groups_hit_acc_user_type_ids = groups_hit_acc_user_type_ids,
+              media_appsid =media_appsid
             )
           }
           else null
@@ -131,7 +133,7 @@ object bs_log_report_v2 {
       "group_map_match_count_num","groups_hit_media_ids","groups_hit_age_ids","groups_hit_gender_ids", "groups_hit_net_work_ids",
       "groups_hit_ad_slot_type_ids","groups_hit_media_class_ids", "groups_hit_regional_ids","groups_hit_user_level_ids",
       "groups_hit_phone_level_ids","groups_hit_os_type_ids", "groups_hit_black_install_pkg_ids","groups_hit_white_install_pkg_ids",
-      "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids")
+      "groups_hit_content_category_ids", "groups_hit_new_user_ids","groups_hit_acc_user_type_ids","media_appsid")
       .withColumn("`date`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
     pbData.repartition(2).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v2")
@@ -179,6 +181,7 @@ object bs_log_report_v2 {
                      var groups_hit_white_install_pkg_ids: String="",
                      var groups_hit_content_category_ids: String="",
                      var groups_hit_new_user_ids: String="",
-                     var groups_hit_acc_user_type_ids: String=""
+                     var groups_hit_acc_user_type_ids: String="",
+                     var media_appsid: String=""
                    )
 }
