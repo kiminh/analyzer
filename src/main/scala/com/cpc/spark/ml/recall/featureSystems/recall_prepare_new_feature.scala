@@ -49,7 +49,7 @@ object recall_prepare_new_feature {
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
-           |select uid,poi_type_featur1, null, null, null, null, null from dl_cpc.user_frequent_poi where dt='$date'
+           |select uid,poi_type_feature1, poi_type_feature2, poi_type_feature3, null, null, null from dl_cpc.user_frequent_poi where dt='$date'
          """.stripMargin
       ).repartition(200)
     }
