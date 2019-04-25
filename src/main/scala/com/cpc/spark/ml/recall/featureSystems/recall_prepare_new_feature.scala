@@ -40,10 +40,10 @@ object recall_prepare_new_feature {
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
-           |select uid, null, null, null, if(used_pkgs[0]=null,null, used_pkgs),
-           |if(remove_pkgs[0]=null, null, remove_pkgs),
-           |if(add_pkgs[0]=null, null, add_pkgs)
-           | from temptable
+           |select uid, null, null, null, if(used_pkgs[0] is null,null, used_pkgs),
+           |if(remove_pkgs[0] is null, null, remove_pkgs),
+           |if(add_pkgs[0] is null, null, add_pkgs)
+           | from temptable where uid is not null
        """.stripMargin)
     } else if (featureName == "frequentPoi_1"){
       spark.sql(
