@@ -258,9 +258,9 @@ object AutoCoinStrategy {
           .toList
         val l0 = List("0")
 
-        val lowAucUseridFilter = lowAucUserid:::l0  //增加一个默认值，防止空list
+//        val lowAucUseridFilter = lowAucUserid:::l0  //增加一个默认值，防止空list
 
-
+        val lowAucUseridFilter = l0
         lowAucUseridFilter.mkString(",")
     }
 
