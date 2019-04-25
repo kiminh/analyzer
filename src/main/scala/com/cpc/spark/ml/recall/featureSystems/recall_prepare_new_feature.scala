@@ -34,22 +34,22 @@ object recall_prepare_new_feature {
 
   }
   def getFeature(spark: SparkSession, date: String, featureName: String): Unit = {
-    if(featureName == "app"){
+    if(featureName == "active_remove_add_app"){
       val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
-      uidApp.select("uid","used_pkgs","remove_pkgs","add_pkgs").distinct().repartition(200).createOrReplaceTempView("temptable")
+      uidApp.select("uid","used_pkgs","remove_pkgs","addedApp").distinct().repartition(200).createOrReplaceTempView("temptable")
       spark.sql(
         s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
-           |select uid, null, null, null, if(used_pkgs[0] is null,null, used_pkgs),
-           |if(remove_pkgs[0] is null, null, remove_pkgs),
-           |if(add_pkgs[0] is null, null, add_pkgs)
-           | from temptable where uid is not null
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
+           |select uid, null, null, null, if(used_pkgs[0]=null,null, used_pkgs),
+           |if(remove_pkgs[0]=null, null, remove_pkgs),
+           |if(addedApp[0]=null, null, addedApp),
+           |"$featureName" from temptable where used_pkgs[0] is not null
        """.stripMargin)
     } else if (featureName == "frequentPoi_1"){
       spark.sql(
         s"""
-           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
-           |select uid,poi_type_featur1, null, null, null, null, null from dl_cpc.user_frequent_poi where dt='$date'
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date')
+           |select uid,poi_type_featur1, null, null, null, null, null, "$featureName" from dl_cpc.user_frequent_poi where dt='$date'
          """.stripMargin
       ).repartition(200)
     }
