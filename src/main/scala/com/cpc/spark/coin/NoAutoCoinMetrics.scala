@@ -31,7 +31,7 @@ object NoAutoCoinMetrics {
                |    and media_appsid in ("80000001", "80000002")
                |    and isshow = 1
                |    and ideaid > 0
-               |    and adsrc = 1
+               |    and adsrc in (1, 28)
                |    and (charge_type is null or charge_type=1)
                |) a
                |left outer join
@@ -103,15 +103,15 @@ object NoAutoCoinMetrics {
                |(
                |    select userid,
                |        sum(isshow) as show_num, --展示数
-               |        sum(if (isshow=1 and is_auto_coin = 0, 1, 0)) as coin_show_num, --金币展示数
+               |        sum(if (isshow=1 and exp_style = 510127 and is_auto_coin = 0, 1, 0)) as coin_show_num, --金币展示数
                |        sum(isclick) as click_num, --点击数
-               |        sum(if (isclick=1 and is_auto_coin = 0, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(if (isclick=1 and exp_style = 510127 and is_auto_coin = 0, 1, 0)) as coin_click_num, --金币点击数
                |        sum(if (isclick=1 and exp_style != 510127, 1, 0)) as nocoin_click_num, --无金币点击数
                |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |        sum(case when label2 = 1 and is_auto_coin = 0 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case when label2 = 1 and exp_style = 510127 and  is_auto_coin = 0 then 1 else 0 end) as coin_convert_num, --金币样式转化数
                |        sum(case when label2 = 1 and exp_style != 510127 then 1 else 0 end ) as nocoin_convert_num, --无金币样式转化数
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |        sum(case WHEN isclick = 1 and is_auto_coin = 0 then price else 0 end) as coin_click_total_price, --金币点击总价
+               |        sum(case WHEN isclick = 1 and exp_style = 510127 and is_auto_coin = 0 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
                |    from union
                |    group by userid
