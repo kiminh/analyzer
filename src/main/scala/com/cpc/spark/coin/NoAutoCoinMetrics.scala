@@ -90,7 +90,7 @@ object NoAutoCoinMetrics {
                |    if (coin_show_num>0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
                |    if (convert_num is null,0,convert_num) as convert_num,
                |    if (coin_convert_num is null,0,coin_convert_num) as coin_convert_num,
-               |    if (convert_num>0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
+               |    if (convert_num>0,round(coin_convert_num/(coin_convert_num+convert_num),6),0) as coin_convert_rate,
                |    if (nocoin_click_num>0,round(nocoin_convert_num/nocoin_click_num, 6),0) as cvr,
                |    if (coin_click_num>0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
                |    if (click_total_price is null,0,click_total_price) as click_total_price,
