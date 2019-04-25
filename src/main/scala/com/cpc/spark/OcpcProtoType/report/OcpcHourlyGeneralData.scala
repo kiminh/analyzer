@@ -99,8 +99,8 @@ object OcpcHourlyGeneralData {
     resultDF.show(10)
 
     resultDF
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
     saveDataToMysql(resultDF, date, hour, spark)
 
