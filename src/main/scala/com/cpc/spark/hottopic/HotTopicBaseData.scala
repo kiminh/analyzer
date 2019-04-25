@@ -1,7 +1,7 @@
 package com.cpc.spark.hottopic
 
 import org.apache.spark.sql.SparkSession
-
+import org.apache.spark.sql.SaveMode
 /**
   * @author Jinbao
   * @date 2019/3/1 19:50
@@ -34,7 +34,7 @@ object HotTopicBaseData {
           .repartition(1)
           .write
           .partitionBy("day", "hour", "minute")
-          .mode("overwrite") // 修改为Append
+          .mode(SaveMode.Append) // 修改为Append
           .parquet(
             s"""
                |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/
