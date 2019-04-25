@@ -33,7 +33,6 @@ object NoAutoCoinMetrics {
                |    and ideaid > 0
                |    and userid > 0
                |    and adsrc in (0, 1, 28)
-               |    and (charge_type is null or charge_type=1)
                |) a
                |left outer join
                |(
