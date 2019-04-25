@@ -27,7 +27,7 @@ object recall_prepare_training_samples {
     val cal1 = Calendar.getInstance()
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, oneday).repartition(1000)
+    getSample(spark, model_version, featureName, "test", oneday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -36,7 +36,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, twoday).repartition(1000)
+    getSample(spark, model_version, featureName,"train", twoday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -45,7 +45,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, threeday).repartition(1000)
+    getSample(spark, model_version, featureName, "train", threeday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -54,7 +54,7 @@ object recall_prepare_training_samples {
 
     cal1.add(Calendar.DATE, -1)
     val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, fourday).repartition(1000)
+    getSample(spark, model_version, featureName, "train", fourday).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -62,10 +62,17 @@ object recall_prepare_training_samples {
       .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$fourday")
 
   }
-  def getSample(spark: SparkSession, model_version: String, featureName: String, date: String): DataFrame = {
+  def getSample(spark: SparkSession, model_version: String, featureName: String, Type: String, date: String): DataFrame = {
     import spark.implicits._
-    val original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/$model_version/$date/part*").
-      select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense",expr("dense[25]").alias("uidhash"))
+    var original_sample: DataFrame = null
+    if(Type == "train"){
+      original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/$model_version/$date/part*").
+        select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense",expr("dense[25]").alias("uidhash"))
+    } else {
+      original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4/$date/{02,05,08,11,14,17,20,23}/part*").
+        select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense",expr("dense[25]").alias("uidhash"))
+    }
+
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
 
