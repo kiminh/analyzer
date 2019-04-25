@@ -34,7 +34,7 @@ object recall_prepare_new_feature {
 
   }
   def getFeature(spark: SparkSession, date: String, featureName: String): Unit = {
-    if(featureName == "active_remove_add_app"){
+    if(featureName == "app"){
       val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/$date")
       uidApp.select("uid","used_pkgs","remove_pkgs","addedApp").distinct().repartition(200).createOrReplaceTempView("temptable")
       spark.sql(
