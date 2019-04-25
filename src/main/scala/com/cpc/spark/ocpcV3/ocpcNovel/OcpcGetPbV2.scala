@@ -86,11 +86,11 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
-//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    savePbPack(resultDF)
+    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -424,7 +424,7 @@ object OcpcGetPbV2 {
 
     // 返回结果
     resultDF.show(10)
-    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
     resultDF
 
   }
