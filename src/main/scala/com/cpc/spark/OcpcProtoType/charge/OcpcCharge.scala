@@ -28,7 +28,7 @@ object OcpcCharge {
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
     val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
-    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
+//    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
 
     val prevData = getDataFromMysql(spark)
     val data = costData
@@ -289,7 +289,7 @@ object OcpcCharge {
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
-    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425b")
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425b")
 
     data
   }
@@ -333,7 +333,7 @@ object OcpcCharge {
       .filter(s"ocpc_last_open_date = '$date1'")
 
     data.show(10)
-    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")
 
     data
   }
