@@ -122,8 +122,8 @@ object OcpcHourlyGeneralData {
     val reportTableUnit = "report2.report_ocpc_general_data"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    testOperateMySQL.update(delSQLunit) //先删除历史数据
-    testOperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
   }
 
   def getPrevData(date: String, hour: String, spark: SparkSession) = {
