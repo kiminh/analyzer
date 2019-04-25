@@ -35,6 +35,7 @@ object OcpcCharge {
       .join(prevData, Seq("unitid"), "left_outer")
       .filter(s"flag is null")
       .filter(s"conversion > 30")
+      .filter(s"pay > 0")
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
     data.show(10)
