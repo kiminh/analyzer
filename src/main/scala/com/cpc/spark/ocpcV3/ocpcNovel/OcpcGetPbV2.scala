@@ -412,7 +412,7 @@ object OcpcGetPbV2 {
 
     val result=clickdata.join(labelData1,Seq("searchid"),"left")
         .join(labelData2,Seq("searchid"),"left")
-        .groupBy("unitid")
+        .groupBy("unitid","new_adclass")
         .agg(avg(col("price")).alias("avgbid"),
           (sum(col("iscvr1"))/sum(col("isclick"))).alias("postcvr2"),
           (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
