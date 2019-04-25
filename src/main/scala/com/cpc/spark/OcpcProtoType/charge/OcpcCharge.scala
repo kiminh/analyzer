@@ -256,7 +256,6 @@ object OcpcCharge {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isclick,
          |  price,
-         |  row_number() over(partition by unitid order by timestamp) as seq,
          |  date,
          |  hour
          |FROM
@@ -273,10 +272,23 @@ object OcpcCharge {
          |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
-    val data = spark
-        .sql(sqlRequest)
-        .filter(s"is_hidden = 0 and conversion_goal = 3")
+    val rawData = spark
+      .sql(sqlRequest)
+      .filter(s"is_hidden = 0 and conversion_goal = 3")
 
+    rawData.createOrReplaceTempView("raw_data")
+
+//        .filter(s"is_hidden = 0 and conversion_goal = 3")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  *,
+         |  row_number() over(partition by unitid order by timestamp) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val data = spark.sql(sqlRequest2)
     data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425b")
 
     data
