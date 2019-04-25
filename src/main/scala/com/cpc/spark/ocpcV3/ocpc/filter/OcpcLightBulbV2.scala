@@ -175,7 +175,9 @@ object OcpcLightBulbV2{
       .na.fill(0, Seq("conversion_goal"))
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
-    val resultDF = result.filter("cpa >= 0").select("unitid", "conversion_goal", "cpa")
+    val resultDF = result
+      .filter("cpa >= 0")
+      .selectExpr("unitid", "conversion_goal", "cast(round(cpa, 2) as double) cpa")
     resultDF
   }
 
