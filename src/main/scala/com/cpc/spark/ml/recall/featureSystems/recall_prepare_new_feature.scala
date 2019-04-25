@@ -45,7 +45,7 @@ object recall_prepare_new_feature {
            |if(add_pkgs[0] is null, null, add_pkgs)
            | from temptable where uid is not null
        """.stripMargin)
-    } else if (featureName == "frequentPoi_1"){
+    } else if (featureName == "frequent_poi_1"){
       spark.sql(
         s"""
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
