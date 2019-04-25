@@ -81,15 +81,15 @@ object recall_prepare_training_samples {
 
     val feature_onehot1 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot1 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot1 is not null and feature_name='$featureName'
        """.stripMargin).count()
     val feature_onehot2 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot2 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot2 is not null and feature_name='$featureName'
        """.stripMargin).count()
     val feature_onehot3 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot3 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_onehot3 is not null and feature_name='$featureName'
        """.stripMargin).count()
     var feature_onehot = ""
     if(feature_onehot1>0){
@@ -103,15 +103,15 @@ object recall_prepare_training_samples {
     }
     val feature_multihot1 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot1 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot1 is not null and feature_name='$featureName'
        """.stripMargin).count()
     val feature_multihot2 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot2 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot2 is not null and feature_name='$featureName'
        """.stripMargin).count()
     val feature_multihot3 = spark.sql(
       s"""
-         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot3 is not null and featureName='$featureName'
+         |select uid from dl_cpc.recall_test_feature where dt='$date' and feature_multihot3 is not null and feature_name='$featureName'
        """.stripMargin).count()
     var feature_multihot = ""
     if(feature_multihot1>0){
@@ -135,7 +135,7 @@ object recall_prepare_training_samples {
     spark.sql(
       s"""
          |select uid, feature_onehot1, feature_onehot2, feature_onehot3, feature_multihot1, feature_multihot2,
-         |feature_multihot3 from dl_cpc.recall_test_feature where dt='$date' and featureName='$featureName'
+         |feature_multihot3 from dl_cpc.recall_test_feature where dt='$date' and feature_name='$featureName'
        """.stripMargin).select($"uid", hash("f25")($"uid").alias("uidhash"),$"feature_onehot1", $"feature_onehot2",$"feature_onehot3",$"feature_multihot1",$"feature_multihot2",$"feature_multihot3").
       join(original_sample, Seq("uidhash"), "right_outer").
       select($"uid", $"uidhash",
