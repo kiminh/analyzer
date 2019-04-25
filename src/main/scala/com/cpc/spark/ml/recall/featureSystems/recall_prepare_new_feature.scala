@@ -31,6 +31,10 @@ object recall_prepare_new_feature {
     val fourdays = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     getFeature(spark, fourdays, featureName)
 
+    cal1.add(Calendar.DATE, -1)
+    val fivedays = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    getFeature(spark, fivedays, featureName)
+
 
   }
   def getFeature(spark: SparkSession, date: String, featureName: String): Unit = {
