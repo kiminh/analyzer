@@ -1,8 +1,10 @@
 package com.cpc.spark.ml.recall
 
+import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.small.tool.InsertReportAdslotVideoDownload.{clearReportData, mariaReport2dbProp, mariaReport2dbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.storage.StorageLevel
@@ -216,6 +218,7 @@ val sqlRequest2 =
     mariaReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
     mariaReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
+    clearReportData(date)
     spark.sql(
       s"""
         |select
@@ -232,7 +235,7 @@ val sqlRequest2 =
         |sum(costwithouttag) costwithouttag, sum(cvrwithtag) cvrwithtag,
         |sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v2
         |where date='$date' group by date,userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
-        |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tb.tag is not null or tc.profile_tag is not null
+        |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tc.profile_tag is not null or tb.tag is not null or cast(coalesce(ta.tag,0) as int)<1000
       """.stripMargin).
       write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
 
@@ -270,6 +273,23 @@ val sqlRequest2 =
        """.stripMargin
       */
 
+  }
+
+  def clearReportData(date: String): Unit = {
+    try {
+      val conn = DriverManager.getConnection(
+        mariaReport2dbUrl,
+        mariaReport2dbProp.getProperty("user"),
+        mariaReport2dbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from report2.cpc_profiletag_report where `date` = "%s"
+        """.stripMargin.format(date)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
   }
 
 }
