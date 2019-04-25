@@ -1,6 +1,10 @@
 package com.cpc.spark.coin
 
-import org.apache.spark.sql.SparkSession
+import java.util.Properties
+
+import com.cpc.spark.novel.OperateMySQL
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * @author Jinbao
@@ -69,10 +73,9 @@ object NoAutoCoinMetrics {
 
         union.createOrReplaceTempView("union")
 
-        val ideaidSql =
+        val useridSql =
             s"""
                |select userid,
-               |    ideaid,
                |    if (show_num is null,0,show_num) as show_num,
                |    if (coin_show_num is null,0,coin_show_num) as coin_show_num,
                |    if (show_num>0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
@@ -94,28 +97,46 @@ object NoAutoCoinMetrics {
                |    if (uid_num>0,round(click_total_price*10/uid_num,6),0) as arpu,
                |    if (uid_num>0,round(show_num/uid_num,6),0) as aspu,
                |    if (uid_num>0,round(convert_num*100/uid_num,6),0) as acpu,
+               |    0 as auc,
                |    '$date' as `date`
                |from
                |(
                |    select userid,
-               |        ideaid,
                |        sum(isshow) as show_num, --展示数
-               |        sum(if (isshow=1 and is_auto_coin = 1, 1, 0)) as coin_show_num, --金币展示数
+               |        sum(if (isshow=1 and is_auto_coin = 0, 1, 0)) as coin_show_num, --金币展示数
                |        sum(isclick) as click_num, --点击数
-               |        sum(if (isclick=1 and is_auto_coin = 1, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(if (isclick=1 and is_auto_coin = 0, 1, 0)) as coin_click_num, --金币点击数
                |        sum(if (isclick=1 and exp_style != 510127, 1, 0)) as nocoin_click_num, --无金币点击数
                |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |        sum(case when label2 = 1 and is_auto_coin = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case when label2 = 1 and is_auto_coin = 0 then 1 else 0 end) as coin_convert_num, --金币样式转化数
                |        sum(case when label2 = 1 and exp_style != 510127 then 1 else 0 end ) as nocoin_convert_num, --无金币样式转化数
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |        sum(case WHEN isclick = 1 and is_auto_coin = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
+               |        sum(case WHEN isclick = 1 and is_auto_coin = 0 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
                |    from union
-               |    group by userid, ideaid
-               |)
+               |    group by userid
+               |) final
              """.stripMargin
 
-        val ideaidMetrics = spark.sql(ideaidSql).na.fill(0,Seq("ctr"))   //计算ideaid级别的指标
+        val useridMetrics = spark.sql(useridSql).na.fill(0,Seq("ctr"))   //计算ideaid级别的指标
+
+        useridMetrics.repartition(1)
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.cpc_report_coin_userid_metrics_no_auto")
+
+        val conf = ConfigFactory.load() //读取配置文件中mysql的数据
+        val mariadb_write_prop = new Properties()
+        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+        val useridMetricsDelSqlnoAuto = s"delete from report2.report_coin_userid_metrics_no_auto where `date` = '$date'"
+        OperateMySQL.del(useridMetricsDelSqlnoAuto)
+        useridMetrics.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics_no_auto", mariadb_write_prop)
+        println("insert into report2.report_coin_userid_metrics_no_auto success!")
 
     }
 }
