@@ -219,7 +219,7 @@ object recall_prepare_training_samples {
         select($"uid", $"uidhash", $"one_hot",
           $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").
         select($"uid", $"uidhash", $"one_hot".alias("dense_new"),
-          $"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense")
+          $"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense")
       newSample = new_feature.rdd.map{
         r =>
           val uid = r.getAs[String]("uid")
