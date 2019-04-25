@@ -32,7 +32,7 @@ object recall_prepare_training_samples {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$oneday")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$oneday")
 
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
@@ -41,7 +41,7 @@ object recall_prepare_training_samples {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$twoday")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$twoday")
 
     cal1.add(Calendar.DATE, -1)
     val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
@@ -50,7 +50,7 @@ object recall_prepare_training_samples {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$threeday")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$threeday")
 
     cal1.add(Calendar.DATE, -1)
     val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
@@ -59,7 +59,7 @@ object recall_prepare_training_samples {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$fourday")
+      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$fourday")
 
   }
   def getSample(spark: SparkSession, model_version: String, featureName: String, Type: String, date: String): DataFrame = {
