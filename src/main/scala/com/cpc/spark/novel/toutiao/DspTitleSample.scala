@@ -26,7 +26,7 @@ object DspTitleSample {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    data.write.format("csv").save("/home/cpc/dsp_title/midu_toutiao_sample.csv")
+    data.write.mode("overwrite").format("csv").save("/home/cpc/dsp_title/midu_toutiao_sample.csv")
 //    data.select("title","buttontext","description").save("/home/cpc/dsp_title/midu_toutiao_sample.csv","com.databricks.spark.csv")
 //    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample")
 
