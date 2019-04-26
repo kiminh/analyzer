@@ -15,16 +15,16 @@ object OcpcUnionlogTest {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_new")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_new")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog_new")
-
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_new")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog_new")
-    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_new")
+//
+//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+//    ocpcData
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_new")
+////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog_new")
+//    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_new")
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -202,7 +202,9 @@ object OcpcUnionlogTest {
          |    a.exp_ctr,
          |    a.exp_cvr,
          |    a.charge_type,
-         |    a.antispam
+         |    a.antispam,
+         |    a.ocpc_log_old,
+         |    b.ocpc_log_new
          |from raw_data as a
          |left join aug_data as b
          |ON
