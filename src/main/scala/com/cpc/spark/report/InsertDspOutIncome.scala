@@ -73,7 +73,7 @@ object InsertDspOutIncome {
     val sql2 =
       s"""
          |select
-         |  b.day ad date,
+         |  b.day as date,
          |  b.adslot_id as adslotid,
          |  a.adslotid as dsp_adslot_id,
          |  sum(
