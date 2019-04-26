@@ -29,7 +29,6 @@ object ReportCoinMetrics {
             s"""
                |select ideaid,
                |    isshow,
-               |    ext_int,
                |    isclick,
                |    if (b.searchid is null,0,1) as label2,
                |    price,
@@ -262,7 +261,7 @@ object ReportCoinMetrics {
                |  acpu,
                |  0.51 as auc,
                |  '$date' as `date`
-               |from $testTable2 a 
+               |from $testTable2 a
              """.stripMargin
 
         val result = spark.sql(resultSql)
