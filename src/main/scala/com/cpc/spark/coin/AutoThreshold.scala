@@ -54,7 +54,7 @@ object AutoThreshold {
                |  full outer join
                |  (
                |    select ideaid,if(coin_cvr<cvr, 0, 1) as flag
-               |    from dl_cpc.cpc_report_auto_coin_ideaid_metrics
+               |    from dl_cpc.cpc_report_coin_userid_metrics
                |    where `date` = date_sub('$date', 1)
                |    and coin_click_num > 10
                |  ) b
