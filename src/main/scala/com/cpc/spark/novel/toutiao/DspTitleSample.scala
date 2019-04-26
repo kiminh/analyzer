@@ -1,7 +1,7 @@
 package com.cpc.spark.novel.toutiao
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.SQLContext
+import java.io._
 
 object DspTitleSample {
   def main(args: Array[String]): Unit = {
@@ -26,10 +26,14 @@ object DspTitleSample {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    data.coalesce(1).write.mode("overwrite").format("com.databricks.spark.csv")
-      .option("header", "true").save("/home/cpc/dsp_title/midu_toutiao_sample.csv")
-//    data.select("title","buttontext","description").save("/home/cpc/dsp_title/midu_toutiao_sample.csv","com.databricks.spark.csv")
-//    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample")
+    val avgs = data.rdd
+      .map( t=>
+        t(0).toString()+"\001"+t(1).toString()+"\001"+t(2).toString())
+      .collect()
+
+    printToFile(new File("/home/cpc/dsp_title/midu_toutiao_sample.csv")) {
+      p => avgs.foreach(p.println) // avgs.foreach(p.println)
+    }
 
 //    //穿山甲dsp
 //    val sql2 =
