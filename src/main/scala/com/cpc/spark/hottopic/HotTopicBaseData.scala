@@ -42,24 +42,24 @@ object HotTopicBaseData {
             """.stripMargin.trim)
         println(s"insert into $tableName at date = $day, hour = $hour success !")
 
-        for (m<- 0 to 59) {
-            val sqlStmt =
-                """
-                  |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%02d")  LOCATION
-                  |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s/minute=%02d'
-                  |
-                """.stripMargin.format(day,hour,m)
-            println(sqlStmt)
-            spark.sql(sqlStmt)
-
-        }
-//        val sqlStmt =
-//            """
-//              |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%s")  LOCATION
-//              |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s/minute%s'
-//              |
-//                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-//        println(sqlStmt)
-//        spark.sql(sqlStmt)
+//        for (m<- 0 to 59) {
+//            val sqlStmt =
+//                """
+//                  |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%02d")  LOCATION
+//                  |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s/minute=%02d'
+//                  |
+//                """.stripMargin.format(day,hour,m)
+//            println(sqlStmt)
+//            spark.sql(sqlStmt)
+//
+//        }
+        val sqlStmt =
+            """
+              |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s")  LOCATION
+              |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s'
+              |
+                """.stripMargin.format(day, hour, day, hour)
+        println(sqlStmt)
+        spark.sql(sqlStmt)
     }
 }
