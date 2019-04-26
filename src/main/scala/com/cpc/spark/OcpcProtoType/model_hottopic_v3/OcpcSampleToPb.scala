@@ -128,7 +128,19 @@ object OcpcSampleToPb {
          |and conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data1 = spark.sql(sqlRequest)
+
+    val conf = ConfigFactory.load("ocpc")
+    val idList = conf.getString("medias.hottopic.hidden_test")
+    val data2 = spark
+        .read.format("json").json(idList)
+        .select("identifier").distinct()
+
+    val data = data1
+        .join(data2, Seq("identifier"), "inner")
+        .select("identifier", "conversion_goal", "cpagiven")
+
+    data.show(10)
 
     data
   }

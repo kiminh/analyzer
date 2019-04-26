@@ -42,7 +42,7 @@ object OcpcProcessUnionlog {
          |    isshow,
          |    ocpc_log,
          |    is_api_callback
-         |from dl_cpc.cpc_novel_union_events
+         |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
          |and isshow = 1

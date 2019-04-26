@@ -22,7 +22,7 @@ object MultiDimensionCalibOnMidu {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
-  val MIN_BIN_SIZE = 10000
+  val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
 
@@ -31,6 +31,8 @@ object MultiDimensionCalibOnMidu {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
+    val model = "novel-ctr-dnn-rawid-v7-cali"
+    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -48,12 +50,11 @@ object MultiDimensionCalibOnMidu {
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
-
     val timeRangeSql = Utils.getTimeRangeSql_2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id, ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -62,63 +63,66 @@ object MultiDimensionCalibOnMidu {
                  | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name = 'novel-ctr-dnn-rawid-v7-cali'
+                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    log.persist()
 
     val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .filter("count1>100000")
+      .select("ideaid","user_req_ad_num","adslot_id","group")
     val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .filter("count2>100000")
+      .select("ideaid","user_req_ad_num","group")
     val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
+      .filter("count3>10000")
+      .withColumn("group",col("ideaid"))
+      .select("ideaid","group")
 
-    val keygroup = group1.join(group2,Seq("ideaid","user_req_ad_num"),"left").join(group3,Seq("ideaid"),"left")
-        .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-        .withColumn("group",when(col("count1") < 100000,concat_ws("_",col("ideaid"),col("user_req_ad_num")))
-          .otherwise(col("group")))
-        .withColumn("group",when(col("count2") < 100000,col("ideaid"))
-          .otherwise(col("group")))
-        .select("user_req_ad_num","adslot_id","ideaid","group","count3").distinct()
-    keygroup.write.mode("overwrite").saveAsTable("test.wy01")
+    val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
+    val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
+    val data3 = log.join(group3,Seq("ideaid"),"inner")
 
-    val data = log.join(keygroup,Seq("user_req_ad_num","adslot_id","ideaid"),"left")
-      .select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","show_timestamp","ctr_model_name","group","count3")
-      .filter("count3>50000")
-
-    data.write.mode("overwrite").saveAsTable("test.wy00")
-
-    unionLogToConfig2(data.rdd, session, softMode)
+    //create cali pb
+    val calimap1 = GroupToConfig(data1, session,calimodelname)
+    val calimap2 = GroupToConfig(data2, session,calimodelname)
+    val calimap3 = GroupToConfig(data3, session,calimodelname)
+    val calimap = calimap1 ++ calimap2 ++ calimap3
+    val califile = PostCalibrations(calimap.toMap)
+    val localPath = saveProtoToLocal(model, califile)
+    saveFlatTextFileForDebug(model, califile)
+    if (softMode == 0) {
+      val conf = ConfigFactory.load()
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
+    }
   }
 
-
-  def unionLogToConfig2(log: RDD[Row], session: SparkSession, softMode: Int, saveToLocal: Boolean = true,
-                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
+  def GroupToConfig(data:DataFrame, session: SparkSession, calimodelname: String, minBinSize: Int = MIN_BIN_SIZE,
+                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     import session.implicits._
     val sc = session.sparkContext
-    var auc = Seq[(Double,Double)]()
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = log.map( x => {
+    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+      .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
         isClick = x.getInt(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(6)
-      val group = x.getString(7)
-      val key = model+'_'+group
+      val model = x.getString(5)
+      val group = x.getString(6)
+      val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
         x =>
           (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-//        x => {
-//          val l = x.toList
-//          val l1 = l.take(l.length - l.length/3)
-//          val l2 = l.takeRight(l.length/3)
-//          (binIterable(l1, minBinSize, maxBinCount), Utils.sampleFixed(l1.toIterable, 100000),Utils.sampleFixed(l2.toIterable, 100000))
-//        }
           )
       .toLocalIterator
       .map {
@@ -128,15 +132,10 @@ object MultiDimensionCalibOnMidu {
           val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
-//          计算testauc
-//          val test = x._2._3
-//          val ScoreAndLabel = sc.parallelize(test)
-//          val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
-//          val aucROC = metrics.areaUnderROC
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (bins._1.size <= minBinCount) {
-            println("bin number too small, don't output the calibration")
+          if (bins._1.size < minBinCount) {
+            println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
@@ -146,10 +145,6 @@ object MultiDimensionCalibOnMidu {
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-//            println(s"test (ectr/ctr) (before, after): ${computeCalibration(test, irModel)}")
-//            val caliauc = getauccali(test, sc, irModel)
-//            println(s"test auc(before, after): $aucROC,$caliauc")
-//            auc = auc :+ (aucROC,caliauc)
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
@@ -158,19 +153,7 @@ object MultiDimensionCalibOnMidu {
             config
           }
       }.toList
-    val califile = PostCalibrations(calimap.toMap)
-//    auc.toDF.write.mode("overwrite").saveAsTable("test.caliauc")
-    if (saveToLocal) {
-      val model = "novel-ctr-dnn-rawid-v7-cali"
-      val localPath = saveProtoToLocal(model, califile)
-      saveFlatTextFileForDebug(model, califile)
-      if (softMode == 0) {
-        val conf = ConfigFactory.load()
-        println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
-        println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
-      }
-    }
-    return result
+    return calimap
   }
 
   // input: (<ectr, click>)
@@ -226,7 +209,7 @@ object MultiDimensionCalibOnMidu {
     }
     var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return Math.max(0.0, irModel.predictions(0) * (prob - irModel.boundaries(0)))
+      return Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
     }
     if (index == irModel.boundaries.size) {
       index = index - 1
@@ -260,7 +243,7 @@ object MultiDimensionCalibOnMidu {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d

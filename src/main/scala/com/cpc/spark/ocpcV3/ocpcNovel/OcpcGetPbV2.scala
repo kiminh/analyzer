@@ -2,7 +2,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
@@ -74,14 +74,18 @@ object OcpcGetPbV2 {
 
     val PostCvrDF = getPostCvrAndAvgBid(date,hour,spark)
 
+    val targetmiduDF = targetmidu(spark)
+
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
       .join(FlagDF,Seq("unitid"),"left")
       .join(PostCvrDF,Seq("unitid"),"left")
       .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
+      .join(targetmiduDF,Seq("unitid"),"left")
+      .filter("target is null")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
-//
+
 //    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
@@ -411,7 +415,6 @@ object OcpcGetPbV2 {
 
   }
 
-
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUnit]
     val filename = s"OcpcNovel.pb"
@@ -473,5 +476,22 @@ object OcpcGetPbV2 {
 
     println("complete save data into protobuffer")
 
+  }
+
+  def targetmidu(spark: SparkSession) = {
+    //    连接adv_test
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "adv_live_read")
+    jdbcProp.put("password", "seJzIPUc7xU")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+
+    //从adv后台mysql获取人群包的url
+    val table=s"(select id as unitid FROM adv.unit WHERE target_medias ='80001098,80001292,80001539,80002480,80001011' and status=0) as tmp"
+      val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
+          .withColumn("target",lit(1))
+          .selectExpr("cast(unitid as int)unitid","target")
+
+    resultDF
   }
 }

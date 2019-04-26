@@ -40,7 +40,6 @@ object bscvr_exp_report {
          price FROM dl_cpc.slim_union_log
          WHERE dt='$tardate'
          and media_appsid  in ('80000001', '80000002') and isshow > 0
-         and antispam = 0
          and adsrc = 1
          AND userid > 0
          and uid not like '%000000%'
@@ -77,7 +76,6 @@ object bscvr_exp_report {
 |         adslot_type, cast(unitid as bigint) as unitid,
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate' and media_appsid  in ('80000001', '80000002') and isshow > 0
-|         and antispam = 0
 |         and adsrc = 1
 |         AND userid > 0
 |         and uid not like '%000000%'
@@ -116,7 +114,6 @@ object bscvr_exp_report {
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate'
 |         and media_appsid  in ('80000001', '80000002') and isshow > 0
-|         and antispam = 0
 |         and adsrc = 1
 |         AND userid > 0
 |         and uid not like '%000000%'
@@ -130,12 +127,17 @@ object bscvr_exp_report {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_bsExp_report partition (date='$tardate')
          |select * from unitid_total
          |union
          |select * from unitid_detail
          |union
          |select * from unitid_all
+      """.stripMargin).repartition(1).createOrReplaceTempView("bsExp_report")
+
+    spark.sql(
+      s"""
+         |insert overwrite table dl_cpc.cpc_recall_bsExp_report partition (date='$tardate')
+         |select * from bsExp_report
       """.stripMargin)
   }
 }

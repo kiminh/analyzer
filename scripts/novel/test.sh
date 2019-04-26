@@ -19,11 +19,12 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 10g --driver-memory 10g \
-    --executor-cores 10 --num-executors 20  \
-    --conf 'spark.yarn.executor.memoryOverhead=4g'\
-    --conf 'spark.dynamicAllocation.maxExecutors=50'\
+    --executor-memory 12g --driver-memory 4g \
+    --executor-cores 4 --num-executors 50  \
+    --conf 'spark.yarn.executor.memoryOverhead=5g'\
+    --conf 'spark.dynamicAllocation.maxExecutors=100'\
+    --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ocpcV3.ocpcNovel.logs.OcpcLaunchReport \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day
+    --class com.cpc.spark.ml.recallReport.bs_log_report_v2 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-04-22 18

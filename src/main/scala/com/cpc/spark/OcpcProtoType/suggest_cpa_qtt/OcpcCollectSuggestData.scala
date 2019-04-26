@@ -6,6 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
@@ -15,6 +16,7 @@ object OcpcCollectSuggestData {
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2中抽取需要的字段
      */
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession
@@ -22,24 +24,26 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-//    unitid,
-//    |  cpa,
-//    |  kvalue,
-//    |  cost,
-//    |  cast(0.5 * acb as int) as last_bid,
-//    |  row_number() over(partition by unitid order by cost desc) as seq
-//      .withColumn("conversion_goal", lit(conversionGoal))
-//      .withColumn("max_budget", lit(maxBudget))
-//      .withColumn("industry", lit(industry))
-
     // 安装类feedapp广告单元
-//    val adslot_type = getAdSlotType(date, hour, spark)
     val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
-    // 二类电商
-    val elds1 = getSuggestData("qtt_hidden", "elds", 3, 300000, date, hour, spark)
+    // 二类电商：30~60
+    val elds1 = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 60, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
+//    // 二类电商：40~50
+//    val elds2raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 40, 50, date, hour, spark)
+//    val elds2 = elds2raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//
+//    // 二类电商：30~40
+//    val elds3raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 40, date, hour, spark)
+//    val elds3 = elds3raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+//
+//    val elds = elds1
+//      .union(elds2)
+//      .union(elds3)
+//    elds.write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once20190423a")
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
@@ -78,6 +82,71 @@ object OcpcCollectSuggestData {
       .withColumn("verion", lit("qtt_demo"))
       .repartition(5)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+  }
+
+  def getSuggestDataV2(version: String, industry: String, conversionGoal: Int, maxBudget: Int, cvThreshold1: Int, cvThreshold2: Int, date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  cpa,
+         |  kvalue,
+         |  cost,
+         |  cast(0.5 * acb as int) as last_bid,
+         |  cvrcnt,
+         |  cal_bid,
+         |  acb,
+         |  row_number() over(partition by unitid order by cost desc) as seq
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version = '$version'
+         |AND
+         |  industry = '$industry'
+         |AND
+         |  conversion_goal = $conversionGoal
+         |AND
+         |  is_recommend = 0
+         |AND
+         |  auc > 0.65
+         |AND
+         |  cvrcnt is not null
+         |AND
+         |  cal_bid is not null
+         |AND
+         |  acb is not null
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"cvrcnt <= $cvThreshold2 and cvrcnt > $cvThreshold1")
+      .filter(s"cal_bid * 1.0 / acb >= 0.7")
+      .filter(s"cal_bid * 1.0 / acb <= 1.3")
+    data.show(10)
+
+//    unitid,
+//    cpa,
+//    kvalue,
+//    cost,
+//    cast(0.5 * acb as int) as last_bid,
+//    row_number() over(partition by unitid order by cost desc) as seq
+//    withColumn("conversion_goal", lit(conversionGoal))
+//    withColumn("max_budget", lit(maxBudget))
+//    withColumn("industry", lit(industry))
+
+    val resultDF = data
+      .select("unitid", "cpa", "kvalue", "cost", "last_bid", "seq")
+      .filter(s"seq = 1")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("max_budget", lit(maxBudget))
+      .withColumn("industry", lit(industry))
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
@@ -306,8 +375,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "last_bid")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent", "last_bid")
-      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.2)))
-      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.05)))
+      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.1)))
+      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.1)))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
