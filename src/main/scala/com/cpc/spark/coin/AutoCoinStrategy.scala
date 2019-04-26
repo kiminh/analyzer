@@ -421,10 +421,13 @@ object AutoCoinStrategy {
 
         val ideaP = getIdeaidP(spark,t.substring(0, 10))    //获取p值
 
-        df.join(ideaP,Seq("ideaid"),"left_outer").select("ideaid","exp_cvr","p")
+        ideaP.show(10)
+
+        val tmp = df.join(ideaP,Seq("ideaid"),"left_outer").select("ideaid","exp_cvr","p")
           .na
           .fill(p,Seq("p")) //用默认p值填充
-          .rdd
+          tmp.show(20)
+          tmp.rdd
           .map(x => (x.getAs[Int]("ideaid"),
             (List(x.getAs[Int]("exp_cvr")),x.getAs[Double]("p"))))
           .reduceByKey((x,y) => {
