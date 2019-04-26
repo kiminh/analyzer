@@ -43,7 +43,7 @@ object InsertDspOutIncome {
 
 
     /* 1.外媒dsp结算信息自动化 */
-    val sql2 =
+    /*val sql2 =
       s"""
          |SELECT
          |  `date`,
@@ -68,9 +68,9 @@ object InsertDspOutIncome {
          |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"]
        """.stripMargin
-    println("sql2: " + sql2)
+    println("sql2: " + sql2)*/
 
-    val sql=
+    val sql2 =
       s"""
          |select
          |  b.day ad date,
@@ -95,6 +95,7 @@ object InsertDspOutIncome {
          |  b.adslot_id,
          |  a.adslotid
        """.stripMargin
+    println("sql2: " + sql2)
 
     val df = spark.sql(sql2).cache()
     var dspIncomeLog = df.collect()
