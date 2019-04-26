@@ -169,20 +169,20 @@ object ReportCoinMetrics {
         println("insert into report2.report_coin_ideaid_metrics success!")
         ideaidMetrics.unpersist()
 
-//        val useridAucListSql =
-//            s"""
-//               |select cast(userid as string) as userid,exp_cvr as score,label2 as label
-//               |from union
-//             """.stripMargin
-//
-//        val useridAucList = spark.sql(useridAucListSql)
-//
-//        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
-//          .select("name","auc")
-//
-//        val testTable = s"test.uauc_$tmpDate"
-//
-//        uAuc.write.mode("overwrite").saveAsTable(testTable)
+        val useridAucListSql =
+            s"""
+               |select cast(userid as string) as userid,exp_cvr as score,label2 as label
+               |from union
+             """.stripMargin
+
+        val useridAucList = spark.sql(useridAucListSql)
+
+        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
+          .select("name","auc")
+
+        val testTable = s"test.uauc_$tmpDate"
+
+        uAuc.write.mode("overwrite").saveAsTable(testTable)
 
         val useridSql =
             s"""
@@ -259,9 +259,15 @@ object ReportCoinMetrics {
                |  arpu,
                |  aspu,
                |  acpu,
-               |  0.51 as auc,
+               |  b.auc as auc,
                |  '$date' as `date`
-               |from $testTable2 a
+               |from $testTable2 a left outer join
+               |(
+               |    select userid, auc
+               |    from $testTable
+               |
+               |) b
+               |on a.userid = b.userid
              """.stripMargin
 
         val result = spark.sql(resultSql)
