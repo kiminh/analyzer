@@ -1,12 +1,11 @@
 package com.cpc.spark.report
 
-import java.sql.{Connection, DriverManager, Statement}
+import java.sql.DriverManager
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 /**
   * Created on 2018-12-12 16
@@ -41,7 +40,6 @@ object InsertDspOutIncome {
       .appName("insert dsp_out_income date " + day)
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
 
     /* 1.外媒dsp结算信息自动化 */
@@ -71,6 +69,32 @@ object InsertDspOutIncome {
          |  ext_string["dsp_adslotid_by_src_22"]
        """.stripMargin
     println("sql2: " + sql2)
+
+    val sql=
+      s"""
+         |select
+         |  b.day ad date,
+         |  b.adslot_id as adslotid,
+         |  a.adslotid as dsp_adslot_id,
+         |  sum(
+         |    CASE
+         |      WHEN b.isshow == 1 THEN b.bid/1000
+         |      ELSE 0
+         |    END
+         |  ) AS dsp_income,
+         |  sum(b.isclick) as dsp_click,
+         |  sum(b.isshow) as dsp_impression
+         |from dl_cpc.cpc_basedata_search_dsp a
+         |join dl_cpc.cpc_basedata_union_events b
+         |on a.searchid=b.searchid
+         |where a.day="$day" and b.day="$day"
+         |  and b.adsrc=22
+         |  and b.isshow=1
+         |group by
+         |  b.day,
+         |  b.adslot_id,
+         |  a.adslotid
+       """.stripMargin
 
     val df = spark.sql(sql2).cache()
     var dspIncomeLog = df.collect()
