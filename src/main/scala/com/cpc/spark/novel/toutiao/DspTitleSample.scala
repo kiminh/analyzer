@@ -25,7 +25,7 @@ object DspTitleSample {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    data.write.mode("overwrite").format("com.databricks.spark.csv")
+    data.repartition(1).write.mode("overwrite").format("com.databricks.spark.csv")
       .option("delimiter","\001").save("hdfs://emr-cluster/home/cpc/dsp_title/midu_toutiao_sample.csv")
     data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample")
 
@@ -42,7 +42,7 @@ object DspTitleSample {
              """.stripMargin
     println(sql2)
     val data2 = spark.sql(sql2)
-    data2.write.mode("overwrite").format("com.databricks.spark.csv")
+    data2.repartition(1).write.mode("overwrite").format("com.databricks.spark.csv")
       .option("delimiter","\001").save("hdfs://emr-cluster/home/cpc/dsp_title/dsp_toutiao_sample.csv")
     data2.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_sample2")
   }
