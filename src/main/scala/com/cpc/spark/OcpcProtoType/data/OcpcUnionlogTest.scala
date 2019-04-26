@@ -153,6 +153,8 @@ object OcpcUnionlogTest {
          |  $augTableName
          |WHERE
          |  $selectWhere
+         |AND
+         |  length(ocpc_log) > 0
        """.stripMargin
     println(sqlRequest2)
     val augData = spark.sql(sqlRequest2)
