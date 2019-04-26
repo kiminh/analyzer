@@ -136,6 +136,7 @@ object OcpcUnionlogTest {
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
+         |and adslot_type != 7
          |and length(searchid) > 0
       """.stripMargin
     println(sqlRequest1)
