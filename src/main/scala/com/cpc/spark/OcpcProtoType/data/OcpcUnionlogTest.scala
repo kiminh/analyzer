@@ -141,6 +141,7 @@ object OcpcUnionlogTest {
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new20190426a")
 
     // 更新ocpc_log
     val augTableName = "dl_cpc.cpc_basedata_as_event"
@@ -159,6 +160,7 @@ object OcpcUnionlogTest {
     println(sqlRequest2)
     val augData = spark.sql(sqlRequest2)
     augData.createOrReplaceTempView("aug_data")
+    augData.write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new20190426b")
 
     val sqlRequest3 =
       s"""
