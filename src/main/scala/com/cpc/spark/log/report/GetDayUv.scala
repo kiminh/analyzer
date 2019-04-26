@@ -1,9 +1,9 @@
 package com.cpc.spark.log.report
 
+import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.UnionLog
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -43,11 +43,10 @@ object GetDayUv {
       .appName("cpc get uv report from %s %s".format(table, date))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
     val unionLog = ctx.sql(
       s"""
-         |select * from dl_cpc.%s where `date` = "%s" and adslotid > 0 and isshow = 1
+         |select * from dl_cpc.%s where `day` = "%s" and adslot_id > 0 and isshow = 1
        """.stripMargin.format(table, date))
       //      .as[UnionLog]
       .rdd
@@ -57,10 +56,10 @@ object GetDayUv {
         x =>
           val r = MediaUvReport(
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             adslot_type = x.getAs[Int]("adslot_type"),
             uniq_user = 1,
-            date = x.getAs[String]("date")
+            date = x.getAs[String]("day")
           )
           ("%d-%d-%s".format(r.media_id, r.adslot_id, x.getAs[String]("uid")), r)
       }
@@ -73,6 +72,7 @@ object GetDayUv {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    clearReportHourData(date)
     ctx.createDataFrame(uvData)
       .write
       .mode(SaveMode.Append)
@@ -80,6 +80,24 @@ object GetDayUv {
 
     println("done", uvData.count())
     ctx.stop()
+  }
+
+  def clearReportHourData(date: String): Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from report.report_media_uv_daily where `date` = "%s"
+        """.stripMargin.format(date)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
   }
 }
 
