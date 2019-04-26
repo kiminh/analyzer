@@ -30,6 +30,7 @@ object HotTopicBaseData {
 //        result.repartition(1).write.mode("overwrite").insertInto(tableName)
         println(s"insert into $tableName at date = $day, hour = $hour success !")
 //
+
         result.toDF
           .repartition(1)
           .write
@@ -44,7 +45,7 @@ object HotTopicBaseData {
         for (m<- 0 to 59) {
             val sqlStmt =
                 """
-                  |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%s")  LOCATION
+                  |ALTER TABLE dl_cpc.cpc_hot_topic_basedata_union_events add if not exists PARTITION (day = "%s", hour = "%s", minute = "%02d")  LOCATION
                   |       '/warehouse/dl_cpc.db/cpc_hot_topic_basedata_union_events/day=%s/hour=%s/minute=%02d'
                   |
                 """.stripMargin.format(day,hour,m)
