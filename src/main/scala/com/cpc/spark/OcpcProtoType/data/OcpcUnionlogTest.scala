@@ -93,7 +93,7 @@ object OcpcUnionlogTest {
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
 
     // 拿到基础数据
-    var sqlRequest =
+    var sqlRequest1 =
       s"""
          |select
          |    searchid,
@@ -125,24 +125,93 @@ object OcpcUnionlogTest {
          |    0 as duration,
          |    userid,
          |    cast(is_ocpc as int) as is_ocpc,
-         |    ocpc_log,
+         |    ocpc_log as ocpc_log_old,
          |    user_city,
          |    city_level,
          |    adclass,
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |    charge_type,
-         |    (case when antispam_score=10000 then 0 else 1 end) as antispam
+         |    0 as antispam
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
+         |and length(searchid) > 0
       """.stripMargin
-    println(sqlRequest)
-    val rawData = spark
-      .sql(sqlRequest)
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+    rawData.createOrReplaceTempView("raw_data")
 
+    // 更新ocpc_log
+    val augTableName = "dl_cpc.cpc_basedata_as_event"
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ocpc_log_new
+         |FROM
+         |  $augTableName
+         |WHERE
+         |  $selectWhere
+         |AND
+         |  (isshow>0 or isclick>0)
+         |AND
+         |  length(searchid) > 0
+       """.stripMargin
+    println(sqlRequest2)
+    val augData = spark.sql(sqlRequest2)
+    augData.createOrReplaceTempView("aug_data")
 
-    val resultDF = rawData
+    val sqlRequest3 =
+      s"""
+         |select
+         |    a.searchid,
+         |    a.timestamp,
+         |    a.network,
+         |    a.exptags,
+         |    a.media_type,
+         |    a.media_appsid,
+         |    a.adslotid,
+         |    a.adslot_type,
+         |    a.adtype,
+         |    a.adsrc,
+         |    a.interaction,
+         |    a.bid,
+         |    a.price,
+         |    a.ideaid,
+         |    a.unitid,
+         |    a.planid,
+         |    a.country,
+         |    a.province,
+         |    a.city,
+         |    a.uid,
+         |    a.ua,
+         |    a.os,
+         |    a.sex,
+         |    a.age,
+         |    a.isshow,
+         |    a.isclick,
+         |    a.duration,
+         |    a.userid,
+         |    a.is_ocpc,
+         |    (case when b.ocpc_log_new is null then a.ocpc_log_old
+         |          else b.ocpc_log_new end) as ocpc_log,
+         |    a.user_city,
+         |    a.city_level,
+         |    a.adclass,
+         |    a.exp_ctr,
+         |    a.exp_cvr,
+         |    a.charge_type,
+         |    a.antispam
+         |from raw_data as a
+         |left join aug_data as b
+         |ON
+         |    a.searchid = b.searchid
+       """.stripMargin
+    println(sqlRequest3)
+    val data = spark.sql(sqlRequest3)
+
+    val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
