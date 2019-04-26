@@ -148,15 +148,11 @@ object OcpcUnionlogTest {
       s"""
          |SELECT
          |  searchid,
-         |  ocpc_log_new
+         |  ocpc_log as ocpc_log_new
          |FROM
          |  $augTableName
          |WHERE
          |  $selectWhere
-         |AND
-         |  (isshow>0 or isclick>0)
-         |AND
-         |  length(searchid) > 0
        """.stripMargin
     println(sqlRequest2)
     val augData = spark.sql(sqlRequest2)
