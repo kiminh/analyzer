@@ -9,7 +9,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
-@deprecated
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
@@ -47,8 +46,8 @@ object OcpcCalculateAUC {
       .withColumn("version", lit(version))
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("test.test20190403auc")
+    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
     //        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
@@ -59,7 +58,7 @@ object OcpcCalculateAUC {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -124,7 +123,7 @@ object OcpcCalculateAUC {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
