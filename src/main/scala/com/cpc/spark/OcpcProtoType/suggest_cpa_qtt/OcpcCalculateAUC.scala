@@ -208,7 +208,8 @@ object OcpcCalculateAUC {
 //
 //    resultDF
 //  }
-  
+
+
   def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
       .table(tableName)
