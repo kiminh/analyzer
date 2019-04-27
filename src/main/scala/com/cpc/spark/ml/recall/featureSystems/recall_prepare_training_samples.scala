@@ -23,8 +23,10 @@ object recall_prepare_training_samples {
       .enableHiveSupport()
       .getOrCreate()
     val featureName = args(0)
+    val curday = args(1)
     val model_version = "adlist-v4"
     val cal1 = Calendar.getInstance()
+    cal1.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
