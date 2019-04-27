@@ -261,11 +261,11 @@ object ReportCoinMetrics {
                |  acpu,
                |  b.auc as auc,
                |  '$date' as `date`
-               |from $testTable2 a left outer join
+               |from $testTable2 left outer join
                |(
-               |    select userid, auc
+               |    select cast(name as bigint) userid,
+               |           auc
                |    from $testTable
-               |
                |) b
                |on a.userid = b.userid
              """.stripMargin

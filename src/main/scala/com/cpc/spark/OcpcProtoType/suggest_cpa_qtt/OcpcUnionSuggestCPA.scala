@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.model_v3.OcpcSmoothFactor
 
-
+@deprecated
 object OcpcUnionSuggestCPA {
   def main(args: Array[String]): Unit = {
     /*
@@ -40,12 +40,9 @@ object OcpcUnionSuggestCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
-//    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("test.test20190403unioncpa")
-    println("successfully save data into table: test.test20190403unioncpa")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
 
@@ -103,31 +100,18 @@ object OcpcUnionSuggestCPA {
   }
 
   def getSuggestData(version: String, date: String, hour: String, spark: SparkSession) = {
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  *
-//         |FROM
-//         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
-//         |WHERE
-//         |  `date` = '$date'
-//         |AND
-//         |  `hour` = '$hour'
-//         |AND
-//         |  version = '$version'
-//       """.stripMargin
-val sqlRequest =
-s"""
-   |SELECT
-   |  *
-   |FROM
-   |  test.test20190403cpa
-   |WHERE
-   |  `date` = '$date'
-   |AND
-   |  `hour` = '$hour'
-   |AND
-   |  version = '$version'
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version = '$version'
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

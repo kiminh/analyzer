@@ -57,7 +57,7 @@ object Udfs_wj{
     else if (midu.contains((media_appsid)))
       "midu"
     else if (hottopic.contains(media_appsid))
-      "hot_topic"
+      "hottopic"
     else
       "other"
   })
@@ -80,20 +80,6 @@ object Udfs_wj{
 
   })
 
-    def udfGetIndustry() = udf((adclass:Int, adslot_type:Int) => {
-        if (adclass/1000000 == 134 || adclass/1000000 == 107)
-            "elds"
-        else if (adslot_type != 7 && adclass/1000000 == 100)
-            "feedapp"
-        else if (adslot_type == 7 && adclass/1000000 == 100)
-            "yysc"
-        else if (adclass == 110110100 || adclass == 125100100)
-            "wzcp"
-        else
-            "others"
-
-    })
-
   def udfStringToMap() = udf((valueLog: String) => {
     var result = mutable.LinkedHashMap[String, String]()
     if (valueLog != null && valueLog != "") {
@@ -107,6 +93,22 @@ object Udfs_wj{
       result
     } else {
       null
+    }
+  })
+
+  def udfStringToMapCheck() = udf((valueLog: String) => {
+    var result = 0
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        if (splits.length != 2) {
+          result = 1
+        }
+      }
+      result
+    } else {
+      result
     }
   })
 
