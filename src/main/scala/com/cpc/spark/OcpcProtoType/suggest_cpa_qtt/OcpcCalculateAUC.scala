@@ -26,8 +26,8 @@ object OcpcCalculateAUC {
     val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
     data
       .repartition(10).write.mode("overwrite").saveAsTable(tableName)
-    //    data
-    //      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
     // 获取unitid与industry之间的关联表
     val unitidIndustry = getIndustry(date, hour, spark)
@@ -46,8 +46,8 @@ object OcpcCalculateAUC {
       .withColumn("version", lit(version))
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
-    resultDF.repartition(10).write.mode("overwrite").insertInto("test.test20190403auc")
-    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
     //        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
@@ -58,7 +58,7 @@ object OcpcCalculateAUC {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -123,7 +123,7 @@ object OcpcCalculateAUC {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -185,29 +185,30 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  //  def filterData(tableName: String, cvThreshold: Int, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
-  //    val rawData = spark
-  //      .table(tableName)
-  //      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
-  //
-  //    val filterCondition = s"when conversion_goal is $conversionGoal: cvrcnt >= $cvThreshold"
-  //    println("############ filter function #######################")
-  //    println(filterCondition)
-  //    val dataIdea = rawData
-  //      .groupBy("userid")
-  //      .agg(sum(col("label")).alias("cvrcnt"))
-  //      .select("userid", "cvrcnt")
-  //      .filter(s"cvrcnt >= $cvThreshold")
-  //
-  //    val resultDF = rawData
-  //      .join(dataIdea, Seq("userid"), "inner")
-  //      .select("searchid", "userid", "score", "label")
-  //      .withColumn("conversion_goal", lit(conversionGoal))
-  //      .withColumn("date", lit(date))
-  //      .withColumn("version", lit(version))
-  //
-  //    resultDF
-  //  }
+//  def filterData(tableName: String, cvThreshold: Int, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
+//    val rawData = spark
+//      .table(tableName)
+//      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+//
+//    val filterCondition = s"when conversion_goal is $conversionGoal: cvrcnt >= $cvThreshold"
+//    println("############ filter function #######################")
+//    println(filterCondition)
+//    val dataIdea = rawData
+//      .groupBy("userid")
+//      .agg(sum(col("label")).alias("cvrcnt"))
+//      .select("userid", "cvrcnt")
+//      .filter(s"cvrcnt >= $cvThreshold")
+//
+//    val resultDF = rawData
+//      .join(dataIdea, Seq("userid"), "inner")
+//      .select("searchid", "userid", "score", "label")
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+//  }
+
 
 
   def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
