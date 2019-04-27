@@ -1,6 +1,7 @@
 package com.cpc.spark.novel.toutiao
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 import java.io._
 
 object DspTitleSample {
@@ -25,13 +26,14 @@ object DspTitleSample {
          |group by title
              """.stripMargin
     println(sql)
-    val data = spark.sql(sql)
+    val data = spark.sql(sql).withColumn("description",concat_ws(" ",col("title"),col("buttontext"),col("description")))
+      .select("title","description")
     val avgs = data.rdd
       .map( t=>
-        t(0).toString()+"\001"+t(1).toString()+"\001"+t(2).toString())
+        t(0).toString()+"\001"+t(1).toString())
       .collect()
 
-    printToFile(new File("/home/cpc/dsp_title/midu_toutiao_sample.csv"),"title\001buttontext\001description") {
+    printToFile(new File("/home/cpc/dsp_title/midu_toutiao_sample.csv"),"title\001description") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
