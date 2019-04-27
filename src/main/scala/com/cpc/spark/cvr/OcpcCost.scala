@@ -22,10 +22,10 @@ object OcpcCost {
                |from(
                |    select searchid,unitid,
                |        case when price > 0 then price else 0 end as price,
-               |        ext_string['ocpc_log'] as ocpc_log,
+               |        ocpc_log,
                |        media_appsid
-               |    from dl_cpc.cpc_union_log
-               |    where `date`='$date' and hour = '$hour'
+               |    from dl_cpc.cpc_basedata_union_events
+               |    where `day`='$date' and hour = '$hour'
                |    and media_appsid in ('80000001', '80000002', '80001098', '80001292')
                |    and isclick = 1
                |) a
