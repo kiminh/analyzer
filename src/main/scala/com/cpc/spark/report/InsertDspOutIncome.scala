@@ -78,7 +78,7 @@ object InsertDspOutIncome {
          |  a.adslotid as dsp_adslot_id,
          |  sum(
          |    CASE
-         |      WHEN b.isshow == 1 THEN b.bid/1000
+         |      WHEN b.isshow == 1 THEN b.bid*0.8/1000
          |      ELSE 0
          |    END
          |  ) AS dsp_income,
