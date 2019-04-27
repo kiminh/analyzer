@@ -11,52 +11,52 @@ object DspTitleSample {
       .enableHiveSupport()
       .getOrCreate()
     //穿山甲直投米读
-//    val sql =
-//      s"""
-//         |select title,concat_ws(' ',collect_set(ButtonText)) ButtonText,concat_ws(' ',collect_set(description)) as description
-//         |  from
-//         |  (select title,description,ButtonText,row_number() over(partition by title order by description) rk
-//         |      from
-//         |      (select distinct title,description,ButtonText from dl_cpc.cpc_midu_toutiao_log
-//         |       where `date` > date_sub('$date', 30)
-//         |       ) a
-//         |   ) b
-//         |   where rk<10
-//         |group by title
-//             """.stripMargin
-//    println(sql)
-//    val data = spark.sql(sql)
-//    val avgs = data.rdd
-//      .map( t=>
-//        t(0).toString()+"\001"+t(1).toString()+"\001"+t(2).toString())
-//      .collect()
-//
-//    printToFile(new File("/home/cpc/dsp_title/midu_toutiao_sample.csv")) {
-//      p => avgs.foreach(p.println) // avgs.foreach(p.println)
-//    }
-//
-//    //穿山甲dsp
-//    val sql2 =
-//      s"""
-//         |SELECT
-//         |distinct
-//         |adid, title
-//         |FROM dl_cpc.slim_union_log
-//         |WHERE dt> date_sub('$date', 7) and adid != '' and adsrc = 22
-//         |and media_appsid in ("80001098", "80001292")
-//         |and title != ''
-//             """.stripMargin
-//    println(sql2)
-//    val data2 = spark.sql(sql2)
-//    val avgs2 = data2.rdd
-//      .map( t=>
-//        t(0).toString()+"\001"+t(1).toString())
-//      .collect()
-//
-//    printToFile(new File("/home/cpc/dsp_title/dsp_toutiao_sample.csv")) {
-//      p => avgs2.foreach(p.println) // avgs.foreach(p.println)
-//    }
-    //title label
+    val sql =
+      s"""
+         |select title,concat_ws(' ',collect_set(ButtonText)) ButtonText,concat_ws(' ',collect_set(description)) as description
+         |  from
+         |  (select title,description,ButtonText,row_number() over(partition by title order by description) rk
+         |      from
+         |      (select distinct title,description,ButtonText from dl_cpc.cpc_midu_toutiao_log
+         |       where `date` > date_sub('$date', 30)
+         |       ) a
+         |   ) b
+         |   where rk<10
+         |group by title
+             """.stripMargin
+    println(sql)
+    val data = spark.sql(sql)
+    val avgs = data.rdd
+      .map( t=>
+        t(0).toString()+"\001"+t(1).toString()+"\001"+t(2).toString())
+      .collect()
+
+    printToFile(new File("/home/cpc/dsp_title/midu_toutiao_sample.csv"),"title\001buttontext\001description") {
+      p => avgs.foreach(p.println) // avgs.foreach(p.println)
+    }
+
+    //穿山甲dsp
+    val sql2 =
+      s"""
+         |SELECT
+         |distinct
+         |adid, title
+         |FROM dl_cpc.slim_union_log
+         |WHERE dt> date_sub('$date', 7) and adid != '' and adsrc = 22
+         |and media_appsid in ("80001098", "80001292")
+         |and title != ''
+             """.stripMargin
+    println(sql2)
+    val data2 = spark.sql(sql2)
+    val avgs2 = data2.rdd
+      .map( t=>
+        t(0).toString()+"\001"+t(1).toString())
+      .collect()
+
+    printToFile(new File("/home/cpc/dsp_title/dsp_toutiao_sample.csv"),"adid\001title") {
+      p => avgs2.foreach(p.println) // avgs.foreach(p.println)
+    }
+    //    title label
     val sql3 =
       s"""
          |select
@@ -79,16 +79,15 @@ object DspTitleSample {
         t(0).toString()+"\001"+t(1).toString())
       .collect()
 
-    printToFile(new File("/home/cpc/dsp_title/title_label.csv")) {
+    printToFile(new File("/home/cpc/dsp_title/title_label.csv"),"title\001label") {
       p => avgs3.foreach(p.println) // avgs.foreach(p.println)
     }
   }
 
-  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit)
+  def printToFile(f: java.io.File,ColumnName:String)(op: java.io.PrintWriter => Unit)
   {
     val p = new java.io.PrintWriter(f);
-//    p.write("asin,")
-//    p.write("rating_avg\n")
+    p.write(s"$ColumnName\n")
     try { op(p) }
     finally { p.close() }
   }
