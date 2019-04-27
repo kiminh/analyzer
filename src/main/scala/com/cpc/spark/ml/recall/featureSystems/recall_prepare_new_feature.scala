@@ -68,5 +68,27 @@ object recall_prepare_new_feature {
          """.stripMargin
       ).repartition(200)
     }
+    else if (featureName == "activeapp"){
+      val cal = Calendar.getInstance()
+      cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$date"))
+      cal.add(Calendar.DATE, -1)
+      val date1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      cal.add(Calendar.DATE, -1)
+      val date2 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      val uidApp = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/userInstalledApp/{$date, $date1, $date2}")
+      uidApp.select("uid","used_pkgs").distinct().createOrReplaceTempView("temptable")
+      spark.sql(
+        s"""
+           |select uid, null, null, null, if(used_pkgs[0] is null,null, used_pkgs),
+           |null,
+           |null
+           | from (select *,row_number() over(partition by uid order by rand() desc) as row_num from temptable where uid is not null) ta where row_num=1
+       """.stripMargin).repartition(200).createOrReplaceTempView("temp_result")
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select * from temp_result
+       """.stripMargin)
+    }
   }
 }
