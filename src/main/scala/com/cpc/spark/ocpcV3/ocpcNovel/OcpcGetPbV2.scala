@@ -307,8 +307,8 @@ object OcpcGetPbV2 {
     val wzDefaultK = resultDF1.filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     val otherDefaultK = resultDF1.filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     val resultDF = resultDF1
-      .withColumn("kvalue",when(col("kvalue").isNotNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
-      .withColumn("kvalue",when(col("kvalue").isNotNull and col("new_adclass")===110110,lit(otherDefaultK)).otherwise(col("kvalue")))
+      .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
+      .withColumn("kvalue",when(col("kvalue").isNull,lit(otherDefaultK)).otherwise(col("kvalue")))
     resultDF1.write.mode("overwrite").saveAsTable("test.wy12")
     resultDF
   }
@@ -507,7 +507,8 @@ object OcpcGetPbV2 {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    val table=s"(select id as unitid FROM adv.unit WHERE target_medias ='80001098,80001292,80001539,80002480,80001011' and status=0) as tmp"
+    val table=s"(select id as unitid FROM adv.unit " +
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
       val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
           .withColumn("target",lit(1))
           .selectExpr("cast(unitid as int)unitid","target")
