@@ -34,13 +34,17 @@ object OcpcCharge {
     val data = costData
       .join(prevData, Seq("unitid"), "left_outer")
       .filter(s"flag is null")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+    val dataFilter = data
       .filter(s"conversion > 30")
       .filter(s"pay > 0")
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
-    data.show(10)
 
-    saveDataToMysql(data, spark)
+    dataFilter.show(10)
+
+    saveDataToMysql(dataFilter, spark)
 
     val result = data
       .withColumn("date", lit(date))
