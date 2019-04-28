@@ -21,14 +21,14 @@ object DspTitleClassify {
       .option("header", "false")
       .option("inferSchema", "false") //是否自动推到内容的类型
       .option("delimiter","\001")  //分隔符，默认为 ,
-      .load("/user/cpc/wy/prediction.csv")
+      .load("hdfs://emr-cluster/user/cpc/wy/prediction.csv")
       df.show(10)
 
     val df2 = spark.read.format("com.databricks.spark.csv")
       .option("header", "false")
       .option("inferSchema", "false") //是否自动推到内容的类型
       .option("delimiter","\001")  //分隔符，默认为 ,
-      .load("/user/cpc/wy/prediction_dsp.csv")
+      .load("hdfs://emr-cluster/user/cpc/wy/prediction_dsp.csv")
     df2.show(10)
 
     val adid=spark.sql("select * from dl_cpc.midu_toutiao_sample2")
