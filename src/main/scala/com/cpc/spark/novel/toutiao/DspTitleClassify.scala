@@ -40,7 +40,7 @@ object DspTitleClassify {
       .withColumn("day",lit(s"$date"))
 
        resultDF.show(10)
-      resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
+      resultDF.repartition(1).write.mode("overwrite").insertInto("dl_cpc.midu_toutiao_adclass_predict")
   }
 
   def convert= udf{
