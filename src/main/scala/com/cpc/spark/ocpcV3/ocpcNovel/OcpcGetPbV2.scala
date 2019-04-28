@@ -86,11 +86,11 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
-//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    savePbPack(resultDF)
+    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -296,7 +296,8 @@ object OcpcGetPbV2 {
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
        .withColumn("kvalue",
-        when(col("kvalue")<col("prevk")*1.3, col("kvalue")).otherwise(col("prevk")*1.3))
+        when(col("kvalue")>col("prevk")*1.3 and col("prevk").isNotNull, col("prevk")*1.3).
+          otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
