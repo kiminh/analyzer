@@ -22,7 +22,7 @@ object DspTitleClassify {
       .option("header", "false")
       .option("inferSchema", "false") //是否自动推到内容的类型
       .option("delimiter","\001")  //分隔符，默认为 ,
-      .load("hdfs://emr-cluster/user/cpc/wy/prediction.csv")
+      .load("hdfs://emr-cluster/user/cpc/wy/prediction_direct.csv")
       df.show(10)
 
     val df2 = spark.read.format("com.databricks.spark.csv")
