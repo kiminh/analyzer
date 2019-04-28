@@ -3,7 +3,7 @@ package com.cpc.spark.qukan.userprofile
 /**
   * @author fym
   * @version created: 2019-04-28 15:10
-  * @desc inherited from an ancient version (anonymous author).
+  * @desc inherited from an ancient version (anonymous author - xuxiang?).
   */
 
 import java.util.Calendar
