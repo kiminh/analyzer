@@ -85,6 +85,7 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
+        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    0 as is_hidden
@@ -124,6 +125,7 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
+        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    1 as is_hidden
@@ -164,7 +166,6 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
-        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    0 as is_hidden
@@ -199,7 +200,6 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
-        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    1 as is_hidden
