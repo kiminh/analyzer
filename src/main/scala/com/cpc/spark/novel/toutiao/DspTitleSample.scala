@@ -1,11 +1,13 @@
 package com.cpc.spark.novel.toutiao
 
 import org.apache.spark.sql.SparkSession
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import java.io._
 
 object DspTitleSample {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0)
     val spark = SparkSession.builder()
       .appName(s"midu_sample")

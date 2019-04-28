@@ -1,7 +1,7 @@
 package com.cpc.spark.novel.toutiao
 
 import java.io.StringReader
-import au.com.bytecode.opencsv.CSVReader
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.functions._
@@ -9,6 +9,7 @@ import scala.sys.process._
 
 object DspTitleClassify {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0)
     val spark = SparkSession.builder()
       .appName(s"midu_sample")
