@@ -301,8 +301,8 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
-    val wzDefaultK = resultDF1.filter("kvalue not null").filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
-    val otherDefaultK = resultDF1.filter("kvalue not null").filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    val wzDefaultK = resultDF1.filter("kvalue is not null and new_adclass =='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    val otherDefaultK = resultDF1.filter("kvalue is not null and new_adclass !='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     print(wzDefaultK,otherDefaultK)
     val resultDF = resultDF1
       .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
