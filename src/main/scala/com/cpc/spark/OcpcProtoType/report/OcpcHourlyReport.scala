@@ -1,6 +1,6 @@
 package com.cpc.spark.OcpcProtoType.report
 
-import com.cpc.spark.tools.OperateMySQL
+import com.cpc.spark.tools.{OperateMySQL, testOperateMySQL}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -67,8 +67,8 @@ object OcpcHourlyReport {
     val reportTableUnit = "report2.report_ocpc_data_detail_v2"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLunit) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+    testOperateMySQL.update(delSQLunit) //先删除历史数据
+    testOperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -79,8 +79,8 @@ object OcpcHourlyReport {
     val reportTableConversion = "report2.report_ocpc_data_summary_v2"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLconversion) //先删除历史数据
-    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+    testOperateMySQL.update(delSQLconversion) //先删除历史数据
+    testOperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
   def saveDataToHDFS(dataUnit: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {

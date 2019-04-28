@@ -2,7 +2,6 @@ package com.cpc.spark.log.anal
 
 import java.util.Date
 
-import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -10,15 +9,17 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 /**
-  * Created by Roy on 2017/5/18.
-  * new owner: fym (190428).
+  * @author fym
+  * @version created: 2019-04-28 14:27
+  * @desc
   */
-object ConditionTouchedUV {
+object ConditionTouchedUVByCoin {
 
   var redis: RedisClient = _
 
 
   var interestids = Seq(110, 125, 201, 202, 203, 204, 205, 206, 207, 208, 209)
+
 
 
   def main(args: Array[String]): Unit = {
@@ -38,7 +39,7 @@ object ConditionTouchedUV {
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
     redis.select(3)
     val ctx = SparkSession.builder()
-      .appName("[cpc-anal] condition touched uv from %s".format(date))
+      .appName("cpc anal condition touched uv from %s".format(date))
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
@@ -48,27 +49,6 @@ object ConditionTouchedUV {
       //      .as[UnionLog]
       .rdd
 
-    val uv = ulog.map(x => (x.getAs[String]("uid"), 1)).reduceByKey((x, y) => x).count()
-    redis.set("touched_uv_total", uv)
-    println("uv", uv)
-    ulog = ulog.randomSplit(Array(rate, 1-rate), new Date().getTime)(0).coalesce(900)
-
-    ulog.cache()
-
-    //人群包
-//    calcCondPercent("people", ulog
-//      .flatMap{
-//        x =>
-//          x.getAs[String]("interests").split(",")
-//            .map(i => i.split("="))
-//            .filter(x => x.length == 2 && interestids.contains(x(0).toInt))
-//            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
-//      })
-
-    calcCondPercent("province", ulog.filter(_.getAs[Int]("province") > 0).map(u => ((u.getAs[Int]("province"), u.getAs[String]("uid")), 1)))
-    calcCondPercent("city", ulog.filter(_.getAs[Int]("city") > 0).map(u => ((u.getAs[Int]("city"), u.getAs[String]("uid")), 1)))
-    calcCondPercent("sex", ulog.filter(_.getAs[Int]("sex") > 0).map(u => ((u.getAs[Int]("sex"), u.getAs[String]("uid")), 1)))
-    calcCondPercent("age", ulog.filter(_.getAs[Int]("age") > 0).map(u => ((u.getAs[Int]("age"), u.getAs[String]("uid")), 1)))
     calcCondPercent("coin", ulog.filter(_.getAs[Int]("coin") > 0)
       .map {
         u =>
@@ -84,21 +64,6 @@ object ConditionTouchedUV {
             lvl = 4
           }
           ((lvl, u.getAs[String]("uid")), 1)})
-
-    calcCondPercent("os", ulog.filter(_.getAs[Int]("os") > 0).map(u => ((u.getAs[Int]("os"), u.getAs[String]("uid")), 1)))
-    calcCondPercent("net", ulog.filter(_.getAs[Int]("network") > 0).map(u => ((u.getAs[Int]("network"), u.getAs[String]("uid")), 1)))
-    calcCondPercent("phone_level", ulog.map(u => (u.getAs[Int]("phone_level"), u))
-      .filter(_._1 > 0)
-      .map(x => ((x._1, x._2.getAs[String]("uid")), 1)))
-
-//    calcCondPercent("user_type", ulog
-//      .flatMap{
-//        x =>
-//          x.getAs[String]("interests").split(",")
-//            .map(i => i.split("="))
-//            .filter(x => x.length == 2 && x(0).toInt > 0)
-//            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
-//      })
 
     println("done")
     ctx.stop()
@@ -133,5 +98,3 @@ object ConditionTouchedUV {
     }
   }
 }
-
-
