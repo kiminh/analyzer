@@ -138,9 +138,7 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-//      .withColumn("date", lit(date))
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.wt_union_detail_report")
+
   }
 
   def unionSummaryReport(date: String, hour: String, spark: SparkSession): DataFrame ={
@@ -166,6 +164,7 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
+        |
         |    hour,
         |    version,
         |    0 as is_hidden
@@ -214,9 +213,7 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-//      .withColumn("date", lit(date))
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.wt_union_summary_report")
+
   }
 
 
