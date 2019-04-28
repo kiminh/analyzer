@@ -306,10 +306,11 @@ object OcpcGetPbV2 {
 
     val wzDefaultK = resultDF1.filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     val otherDefaultK = resultDF1.filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    print(wzDefaultK,otherDefaultK)
     val resultDF = resultDF1
       .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
       .withColumn("kvalue",when(col("kvalue").isNull,lit(otherDefaultK)).otherwise(col("kvalue")))
-    resultDF1.write.mode("overwrite").saveAsTable("test.wy12")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
     resultDF
   }
 
