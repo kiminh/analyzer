@@ -7,6 +7,7 @@ import java.util.{Calendar, Properties}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -15,6 +16,7 @@ object OcpcCharge {
     /*
     根据最近四天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
