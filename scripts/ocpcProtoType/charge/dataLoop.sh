@@ -13,7 +13,7 @@ while [ ${d} -le $2 ]; do
 
     echo $day
 
-    sh testOcpcChargeLoop.sh $day 23
+#    sh testOcpcChargeLoop.sh $day 23
 
     let d=d+1
 done

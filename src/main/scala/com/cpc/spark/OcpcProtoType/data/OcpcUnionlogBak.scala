@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType.data
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlogTest {
+object OcpcUnionlogBak {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -15,22 +17,22 @@ object OcpcUnionlogTest {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_new")
-      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new")
+      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
-    println("successfully save data into table: dl_cpc.ocpc_base_unionlog_new")
-//
-//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-//    ocpcData
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_new")
-////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog_new")
-//    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_new")
+    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
+
+    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+    ocpcData
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val baseData = data
-      .filter(s"length(ocpc_log)>0")
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+        .filter(s"length(ocpc_log)>0")
+        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -72,7 +74,17 @@ object OcpcUnionlogTest {
          |    ocpc_log_dict,
          |    exp_ctr,
          |    exp_cvr,
-         |    antispam
+         |    antispam,
+         |    conversion_goal,
+         |    charge_type,
+         |    conversion_from,
+         |    is_api_callback,
+         |    siteid,
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from
          |    base_data
        """.stripMargin
@@ -92,14 +104,65 @@ object OcpcUnionlogTest {
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
 
-    // 拿到基础数据
-    var sqlRequest1 =
+//    // 旧版基础数据抽取逻辑
+//    // 拿到基础数据
+//    var sqlRequest =
+//      s"""
+//         |select
+//         |    searchid,
+//         |    timestamp,
+//         |    network,
+//         |    exptags,
+//         |    media_type,
+//         |    media_appsid,
+//         |    adslotid,
+//         |    adslot_type,
+//         |    adtype,
+//         |    adsrc,
+//         |    interaction,
+//         |    bid,
+//         |    price,
+//         |    ideaid,
+//         |    unitid,
+//         |    planid,
+//         |    country,
+//         |    province,
+//         |    city,
+//         |    uid,
+//         |    ua,
+//         |    os,
+//         |    sex,
+//         |    age,
+//         |    isshow,
+//         |    isclick,
+//         |    duration,
+//         |    userid,
+//         |    ext_int['is_ocpc'] as is_ocpc,
+//         |    ext_string['ocpc_log'] as ocpc_log,
+//         |    ext_string['user_city'] as user_city,
+//         |    ext['city_level'].int_value as city_level,
+//         |    ext['adclass'].int_value as adclass,
+//         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
+//         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+//         |    cast(ext["charge_type"].int_value as int) as charge_type,
+//         |    ext['antispam'].int_value as antispam,
+//         |    cast(ext['usertype'].int_value as bigint) as usertype
+//         |from dl_cpc.cpc_union_log
+//         |where $selectWhere
+//         |and (isshow>0 or isclick>0)
+//      """.stripMargin
+//    println(sqlRequest)
+//    val rawData = spark
+//      .sql(sqlRequest)
+
+    // 新版基础数据抽取逻辑
+    var sqlRequest =
       s"""
          |select
          |    searchid,
          |    timestamp,
          |    network,
-         |    exptags,
+         |    concat_ws(',', exptags) as exptags,
          |    media_type,
          |    media_appsid,
          |    adslot_id as adslotid,
@@ -132,17 +195,26 @@ object OcpcUnionlogTest {
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |    charge_type,
-         |    0 as antispam
+         |    0 as antispam,
+         |    usertype,
+         |    conversion_goal,
+         |    conversion_from,
+         |    is_api_callback,
+         |    siteid,
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
          |and length(searchid) > 0
       """.stripMargin
-    println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1)
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
     rawData.createOrReplaceTempView("raw_data")
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new20190426a")
 
     // 更新ocpc_log
     val augTableName = "dl_cpc.cpc_basedata_as_event"
@@ -161,7 +233,6 @@ object OcpcUnionlogTest {
     println(sqlRequest2)
     val augData = spark.sql(sqlRequest2)
     augData.createOrReplaceTempView("aug_data")
-    augData.write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new20190426b")
 
     val sqlRequest3 =
       s"""
@@ -204,10 +275,18 @@ object OcpcUnionlogTest {
          |    a.exp_cvr,
          |    a.charge_type,
          |    a.antispam,
-         |    a.ocpc_log_old,
-         |    b.ocpc_log_new
+         |    a.usertype,
+         |    a.conversion_goal,
+         |    a.conversion_from,
+         |    a.is_api_callback,
+         |    a.siteid,
+         |    a.cvr_model_name,
+         |    a.user_req_ad_num,
+         |    a.user_req_num,
+         |    a.is_new_ad,
+         |    a.is_auto_coin
          |from raw_data as a
-         |left join aug_data as b
+         |left JOIN aug_data as b
          |ON
          |    a.searchid = b.searchid
        """.stripMargin
@@ -226,7 +305,6 @@ object OcpcUnionlogTest {
 
 
 }
-
 
 
 
