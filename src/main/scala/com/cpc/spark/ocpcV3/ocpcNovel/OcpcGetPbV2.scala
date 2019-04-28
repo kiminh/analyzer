@@ -294,15 +294,12 @@ object OcpcGetPbV2 {
 
     val resultDF1 = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
-       .withColumn("kvalue2",col("kvalue"))
        .withColumn("kvalue",
         when(col("kvalue")>col("prevk")*1.3 and col("prevk").isNotNull, col("prevk")*1.3).
           otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
-      .select("unitid", "new_adclass", "kvalue", "conversion_goal","prevk","kvalue2")
-
-    resultDF1.write.mode("overwrite").saveAsTable("test.wy11")
+      .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     val wzDefaultK = resultDF1.filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     val otherDefaultK = resultDF1.filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
@@ -310,7 +307,7 @@ object OcpcGetPbV2 {
     val resultDF = resultDF1
       .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
       .withColumn("kvalue",when(col("kvalue").isNull,lit(otherDefaultK)).otherwise(col("kvalue")))
-    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
     resultDF
   }
 
