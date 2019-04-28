@@ -86,11 +86,11 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    savePbPack(resultDF)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -301,13 +301,13 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
-    val wzDefaultK = resultDF1.filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
-    val otherDefaultK = resultDF1.filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    val wzDefaultK = resultDF1.filter("kvalue not null").filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    val otherDefaultK = resultDF1.filter("kvalue not null").filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
     print(wzDefaultK,otherDefaultK)
     val resultDF = resultDF1
       .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
       .withColumn("kvalue",when(col("kvalue").isNull,lit(otherDefaultK)).otherwise(col("kvalue")))
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
     resultDF
   }
 
