@@ -31,7 +31,7 @@ object DspTitleClassify {
       .load("hdfs://emr-cluster/user/cpc/wy/prediction_dsp.csv")
     df2.show(10)
 
-    val adid=spark.sql("select * from dl_cpc.midu_toutiao_sample2")
+    val adid=spark.sql("select * from dl_cpc.midu_toutiao_dsp_sample")
 
     val resultDF= df.union(df2).select($"_c0".alias("id"),$"_c1".alias("title"))
       .withColumn("category",convert(col("id")))
