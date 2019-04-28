@@ -10,6 +10,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by Roy on 2017/4/26.
+  * new owner: fym (190428).
   */
 object GetDayUv {
 
@@ -40,7 +41,7 @@ object GetDayUv {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
-      .appName("cpc get uv report from %s %s".format(table, date))
+      .appName("[cpc-anal] get uv report from %s %s".format(table, date))
       .enableHiveSupport()
       .getOrCreate()
 
