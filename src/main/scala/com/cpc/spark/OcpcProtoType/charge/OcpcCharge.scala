@@ -32,29 +32,29 @@ object OcpcCharge {
 //    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
     cleanDataInMysql(3, date, hour, spark)
 
-//    val prevData = getDataFromMysql(spark)
-//    val data = costData
-//      .join(prevData, Seq("unitid"), "left_outer")
-//      .filter(s"flag is null")
-//      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
-//
-//    val dataFilter = data
-//      .filter(s"conversion > 30")
-//      .filter(s"pay > 0")
-//      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
-//
-//
-//    dataFilter.show(10)
-//
-//    saveDataToMysql(dataFilter, spark)
-//
-//    val result = data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//
-//    result
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
-////      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+    val prevData = getDataFromMysql(spark)
+    val data = costData
+      .join(prevData, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+    val dataFilter = data
+      .filter(s"conversion > 30")
+      .filter(s"pay > 0")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+
+    dataFilter.show(10)
+
+    saveDataToMysql(dataFilter, spark)
+
+    val result = data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+
+    result
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
 
