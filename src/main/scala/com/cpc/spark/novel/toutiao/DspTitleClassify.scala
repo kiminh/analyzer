@@ -37,6 +37,7 @@ object DspTitleClassify {
       .withColumn("category",convert(col("id")))
       .select("title","category")
       .join(adid,Seq("title"),"left")
+      .withColumn("day",lit(s"$date"))
 
        resultDF.show(10)
       resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_adclass_predict")
