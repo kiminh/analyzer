@@ -50,7 +50,7 @@ object DspTitleSample {
              """.stripMargin
     println(sql2)
     val data2 = spark.sql(sql2)
-    data2.repartition(1).write.mode("overwrite").saveAsTable("select * from dl_cpc.midu_toutiao_dsp_sample")
+    data2.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_dsp_sample")
     val avgs2 = data2.rdd
       .map( t=>
         t(0).toString()+"\001"+t(1).toString())
