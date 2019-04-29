@@ -28,7 +28,7 @@ object NovelUnionEvents {
         println(sql)
 
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
-        spark.sql(sql).toDF.repartition(1)
+        spark.sql(sql).toDF.repartition(100)
           .write
           .partitionBy("day", "hour", "minute")
           .mode(SaveMode.Append) // 修改为Append
