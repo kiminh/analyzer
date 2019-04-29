@@ -33,7 +33,8 @@ object OcpcDailyFunnelIndustry {
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
 
 
   }
