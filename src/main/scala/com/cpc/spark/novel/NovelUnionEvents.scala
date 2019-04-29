@@ -17,34 +17,46 @@ object NovelUnionEvents {
           .appName(s"NovelUnionLog date = $date and hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
-        val sql =
-            s"""
-               |select *
-               |from dl_cpc.cpc_basedata_union_events
-               |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
-               |      and day= '$date' and hour = '$hour'
-             """.stripMargin
+//        val sql =
+//            s"""
+//               |select *
+//               |from dl_cpc.cpc_basedata_union_events
+//               |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
+//               |      and day= '$date' and hour = '$hour'
+//             """.stripMargin
+//
+//        println(sql)
+        val sql=
+        s"""
+           |insert overwrite table dl_cpc.cpc_novel_union_events partition(day,hour,minute)
+           |select *
+           |from dl_cpc.cpc_basedata_union_events
+           |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
+           |  and day= '$date' and hour = '$hour';
+         """.stripMargin
 
         println(sql)
 
+        spark.sql(sql)
+
+
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
-        spark.sql(sql).toDF.coalesce(10)
-          .write
-          .partitionBy("day", "hour", "minute")
-          .mode(SaveMode.Append) // 修改为Append
-          .parquet(
-            s"""
-               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
-         """.stripMargin.trim)
-
-      spark.sql("msck repair table dl_cpc.cpc_novel_union_events")
-
+//        spark.sql(sql).toDF
+//          .write
+//          .partitionBy("day", "hour", "minute")
+//          .mode(SaveMode.Append) // 修改为Append
+//          .parquet(
+//            s"""
+//               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
+//         """.stripMargin.trim)
+//
 //      spark.sql(
 //        s"""
 //           |ALTER TABLE dl_cpc.cpc_basedata_union_events
 //           | add if not exists PARTITION(`day` = "$date", `hour` = "$hour")
 //           | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_basedata_union_events/day=$date/hour=$hour'
 //      """.stripMargin.trim)
+
         println(" -- write cpc_basedata_union_events to hive successfully -- ")
     }
 }
