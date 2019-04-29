@@ -52,7 +52,7 @@ object MultiDimensionCalibOnQtt {
 
     // get union log
     val sql = s"""
-                 |select cast(isclick as int) as isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -111,7 +111,7 @@ object MultiDimensionCalibOnQtt {
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
-        isClick = x.getInt(3).toDouble
+        isClick = x.getLong(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
       val model = x.getString(5)
