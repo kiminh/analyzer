@@ -163,10 +163,20 @@ object OcpcDailyFunnelIndustry {
     val sqlRequestCtr =
       s"""
          |SELECT
-         |  *,
-         |  (case when is_api_callback = 1 and industry = 'feedapp' then 2
-         |        when industry = 'elds' then 3
-         |        else 0 end) as conversin_goal
+         |    searchid,
+         |    unitid,
+         |    planid,
+         |    userid,
+         |    isclick,
+         |    isshow,
+         |    cpc_type,
+         |    cpagiven,
+         |    price,
+         |    industry,
+         |    is_api_callback,
+         |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
+         |            when industry = 'elds' then 3
+         |            else 0 end) as conversin_goal
          |FROM
          |  base_ctr
        """.stripMargin
