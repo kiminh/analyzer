@@ -56,7 +56,7 @@ object OcpcHourlyAucReport {
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
+      .withColumn("version", lit(partitionVersion))
 
     unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
 //    unitData
