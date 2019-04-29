@@ -40,7 +40,7 @@ object NovelUnionEvents {
         while (i <60){
             var minute = (i/10).toString
             minute=minute + i%10
-            print(minute)
+            println(minute)
 //            spark.sql(
 //                s"""
 //                   |ALTER TABLE dl_cpc.cpc_basedata_union_events
