@@ -86,15 +86,10 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
         "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
-
-
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto(tableName)
-
-
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
     savePbPack(resultDF)
   }
 
@@ -297,18 +292,22 @@ object OcpcGetPbV2 {
         .withColumn("prevk",col("kvalue"))
         .select("unitid","prevk")
 
-//    prevk.write.mode("overwrite").saveAsTable("test.wy00")
-    val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
+    val resultDF1 = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
        .withColumn("kvalue",
-        when(col("kvalue")>col("prevk") and col("prevk").isNotNull,
-          (col("kvalue")-col("prevk"))/3 + col("prevk")).
+        when(col("kvalue")>col("prevk")*1.3 and col("prevk").isNotNull, col("prevk")*1.3).
           otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
-    resultDF.write.mode("overwrite").saveAsTable("test.wy11")
+    val wzDefaultK = resultDF1.filter("new_adclass=='110110'").filter("new_adclass=='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    val otherDefaultK = resultDF1.filter("new_adclass!='110110'").groupBy().agg(avg(col("kvalue")).alias("defaultk")).first().getAs[Double]("defaultk")
+    print(wzDefaultK,otherDefaultK)
+    val resultDF = resultDF1
+      .withColumn("kvalue",when(col("kvalue").isNull and col("new_adclass")===110110,lit(wzDefaultK)).otherwise(col("kvalue")))
+      .withColumn("kvalue",when(col("kvalue").isNull,lit(otherDefaultK)).otherwise(col("kvalue")))
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy12")
     resultDF
   }
 
@@ -352,7 +351,7 @@ object OcpcGetPbV2 {
          |SELECT
          |  searchid,
          |  unitid,
-         |  price,
+         |  ocpc_log_dict["dynamicbid"] as bid,
          |  isclick
          |FROM
          |  dl_cpc.ocpcv3_unionlog_label_hourly
@@ -399,14 +398,33 @@ object OcpcGetPbV2 {
     println(sqlRequest3)
     val labelData2 = spark.sql(sqlRequest3).distinct()
 
-    val resultDF=clickdata.join(labelData1,Seq("searchid"),"left")
+    //qtt maxbid
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  sum(total_bid)/sum(ctr_cnt) as qtt_avgbid
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  where $selectCondition and media_appsid in ('80000001','80000002')
+         |  group by unitid
+       """.stripMargin
+    println(sqlRequest4)
+    val qttavgbid = spark.sql(sqlRequest4)
+
+    val result=clickdata.join(labelData1,Seq("searchid"),"left")
         .join(labelData2,Seq("searchid"),"left")
         .groupBy("unitid")
-        .agg(avg(col("price")).alias("avgbid"),
+        .agg(avg(col("bid")).alias("avgbid"),
           (sum(col("iscvr1"))/sum(col("isclick"))).alias("postcvr2"),
           (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
         .withColumn("postcvr2",when(col("postcvr3") isNotNull,col("postcvr3")).otherwise(col("postcvr2")))
         .withColumn("maxbid",col("avgbid")*3)
+
+    val resultDF=qttavgbid.join(result,Seq("unitid"),"outer")
+      .withColumn("maxbid",when(col("maxbid").isNull,col("qtt_avgbid")).otherwise(col("maxbid")))
+        .withColumn("maxbid",when(col("qtt_avgbid")<col("maxbid"),col("qtt_avgbid")).otherwise(col("maxbid")))
 
     // 返回结果
     resultDF.show(10)
@@ -487,7 +505,8 @@ object OcpcGetPbV2 {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    val table=s"(select id as unitid FROM adv.unit WHERE target_medias ='80001098,80001292,80001539,80002480,80001011' and status=0) as tmp"
+    val table=s"(select id as unitid FROM adv.unit " +
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
       val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
           .withColumn("target",lit(1))
           .selectExpr("cast(unitid as int)unitid","target")

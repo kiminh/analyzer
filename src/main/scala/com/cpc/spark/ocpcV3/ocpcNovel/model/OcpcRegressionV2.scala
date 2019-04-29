@@ -107,7 +107,6 @@ object OcpcRegressionV2 {
 
     val adclassMap = getCPAsrcMap(date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
-//    var testList = new mutable.ListBuffer[(String, Double, Double, Double, Double, Double)]()
     for (row <- res) {
       val unitid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
@@ -115,8 +114,8 @@ object OcpcRegressionV2 {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // version1: 根据cpa_src决定targetK
-      //  version2: 根据adclass决定targetK
+
+      //  version: 根据adclass决定targetK
       val targetK = getTargetK(unitid, adclassMap, date, hour, spark)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
@@ -181,7 +180,7 @@ object OcpcRegressionV2 {
     val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
     if (cpasrc == "110110") {
-      targetK = 0.50
+      targetK = 0.75
     } else {
       targetK = 0.95
     }

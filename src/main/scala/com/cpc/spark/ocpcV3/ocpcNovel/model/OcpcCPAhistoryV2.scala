@@ -149,6 +149,8 @@ object OcpcCPAhistoryV2 {
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
       .select("unitid", "new_adclass", "media_appsid", "cvr2cnt")
 
+    //
+
     // 关联数据构成基础表
     val resultDF = costData
       .join(cvr1Data, Seq("unitid", "new_adclass", "media_appsid"), "left_outer")
