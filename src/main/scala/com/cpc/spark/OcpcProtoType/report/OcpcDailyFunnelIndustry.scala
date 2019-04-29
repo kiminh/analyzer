@@ -52,18 +52,18 @@ object OcpcDailyFunnelIndustry {
          |    sum(isshow) as show,
          |    sum(iscvr) as cv,
          |    sum(case when isclick=1 then price else 0 end) * 0.01 as cost,
-         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then cpagiven else 0 end) * 1.0 / sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then 1 else 0 end) as ocpc_cpagiven,
-         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 1.0 / sum(case when cpc_type = 'hidden_ocpc' and iscvr=1 then 1 else 0 end) as ocpc_cpareal,
-         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then 1 else 0 end) as ocpc_click,
-         |    sum(case when cpc_type = 'hidden_ocpc' and isshow=1 then 1 else 0 end) as ocpc_show,
-         |    sum(case when cpc_type = 'hidden_ocpc' and iscvr=1 then 1 else 0 end) as ocpc_cv,
-         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 0.01 as ocpc_cost,
-         |    sum(case when cpc_type = 'ocpc' and isclick=1 then cpagiven else 0 end) * 1.0 / sum(case when cpc_type = 'ocpc' and isclick=1 then 1 else 0 end) as hidden_cpagiven,
-         |    sum(case when cpc_type = 'ocpc' and isclick=1 then price else 0 end) * 1.0 / sum(case when cpc_type = 'ocpc' and iscvr=1 then 1 else 0 end) as hidden_cpareal,
-         |    sum(case when cpc_type = 'ocpc' and isclick=1 then 1 else 0 end) as hidden_click,
-         |    sum(case when cpc_type = 'ocpc' and isshow=1 then 1 else 0 end) as hidden_show,
-         |    sum(case when cpc_type = 'ocpc' and iscvr=1 then 1 else 0 end) as hidden_cv,
-         |    sum(case when cpc_type = 'ocpc' and isclick=1 then price else 0 end) * 0.01 as hidden_cost
+         |    sum(case when cpc_type = 'ocpc' and isclick=1 then cpagiven else 0 end) * 1.0 / sum(case when cpc_type = 'ocpc' and isclick=1 then 1 else 0 end) as ocpc_cpagiven,
+         |    sum(case when cpc_type = 'ocpc' and isclick=1 then price else 0 end) * 1.0 / sum(case when cpc_type = 'ocpc' and iscvr=1 then 1 else 0 end) as ocpc_cpareal,
+         |    sum(case when cpc_type = 'ocpc' and isclick=1 then 1 else 0 end) as ocpc_click,
+         |    sum(case when cpc_type = 'ocpc' and isshow=1 then 1 else 0 end) as ocpc_show,
+         |    sum(case when cpc_type = 'ocpc' and iscvr=1 then 1 else 0 end) as ocpc_cv,
+         |    sum(case when cpc_type = 'ocpc' and isclick=1 then price else 0 end) * 0.01 as ocpc_cost,
+         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then cpagiven else 0 end) * 1.0 / sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then 1 else 0 end) as hidden_cpagiven,
+         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 1.0 / sum(case when cpc_type = 'hidden_ocpc' and iscvr=1 then 1 else 0 end) as hidden_cpareal,
+         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then 1 else 0 end) as hidden_click,
+         |    sum(case when cpc_type = 'hidden_ocpc' and isshow=1 then 1 else 0 end) as hidden_show,
+         |    sum(case when cpc_type = 'hidden_ocpc' and iscvr=1 then 1 else 0 end) as hidden_cv,
+         |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 0.01 as hidden_cost
          |FROM
          |    base_data
          |GROUP BY unitid, planid, userid, industry
@@ -134,6 +134,8 @@ object OcpcDailyFunnelIndustry {
          |        else "other" end) as cpc_type,
          |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'cpagiven:(.*?),', 1) else 0 end) as cpagiven,
          |    price,
+         |    is_ocpc,
+         |    ocpc_log,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -172,17 +174,21 @@ object OcpcDailyFunnelIndustry {
          |    cpc_type,
          |    cpagiven,
          |    price,
+         |    is_ocpc,
+         |    ocpc_log,
          |    industry,
          |    is_api_callback,
          |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
-         |            when industry = 'elds' then 3
-         |            else 0 end) as conversion_goal
+         |          when industry = 'elds' then 3
+         |          else 0 end) as conversion_goal
          |FROM
          |  base_ctr
        """.stripMargin
     val ctrData = spark
       .sql(sqlRequestCtr)
       .filter(s"conversion_goal in (2, 3)")
+
+    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
 
     // cvr2Data
     val sqlRequest2 =
