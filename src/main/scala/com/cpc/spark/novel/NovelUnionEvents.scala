@@ -17,28 +17,29 @@ object NovelUnionEvents {
           .appName(s"NovelUnionLog date = $date and hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
-        val sql =
-            s"""
-               |select *
-               |from dl_cpc.cpc_basedata_union_events
-               |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
-               |      and day= '$date' and hour = '$hour'
-             """.stripMargin
+//        val sql =
+//            s"""
+//               |select *
+//               |from dl_cpc.cpc_basedata_union_events
+//               |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
+//               |      and day= '$date' and hour = '$hour'
+//             """.stripMargin
+//
+//        println(sql)
+//
+//        spark.sql(sql).toDF
+//          .write
+//          .partitionBy("day", "hour", "minute")
+//          .mode(SaveMode.Append) // 修改为Append
+//          .parquet(
+//            s"""
+//               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
+//         """.stripMargin.trim)
 
-        println(sql)
-
-        spark.sql(sql).toDF
-          .write
-          .partitionBy("day", "hour", "minute")
-          .mode(SaveMode.Append) // 修改为Append
-          .parquet(
-            s"""
-               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
-         """.stripMargin.trim)
-
-        var minute = "00"
         var i = 0
         while (i <60){
+            var minute = (i/10).toString
+            minute=minute + i%10
             print(minute)
 //            spark.sql(
 //                s"""
@@ -47,7 +48,6 @@ object NovelUnionEvents {
 //                   | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_basedata_union_events/day=$date/hour=$hour'
 //          """.stripMargin.trim)
             i=i+1
-            minute=minute+1
         }
 
 
