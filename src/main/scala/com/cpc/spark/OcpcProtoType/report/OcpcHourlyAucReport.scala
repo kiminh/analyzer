@@ -30,37 +30,109 @@ object OcpcHourlyAucReport {
 
     val rawData = getOcpcLog(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
+//    // 详情表数据
+//    val unitData1 = calculateByUnitid(rawData, date, hour, spark)
+//    val unitData2 = calculateAUCbyUnitid(rawData, date, hour, spark)
+//    val unitData = unitData1
+//      .join(unitData2, Seq("unitid", "userid", "conversion_goal"), "left_outer")
+//      .withColumn("identifier", col("unitid"))
+//      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+////    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+//    unitData
+//      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
+
+
     // 详情表数据
-    val unitData1 = calculateByUnitid(rawData, date, hour, spark)
-    val unitData2 = calculateAUCbyUnitid(rawData, date, hour, spark)
-    val unitData = unitData1
-      .join(unitData2, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .withColumn("identifier", col("unitid"))
+    val partitionVersion = version + "_userid"
+    val userData1 = calculateByUserid(rawData, date, hour, spark)
+    val userData2 = calculateAUCbyUserid(rawData, date, hour, spark)
+    val unitData = userData1
+      .join(userData2, Seq("userid", "conversion_goal"), "left_outer")
+      .withColumn("identifier", col("userid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
-    unitData
-      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
+    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+//    unitData
+//      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
-    // 汇总表数据
-    val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
-    val conversionData2 = calculateAUCbyConversionGoal(rawData, date, hour, spark)
-    val conversionData = conversionData1
-      .join(conversionData2, Seq("conversion_goal"), "left_outer")
-      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-
-//    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
-    conversionData
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_summary_hourly")
+//    // 汇总表数据
+//    val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
+//    val conversionData2 = calculateAUCbyConversionGoal(rawData, date, hour, spark)
+//    val conversionData = conversionData1
+//      .join(conversionData2, Seq("conversion_goal"), "left_outer")
+//      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+////    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
+//    conversionData
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_summary_hourly")
 
 
   }
+
+  def calculateAUCbyUserid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val key = data.select("userid", "conversion_goal").distinct()
+    import spark.implicits._
+
+    val newData = data
+      .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
+      .withColumn("score", col("exp_cvr") * 1000000)
+      .withColumn("label", col("iscvr"))
+      .selectExpr("identifier", "cast(score as int) score", "label")
+      .coalesce(400)
+
+    val result = utils.getGauc(spark, newData, "identifier")
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("name")
+      val identifierList = identifier.trim.split("-")
+      val userid = identifierList(0).toInt
+      val conversionGoal = identifierList(1).toInt
+      val auc = row.getAs[Double]("auc")
+      (userid, conversionGoal, auc)
+    })
+    val resultDF = resultRDD.toDF("userid", "conversion_goal", "auc")
+    resultDF
+  }
+
+
+  def calculateByUserid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    //    预测cvr
+    //    acb
+    //    auc
+    //    q_factor
+    //    suggest_cpa
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  conversion_goal,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 100.0 / sum(isclick) as pre_cvr,
+         |  sum(iscvr) * 100.0 / sum(isclick) as post_cvr,
+         |  0 as q_factor,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpareal,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb
+         |FROM
+         |  base_data
+         |GROUP BY userid, conversion_goal
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF
+  }
+
 
   def getOcpcLog(media: String, date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
