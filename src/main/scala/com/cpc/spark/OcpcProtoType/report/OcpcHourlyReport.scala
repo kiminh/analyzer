@@ -54,7 +54,7 @@ object OcpcHourlyReport {
     val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-    saveDataToHDFS(dataUnit, dataUser, dataConversion, version, date, hour, spark)
+    saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
 
 //    // 存储数据到mysql
 //    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
@@ -201,7 +201,32 @@ object OcpcHourlyReport {
     testOperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
-  def saveDataToHDFS(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+  def saveDataToHDFS(dataUnit: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    存储unitid级别和conversion_goal级别的报表到hdfs
+     */
+    dataUnit
+      .withColumn("identifier", col("unitid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .withColumn("version", lit(version))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
+    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
+
+    dataUnit
+      .withColumn("identifier", col("unitid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr", "date", "hour")
+      .withColumn("version", lit(version))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cali_detail_report_hourly_20190413")
+    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
+
+    dataConversion
+      .withColumn("version", lit(version))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
+    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
+  }
+
+
+  def saveDataToHDFSv2(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     存储unitid级别和conversion_goal级别的报表到hdfs
      */
