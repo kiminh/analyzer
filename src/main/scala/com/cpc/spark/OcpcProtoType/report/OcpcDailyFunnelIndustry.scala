@@ -26,17 +26,59 @@ object OcpcDailyFunnelIndustry {
 
     val rawData = getOcpcLog(media, date, hour, spark)
 
-    val data = calculateBase(rawData, date, hour, spark)
+    val data1 = calculateBase(rawData, date, hour, spark)
 
-    val resultDF = data
+    val result1 = data1
       .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "industry", "date")
 
-    resultDF
+    result1
       .repartition(5)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
 
+    val data2 = calculateCnt(rawData, date, hour, spark)
+    val result2 = data2
+      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
+      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid"))
+      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
 
+    result2
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+
+
+  }
+
+  def calculateCnt(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // 计算日期
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`dt` = '$date1'"
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    industry,
+         |    count(distinct ideaid) as ideaid_cnt,
+         |    count(distinct unitid) as unitid_cnt,
+         |    count(distinct userid) as userid_cnt
+         |FROM
+         |    base_data
+         |GROUP BY industry
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .withColumn("date", lit(date1))
+
+    data
   }
 
   def calculateBase(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -124,6 +166,7 @@ object OcpcDailyFunnelIndustry {
       s"""
          |SELECT
          |    searchid,
+         |    ideaid,
          |    unitid,
          |    planid,
          |    userid,
@@ -167,6 +210,7 @@ object OcpcDailyFunnelIndustry {
       s"""
          |SELECT
          |    searchid,
+         |    ideaid,
          |    unitid,
          |    planid,
          |    userid,
