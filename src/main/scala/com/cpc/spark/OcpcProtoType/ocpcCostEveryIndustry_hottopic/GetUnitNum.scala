@@ -88,7 +88,7 @@ object GetUnitNum {
         |    where
         |        dt = '$yesterday'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        'all') c
         |on
@@ -102,7 +102,7 @@ object GetUnitNum {
         |    where
         |        dt = '$today'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        'all') d
         |on
@@ -156,7 +156,7 @@ object GetUnitNum {
         |    where
         |        dt = '$yesterday'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        industry) c
         |on
@@ -170,7 +170,7 @@ object GetUnitNum {
         |    where
         |        dt = '$today'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        industry) d
         |on
@@ -235,7 +235,7 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) c
@@ -253,7 +253,7 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    group by
         |        (case when siteid > 0 then 'elds_jianzhan'
         |              else 'elds_notjianzhan' end)) d
@@ -309,7 +309,7 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    and
         |        siteid > 5000000
         |    group by
@@ -327,7 +327,7 @@ object GetUnitNum {
         |    and
         |        industry = 'elds'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    and
         |        siteid > 5000000
         |    group by
@@ -391,7 +391,7 @@ object GetUnitNum {
         |    where
         |        dt = '$yesterday'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    and
         |        industry = 'app'
         |    and
@@ -409,7 +409,7 @@ object GetUnitNum {
         |    where
         |        dt = '$today'
         |    and
-        |        length(ocpc_log) > 0
+        |        is_ocpc = 1
         |    and
         |        industry = 'app'
         |    and

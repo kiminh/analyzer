@@ -8,8 +8,8 @@ object WriteCsv {
   }
 
   def writeCsv(today: String, dataDF: DataFrame, spark: SparkSession): Unit ={
-    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_show", "all_show",
-      "ocpc_click", "all_click", "ocpc_cost", "all_cost", "cost_ratio", "all_cost_yesterday",
+    val title = spark.sparkContext.parallelize(Seq(Seq("industry", "ocpc_show", "all_show",  "ocpc_click",
+      "all_click", "ocpc_cost", "all_cost", "cost_ratio", "all_cpm", "ocpc_cpm", all_cost_yesterday",
       "all_cost_yesterday_ratio", "all_cost_days7ago", "all_cost_days7ago_ratio", "ocpc_cost_yesterday",
       "ocpc_cost_yesterday_ratio", "ocpc_cost_days7ago", "ocpc_cost_days7ago_ratio", "all_unit_yesterday",
       "all_unit_today", "ocpc_unit_yesterday", "ocpc_unit_today", "new_ocpc_unit", "recommend_unit",
@@ -24,6 +24,8 @@ object WriteCsv {
       x.getAs[Double]("ocpc_cost").toString,
       x.getAs[Double]("all_cost").toString,
       x.getAs[Double]("cost_ratio").toString,
+      x.getAs[Double]("all_cpm").toString,
+      x.getAs[Double]("ocpc_cpm").toString,
       x.getAs[Double]("all_cost_yesterday").toString,
       x.getAs[Double]("all_cost_yesterday_ratio").toString,
       x.getAs[Double]("all_cost_days7ago").toString,

@@ -66,7 +66,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$today'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        group by
         |            unitid,
         |            industry) a
@@ -79,7 +79,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$yesterday'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        group by
         |            unitid,
         |            industry) b
@@ -117,7 +117,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$today'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        group by
         |            unitid,
         |            industry) a
@@ -130,7 +130,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$yesterday'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        group by
         |            unitid,
         |            industry) b
@@ -169,7 +169,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$today'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'elds'
         |        group by
@@ -186,7 +186,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$yesterday'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'elds'
         |        group by
@@ -218,7 +218,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$today'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'elds'
         |        and
@@ -235,7 +235,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$yesterday'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'elds'
         |        and
@@ -274,7 +274,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$today'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'app'
         |        and
@@ -289,7 +289,7 @@ object GetNewOcpcUnitNum {
         |        where
         |            dt = '$yesterday'
         |        and
-        |            length(ocpc_log) > 0
+        |            is_ocpc = 1
         |        and
         |            industry = 'app'
         |        and
