@@ -8,6 +8,8 @@ create table if not exists dl_cpc.ocpc_cost_every_industry_hottopic(
     ocpc_cost                   double,
     all_cost                    double,
     cost_ratio                  double,
+    all_cpm                     double,
+    ocpc_cpm                    double,
     all_cost_yesterday          double,
     all_cost_yesterday_ratio    double,
     all_cost_days7ago           double,

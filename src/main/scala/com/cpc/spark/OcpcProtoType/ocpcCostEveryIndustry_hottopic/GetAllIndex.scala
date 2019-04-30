@@ -34,6 +34,8 @@ object GetAllIndex {
         |    round(a.ocpc_cost, 2) as ocpc_cost,
         |    round(a.all_cost, 2) as all_cost,
         |    round(a.cost_ratio, 3) as cost_ratio,
+        |    round(a.all_cpm, 3) as all_cpm,
+        |    round(a.ocpc_cpm, 3) as ocpc_cpm,
         |    round(d.all_cost_yesterday, 2) as all_cost_yesterday,
         |    round(a.all_cost / d.all_cost_yesterday, 3) as all_cost_yesterday_ratio,
         |    round(d.all_cost_days7ago, 2) as all_cost_days7ago,
