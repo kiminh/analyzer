@@ -89,7 +89,7 @@ object OcpcRegressionV2 {
 
     val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
       .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression_v2")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2_dev")
     res
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
   }
@@ -180,7 +180,7 @@ object OcpcRegressionV2 {
     val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
     if (cpasrc == "110110") {
-      targetK = 0.75
+      targetK = 0.95
     } else {
       targetK = 0.95
     }
