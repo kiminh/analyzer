@@ -56,8 +56,8 @@ object GetPreOcpcCost {
         |    'all' as industry,
         |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
         |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
-        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
-        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when length(ocpc_log) > 0 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when length(ocpc_log) > 0 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |group by
@@ -78,8 +78,8 @@ object GetPreOcpcCost {
         |    industry,
         |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
         |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
-        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
-        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when length(ocpc_log) > 0 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when length(ocpc_log) > 0 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |group by
@@ -101,8 +101,8 @@ object GetPreOcpcCost {
         |          else 'elds_notjianzhan' end) as industry,
         |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
         |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
-        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
-        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when length(ocpc_log) > 0 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when length(ocpc_log) > 0 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -117,8 +117,8 @@ object GetPreOcpcCost {
         |    'elds_chitu' as industry,
         |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
         |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
-        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
-        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when length(ocpc_log) > 0 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when length(ocpc_log) > 0 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where
@@ -143,8 +143,8 @@ object GetPreOcpcCost {
         |    'app_api_callback' as industry,
         |    sum(case when dt = '$days7ago' then cost else 0 end) as all_cost_days7ago,
         |    sum(case when dt = '$yesterday' then cost else 0 end) as all_cost_yesterday,
-        |    sum(case when is_ocpc = 1 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
-        |    sum(case when is_ocpc = 1 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
+        |    sum(case when length(ocpc_log) > 0 and dt = '$days7ago' then cost else 0 end) as ocpc_cost_days7ago,
+        |    sum(case when length(ocpc_log) > 0 and dt = '$yesterday' then cost else 0 end) as ocpc_cost_yesterday
         |from
         |    base_data_table
         |where

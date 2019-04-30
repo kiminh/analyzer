@@ -51,15 +51,15 @@ object GetBaseIndex {
         |select
         |    'all' as industry,
         |    sum(show) as all_show,
-        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(case when length(ocpc_log) > 0 then show else 0 end) as ocpc_show,
         |    sum(click) as all_click,
-        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(case when length(ocpc_log) > 0 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
+        |    sum(case when length(ocpc_log) > 0 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
-        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) * 1000.0
+        |        / sum(case when length(ocpc_log) > 0 then show else 0 end), 2) as ocpc_cpm
         |from
         |    base_data_table
         |where
@@ -81,15 +81,15 @@ object GetBaseIndex {
         |select
         |    industry,
         |    sum(show) as all_show,
-        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(case when length(ocpc_log) > 0 then show else 0 end) as ocpc_show,
         |    sum(click) as all_click,
-        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(case when length(ocpc_log) > 0 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
+        |    sum(case when length(ocpc_log) > 0 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
-        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) * 1000.0
+        |        / sum(case when length(ocpc_log) > 0 then show else 0 end), 2) as ocpc_cpm
         |from
         |    base_data_table
         |where
@@ -112,15 +112,15 @@ object GetBaseIndex {
         |    (case when siteid > 0 then 'elds_jianzhan'
         |          else 'elds_notjianzhan' end) as industry,
         |    sum(show) as all_show,
-        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(case when length(ocpc_log) > 0 then show else 0 end) as ocpc_show,
         |    sum(click) as all_click,
-        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(case when length(ocpc_log) > 0 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
+        |    sum(case when length(ocpc_log) > 0 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
-        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) * 1000.0
+        |        / sum(case when length(ocpc_log) > 0 then show else 0 end), 2) as ocpc_cpm
         |from
         |    base_data_table
         |where
@@ -136,15 +136,15 @@ object GetBaseIndex {
         |select
         |    'elds_chitu' as industry,
         |    sum(show) as all_show,
-        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(case when length(ocpc_log) > 0 then show else 0 end) as ocpc_show,
         |    sum(click) as all_click,
-        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(case when length(ocpc_log) > 0 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
+        |    sum(case when length(ocpc_log) > 0 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
-        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) * 1000.0
+        |        / sum(case when length(ocpc_log) > 0 then show else 0 end), 2) as ocpc_cpm
         |from
         |    base_data_table
         |where
@@ -170,15 +170,15 @@ object GetBaseIndex {
         |select
         |    'app_api_callback' as industry,
         |    sum(show) as all_show,
-        |    sum(case when is_ocpc = 1 then show else 0 end) as ocpc_show,
+        |    sum(case when length(ocpc_log) > 0 then show else 0 end) as ocpc_show,
         |    sum(click) as all_click,
-        |    sum(case when is_ocpc = 1 then click else 0 end) as ocpc_click,
+        |    sum(case when length(ocpc_log) > 0 then click else 0 end) as ocpc_click,
         |    sum(cost) as all_cost,
-        |    sum(case when is_ocpc = 1 then cost else 0 end) as ocpc_cost,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) / sum(cost), 4) as cost_ratio,
+        |    sum(case when length(ocpc_log) > 0 then cost else 0 end) as ocpc_cost,
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) / sum(cost), 4) as cost_ratio,
         |    round(sum(cost) * 1000.0 / sum(show), 2) as all_cpm,
-        |    round(sum(case when is_ocpc = 1 then cost else 0 end) * 1000.0
-        |        / sum(case when is_ocpc = 1 then show else 0 end), 2) as ocpc_cpm
+        |    round(sum(case when length(ocpc_log) > 0 then cost else 0 end) * 1000.0
+        |        / sum(case when length(ocpc_log) > 0 then show else 0 end), 2) as ocpc_cpm
         |from
         |    base_data_table
         |where
