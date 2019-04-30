@@ -39,7 +39,7 @@ object OcpcDailyFunnelIndustry {
     val data2 = calculateCnt(rawData, date, hour, spark)
     val result2 = data2
       .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
-      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid"))
+      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
       .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
 
     result2
