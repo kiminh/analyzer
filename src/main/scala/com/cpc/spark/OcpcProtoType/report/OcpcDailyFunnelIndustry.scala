@@ -44,7 +44,7 @@ object OcpcDailyFunnelIndustry {
 
     result2
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
 
 
