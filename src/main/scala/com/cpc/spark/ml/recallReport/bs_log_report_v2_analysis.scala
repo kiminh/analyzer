@@ -32,7 +32,7 @@ object bs_log_report_v2_analysis {
          |dl_cpc.OcpcLaunchdata2
          |WHERE date='$date'
        """.stripMargin
-    val data2=spark.sql(sql2).join(data,Seq("unitid"),"left")
-    data.repartition(1).write.mode("overwrite").saveAsTable("test.wy00")
+    val data2=spark.sql(sql2).join(data,Seq("unitid"),"left").select("unitid","choose","flag")
+    data2.repartition(1).write.mode("overwrite").saveAsTable("test.wy00")
   }
 }
