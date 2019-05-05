@@ -77,7 +77,9 @@ object AntouAndZhitou {
     val sql =
       s"""
         |select
-        |    'antou' as type,
+        |    (case when usertype = 0 then 'antou_other'
+        |          when usertype = 1 then 'antou_heiwulei'
+        |          else 'antou_zhengqi'end) as type,
         |    sum(case when a.isclick = 1 and length(a.ocpc_log) > 0 then a.price else 0 end) * 0.01 as ocpc_cost,
         |    sum(case when length(a.ocpc_log) > 0 then 1 else 0 end) as ocpc_show,
         |    round(sum(case when a.isclick = 1 and length(a.ocpc_log) > 0 then a.price else 0 end) * 10.0
@@ -100,7 +102,7 @@ object AntouAndZhitou {
         |    from
         |        dl_cpc.ocpc_base_unionlog
         |    where
-        |        `date` = '$date'
+        |        `date` = '2019-05-04'
         |    and
         |        isshow = 1
         |    and
@@ -112,7 +114,7 @@ object AntouAndZhitou {
         |    and
         |        media_appsid = '80002819') a
         |right join
-        |    temp_table b
+        |    test.wt_20190505_temp_table1 b
         |on
         |    a.unitid = b.unitid
         |where
@@ -120,7 +122,9 @@ object AntouAndZhitou {
         |and
         |    b.other_cost > 0
         |group by
-        |    'antou'
+        |    (case when usertype = 0 then 'antou_other'
+        |          when usertype = 1 then 'antou_heiwulei'
+        |          else 'antou_zhengqi'end)
       """.stripMargin
     println("--------- get antou info -----------")
     println(sql)
@@ -134,7 +138,7 @@ object AntouAndZhitou {
     val sql =
       s"""
         |select
-        |    'zhitou_fzq_other' as type,
+        |    (case when usertype = 0 then 'zhitou_other' else 'zhitou_heiwulei' end) as type,
         |    sum(case when a.isclick = 1 and a.is_ocpc = 1 then a.price else 0 end) * 0.01 as ocpc_cost,
         |    sum(case when a.is_ocpc = 1 then 1 else 0 end) as ocpc_show,
         |    round(sum(case when a.isclick = 1 and a.is_ocpc = 1 then a.price else 0 end) * 10.0
@@ -179,7 +183,7 @@ object AntouAndZhitou {
         |and
         |    b.other_cost = 0
         |group by
-        |    'zhitou_fzq_other'
+        |    (case when usertype = 0 then 'zhitou_other' else 'zhitou_heiwulei' end)
       """.stripMargin
     println("--------- get zhitou other -----------")
     println(sql)
