@@ -23,6 +23,7 @@ object bs_log_report_v2_analysis {
       """.stripMargin
     println(sql)
     val data=spark.sql(sql).withColumn("unitid",explode(split(col("groups_hit_new_user_ids"),",")))
+        .withColumn("flag",lit(1))
     data.show(10)
 
     val sql2=
@@ -31,7 +32,7 @@ object bs_log_report_v2_analysis {
          |dl_cpc.recall_filter_number_report_v2
          |WHERE date='$date'
        """.stripMargin
-    val data2=spark.sql(sql2).join(data,Seq("unitid"),"inner")
+    val data2=spark.sql(sql2).join(data,Seq("unitid"),"left")
     data.repartition(1).write.mode("overwrite").saveAsTable("test.wy00")
   }
 }
