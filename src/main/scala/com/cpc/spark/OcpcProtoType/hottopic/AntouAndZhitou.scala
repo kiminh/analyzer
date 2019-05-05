@@ -102,7 +102,7 @@ object AntouAndZhitou {
         |    from
         |        dl_cpc.ocpc_base_unionlog
         |    where
-        |        `date` = '$date'
+        |        `date` = '2019-05-04'
         |    and
         |        isshow = 1
         |    and
@@ -114,7 +114,7 @@ object AntouAndZhitou {
         |    and
         |        media_appsid = '80002819') a
         |right join
-        |    temp_table b
+        |    test.wt_20190505_temp_table1 b
         |on
         |    a.unitid = b.unitid
         |where
@@ -122,9 +122,9 @@ object AntouAndZhitou {
         |and
         |    b.other_cost > 0
         |group by
-        |    (case when usertype = 0 then 'other'
-        |          when usertype = 1 then 'heiwulei'
-        |          else 'zhengqi' end)
+        |    (case when usertype = 0 then 'antou_other'
+        |          when usertype = 1 then 'antou_heiwulei'
+        |          else 'antou_zhengqi'end)
       """.stripMargin
     println("--------- get antou info -----------")
     println(sql)
