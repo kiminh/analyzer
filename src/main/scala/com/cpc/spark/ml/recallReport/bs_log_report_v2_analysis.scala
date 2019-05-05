@@ -29,7 +29,7 @@ object bs_log_report_v2_analysis {
     val sql2=
       s"""
          |select unitid,choose from
-         |dl_cpc.recall_filter_number_report_v2
+         |dl_cpc.OcpcLaunchdata2
          |WHERE date='$date'
        """.stripMargin
     val data2=spark.sql(sql2).join(data,Seq("unitid"),"left")
