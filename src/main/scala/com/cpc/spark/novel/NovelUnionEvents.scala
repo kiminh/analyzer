@@ -44,11 +44,11 @@ object NovelUnionEvents {
             spark.sql(
                 s"""
                    |ALTER TABLE dl_cpc.cpc_novel_union_events
-                   | add if not exists PARTITION(`day` = "$date", `hour` = "$hour",`minute`="$minute")
+                   | add if not exists PARTITION(`day` = "$date", `hour` = "$hour", `minute`="$minute")
                    | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/day=$date/hour=$hour/minute=$minute'
           """.stripMargin.trim)
             i=i+1
         }
-        println(" -- write cpc_basedata_union_events to hive successfully -- ")
+        println(" -- write cpc_novel_union_events to hive successfully -- ")
     }
 }
