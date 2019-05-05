@@ -47,7 +47,7 @@ object DspTitleSample {
          |adid, title
          |FROM dl_cpc.slim_union_log
          |WHERE dt> date_sub('$date', 7) and adid != '' and adsrc = 22
-         |and media_appsid in ("80001098", "80001292")
+         |and media_appsid in ("80001098", "80001292","80000001", "80000002")
          |and title != ''
              """.stripMargin
     println(sql2)
