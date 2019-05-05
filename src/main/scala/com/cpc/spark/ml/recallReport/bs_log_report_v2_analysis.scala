@@ -19,7 +19,7 @@ object bs_log_report_v2_analysis {
     val sql: String =
       s"""
         |select groups_hit_new_user_ids from dl_cpc.recall_filter_number_report_v2
-        |WHERE date='$date'
+        |WHERE date='$date' and media_appsid in ('80001098','80001292')
       """.stripMargin
     println(sql)
     val data=spark.sql(sql).withColumn("new_user_ids",explode(split(col("groups_hit_new_user_ids"),",")))
