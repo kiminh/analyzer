@@ -44,8 +44,8 @@ object OcpcUnionSuggestCPAv2 {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190411")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190411")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -56,7 +56,7 @@ object OcpcUnionSuggestCPAv2 {
       s"""
          |SELECT
          |  *,
-         |  (case when unitid in (2078340, 2078121, 2077145, 2072348, 2024103, 1988046, 2064875, 2040762, 2064725) then 50
+         |  (case when industry = 'elds' then 40
          |        else 60 end) as cv_threshold
          |FROM
          |  base_data
