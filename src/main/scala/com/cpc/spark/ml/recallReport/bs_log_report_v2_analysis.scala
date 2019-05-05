@@ -22,7 +22,7 @@ object bs_log_report_v2_analysis {
         |WHERE date='$date' and media_appsid in ('80001098','80001292')
       """.stripMargin
     println(sql)
-    val data=spark.sql(sql).withColumn("new_user_ids",explode(split(col("groups_hit_new_user_ids"),",")))
+    val data=spark.sql(sql).withColumn("unitid",explode(split(col("groups_hit_new_user_ids"),",")))
     data.show(10)
 
     val sql2=
