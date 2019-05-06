@@ -55,8 +55,8 @@ object OcpcHourlyReport {
     val dataConversion = getDataByConversionV2(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-    saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
-
+//    saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
+    saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 //    // 存储数据到mysql
 //    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
@@ -259,6 +259,8 @@ object OcpcHourlyReport {
     //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cali_detail_report_hourly")
 
     dataConversion
+      .withColumn("identifier", col("userid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr", "date", "hour")
       .withColumn("version", lit(version))
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
     //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
