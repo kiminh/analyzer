@@ -93,8 +93,8 @@ object MultiDimensionCalibOnMiduV2 {
     saveFlatTextFileForDebug(model, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$model.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$calimodel.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$calimodel.mlm", conf))
     }
   }
 }
