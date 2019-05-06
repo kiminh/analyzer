@@ -177,7 +177,10 @@ object OcpcUnionReportV2 {
         |    auc,
         |    hour,
         |    version,
-        |    0 as is_hidden
+        |    0 as is_hidden,
+        |    cpa_given,
+        |    cpa_real,
+        |    cpa_ratio
         |from
         |    dl_cpc.ocpc_summary_report_hourly_v4
         |where
@@ -211,7 +214,10 @@ object OcpcUnionReportV2 {
         |    auc,
         |    hour,
         |    version,
-        |    1 as is_hidden
+        |    1 as is_hidden,
+        |    cpa_given,
+        |    cpa_real,
+        |    cpa_ratio
         |from
         |    dl_cpc.ocpc_summary_report_hourly_v4
         |where
@@ -257,8 +263,8 @@ object OcpcUnionReportV2 {
 
     // 汇总表
     val dataConversionMysql = dataConversion
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden")
-      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cpa_given", "cpa_real", "cpa_ratio")
+      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpa_given", "cpa_real", "cpa_ratio"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
     val reportTableConversion = "report2.report_ocpc_data_summary_v2"

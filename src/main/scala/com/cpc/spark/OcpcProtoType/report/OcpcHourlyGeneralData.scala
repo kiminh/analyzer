@@ -114,8 +114,9 @@ object OcpcHourlyGeneralData {
       .withColumn("cost", col("cost") * 100)
       .withColumn("cost_low", col("cost_low") * 100)
       .withColumn("cost_high", col("cost_high") * 100)
-      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(cost_low as int) as cost_low", "cast(cost_high as int) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt", "cast(low_unit_percent as double) control_unit_ratio", "cast(pay_percent as double) uncontrol_pay_ratio", "cast(cpa_real as double) cpa_real", "cast(cpa_given as double) cpa_given")
-      .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "control_unit_ratio", "uncontrol_pay_ratio", "cpa_real", "cpa_given"))
+      .withColumn("cpa_ratio", col("cpa_real") * 1.0 / col("cpa_given"))
+      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(cost_low as int) as cost_low", "cast(cost_high as int) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt", "cast(low_unit_percent as double) control_unit_ratio", "cast(pay_percent as double) uncontrol_pay_ratio", "cast(cpa_given as double) cpa_given", "cast(cpa_real as double) cpa_real", "cast(cpa_ratio as double) cpa_ratio")
+      .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "control_unit_ratio", "uncontrol_pay_ratio", "cpa_given", "cpa_real", "cpa_ratio"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
 
