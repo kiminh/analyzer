@@ -1,26 +1,31 @@
 package com.cpc.spark.OcpcProtoType.report
 
-import com.cpc.spark.tools.{OperateMySQL, testOperateMySQL}
+import com.cpc.spark.tools.testOperateMySQL
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionReport {
+object OcpcUnionReportV2 {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
     // get the unit data
-    val dataUnitRaw = unionDetailReport(date, hour, spark)
-    val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
-//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
-    println("------union detail report success---------")
-    val dataConversion = unionSummaryReport(date, hour, spark)
-    println("------union summary report success---------")
-    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-    println("------insert into mysql success----------")
+    val dataUnitRaw = unionDetailReport("_unitid", date, hour, spark)
+    val dataUnit = addSuggestCPA(dataUnitRaw, "_unitid", date, hour, spark)
+    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
+    // get the user data
+    val dataUserRaw = unionDetailReport("_userid", date, hour, spark)
+    val dataUser = addSuggestCPA(dataUserRaw, "_userid", date, hour, spark)
+    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
+
+//    println("------union detail report success---------")
+//    val dataConversion = unionSummaryReport(date, hour, spark)
+//    println("------union summary report success---------")
+//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+//    println("------insert into mysql success----------")
   }
 
-  def addSuggestCPA(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def addSuggestCPA(rawData: DataFrame, versionPostfix: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -43,7 +48,7 @@ object OcpcUnionReport {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('qtt_demo', 'qtt_hidden')
+         |  version in ('qtt_demo' + '$versionPostfix', 'qtt_hidden' + '$versionPostfix')
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -56,87 +61,87 @@ object OcpcUnionReport {
     result
   }
 
-  def unionDetailReport(date: String, hour: String, spark: SparkSession): DataFrame ={
+  def unionDetailReport(versionPostfix: String, date: String, hour: String, spark: SparkSession): DataFrame ={
     val sql =
       s"""
-        |select
-        |    identifier as unit_id,
-        |    userid as user_id,
-        |    conversion_goal,
-        |    step2_click_percent,
-        |    is_step2,
-        |    cpa_given,
-        |    cpa_real,
-        |    cpa_ratio,
-        |    is_cpa_ok,
-        |    impression,
-        |    click,
-        |    conversion,
-        |    ctr,
-        |    click_cvr,
-        |    show_cvr,
-        |    cost,
-        |    acp,
-        |    avg_k,
-        |    recent_k,
-        |    pre_cvr,
-        |    post_cvr,
-        |    q_factor,
-        |    acb,
-        |    auc,
-        |    round(cost*10.0/impression,3) as cpm,
-        |    hour,
-        |    version,
-        |    0 as is_hidden
-        |from
-        |    dl_cpc.ocpc_detail_report_hourly_v4
-        |where
-        |    `date` = '$date'
-        |and
-        |    hour = '$hour'
-        |and
-        |    version = 'qtt_demo'
-        |
-        |union
-        |
-        |select
-        |    identifier as unit_id,
-        |    userid as user_id,
-        |    conversion_goal,
-        |    step2_click_percent,
-        |    is_step2,
-        |    cpa_given,
-        |    cpa_real,
-        |    cpa_ratio,
-        |    is_cpa_ok,
-        |    impression,
-        |    click,
-        |    conversion,
-        |    ctr,
-        |    click_cvr,
-        |    show_cvr,
-        |    cost,
-        |    acp,
-        |    avg_k,
-        |    recent_k,
-        |    pre_cvr,
-        |    post_cvr,
-        |    q_factor,
-        |    acb,
-        |    auc,
-        |    round(cost*10.0/impression,3) as cpm,
-        |    hour,
-        |    version,
-        |    1 as is_hidden
-        |from
-        |    dl_cpc.ocpc_detail_report_hourly_v4
-        |where
-        |    `date` = '$date'
-        |and
-        |    hour = '$hour'
-        |and
-        |    version = 'qtt_hidden'
-      """.stripMargin
+         |select
+         |    identifier as unit_id,
+         |    userid as user_id,
+         |    conversion_goal,
+         |    step2_click_percent,
+         |    is_step2,
+         |    cpa_given,
+         |    cpa_real,
+         |    cpa_ratio,
+         |    is_cpa_ok,
+         |    impression,
+         |    click,
+         |    conversion,
+         |    ctr,
+         |    click_cvr,
+         |    show_cvr,
+         |    cost,
+         |    acp,
+         |    avg_k,
+         |    recent_k,
+         |    pre_cvr,
+         |    post_cvr,
+         |    q_factor,
+         |    acb,
+         |    auc,
+         |    round(cost*10.0/impression,3) as cpm,
+         |    hour,
+         |    version,
+         |    0 as is_hidden
+         |from
+         |    dl_cpc.ocpc_detail_report_hourly_v4
+         |where
+         |    `date` = '$date'
+         |and
+         |    hour = '$hour'
+         |and
+         |    version = ('qtt_demo' + '$versionPostfix')
+         |
+         |union
+         |
+         |select
+         |    identifier as unit_id,
+         |    userid as user_id,
+         |    conversion_goal,
+         |    step2_click_percent,
+         |    is_step2,
+         |    cpa_given,
+         |    cpa_real,
+         |    cpa_ratio,
+         |    is_cpa_ok,
+         |    impression,
+         |    click,
+         |    conversion,
+         |    ctr,
+         |    click_cvr,
+         |    show_cvr,
+         |    cost,
+         |    acp,
+         |    avg_k,
+         |    recent_k,
+         |    pre_cvr,
+         |    post_cvr,
+         |    q_factor,
+         |    acb,
+         |    auc,
+         |    round(cost*10.0/impression,3) as cpm,
+         |    hour,
+         |    version,
+         |    1 as is_hidden
+         |from
+         |    dl_cpc.ocpc_detail_report_hourly_v4
+         |where
+         |    `date` = '$date'
+         |and
+         |    hour = '$hour'
+         |and
+         |    version = ('qtt_hidden' + '$versionPostfix')
+       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
 
