@@ -438,7 +438,7 @@ object OcpcHourlyReport {
       .withColumn("click_cvr", when(col("click")===0, 1).otherwise(col("click_cvr")))
       .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("acp", when(col("click")===0, 0).otherwise(col("acp")))
-      .withColumn("cpa_ratio", col("cpa_real") * 1.0 / col("cpa_given"))
+      .withColumn("cpa_ratio", when(col("conversion").isNull || col("conversion") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
 
     resultDF
   }
