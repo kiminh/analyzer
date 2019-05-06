@@ -12,17 +12,17 @@ object OcpcUnionReportV2 {
     // get the unit data
     val dataUnitRaw = unionDetailReport("_unitid", date, hour, spark)
     val dataUnit = addSuggestCPA(dataUnitRaw, "_unitid", date, hour, spark)
-    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
+//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
     // get the user data
     val dataUserRaw = unionDetailReport("_userid", date, hour, spark)
     val dataUser = addSuggestCPA(dataUserRaw, "_userid", date, hour, spark)
-    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
+//    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
 
-//    println("------union detail report success---------")
-//    val dataConversion = unionSummaryReport(date, hour, spark)
-//    println("------union summary report success---------")
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-//    println("------insert into mysql success----------")
+    println("------union detail report success---------")
+    val dataConversion = unionSummaryReport(date, hour, spark)
+    println("------union summary report success---------")
+    saveDataToMysql(dataUnit, dataUser, dataConversion, date, hour, spark)
+    println("------insert into mysql success----------")
   }
 
   def addSuggestCPA(rawData: DataFrame, versionPostfix: String, date: String, hour: String, spark: SparkSession) = {
@@ -31,7 +31,7 @@ object OcpcUnionReportV2 {
     val sqlRequest =
       s"""
          |SELECT
-         |  identifier as unit_id,
+         |  identifier,
          |  conversion_goal,
          |  version,
          |  cpa_suggest,
@@ -69,7 +69,7 @@ object OcpcUnionReportV2 {
     val sql =
       s"""
          |select
-         |    identifier as unit_id,
+         |    identifier,
          |    userid as user_id,
          |    conversion_goal,
          |    step2_click_percent,
@@ -109,7 +109,7 @@ object OcpcUnionReportV2 {
          |union
          |
          |select
-         |    identifier as unit_id,
+         |    identifier,
          |    userid as user_id,
          |    conversion_goal,
          |    step2_click_percent,
@@ -226,12 +226,13 @@ object OcpcUnionReportV2 {
   }
 
 
-  def saveDataToMysql(dataUnit: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def saveDataToMysql(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val hourInt = hour.toInt
-    // 详情表
+    // unitid详情表
     val dataUnitMysql = dataUnit
-      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr")
-      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
+      .withColumn("unit_id", col("identifier"))
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpm", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr")
+      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpm", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
     val reportTableUnit = "report2.report_ocpc_data_detail_v2"
@@ -239,6 +240,19 @@ object OcpcUnionReportV2 {
 
     testOperateMySQL.update(delSQLunit) //先删除历史数据
     testOperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+
+
+    // userid详情表
+    val dataUserMysql = dataUnit
+      .select("user_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpm", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr")
+      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpm", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableUser = "report2.report_ocpc_data_user_detail"
+    val delSQLuser = s"delete from $reportTableUser where `date` = '$date' and hour = $hourInt"
+
+    testOperateMySQL.update(delSQLuser) //先删除历史数据
+    testOperateMySQL.insert(dataUserMysql, reportTableUser) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
