@@ -51,7 +51,8 @@ object OcpcHourlyReport {
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
+    val cpaDataConversion = preprocessCpaByConversion(baseData, date, hour, spark)
+    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
     saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
@@ -59,6 +60,44 @@ object OcpcHourlyReport {
 //    // 存储数据到mysql
 //    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
+  }
+
+  def preprocessCpaByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  0 as conversion_goal,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
+         |  sum(iscvr) as cvr_cnt
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest0)
+    val result0 = spark.sql(sqlRequest0)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
+         |  sum(iscvr) as cvr_cnt
+         |FROM
+         |  raw_data
+         |GROUP BY conversion_goal
+       """.stripMargin
+    println(sqlRequest1)
+    val result1 = spark.sql(sqlRequest1)
+
+    val resultDF = result0
+      .union(result1)
+      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
+      .select("conversion_goal", "cpa_given", "cpa_real", "cpa_ratio")
+
+    resultDF
   }
 
 
@@ -270,7 +309,7 @@ object OcpcHourlyReport {
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
-  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, cpaData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -289,8 +328,10 @@ object OcpcHourlyReport {
     // 关联数据
     val resultDF = rawData
       .join(costData, Seq("conversion_goal"), "left_outer")
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
       .join(aucData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .join(cpaData, Seq("conversion_goal"), "left_outer")
       .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -396,8 +437,6 @@ object OcpcHourlyReport {
          |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
          |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
-         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
-         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  SUM(impression) as impression,
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
@@ -417,8 +456,6 @@ object OcpcHourlyReport {
          |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
          |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
-         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
-         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  SUM(impression) as impression,
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
@@ -438,7 +475,6 @@ object OcpcHourlyReport {
       .withColumn("click_cvr", when(col("click")===0, 1).otherwise(col("click_cvr")))
       .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("acp", when(col("click")===0, 0).otherwise(col("acp")))
-      .withColumn("cpa_ratio", when(col("conversion").isNull || col("conversion") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
 
     resultDF
   }
