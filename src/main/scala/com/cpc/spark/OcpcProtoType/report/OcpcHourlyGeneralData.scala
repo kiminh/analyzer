@@ -225,7 +225,7 @@ object OcpcHourlyGeneralData {
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real
          |FROM
-         |  base_data
+         |  raw_data
          |GROUP BY industry
        """.stripMargin
     println(sqlRequest3)
