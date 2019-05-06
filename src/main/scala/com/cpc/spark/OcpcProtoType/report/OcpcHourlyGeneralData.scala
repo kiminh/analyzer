@@ -209,7 +209,7 @@ object OcpcHourlyGeneralData {
          |  sum(case when high_cost = 0.0 then 1 else 0 end) as low_unitid_cnt,
          |  count(unitid) as unitid_cnt,
          |  count(distinct userid) as userid_cnt,
-         |  cpa_given,
+         |  cpagiven as cpa_given,
          |  sum(ocpc_cost) * 1.0 / sum(cv) as cpa_real
          |FROM
          |  base_data
