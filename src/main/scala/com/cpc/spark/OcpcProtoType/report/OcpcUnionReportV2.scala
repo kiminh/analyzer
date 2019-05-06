@@ -26,6 +26,8 @@ object OcpcUnionReportV2 {
   }
 
   def addSuggestCPA(rawData: DataFrame, versionPostfix: String, date: String, hour: String, spark: SparkSession) = {
+    val version1 = "qtt_demo" + versionPostfix
+    val version2 = "qtt_hidden" + versionPostfix
     val sqlRequest =
       s"""
          |SELECT
@@ -48,7 +50,7 @@ object OcpcUnionReportV2 {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('qtt_demo' + '$versionPostfix', 'qtt_hidden' + '$versionPostfix')
+         |  version in ('$version1', '$version2')
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -62,6 +64,8 @@ object OcpcUnionReportV2 {
   }
 
   def unionDetailReport(versionPostfix: String, date: String, hour: String, spark: SparkSession): DataFrame ={
+    val version1 = "qtt_demo" + versionPostfix
+    val version2 = "qtt_hidden" + versionPostfix
     val sql =
       s"""
          |select
@@ -100,7 +104,7 @@ object OcpcUnionReportV2 {
          |and
          |    hour = '$hour'
          |and
-         |    version = ('qtt_demo' + '$versionPostfix')
+         |    version = '$version1'
          |
          |union
          |
@@ -140,7 +144,7 @@ object OcpcUnionReportV2 {
          |and
          |    hour = '$hour'
          |and
-         |    version = ('qtt_hidden' + '$versionPostfix')
+         |    version = '$version2'
        """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
