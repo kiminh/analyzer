@@ -20,12 +20,12 @@ object OcpcPIDwithCPAV2 {
 
     val result = calculateKv2(date, hour, spark)
     val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    println(s"successfully save data into table: $tableName")
-//
-//    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
+
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
 
 
   }
@@ -266,7 +266,7 @@ object OcpcPIDwithCPAV2 {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
-    cpaRatio.write.mode("overwrite").saveAsTable("test.wy04")
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.wy04")
     cpaRatio
 
   }
@@ -298,7 +298,7 @@ object OcpcPIDwithCPAV2 {
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
-    rawData.write.mode("overwrite").saveAsTable("test.wy05")
+//    rawData.write.mode("overwrite").saveAsTable("test.wy05")
     val resultDF = rawData
       .select("unitid", "new_adclass", "updated_k", "conversion_goal")
       .withColumn("k_value", col("updated_k"))
