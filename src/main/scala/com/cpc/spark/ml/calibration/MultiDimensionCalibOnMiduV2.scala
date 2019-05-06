@@ -10,7 +10,7 @@ import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions._
-import com.cpc.spark.ml.calibration.MultiDimensionCalibOnMidu._
+import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt._
 
 
 object MultiDimensionCalibOnMiduV2 {
