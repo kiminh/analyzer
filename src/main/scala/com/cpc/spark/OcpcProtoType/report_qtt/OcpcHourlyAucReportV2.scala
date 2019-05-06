@@ -19,7 +19,7 @@ object OcpcHourlyAucReportV2 {
     val version = args(2).toString
     val media = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"com.cpc.spark.OcpcProtoType.report_qtt.OcpcHourlyAucReportV2: date=$date, hour=$hour, version=$version, media=$media")
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
