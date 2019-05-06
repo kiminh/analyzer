@@ -259,6 +259,7 @@ object OcpcPIDwithCPAV2 {
          |  cvr_cnt,
          |  (case when total_cost is null or total_cost = 0 then 1.0
          |        when (cvr_cnt = 0 or cvr_cnt is null) and total_cost > 50000 then 0.8
+         |        when (cvr_cnt = 0 or cvr_cnt is null) and total_cost <= 50000 then 1.0
          |        else cpa_given * cvr_cnt * 1.0 / total_cost end) as cpa_ratio
          |FROM
          |  join_table
