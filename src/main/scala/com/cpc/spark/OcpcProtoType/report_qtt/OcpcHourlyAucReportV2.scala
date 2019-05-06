@@ -44,9 +44,9 @@ object OcpcHourlyAucReportV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
-//    unitData
-//      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
+//    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+    unitData
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
     // 汇总表数据
     val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
@@ -58,9 +58,9 @@ object OcpcHourlyAucReportV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
-//    conversionData
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_summary_hourly")
+//    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
+    conversionData
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_summary_hourly")
 
 
   }
