@@ -41,10 +41,10 @@ object TouchedUV {
         //根据趣头条、米读选择不同的sql语句
         val sql = appType match {
             case "qtt" =>
-                "select uid,province,city,sex,age,coin,os,network,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and isshow=1 and ideaid>0"
+                "select uid,province,city,sex,age,coin,os,network,share_coin,phone_level from dl_cpc.cpc_basedata_union_events where day = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and isshow=1 and ideaid>0"
                   .format(date)
             case "miRead" =>
-                "select uid,province,city,sex,age,coin,os,network,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80001098\", \"80001292\") and isshow=1 and ideaid>0"
+                "select uid,province,city,sex,age,coin,os,network,share_coin,phone_level from dl_cpc.cpc_basedata_union_events where day = \"%s\" and media_appsid in (\"80001098\", \"80001292\") and isshow=1 and ideaid>0"
                   .format(date)
             case _ => ""
         }

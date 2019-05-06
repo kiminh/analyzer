@@ -43,14 +43,13 @@ object bscvr_report {
          price FROM dl_cpc.slim_union_log
          WHERE dt='$tardate'
          and media_appsid  in ('80000001', '80000002') and isshow > 0
-         and antispam = 0
          and adsrc = 1
          AND userid > 0
          and uid not like '%000000%'
          and (charge_type = 1 or charge_type is null)) ta
          join
          (select cast(unitid as bigint) as unitid
-         from dl_cpc.cpc_recall_high_confidence_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
+         from dl_cpc.cpc_recall_bsExp_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
          left join
          (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
           and isreport=1 group by searchid,ideaid) tc
@@ -80,14 +79,13 @@ object bscvr_report {
 |         adslot_type, cast(unitid as bigint) as unitid,
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate' and media_appsid  in ('80000001', '80000002') and isshow > 0
-|         and antispam = 0
 |         and adsrc = 1
 |         AND userid > 0
 |         and uid not like '%000000%'
 |         and (charge_type = 1 or charge_type is null)) ta
 |         join
 |         (select cast(unitid as bigint) as unitid
-|         from dl_cpc.cpc_recall_high_confidence_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
+|         from dl_cpc.cpc_recall_bsExp_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
 |         left join
 |         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
 |          and isreport=1 group by searchid,ideaid) tc
@@ -119,7 +117,6 @@ object bscvr_report {
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate'
 |         and media_appsid  in ('80000001', '80000002') and isshow > 0
-|         and antispam = 0
 |         and adsrc = 1
 |         AND userid > 0
 |         and uid not like '%000000%'
@@ -133,12 +130,17 @@ object bscvr_report {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_bsCvr_report partition (date='$tardate')
          |select * from unitid_total
          |union
          |select * from unitid_detail
          |union
          |select * from unitid_all
+      """.stripMargin).repartition(1).createOrReplaceTempView("bsCvr_report")
+
+    spark.sql(
+      s"""
+         |insert overwrite table dl_cpc.cpc_recall_bsCvr_report partition (date='$tardate')
+         |select * from bsCvr_report
       """.stripMargin)
   }
 }

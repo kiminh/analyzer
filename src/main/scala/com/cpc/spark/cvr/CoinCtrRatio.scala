@@ -29,7 +29,7 @@ object CoinCtrRatio {
             val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             val dd = sf.format(cal.getTime())
             val d1 = dd.substring(0, 10)
-            val datecond = s"`date` = '$d1'"
+            val datecond = s"`day` = '$d1'"
             dateList += datecond
         }
 
@@ -45,9 +45,9 @@ object CoinCtrRatio {
                |    select
                |        ideaid,
                |        sum(isclick) / count(*) as acutal_ctr,
-               |        (sum(ext["exp_ctr"].int_value)/1000000) / count(*) as exp_ctr
+               |        (sum(exp_ctr)/1000000) / count(*) as exp_ctr
                |        from
-               |            dl_cpc.cpc_union_log
+               |            dl_cpc.cpc_basedata_union_events
                |        where
                |            ($datelist)
                |            and media_appsid in ('80000001','80000002')

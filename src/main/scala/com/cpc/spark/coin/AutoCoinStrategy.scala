@@ -62,85 +62,86 @@ object AutoCoinStrategy {
         //正企userid白名单，出自动金币
         val userWhiteList =
             """
-              |1522853,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587, 1553711, 1552154, 1559014, 1551248, 1538486, 1551950, 1559495, 1550108, 1551707, 1548568, 1558766, 1558705, 1559522, 1556256, 1548521, 1558838, 1559266, 1560432, 1559076, 1557344, 1540595, 1560225
+              |0
             """.stripMargin
 
         val mlFeatureNth = calcThreshold(spark,ml_cvr_feature_v1,dateHourFilter,ideaBlacklist,
             lowAucUseridFilter,userWhiteList,unKnownIdeaidList,
             p1,p2,
             date,hour)
-        val apiUnionNth = calcApiThreshold(spark,cpc_api_union_log,dateHourFilter,ideaBlacklist,
+        val apiUnionNth = calcApiThreshold(spark,cpc_api_union_log,dateHourFilter.replace("date","day"),ideaBlacklist,
             lowAucUseridFilter,userWhiteList,unKnownIdeaidList,
             p1,p2,
             date,hour)
-
+        println("mlFeatureNth 's count" + mlFeatureNth.count())
+        println("apiUnionNth 's count" + apiUnionNth.count())
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)   //两个数据组合
           .map(x => {
-              val label = x._2._1.orNull
+            val label = x._2._1.orNull
 
-              val api = x._2._2.orNull
-              if (label != null && api != null) {
-                  coin(ideaid = x._1,
-                      label_exp_cvr = label._1,
-                      label_min = label._2,
-                      label_max = label._3,
-                      label_num = label._4,
-                      label_5th = label._5,
-                      label_6th = label._6,
-                      label_7th = label._7,
-                      label_8th = label._8,
-                      label_9th = label._9,
+            val api = x._2._2.orNull
+            if (label != null && api != null) {
+                coin(ideaid = x._1,
+                    label_exp_cvr = label._1,
+                    label_min = label._2,
+                    label_max = label._3,
+                    label_num = label._4,
+                    label_5th = label._5,
+                    label_6th = label._6,
+                    label_7th = label._7,
+                    label_8th = label._8,
+                    label_9th = label._9,
 
-                      api_exp_cvr = api._1,
-                      api_min = api._2,
-                      api_max = api._3,
-                      api_num = api._4,
-                      api_5th = api._5,
-                      api_6th = api._6,
-                      api_7th = api._7,
-                      api_8th = api._8,
-                      api_9th = api._9,
+                    api_exp_cvr = api._1,
+                    api_min = api._2,
+                    api_max = api._3,
+                    api_num = api._4,
+                    api_5th = api._5,
+                    api_6th = api._6,
+                    api_7th = api._7,
+                    api_8th = api._8,
+                    api_9th = api._9,
 
-                      date = date,
-                      hour = hour.toString)
-              }
-              else if (label == null && api != null) {
-                  coin(ideaid = x._1,
+                    date = date,
+                    hour = hour.toString)
+            }
+            else if (label == null && api != null) {
+                coin(ideaid = x._1,
 
-                      api_exp_cvr = api._1,
-                      api_min = api._2,
-                      api_max = api._3,
-                      api_num = api._4,
-                      api_5th = api._5,
-                      api_6th = api._6,
-                      api_7th = api._7,
-                      api_8th = api._8,
-                      api_9th = api._9,
+                    api_exp_cvr = api._1,
+                    api_min = api._2,
+                    api_max = api._3,
+                    api_num = api._4,
+                    api_5th = api._5,
+                    api_6th = api._6,
+                    api_7th = api._7,
+                    api_8th = api._8,
+                    api_9th = api._9,
 
-                      date = date,
-                      hour = hour.toString)
-              }
-              else if (label != null && api == null) {
-                  coin(ideaid = x._1,
-                      label_exp_cvr = label._1,
-                      label_min = label._2,
-                      label_max = label._3,
-                      label_num = label._4,
-                      label_5th = label._5,
-                      label_6th = label._6,
-                      label_7th = label._7,
-                      label_8th = label._8,
-                      label_9th = label._9,
+                    date = date,
+                    hour = hour.toString)
+            }
+            else if (label != null && api == null) {
+                coin(ideaid = x._1,
+                    label_exp_cvr = label._1,
+                    label_min = label._2,
+                    label_max = label._3,
+                    label_num = label._4,
+                    label_5th = label._5,
+                    label_6th = label._6,
+                    label_7th = label._7,
+                    label_8th = label._8,
+                    label_9th = label._9,
 
-                      date = date,
-                      hour = hour.toString)
-              }
-              else {
-                  coin(ideaid = x._1,
-                      date = date,
-                      hour = hour.toString)
-              }
-          })
+                    date = date,
+                    hour = hour.toString)
+            }
+            else {
+                coin(ideaid = x._1,
+                    date = date,
+                    hour = hour.toString)
+            }
+        })
           .filter(x => x.api_num >= 30 || x.label_num >= 30)    //过滤数据量小于等于30
           .toDS()
           .coalesce(1)
@@ -259,7 +260,6 @@ object AutoCoinStrategy {
 
         val lowAucUseridFilter = lowAucUserid:::l0  //增加一个默认值，防止空list
 
-
         lowAucUseridFilter.mkString(",")
     }
 
@@ -281,18 +281,17 @@ object AutoCoinStrategy {
                          p1:Double, p2:Double, date:String, hour:String):RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val apiUnionLogSql =
             s"""
-               |select ideaid,ext["exp_cvr"].int_value as exp_cvr
-               |from $cpc_api_union_log
+               |select ideaid,exp_cvr
+               |from dl_cpc.api_basedata_union_events
                |where ($dateHourFilter)
-               |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
                |and adslot_type in (1, 2)
-               |and round(ext['adclass'].int_value/1000000) != 107 and round(ext['adclass'].int_value/1000000) != 134
-               |and ((adslot_type<>7 and ext['adclass'].int_value like '100%') or (ext['adclass'].int_value in (110110100, 125100100)))
+               |and round(adclass/1000000) != 107 and round(adclass/1000000) != 134
+               |and ((adslot_type<>7 and adclass like '100%') or (adclass in (110110100, 125100100)))
                |and ideaid not in ($ideaBlacklist)
                |and userid not in ($lowAucUseridFilter)
-               |and (userid in ($userWhiteList) or ext['usertype'].int_value != 2)
+               |and (userid in ($userWhiteList) or usertype != 2)
              """.stripMargin
         println(apiUnionLogSql)
 
@@ -417,10 +416,12 @@ object AutoCoinStrategy {
       * @return
       */
     def getThresholdAdjust(spark:SparkSession,df:DataFrame,date:String, hour:String, p:Double):
-        RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+    RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val t = getPreTime(date,hour,3) //获取3个小时前的时间
 
         val ideaP = getIdeaidP(spark,t.substring(0, 10))    //获取p值
+
+        ideaP.show(10)
 
         df.join(ideaP,Seq("ideaid"),"left_outer").select("ideaid","exp_cvr","p")
           .na

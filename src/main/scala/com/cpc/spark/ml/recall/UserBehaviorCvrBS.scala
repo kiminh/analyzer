@@ -37,10 +37,15 @@ object UserBehaviorCvrBS {
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
          |  ) a
-         |inner join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1
+         |left join
+         |  (select searchid, ideaid, label2 from dl_cpc.ml_cvr_feature_v1
          |  WHERE `date` = '$date' and label2 = 1
-         |  ) b on a.searchid = b.searchid
+         |  ) b on a.searchid = b.searchid and a.cvr_ideaid=b.ideaid
+         |  left join
+         |  (select searchid, ideaid, label from dl_cpc.ml_cvr_feature_v2
+         |  WHERE `date` = '$date' and label = 1
+         |  ) c on a.searchid = c.searchid and a.cvr_ideaid=c.ideaid
+         |  where label2=1 or label=1
       """.stripMargin
 
     println(cvr_sql)

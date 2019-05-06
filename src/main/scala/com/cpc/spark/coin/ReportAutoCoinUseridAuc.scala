@@ -82,7 +82,7 @@ object ReportAutoCoinUseridAuc {
           .select("userid","auc","date")
 
         uAuc.repartition(1)
-          .write.insertInto("dl_cpc.cpc_coin_userid_auc")
+          .write.mode("overwrite").insertInto("dl_cpc.cpc_coin_userid_auc")
 
         val iAuc = CalcMetrics.getGauc(spark,useridAucList,"ideaid")
           .withColumnRenamed("name","ideaid")
@@ -90,7 +90,7 @@ object ReportAutoCoinUseridAuc {
           .select("ideaid","auc","date")
 
         iAuc.repartition(1)
-          .write.insertInto("dl_cpc.cpc_coin_ideaid_auc")
+          .write.mode("overwrite").insertInto("dl_cpc.cpc_coin_ideaid_auc")
 
     }
 }

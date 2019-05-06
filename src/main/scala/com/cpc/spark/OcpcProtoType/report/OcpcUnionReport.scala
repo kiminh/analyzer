@@ -1,6 +1,6 @@
 package com.cpc.spark.OcpcProtoType.report
 
-import com.cpc.spark.tools.OperateMySQL
+import com.cpc.spark.tools.{OperateMySQL, testOperateMySQL}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -13,6 +13,7 @@ object OcpcUnionReport {
     val dataUnitRaw = unionDetailReport(date, hour, spark)
     // get the suggest cpa
     val dataUnit = addSuggestCPA(dataUnitRaw, date, hour, spark)
+//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
     println("------union detail report success---------")
     val dataConversion = unionSummaryReport(date, hour, spark)
     println("------union summary report success---------")
@@ -27,7 +28,15 @@ object OcpcUnionReport {
          |  identifier as unit_id,
          |  conversion_goal,
          |  version,
-         |  cpa_suggest
+         |  cpa_suggest,
+         |  cali_value,
+         |  cali_pcvr,
+         |  cali_postcvr,
+         |  smooth_factor,
+         |  hourly_expcvr,
+         |  hourly_calivalue,
+         |  hourly_calipcvr,
+         |  hourly_calipostcvr
          |FROM
          |  dl_cpc.ocpc_cali_detail_report_hourly
          |WHERE
@@ -76,6 +85,7 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
+        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    0 as is_hidden
@@ -115,6 +125,7 @@ object OcpcUnionReport {
         |    q_factor,
         |    acb,
         |    auc,
+        |    round(cost*10.0/impression,3) as cpm,
         |    hour,
         |    version,
         |    1 as is_hidden
@@ -129,9 +140,7 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-//      .withColumn("date", lit(date))
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.wt_union_detail_report")
+
   }
 
   def unionSummaryReport(date: String, hour: String, spark: SparkSession): DataFrame ={
@@ -205,9 +214,7 @@ object OcpcUnionReport {
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
-//      .withColumn("date", lit(date))
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.wt_union_summary_report")
+
   }
 
 
@@ -215,15 +222,15 @@ object OcpcUnionReport {
     val hourInt = hour.toInt
     // 详情表
     val dataUnitMysql = dataUnit
-      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cpa_suggest")
-      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr")
+      .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
     val reportTableUnit = "report2.report_ocpc_data_detail_v2"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLunit) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+    testOperateMySQL.update(delSQLunit) //先删除历史数据
+    testOperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -234,8 +241,8 @@ object OcpcUnionReport {
     val reportTableConversion = "report2.report_ocpc_data_summary_v2"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLconversion) //先删除历史数据
-    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+    testOperateMySQL.update(delSQLconversion) //先删除历史数据
+    testOperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
 }

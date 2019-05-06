@@ -1,9 +1,16 @@
 package com.cpc.spark.hottopic
 
+import java.util.Properties
+
 import com.cpc.spark.hottopic.HotTopicCtrAuc.DetailAuc
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.tools.OperateMySQL
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+
 /**
   * @author Liuyulin
   * @date 2019/3/25 15:10
@@ -87,11 +94,11 @@ object HotTopicCtrCvrAucGauc {
          |        where tmp.isreport=1
          |    ) b
          |    on a.searchid = b.searchid
+         |    where ctr_model_name not like '%noctr%'
              """.stripMargin
 
     val union = spark.sql(sql).cache()
     val CtrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
-    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
 
     //分模型-ctr
     val ctrModelNames = union.filter("length(ctr_model_name)>0").select("ctr_model_name")
@@ -144,6 +151,7 @@ object HotTopicCtrCvrAucGauc {
                     .insertInto("dl_cpc.cpc_hot_topic_ctr_auc_gauc_hourly")
     println("test.cpc_hot_topic_ctr_auc_gauc_hourly success!")
 
+    //CVR模型
     val sql_cvr =
       s"""
          |select cvr_model_name,exp_cvr as score,uid,if(b.searchid is not null,1,0) as label
@@ -206,56 +214,43 @@ object HotTopicCtrCvrAucGauc {
 
     val union_cvr = spark.sql(sql_cvr).cache()
 
-//    分模型-cvr
-    val cvrModelNames = union_cvr.filter("length(cvr_model_name)>0 ").select("cvr_model_name")
+    val cvr_model_names = union_cvr.select("cvr_model_name")
       .distinct()
       .collect()
-      .map(x => x.getAs[String]("cvr_model_name"))
-    println("cvrModelNames 's num is " + cvrModelNames.length)
-
-    for (cvrModelName <- cvrModelNames) {
-      println(cvrModelName)
-      val cvrModelUnion = union_cvr.filter(s"cvr_model_name = '$cvrModelName' ")
-      cvrModelUnion.filter("label =1 ").show(10)
-      val cvrModelAuc = CalcMetrics.getAuc(spark, cvrModelUnion)
-      println("auc" + cvrModelAuc)
-      var L = CalcMetrics.getGauc(spark, cvrModelUnion, "uid")
-      L.show(10)
-      val cvrModeGaucLists = L.collect()
-      println(cvrModeGaucLists.length)
-      val gauc1 = cvrModeGaucLists.filter(x => x.getAs[Double]("auc") != -1)
-      println(gauc1.length)
-      if (gauc1.length > 0) {
-        println("ajksdfan")
-        val gauc = gauc1
-        .map(x => (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum")))
+      .map(_.getAs[String]("cvr_model_name"))
+    val CvrAucGaucListBuffer = scala.collection.mutable.ListBuffer[DetailAucGauc]()
+    for (cvr_model_name <- cvr_model_names) {
+      val cvrmodelData = union_cvr.filter(s"cvr_model_name = '$cvr_model_name'")
+      val cvr_auc = CalcMetrics.getAuc(spark,cvrmodelData)
+      val cvr_gauc = CalcMetrics.getGauc(spark,cvrmodelData,"uid").filter("auc != -1").collect()
+      val gauc = if(cvr_gauc.length > 0) {
+        val aucs = cvr_gauc.map(x =>
+          (x.getAs[Double]("auc") * x.getAs[Double]("sum"), x.getAs[Double]("sum"))
+        )
           .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-        val gaucROC = if (gauc._2 != 0) gauc._1 * 1.0 / gauc._2 else 0
 
-        CvrAucGaucListBuffer += DetailAucGauc(
-          auc = cvrModelAuc,
-          gauc = gaucROC,
-          model = cvrModelName,
-          date = date,
-          hour = hour)
+        if (aucs._2 != 0)
+          aucs._1 * 1.0 / aucs._2
+        else 0
+
       }
+      else 0
+
+      println(s"cvr_model_name = $cvr_model_name , auc = $cvr_auc , gauc = $gauc")
+
+      CvrAucGaucListBuffer += DetailAucGauc( auc = cvr_auc,gauc = gauc, model = cvr_model_name, date = date, hour = hour)
     }
     val CvrAucGauc = CvrAucGaucListBuffer.toList.toDF()
-    CvrAucGauc.repartition(1)
-      .write
-      .mode("overwrite")
-      //.saveAsTable("test.cpc_hot_topic_cvr_auc_gauc_hourly")
-     .insertInto("dl_cpc.cpc_hot_topic_cvr_auc_gauc_hourly")
-    println("test.cpc_hot_topic_cvr_auc_gauc_hourly success!")
 
     val tableName1 = "report2.cpc_hot_topic_ctr_auc_gauc_hourly"
     val tableName2 = "report2.cpc_hot_topic_cvr_auc_gauc_hourly"
-    val deleteSql1 = s"delete from $tableName1 where 'date' = '$date' and hour = '$hour'"
-    val deleteSql2 = s"delete from $tableName2 where 'date' = '$date' and hour = '$hour'"
-    OperateMySQL.update(deleteSql1) //先删除历史数据
-    OperateMySQL.insert(CtrAucGauc,tableName1)
+    val deleteSql1 = s"delete from $tableName1 where `date` = '$date' and hour = '$hour'"
+    val deleteSql2 = s"delete from $tableName2 where `date` = '$date' and hour = '$hour'"
+     OperateMySQL.update(deleteSql1) //先删除历史数据
+     OperateMySQL.insert(CtrAucGauc,tableName1) //插入到MySQL中的report2库中
     OperateMySQL.update(deleteSql2) //先删除历史数据
     OperateMySQL.insert(CvrAucGauc,tableName2)
+
   }
   case class DetailAucGauc(
                            var auc: Double = 0,
