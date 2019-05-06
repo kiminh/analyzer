@@ -12,17 +12,17 @@ object OcpcUnionReportV2 {
     // get the unit data
     val dataUnitRaw = unionDetailReport("_unitid", date, hour, spark)
     val dataUnit = addSuggestCPA(dataUnitRaw, "_unitid", date, hour, spark)
-//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
+    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
     // get the user data
     val dataUserRaw = unionDetailReport("_userid", date, hour, spark)
     val dataUser = addSuggestCPA(dataUserRaw, "_userid", date, hour, spark)
-//    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
+    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
 
-    println("------union detail report success---------")
-    val dataConversion = unionSummaryReport(date, hour, spark)
-    println("------union summary report success---------")
-    saveDataToMysql(dataUnit, dataUser, dataConversion, date, hour, spark)
-    println("------insert into mysql success----------")
+//    println("------union detail report success---------")
+//    val dataConversion = unionSummaryReport(date, hour, spark)
+//    println("------union summary report success---------")
+//    saveDataToMysql(dataUnit, dataUser, dataConversion, date, hour, spark)
+//    println("------insert into mysql success----------")
   }
 
   def addSuggestCPA(rawData: DataFrame, versionPostfix: String, date: String, hour: String, spark: SparkSession) = {
@@ -146,6 +146,7 @@ object OcpcUnionReportV2 {
          |and
          |    version = '$version2'
        """.stripMargin
+    println(sql)
     val dataDF = spark.sql(sql)
     dataDF
 
