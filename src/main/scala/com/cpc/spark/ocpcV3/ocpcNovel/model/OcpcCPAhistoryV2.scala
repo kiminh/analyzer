@@ -48,7 +48,7 @@ object OcpcCPAhistoryV2 {
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+
     result
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
