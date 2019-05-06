@@ -264,6 +264,7 @@ object OcpcHourlyReport {
 
 
     dataConversion
+      .selectExpr("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
@@ -288,9 +289,9 @@ object OcpcHourlyReport {
     // 关联数据
     val resultDF = rawData
       .join(costData, Seq("conversion_goal"), "left_outer")
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
       .join(aucData, Seq("conversion_goal"), "left_outer")
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -395,6 +396,8 @@ object OcpcHourlyReport {
          |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
          |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  SUM(impression) as impression,
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
@@ -414,6 +417,8 @@ object OcpcHourlyReport {
          |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
          |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
          |  SUM(impression) as impression,
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
@@ -433,6 +438,7 @@ object OcpcHourlyReport {
       .withColumn("click_cvr", when(col("click")===0, 1).otherwise(col("click_cvr")))
       .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("acp", when(col("click")===0, 0).otherwise(col("acp")))
+      .withColumn("cpa_ratio", col("cpa_real") * 1.0 / col("cpa_given"))
 
     resultDF
   }
