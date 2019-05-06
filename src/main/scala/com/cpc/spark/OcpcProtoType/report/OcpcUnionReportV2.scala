@@ -57,7 +57,7 @@ object OcpcUnionReportV2 {
 
     // 数据关联
     val result = rawData
-      .join(data, Seq("unit_id", "conversion_goal", "version"), "left_outer")
+      .join(data, Seq("identifier", "conversion_goal", "version"), "left_outer")
       .na.fill(0.0, Seq("cpa_suggest"))
 
     result
