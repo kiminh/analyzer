@@ -52,7 +52,7 @@ object OcpcHourlyReport {
     val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
     val cpaDataConversion = preprocessCpaByConversion(baseData, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
+    val dataConversion = getDataByConversionV2(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
     saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
@@ -309,7 +309,7 @@ object OcpcHourlyReport {
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
-  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, cpaData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getDataByConversionV2(rawData: DataFrame, version: String, costData: DataFrame, cpaData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 获取新增数据如auc
     2. 计算报表数据
@@ -333,6 +333,34 @@ object OcpcHourlyReport {
       .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .join(cpaData, Seq("conversion_goal"), "left_outer")
       .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
+  }
+
+  def getDataByConversion(rawData: DataFrame, version: String, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 获取新增数据如auc
+    2. 计算报表数据
+    3. 数据关联并存储到结果表
+     */
+
+    // 获取新增数据如auc
+    val aucData = spark
+      .table("dl_cpc.ocpc_auc_report_summary_hourly")
+      .where(s"`date`='$date' and `hour`='$hour' and version='$version'")
+      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+
+    // 计算报表数据
+    val hourInt = hour.toInt
+
+    // 关联数据
+    val resultDF = rawData
+      .join(costData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
+      .join(aucData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
