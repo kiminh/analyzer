@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-@deprecated
+
 object OcpcHourlyReportHidden {
   def main(args: Array[String]): Unit = {
     /*
