@@ -51,29 +51,55 @@ object OcpcUnionSuggestCPA {
 
   }
 
-  def getRecommendLabelV2(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    baseData.createOrReplaceTempView("base_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  *,
-         |  (case when unitid in (2078340, 2078121, 2077145, 2072348, 2024103, 1988046, 2064875, 2040762, 2064725) then 50
-         |        else 60 end) as cv_threshold
-         |FROM
-         |  base_data
-       """.stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    val resultDF = data
-      .withColumn("is_recommend_old", col("is_recommend"))
-      .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
-    resultDF.write.mode("overwrite").saveAsTable("test.test_check_data20190424a")
+//  def getRecommendLabelV2(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    baseData.createOrReplaceTempView("base_data")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  *,
+//         |  (case when industry = 'elds' then 30
+//         |        when industry = 'feedapp' then 40
+//         |        else 60 end) as cv_threshold
+//         |FROM
+//         |  base_data
+//       """.stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    val resultDF = data
+//      .withColumn("is_recommend_old", col("is_recommend"))
+//      .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
+//      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
+//    resultDF.write.mode("overwrite").saveAsTable("test.test_check_data20190424a")
+//
+//    resultDF
+//  }
 
-    resultDF
-  }
+//  def getRecommendLabelV2(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    baseData.createOrReplaceTempView("base_data")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  *,
+//         |  (case when unitid in (2078340, 2078121, 2077145, 2072348, 2024103, 1988046, 2064875, 2040762, 2064725) then 50
+//         |        else 60 end) as cv_threshold
+//         |FROM
+//         |  base_data
+//       """.stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    val resultDF = data
+//      .withColumn("is_recommend_old", col("is_recommend"))
+//      .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
+//      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
+//    resultDF.write.mode("overwrite").saveAsTable("test.test_check_data20190424a")
+//
+//    resultDF
+//  }
 
 }
