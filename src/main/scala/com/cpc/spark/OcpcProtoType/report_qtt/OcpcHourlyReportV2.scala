@@ -45,10 +45,16 @@ object OcpcHourlyReportV2 {
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
     val dataUnit = getDataByUnit(rawDataUnit, version, date, hour, spark)
 
+//    // 分conversion_goal统计数据
+//    val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
+//    val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
+//    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
+    
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataUnit, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataUnit, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, version, costDataConversion, date, hour, spark)
+    val cpaDataConversion = preprocessCpaByConversion(baseData, date, hour, spark)
+    val dataConversion = getDataByConversionV2(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
