@@ -208,17 +208,31 @@ object OcpcHourlyGeneralData {
          |  sum(high_cost) as high_cost,
          |  sum(case when high_cost = 0.0 then 1 else 0 end) as low_unitid_cnt,
          |  count(unitid) as unitid_cnt,
-         |  count(distinct userid) as userid_cnt,
-         |  cpagiven as cpa_given,
-         |  sum(ocpc_cost) * 1.0 / sum(cv) as cpa_real
+         |  count(distinct userid) as userid_cnt
          |FROM
          |  base_data
          |GROUP BY industry
        """.stripMargin
     println(sqlRequest2)
-    val result = spark
+    val result1 = spark
       .sql(sqlRequest2)
       .withColumn("low_cost", col("ocpc_cost") - col("high_cost"))
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  industry,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real
+         |FROM
+         |  base_data
+         |GROUP BY industry
+       """.stripMargin
+    println(sqlRequest3)
+    val result2 = spark.sql(sqlRequest3)
+
+    val result = result1
+        .join(result2, Seq("industry"), "inner")
 
     result
 
