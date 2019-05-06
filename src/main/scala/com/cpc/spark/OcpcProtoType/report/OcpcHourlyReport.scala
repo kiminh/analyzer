@@ -303,10 +303,16 @@ object OcpcHourlyReport {
 
 
     dataConversion
-      .selectExpr("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .selectExpr("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpa_given", "cpa_real", "cpa_ratio", "date", "hour")
       .withColumn("version", lit(version))
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3_20190413")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
+
+//    dataConversion
+//      .selectExpr("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+//      .withColumn("version", lit(version))
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_cpa_hourly_20190413")
+//    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v4")
   }
 
   def getDataByConversionV2(rawData: DataFrame, version: String, costData: DataFrame, cpaData: DataFrame, date: String, hour: String, spark: SparkSession) = {
