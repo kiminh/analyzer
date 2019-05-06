@@ -297,6 +297,7 @@ object OcpcPIDwithCPAV2 {
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
+    rawData.write.mode("overwrite").saveAsTable("test.wy05")
     val resultDF = rawData
       .select("unitid", "new_adclass", "updated_k", "conversion_goal")
       .withColumn("k_value", col("updated_k"))
@@ -304,7 +305,6 @@ object OcpcPIDwithCPAV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy05")
     resultDF
   }
 
