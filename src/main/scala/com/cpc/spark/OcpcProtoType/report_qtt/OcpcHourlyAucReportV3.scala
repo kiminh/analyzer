@@ -6,12 +6,14 @@ package com.cpc.spark.OcpcProtoType.report_qtt
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyAucReport._
+import org.apache.log4j.{Level, Logger}
 
 //import scala.collection.mutable
 
 object OcpcHourlyAucReportV3 {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString

@@ -5,6 +5,7 @@ package com.cpc.spark.OcpcProtoType.report_qtt
 //import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyReport._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{col, lit}
 
 
@@ -19,6 +20,7 @@ object OcpcHourlyReportV3 {
     5. 存储到hdfs
     6. 存储到mysql
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession
       .builder()
       .appName("OcpcHourlyReport")

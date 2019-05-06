@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
 import com.cpc.spark.tools.testOperateMySQL
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object OcpcUnionReportV3 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val spark = SparkSession.builder().appName("OcpcUnionAucReport").enableHiveSupport().getOrCreate()
