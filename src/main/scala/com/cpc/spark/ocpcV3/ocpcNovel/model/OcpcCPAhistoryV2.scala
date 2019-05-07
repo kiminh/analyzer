@@ -48,7 +48,7 @@ object OcpcCPAhistoryV2 {
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+    //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
     result
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
@@ -230,7 +230,7 @@ object OcpcCPAhistoryV2 {
 
 
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
+    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
@@ -340,8 +340,8 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_src", when(col("cpa_src_middle")==="novel" && col("cpa_novel").isNull, "adclass").otherwise(col("cpa_src_middle")))
       .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(when(col("cpa_src")==="novel", col("cpa_novel")).otherwise(col("cpa_adclass"))))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-//      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
-//      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
+    //      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
+    //      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
 
     data

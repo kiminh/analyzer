@@ -58,16 +58,16 @@ object OcpcHourlyReport {
     val sqlRequest2 =
       s"""
          |SELECT
-         |    searchid,
-         |    label2 as iscvr1
+         |  searchid,
+         |  label as iscvr1
          |FROM
-         |    dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    $selectCondition
+         |  where $selectCondition
          |AND
-         |    label2=1
+         |  label = 1
          |AND
-         |    label_type!=12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2).distinct()
@@ -75,14 +75,16 @@ object OcpcHourlyReport {
     val sqlRequest3 =
       s"""
          |SELECT
-         |    searchid,
-         |    label as iscvr2
+         |  searchid,
+         |  label  as iscvr2
          |FROM
-         |    dl_cpc.ml_cvr_feature_v2
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    $selectCondition
+         |  where $selectCondition
          |AND
-         |    label=1
+         |  label = 1
+         |AND
+         |  cvr_goal = 'cvr3'
        """.stripMargin
     println(sqlRequest3)
     val cvr2Data = spark.sql(sqlRequest3).distinct()

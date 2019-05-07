@@ -99,9 +99,9 @@ object OcpcDetailReport {
          |    (
          |        select
          |            searchid,
-         |            label2 as iscvr
-         |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition and label_type!=12
+         |            label as iscvr
+         |        from dl_cpc.ocpc_label_cvr_hourly
+         |        WHERE $selectCondition
          |    ) b on a.searchid = b.searchid
        """.stripMargin
 
@@ -179,9 +179,9 @@ object OcpcDetailReport {
          |    (
          |        select
          |            searchid,
-         |            label2 as iscvr
-         |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition and label_type!=12
+         |            label as iscvr
+         |        from dl_cpc.ocpc_label_cvr_hourly
+         |        WHERE $selectCondition
          |    ) as c
          |on  b.searchid = c.searchid
        """.stripMargin
