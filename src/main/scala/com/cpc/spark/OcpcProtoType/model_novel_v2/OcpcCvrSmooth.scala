@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_novel_v3
+package com.cpc.spark.OcpcProtoType.model_novel_v2
 
 import java.io.FileOutputStream
 

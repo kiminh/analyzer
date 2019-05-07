@@ -35,7 +35,6 @@ object OcpcLightBulb{
 
 
     val tableName = "dl_cpc.ocpc_light_control_version"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -74,7 +73,6 @@ object OcpcLightBulb{
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ##########################")
 
-//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
     resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
@@ -105,33 +103,6 @@ object OcpcLightBulb{
          |and industry = 'feedapp'
        """.stripMargin
 
-    //    val sqlRequest =
-    //        s"""
-    //           |select
-    //           |    a.unitid,
-    //           |	    a.original_conversion as conversion_goal,
-    //           |    a.cpa / 100.0 as cpa1
-    //           |FROM
-    //           |    (SELECT
-    //           |        *
-    //           |    FROM
-    //           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
-    //           |    WHERE
-    //           |        date = '$date'
-    //           |    AND
-    //           |        `hour` = '06'
-    //           |    and is_recommend = 1
-    //           |    and version = '$version'
-    //           |    and industry in ('elds', 'feedapp')) as a
-    //           |INNER JOIN
-    //           |    (
-    //           |        select distinct unitid, adslot_type
-    //           |        FROM dl_cpc.ocpc_ctr_data_hourly
-    //           |        where date >= '$date1'
-    //           |    ) as b
-    //           |ON
-    //           |    a.unitid=b.unitid
-    //         """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
 

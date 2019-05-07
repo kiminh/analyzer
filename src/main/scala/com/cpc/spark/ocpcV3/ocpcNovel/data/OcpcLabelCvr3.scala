@@ -130,15 +130,15 @@ object OcpcLabelCvr3 {
       s"""
          |SELECT
          |  searchid,
-         |  label2 as label
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectWhere
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type!=12
+         |  cvr_goal = 'cvr3'
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

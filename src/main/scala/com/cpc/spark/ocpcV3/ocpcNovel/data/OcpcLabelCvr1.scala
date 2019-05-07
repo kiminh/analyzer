@@ -12,8 +12,10 @@ object OcpcLabelCvr1 {
     val hour = args(1).toString
 
     val result = getLabel(date, hour, spark)
-    result
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
+//    result
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
+    result.show(10)
+    result.write.mode("overwrite").saveAsTable("test.wy00")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr1_data_hourly")
   }
 
@@ -52,15 +54,15 @@ object OcpcLabelCvr1 {
       s"""
          |SELECT
          |  searchid,
-         |  label2 as label
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectWhere
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type != 12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()
