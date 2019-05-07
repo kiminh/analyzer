@@ -293,26 +293,29 @@ object OcpcHourlyReportV2 {
 
     // cvr1
     val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition2)
-      .filter(s"label2=1")
+      .filter("cvr_goal='cvr1'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr1", lit(1))
       .distinct()
 
     // cvr2
     val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition2)
-      .filter(s"label=1")
+      .filter("cvr_goal='cvr3'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr2", lit(1))
       .distinct()
 
     // cvr3
     val cvr3Data = spark
-      .table("dl_cpc.site_form_unionlog")
+      .table("dl_cpc.ml_cvr_feature_v2")
       .where(selectCondition2)
+      .filter(s"label=1")
       .select("searchid")
       .withColumn("iscvr3", lit(1))
       .distinct()
