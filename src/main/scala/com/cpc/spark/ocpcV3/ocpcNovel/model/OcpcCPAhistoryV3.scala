@@ -3,15 +3,13 @@ package com.cpc.spark.ocpcV3.ocpcNovel.model
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils._
-import com.cpc.spark.ocpc.utils.OcpcUtils.getIdeaUpdates
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.IntegerType
-import com.cpc.spark.udfs.Udfs_wj._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcCPAhistoryV2 {
+object OcpcCPAhistoryV3 {
   def main(args: Array[String]): Unit = {
     /*
     选取cpa_history的基本策略：
@@ -32,7 +30,7 @@ object OcpcCPAhistoryV2 {
     val baseData = getBaseData(date, hour, spark)
     val qttData = getQttCPA(baseData, date, hour, spark)
     val novelData = getNovelCPA(baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
+    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2","cpa3")
     val qttAlpha = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark)
     val novelAlpha = checkCPAhistory(novelData, 0.8, "novel", date, hour, spark)
 
@@ -43,12 +41,12 @@ object OcpcCPAhistoryV2 {
       .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
       .join(novelAlpha, Seq("unitid", "new_adclass"), "left_outer")
       .join(adclassData, Seq("new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
+      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel","cpa3_history_novel", "cpa1", "cpa2", "cpa3")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-    //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+
     result
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
@@ -149,13 +147,36 @@ object OcpcCPAhistoryV2 {
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
       .select("unitid", "new_adclass", "media_appsid", "cvr2cnt")
 
-    //
+    //表单类转化
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  media_appsid,
+         |  cvr2_cnt
+         |FROM
+         |  dl_cpc.ocpcv3_cvr3_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
+       """.stripMargin
+    println(sqlRequest4)
+    val cvr3Data = spark
+      .sql(sqlRequest4)
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .groupBy("unitid", "new_adclass", "media_appsid")
+      .agg(sum(col("cvr3_cnt")).alias("cvr3cnt"))
+      .select("unitid", "new_adclass", "media_appsid", "cvr3cnt")
 
     // 关联数据构成基础表
     val resultDF = costData
       .join(cvr1Data, Seq("unitid", "new_adclass", "media_appsid"), "left_outer")
       .join(cvr2Data, Seq("unitid", "new_adclass", "media_appsid"), "left_outer")
-      .select("unitid", "new_adclass", "media_appsid", "total_cost", "cvr1cnt", "cvr2cnt", "total_bid", "ctrcnt")
+      .join(cvr3Data, Seq("unitid", "new_adclass", "media_appsid"), "left_outer")
+      .select("unitid", "new_adclass", "media_appsid", "total_cost", "cvr1cnt", "cvr2cnt", "cvr3cnt", "total_bid", "ctrcnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -174,13 +195,16 @@ object OcpcCPAhistoryV2 {
         sum(col("total_cost")).alias("cost"),
         sum(col("cvr1cnt")).alias("cvr1cnt"),
         sum(col("cvr2cnt")).alias("cvr2cnt"),
+        sum(col("cvr3cnt")).alias("cvr3cnt"),
         sum(col("total_bid")).alias("bid"),
         sum(col("ctrcnt")).alias("ctrcnt"))
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("cpa3", col("cost") * 1.0 / col("cvr3cnt"))
       .withColumn("avg_bid", col("bid") * 1.0 / col("ctrcnt"))
       .withColumn("alpha1", col("cpa1") * 1.0 / col("avg_bid"))
       .withColumn("alpha2", col("cpa2") * 1.0 / col("avg_bid"))
+      .withColumn("alpha3", col("cpa3") * 1.0 / col("avg_bid"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -198,13 +222,16 @@ object OcpcCPAhistoryV2 {
         sum(col("total_cost")).alias("cost"),
         sum(col("cvr1cnt")).alias("cvr1cnt"),
         sum(col("cvr2cnt")).alias("cvr2cnt"),
+        sum(col("cvr3cnt")).alias("cvr3cnt"),
         sum(col("total_bid")).alias("bid"),
         sum(col("ctrcnt")).alias("ctrcnt"))
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("cpa3", col("cost") * 1.0 / col("cvr3cnt"))
       .withColumn("avg_bid", col("bid") * 1.0 / col("ctrcnt"))
       .withColumn("alpha1", col("cpa1") * 1.0 / col("avg_bid"))
       .withColumn("alpha2", col("cpa2") * 1.0 / col("avg_bid"))
+      .withColumn("alpha3", col("cpa3") * 1.0 / col("avg_bid"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -221,16 +248,16 @@ object OcpcCPAhistoryV2 {
       .agg(
         sum(col("total_cost")).alias("cost"),
         sum(col("cvr1cnt")).alias("cvr1cnt"),
-        sum(col("cvr2cnt")).alias("cvr2cnt"))
+        sum(col("cvr2cnt")).alias("cvr2cnt"),
+        sum(col("cvr3cnt")).alias("cvr3cnt"))
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("cpa3", col("cost") * 1.0 / col("cvr3cnt"))
+      .select("new_adclass","cost","cvr1cnt","cvr2cnt","cpa1","cpa2","cvr3cnt","cpa3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-
-
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
@@ -246,6 +273,9 @@ object OcpcCPAhistoryV2 {
     val cvr2Data = base
       .select("unitid", "new_adclass", "cvr2cnt", "cpa2", "avg_bid", "alpha2")
     cvr2Data.createOrReplaceTempView("cvr2_table")
+    val cvr3Data = base
+      .select("unitid", "new_adclass", "cvr3cnt", "cpa3", "avg_bid", "alpha2")
+    cvr3Data.createOrReplaceTempView("cvr3_table")
 
     // 按照alpha取分位数
     val sqlRequest1 =
@@ -290,10 +320,33 @@ object OcpcCPAhistoryV2 {
     val cvr2Final = cvr2alpha
       .select("unitid", "new_adclass", "cpa2_history_" + media)
 
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  new_adclass,
+         |  percentile(alpha2, $alpha) as alpha2_max
+         |FROM
+         |  cvr2_table
+         |WHERE
+         |  cvr2cnt > 1
+         |GROUP BY new_adclass
+       """.stripMargin
+    println(sqlRequest3)
+    val alpha3Data = spark.sql(sqlRequest3)
+    val cvr3alpha = cvr3Data
+      .join(alpha3Data, Seq("new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "cvr3cnt", "cpa3", "avg_bid", "alpha3", "alpha3_max")
+      .withColumn("cpa3_max", col("avg_bid") * col("alpha3_max"))
+      .withColumn("cpa3_history_" + media, when(col("cpa3") > col("cpa3_max") && col("cpa3_max")>0, col("cpa3_max")).otherwise(col("cpa3")))
+    val cvr3Final = cvr3alpha
+      .select("unitid", "new_adclass", "cpa3_history_" + media)
+
+
     // 关联数据表
     val resultDF = cvr1Final
       .join(cvr2Final, Seq("unitid", "new_adclass"), "outer")
-      .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media)
+      .join(cvr3Final, Seq("unitid", "new_adclass"), "outer")
+      .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media,"cpa3_history_" + media)
 
     resultDF
   }
@@ -340,8 +393,6 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_src", when(col("cpa_src_middle")==="novel" && col("cpa_novel").isNull, "adclass").otherwise(col("cpa_src_middle")))
       .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(when(col("cpa_src")==="novel", col("cpa_novel")).otherwise(col("cpa_adclass"))))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-    //      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
-    //      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
 
     data
