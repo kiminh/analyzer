@@ -29,7 +29,7 @@ object OcpcDailyFunnelIndustry {
     val data1 = calculateBase(rawData, date, hour, spark)
 
     val result1 = data1
-      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "industry", "adslot_type", "site_type", "date")
+      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "industry", "date")
 
     result1
       .repartition(5)
