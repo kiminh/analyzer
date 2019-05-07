@@ -33,8 +33,9 @@ object OcpcDailyFunnelIndustry {
 
     result1
       .repartition(5)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
       .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
+
 
     val data2 = calculateCnt(rawData, date, hour, spark)
     val result2 = data2
