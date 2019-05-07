@@ -90,7 +90,7 @@ object OcpcHourlyGeneralData {
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost") * 0.01)
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -99,11 +99,33 @@ object OcpcHourlyGeneralData {
     resultDF.show(10)
 
     resultDF
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "date", "hour", "version")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
-    saveDataToMysql(resultDF, date, hour, spark)
+    saveDataToMysqlV2(resultDF, date, hour, spark)
 
+  }
+
+  def saveDataToMysqlV2(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+    // 详情表
+    val dataMysql = data
+      .withColumn("cost", col("cost") * 100)
+      .withColumn("cost_low", col("cost_low") * 100)
+      .withColumn("cost_high", col("cost_high") * 100)
+      .withColumn("cpa_ratio", col("cpa_real") * 1.0 / col("cpa_given"))
+      .selectExpr("industry", "cast(cost as int) as cost", "cast(round(cost_cmp, 2) as double) as cost_cmp", "cast(round(cost_ratio, 2) as double) as cost_ratio", "cast(cost_low as int) as cost_low", "cast(cost_high as int) as cost_high", "cast(unitid_cnt as int) unitid_cnt", "cast(userid_cnt as int) userid_cnt", "cast(low_unit_percent as double) control_unit_ratio", "cast(pay_percent as double) uncontrol_pay_ratio", "cast(cpa_given as double) cpa_given", "cast(cpa_real as double) cpa_real", "cast(cpa_ratio as double) cpa_ratio")
+      .na.fill(0, Seq("cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "control_unit_ratio", "uncontrol_pay_ratio", "cpa_given", "cpa_real", "cpa_ratio"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+
+    dataMysql.printSchema()
+    val reportTableUnit = "report2.report_ocpc_general_data"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
+
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataMysql, reportTableUnit) //插入数据
   }
 
   def saveDataToMysql(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -193,9 +215,25 @@ object OcpcHourlyGeneralData {
          |GROUP BY industry
        """.stripMargin
     println(sqlRequest2)
-    val result = spark
+    val result1 = spark
       .sql(sqlRequest2)
       .withColumn("low_cost", col("ocpc_cost") - col("high_cost"))
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  industry,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real
+         |FROM
+         |  raw_data
+         |GROUP BY industry
+       """.stripMargin
+    println(sqlRequest3)
+    val result2 = spark.sql(sqlRequest3)
+
+    val result = result1
+        .join(result2, Seq("industry"), "inner")
 
     result
 

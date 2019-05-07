@@ -8,6 +8,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
 
+
 object OcpcHourlyAucReportHidden {
   def main(args: Array[String]): Unit = {
     // 计算日期周期

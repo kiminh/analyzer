@@ -1,25 +1,25 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
-import com.cpc.spark.ocpcV3.utils
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+//import com.cpc.spark.ocpcV3.utils
+//import com.typesafe.config.ConfigFactory
+//import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyAucReport._
 import org.apache.log4j.{Level, Logger}
 
-import scala.collection.mutable
+//import scala.collection.mutable
 
-object OcpcHourlyAucReportV2 {
+object OcpcHourlyAucReportV3 {
   def main(args: Array[String]): Unit = {
-    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
     println("parameters:")
-    println(s"com.cpc.spark.OcpcProtoType.report_qtt.OcpcHourlyAucReportV2: date=$date, hour=$hour, version=$version, media=$media")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
@@ -34,6 +34,7 @@ object OcpcHourlyAucReportV2 {
     val rawData = getOcpcLog(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 详情表数据
+    val versionUnit = version + "_unitid"
     val unitData1 = calculateByUnitid(rawData, date, hour, spark)
     val unitData2 = calculateAUCbyUnitid(rawData, date, hour, spark)
     val unitData = unitData1
@@ -42,10 +43,27 @@ object OcpcHourlyAucReportV2 {
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
+      .withColumn("version", lit(versionUnit))
 
 //    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
     unitData
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
+
+
+    // 详情表数据
+    val versionUserid = version + "_userid"
+    val userData1 = calculateByUserid(rawData, date, hour, spark)
+    val userData2 = calculateAUCbyUserid(rawData, date, hour, spark)
+    val userData = userData1
+      .join(userData2, Seq("userid", "conversion_goal"), "left_outer")
+      .withColumn("identifier", col("userid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(versionUserid))
+
+//    userData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+    userData
       .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
     // 汇总表数据
@@ -64,7 +82,5 @@ object OcpcHourlyAucReportV2 {
 
 
   }
-
-
 
 }
