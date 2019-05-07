@@ -369,7 +369,7 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  searchid,
-         |  label
+         |  label as iscvr1
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -387,7 +387,7 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  searchid,
-         |  label
+         |  label as iscvr2
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
