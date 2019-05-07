@@ -491,6 +491,15 @@ object OcpcHourlyReportV2 {
       .withColumn("iscvr2", lit(1))
       .distinct()
 
+    // cvr3
+    val cvr3Data = spark
+      .table("dl_cpc.ml_cvr_feature_v2")
+      .where(selectCondition)
+      .filter(s"label=1")
+      .select("searchid")
+      .withColumn("iscvr3", lit(1))
+      .distinct()
+
 
 
     // 数据关联
