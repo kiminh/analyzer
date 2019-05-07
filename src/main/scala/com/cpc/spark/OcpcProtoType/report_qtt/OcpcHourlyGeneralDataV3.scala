@@ -10,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyGeneralData._
 
 
-object OcpcHourlyGeneralData {
+object OcpcHourlyGeneralDataV3 {
   def main(args: Array[String]): Unit = {
     /*
     新版报表程序
@@ -88,7 +88,7 @@ object OcpcHourlyGeneralData {
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost") * 0.01)
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -97,10 +97,13 @@ object OcpcHourlyGeneralData {
     resultDF.show(10)
 
     resultDF
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "date", "hour", "version")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
 
-    saveDataToMysql(resultDF, date, hour, spark)
+    saveDataToMysqlV2(resultDF, date, hour, spark)
 
   }
+
+
 }
