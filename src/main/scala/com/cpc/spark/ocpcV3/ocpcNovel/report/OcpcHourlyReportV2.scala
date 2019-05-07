@@ -470,35 +470,30 @@ object OcpcHourlyReportV2 {
     val selectCondition = s"`date`='$date'"
     // cvr1
     val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition)
-      .filter(s"label2=1")
+      .filter("cvr_goal='cvr1'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr1", lit(1))
       .distinct()
 
     // cvr2
     val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition)
-      .filter(s"label=1")
+      .filter("cvr_goal='cvr3'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr2", lit(1))
       .distinct()
 
-    // cvr3
-    val cvr3Data = spark
-      .table("dl_cpc.site_form_unionlog")
-      .where(selectCondition)
-      .select("searchid")
-      .withColumn("iscvr3", lit(1))
-      .distinct()
+
 
     // 数据关联
     val resultDF = rawData
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
-      .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
