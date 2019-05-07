@@ -16,10 +16,9 @@ object OcpcLabelCvr3 {
     val hour = args(1).toString
 
     val result1 = getLabelFromAdv(date, hour, spark)
-    result1.show(10)
-    result1.write.mode("overwrite").saveAsTable("test.wy00")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
-//    println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
+    result1
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
+    println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
 
   }
 
