@@ -59,21 +59,39 @@ object OcpcUnionlogNovel {
       s"""
          |SELECT
          |  searchid,
-         |  1 as iscvr1
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectWhere
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type!=12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val labelData1 = spark.sql(sqlRequest2).distinct()
 
-    // cvr2: api回传类
+    // cvr2: 表单类
     val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  where $selectWhere
+         |AND
+         |  label = 1
+         |AND
+         |  cvr_goal = 'cvr3'
+       """.stripMargin
+    println(sqlRequest3)
+    val labelData2 = spark.sql(sqlRequest3).distinct()
+
+    // api回传类
+    val sqlRequest4 =
       s"""
          |SELECT
          |  searchid,
@@ -84,24 +102,6 @@ object OcpcUnionlogNovel {
          |  where $selectWhere
          |AND
          |  label=1
-       """.stripMargin
-    println(sqlRequest3)
-    val labelData2 = spark.sql(sqlRequest3).distinct()
-
-    // 表单类
-    val sqlRequest4 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  1 as iscvr3
-         |FROM
-         |  dl_cpc.ml_cvr_feature_v1
-         |WHERE
-         |  where $selectWhere
-         |AND
-         |  label2=1
-         |AND
-         |  label_type!=12
        """.stripMargin
     println(sqlRequest4)
     val labelData3 = spark.sql(sqlRequest4).distinct()
