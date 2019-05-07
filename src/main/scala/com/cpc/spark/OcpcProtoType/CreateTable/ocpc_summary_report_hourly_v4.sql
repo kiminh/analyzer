@@ -22,3 +22,7 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_summary_report_hourly_v4
 )
 PARTITIONED by (`date` STRING, `hour` STRING, version STRING)
 STORED as PARQUET;
+
+alter table dl_cpc.ocpc_summary_report_hourly_v4 add columns (cpa_given double);
+alter table dl_cpc.ocpc_summary_report_hourly_v4 add columns (cpa_real double);
+alter table dl_cpc.ocpc_summary_report_hourly_v4 add columns (cpa_ratio double);
