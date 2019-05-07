@@ -369,15 +369,15 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  searchid,
-         |  1 as iscvr1
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectCondition
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type!=12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val labelData1 = spark.sql(sqlRequest2).distinct()
@@ -387,13 +387,15 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  searchid,
-         |  1 as iscvr2
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v2
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectCondition
          |AND
-         |  label=1
+         |  label = 1
+         |AND
+         |  cvr_goal = 'cvr3'
        """.stripMargin
     println(sqlRequest3)
     val labelData2 = spark.sql(sqlRequest3).distinct()
