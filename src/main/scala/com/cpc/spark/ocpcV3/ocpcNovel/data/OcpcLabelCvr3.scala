@@ -11,7 +11,7 @@ object OcpcLabelCvr3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    // 计算日期周期
+    // 二类电商表单类转化
     val date = args(0).toString
     val hour = args(1).toString
 
@@ -88,8 +88,8 @@ object OcpcLabelCvr3 {
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
       .groupBy("ideaid", "unitid", "adclass", "media_appsid")
-      .agg(sum(col("label")).alias("cvr3_cnt"))
-      .select("ideaid", "unitid", "adclass", "media_appsid", "cvr3_cnt")
+      .agg(sum(col("label")).alias("cvr2_cnt"))
+      .select("ideaid", "unitid", "adclass", "media_appsid", "cvr2_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
