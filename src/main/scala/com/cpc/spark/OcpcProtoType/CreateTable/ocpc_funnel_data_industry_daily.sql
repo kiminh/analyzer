@@ -23,3 +23,11 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_funnel_data_industry_daily
 )
 PARTITIONED by (industry string, `date` string)
 STORED as PARQUET;
+
+
+
+alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (adslot_type int);
+alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (site_type string);
+
+--adslot_type             int
+--site_type               string

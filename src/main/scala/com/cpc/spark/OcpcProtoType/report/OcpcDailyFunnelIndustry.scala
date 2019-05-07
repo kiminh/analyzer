@@ -29,12 +29,13 @@ object OcpcDailyFunnelIndustry {
     val data1 = calculateBase(rawData, date, hour, spark)
 
     val result1 = data1
-      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "industry", "date")
+      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "industry", "date")
 
     result1
       .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
+
 
     val data2 = calculateCnt(rawData, date, hour, spark)
     val result2 = data2
@@ -44,8 +45,8 @@ object OcpcDailyFunnelIndustry {
 
     result2
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
@@ -92,6 +93,8 @@ object OcpcDailyFunnelIndustry {
          |    planid,
          |    userid,
          |    industry,
+         |    adslot_type,
+         |    site_type,
          |    sum(isclick) as click,
          |    sum(isshow) as show,
          |    sum(iscvr) as cv,
@@ -110,7 +113,7 @@ object OcpcDailyFunnelIndustry {
          |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 0.01 as hidden_cost
          |FROM
          |    base_data
-         |GROUP BY unitid, planid, userid, industry
+         |GROUP BY unitid, planid, userid, industry, adslot_type, site_type
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
@@ -141,7 +144,7 @@ object OcpcDailyFunnelIndustry {
     // 数据关联
     val data = data1
         .join(data2, Seq("planid"), "left_outer")
-        .select("unitid", "planid", "userid", "industry", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget")
+        .select("unitid", "planid", "userid", "industry", "adslot_type", "site_type", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget")
         .withColumn("date", lit(date1))
 
     data
@@ -171,6 +174,9 @@ object OcpcDailyFunnelIndustry {
          |    unitid,
          |    planid,
          |    userid,
+         |    adslot_type,
+         |    (case when siteid is not null and siteid > 0 then "siteform"
+         |          else "no-siteform" end) as site_type,
          |    isclick,
          |    isshow,
          |    (case when ocpc_log = "" then "cpc"
@@ -226,7 +232,9 @@ object OcpcDailyFunnelIndustry {
          |    is_api_callback,
          |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
          |          when industry = 'elds' then 3
-         |          else 0 end) as conversion_goal
+         |          else 0 end) as conversion_goal,
+         |    adslot_type,
+         |    site_type
          |FROM
          |  base_ctr
        """.stripMargin
