@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyGeneralData._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcHourlyGeneralDataV3 {
@@ -32,6 +33,7 @@ object OcpcHourlyGeneralDataV3 {
     1. 从base表抽取数据，按照行业过滤数据
     2. 统计各项指标
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession
       .builder()
       .appName("OcpcHourlyReport")
