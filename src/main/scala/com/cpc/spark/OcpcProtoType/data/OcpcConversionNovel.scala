@@ -36,7 +36,7 @@ object OcpcConversionNovel {
            |  $selectCondition
            |AND
            |  access_channel="sdk"
-           |and (array_contains(cvr_list,"sdk_site_wz")
+           |and array_contains(cvr_list,"sdk_site_wz")
            |GROUP BY searchid, label2
        """.stripMargin
       cvrPt = "cvr4"
