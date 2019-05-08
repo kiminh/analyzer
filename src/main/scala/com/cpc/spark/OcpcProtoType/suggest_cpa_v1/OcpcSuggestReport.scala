@@ -37,11 +37,11 @@ object OcpcSuggestReport {
 
     // 整理准入名单
     val permitUnit = getPermitUnit(unitAdslotType, filterCondition, version, date, hour, spark)
-    permitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_permit_unit")
+//    permitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_permit_unit")
 
     // 整理不准入名单
     val unpermitUnit = getUnpermitUnit(unitAdslotType, filterCondition, version, date, hour, spark)
-    unpermitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_unpermit_unit")
+//    unpermitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_unpermit_unit")
 
     saveDataToMysql(permitUnit, unpermitUnit, date, hour, spark)
   }
