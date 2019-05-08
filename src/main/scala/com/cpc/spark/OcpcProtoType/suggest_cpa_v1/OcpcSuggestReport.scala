@@ -114,6 +114,8 @@ object OcpcSuggestReport {
          |AND
          |  is_recommend = 0
          |AND
+         |  auc > 0
+         |AND
          |  $filterCondition
        """.stripMargin
     println(sqlRequest)
