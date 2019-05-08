@@ -100,7 +100,8 @@ object OcpcLightBulb{
          |    `hour` = '06'
          |and is_recommend = 1
          |and version = '$version'
-         |and industry in ('feedapp','wzcp','elds')
+         |and (industry in ('feedapp','elds','wzcp') or cast(adclass as string) like '118106%'
+         |    or cast(adclass as string) like '110111%' or adclass = 130104101)
        """.stripMargin
 
     println(sqlRequest)
