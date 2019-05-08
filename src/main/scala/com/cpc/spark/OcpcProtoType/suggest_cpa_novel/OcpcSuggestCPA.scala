@@ -46,8 +46,10 @@ object OcpcSuggestCPA {
       cvrType = "cvr1"
     } else if (conversionGoal == 2) {
       cvrType = "cvr2"
-    } else {
+    } else if (conversionGoal == 3) {
       cvrType = "cvr3"
+    } else {
+      cvrType = "cvr4"
     }
     println("parameters:")
     println(s"date=$date, hour=$hour, media=$media, conversionGoal=$conversionGoal, version=$version")
