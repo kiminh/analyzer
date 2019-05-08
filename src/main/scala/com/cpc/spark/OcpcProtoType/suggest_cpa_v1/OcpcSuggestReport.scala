@@ -124,7 +124,7 @@ object OcpcSuggestReport {
       .join(adslotTypes, Seq("unitid"), "left_outer")
       .withColumn("adslot_type", udfAdslotTypeMap()(col("adslot_type")))
       .withColumn("no_suggest_reason", udfNoSuggestReason()(col("cv"), col("auc"), col("ocpc_flag"), col("bid_ratio")))
-      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_cpa_reason")
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_reason")
 
     resultDF
 
