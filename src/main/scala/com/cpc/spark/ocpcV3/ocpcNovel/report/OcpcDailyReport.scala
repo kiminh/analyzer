@@ -1,15 +1,17 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import java.util.Properties
-import com.typesafe.config.ConfigFactory
 
-import org.apache.spark.sql.{DataFrame, SparkSession, SaveMode}
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcDailyReport {
   var mariadb_write_url = ""
   val mariadb_write_prop = new Properties()
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString

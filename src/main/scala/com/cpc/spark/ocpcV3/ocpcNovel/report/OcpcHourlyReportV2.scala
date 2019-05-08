@@ -1,6 +1,7 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import com.cpc.spark.tools.OperateMySQL
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, _}
 import org.apache.spark.sql.types.IntegerType
@@ -8,6 +9,7 @@ import org.apache.spark.sql.types.IntegerType
 
 object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     新版报表程序
     1. 从ocpcv3_unionlog_label_hourly拉取ocpc广告记录
