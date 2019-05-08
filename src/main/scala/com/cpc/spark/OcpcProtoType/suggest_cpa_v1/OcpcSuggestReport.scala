@@ -63,7 +63,7 @@ object OcpcSuggestReport {
 
     // 未准入表
     val dataUnitMysql2 = unpermitUnit
-      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_cpa_reason")
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "pcoc", "jfb", "no_suggest_cpa_reason")
       .na.fill("", Seq("adslot_type", "no_suggest_cpa_reason"))
       .na.fill(0, Seq("show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb"))
       .withColumn("date", lit(date))
