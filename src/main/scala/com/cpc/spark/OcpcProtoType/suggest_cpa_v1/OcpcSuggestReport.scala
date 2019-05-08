@@ -197,6 +197,7 @@ object OcpcSuggestReport {
          |  `date` between '$date1' and '$date'
          |AND
          |  $mediaSelection
+         |GROUP BY unitid, adslot_type
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
