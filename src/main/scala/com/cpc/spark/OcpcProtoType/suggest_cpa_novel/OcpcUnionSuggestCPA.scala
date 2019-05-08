@@ -27,8 +27,9 @@ object OcpcUnionSuggestCPA {
     val cvr1Cali = getNewCali(media, baseResult, 1, hourInt, date, hour, spark)
     val cvr2Cali = getNewCali(media, baseResult, 2, hourInt, date, hour, spark)
     val cvr3Cali = getNewCali(media, baseResult, 3, hourInt, date, hour, spark)
+    val cvr4Cali = getNewCali(media, baseResult, 4, hourInt, date, hour, spark)
 
-    val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali)
+    val cvrCali = cvr1Cali.union(cvr2Cali).union(cvr3Cali).union(cvr4Cali)
 
     val updateData = baseResult
       .join(cvrCali, Seq("unitid", "conversion_goal"), "left_outer")
