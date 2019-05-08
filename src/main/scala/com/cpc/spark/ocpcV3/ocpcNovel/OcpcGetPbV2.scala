@@ -9,6 +9,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import ocpcnovel.ocpcnovel.SingleUnit
 import ocpcnovel.ocpcnovel.OcpcNovelList
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{DoubleType, IntegerType}
 
 import scala.collection.mutable.ListBuffer
@@ -16,6 +17,7 @@ import scala.collection.mutable.ListBuffer
 
 object OcpcGetPbV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     组装pb文件，由以下几个部分构成：
     - unitid：标识符，广告单元

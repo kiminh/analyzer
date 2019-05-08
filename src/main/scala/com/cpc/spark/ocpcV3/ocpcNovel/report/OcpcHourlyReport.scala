@@ -1,9 +1,10 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import java.util.Properties
-import com.typesafe.config.ConfigFactory
 
-import org.apache.spark.sql.{DataFrame, SparkSession, SaveMode}
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcHourlyReport {
@@ -11,6 +12,7 @@ object OcpcHourlyReport {
   val mariadb_write_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期

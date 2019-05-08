@@ -9,10 +9,12 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.IntegerType
 import com.cpc.spark.udfs.Udfs_wj._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcCPAhistoryV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     选取cpa_history的基本策略：
     1. 抽取基础表

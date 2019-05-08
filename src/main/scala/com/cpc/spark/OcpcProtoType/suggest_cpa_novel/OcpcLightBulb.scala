@@ -100,7 +100,7 @@ object OcpcLightBulb{
          |    `hour` = '06'
          |and is_recommend = 1
          |and version = '$version'
-         |and industry = 'feedapp'
+         |and industry in ('feedapp','wzcp','elds')
        """.stripMargin
 
     println(sqlRequest)

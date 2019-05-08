@@ -4,11 +4,13 @@ import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpcV3.utils
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable
 
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
