@@ -30,7 +30,7 @@ object OcpcConversionNovel {
         s"""
            |SELECT
            |  searchid,
-           |  label2 as label
+           |  1 as label
            |FROM
            |  dl_cpc.ml_cvr_feature_v1
            |WHERE
@@ -38,7 +38,7 @@ object OcpcConversionNovel {
            |AND
            |  access_channel="sdk"
            |and array_contains(cvr_list,"sdk_site_wz")
-           |GROUP BY searchid, label2
+           |GROUP BY searchid
        """.stripMargin
       cvrPt = "cvr4"
     }
