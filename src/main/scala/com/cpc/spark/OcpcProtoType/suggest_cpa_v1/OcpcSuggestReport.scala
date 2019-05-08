@@ -3,6 +3,8 @@ package com.cpc.spark.OcpcProtoType.suggest_cpa_v1
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.tools.testOperateMySQL
+
 //import org.apache.spark.sql.functions.udf
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -40,6 +42,37 @@ object OcpcSuggestReport {
     // 整理不准入名单
     val unpermitUnit = getUnpermitUnit(unitAdslotType, filterCondition, version, date, hour, spark)
     unpermitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_unpermit_unit")
+
+    saveDataToMysql(permitUnit, unpermitUnit, date, hour, spark)
+  }
+
+  def saveDataToMysql(permitUnit: DataFrame, unpermitUnit: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+    // 准入表
+    val dataUnitMysql1 = permitUnit
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "cpm", "suggest_cpa", "is_ocpc", "usertype")
+      .na.fill("", Seq("adslot_type"))
+      .na.fill(0, Seq("show", "click", "cv", "charge", "cpm", "suggest_cpa", "is_ocpc", "usertype"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableUnit1 = "report2.report_ocpc_suggest_list"
+    val delSQLunit1 = s"delete from $reportTableUnit1 where `date` = '$date' and hour = $hourInt"
+
+    testOperateMySQL.update(delSQLunit1) //先删除历史数据
+    testOperateMySQL.insert(dataUnitMysql1, reportTableUnit1) //插入数据
+
+    // 未准入表
+    val dataUnitMysql2 = unpermitUnit
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_cpa_reason")
+      .na.fill("", Seq("adslot_type", "no_suggest_cpa_reason"))
+      .na.fill(0, Seq("show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableUnit2 = "report2.report_ocpc_no_suggest_list"
+    val delSQLunit2 = s"delete from $reportTableUnit2 where `date` = '$date' and hour = $hourInt"
+
+    testOperateMySQL.update(delSQLunit2) //先删除历史数据
+    testOperateMySQL.insert(dataUnitMysql2, reportTableUnit2) //插入数据
   }
 
   def getUnpermitUnit(adslotTypes: DataFrame, filterCondition: String, version: String, date: String, hour: String, spark: SparkSession) = {
