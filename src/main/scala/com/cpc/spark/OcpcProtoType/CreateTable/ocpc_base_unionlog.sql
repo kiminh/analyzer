@@ -53,6 +53,6 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (is_auto_coin int);
 
 
-alter table dl_cpc.ocpc_base_unionlog add columns (bid_discounted_by_ad_slot int);
+alter table dl_cpc.ocpc_base_unionlog add columns (bid_discounted_by_ad_slot bigint);
 alter table dl_cpc.ocpc_base_unionlog add columns (discount int);
 alter table dl_cpc.ocpc_base_unionlog add columns (exp_cpm bigint);
