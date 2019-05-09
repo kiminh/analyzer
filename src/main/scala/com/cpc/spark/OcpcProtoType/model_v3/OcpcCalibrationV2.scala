@@ -4,16 +4,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
-
-import scala.collection.mutable.ListBuffer
-import ocpcFactor.ocpcFactor.{OcpcFactorList, SingleItem}
-import java.io.FileOutputStream
-
-import hiddenTest.Hiddentest
 import org.apache.spark.sql.functions._
 
 object OcpcCalibrationV2 {
