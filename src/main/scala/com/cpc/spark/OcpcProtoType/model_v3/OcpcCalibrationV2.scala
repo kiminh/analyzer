@@ -67,7 +67,7 @@ object OcpcCalibrationV2 {
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val data1 = calculateData1(baseData, date, hour, spark)
-    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
+//    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
