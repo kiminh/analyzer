@@ -61,113 +61,28 @@ object OcpcCalibrationV2 {
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val data1 = calculateData1(baseData, date, hour, spark)
+    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
       .join(data1, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "left_outer")
 
     val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
+    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
 
     val data = data1
       .join(data2, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
       .withColumn("high_bid_factor", lit(highBidFactor))
-      .select("unitid", "ideaid", "slotid", "slottype", "adtype", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
-
-    savePbPack(data, fileName, expTag, spark)
-
-  }
-
-  def savePbPack(dataset: DataFrame, filename: String, expTag: String, spark: SparkSession): Unit = {
-    /*
-    string expTag = 1;
-    int64 unitid = 2;
-    int64 ideaid = 3;
-    string slotid = 4;
-    int64 slottype = 5;
-    int64 adtype = 6;
-    double cvrCalFactor = 7;
-    double jfbFactor = 8;
-    double postCvr = 9;
-    double highBidFactor = 10;
-    double lowBidFactor = 11;
-     */
-    var list = new ListBuffer[SingleItem]
-    dataset.createOrReplaceTempView("raw_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  ideaid,
-         |  slotid,
-         |  slottype,
-         |  adtype,
-         |  1.0 / pcoc as cvr_cal_factor,
-         |  1.0 / jfb as jfb_factor,
-         |  post_cvr,
-         |  high_bid_factor,
-         |  low_bid_factor
-         |FROM
-         |  raw_data
-       """.stripMargin
-    println(sqlRequest)
-    val resultData = spark
-      .sql(sqlRequest)
       .withColumn("exp_tag", lit(expTag))
-      .selectExpr("exp_tag", "cast(unitid as bigint) unitid", "cast(ideaid as bigint) ideaid", "cast(slotid as string) slotid", "cast(slottype as bigint) slottype", "cast(adtype as bigint) adtype", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(jfb_factor as double) jfb_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
+      .select("exp_tag", "unitid", "ideaid", "slotid", "slottype", "adtype", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
-    println("size of the dataframe:")
-    println(resultData.count)
-    resultData.show(10)
-    resultData.printSchema()
-    var cnt = 0
+    val resultDF = data
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
 
-    for (record <- resultData.collect()) {
-      val expTag = record.getAs[String]("exp_tag")
-      val unitid = record.getAs[Long]("unitid")
-      val ideaid = record.getAs[Long]("ideaid")
-      val slotid = record.getAs[String]("slotid")
-      val slottype = record.getAs[Long]("slottype")
-      val adtype = record.getAs[Long]("adtype")
-      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
-      val jfbFactor = record.getAs[Double]("jfb_factor")
-      val postCvr = record.getAs[Double]("post_cvr")
-      val highBidFactor = record.getAs[Double]("high_bid_factor")
-      val lowBidFactor = record.getAs[Double]("low_bid_factor")
-
-      if (cnt % 100 == 0) {
-        println(s"expTag:$expTag, unitid:$unitid, ideaid:$ideaid, slotid:$slotid, slottype:$slottype, adtype:$adtype, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, postCvr:$postCvr, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
-      }
-      cnt += 1
-
-
-      cnt += 1
-      val currentItem = SingleItem(
-        expTag = expTag,
-        unitid = unitid,
-        ideaid = ideaid,
-        slotid = slotid,
-        slottype = slottype,
-        adtype = adtype,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        postCvr = postCvr,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor
-      )
-      list += currentItem
-
-    }
-
-    val result = list.toArray[SingleItem]
-    val adRecordList = OcpcFactorList(
-      records = result
-    )
-
-    println("length of the array")
-    println(result.length)
-    adRecordList.writeTo(new FileOutputStream(filename))
-
-    println("complete save data into protobuffer")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
 
   }
 
