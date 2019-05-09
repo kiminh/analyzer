@@ -92,7 +92,9 @@ object OcpcCalibrationV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
+    resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
+      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_calibration_v2_hourly")
 
   }
 
