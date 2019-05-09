@@ -67,11 +67,11 @@ object OcpcCalibrationV2 {
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val data1 = calculateData1(baseData, date, hour, spark)
-//    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
+    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
-      .join(data1, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "left_outer")
+      .join(data1, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
 
     val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
 //    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
@@ -118,12 +118,14 @@ object OcpcCalibrationV2 {
          |  exp_cvr,
          |  isclick,
          |  isshow,
-         |  (case when exp_cvr >= post_cvr then "high" else "low" end) as pcvr_group
+         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr
          |FROM
          |  base_data
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark
+        .sql(sqlRequest)
+        .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
@@ -135,7 +137,7 @@ object OcpcCalibrationV2 {
          |  slottype,
          |  adtype,
          |  sum(isclick) as click,
-         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |GROUP BY unitid, ideaid, slotid, slottype, adtype
@@ -155,7 +157,7 @@ object OcpcCalibrationV2 {
          |  slottype,
          |  adtype,
          |  sum(isclick) as click,
-         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
@@ -177,7 +179,7 @@ object OcpcCalibrationV2 {
          |  slottype,
          |  adtype,
          |  sum(isclick) as click,
-         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
@@ -212,7 +214,9 @@ object OcpcCalibrationV2 {
          |  data
        """.stripMargin
     println(sqlRequestFinal)
-    val dataFinal = spark.sql(sqlRequestFinal)
+    val dataFinal = spark
+        .sql(sqlRequestFinal)
+        .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.5, 0.5).otherwise(col("low_bid_factor")))
 
     dataFinal
   }
