@@ -158,7 +158,7 @@ object OcpcCalibrationV2toPb {
          |SELECT
          |  *
          |FROM
-         |  test.check_ocpc_calibration3
+         |  dl_cpc.ocpc_calibration_v2_hourly
          |WHERE
          |  `date` = '$date'
          |AND

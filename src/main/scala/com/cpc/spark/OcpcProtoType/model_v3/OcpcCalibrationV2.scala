@@ -90,7 +90,7 @@ object OcpcCalibrationV2 {
 
     resultDF
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
-      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_calibration_v2_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_hourly")
 
   }
 
