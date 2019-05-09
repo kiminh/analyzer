@@ -118,7 +118,8 @@ object OcpcCalibrationV2 {
          |  exp_cvr,
          |  isclick,
          |  isshow,
-         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr
+         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr,
+         |  post_cvr
          |FROM
          |  base_data
        """.stripMargin
