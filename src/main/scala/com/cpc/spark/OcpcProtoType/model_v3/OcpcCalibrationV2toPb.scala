@@ -201,7 +201,7 @@ object OcpcCalibrationV2toPb {
          |    unitid,
          |    cast(conversion_goal as int) as conversion_goal
          |FROM
-         |    base
+         |    base_data
          |WHERE
          |    conversion_goal > 0
        """.stripMargin
