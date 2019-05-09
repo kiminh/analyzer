@@ -40,7 +40,8 @@ object OcpcSampleToPb {
       .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
       .filter(s"cv_flag is not null")
       .withColumn("cpagiven",lit(1))
-      .select("identifier", "conversion_goal", "cpagiven",  "kvalue", "flag", "pcoc", "jfb")
+      .withColumn("cvrcnt",lit(30))
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "flag", "pcoc", "jfb")
 
     println("result")
     result.show(10)
