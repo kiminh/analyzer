@@ -148,7 +148,6 @@ object OcpcCalibrationV2toPb {
     adRecordList.writeTo(new FileOutputStream(filename))
 
     println("complete save data into protobuffer")
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
 
   }
 
