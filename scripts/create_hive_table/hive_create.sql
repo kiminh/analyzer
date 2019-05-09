@@ -114,3 +114,23 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_summary_report_hourly_v3
 )
 PARTITIONED by (`date` STRING, `hour` STRING, version STRING)
 STORED as PARQUET;
+
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_post_cvr_unitid_hourly_novel (
+    identifier string,
+    min_bid double,
+    cvr1 double,
+    cvr2 double,
+    cvr3 double,
+    cvr4 double,
+    min_cpm double,
+    factor1 double,
+    factor2 double,
+    factor3 double,
+    factor4 double,
+    cpc_bid double,
+    cpa_suggest int,
+    param_t int,
+    cali_value double
+)
+PARTITIONED BY (date string, hour string, version string)
+STORED AS PARQUET;
