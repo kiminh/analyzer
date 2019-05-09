@@ -35,17 +35,7 @@ object OcpcSampleToPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
 
-    val result2raw = getNewK(date, hour, version, spark)
-    println("#######################################")
-    println(result2raw.count())
-    result2raw.printSchema()
-    val ocpcUnit = getConversionGoal(date, hour, spark)
-    println("#######################################")
-    println(ocpcUnit.count())
-    ocpcUnit.printSchema()
-    val result = result2raw
-      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
-      .filter(s"cv_flag is not null")
+    val result = getNewK(date, hour, version, spark)
       .withColumn("cpagiven",lit(1.0))
       .withColumn("cvrcnt",lit(30))
       .withColumn("cvrcnt",col("cvrcnt").cast(LongType))
@@ -54,13 +44,7 @@ object OcpcSampleToPb {
     println("result")
     println(result.count())
     result.show(10)
-    //debug
-    val df= result2raw
-      .join(ocpcUnit, Seq("identifier"), "left_outer").filter(s"cv_flag is not null")
-        .select("identifier").distinct()
-    println(df.count())
-    df.show(20)
-    println("#######################################")
+
     val smoothData = result
       .filter(s"flag = 1 and kvalue is not null")
       .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal")
