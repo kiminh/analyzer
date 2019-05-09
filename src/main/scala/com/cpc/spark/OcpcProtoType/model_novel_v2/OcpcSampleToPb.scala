@@ -58,6 +58,7 @@ object OcpcSampleToPb {
     val df= result2raw
       .join(ocpcUnit, Seq("identifier"), "left_outer").filter(s"cv_flag is not null")
     println(df.count())
+    df.show(20)
     println("#######################################")
     val smoothData = result
       .filter(s"flag = 1 and kvalue is not null")
