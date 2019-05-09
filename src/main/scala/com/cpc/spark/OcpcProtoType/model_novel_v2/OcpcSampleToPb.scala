@@ -57,6 +57,7 @@ object OcpcSampleToPb {
     //debug
     val df= result2raw
       .join(ocpcUnit, Seq("identifier"), "left_outer").filter(s"cv_flag is not null")
+        .select("identifier").distinct()
     println(df.count())
     df.show(20)
     println("#######################################")
