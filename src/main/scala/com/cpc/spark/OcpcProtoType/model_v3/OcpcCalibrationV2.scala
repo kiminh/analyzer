@@ -42,6 +42,10 @@ object OcpcCalibrationV2 {
     val highBidFactor = args(5).toDouble
     val hourInt = args(6).toInt
 
+    println("parameters:")
+    println(s"date=$date, hour=$hour, media:$media, version:$version, expTag:$expTag, highBidFactor:$highBidFactor, hourInt:$hourInt")
+
+
 
 
 
