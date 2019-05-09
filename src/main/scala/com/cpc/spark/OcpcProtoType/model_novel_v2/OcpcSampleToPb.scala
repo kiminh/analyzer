@@ -5,6 +5,7 @@ import java.io.FileOutputStream
 import ocpc.ocpc.{OcpcList, SingleRecord}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.LongType
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable.ListBuffer
@@ -41,6 +42,7 @@ object OcpcSampleToPb {
       .filter(s"cv_flag is not null")
       .withColumn("cpagiven",lit(1))
       .withColumn("cvrcnt",lit(30))
+      .withColumn("cvrcnt",col("cvrcnt").cast(LongType))
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "flag", "pcoc", "jfb")
 
     println("result")
