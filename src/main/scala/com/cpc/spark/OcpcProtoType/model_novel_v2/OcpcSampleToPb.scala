@@ -87,7 +87,7 @@ object OcpcSampleToPb {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as int) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -101,7 +101,7 @@ object OcpcSampleToPb {
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
       .withColumn("cv_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier",  "conversion_goal", "cv_flag")
+      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal", "cv_flag")
       .distinct()
 
     resultDF.show(10)
