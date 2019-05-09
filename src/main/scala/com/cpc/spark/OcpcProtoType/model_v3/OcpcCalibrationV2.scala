@@ -46,18 +46,31 @@ object OcpcCalibrationV2 {
     val highBidFactor = args(5).toDouble
     val hourInt = args(6).toInt
     val conversionGoal = args(7).toInt
-    val fileName = "test.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version, expTag:$expTag, highBidFactor:$highBidFactor, hourInt:$hourInt")
 
     // 抽取基础数据
+//    searchid,
+//    ideaid,
+//    unitid,
+//    slotid,
+//    slottype,
+//    adtype,
+//    bid,
+//    price,
+//    exp_cvr,
+//    isclick,
+//    isshow
     val cvrType = "cvr" + conversionGoal.toString
     val baseDataClick = getBaseData(media, hourInt, date, hour, spark)
     val cvrData = getCvrData(cvrType, hourInt, date, hour, spark)
     val baseData = baseDataClick
-      .join(cvrData, Seq("searchid"), "left_outer")
-      .na.fill(0, Seq("iscvr"))
+        .join(cvrData, Seq("searchid"), "left_outer")
+        .na.fill(0, Seq("iscvr"))
+        .select("searchid", "ideaid", "unitid", "slotid", "slottype", "adtype", "bid", "price", "exp_cvr", "isclick", "isshow", "iscvr")
+        .withColumn("conversion_goal", lit(conversionGoal))
+
     baseData.repartition(200).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_basedata")
 
 //    // 计算各维度下的pcoc、jfb以及后验cvr等指标
