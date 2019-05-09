@@ -54,6 +54,7 @@ object OcpcCalibrationV2toPb {
 
 
     savePbPack(resultDF, fileName, spark)
+    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_v2")
 
   }
 
