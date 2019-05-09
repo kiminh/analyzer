@@ -40,7 +40,7 @@ object OcpcSampleToPb {
     val result = result2raw
       .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
       .filter(s"cv_flag is not null")
-      .withColumn("cpagiven",lit(1))
+      .withColumn("cpagiven",lit(1.0))
       .withColumn("cvrcnt",lit(30))
       .withColumn("cvrcnt",col("cvrcnt").cast(LongType))
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "flag", "pcoc", "jfb")
