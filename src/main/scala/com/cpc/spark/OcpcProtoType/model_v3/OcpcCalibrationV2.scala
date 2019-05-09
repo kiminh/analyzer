@@ -65,10 +65,6 @@ object OcpcCalibrationV2 {
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("version", lit(version))
 
-//    baseData
-////      .repartition(200).write.mode("overwrite").saveAsTable("test.ocpc_calibrationv2_basedata")
-//      .repartition(200).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibrationv2_basedata")
-
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val data1 = calculateData1(baseData, date, hour, spark)
 //    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
