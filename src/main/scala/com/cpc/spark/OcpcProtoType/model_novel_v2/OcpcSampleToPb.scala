@@ -36,6 +36,7 @@ object OcpcSampleToPb {
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
 
     val result2raw = getNewK(date, hour, version, spark)
+    result2raw.count()
     val ocpcUnit = getConversionGoal(date, hour, spark)
     val result = result2raw
       .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
