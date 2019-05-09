@@ -58,31 +58,32 @@ object OcpcCalibrationV2 {
     val baseData = baseDataClick
       .join(cvrData, Seq("searchid"), "left_outer")
       .na.fill(0, Seq("iscvr"))
+    baseData.repartition(200).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_basedata")
 
-    // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data1 = calculateData1(baseData, date, hour, spark)
-    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
-
-    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
-    val baseData2 = baseData
-      .join(data1, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "left_outer")
-
-    val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
-    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
-
-    val data = data1
-      .join(data2, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
-      .withColumn("high_bid_factor", lit(highBidFactor))
-      .withColumn("exp_tag", lit(expTag))
-      .select("exp_tag", "unitid", "ideaid", "slotid", "slottype", "adtype", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
-
-    val resultDF = data
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
+//    // 计算各维度下的pcoc、jfb以及后验cvr等指标
+//    val data1 = calculateData1(baseData, date, hour, spark)
+//    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
+//
+//    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+//    val baseData2 = baseData
+//      .join(data1, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "left_outer")
+//
+//    val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
+//    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
+//
+//    val data = data1
+//      .join(data2, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
+//      .withColumn("high_bid_factor", lit(highBidFactor))
+//      .withColumn("exp_tag", lit(expTag))
+//      .select("exp_tag", "unitid", "ideaid", "slotid", "slottype", "adtype", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+//
+//    val resultDF = data
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration3")
 
   }
 
