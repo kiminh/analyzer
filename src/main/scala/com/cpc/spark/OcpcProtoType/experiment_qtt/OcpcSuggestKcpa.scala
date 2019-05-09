@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -19,6 +20,7 @@ object OcpcSuggestKcpa {
     4. 读取前一天的时间分区中的所有cpa与kvalue
     5. 数据关联，并更新字段cpa，kvalue以及day_cnt字段
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
