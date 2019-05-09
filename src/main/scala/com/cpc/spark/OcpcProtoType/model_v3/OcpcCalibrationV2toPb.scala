@@ -77,7 +77,7 @@ object OcpcCalibrationV2toPb {
     val sqlRequest =
       s"""
          |SELECT
-         |  exp_tag
+         |  exp_tag,
          |  unitid,
          |  ideaid,
          |  slotid,
