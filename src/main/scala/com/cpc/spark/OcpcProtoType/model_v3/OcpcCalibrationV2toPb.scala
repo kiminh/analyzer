@@ -53,7 +53,7 @@ object OcpcCalibrationV2toPb {
       .join(unitidList, Seq("unitid", "conversion_goal"), "inner")
 
 
-    savePbPack(resultDF, fileName, spark)
+    savePbPack(resultDF, fileName, version, spark)
 
 
   }
