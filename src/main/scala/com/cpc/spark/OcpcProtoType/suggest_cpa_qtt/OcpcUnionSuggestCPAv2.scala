@@ -56,7 +56,7 @@ object OcpcUnionSuggestCPAv2 {
       s"""
          |SELECT
          |  *,
-         |  (case when industry in ('elds', 'feedapp') then 40
+         |  (case when industry in ('elds', 'feedapp') then 30
          |        else 60 end) as cv_threshold
          |FROM
          |  base_data
