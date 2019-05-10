@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ocpcFactor;
+message SingleItem {
+    string expTag = 1;
+    int64 unitid = 2;
+    int64 ideaid = 3;
+    string slotid = 4;
+    int64 slottype = 5;
+    int64 adtype = 6;
+    double cvrCalFactor = 7;
+    double jfbFactor = 8;
+    double postCvr = 9;
+    double highBidFactor = 10;
+    double lowBidFactor = 11;
+}
+
+message OcpcFactorList {
+    repeated SingleItem records = 1;
+}
