@@ -23,8 +23,8 @@ object CalibrationCheckOnMidu {
     println(s"hour=$hour")
     println(s"modelName=$modelName")
 
-    val irModel = new CalibrationConfig().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath)))
-    println(irModel.toString)
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath)))
+    println(calimap.toString)
     val session = Utils.buildSparkSession("calibration_check")
 
     val timeRangeSql = Utils.getTimeRangeSql(dt, hour, dt, hour)
