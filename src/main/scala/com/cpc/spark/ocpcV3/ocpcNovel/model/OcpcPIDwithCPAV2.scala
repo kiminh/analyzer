@@ -2,7 +2,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.model
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
+import com.cpc.spark.ocpcV3.ocpcNovel.model.OcpcRegressionV2.wz_discount
 import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
@@ -296,7 +296,7 @@ object OcpcPIDwithCPAV2 {
       .join(cpaRatio, Seq("unitid", "new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")*0.75))
+      .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio") * wz_discount))
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
