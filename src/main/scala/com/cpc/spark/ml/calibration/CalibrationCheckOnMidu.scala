@@ -62,7 +62,7 @@ object CalibrationCheckOnMidu {
     log.filter("length(group)>0").limit(1000).rdd.toLocalIterator.foreach( x => {
       val isClick = x.getLong(0).toDouble
       val rawCtr = x.getLong(1).toDouble / 1e6d
-      val onlineCtr = x.getInt(2).toDouble / 1e6d
+      val onlineCtr = x.getLong(2).toDouble / 1e6d
       val searchid = x.getString(3)
       val group = x.getString(4)
       val irModel = calimap.get(group).get
