@@ -7,6 +7,7 @@ import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions.{col, concat_ws, udf}
 import scala.collection.mutable
+import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
@@ -55,29 +56,32 @@ object CalibrationCheckOnMidu {
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(lit("")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
+      .select("isclick","raw_ctr","ctr","searchid","group","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
 
     log.show(50)
-//    log.rdd.toLocalIterator.foreach( x => {
-//      val isClick = x.getInt(0).toDouble
-//      val rawCtr = x.getLong(1).toDouble / 1e6d
-//      val onlineCtr = x.getInt(2).toDouble / 1e6d
-//      val searchid = x.getString(3)
-//      val calibrated = HourlyCalibration.computeCalibration(rawCtr, irModel.ir.get)
-//
-//      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
-//        println(s"rawCtr: $rawCtr")
-//        println(s"onlineCtr: $onlineCtr")
-//        println(s"calibrated: $calibrated")
-//        println(s"searchid: $searchid")
-//        println("======")
-//      }
-//
-//    })
+    log.filter("length(group)>0").limit(1000).rdd.toLocalIterator.foreach( x => {
+      val isClick = x.getInt(0).toDouble
+      val rawCtr = x.getLong(1).toDouble / 1e6d
+      val onlineCtr = x.getInt(2).toDouble / 1e6d
+      val searchid = x.getString(3)
+      val group = x.getString(4)
+      val irModel = calimap.get(group).get
+      val calibrated = HourlyCalibration.computeCalibration(rawCtr, irModel.ir.get)
+
+      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
+        println(s"rawCtr: $rawCtr")
+        println(s"onlineCtr: $onlineCtr")
+        println(s"calibrated: $calibrated")
+        println(s"searchid: $searchid")
+        println("======")
+      }
+
+    })
 //    val result = log.rdd.map( x => {
 //      val isClick = x.getInt(0).toDouble
 //      val ectr = x.getLong(1).toDouble / 1e6d
 //      val onlineCtr = x.getInt(2).toDouble / 1e6d
-//      val calibrated = HourlyCalibration.computeCalibration(ectr, irModel.ir.get)
+//      val calibrated = computeCalibration(ectr, irModel.ir.get)
 //      var mistake = 0
 //      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
 //        mistake = 1
