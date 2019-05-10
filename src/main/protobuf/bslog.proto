@@ -112,8 +112,25 @@ message GroupStats {
     repeated int32 groups_hit_content_category_ids = 36;
     repeated int32 groups_hit_new_user_ids = 37;
     repeated int32 groups_hit_acc_user_type_ids = 38;
+    repeated int32 groups_hit_interest_or_user_signal_ids = 39;
+    repeated int32 groups_filtered_by_ad_show_ids = 40;
+    repeated int32 groups_filtered_by_ad_click_ids = 41;
+    repeated int32 groups_filtered_by_black_user_ids = 42;
+    repeated int32 groups_filtered_by_black_sid_ids = 43;
+    repeated int32 groups_filtered_by_not_delivery_pr_ids = 44;
 };
 
+message IdeaStats {
+    repeated int32 ideas_filtered_by_material_type = 1;
+    repeated int32 ideas_filtered_by_interaction = 2;
+    repeated int32 ideas_filtered_by_black_class = 3;
+    repeated int32 ideas_filtered_by_acc_class = 4;
+    repeated int32 ideas_filtered_by_material_level = 5;
+    repeated int32 ideas_filtered_by_only_site = 6;
+    repeated int32 ideas_filtered_by_filter_goods = 7;
+    repeated int32 ideas_filtered_by_pkg_filter = 8;
+    repeated int32 ideas_filtered_by_chitu = 9;
+}
 message NoticeLogBody {
     required string searchid = 1;
     required int64 req_io_time = 2;
@@ -133,4 +150,8 @@ message NoticeLogBody {
     required string hostname = 16;
     repeated string exptags = 17;
     optional int32 ad_num_of_delivery = 18;
+    optional IdeaStats idea_stats = 19;
+    optional int64 bid_avg_before_filter = 20;
+    optional int64 bid_avg_after_filter = 21;
+    optional int64 bid_avg_return_as = 22;
 };

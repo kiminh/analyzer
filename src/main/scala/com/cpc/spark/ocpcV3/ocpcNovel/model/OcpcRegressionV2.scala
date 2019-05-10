@@ -6,6 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.ocpc.utils.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
 import com.cpc.spark.udfs.Udfs_wj.udfSqrt
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
@@ -13,6 +14,7 @@ import scala.collection.mutable
 
 object OcpcRegressionV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -89,7 +91,7 @@ object OcpcRegressionV2 {
 
     val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
       .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression_v2")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2_dev")
     res
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
   }
@@ -107,7 +109,6 @@ object OcpcRegressionV2 {
 
     val adclassMap = getCPAsrcMap(date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
-//    var testList = new mutable.ListBuffer[(String, Double, Double, Double, Double, Double)]()
     for (row <- res) {
       val unitid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
@@ -115,8 +116,8 @@ object OcpcRegressionV2 {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // version1: 根据cpa_src决定targetK
-      //  version2: 根据adclass决定targetK
+
+      //  version: 根据adclass决定targetK
       val targetK = getTargetK(unitid, adclassMap, date, hour, spark)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
@@ -181,7 +182,7 @@ object OcpcRegressionV2 {
     val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
     if (cpasrc == "110110") {
-      targetK = 0.50
+      targetK = 0.95
     } else {
       targetK = 0.95
     }

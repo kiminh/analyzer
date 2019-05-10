@@ -4,11 +4,13 @@ import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpcV3.utils
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable
 
 object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
@@ -78,15 +80,15 @@ object OcpcCalculateAUC {
       s"""
          |SELECT
          |  searchid,
-         |  label2 as iscvr1
+         |  label as iscvr1
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  where $selectCondition2
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type!=12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest1)
     val cvr1Data = spark.sql(sqlRequest1).distinct()
@@ -98,9 +100,13 @@ object OcpcCalculateAUC {
          |  searchid,
          |  label as iscvr2
          |FROM
-         |  dl_cpc.ml_cvr_feature_v2
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  where $selectCondition2
+         |AND
+         |  label = 1
+         |AND
+         |  cvr_goal = 'cvr3'
        """.stripMargin
     println(sqlRequest2)
     val cvr2Data = spark.sql(sqlRequest2).distinct()
@@ -234,24 +240,5 @@ object OcpcCalculateAUC {
 
   }
 
-//  def calculateAUCbyConversionGoal(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-//    import spark.implicits._
-//
-//    val newData = data
-//      .withColumn("score", col("exp_cvr") * 1000000)
-//      .withColumn("label", col("iscvr"))
-//      .selectExpr("cast(conversion_goal as string) conversion_goal", "cast(score as int) score", "label")
-//      .coalesce(400)
-//
-//    val result = utils.getGauc(spark, newData, "conversion_goal")
-//    val resultRDD = result.rdd.map(row => {
-//      val identifier = row.getAs[String]("name").toInt
-//      val auc = row.getAs[Double]("auc")
-//      (identifier, auc)
-//    })
-//    val resultDF = resultRDD.toDF("conversion_goal", "auc")
-//    resultDF
-//
-//  }
 
 }

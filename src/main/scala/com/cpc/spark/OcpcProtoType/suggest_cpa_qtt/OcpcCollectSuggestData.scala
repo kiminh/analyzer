@@ -24,8 +24,10 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    // 安装类feedapp广告单元
-    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+    // 安装类feedapp广告单元: 40 ~ 60
+//    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+//    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+    val feedapp1 = getSuggestDataV2("qtt_hidden", "feedapp", 2, 100000, 40, 60, date, hour, spark)
     val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商：30~60
@@ -375,8 +377,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "last_bid")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent", "last_bid")
-      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.3).otherwise(0.2)))
-      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.1).otherwise(0.2)))
+      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(when(col("industry") === "feedapp", 0.2).otherwise(0.2)))
+      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(when(col("industry") === "feedapp", 0.2).otherwise(0.2)))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
