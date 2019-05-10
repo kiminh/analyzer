@@ -340,6 +340,8 @@ object OcpcCalibrationV2 {
          |  $selectCondition
          |AND
          |  $mediaSelection
+         |AND
+         |  price <= bid_discounted_by_ad_slot
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
