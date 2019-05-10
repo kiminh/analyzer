@@ -56,7 +56,7 @@ object CalibrationCheckOnMidu {
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(lit("")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
-      .select("isclick","raw_ctr","ctr","searchid","group","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
+      .select("isclick","raw_ctr","ectr","searchid","group","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
 
     log.show(50)
     log.filter("length(group)>0").limit(1000).rdd.toLocalIterator.foreach( x => {
