@@ -102,12 +102,12 @@ object CalibrationCheckOnMidu {
   def searchMap(modelset:Set[String])= udf{
     (key: String)=>{
 
-      var flag = 0
+      var flag = true
       if(modelset contains(key)){
-        flag = 1
+        flag = true
       }
       else{
-        flag = 0
+        flag = false
       }
       flag
     }
