@@ -1,10 +1,12 @@
 package com.cpc.spark.ml.calibration
 
 import java.io.FileInputStream
-
+import org.apache.spark.sql.functions._
 import com.cpc.spark.common.Utils
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
+import org.apache.spark.sql.functions.{col, concat_ws, udf}
+import scala.collection.mutable
 
 /**
   * author: wangyao
@@ -23,15 +25,17 @@ object CalibrationCheckOnMidu {
     println(s"hour=$hour")
     println(s"modelName=$modelName")
 
-    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath)))
-    println(calimap.toString)
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
+
+    val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
 
     val timeRangeSql = Utils.getTimeRangeSql(dt, hour, dt, hour)
 
     // get union log
     val sql = s"""
-                 |select isclick, raw_ctr, cast(raw_ctr as bigint) as ectr, searchid, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select isclick, raw_ctr, cast(raw_ctr as bigint) as ectr, searchid, ctr_model_name,
+                 |adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -44,9 +48,16 @@ object CalibrationCheckOnMidu {
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
-//    println(s"sql:\n$sql")
-//    val log = session.sql(sql)
-//    log.limit(1000).rdd.toLocalIterator.foreach( x => {
+    println(s"sql:\n$sql")
+    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
+      .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
+      .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(lit("")))
+      .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
+      .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
+
+    log.show(50)
+//    log.rdd.toLocalIterator.foreach( x => {
 //      val isClick = x.getInt(0).toDouble
 //      val rawCtr = x.getLong(1).toDouble / 1e6d
 //      val onlineCtr = x.getInt(2).toDouble / 1e6d
@@ -86,5 +97,19 @@ object CalibrationCheckOnMidu {
 //    println(s"no calibration: ${ectr / ctr}")
 //    println(s"online calibration: ${onlineCtr / ctr}")
 //    println(s"new calibration: ${calibrated_ctr / ctr}")
+  }
+
+  def searchMap(modelset:Set[String])= udf{
+    (key: String)=>{
+
+      var flag = 0
+      if(modelset contains(key)){
+        flag = 1
+      }
+      else{
+        flag = 0
+      }
+      flag
+    }
   }
 }
