@@ -49,7 +49,7 @@ object OcpcCalibrationV2toPb {
       .join(unitidList, Seq("unitid", "conversion_goal"), "inner")
 
 
-    savePbPack(resultDF, fileName, version, spark)
+    savePbPack(resultDF, fileName, version, date, hour, spark)
 //    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_v2")
 
   }

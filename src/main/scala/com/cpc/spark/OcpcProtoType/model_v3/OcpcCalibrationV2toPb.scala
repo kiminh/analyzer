@@ -53,12 +53,12 @@ object OcpcCalibrationV2toPb {
       .join(unitidList, Seq("unitid", "conversion_goal"), "inner")
 
 
-    savePbPack(resultDF, fileName, version, spark)
+    savePbPack(resultDF, fileName, version, date, hour, spark)
 
 
   }
 
-  def savePbPack(dataset: DataFrame, filename: String, version: String, spark: SparkSession): Unit = {
+  def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
     /*
     string expTag = 1;
     int64 unitid = 2;
@@ -101,8 +101,11 @@ object OcpcCalibrationV2toPb {
     resultData.show(10)
     resultData.printSchema()
     resultData
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
-        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
     var cnt = 0
 
     for (record <- resultData.collect()) {
