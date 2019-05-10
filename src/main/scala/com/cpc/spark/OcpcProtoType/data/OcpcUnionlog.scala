@@ -209,7 +209,8 @@ object OcpcUnionlog {
          |    bid_discounted_by_ad_slot,
          |    discount,
          |    exp_cpm,
-         |    cvr_threshold
+         |    cvr_threshold,
+         |    dsp_cpm
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

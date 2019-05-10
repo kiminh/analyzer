@@ -58,3 +58,5 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (exp_cpm bigint);
 
 --alter table dl_cpc.ocpc_base_unionlog add columns (cvr_threshold int);
+
+alter table dl_cpc.ocpc_base_unionlog add columns (dsp_cpm bigint);
