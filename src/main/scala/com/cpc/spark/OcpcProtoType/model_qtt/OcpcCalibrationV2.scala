@@ -95,5 +95,62 @@ object OcpcCalibrationV2 {
 
   }
 
+  def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    /*
+    val expTag: Nothing = 1
+    val unitid: Nothing = 2
+    val ideaid: Nothing = 3
+    val slotid: Nothing = 4
+    val slottype: Nothing = 5
+    val adtype: Nothing = 6
+     */
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  0 as ideaid,
+         |  unitid,
+         |  0 as slotid,
+         |  0 as slottype,
+         |  0 as adtype,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  exp_cvr,
+         |  isclick,
+         |  isshow
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  price <= bid_discounted_by_ad_slot
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
+  }
+
 
 }
