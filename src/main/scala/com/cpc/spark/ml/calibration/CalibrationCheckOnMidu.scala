@@ -30,7 +30,7 @@ object CalibrationCheckOnMidu {
     val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
 
-    val timeRangeSql = Utils.getTimeRangeSql(dt, hour, dt, hour)
+    val timeRangeSql = Utils.getTimeRangeSql_3(dt, hour, dt, hour)
 
     // get union log
     val sql = s"""
