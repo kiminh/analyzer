@@ -35,7 +35,7 @@ object OcpcCalibrationV2toPb {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val fileName = "test.pb"
+    val fileName = "ocpc_factor_v1.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version")
@@ -49,8 +49,8 @@ object OcpcCalibrationV2toPb {
       .join(unitidList, Seq("unitid", "conversion_goal"), "inner")
 
 
-    savePbPack(resultDF, fileName, spark)
-    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_v2")
+    savePbPack(resultDF, fileName, version, spark)
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_v2")
 
   }
 

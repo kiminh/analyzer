@@ -54,11 +54,11 @@ object OcpcCalibrationV2toPb {
 
 
     savePbPack(resultDF, fileName, spark)
-    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_calibration_v2")
+
 
   }
 
-  def savePbPack(dataset: DataFrame, filename: String, spark: SparkSession): Unit = {
+  def savePbPack(dataset: DataFrame, filename: String, version: String, spark: SparkSession): Unit = {
     /*
     string expTag = 1;
     int64 unitid = 2;
@@ -100,6 +100,9 @@ object OcpcCalibrationV2toPb {
     println(resultData.count)
     resultData.show(10)
     resultData.printSchema()
+    resultData
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
     var cnt = 0
 
     for (record <- resultData.collect()) {
