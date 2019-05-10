@@ -4,7 +4,7 @@ import java.io.FileInputStream
 
 import com.cpc.spark.common.Utils
 import com.google.protobuf.CodedInputStream
-import mlmodel.mlmodel.CalibrationConfig
+import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 
 /**
   * author: wangyao
@@ -31,20 +31,18 @@ object CalibrationCheckOnMidu {
 
     // get union log
     val sql = s"""
-                 | select
-                 |  isclick,
-                 |  ext_int['raw_ctr'] as ectr,
-                 |  ext['exp_ctr'].int_value,
-                 |  searchid
-                 | from dl_cpc.cpc_novel_union_log
+                 |select isclick, raw_ctr, cast(raw_ctr as bigint) as ectr, searchid, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |case when user_req_ad_num = 1 then '1'
+                 |  when user_req_ad_num = 2 then '2'
+                 |  when user_req_ad_num in (3,4) then '4'
+                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_req_ad_num
+                 | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292')
-                 | and isshow = 1
-                 | and ext['antispam'].int_value = 0
-                 | and ideaid > 0
-                 | and adsrc = 1
-                 | and userid > 0
-                 | and ext_string['ctr_model_name'] = '$modelName'
+                 | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
+                 | and ctr_model_name in ('$modelName')
+                 | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
