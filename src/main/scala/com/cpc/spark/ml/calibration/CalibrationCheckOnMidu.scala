@@ -74,7 +74,7 @@ object CalibrationCheckOnMidu {
       val calibrated = computeCalibration(rawCtr, irModel.ir.get)
       if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         uncalibrated += 1
-        if(uncalibrated%100==1){
+        if(uncalibrated%1000==1){
           println(s"rawCtr: $rawCtr")
           println(s"onlineCtr: $onlineCtr")
           println(s"calibrated: $calibrated")
@@ -84,30 +84,32 @@ object CalibrationCheckOnMidu {
       }
     })
     println("uncalbrated:%d".format(uncalibrated))
-//    val result = data.rdd.map( x => {
-//      val isClick = x.getInt(0).toDouble
-//      val ectr = x.getLong(1).toDouble / 1e6d
-//      val onlineCtr = x.getInt(2).toDouble / 1e6d
-//      val calibrated = computeCalibration(ectr, irModel.ir.get)
-//      var mistake = 0
-//      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
-//        mistake = 1
-//      }
-//      (isClick, ectr, calibrated, 1.0, onlineCtr, mistake)
-//    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
-//    val ctr = result._1 / result._4
-//    val ectr = result._2 / result._4
-//    val calibrated_ctr = result._3 / result._4
-//    val onlineCtr = result._5 / result._4
-//    println(s"impression: ${result._4}")
-//    println(s"mistake: ${result._6}")
-//    println(s"ctr: $ctr")
-//    println(s"ectr: $ectr")
-//    println(s"online ctr: $onlineCtr")
-//    println(s"calibrated_ctr: $calibrated_ctr")
-//    println(s"no calibration: ${ectr / ctr}")
-//    println(s"online calibration: ${onlineCtr / ctr}")
-//    println(s"new calibration: ${calibrated_ctr / ctr}")
+    val result = data.rdd.map( x => {
+      val isClick = x.getLong(0).toDouble
+      val ectr = x.getLong(1).toDouble / 1e6d
+      val onlineCtr = x.getLong(2).toDouble / 1e6d
+      val group = x.getString(4)
+      val irModel = calimap.get(group).get
+      val calibrated = computeCalibration(ectr, irModel.ir.get)
+      var mistake = 0
+      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
+        mistake = 1
+      }
+      (isClick, ectr, calibrated, 1.0, onlineCtr, mistake)
+    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
+    val ctr = result._1 / result._4
+    val ectr = result._2 / result._4
+    val calibrated_ctr = result._3 / result._4
+    val onlineCtr = result._5 / result._4
+    println(s"impression: ${result._4}")
+    println(s"mistake: ${result._6}")
+    println(s"ctr: $ctr")
+    println(s"ectr: $ectr")
+    println(s"online ctr: $onlineCtr")
+    println(s"calibrated_ctr: $calibrated_ctr")
+    println(s"no calibration: ${ectr / ctr}")
+    println(s"online calibration: ${onlineCtr / ctr}")
+    println(s"new calibration: ${calibrated_ctr / ctr}")
   }
 
   def searchMap(modelset:Set[String])= udf{
