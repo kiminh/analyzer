@@ -104,7 +104,14 @@ object OcpcLightBulbV2{
          |SELECT
          |    unitid,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |    (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |    end) as industry
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -120,6 +127,7 @@ object OcpcLightBulbV2{
     val rawData = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
+      .filter(s"industry in ('elds', 'feedapp')")
       .distinct()
 
     val sqlRequets2 =
