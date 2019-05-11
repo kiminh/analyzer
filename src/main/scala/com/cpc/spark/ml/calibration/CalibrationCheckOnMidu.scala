@@ -59,7 +59,11 @@ object CalibrationCheckOnMidu {
       .select("isclick","raw_ctr","ectr","searchid","group","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
 
     log.show(50)
-    log.filter("length(group)>0").limit(1000).rdd.toLocalIterator.foreach( x => {
+    println("total data:%d".format(log.count()))
+
+    val data = log.filter("length(group)>0")
+    println("calibration data:%d".format(data.count()))
+    data.rdd.toLocalIterator.foreach( x => {
       val isClick = x.getLong(0).toDouble
       val rawCtr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getLong(2).toDouble / 1e6d
@@ -67,14 +71,18 @@ object CalibrationCheckOnMidu {
       val group = x.getString(4)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(rawCtr, irModel.ir.get)
-
-      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
-        println(s"rawCtr: $rawCtr")
-        println(s"onlineCtr: $onlineCtr")
-        println(s"calibrated: $calibrated")
-        println(s"searchid: $searchid")
-        println("======")
+      var uncalibrated = 0
+      if (onlineCtr - calibrated!=0) {
+        uncalibrated += 1
+        if(uncalibrated%100==1){
+          println(s"rawCtr: $rawCtr")
+          println(s"onlineCtr: $onlineCtr")
+          println(s"calibrated: $calibrated")
+          println(s"searchid: $searchid")
+          println("======")
+        }
       }
+      println("uncalbrated:%d".format(uncalibrated))
 
     })
 //    val result = log.rdd.map( x => {
