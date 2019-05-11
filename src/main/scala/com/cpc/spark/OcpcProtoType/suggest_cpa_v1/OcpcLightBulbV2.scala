@@ -245,7 +245,7 @@ object OcpcLightBulbV2{
          |WHERE
          |    date = '$date'
          |AND
-         |    `hour` = '06'
+         |    `hour` = '$hour'
          |and is_recommend = 1
          |and version = '$version'
          |and industry in ('elds', 'feedapp')
