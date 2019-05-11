@@ -42,14 +42,17 @@ object OcpcLightBulbV2{
     cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
     ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
+    val confData = getConfCPA(media, date, hour, spark)
     val cvUnit = getCPAgiven(date, hour, spark)
 
 
     val data = cpcData
         .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
-        .select("unitid", "conversion_goal", "cpa1", "cpa2")
-        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
-        .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+        .join(confData, Seq("unitid", "conversion_goal"), "outer")
+        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa3")
+        .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
+//        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
+        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
     data.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511c")
 
     data.show(10)
@@ -78,6 +81,36 @@ object OcpcLightBulbV2{
     resultDF
       .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
 //      .repartition(5).write.mode("overwrite").insertInto(tableName)
+  }
+
+  def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
+    var cpa = 0.0
+    if (cpa3 >= 0) {
+      cpa = cpa3
+    } else if (cpa2 >= 0) {
+      cpa = cpa2
+    } else {
+      cpa = cpa1
+    }
+
+    cpa
+  })
+
+  def getConfCPA(media: String, date: String, hour: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val suggestCpaPath = conf.getString("ocpc_all.light_control.suggest_path")
+    val rawData = spark.read.format("json").json(suggestCpaPath)
+    val data = rawData
+      .filter(s"media = '$media'")
+      .groupBy("identifier", "conversion_goal")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest")
+      )
+      .withColumn("cpa3", col("cpa_suggest") * 0.01)
+      .selectExpr("cast(identifier as bigint) unitid", "conversion_goal", "cpa3")
+
+    data
   }
 
   def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -307,7 +340,10 @@ object OcpcLightBulbV2{
 
     println(sqlRequest)
 
-    val resultDF = spark.sql(sqlRequest).distinct()
+    val resultDF = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal > 0")
+      .distinct()
 
     resultDF.show(10)
     resultDF
