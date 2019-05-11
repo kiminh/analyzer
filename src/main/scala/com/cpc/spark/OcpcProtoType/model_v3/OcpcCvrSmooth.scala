@@ -90,7 +90,6 @@ object OcpcCvrSmooth {
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-
     savePbPack(resultDF, fileName)
 
   }
