@@ -39,7 +39,9 @@ object OcpcLightBulbV2{
 
     // 抽取数据
     val cpcData = getRecommendationAd(version, date, hour, spark)
+    cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
+    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
     val cvUnit = getCPAgiven(date, hour, spark)
 
 
@@ -48,6 +50,7 @@ object OcpcLightBulbV2{
         .select("unitid", "conversion_goal", "cpa1", "cpa2")
         .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
         .na.fill(-1, Seq("cpa1", "cpa2", "cpa"))
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511c")
 
     data.show(10)
 
