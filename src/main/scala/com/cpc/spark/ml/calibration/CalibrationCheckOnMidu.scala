@@ -74,7 +74,7 @@ object CalibrationCheckOnMidu {
       var uncalibrated = 0
       if (onlineCtr - calibrated!=0) {
         uncalibrated += 1
-        if(uncalibrated%100==1){
+        if(uncalibrated%1000==1){
           println(s"rawCtr: $rawCtr")
           println(s"onlineCtr: $onlineCtr")
           println(s"calibrated: $calibrated")
