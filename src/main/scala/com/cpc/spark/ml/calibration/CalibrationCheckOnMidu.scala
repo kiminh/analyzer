@@ -35,7 +35,7 @@ object CalibrationCheckOnMidu {
 
     // get union log
     val sql = s"""
-                 |select isclick, raw_ctr, cast(raw_ctr as bigint) as ectr, searchid, ctr_model_name,
+                 |select isclick, raw_ctr, cast(exp_ctr as bigint) as ectr, searchid, ctr_model_name,
                  |adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
@@ -84,7 +84,7 @@ object CalibrationCheckOnMidu {
       }
     })
     println("uncalbrated:%d".format(uncalibrated))
-//    val result = log.rdd.map( x => {
+//    val result = data.rdd.map( x => {
 //      val isClick = x.getInt(0).toDouble
 //      val ectr = x.getLong(1).toDouble / 1e6d
 //      val onlineCtr = x.getInt(2).toDouble / 1e6d
