@@ -18,7 +18,7 @@ object OcpcLightBulbV2{
     2. mappartition打开redis，并存储数据
      */
     // 计算日期周期
-//    2019-02-02 10 qtt_demo
+//    2019-02-02 10 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
@@ -27,12 +27,12 @@ object OcpcLightBulbV2{
 
     val spark = SparkSession
       .builder()
-      .appName(s"OcpcLightBulb: $date, $hour, $version")
+      .appName(s"OcpcLightBulbV2: $date, $hour, $version, $media")
       .enableHiveSupport().getOrCreate()
 
-
-    val tableName = "dl_cpc.ocpc_light_control_version"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
+    // todo 修改表名
+//    val tableName = "dl_cpc.ocpc_light_control_version"
+    val tableName = "test.ocpc_qtt_light_control_version20190415"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -61,18 +61,20 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
 
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, version, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ##########################")
 
-//    resultDF.repartition(5).write.mode("overwrite").saveAsTable(tableName)
-    resultDF.repartition(5).write.mode("overwrite").insertInto(tableName)
+    resultDF
+      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//      .repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
   def getOcpcRecord(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -168,8 +170,9 @@ object OcpcLightBulbV2{
   }
 
   def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    // todo 修改测试表名
     val data = spark
-      .table("dl_cpc.ocpc_light_control_daily")
+      .table("test.ocpc_light_control_daily")
       .where(s"`date`='$date' and version='$version'")
       .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
       .repartition(2)
@@ -185,27 +188,40 @@ object OcpcLightBulbV2{
     println(s"host: $host")
     println(s"port: $port")
 
-
-    data.foreachPartition(iterator => {
-      val redis = new RedisClient(host, port)
-      redis.auth(auth)
-      iterator.foreach{
-        record => {
-          val identifier = record.getAs[Int]("unitid").toString
-          val valueDouble = record.getAs[Double]("cpa")
-          var key = "new_algorithm_unit_ocpc_" + identifier
-          if (valueDouble >= 0) {
-            var valueString = valueDouble.toString
-            if (valueString == "0.0") {
-              valueString = "0"
-            }
-            println(s"key:$key, value:$valueString")
-            redis.setex(key, 7 * 24 * 60 * 60, valueString)
-          }
+    // 测试
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
         }
+        println(s"key:$key, value:$valueString")
       }
-      redis.disconnect
-    })
+    }
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          val valueDouble = record.getAs[Double]("cpa")
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          if (valueDouble >= 0) {
+//            var valueString = valueDouble.toString
+//            if (valueString == "0.0") {
+//              valueString = "0"
+//            }
+//            println(s"key:$key, value:$valueString")
+//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+//          }
+//        }
+//      }
+//      redis.disconnect
+//    })
   }
 
   def getRecommendationAd(version: String, date: String, hour: String, spark: SparkSession) = {
