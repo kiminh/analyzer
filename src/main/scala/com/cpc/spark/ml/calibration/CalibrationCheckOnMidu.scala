@@ -82,9 +82,8 @@ object CalibrationCheckOnMidu {
           println("======")
         }
       }
-      println("uncalbrated:%d".format(uncalibrated))
-
     })
+    println("uncalbrated:%d".format(uncalibrated))
 //    val result = log.rdd.map( x => {
 //      val isClick = x.getInt(0).toDouble
 //      val ectr = x.getLong(1).toDouble / 1e6d
