@@ -63,6 +63,7 @@ object CalibrationCheckOnMidu {
 
     val data = log.filter("length(group)>0")
     println("calibration data:%d".format(data.count()))
+    var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
       val isClick = x.getLong(0).toDouble
       val rawCtr = x.getLong(1).toDouble / 1e6d
@@ -71,7 +72,6 @@ object CalibrationCheckOnMidu {
       val group = x.getString(4)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(rawCtr, irModel.ir.get)
-      var uncalibrated = 0
       if (onlineCtr - calibrated!=0) {
         uncalibrated += 1
         if(uncalibrated%10000==1){
