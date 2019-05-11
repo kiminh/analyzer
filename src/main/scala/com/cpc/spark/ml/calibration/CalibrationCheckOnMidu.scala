@@ -1,11 +1,13 @@
 package com.cpc.spark.ml.calibration
 
-import java.io.FileInputStream
+import java.io.{File, FileInputStream, PrintWriter}
+
 import org.apache.spark.sql.functions._
 import com.cpc.spark.common.Utils
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions.{col, concat_ws, udf}
+
 import scala.collection.mutable
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
@@ -27,6 +29,11 @@ object CalibrationCheckOnMidu {
     println(s"modelName=$modelName")
 
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
+
+    val localPath ="/home/cpc/wy/qtt_v4_postcali.txt"
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    new PrintWriter(localPath) { write(calimap.toString); close() }
 
     val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
@@ -74,11 +81,12 @@ object CalibrationCheckOnMidu {
       val calibrated = computeCalibration(rawCtr, irModel.ir.get)
       if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         uncalibrated += 1
-        if(uncalibrated%1000==1){
+        if(uncalibrated%100==1){
           println(s"rawCtr: $rawCtr")
           println(s"onlineCtr: $onlineCtr")
           println(s"calibrated: $calibrated")
           println(s"searchid: $searchid")
+          println(s"group: $group")
           println("======")
         }
       }
