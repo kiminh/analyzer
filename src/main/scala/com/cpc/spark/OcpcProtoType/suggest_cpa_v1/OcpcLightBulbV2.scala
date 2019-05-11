@@ -103,7 +103,8 @@ object OcpcLightBulbV2{
       s"""
          |SELECT
          |    unitid,
-         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -116,7 +117,10 @@ object OcpcLightBulbV2{
          |    isclick = 1
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1).distinct()
+    val rawData = spark
+      .sql(sqlRequest1)
+      .filter(s"is_hidden = 0")
+      .distinct()
 
     val sqlRequets2 =
       s"""
