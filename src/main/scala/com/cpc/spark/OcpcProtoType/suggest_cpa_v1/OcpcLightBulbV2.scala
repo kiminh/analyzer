@@ -73,7 +73,7 @@ object OcpcLightBulbV2{
     println(s"############## saving redis database ##########################")
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
 //      .repartition(5).write.mode("overwrite").insertInto(tableName)
   }
 
