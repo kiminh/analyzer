@@ -87,10 +87,10 @@ object OcpcCvrSmooth {
       .withColumn("version", lit("qtt_demo"))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    
+
     savePbPack(resultDF, fileName)
 
   }
@@ -310,7 +310,7 @@ object OcpcCvrSmooth {
          |SELECT
          |  cast(unitid as string) identifier,
          |  cpa * 100 as cpa_suggest,
-         |  3 as param_t
+         |  10 as param_t
          |FROM
          |  test.ocpc_qtt_light_control_v2
        """.stripMargin
