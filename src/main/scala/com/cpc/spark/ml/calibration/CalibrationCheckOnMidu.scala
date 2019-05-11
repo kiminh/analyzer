@@ -72,9 +72,9 @@ object CalibrationCheckOnMidu {
       val group = x.getString(4)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(rawCtr, irModel.ir.get)
-      if (onlineCtr - calibrated!=0) {
+      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         uncalibrated += 1
-        if(uncalibrated%10000==1){
+        if(uncalibrated%100==1){
           println(s"rawCtr: $rawCtr")
           println(s"onlineCtr: $onlineCtr")
           println(s"calibrated: $calibrated")
