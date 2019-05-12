@@ -8,8 +8,6 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
 import com.typesafe.config.ConfigFactory
-import lrmodel.lrmodel.Pack
-import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
@@ -19,49 +17,111 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
-import scala.collection.mutable.WrappedArray
+import scala.collection.mutable.{ListBuffer, WrappedArray}
 import scala.util.Random
 
 /**
   * Created by zhaolei on 22/12/2017.
+  * new owner: fym (190511).
   */
 object LRTrain {
 
-  private val days = 7
-  private val daysCvr = 20
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
 
-
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    val spark: SparkSession = model.initSpark("cpc lr model")
 
-    //按分区取数据
+    val spark: SparkSession = model
+      .initSpark("[cpc-model] linear regression")
+
+    // 按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
+
+    val date = args(2)
+    val hour = args(3)
 
     initFeatureDict(spark, ctrPathSep)
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
-    val ulog = getData(spark, "ctrdata_v1", ctrPathSep)
+    // fym 190512: to replace getData().
+    val queryRawDataFromUnionEvents =
+      s"""
+         |select
+         |  searchid
+         |  , isclick as label
+         |  , sex
+         |  , age
+         |  , os
+         |  , isp
+         |  , network
+         |  , city
+         |  , media_appsid
+         |  , phone_level
+         |  , `timestamp`
+         |  , adtype
+         |  , planid
+         |  , unitid
+         |  , ideaid
+         |  , adclass
+         |  , adslot_id as adslotid -- bottom-up compatibility.
+         |  , adslot_type
+         |  , interact_pagenum as pagenum -- bottom-up compatibility.
+         |  , interact_bookid as bookid -- bottom-up compatibility.
+         |  , brand_title
+         |  , user_req_ad_num
+         |  , user_req_num
+         |  , uid
+         |  , click_count as user_click_num
+         |  , click_unit_count as user_click_unit_num
+         |  , long_click_count as user_long_click_count
+         |from dl_cpc.cpc_basedata_union_events
+         |where %s
+         |  and isshow = 1
+         |  and ideaid > 0
+         |  and unitid > 0
+       """.stripMargin
+        .format(getSelectedHoursBefore(date, hour, 24))
+
+    val rawDataFromTrident = spark
+      .sql(queryRawDataFromUnionEvents)
+      .filter(_.getAs[Int]("ideaid") > 0)
+
+    /*val ulog = getData(spark, "ctrdata_v1", ctrPathSep)
       .filter(_.getAs[Int]("ideaid") > 0)
       .randomSplit(Array(0.5, 0.5))(0)
-      .cache()
+      .cache()*/
 
-    trainLog :+= "ulog nums = %d".format(ulog.rdd.count)
-    trainLog :+= "ulog NumPartitions = %d".format(ulog.rdd.getNumPartitions)
+    // trainLog :+= "union-events nums = %d".format(rawDataFromTrident.count())
+    // trainLog :+= "ulog NumPartitions = %d".format(rawDataFromTrident.rdd.getNumPartitions)
 
     //qtt-list-parser3-hourly
     model.clearResult()
-    val qttList = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm", 4e8)
-    model.clearResult()
-    train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)
+
+    val qttList = rawDataFromTrident
+      .filter(x =>
+        (
+          x.getAs[String]("media_appsid") == "80000001"
+            || x.getAs[String]("media_appsid") == "80000002")
+          && x.getAs[Int]("adslot_type") == 1
+      )
+
+    train(
+      spark,
+      "parser3",
+      "qtt-list-parser3-hourly",
+      getLeftJoinData(qttList, userAppIdx),
+      "qtt-list-parser3-hourly.lrm",
+      4e8
+    )
+
+    /*model.clearResult()
+    train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)*/
 
     //qtt-content-parser3-hourly
-    model.clearResult()
+    /*model.clearResult()
     val qttContent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm", 4e8)
     model.clearResult()
@@ -70,10 +130,10 @@ object LRTrain {
     //qtt-all-parser3-hourly
     model.clearResult()
     val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "ctrparser3", "qtt-all-ctrparser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-ctrparser3-hourly.lrm", 4e8)
+    train(spark, "ctrparser3", "qtt-all-ctrparser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-ctrparser3-hourly.lrm", 4e8)*/
 
     //凌晨计算所有的模型
-    if (isMorning()) {
+    /*if (isMorning()) {
       //external-all-parser2-hourly
       model.clearResult()
       val extAll = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
@@ -115,10 +175,16 @@ object LRTrain {
       train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
 
       cvrQttAll.unpersist()
-    }
+    }*/
 
-    Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
-    ulog.unpersist()
+    Utils
+      .sendMail(
+        trainLog.mkString("\n"),
+        "TrainLog",
+        Seq("fanyiming@qutoutiao.net"/*"rd@aiclk.com"*/)
+      )
+
+    rawDataFromTrident.unpersist()
     userAppIdx.unpersist()
   }
 
@@ -142,7 +208,7 @@ object LRTrain {
 
 
   def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
-    val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
+    val inpath = "hdfs://emr-cluster/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
     println(inpath)
 
     import spark.implicits._
@@ -259,20 +325,20 @@ object LRTrain {
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
-    val lrfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
-    val mlfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
-    model.saveHdfs("/user/cpc/lrmodel/lrmodeldata/%s".format(date))
-    model.saveIrHdfs("/user/cpc/lrmodel/irmodeldata/%s".format(date))
+    val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
     model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack %s".format(lrfilepath)
 
-    trainLog :+= "\n-------update server data------"
+    /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
       trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
       MUtils.updateMlcppOnlineData(mlfilepath, "/home/work/mlcpp/data/" + destfile, ConfigFactory.load())
-    }
+    }*/
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
@@ -317,7 +383,7 @@ object LRTrain {
 
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
-      val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
+      val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
       println(pathTpl.format(name, pathSep.keys.mkString(",")))
@@ -338,7 +404,6 @@ object LRTrain {
       trainLog :+= "%s=%d".format(name, ids.size)
     }
   }
-
 
   def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     trainLog :+= "\n-------get ulog data------"
@@ -366,7 +431,7 @@ object LRTrain {
   }
   */
 
-  def unionLogToObject(x: Row, seq: Seq[String]): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
+  /*def unionLogToObject(x: Row, seq: Seq[String]): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
     val ad = AdInfo(
       ideaid = x.getAs[Int]("ideaid"),
       unitid = x.getAs[Int]("unitid"),
@@ -402,7 +467,7 @@ object LRTrain {
       phoneLevel = x.getAs[Int]("phone_level")
     )
     (ad, m, slot, u, loc, n, d, x.getAs[Int]("timestamp") * 1000L)
-  }
+  }*/
 
 
   def getVectorParser1(x: Row): Vector = {
@@ -1083,80 +1148,6 @@ object LRTrain {
     }
   }
 
-  def evaluate(spark: SparkSession, dataType: String, mlmfile: String): Unit = {
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -4)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val part = new SimpleDateFormat("yyyy-MM-dd/HH").format(cal.getTime)
-
-    val mlm = Pack.parseFrom(new FileInputStream(mlmfile))
-    val dictData = mlm
-    dict.update("mediaid", dictData.mediaid)
-    dict.update("planid", dictData.planid)
-    dict.update("ideaid", dictData.ideaid)
-    dict.update("unitid", dictData.unitid)
-    dict.update("slotid", dictData.slotid)
-    dict.update("adclass", dictData.adclass)
-    dict.update("cityid", dictData.cityid)
-
-    import spark.implicits._
-    val uidApp = spark.read.parquet("/user/cpc/userInstalledApp/%s/*".format(date)).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[mutable.WrappedArray[String]]("pkgs")))
-      .reduceByKey(_ ++ _)
-      .map(x => (x._1, x._2.distinct))
-      .toDF("uid", "pkgs").rdd
-    val appids = dictData.appid
-    val userAppids = getUserAppIdx(spark, uidApp, appids)
-
-    var qtt = spark.read.parquet("/user/cpc/lrmodel/ctrdata_v1/%s/*".format(date)).coalesce(200)
-    if (dataType == "qtt-list") {
-      qtt = qtt.filter {
-        x =>
-          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
-            x.getAs[Int]("adslot_type") == 1 && x.getAs[Int]("ideaid") > 0
-      }
-    } else if (dataType == "qtt-content") {
-      qtt = qtt.filter {
-        x =>
-          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
-            x.getAs[Int]("adslot_type") == 2 && x.getAs[Int]("ideaid") > 0
-      }
-    } else if (dataType == "qtt-all") {
-      qtt = qtt.filter {
-        x =>
-          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
-            Seq(1, 2).contains(x.getAs[Int]("adslot_type")) && x.getAs[Int]("ideaid") > 0
-      }
-    } else {
-      qtt = qtt.filter { x => x.getAs[Int]("ideaid") > 0 }
-    }
-    qtt = getLimitedData(spark, 1e7, qtt).join(userAppids, Seq("uid"), "leftouter").cache()
-
-    val lr = LogisticRegressionModel.load(spark.sparkContext, "/user/cpc/lrmodel/lrmodeldata/2018-04-09-03-37")
-    val BcDict = spark.sparkContext.broadcast(dict)
-    val BcWeights = spark.sparkContext.broadcast(lr.weights)
-    val lrtest = qtt.rdd
-      .mapPartitions {
-        p =>
-          dict = BcDict.value
-          p.map {
-            u =>
-              val vec = getCtrVectorParser3(u)
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
-          }
-      }
-
-    println(lrtest.first())
-    lr.clearThreshold()
-    val lrresults = lrtest.map { r => (lr.predict(r.features), r.label) }
-    printXGBTestLog(lrresults)
-    val metrics = new BinaryClassificationMetrics(lrresults)
-    val auPRC = metrics.areaUnderPR
-    val auROC = metrics.areaUnderROC
-    println(auPRC, auROC)
-
-  }
-
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
     import spark.implicits._
     var rate = 1d
@@ -1237,5 +1228,30 @@ object LRTrain {
 
     println(log)
     trainLog :+= log
+  }
+
+  // fym 190428.
+  def getSelectedHoursBefore(
+                              date: String,
+                              hour: String,
+                              hours: Int
+                            ): String = {
+    val dateHourList = ListBuffer[String]()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    for (t <- 0 to hours) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val formatDate = dateFormat.format(cal.getTime)
+      val datee = formatDate.substring(0, 10)
+      val hourr = formatDate.substring(11, 13)
+
+      val dateL = s"(`day`='$datee' and `hour`='$hourr')"
+      dateHourList += dateL
+    }
+
+    "(" + dateHourList.mkString(" or ") + ")"
   }
 }
