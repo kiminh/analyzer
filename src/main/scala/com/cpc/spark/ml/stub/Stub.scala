@@ -139,7 +139,7 @@ object Stub {
           }
           */
 
-          val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
+          /*val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
           var ads = Seq[AdInfo]()
           for (i <- 1 to 1) {
             ads = ads :+ ad
@@ -162,7 +162,7 @@ object Stub {
           val blockingStub = PredictorGrpc.blockingStub(channel)
           val reply = blockingStub.predict(req)
 
-          println("ideaid=%d scala=%.8f ml=%.8f".format(ad.ideaid, 0d, reply.results(0).value))
+          println("ideaid=%d scala=%.8f ml=%.8f".format(ad.ideaid, 0d, reply.results(0).value))*/
           println("")
 
       }
