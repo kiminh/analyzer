@@ -287,7 +287,7 @@ object TopCtrIdea {
                               agent_id: Int = 0,
                               user_id: Int = 0,
                               idea_id: Int = 0,
-                              adclass: Int = 0,git 
+                              adclass: Int = 0,
                               adclass_1: Int = 0,
                               title: String = "",
                               mtype: Int = 0,
