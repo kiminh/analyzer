@@ -1,5 +1,6 @@
 package com.cpc.spark.ecpc.v1
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -8,6 +9,8 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import adclassEcpc.adclassEcpc.{SingleItem, AdClassEcpcList}
+import scala.collection.mutable.ListBuffer
 
 object eCPCforElds {
   def main(args: Array[String]): Unit = {
@@ -26,6 +29,7 @@ object eCPCforElds {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
+    val fileName = "test.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt")
@@ -46,6 +50,106 @@ object eCPCforElds {
 
     val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
 
+    val data = data1
+      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+      .withColumn("high_bid_factor", lit(highBidFactor))
+      .select("adclass", "adtype", "slottype", "slotid", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+
+    val resultDF = data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+
+    savePbPack(resultDF, fileName, spark)
+
+  }
+
+  def savePbPack(dataset: DataFrame, filename: String, spark: SparkSession): Unit = {
+    /*
+    int64 adclass = 1;
+    int64 adtype = 2;
+    int64 slottype = 3;
+    string slotid = 4;
+    double post_cvr = 5;
+    double calCvrFactor = 6;
+    double highBidFactor = 7;
+    double lowBidFactor = 8;
+     */
+    var list = new ListBuffer[SingleItem]
+    dataset.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  adclass,
+         |  adtype,
+         |  slottype,
+         |  slotid,
+         |  1.0 / pcoc as cvr_cal_factor,
+         |  post_cvr,
+         |  high_bid_factor,
+         |  low_bid_factor
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest)
+    val resultData = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
+
+    println("size of the dataframe:")
+    println(resultData.count)
+    resultData.show(10)
+    resultData.printSchema()
+//    resultData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      //        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+    var cnt = 0
+
+    for (record <- resultData.collect()) {
+      val adclass = record.getAs[Long]("adclass")
+      val adtype = record.getAs[Long]("adtype")
+      val slottype = record.getAs[Long]("slottype")
+      val slotid = record.getAs[String]("slotid")
+      val postCvr = record.getAs[Double]("post_cvr")
+      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
+      val highBidFactor = record.getAs[Double]("high_bid_factor")
+      val lowBidFactor = record.getAs[Double]("low_bid_factor")
+
+      if (cnt % 100 == 0) {
+        println(s"adclass:$adclass, adtype:$adtype, slottype:$slottype, slotid:$slotid, postCvr:$postCvr, cvrCalFactor:$cvrCalFactor, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        adclass = adclass,
+        adtype = adtype,
+        slottype = slottype,
+        slotid = slotid,
+        postCvr = postCvr,
+        calCvrFactor = cvrCalFactor,
+        highBidFactor = highBidFactor,
+        lowBidFactor = lowBidFactor
+      )
+      list += currentItem
+
+    }
+
+    val result = list.toArray[SingleItem]
+    val adRecordList = AdClassEcpcList(
+      records = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(filename))
+
+    println("complete save data into protobuffer")
 
   }
 
@@ -155,7 +259,7 @@ object eCPCforElds {
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("adclass", "adtype", "slottype", "slotid")
+      .select("adclass", "adtype", "slottype", "slotid", "calc_total")
 
     val sqlRequest2 =
       s"""
@@ -170,50 +274,48 @@ object eCPCforElds {
          |  raw_data
          |WHERE
          |  pcvr_group = "high"
-         |GROUP BY unitid, ideaid, slotid, slottype, adtype
+         |GROUP BY adclass, adtype, slottype, slotid
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-      .select("unitid", "ideaid", "slotid", "slottype", "adtype", "calc_high")
+      .select("adclass", "adtype", "slottype", "slotid", "calc_high")
 
     val sqlRequest3 =
       s"""
          |SELECT
-         |  unitid,
-         |  ideaid,
-         |  slotid,
-         |  slottype,
+         |  adclass,
          |  adtype,
+         |  slottype,
+         |  slotid,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "low"
-         |GROUP BY unitid, ideaid, slotid, slottype, adtype
+         |GROUP BY adclass, adtype, slottype, slotid
        """.stripMargin
     println(sqlRequest3)
     val data3 = spark
       .sql(sqlRequest3)
       .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("unitid", "ideaid", "slotid", "slottype", "adtype", "calc_low")
+      .select("adclass", "adtype", "slottype", "slotid", "calc_low")
 
     val data = data1
-      .join(data2, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
-      .join(data3, Seq("unitid", "ideaid", "slotid", "slottype", "adtype"), "inner")
-      .select("unitid", "ideaid", "slotid", "slottype", "adtype", "calc_total", "calc_high", "calc_low")
+      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+      .join(data3, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+      .select("adclass", "adtype", "slottype", "slotid", "calc_total", "calc_high", "calc_low")
 
     data.createOrReplaceTempView("data")
     val sqlRequestFinal =
       s"""
          |SELECT
-         |  unitid,
-         |  ideaid,
-         |  slotid,
-         |  slottype,
+         |  adclass,
          |  adtype,
+         |  slottype,
+         |  slotid,
          |  calc_total,
          |  calc_high,
          |  calc_low,
