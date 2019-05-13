@@ -1,10 +1,13 @@
 package com.cpc.spark.OcpcProtoType.model_novel_v2
 
 import java.io.FileOutputStream
-import ocpcParams.ocpcParams.{OcpcParamsList,SingleItem}
+
+import ocpcParams.OcpcParams
+import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
 import scala.collection.mutable.ListBuffer
 
 object OcpcSampleToPb {
@@ -136,8 +139,8 @@ object OcpcSampleToPb {
     for (record <- dataset.collect()) {
       val identifier = record.getAs[String]("identifier")
       val HiddenOcpc = isHidden
-      val expTag = "oCPCNovel"
-      val key = expTag + "&" + identifier + "&" + HiddenOcpc
+      val key = "oCPCNovel&" + identifier + "&" + HiddenOcpc
+      val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cvrcalfactor")
       val jfbFactor = record.getAs[Double]("kvalue")
       val smoothFactor = record.getAs[Double]("smoothfactor")
@@ -151,17 +154,15 @@ object OcpcSampleToPb {
       val ocpcMinbid = 0
       val cpcbid = 0
       val maxbid = 0
-      val conversionGoal = record.getAs[Int]("conversion_goal")
-
 
       if (cnt % 100 == 0) {
-        println(s"expTag:$expTag, key:$key,conversionGoal:$conversionGoal, jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor")
+        println(s"key: $key,conversionGoal: $conversionGoal, jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor")
       }
       cnt += 1
 
       val currentItem = SingleItem(
-        expTag = expTag,
         key = key,
+        conversionGoal = conversionGoal,
         cvrCalFactor = cvrCalFactor,
         jfbFactor = jfbFactor,
         smoothFactor = smoothFactor,

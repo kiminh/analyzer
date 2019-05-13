@@ -2,21 +2,21 @@ syntax = "proto3";
 
 package ocpcParams;
 message SingleItem {
-    string expTag = 1;
-    string key = 2;
-    double cvrCalFactor = 3;
-    double jfbFactor = 4;
-    double smoothFactor = 5; 
-    double postCvr = 6;
-    double cpaGiven = 7;
-    double cpaSuggest = 8;
-    double paramT = 9;
-    double highBidFactor = 10;
-    double lowBidFactor = 11;
-    int64 ocpcMincpm = 12;
-    int64 ocpcMinbid = 13; 
-    int64 cpcbid = 14;
-	int64 maxbid = 15;
+    string   key = 1;
+    int32    conversionGoal = 2;
+    double   cvrCalFactor = 3;
+    double   jfbFactor = 4;
+    double   smoothFactor = 5;
+    double   postCvr = 6;
+    double   cpaGiven = 7;
+    double   cpaSuggest = 8;
+    double   paramT = 9;
+    double   highBidFactor = 10;
+    double   lowBidFactor = 11;
+    int64    ocpcMincpm = 12;
+    int64    ocpcMinbid = 13;
+    int64    cpcbid = 14;
+    int64    maxbid = 15;
 }
 
 message OcpcParamsList {
