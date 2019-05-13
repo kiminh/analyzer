@@ -107,7 +107,7 @@ object OcpcSampleToPb {
          |FROM
          |  dl_cpc.ocpc_pcoc_jfb_hourly
          |WHERE
-         |  date` = '$date' and `hour` = '$hour'
+         |  `date` = '$date' and `hour` = '$hour'
          |AND
          |  version = '$version'
          |AND
@@ -115,10 +115,7 @@ object OcpcSampleToPb {
        """.stripMargin
 
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-
-    val resultDF  =data
-      .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue")
+    val resultDF = spark.sql(sqlRequest)
 
     resultDF
 
