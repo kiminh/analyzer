@@ -35,32 +35,26 @@ object OcpcSampleToPb {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val isKnown = args(3).toInt
+    val isHidden = args(3).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
+    println(s"date=$date, hour=$hour, version=$version, isHidden:$isHidden")
 
-    val data = getPostCvrAndK(date, hour, version, spark)
+    val cvrData = getPostCvrAndK(date, hour, version, spark)
 
     println("NewK")
-    println(data.count())
-    data.show(10)
+    println(cvrData.count())
+    cvrData.show(10)
 
-    data
-      .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal","post_cvr")
-      .na.fill(0.0, Seq("post_cvr"))
+    val cvGoal = getConversionGoal(date, hour, spark)
+    // 获取postcvr数据
 
-    data.write.mode("overwrite").saveAsTable("test.wy00")
+    // 组装数据
+    val resultDF = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
+      .withColumn("smoothfactor", lit(0.5))
 
-//    val cvGoal = getConversionGoal(date, hour, spark)
-//    // 获取postcvr数据
-//
-//    // 组装数据
-//    val result = assemblyData(cvrData, spark)
-//
-//    val resultDF = result.
-//
-//    savePbPack(resultDF, version, isKnown)
+    savePbPack(resultDF, version, isHidden)
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
@@ -82,7 +76,7 @@ object OcpcSampleToPb {
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
       .withColumn("cv_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier",  "cast(conversion_goal as int) conversion_goal", "cv_flag")
+      .selectExpr("cast(unitid as string) identifier", "cast(conversion_goal as int) conversion_goal", "cv_flag")
       .distinct()
 
     resultDF.show(10)
@@ -96,22 +90,24 @@ object OcpcSampleToPb {
      */
     // 从表中抽取数据
     val sqlRequest =
-      s"""
-         |SELECT
-         |  identifier,
-         |  pcoc,
-         |  jfb,
-         |  1.0 / jfb as kvalue,
-         |  conversion_goal,
-         |  post_cvr
-         |FROM
-         |  dl_cpc.ocpc_pcoc_jfb_hourly
-         |WHERE
-         |  `date` = '$date' and `hour` = '$hour'
-         |AND
-         |  version = '$version'
-         |AND
-         |  jfb > 0
+    s"""
+       |SELECT
+       |  identifier,
+       |  1.0 / pcoc cvrcalfactor,
+       |  jfb,
+       |  1.0 / jfb as kvalue,
+       |  conversion_goal,
+       |  post_cvr
+       |FROM
+       |  dl_cpc.ocpc_pcoc_jfb_hourly
+       |WHERE
+       |  `date` = '$date' and `hour` = '$hour'
+       |AND
+       |  version = '$version'
+       |AND
+       |  jfb > 0
+       |AND
+       |  pcoc>0
        """.stripMargin
 
     println(sqlRequest)
@@ -122,84 +118,79 @@ object OcpcSampleToPb {
   }
 
 
-//  def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
-//    var list = new ListBuffer[SingleItem]
-//    var filename = ""
-//    if (isKnown == 1) {
-//      filename = s"Ocpc_" + version + "_known.pb"
-//    } else {
-//      filename = s"Ocpc_" + version + "_unknown.pb"
-//    }
-//    println("size of the dataframe")
-//    println(dataset.count)
-//    println(s"filename: $filename")
-//    dataset.show(10)
-//    dataset.printSchema()
-//    var cnt = 0
-//
-//    for (record <- dataset.collect()) {
-//      val identifier = record.getAs[String]("identifier")
-//      val cpaGiven = record.getAs[Double]("cpagiven")
-//      val kvalue = record.getAs[Double]("kvalue")
-//      val cvrCnt = record.getAs[Long]("cvrcnt")
-//      val conversionGoal = record.getAs[Int]("conversion_goal")
-//
-//      if (cnt % 100 == 0) {
-//        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
-//      }
-//      cnt += 1
-//
-//      val currentItem = SingleItem(
-//        identifier = identifier,
-//        conversiongoal = conversionGoal,
-//        kvalue = kvalue,
-//        cpagiven = cpaGiven,
-//        cvrcnt = cvrCnt
-//      )
-//      list += currentItem
-//
-//    }
-//    val result = list.toArray[SingleRecord]
-//    val adRecordList = OcpcList(
-//      adrecord = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(filename))
-//
-//    println("complete save data into protobuffer")
-//
-//  }
+  def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
+    var list = new ListBuffer[SingleItem]
+    var filename = ""
+    if (isHidden == 0) {
+      filename = s"Ocpc_" + version + "_known.pb"
+    } else {
+      filename = s"Ocpc_" + version + "_unknown.pb"
+    }
+    println("size of the dataframe")
+    println(dataset.count)
+    println(s"filename: $filename")
+    dataset.show(10)
+    dataset.printSchema()
+    var cnt = 0
 
-  def assemblyData(cvrData: DataFrame, spark: SparkSession) = {
-    /*
-      identifier      string  NULL
-      min_bid double  NULL
-      cvr1    double  NULL
-      cvr2    double  NULL
-      cvr3    double  NULL
-      min_cpm double  NULL
-      factor1 double  NULL
-      factor2 double  NULL
-      factor3 double  NULL
-      cpc_bid double  NULL
-      cpa_suggest     double  NULL
-      param_t double  NULL
-      cali_value      double  NULL
-     */
-    val result = cvrData
-      .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
-      .withColumn("min_bid", lit(0))
-      .withColumn("min_cpm", lit(0))
-      .na.fill(0, Seq("min_bid", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
-      .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
-      .na.fill(0.2, Seq("factor1"))
-      .na.fill(0.5, Seq("factor2", "factor3"))
-      .na.fill(1.0, Seq("cali_value"))
-      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
+    for (record <- dataset.collect()) {
+      val identifier = record.getAs[String]("identifier")
+      val HiddenOcpc = isHidden
+      val expTag = "oCPCNovel"
+      val key = expTag + "&" + identifier + "&" + HiddenOcpc
+      val cvrCalFactor = record.getAs[Double]("cvrcalfactor")
+      val jfbFactor = record.getAs[Double]("kvalue")
+      val smoothFactor = record.getAs[Double]("smoothfactor")
+      val postCvr = record.getAs[Double]("post_cvr")
+      val cpaGiven = 0.0
+      val cpaSuggest = 0.0
+      val paramT = 0.0
+      val highBidFactor = 0.0
+      val lowBidFactor = 0.0
+      val ocpcMincpm = 0
+      val ocpcMinbid = 0
+      val cpcbid = 0
+      val maxbid = 0
+      val conversionGoal = record.getAs[Int]("conversion_goal")
 
-    result
+
+      if (cnt % 100 == 0) {
+        println(s"expTag:$expTag, key:$key,conversionGoal:$conversionGoal, jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        expTag = expTag,
+        key = key,
+        cvrCalFactor = cvrCalFactor,
+        jfbFactor = jfbFactor,
+        smoothFactor = smoothFactor,
+        postCvr = postCvr,
+        cpaGiven = cpaGiven,
+        cpaSuggest = cpaSuggest,
+        paramT = paramT,
+        highBidFactor = highBidFactor,
+        lowBidFactor = lowBidFactor,
+        ocpcMincpm = ocpcMincpm,
+        ocpcMinbid = ocpcMinbid,
+        cpcbid = cpcbid,
+        maxbid = maxbid
+      )
+      list += currentItem
+
+    }
+    val result = list.toArray[SingleItem]
+    val adRecordList = OcpcParamsList(
+      records = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(filename))
+
+    println("complete save data into protobuffer")
+
   }
 }
+
 
