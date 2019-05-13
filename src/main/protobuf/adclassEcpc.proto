@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package adclassEcpc;
+message SingleItem {
+    int64 adclass = 1;
+    int64 adtype = 2;
+    int64 slottype = 3;
+    string slotid = 4;
+    double post_cvr = 5;
+    double calCvrFactor = 6;
+    double highBidFactor = 7;
+    double lowBidFactor = 8;
+}
+
+message AdClassEcpcList {
+    repeated SingleItem records = 1;
+}
