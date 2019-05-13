@@ -413,6 +413,8 @@ object eCPCforElds {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 0
+         |AND
+         |  (cast(adclass as string) like '134%' or cast(adclass as string) like '107%')
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark.sql(sqlRequest1)
