@@ -52,7 +52,6 @@ object OcpcLightBulbV2{
         .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa3")
         .na.fill(-1, Seq("cpa1", "cpa2", "cpa3"))
         .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
-//        .withColumn("cpa", when(col("cpa2").isNotNull && col("cpa2") >= 0, col("cpa2")).otherwise(col("cpa1")))
         .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
     data.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511c")
 
