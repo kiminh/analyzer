@@ -73,7 +73,7 @@ object OcpcLightBulbV2{
 
     // 清除redis里面的数据
     println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
+    cleanRedis("dl_cpc.ocpc_light_control_version", version, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
