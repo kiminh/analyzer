@@ -104,8 +104,8 @@ object OcpcCalibrationV2toPb {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
-        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
     var cnt = 0
 
     for (record <- resultData.collect()) {
@@ -145,21 +145,21 @@ object OcpcCalibrationV2toPb {
 
     }
 
-    // todo test
-    val currentItem = SingleItem(
-      expTag = "ocpcRangeBidRatio",
-      unitid = 270,
-      ideaid = 0,
-      slotid = "0",
-      slottype = 0,
-      adtype = 0,
-      cvrCalFactor = 0.0,
-      jfbFactor = 0.0,
-      postCvr = 0.0,
-      highBidFactor = 0.0,
-      lowBidFactor = 0.0
-    )
-    list += currentItem
+//    // todo test
+//    val currentItem = SingleItem(
+//      expTag = "ocpcRangeBidRatio",
+//      unitid = 270,
+//      ideaid = 0,
+//      slotid = "0",
+//      slottype = 0,
+//      adtype = 0,
+//      cvrCalFactor = 0.0,
+//      jfbFactor = 0.0,
+//      postCvr = 0.0,
+//      highBidFactor = 0.0,
+//      lowBidFactor = 0.0
+//    )
+//    list += currentItem
 
     val result = list.toArray[SingleItem]
     val adRecordList = OcpcFactorList(
