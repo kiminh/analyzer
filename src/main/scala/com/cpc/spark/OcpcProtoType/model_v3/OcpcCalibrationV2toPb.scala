@@ -104,8 +104,8 @@ object OcpcCalibrationV2toPb {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
     var cnt = 0
 
     for (record <- resultData.collect()) {
