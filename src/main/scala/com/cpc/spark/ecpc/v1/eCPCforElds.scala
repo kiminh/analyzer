@@ -29,7 +29,7 @@ object eCPCforElds {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
-    val fileName = "test.pb"
+    val fileName = "adclass_ecpc.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt")
