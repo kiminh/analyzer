@@ -4,7 +4,6 @@ import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
@@ -15,6 +14,7 @@ import scala.collection.mutable
 /**
   * Created by roydong on 27/10/2017.
   */
+@deprecated
 object TopCtrIdea {
 
 
@@ -37,7 +37,6 @@ object TopCtrIdea {
       .appName("top ctr ideas")
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -45,10 +44,9 @@ object TopCtrIdea {
     for (i <- 0 until dayBefore) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt = """
-                   |select *,
-                   | ext['adclass'].int_value as adclass
-                   | from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-                   |and adslotid > 0 and adslot_type in (1,2)
+                   |select *
+                   | from dl_cpc.cpc_basedata_union_events where `day` = "%s" and isshow = 1
+                   |and adslot_id > 0 and adslot_type in (1,2)
                  """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
