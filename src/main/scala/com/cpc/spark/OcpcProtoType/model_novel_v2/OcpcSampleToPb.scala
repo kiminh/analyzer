@@ -125,55 +125,55 @@ object OcpcSampleToPb {
   }
 
 
-  def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
-    var list = new ListBuffer[SingleItem]
-    var filename = ""
-    if (isKnown == 1) {
-      filename = s"Ocpc_" + version + "_known.pb"
-    } else {
-      filename = s"Ocpc_" + version + "_unknown.pb"
-    }
-    println("size of the dataframe")
-    println(dataset.count)
-    println(s"filename: $filename")
-    dataset.show(10)
-    dataset.printSchema()
-    var cnt = 0
-
-    for (record <- dataset.collect()) {
-      val identifier = record.getAs[String]("identifier")
-      val cpaGiven = record.getAs[Double]("cpagiven")
-      val kvalue = record.getAs[Double]("kvalue")
-      val cvrCnt = record.getAs[Long]("cvrcnt")
-      val conversionGoal = record.getAs[Int]("conversion_goal")
-
-      if (cnt % 100 == 0) {
-        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
-      }
-      cnt += 1
-
-      val currentItem = SingleItem(
-        identifier = identifier,
-        conversiongoal = conversionGoal,
-        kvalue = kvalue,
-        cpagiven = cpaGiven,
-        cvrcnt = cvrCnt
-      )
-      list += currentItem
-
-    }
-    val result = list.toArray[SingleRecord]
-    val adRecordList = OcpcList(
-      adrecord = result
-    )
-
-    println("length of the array")
-    println(result.length)
-    adRecordList.writeTo(new FileOutputStream(filename))
-
-    println("complete save data into protobuffer")
-
-  }
+//  def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
+//    var list = new ListBuffer[SingleItem]
+//    var filename = ""
+//    if (isKnown == 1) {
+//      filename = s"Ocpc_" + version + "_known.pb"
+//    } else {
+//      filename = s"Ocpc_" + version + "_unknown.pb"
+//    }
+//    println("size of the dataframe")
+//    println(dataset.count)
+//    println(s"filename: $filename")
+//    dataset.show(10)
+//    dataset.printSchema()
+//    var cnt = 0
+//
+//    for (record <- dataset.collect()) {
+//      val identifier = record.getAs[String]("identifier")
+//      val cpaGiven = record.getAs[Double]("cpagiven")
+//      val kvalue = record.getAs[Double]("kvalue")
+//      val cvrCnt = record.getAs[Long]("cvrcnt")
+//      val conversionGoal = record.getAs[Int]("conversion_goal")
+//
+//      if (cnt % 100 == 0) {
+//        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
+//      }
+//      cnt += 1
+//
+//      val currentItem = SingleItem(
+//        identifier = identifier,
+//        conversiongoal = conversionGoal,
+//        kvalue = kvalue,
+//        cpagiven = cpaGiven,
+//        cvrcnt = cvrCnt
+//      )
+//      list += currentItem
+//
+//    }
+//    val result = list.toArray[SingleRecord]
+//    val adRecordList = OcpcList(
+//      adrecord = result
+//    )
+//
+//    println("length of the array")
+//    println(result.length)
+//    adRecordList.writeTo(new FileOutputStream(filename))
+//
+//    println("complete save data into protobuffer")
+//
+//  }
 
   def assemblyData(cvrData: DataFrame, spark: SparkSession) = {
     /*
