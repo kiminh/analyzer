@@ -31,7 +31,6 @@ object OcpcLightBulbV2{
       .appName(s"OcpcLightBulbV2: $date, $hour, $version, $media")
       .enableHiveSupport().getOrCreate()
 
-    // todo 修改表名
 //    val tableName = "dl_cpc.ocpc_light_control_version"
     val tableName = "test.ocpc_qtt_light_control_v2"
 //    val tableName = "test.ocpc_qtt_light_control_version20190415"
