@@ -107,8 +107,8 @@ object TopCtrIdeaV2 {
     val adinfo = adctr
       .groupBy("adslot_type", "ideaid")
       .agg(
-        expr("sum(sum_click)").alias("click").cast("int"),
-        expr("sum(sum_show)").alias("show").cast("int"),
+        expr("sum(sum_click)").cast("int").alias("click"),
+        expr("sum(sum_show)").cast("int").alias("show"),
         expr("sum(sum_click)/sum(sum_show)*1000000").cast("int").alias("ctr")
       )
       .where("click>0")
