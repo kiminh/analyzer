@@ -9,10 +9,12 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcLightBulbV2._
+import org.apache.log4j.{Level, Logger}
 
 
 object OcpcLightBulbV2{
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     通过向redis中存储suggest cpa来控制灯泡的亮灯逻辑
     1. 抽取recommendation数据表
