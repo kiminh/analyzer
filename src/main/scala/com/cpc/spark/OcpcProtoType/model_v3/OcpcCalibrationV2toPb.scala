@@ -145,6 +145,22 @@ object OcpcCalibrationV2toPb {
 
     }
 
+    // todo test
+    val currentItem = SingleItem(
+      expTag = "ocpcRangeBidRatio",
+      unitid = 270,
+      ideaid = 0,
+      slotid = "0",
+      slottype = 0,
+      adtype = 0,
+      cvrCalFactor = 0.0,
+      jfbFactor = 0.0,
+      postCvr = 0.0,
+      highBidFactor = 0.0,
+      lowBidFactor = 0.0
+    )
+    list += currentItem
+
     val result = list.toArray[SingleItem]
     val adRecordList = OcpcFactorList(
       records = result
