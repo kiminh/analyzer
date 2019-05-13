@@ -196,8 +196,8 @@ object OcpcLightBulbV2{
     /*
     将对应key的值设成空的json字符串
      */
-//    val data = spark.table(tableName).where(s"version = '$version'").repartition(2)
-    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
+    val data = spark.table(tableName).where(s"version = '$version'").repartition(2)
+//    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
