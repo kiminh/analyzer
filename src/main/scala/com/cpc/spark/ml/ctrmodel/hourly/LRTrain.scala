@@ -83,11 +83,7 @@ object LRTrain {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-<<<<<<< src/main/scala/com/cpc/spark/ml/ctrmodel/hourly/LRTrain.scala
         .format(getSelectedHoursBefore(date, hour, 2))
-=======
-        .format(getSelectedHoursBefore(date, hour, 24))
->>>>>>> src/main/scala/com/cpc/spark/ml/ctrmodel/hourly/LRTrain.scala
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
@@ -125,7 +121,6 @@ object LRTrain {
     train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)*/
 
     //qtt-content-parser3-hourly
-<<<<<<< src/main/scala/com/cpc/spark/ml/ctrmodel/hourly/LRTrain.scala
     model.clearResult()
 
     val qttContent = rawDataFromTrident
@@ -165,18 +160,6 @@ object LRTrain {
       "qtt-all-ctrparser3-hourly.lrm",
       4e8
     )
-=======
-    /*model.clearResult()
-    val qttContent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm", 4e8)
-    model.clearResult()
-    train(spark, "ctrparser3", "qtt-content-ctrparser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-ctrparser3-hourly.lrm", 4e8)
-
-    //qtt-all-parser3-hourly
-    model.clearResult()
-    val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "ctrparser3", "qtt-all-ctrparser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-ctrparser3-hourly.lrm", 4e8)*/
->>>>>>> src/main/scala/com/cpc/spark/ml/ctrmodel/hourly/LRTrain.scala
 
     //凌晨计算所有的模型
     /*if (isMorning()) {
