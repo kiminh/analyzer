@@ -4,13 +4,10 @@ import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.anal.TopCtrIdea.Adinfo
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
@@ -57,8 +54,8 @@ object TopCtrIdeaV2 {
       val stmt =
         """
           |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
-          |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and ideaid > 0
+          |from dl_cpc.cpc_basedata_union_events where `day` = "%s" and isshow = 1
+          |and adslot_id > 0 and ideaid > 0
           |group by adslot_type, ideaid
         """.stripMargin.format(date)
       println(stmt)

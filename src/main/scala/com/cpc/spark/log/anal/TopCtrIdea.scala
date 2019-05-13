@@ -14,6 +14,7 @@ import scala.collection.mutable
 /**
   * Created by roydong on 27/10/2017.
   */
+@deprecated
 object TopCtrIdea {
 
 
