@@ -6,8 +6,8 @@ import java.util.{Calendar, Properties}
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import scala.collection.mutable
 
@@ -47,7 +47,7 @@ object TopCtrIdeaV2 {
     cal.add(Calendar.DATE, -dayBefore)
 
     //读取近10天广告信息。 ((adslot_type, ideaid), Adinfo)
-    var adctr: RDD[((Int, Int), Adinfo)] = null
+    /*var adctr: RDD[((Int, Int), Adinfo)] = null
 
     for (i <- 0 until dayBefore) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -81,13 +81,62 @@ object TopCtrIdeaV2 {
       }
 
       cal.add(Calendar.DATE, 1)
+    }*/
+
+    var adctr: DataFrame = null
+    for (i <- 0 until dayBefore) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      val stmt =
+        """
+          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
+          |from dl_cpc.cpc_basedata_union_events where `day` = "%s" and isshow = 1
+          |and adslot_id > 0 and ideaid > 0
+          |group by adslot_type, ideaid
+        """.stripMargin.format(date)
+      println(stmt)
+      val ulog = spark.sql(stmt)
+
+      if (adctr == null) {
+        adctr = ulog
+      } else {
+        adctr = adctr.union(ulog) //合并
+      }
+      cal.add(Calendar.DATE, 1)
     }
+
+    val adinfo = adctr
+      .groupBy("adslot_type", "ideaid")
+      .agg(
+        expr("sum(sum_click)").alias("click").cast("int"),
+        expr("sum(sum_show)").alias("show").cast("int"),
+        expr("sum(sum_click)/sum(sum_show)*1000000").cast("int").alias("ctr")
+      )
+      .where("click>0")
+      .where("((adslot_type=1 or adslot_type=2) and show>1000) or adslot_type>2")
+      .rdd
+      .map { r =>
+        val idea_id = r.getAs[Int]("ideaid")
+        val adslot_type = r.getAs[Int]("adslot_type")
+        val click = r.getAs[Int]("click")
+        val show = r.getAs[Int]("show")
+        val ctr = r.getAs[Int]("ctr")
+        val v = Adinfo(
+          adslot_type = adslot_type,
+          idea_id = idea_id,
+          show = show,
+          click = click,
+          ctr = ctr)
+        v
+      }
+      .toLocalIterator
+      .toSeq
+
 
     /**
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
       */
-    val adinfo = adctr
+    /*val adinfo = adctr
       .reduceByKey { //计算近10天的click,show
         (x, y) =>
           x.copy(
@@ -112,7 +161,7 @@ object TopCtrIdeaV2 {
       }
       .coalesce(5)
       .toLocalIterator
-      .toSeq
+      .toSeq*/
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
@@ -172,7 +221,7 @@ object TopCtrIdeaV2 {
       }
       .filter(x => x != null && !(x.adclass == 118100100 && x.mtype == 4) &&
         !Seq(1537507, 1540081, 1544700, 1544832, 1545016, 1545020, 1545025, 1545197, 1545200, 1545202, 1547033, 1549325, 1549327, 1549328, 1549329,
-          1549342, 1552330, 1552333, 1552336, 1552339, 1552340, 1552545, 1552551, 1552553, 1552562, 1552565,1001028,1501897).contains(x.user_id) &&
+          1549342, 1552330, 1552333, 1552336, 1552339, 1552340, 1552545, 1552551, 1552553, 1552562, 1552565, 1001028, 1501897).contains(x.user_id) &&
         !(
           (110110100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
             (125100100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
