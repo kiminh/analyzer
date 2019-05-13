@@ -98,6 +98,7 @@ object eCPCforElds {
     val resultData = spark
       .sql(sqlRequest)
       .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
+      .cache()
 
     println("size of the dataframe:")
     println(resultData.count)
