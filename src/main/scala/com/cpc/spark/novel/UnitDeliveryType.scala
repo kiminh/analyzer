@@ -1,14 +1,14 @@
 package com.cpc.spark.novel
 
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.tools.OperateMySQL._
+import com.cpc.spark.tools.testOperateMySQL._
 
 object UnitDeliveryType {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val hour = args(1)
     val spark = SparkSession.builder()
-      .appName(s"NovelUnionLog date = $date and hour = $hour")
+      .appName(s"NovelUnitDeliveryType date = $date and hour = $hour")
       .enableHiveSupport()
       .getOrCreate()
     val sql =
@@ -26,11 +26,10 @@ object UnitDeliveryType {
     println(sql)
 
     val data = spark.sql(sql)
-    data.write.mode("overwrite").saveAsTable("test.wy00")
-//    val reportTable = "report2.report_ocpc_data_detail_v2"
-//    val delSQL = s"delete from $reportTable where `date` = '$date' and hour = $hour"
-//
-//    update(delSQL) //先删除历史数据
-//    insert(data, reportTable) //插入数据
+    val reportTable = "report2.report_novel_unit_delivery_type"
+    val delSQL = s"delete from $reportTable where `date` = '$date' and hour = $hour"
+
+    update(delSQL) //先删除历史数据
+    insert(data, reportTable) //插入数据
   }
 }
