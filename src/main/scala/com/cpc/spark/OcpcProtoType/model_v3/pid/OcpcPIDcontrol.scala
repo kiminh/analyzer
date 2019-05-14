@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v3
+package com.cpc.spark.OcpcProtoType.model_v3.pid
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -25,26 +25,29 @@ object OcpcPIDcontrol {
     val ki = args(8).toDouble
     val kd = args(9).toDouble
 
-    val baseData = getBaseData(media, sampleHour, conversionGoal, date, hour, spark)
-    val errorData = calculateError(baseData, minCV, date, hour, spark)
-    val prevError = getPrevData(1, conversionGoal, version, date, hour, spark)
+    println("parameters:")
+    println(s"date=$date, hour=$hour, media=$media, version=$version, conversionGoal=$conversionGoal, sampleHour=$sampleHour, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd")
 
-    val data = errorData
-      .join(prevError, Seq("unitid"), "left_outer")
-      .select("unitid", "current_error", "prev_error", "last_error")
-
-    val result = calculatePID(data, kp, ki, kd, date, hour, spark)
-
-    val resultDF = result
-      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-
-    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly")
+//    val baseData = getBaseData(media, sampleHour, conversionGoal, date, hour, spark)
+//    val errorData = calculateError(baseData, minCV, date, hour, spark)
+//    val prevError = getPrevData(1, conversionGoal, version, date, hour, spark)
+//
+//    val data = errorData
+//      .join(prevError, Seq("unitid"), "left_outer")
+//      .select("unitid", "current_error", "prev_error", "last_error")
+//
+//    val result = calculatePID(data, kp, ki, kd, date, hour, spark)
+//
+//    val resultDF = result
+//      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment")
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly")
   }
 
   def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
