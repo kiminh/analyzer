@@ -2,9 +2,11 @@ package com.cpc.spark.novel
 
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.tools.OperateMySQL._
+import org.apache.log4j.{Level, Logger}
 
 object UnitDeliveryType {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0)
     val hour = args(1)
     val spark = SparkSession.builder()
@@ -14,7 +16,7 @@ object UnitDeliveryType {
     val sql =
       s"""
          |select
-         |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, cast(hour as int) hour,
+         |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day as date, cast(hour as int) hour,
          |  sum(isshow) imp, sum(isclick) click,
          |  sum(if(isclick = 1,price,0)) cost
          |from dl_cpc.cpc_novel_union_events
