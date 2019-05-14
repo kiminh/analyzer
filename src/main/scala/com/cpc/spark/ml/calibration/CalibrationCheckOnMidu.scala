@@ -67,6 +67,7 @@ object CalibrationCheckOnMidu {
 
     log.show(50)
     println("total data:%d".format(log.count()))
+    log.write.mode("overwrite").saveAsTable("test.wy00")
 
     val data = log.filter("length(group)>0")
     println("calibration data:%d".format(data.count()))
