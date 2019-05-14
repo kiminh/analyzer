@@ -14,7 +14,7 @@ object UnitDeliveryType {
     val sql =
       s"""
          |select
-         |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, hour,
+         |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, cast(hour as int) hour,
          |  sum(isshow) imp, sum(isclick) click,
          |  sum(if(isclick = 1,price,0)) cost
          |from dl_cpc.cpc_novel_union_events
