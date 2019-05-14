@@ -17,7 +17,7 @@ object UnitDeliveryType {
       s"""
          |select
          |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day as date, cast(hour as int) hour,
-         |  sum(isshow) imp, sum(isclick) click,
+         |  sum(isshow) impression, sum(isclick) click,
          |  sum(if(isclick = 1,price,0)) cost
          |from dl_cpc.cpc_novel_union_events
          |where day= '$date' and hour = '$hour'
