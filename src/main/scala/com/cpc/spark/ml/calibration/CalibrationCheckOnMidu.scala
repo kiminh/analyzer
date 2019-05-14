@@ -69,7 +69,7 @@ object CalibrationCheckOnMidu {
     println("total data:%d".format(log.count()))
 
     val data = log.filter("length(group)>0")
-        .filter("group == group1")
+        .filter("group = group1")
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
