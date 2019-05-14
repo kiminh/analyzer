@@ -126,10 +126,15 @@ object OcpcPIDcontrol {
     val currentError = data
       .filter(s"cv >= $minCV")
       .select("unitid", "cpareal", "cpagiven", "cv")
-      .withColumn("current_error", col("cpagiven") - col("cpareal"))
+      .withColumn("current_error", udfCalculateError()(col("cpagiven"), col("cpareal")))
 
     currentError
   }
+
+  def udfCalculateError() = udf((cpagiven: Double, cpareal: Double) => {
+    val result = 1.0 - cpareal / cpagiven
+    result
+  })
 
 
   def getBaseData(media: String, sampleHour: Int, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
