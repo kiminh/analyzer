@@ -13,7 +13,7 @@ import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
-  * date: 9/19/18
+  * date: 5/14/19
   */
 object CalibrationCheckOnMidu {
   def main(args: Array[String]): Unit = {
@@ -63,12 +63,13 @@ object CalibrationCheckOnMidu {
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(lit("")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslot_id","ideaid","user_req_ad_num")
 
     log.show(50)
     println("total data:%d".format(log.count()))
 
     val data = log.filter("length(group)>0")
+        .filter("group == group1")
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
