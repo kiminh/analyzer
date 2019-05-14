@@ -168,7 +168,7 @@ object OcpcPIDmerge {
          |AND
          |  is_ocpc = 1
          |AND
-         |  is_click = 1
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val data = spark
