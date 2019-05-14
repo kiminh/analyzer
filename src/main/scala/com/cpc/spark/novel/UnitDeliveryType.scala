@@ -13,13 +13,15 @@ object UnitDeliveryType {
       .getOrCreate()
     val sql =
       s"""
-         |select ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, hour,
-         |sum(isshow) imp, sum(isclick) click,
-         |sum(if(isclick = 1,price,0)) cost
+         |select
+         |  ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, hour,
+         |  sum(isshow) imp, sum(isclick) click,
+         |  sum(if(isclick = 1,price,0)) cost
          |from dl_cpc.cpc_novel_union_events
          |where day= '$date' and hour = '$hour'
-         |and isshow = 1 and adsrc = 1
-         |AND (charge_type IS NULL OR charge_type = 1)
+         |  and isshow = 1 and adsrc = 1
+         |  AND (charge_type IS NULL OR charge_type = 1)
+         |group by ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, hour
              """.stripMargin
     println(sql)
 
