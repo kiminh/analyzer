@@ -18,6 +18,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   * 输出：mysql, report2.report_hd_redirect_pv_minute
   *
   */
+@deprecated
 object InsertReport2HdRedirectPV {
   var report2Url = ""
   val report2Prop = new Properties()

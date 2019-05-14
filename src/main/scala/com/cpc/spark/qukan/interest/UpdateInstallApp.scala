@@ -53,8 +53,8 @@ object UpdateInstallApp {
 
     val stmt =
       """
-        |select trace_op1, trace_op2, trace_op3 from dl_cpc.logparsed_cpc_trace_minute
-        |where `thedate` = "%s" and trace_type = "%s"
+        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_basedata_trace_event
+        |where `day` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
