@@ -82,7 +82,7 @@ object LRTrain {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 2))
+        .format(getSelectedHoursBefore(date, hour, 168))
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
