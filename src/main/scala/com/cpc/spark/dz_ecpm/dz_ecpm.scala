@@ -151,7 +151,7 @@ object dz_ecpm {
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
          |from
          |(
-         |select  '${yesdate}' as dt,adslot_id, hour, adclass,unitid,ecpm,
+         |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
          |         row_number() over (order by ecpm desc) as ecpm_rank
          |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
          |where  dt>='${date1}' and dt<=date_add('${date1}',2)
@@ -167,7 +167,7 @@ object dz_ecpm {
          |)  nd
          |left join
          |(
-         |   select  count(ecpm) as max_num,'${yesdate}' as dt
+         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
          |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
          |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
          |     and    media_appsid in ('80002819')
@@ -195,7 +195,7 @@ object dz_ecpm {
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
          |from
          |(
-         |select  '${yesdate}' as dt,adslot_id, hour, adclass,unitid,ecpm,
+         |select   date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
          |         row_number() over (order by ecpm desc) as ecpm_rank
          |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
          |where  dt>='${date1}' and dt<=date_add('${date1}',2)
@@ -211,7 +211,7 @@ object dz_ecpm {
          |)  nd
          |left join
          |(
-         |   select  count(ecpm) as max_num,'${yesdate}' as dt
+         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
          |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
          |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
          |     and    media_appsid in ('80002819')
