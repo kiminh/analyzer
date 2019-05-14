@@ -1,7 +1,7 @@
 package com.cpc.spark.novel
 
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.tools.OperateMySQL
+import com.cpc.spark.tools.OperateMySQL._
 
 object UnitDeliveryType {
   def main(args: Array[String]): Unit = {
@@ -13,20 +13,22 @@ object UnitDeliveryType {
       .getOrCreate()
     val sql =
       s"""
-         |select ideaid, delivery_type, unitid, userid, sum(isshow) imp,sum(isclick) click,
-         |cost, adslot_id, adsrc, adtype, day, hour
+         |select ideaid, delivery_type, unitid, userid, adclass, usertype, adslot_id, day, hour,
+         |sum(isshow) imp, sum(isclick) click,
+         |sum(if(isclick = 1,price,0)) cost
          |from dl_cpc.cpc_novel_union_events
          |where day= '$date' and hour = '$hour'
-         |and isshow = 1
+         |and isshow = 1 and adsrc = 1
          |AND (charge_type IS NULL OR charge_type = 1)
              """.stripMargin
-
     println(sql)
 
-    val reportTableUnit = "report2.report_ocpc_data_detail_v2"
-    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
-
-    OperateMySQL.update(delSQLunit) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+    val data = spark.sql(sql)
+    data.write.mode("overwrite").saveAsTable("test.wy00")
+//    val reportTable = "report2.report_ocpc_data_detail_v2"
+//    val delSQL = s"delete from $reportTable where `date` = '$date' and hour = $hour"
+//
+//    update(delSQL) //先删除历史数据
+//    insert(data, reportTable) //插入数据
   }
 }
