@@ -41,30 +41,167 @@ object eCPCforElds {
       .withColumn("slottype", udfSlottypeMap()(col("slottype")))
       .select("searchid", "adclass", "adtype", "slottype", "slotid", "bid", "price", "exp_cvr", "isshow", "isclick", "iscvr")
 
+    val dataMain = baseData
+      .select("adclass", "adtype", "slottype", "slotid")
+      .distinct()
+
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data1 = calculateData1(baseData, date, hour, spark)
+    val data1 = calculateData1(baseData, 20, date, hour, spark)
+    val data2 = calculateData2(baseData, 20, date, hour, spark)
+    val data3 = calculateData3(baseData, 20, date, hour, spark)
+    val data4 = calculateData4(baseData, 20, date, hour, spark)
 
-    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
-    val baseData2 = baseData
-      .join(data1, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+    val data = dataMain
+      .join(data1, Seq("adclass", "adtype", "slottype", "slotid"), "left_outer")
+      .join(data2, Seq("adclass", "adtype", "slottype"), "left_outer")
+      .join(data3, Seq("adclass", "adtype"), "left_outer")
+      .join(data4, Seq("adclass"), "left_outer")
+      .select("adclass", "adtype", "slottype", "slotid", "post_cvr1", "pcoc1", "post_cvr2", "pcoc2", "post_cvr3", "pcoc3", "post_cvr4", "pcoc4")
+      .na.fill(0.0, Seq("post_cvr1", "pcoc1", "post_cvr2", "pcoc2", "post_cvr3", "pcoc3", "post_cvr4", "pcoc4"))
+      .withColumn("pcoc", udfSelectPCOC()(col("pcoc1"), col("pcoc2"), col("pcoc3"), col("pcoc4")))
+      .withColumn("post_cvr", udfSelectPostCvr()(col("post_cvr1"), col("post_cvr2"), col("post_cvr3"), col("post_cvr4")))
+      .withColumn("high_bid_factor", lit(1.0))
+      .withColumn("low_bid_factor", lit(1.0))
 
-    val data2 = calculateData2(baseData2, highBidFactor, date, hour, spark)
+    data.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514")
 
-    val data = data1
-      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
-      .withColumn("high_bid_factor", lit(highBidFactor))
-      .select("adclass", "adtype", "slottype", "slotid", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
-    val resultDF = data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
+//    val resultDF = data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+//
+//    savePbPack(resultDF, fileName, version, date, hour, spark)
 
-    resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+  }
 
-    savePbPack(resultDF, fileName, version, date, hour, spark)
+  def udfSelectPostCvr() = udf((postCvr1: Double, postCvr2: Double, postCvr3: Double, postCvr4: Double) => {
+    var postCvr = 0.0
+    if (postCvr1 > 0.0) {
+      postCvr = postCvr1
+    } else if (postCvr2 > 0.0) {
+      postCvr = postCvr2
+    } else if (postCvr3 > 0.0) {
+      postCvr = postCvr3
+    } else {
+      postCvr = postCvr4
+    }
+    postCvr
+  })
 
+  def udfSelectPCOC() = udf((pcoc1: Double, pcoc2: Double, pcoc3: Double, pcoc4: Double) => {
+    var pcoc = 0.0
+    if (pcoc1 > 0.0) {
+      pcoc = pcoc1
+    } else if (pcoc2 > 0.0) {
+      pcoc = pcoc2
+    } else if (pcoc3 > 0.0) {
+      pcoc = pcoc3
+    } else {
+      pcoc = pcoc4
+    }
+
+    pcoc
+  })
+
+  def calculateData4(baseData: DataFrame, minCv: Int, date: String, hour: String, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  adclass,
+         |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv
+         |FROM
+         |  base_data
+         |GROUP BY adclass, adtype
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+      .select("adclass", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .filter(s"cv >= $minCv")
+      .withColumn("post_cvr4", col("post_cvr"))
+      .withColumn("pcoc4", col("pcoc"))
+      .select("adclass", "post_cvr1", "pcoc1")
+
+    data
+  }
+
+  def calculateData3(baseData: DataFrame, minCv: Int, date: String, hour: String, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  adclass,
+         |  adtype,
+         |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv
+         |FROM
+         |  base_data
+         |GROUP BY adclass, adtype
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+      .select("adclass", "adtype", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .filter(s"cv >= $minCv")
+      .withColumn("post_cvr3", col("post_cvr"))
+      .withColumn("pcoc3", col("pcoc"))
+      .select("adclass", "adtype", "post_cvr1", "pcoc1")
+
+
+    data
+  }
+
+  def calculateData2(baseData: DataFrame, minCv: Int, date: String, hour: String, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  adclass,
+         |  adtype,
+         |  slottype,
+         |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv
+         |FROM
+         |  base_data
+         |GROUP BY adclass, adtype, slottype
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+      .select("adclass", "adtype", "slottype", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .filter(s"cv >= $minCv")
+      .withColumn("post_cvr2", col("post_cvr"))
+      .withColumn("pcoc2", col("pcoc"))
+      .select("adclass", "adtype", "slottype", "post_cvr1", "pcoc1")
+
+    data
   }
 
   def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
@@ -207,132 +344,132 @@ object eCPCforElds {
     result
   })
 
-  def calculateData2(baseData: DataFrame, highBidFactor: Double, date: String, hour: String, spark: SparkSession) = {
-    /*
-    int64 adclass = 1;
-    int64 adtype = 2;
-    int64 slottype = 3;
-    string slotid = 4;
-    double post_cvr = 5;
-    double calCvrFactor = 6;
-    double highBidFactor = 7;
-    double lowBidFactor = 8;
-     */
-    baseData.createOrReplaceTempView("base_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  searchid,
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  bid,
-         |  price,
-         |  exp_cvr,
-         |  isclick,
-         |  isshow,
-         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr,
-         |  post_cvr
-         |FROM
-         |  base_data
-       """.stripMargin
-    println(sqlRequest)
-    val rawData = spark
-      .sql(sqlRequest)
-      .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
+//  def calculateData2(baseData: DataFrame, highBidFactor: Double, date: String, hour: String, spark: SparkSession) = {
+//    /*
+//    int64 adclass = 1;
+//    int64 adtype = 2;
+//    int64 slottype = 3;
+//    string slotid = 4;
+//    double post_cvr = 5;
+//    double calCvrFactor = 6;
+//    double highBidFactor = 7;
+//    double lowBidFactor = 8;
+//     */
+//    baseData.createOrReplaceTempView("base_data")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  bid,
+//         |  price,
+//         |  exp_cvr,
+//         |  isclick,
+//         |  isshow,
+//         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr,
+//         |  post_cvr
+//         |FROM
+//         |  base_data
+//       """.stripMargin
+//    println(sqlRequest)
+//    val rawData = spark
+//      .sql(sqlRequest)
+//      .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
+//
+//    rawData.createOrReplaceTempView("raw_data")
+//    val sqlRequest1 =
+//      s"""
+//         |SELECT
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |GROUP BY adclass, adtype, slottype, slotid
+//       """.stripMargin
+//    println(sqlRequest1)
+//    val data1 = spark
+//      .sql(sqlRequest1)
+//      .withColumn("calc_total", col("pre_cvr") * col("click"))
+//      .select("adclass", "adtype", "slottype", "slotid", "calc_total")
+//
+//    val sqlRequest2 =
+//      s"""
+//         |SELECT
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |WHERE
+//         |  pcvr_group = "high"
+//         |GROUP BY adclass, adtype, slottype, slotid
+//       """.stripMargin
+//    println(sqlRequest2)
+//    val data2 = spark
+//      .sql(sqlRequest2)
+//      .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
+//      .select("adclass", "adtype", "slottype", "slotid", "calc_high")
+//
+//    val sqlRequest3 =
+//      s"""
+//         |SELECT
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |WHERE
+//         |  pcvr_group = "low"
+//         |GROUP BY adclass, adtype, slottype, slotid
+//       """.stripMargin
+//    println(sqlRequest3)
+//    val data3 = spark
+//      .sql(sqlRequest3)
+//      .withColumn("calc_low", col("pre_cvr") * col("click"))
+//      .select("adclass", "adtype", "slottype", "slotid", "calc_low")
+//
+//    val data = data1
+//      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+//      .join(data3, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
+//      .select("adclass", "adtype", "slottype", "slotid", "calc_total", "calc_high", "calc_low")
+//
+//    data.createOrReplaceTempView("data")
+//    val sqlRequestFinal =
+//      s"""
+//         |SELECT
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  calc_total,
+//         |  calc_high,
+//         |  calc_low,
+//         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
+//         |FROM
+//         |  data
+//       """.stripMargin
+//    println(sqlRequestFinal)
+//    val dataFinal = spark
+//      .sql(sqlRequestFinal)
+//      .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.3, 0.3).otherwise(col("low_bid_factor")))
+//
+//    dataFinal
+//  }
 
-    rawData.createOrReplaceTempView("raw_data")
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  sum(isclick) as click,
-         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-         |FROM
-         |  raw_data
-         |GROUP BY adclass, adtype, slottype, slotid
-       """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark
-      .sql(sqlRequest1)
-      .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("adclass", "adtype", "slottype", "slotid", "calc_total")
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  sum(isclick) as click,
-         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-         |FROM
-         |  raw_data
-         |WHERE
-         |  pcvr_group = "high"
-         |GROUP BY adclass, adtype, slottype, slotid
-       """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark
-      .sql(sqlRequest2)
-      .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-      .select("adclass", "adtype", "slottype", "slotid", "calc_high")
-
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  sum(isclick) as click,
-         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-         |FROM
-         |  raw_data
-         |WHERE
-         |  pcvr_group = "low"
-         |GROUP BY adclass, adtype, slottype, slotid
-       """.stripMargin
-    println(sqlRequest3)
-    val data3 = spark
-      .sql(sqlRequest3)
-      .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("adclass", "adtype", "slottype", "slotid", "calc_low")
-
-    val data = data1
-      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
-      .join(data3, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
-      .select("adclass", "adtype", "slottype", "slotid", "calc_total", "calc_high", "calc_low")
-
-    data.createOrReplaceTempView("data")
-    val sqlRequestFinal =
-      s"""
-         |SELECT
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  calc_total,
-         |  calc_high,
-         |  calc_low,
-         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
-         |FROM
-         |  data
-       """.stripMargin
-    println(sqlRequestFinal)
-    val dataFinal = spark
-      .sql(sqlRequestFinal)
-      .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.3, 0.3).otherwise(col("low_bid_factor")))
-
-    dataFinal
-  }
-
-  def calculateData1(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateData1(baseData: DataFrame, minCv: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     int64 adclass = 1;
     int64 adtype = 2;
@@ -356,7 +493,8 @@ object eCPCforElds {
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
          |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
-         |  sum(isclick) as click
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv
          |FROM
          |  base_data
          |GROUP BY adclass, adtype, slottype, slotid
@@ -366,7 +504,11 @@ object eCPCforElds {
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .withColumn("jfb", col("acp") * 1.0 / col("acb"))
-      .select("adclass", "adtype", "slottype", "slotid", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click")
+      .select("adclass", "adtype", "slottype", "slotid", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .filter(s"cv >= $minCv")
+      .withColumn("post_cvr1", col("post_cvr"))
+      .withColumn("pcoc1", col("pcoc"))
+      .select("adclass", "adtype", "slottype", "slotid", "post_cvr1", "pcoc1")
 
     data
   }
