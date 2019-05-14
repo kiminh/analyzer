@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package dz_ecpm;
+
+message dz_ecpm_Threshold {
+    int64 adslot_id=1;
+    int64 hour=2;
+    int64 adclass=3;
+    double  ecpm_t=4;
+    double  traffic=5;
+    int64  exp_id=6;
+}
+
+message  Threshold_dz_ecpm  {
+    repeated dz_ecpm_Threshold  det = 1;
+}
