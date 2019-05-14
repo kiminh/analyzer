@@ -52,7 +52,7 @@ object OcpcPIDcontrol {
 
   def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
     val result = baseData
-      .filter(s"current_error is not null and prev_error is not null and last_error is not null")
+      .na.fill(0, Seq("current_error", "prev_error", "last_error"))
       .withColumn("increment", udfCalculatePID(kp, ki, kd)(col("current_error"), col("prev_error"), col("last_error")))
       .withColumn("kp", lit(kp))
       .withColumn("ki", lit(ki))
