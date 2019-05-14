@@ -27,4 +27,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.calibration.CalibrationCheckOnMidu \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/calibration-qtt-list-dnn-rawid-v4-postcali.mlm 2019-05-14 10 qtt-list-dnn-rawid-v4-postcali
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/calibration-qtt-list-dnn-rawid-v4-postcali.mlm 2019-05-10 16 qtt-list-dnn-rawid-v4-postcali
