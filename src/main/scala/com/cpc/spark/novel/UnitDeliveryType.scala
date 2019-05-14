@@ -1,7 +1,7 @@
 package com.cpc.spark.novel
 
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.tools.testOperateMySQL._
+import com.cpc.spark.tools.OperateMySQL._
 
 object UnitDeliveryType {
   def main(args: Array[String]): Unit = {
