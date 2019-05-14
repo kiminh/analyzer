@@ -6,10 +6,10 @@ import java.util.Calendar
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcPIDcontrol {
+object OcpcLocPIDcontrol {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
