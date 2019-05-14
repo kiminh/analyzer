@@ -209,7 +209,7 @@ object LRTrain {
       .sendMail(
         trainLog.mkString("\n"),
         "TrainLog",
-        Seq("fanyiming@qutoutiao.net"/*"rd@aiclk.com"*/)
+        Seq("fanyiming@qutoutiao.net", "dongwei@qutoutiao.net", "tankaide@qutoutiao.net"/*"rd@aiclk.com"*/)
       )
 
     rawDataFromTrident.unpersist()
