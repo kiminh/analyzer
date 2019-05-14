@@ -28,6 +28,7 @@ object UnitDeliveryType {
     println(sql)
 
     val data = spark.sql(sql)
+      .toDF("ideaid","delivery_type","unitid","userid","adclass","usertype","adslot_id","date","hour","impression","click","cost")
     val reportTable = "report2.report_novel_unit_delivery_type"
     val delSQL = s"delete from $reportTable where `date` = '$date' and hour = $hour"
 
