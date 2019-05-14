@@ -13,10 +13,10 @@ import java.util.Calendar
 
 import breeze.linalg.det
 import org.apache.spark.sql.SparkSession
-//import dz_ecpm.dz_ecpm.dz_ecpm_Threshold
-//import dz_ecpm.dz_ecpm.Threshold_dz_ecpm
-//import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.dz_ecpm_Threshold
-//import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.Threshold_dz_ecpm
+import dz_ecpm.dz_ecpm.dz_ecpm_Threshold
+import dz_ecpm.dz_ecpm.Threshold_dz_ecpm
+import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.dz_ecpm_Threshold
+import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.Threshold_dz_ecpm
 
 /*2019-05-14 dz_ecpm工程开发*/
 
@@ -85,7 +85,7 @@ object dz_ecpm {
          |        day,
          |        hour
          |from    dl_cpc.cpc_basedata_union_events
-         |where   day=date_add('${date1}',+3)
+         |where   day=date_add('${date1}',3)
          |and     media_appsid in ('80002819')
          |and     adsrc in (1,28)
          |and     (charge_type is null or charge_type=1)
@@ -415,52 +415,50 @@ object dz_ecpm {
     checktab.show(10,false)
     println(" check3 success!")
 
-
-
+   /*增加段子分组对应关系 */
+    var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").
+      selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic",s"""'' as exp_id""")
 
 
     /*#########################################################################*/
     //   pb写法
 
-//    val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
-//    var cnt = 0
-//    for (record <- threstab.collect()) {
-//      var adslot_id = record.getAs[BigInt]("adslot_id")
-//      var hour = record.getAs[Int]("hour")
-//      var adclass = record.getAs[BigInt]("adclass")
-//      var unit_id =record.getAs[Int]("unitid")
-//      var ecpm_t = record.getAs[Double]("threshold")
-//      var traffic = record.getAs[Double]("traffic")
-//      var expid = record.getAs[Int]("expid")
-//      println(
-//        s"""adslot_id:${adslot_id},
-//           |expcvr   :${hour},
-//           |adclass  :${adclass},
-//           |unitid   :${unit_id},
-//           |ecpm_t   :${ecpm_t},
-//           |traffic  :${traffic},
-//           |exp_id   :${expid},
-//           |""".stripMargin)
-//
-//      cnt += 1
-//      val Item = dz_ecpm_Threshold(
-//        adslot_id=adslot_id,
-//        hour=hour,
-//        adclass=adclass,
-//        unitid=unit_id,
-//        ecpm_t=ecpm_t,
-//        traffic=traffic,
-//        exp_id=expid
-//      )
-//      list += Item
-//    }
-//    println("final userid cnt:" + cnt)
-//    val result = list.toArray
-//    val ecpmlist = Threshold_dz_ecpm(
-//      det = result)
-//    println("Array length:" + result.length)
-//    ecpmlist.writeTo(new FileOutputStream("dz_ecpm.pb"))
-//    println("dz_ecpm.pb insert success!")
+    val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
+    var cnt = 0
+    for (record <- threstab.collect()) {
+      var adslot_id = record.getAs[BigInt]("adslot_id")
+      var hour = record.getAs[Int]("hour")
+      var adclass = record.getAs[BigInt]("adclass")
+      var ecpm_t = record.getAs[Double]("threshold")
+      var traffic = record.getAs[Double]("traffic")
+      var expid =record.getAs[Double]("exp_id")
+      println(
+        s"""adslot_id:${adslot_id},
+           |expcvr   :${hour},
+           |adclass  :${adclass},
+           |ecpm_t   :${ecpm_t},
+           |traffic  :${traffic},
+           |exp_id   :${expid},
+           |""".stripMargin)
+
+      cnt += 1
+      val Item = dz_ecpm_Threshold(
+        adslot_id=adslot_id,
+        hour=hour,
+        adclass=adclass,
+        ecpm_t=ecpm_t,
+        traffic=traffic,
+        expid=expid
+      )
+      list += Item
+    }
+    println("final userid cnt:" + cnt)
+    val result = list.toArray
+    val ecpmlist = Threshold_dz_ecpm(
+      det = result)
+    println("Array length:" + result.length)
+    ecpmlist.writeTo(new FileOutputStream("dz_ecpm.pb"))
+    println("dz_ecpm.pb insert success!")
 
 
 
