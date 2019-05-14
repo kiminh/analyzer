@@ -133,7 +133,7 @@ object eCPCforElds {
       .filter(s"cv >= $minCv")
       .withColumn("post_cvr4", col("post_cvr"))
       .withColumn("pcoc4", col("pcoc"))
-      .select("adclass", "post_cvr1", "pcoc1")
+      .select("adclass", "post_cvr4", "pcoc4")
 
     data
   }
@@ -165,7 +165,7 @@ object eCPCforElds {
       .filter(s"cv >= $minCv")
       .withColumn("post_cvr3", col("post_cvr"))
       .withColumn("pcoc3", col("pcoc"))
-      .select("adclass", "adtype", "post_cvr1", "pcoc1")
+      .select("adclass", "adtype", "post_cvr3", "pcoc3")
 
 
     data
@@ -199,7 +199,7 @@ object eCPCforElds {
       .filter(s"cv >= $minCv")
       .withColumn("post_cvr2", col("post_cvr"))
       .withColumn("pcoc2", col("pcoc"))
-      .select("adclass", "adtype", "slottype", "post_cvr1", "pcoc1")
+      .select("adclass", "adtype", "slottype", "post_cvr2", "pcoc2")
 
     data
   }
