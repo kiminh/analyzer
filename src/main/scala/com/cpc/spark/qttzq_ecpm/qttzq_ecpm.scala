@@ -12,7 +12,7 @@ object qttzq_ecpm {
     val traffic2 = args(2)
     val traffic3 = args(3)
     val spark = SparkSession.builder()
-      .appName(s"""dz_ecpm_execute +'${date}' """)
+      .appName(s"""qttzq_ecpm_execute +'${date}' """)
       .enableHiveSupport()
       .getOrCreate()
     import java.text.SimpleDateFormat
