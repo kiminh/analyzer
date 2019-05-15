@@ -82,7 +82,7 @@ object LRTrain {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 168))
+        .format(getSelectedHoursBefore(date, hour, 48))
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
@@ -154,9 +154,9 @@ object LRTrain {
     train(
       spark,
       "ctrparser4",
-      "qtt-bs-ctrparser4-hourly",
+      "qtt-bs-ctrparser4-daily",
       getLeftJoinData(qttAll, userAppIdx),
-      "qtt-bs-ctrparser4-hourly.lrm",
+      "qtt-bs-ctrparser4-daily.lrm",
       4e8
     )
 
