@@ -171,8 +171,7 @@ object MultiDimensionCalibOnQttV2 {
         isClick = x.getLong(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
-      val model = calimodel
-      (model, (ectr, isClick))
+      (calimodel, (ectr, isClick))
     }).groupByKey()
       .mapValues(
         x =>
@@ -197,7 +196,7 @@ object MultiDimensionCalibOnQttV2 {
           )
           println(s"bin size: ${irFullModel.boundaries.length}")
           println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-      }
+      }.toList
       val irModel = IRModel(
         boundaries,
         predictions
