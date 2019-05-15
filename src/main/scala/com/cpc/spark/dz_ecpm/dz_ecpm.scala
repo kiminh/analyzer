@@ -31,7 +31,7 @@ object dz_ecpm {
 //    val yesdate=yesday.split(" ")(0)
 //    val yestime=yesday.split(" ")(1)
 //    设定过去3天的时间点
-    calendar.add(Calendar.DATE, -2)
+    calendar.add(Calendar.DATE, -3)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
