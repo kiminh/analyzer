@@ -21,7 +21,7 @@ import scala.util.Random
 
 /**
   * Created by zhaolei on 22/12/2017.
-  * new owner: fym (190511).
+  * new owner: wsx (190515).
   */
 object LRCVRTrain {
 
@@ -77,7 +77,7 @@ object LRCVRTrain {
     val cvrPathSep = getPathSeq(args(1).toInt)
     val cvrDays = args(1).toInt
 
-    val date = "2019-05-14"
+    val date = args(2)
     val hour = args(3)
 
     initFeatureDict(spark, ctrPathSep)
