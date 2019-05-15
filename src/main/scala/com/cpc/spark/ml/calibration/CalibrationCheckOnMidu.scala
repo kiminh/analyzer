@@ -59,9 +59,9 @@ object CalibrationCheckOnMidu {
     val log = session.sql(sql).withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
       .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
       .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
-      .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(lit("")))
+      .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(lit("")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
-      .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
+      .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
       .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslot_id","ideaid","user_req_ad_num","len")
 
