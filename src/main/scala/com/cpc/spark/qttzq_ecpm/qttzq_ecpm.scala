@@ -54,6 +54,7 @@ object qttzq_ecpm {
          |        adsrc       ,
          |        charge_type ,
          |        unitid      ,
+         |        planid      ,
          |        userid      ,
          |        usertype    ,
          |        uid         ,
