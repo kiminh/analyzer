@@ -85,6 +85,7 @@ object MultiDimensionCalibOnQttV2 {
     val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
     val data3 = log.join(group3.filter("flag = 1"),Seq("ideaid"),"inner")
     val data4 = group3.filter("flag = 0").select("group").distinct()
+    data4.show(10)
 
     //create cali pb
     val calimap1 = GroupToConfig(data1, session, calimodel)
