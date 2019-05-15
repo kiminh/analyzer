@@ -201,6 +201,7 @@ object MultiDimensionCalibOnQttV2 {
         boundaries,
         predictions
       )
+    println(irModel.toString)
       val keymap = keyset.select("group").rdd.map( x => {
       val group = x.getString(0)
       val key = calimodel + "_" + group
