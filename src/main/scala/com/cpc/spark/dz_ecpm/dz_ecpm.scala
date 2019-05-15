@@ -43,7 +43,7 @@ object dz_ecpm {
 
 
     spark.sql("set hive.exec.dynamic.partition=true")
-  每日更新前一天24小时的段子数据
+//  每日更新前一天24小时adslotid限定的段子数据
     val sql0=
       s"""
 
