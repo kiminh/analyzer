@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package qttzq_ecpm_dev;
+
+message qttzq_ecpm_Threshold {
+    int64 adslotid_qq=1;
+    int64 hour_zq=2;
+    int64 adclass_zq=3;
+    double  ecpmt_zq=4;
+    double  traffic_zq=5;
+}
+
+message  Threshold_qttzq_ecpm  {
+    repeated qttzq_ecpm_Threshold  det = 1;
+}
