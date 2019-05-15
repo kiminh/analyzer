@@ -1,7 +1,5 @@
 package com.cpc.spark.qttzq_ecpm
 
-import java.io.FileOutputStream
-import qttzq_ecpm_dev.qttzq_ecpm_dev.{Threshold_qttzq_ecpm, qttzq_ecpm_Threshold}
 import org.apache.spark.sql.SparkSession
 
 /*2019-05-15 qttzq_ecpm工程开发*/
@@ -223,41 +221,41 @@ object qttzq_ecpm {
     /*#########################################################################*/
     //   pb写法
 
-
-    val list = new scala.collection.mutable.ListBuffer[qttzq_ecpm_Threshold]()
-    var cnt = 0
-    for (record <- tabzq.collect()) {
-      var adslotid0 = record.getAs[Long]("adslot_id")
-      var hour0 = record.getAs[Int]("hour")
-      var adclass0 = record.getAs[Long]("adclass")
-      var ecpmt0 = record.getAs[Double]("threshold")
-      var traffic0 = record.getAs[Double]("traffic")
-
-      println(
-        s"""adslot_id:${adslotid0},
-           |expcvr   :${hour0},
-           |adclass  :${adclass0},
-           |ecpm_t   :${ecpmt0},
-           |traffic  :${traffic0}
-           |""".stripMargin)
-
-      cnt += 1
-      val Item = qttzq_ecpm_Threshold(
-        adslotid_zq=adslotid0,
-        hour_zq=hour0,
-        adclass_zq=adclass0,
-        ecpmt_zq=ecpmt0,
-        traffic_zq=traffic0
-      )
-      list += Item
-    }
-    println("final userid cnt:" + cnt)
-    val result = list.toArray
-    val ecpmlist = Threshold_qttzq_ecpm(
-      det = result )
-    println("Array length:" + result.length)
-    ecpmlist.writeTo(new FileOutputStream("qttzq_ecpm_qbj.pb"))
-    println("qttzq_ecpm_qbj.pb insert success!")
+//
+//    val list = new scala.collection.mutable.ListBuffer[qttzq_ecpm_Threshold]()
+//    var cnt = 0
+//    for (record <- tabzq.collect()) {
+//      var adslotid0 = record.getAs[Long]("adslot_id")
+//      var hour0 = record.getAs[Int]("hour")
+//      var adclass0 = record.getAs[Long]("adclass")
+//      var ecpmt0 = record.getAs[Double]("threshold")
+//      var traffic0 = record.getAs[Double]("traffic")
+//
+//      println(
+//        s"""adslot_id:${adslotid0},
+//           |expcvr   :${hour0},
+//           |adclass  :${adclass0},
+//           |ecpm_t   :${ecpmt0},
+//           |traffic  :${traffic0}
+//           |""".stripMargin)
+//
+//      cnt += 1
+//      val Item = qttzq_ecpm_Threshold(
+//        adslotid_zq=adslotid0,
+//        hour_zq=hour0,
+//        adclass_zq=adclass0,
+//        ecpmt_zq=ecpmt0,
+//        traffic_zq=traffic0
+//      )
+//      list += Item
+//    }
+//    println("final userid cnt:" + cnt)
+//    val result = list.toArray
+//    val ecpmlist = Threshold_qttzq_ecpm(
+//      det = result )
+//    println("Array length:" + result.length)
+//    ecpmlist.writeTo(new FileOutputStream("qttzq_ecpm_qbj.pb"))
+//    println("qttzq_ecpm_qbj.pb insert success!")
 
 
 
