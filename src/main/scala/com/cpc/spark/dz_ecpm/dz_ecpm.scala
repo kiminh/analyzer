@@ -124,7 +124,7 @@ object dz_ecpm {
     val  threstab1 = spark.sql(
       s"""
            |
-           |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
+           |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
            |from
            |(
            |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
@@ -168,7 +168,7 @@ object dz_ecpm {
     //-----阈值试算 traffic2----------
     val  threstab2 = spark.sql(
       s"""
-         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
+         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
          |from
          |(
          |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
@@ -213,7 +213,7 @@ object dz_ecpm {
     val  threstab3 = spark.sql(
       s"""
          |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt='${date}',traffic=${traffic3})
-         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
+         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
          |from
          |(
          |select   date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
