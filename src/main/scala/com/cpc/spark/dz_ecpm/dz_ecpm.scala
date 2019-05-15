@@ -31,7 +31,7 @@ object dz_ecpm {
 //    val yesdate=yesday.split(" ")(0)
 //    val yestime=yesday.split(" ")(1)
 //    设定过去3天的时间点
-    calendar.add(Calendar.DATE, -3)
+    calendar.add(Calendar.DATE, -2)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -121,7 +121,7 @@ object dz_ecpm {
     //-----阈值试算 traffic1----------
     val  threstab1 = spark.sql(
       s"""
-           |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt=date_add('${date1}',3),traffic=${traffic1})
+           |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt='${date}',traffic=${traffic1})
            |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
            |from
            |(
@@ -165,7 +165,7 @@ object dz_ecpm {
     //-----阈值试算 traffic2----------
     val  threstab2 = spark.sql(
       s"""
-         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt=date_add('${date1}',3),traffic=${traffic2})
+         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition ( dt='${date}',traffic=${traffic2})
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
          |from
          |(
@@ -209,7 +209,7 @@ object dz_ecpm {
     //-----阈值试算 traffic3----------
     val  threstab3 = spark.sql(
       s"""
-         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt=date_add('${date1}',3),traffic=${traffic3})
+         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt='${date}',traffic=${traffic3})
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
          |from
          |(
@@ -250,7 +250,55 @@ object dz_ecpm {
     threstab3.show(10,false)
     println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic3} insert success")
 
+    /*增加段子分组对应关系 */
+    var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").
+      selectExpr("adslot_id","hour","adclass", "threshold","traffic",s"""0 as exp_id""").na.fill(0)
 
+    /*#########################################################################*/
+    //   pb写法
+
+
+    val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
+    var cnt = 0
+    for (record <- tabg.collect()) {
+      var adslotid0 = record.getAs[Long]("adslot_id")
+      var hour0 = record.getAs[Long]("hour")
+      var adclass0 = record.getAs[Long]("adclass")
+      var ecpmt0 = record.getAs[Double]("threshold")
+      var traffic0 = record.getAs[Double]("traffic")
+      var expid0 =record.getAs[Long]("exp_id")
+
+      println(
+        s"""adslot_id:${adslotid0},
+           |expcvr   :${hour0},
+           |adclass  :${adclass0},
+           |ecpm_t   :${ecpmt0},
+           |traffic  :${traffic0},
+           |exp_id   :${expid0},
+           |""".stripMargin)
+
+      cnt += 1
+      val Item = dz_ecpm_Threshold(
+        adslotid=adslotid0,
+        hour=hour0,
+        adclass=adclass0,
+        ecpmt=ecpmt0,
+        traffic=traffic0,
+        expids=expid0
+      )
+      list += Item
+    }
+    println("final userid cnt:" + cnt)
+    val result = list.toArray
+    val ecpmlist = Threshold_dz_ecpm(
+      det = result )
+    println("Array length:" + result.length)
+    ecpmlist.writeTo(new FileOutputStream("dz_ecpm_qbj.pb"))
+    println("dz_ecpm_qbj.pb insert success!")
+
+
+
+    /*#################################################################################*/
 
 
     /*------调试ecpm参数,验证消耗比例 traffic1-------*/
@@ -433,56 +481,6 @@ object dz_ecpm {
     checktab.show(10,false)
     println(" check3 success!")
 
-   /*增加段子分组对应关系 */
-    var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").
-      selectExpr("adslot_id","hour","adclass", "threshold","traffic",s"""0 as exp_id""").na.fill(0)
-
-
-    /*#########################################################################*/
-    //   pb写法
-
-
-    val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
-    var cnt = 0
-    for (record <- tabg.collect()) {
-      var adslotid0 = record.getAs[Long]("adslot_id")
-      var hour0 = record.getAs[Long]("hour")
-      var adclass0 = record.getAs[Long]("adclass")
-      var ecpmt0 = record.getAs[Double]("threshold")
-      var traffic0 = record.getAs[Double]("traffic")
-      var expid0 =record.getAs[Long]("exp_id")
-
-      println(
-        s"""adslot_id:${adslotid0},
-           |expcvr   :${hour0},
-           |adclass  :${adclass0},
-           |ecpm_t   :${ecpmt0},
-           |traffic  :${traffic0},
-           |exp_id   :${expid0},
-           |""".stripMargin)
-
-      cnt += 1
-      val Item = dz_ecpm_Threshold(
-        adslotid=adslotid0,
-        hour=hour0,
-        adclass=adclass0,
-        ecpmt=ecpmt0,
-        traffic=traffic0,
-        expids=expid0
-      )
-      list += Item
-    }
-    println("final userid cnt:" + cnt)
-    val result = list.toArray
-    val ecpmlist = Threshold_dz_ecpm(
-      det = result )
-    println("Array length:" + result.length)
-    ecpmlist.writeTo(new FileOutputStream("dz_ecpm_qbj.pb"))
-    println("dz_ecpm_qbj.pb insert success!")
-
-
-
-    /*#################################################################################*/
 
   }
 
