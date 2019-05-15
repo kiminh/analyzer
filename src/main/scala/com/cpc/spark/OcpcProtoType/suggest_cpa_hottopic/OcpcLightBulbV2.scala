@@ -172,7 +172,7 @@ object OcpcLightBulbV2{
     val rawData = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
-      .filter(s"industry in 'feedapp'")
+      .filter(s"industry in ('feedapp')")
       .distinct()
 
     val sqlRequets2 =
