@@ -44,214 +44,214 @@ object dz_ecpm {
 
     spark.sql("set hive.exec.dynamic.partition=true")
 //  每日更新前一天24小时的段子数据
-    val sql0=
-      s"""
-
-         |select  distinct
-         |        searchid  ,
-         |        is_ocpc   ,
-         |        media_appsid  ,
-         |        adslot_id   ,
-         |        adclass     ,
-         |        adtype      ,
-         |        adsrc       ,
-         |        charge_type ,
-         |        unitid      ,
-         |        userid      ,
-         |        usertype    ,
-         |        uid         ,
-         |        city_level  ,
-         |        isshow      ,
-         |        isclick     ,
-         |        price       ,
-         |        bid         ,
-         |        exp_ctr     ,
-         |        raw_ctr     ,
-         |        exp_ctr*1.0*bid/100000        ,
-         |        day,
-         |        hour
-         |from    dl_cpc.cpc_basedata_union_events
-         |where   day=date_add('${date1}',2)
-         |and     media_appsid in ('80002819')
-         |and     adsrc in (1,28)
-         |and     (charge_type is null or charge_type=1)
-         |and     uid not like "%.%"
-         |and     uid not like "%000000%"
-         |and     length(uid) in (14, 15, 36)
-         |and     ideaid > 0
-         |and     userid > 0
-         |and     is_ocpc=0
-         |and     adslot_id in (
-         |'7722999',
-         |'7052921',
-         |'7757626',
-         |'7140597',
-         |'7525397',
-         |'7489717',
-         |'7488761',
-         |'7566103',
-         |'7217976',
-         |'7001299',
-         |'7998177',
-         |'7137431',
-         |'7988329',
-         |'7271479',
-         |'7333986',
-         |'7696667',
-         |'7771837',
-         |'7563122',
-         |'7933451',
-         |'7063093',
-         |'7275682',
-         |'7773241',
-         |'7403906',
-         |'7029316',
-         |'7050440',
-         |'7786564',
-         |'7648066',
-         |'7557848',
-         |'7572146',
-         |'7323122',
-         |'7882381'
-         |)
-       """.stripMargin
-      val tab00=spark.sql(sql0).persist()
-      tab00.show(10,false)
-       tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_detail_mid_qbj")
-//       tab00.createOrReplaceTempView("dzecpmmidtab")
-
-    //-----阈值试算 traffic1----------
-    val  threstab1 = spark.sql(
-      s"""
-           |
-           |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
-           |from
-           |(
-           |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
-           |         row_number() over (order by ecpm desc) as ecpm_rank
-           |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
-           |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-           |and     media_appsid in ('80002819')
-           |and     adsrc in (1,28)
-           |and     (charge_type is null or charge_type=1)
-           |and     uid not like "%.%"
-           |and     uid not like "%000000%"
-           |and     length(uid) in (14, 15, 36)
-           |and     userid > 0
-           |and     unitid>0
-           |and     is_ocpc=0
-           |)  nd
-           |left join
-           |(
-           |   select  count(ecpm) as max_num, date_add('${date1}',3) as dt
-           |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
-           |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
-           |     and    media_appsid in ('80002819')
-           |    and adsrc in (1,28)
-           |    and (charge_type is null or charge_type=1)
-           |    and uid not like "%.%"
-           |    and uid not like "%000000%"
-           |    and length(uid) in (14, 15, 36)
-           |    and userid > 0
-           |    and  unitid>0
-           |
-           |)  hd
-           |on  hd.dt=nd.dt
-           |where   nd.ecpm_rank>round(hd.max_num*${traffic1},0)
-           |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic1} as traffic""").
-      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
-      threstab1.show(10,false)
-      threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
-      println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic1} insert success")
-
-    //-----阈值试算 traffic2----------
-    val  threstab2 = spark.sql(
-      s"""
-         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
-         |from
-         |(
-         |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
-         |         row_number() over (order by ecpm desc) as ecpm_rank
-         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-         |and     media_appsid in ('80002819')
-         |and     adsrc in (1,28)
-         |and     (charge_type is null or charge_type=1)
-         |and     uid not like "%.%"
-         |and     uid not like "%000000%"
-         |and     length(uid) in (14, 15, 36)
-         |and     userid > 0
-         |and     unitid>0
-         |and     is_ocpc=0
-         |)  nd
-         |left join
-         |(
-         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
-         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
-         |     and    media_appsid in ('80002819')
-         |    and adsrc in (1,28)
-         |    and (charge_type is null or charge_type=1)
-         |    and uid not like "%.%"
-         |    and uid not like "%000000%"
-         |    and length(uid) in (14, 15, 36)
-         |    and userid > 0
-         |    and  unitid>0
-         |
-         |)  hd
-         |on  hd.dt=nd.dt
-         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
-         |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic2} as traffic""").
-      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
-      threstab2.show(10,false)
-    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
-    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic2} insert success")
-
-    //-----阈值试算 traffic3----------
-    val  threstab3 = spark.sql(
-      s"""
-         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
-         |from
-         |(
-         |select   date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
-         |         row_number() over (order by ecpm desc) as ecpm_rank
-         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-         |and     media_appsid in ('80002819')
-         |and     adsrc in (1,28)
-         |and     (charge_type is null or charge_type=1)
-         |and     uid not like "%.%"
-         |and     uid not like "%000000%"
-         |and     length(uid) in (14, 15, 36)
-         |and     userid > 0
-         |and     unitid>0
-         |and     is_ocpc=0
-         |)  nd
-         |left join
-         |(
-         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
-         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
-         |     and    media_appsid in ('80002819')
-         |    and adsrc in (1,28)
-         |    and (charge_type is null or charge_type=1)
-         |    and uid not like "%.%"
-         |    and uid not like "%000000%"
-         |    and length(uid) in (14, 15, 36)
-         |    and userid > 0
-         |    and  unitid>0
-         |
-         |)  hd
-         |on  hd.dt=nd.dt
-         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
-         |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic3} as traffic""").
-      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
-    threstab3.show(10,false)
-    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
-    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic3} insert success")
+//    val sql0=
+//      s"""
+//
+//         |select  distinct
+//         |        searchid  ,
+//         |        is_ocpc   ,
+//         |        media_appsid  ,
+//         |        adslot_id   ,
+//         |        adclass     ,
+//         |        adtype      ,
+//         |        adsrc       ,
+//         |        charge_type ,
+//         |        unitid      ,
+//         |        userid      ,
+//         |        usertype    ,
+//         |        uid         ,
+//         |        city_level  ,
+//         |        isshow      ,
+//         |        isclick     ,
+//         |        price       ,
+//         |        bid         ,
+//         |        exp_ctr     ,
+//         |        raw_ctr     ,
+//         |        exp_ctr*1.0*bid/100000        ,
+//         |        day,
+//         |        hour
+//         |from    dl_cpc.cpc_basedata_union_events
+//         |where   day=date_add('${date1}',2)
+//         |and     media_appsid in ('80002819')
+//         |and     adsrc in (1,28)
+//         |and     (charge_type is null or charge_type=1)
+//         |and     uid not like "%.%"
+//         |and     uid not like "%000000%"
+//         |and     length(uid) in (14, 15, 36)
+//         |and     ideaid > 0
+//         |and     userid > 0
+//         |and     is_ocpc=0
+//         |and     adslot_id in (
+//         |'7722999',
+//         |'7052921',
+//         |'7757626',
+//         |'7140597',
+//         |'7525397',
+//         |'7489717',
+//         |'7488761',
+//         |'7566103',
+//         |'7217976',
+//         |'7001299',
+//         |'7998177',
+//         |'7137431',
+//         |'7988329',
+//         |'7271479',
+//         |'7333986',
+//         |'7696667',
+//         |'7771837',
+//         |'7563122',
+//         |'7933451',
+//         |'7063093',
+//         |'7275682',
+//         |'7773241',
+//         |'7403906',
+//         |'7029316',
+//         |'7050440',
+//         |'7786564',
+//         |'7648066',
+//         |'7557848',
+//         |'7572146',
+//         |'7323122',
+//         |'7882381'
+//         |)
+//       """.stripMargin
+//      val tab00=spark.sql(sql0).persist()
+//      tab00.show(10,false)
+//       tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_detail_mid_qbj")
+////       tab00.createOrReplaceTempView("dzecpmmidtab")
+//
+//    //-----阈值试算 traffic1----------
+//    val  threstab1 = spark.sql(
+//      s"""
+//           |
+//           |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
+//           |from
+//           |(
+//           |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
+//           |         row_number() over (order by ecpm desc) as ecpm_rank
+//           |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
+//           |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//           |and     media_appsid in ('80002819')
+//           |and     adsrc in (1,28)
+//           |and     (charge_type is null or charge_type=1)
+//           |and     uid not like "%.%"
+//           |and     uid not like "%000000%"
+//           |and     length(uid) in (14, 15, 36)
+//           |and     userid > 0
+//           |and     unitid>0
+//           |and     is_ocpc=0
+//           |)  nd
+//           |left join
+//           |(
+//           |   select  count(ecpm) as max_num, date_add('${date1}',3) as dt
+//           |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
+//           |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//           |     and    media_appsid in ('80002819')
+//           |    and adsrc in (1,28)
+//           |    and (charge_type is null or charge_type=1)
+//           |    and uid not like "%.%"
+//           |    and uid not like "%000000%"
+//           |    and length(uid) in (14, 15, 36)
+//           |    and userid > 0
+//           |    and  unitid>0
+//           |
+//           |)  hd
+//           |on  hd.dt=nd.dt
+//           |where   nd.ecpm_rank>round(hd.max_num*${traffic1},0)
+//           |group by nd.adslot_id,nd.hour,nd.adclass
+//       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic1} as traffic""").
+//      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
+//      threstab1.show(10,false)
+//      threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
+//      println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic1} insert success")
+//
+//    //-----阈值试算 traffic2----------
+//    val  threstab2 = spark.sql(
+//      s"""
+//         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
+//         |from
+//         |(
+//         |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
+//         |         row_number() over (order by ecpm desc) as ecpm_rank
+//         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//         |and     media_appsid in ('80002819')
+//         |and     adsrc in (1,28)
+//         |and     (charge_type is null or charge_type=1)
+//         |and     uid not like "%.%"
+//         |and     uid not like "%000000%"
+//         |and     length(uid) in (14, 15, 36)
+//         |and     userid > 0
+//         |and     unitid>0
+//         |and     is_ocpc=0
+//         |)  nd
+//         |left join
+//         |(
+//         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
+//         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//         |     and    media_appsid in ('80002819')
+//         |    and adsrc in (1,28)
+//         |    and (charge_type is null or charge_type=1)
+//         |    and uid not like "%.%"
+//         |    and uid not like "%000000%"
+//         |    and length(uid) in (14, 15, 36)
+//         |    and userid > 0
+//         |    and  unitid>0
+//         |
+//         |)  hd
+//         |on  hd.dt=nd.dt
+//         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
+//         |group by nd.adslot_id,nd.hour,nd.adclass
+//       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic2} as traffic""").
+//      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
+//      threstab2.show(10,false)
+//    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
+//    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic2} insert success")
+//
+//    //-----阈值试算 traffic3----------
+//    val  threstab3 = spark.sql(
+//      s"""
+//         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
+//         |from
+//         |(
+//         |select   date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
+//         |         row_number() over (order by ecpm desc) as ecpm_rank
+//         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//         |and     media_appsid in ('80002819')
+//         |and     adsrc in (1,28)
+//         |and     (charge_type is null or charge_type=1)
+//         |and     uid not like "%.%"
+//         |and     uid not like "%000000%"
+//         |and     length(uid) in (14, 15, 36)
+//         |and     userid > 0
+//         |and     unitid>0
+//         |and     is_ocpc=0
+//         |)  nd
+//         |left join
+//         |(
+//         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
+//         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
+//         |     and    media_appsid in ('80002819')
+//         |    and adsrc in (1,28)
+//         |    and (charge_type is null or charge_type=1)
+//         |    and uid not like "%.%"
+//         |    and uid not like "%000000%"
+//         |    and length(uid) in (14, 15, 36)
+//         |    and userid > 0
+//         |    and  unitid>0
+//         |
+//         |)  hd
+//         |on  hd.dt=nd.dt
+//         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
+//         |group by nd.adslot_id,nd.hour,nd.adclass
+//       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic3} as traffic""").
+//      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
+//    threstab3.show(10,false)
+//    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
+//    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic3} insert success")
 
     /*增加段子分组对应关系,只取当天阈值 */
     var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").filter(s"dt='${date}'").
@@ -266,12 +266,12 @@ object dz_ecpm {
     val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
     var cnt = 0
     for (record <- tabg.collect()) {
-      var adslotid0 = record.getAs[Long]("adslot_id")
-      var hour0 = record.getAs[Long]("hour")
-      var adclass0 = record.getAs[Long]("adclass")
+      var adslotid0 = record.getAs[Int]("adslot_id")
+      var hour0 = record.getAs[Int]("hour")
+      var adclass0 = record.getAs[Int]("adclass")
       var ecpmt0 = record.getAs[Double]("threshold")
       var traffic0 = record.getAs[Double]("traffic")
-      var expid0 =record.getAs[Long]("exp_id")
+      var expid0 =record.getAs[Int]("exp_id")
 
       println(
         s"""adslot_id:${adslotid0},
