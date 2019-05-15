@@ -1,6 +1,7 @@
 package com.cpc.spark.qttzq_ecpm
-
+import java.io.FileOutputStream
 import org.apache.spark.sql.SparkSession
+import qttzq_ecpm_dev.qttzq_ecpm_dev.{Threshold_qttzq_ecpm, qttzq_ecpm_Threshold}
 
 /*2019-05-15 qttzq_ecpm工程开发*/
 
@@ -126,93 +127,99 @@ object qttzq_ecpm {
     threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
       println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic1} insert success")
 
-//    //-----阈值试算 traffic2----------
-//    val  threstab2 = spark.sql(
-//      s"""
-//         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt=date_add('${date1}',3),traffic=${traffic2})
-//         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
-//         |from
-//         |(
-//         |select  date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
-//         |         row_number() over (order by ecpm desc) as ecpm_rank
-//         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
-//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and     media_appsid in ('80002819')
-//         |and     adsrc in (1,28)
-//         |and     (charge_type is null or charge_type=1)
-//         |and     uid not like "%.%"
-//         |and     uid not like "%000000%"
-//         |and     length(uid) in (14, 15, 36)
-//         |and     userid > 0
-//         |and     unitid>0
-//         |and     is_ocpc=0
-//         |)  nd
-//         |left join
-//         |(
-//         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
-//         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
-//         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |     and    media_appsid in ('80002819')
-//         |    and adsrc in (1,28)
-//         |    and (charge_type is null or charge_type=1)
-//         |    and uid not like "%.%"
-//         |    and uid not like "%000000%"
-//         |    and length(uid) in (14, 15, 36)
-//         |    and userid > 0
-//         |    and  unitid>0
-//         |
-//         |)  hd
-//         |on  hd.dt=nd.dt
-//         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
-//         |group by nd.adslot_id,nd.hour,nd.adclass
-//       """.stripMargin).selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic").
-//      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
-//    threstab2.show(10,false)
-//    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic2} insert success")
-//
-//    //-----阈值试算 traffic3----------
-//    val  threstab3 = spark.sql(
-//      s"""
-//         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt=date_add('${date1}',3),traffic=${traffic3})
-//         |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
-//         |from
-//         |(
-//         |select   date_add('${date1}',3) as dt,adslot_id, hour, adclass,unitid,ecpm,
-//         |         row_number() over (order by ecpm desc) as ecpm_rank
-//         |from    dl_cpc.duanzi_ecpm_detail_mid_qbj
-//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and     media_appsid in ('80002819')
-//         |and     adsrc in (1,28)
-//         |and     (charge_type is null or charge_type=1)
-//         |and     uid not like "%.%"
-//         |and     uid not like "%000000%"
-//         |and     length(uid) in (14, 15, 36)
-//         |and     userid > 0
-//         |and     unitid>0
-//         |and     is_ocpc=0
-//         |)  nd
-//         |left join
-//         |(
-//         |   select  count(ecpm) as max_num,date_add('${date1}',3) as dt
-//         |   from   dl_cpc.duanzi_ecpm_detail_mid_qbj
-//         |    where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |     and    media_appsid in ('80002819')
-//         |    and adsrc in (1,28)
-//         |    and (charge_type is null or charge_type=1)
-//         |    and uid not like "%.%"
-//         |    and uid not like "%000000%"
-//         |    and length(uid) in (14, 15, 36)
-//         |    and userid > 0
-//         |    and  unitid>0
-//         |
-//         |)  hd
-//         |on  hd.dt=nd.dt
-//         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
-//         |group by nd.adslot_id,nd.hour,nd.adclass
-//       """.stripMargin).selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic").
-//      toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
-//    threstab3.show(10,false)
-//    println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic3} insert success")
+    //-----阈值试算 traffic2----------
+    val  threstab2 = spark.sql(
+      s"""
+         |select   nd.adslot_id,nd.hour,nd.adclass,max(nd.ecpm) as threshold
+         |from
+         |(
+         |select   '${date}' as dt,adslot_id, hour, adclass,ecpm,
+         |         row_number() over (order by ecpm desc) as ecpm_rank
+         |from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
+         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc =1
+         |and      media_appsid in ( '80000002')  --看详情页
+         |and      adtype in (8,10)
+         |--and      isshow=1
+         |--and      adslot_id='7659152'
+         |and      usertype=2
+         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
+         |and     unitid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |)  nd
+         |left join
+         |(
+         |   select  count(ecpm) as max_num,'${date}' as dt
+         |   from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
+         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc =1
+         |and      media_appsid in ( '80000002')  --看详情页
+         |and      adtype in (8,10)
+         |--and      isshow=1
+         |--and      adslot_id='7659152'
+         |and      usertype=2
+         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
+         |and     unitid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |
+           |)  hd
+         |on  hd.dt=nd.dt
+         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
+         |group by nd.adslot_id,nd.hour,nd.adclass
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s"""'${date}' as dt""",s"""${traffic2} as traffic""").
+      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
+    threstab2.show(10,false)
+    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
+    println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic2} insert success")
+
+    //-----阈值试算 traffic3----------
+    val  threstab3 = spark.sql(
+      s"""
+         |select   nd.adslot_id,nd.hour,nd.adclass,max(nd.ecpm) as threshold
+         |from
+         |(
+         |select   '${date}' as dt,adslot_id, hour, adclass,ecpm,
+         |         row_number() over (order by ecpm desc) as ecpm_rank
+         |from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
+         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc =1
+         |and      media_appsid in ( '80000002')  --看详情页
+         |and      adtype in (8,10)
+         |--and      isshow=1
+         |--and      adslot_id='7659152'
+         |and      usertype=2
+         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
+         |and     unitid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |)  nd
+         |left join
+         |(
+         |   select  count(ecpm) as max_num,'${date}' as dt
+         |   from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
+         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc =1
+         |and      media_appsid in ( '80000002')  --看详情页
+         |and      adtype in (8,10)
+         |--and      isshow=1
+         |--and      adslot_id='7659152'
+         |and      usertype=2
+         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
+         |and     unitid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |
+           |)  hd
+         |on  hd.dt=nd.dt
+         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
+         |group by nd.adslot_id,nd.hour,nd.adclass
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s"""'${date}' as dt""",s"""${traffic3} as traffic""").
+      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
+    threstab3.show(10,false)
+    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
+    println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic3} insert success")
 
     /*增加段子分组对应关系 */
     var tabzq=spark.read.table("dl_cpc.cpc_qttzq_ecpm_threshold_qbj").filter(s"dt='${date}'").
@@ -221,41 +228,41 @@ object qttzq_ecpm {
     /*#########################################################################*/
     //   pb写法
 
-//
-//    val list = new scala.collection.mutable.ListBuffer[qttzq_ecpm_Threshold]()
-//    var cnt = 0
-//    for (record <- tabzq.collect()) {
-//      var adslotid0 = record.getAs[Long]("adslot_id")
-//      var hour0 = record.getAs[Int]("hour")
-//      var adclass0 = record.getAs[Long]("adclass")
-//      var ecpmt0 = record.getAs[Double]("threshold")
-//      var traffic0 = record.getAs[Double]("traffic")
-//
-//      println(
-//        s"""adslot_id:${adslotid0},
-//           |expcvr   :${hour0},
-//           |adclass  :${adclass0},
-//           |ecpm_t   :${ecpmt0},
-//           |traffic  :${traffic0}
-//           |""".stripMargin)
-//
-//      cnt += 1
-//      val Item = qttzq_ecpm_Threshold(
-//        adslotid_zq=adslotid0,
-//        hour_zq=hour0,
-//        adclass_zq=adclass0,
-//        ecpmt_zq=ecpmt0,
-//        traffic_zq=traffic0
-//      )
-//      list += Item
-//    }
-//    println("final userid cnt:" + cnt)
-//    val result = list.toArray
-//    val ecpmlist = Threshold_qttzq_ecpm(
-//      det = result )
-//    println("Array length:" + result.length)
-//    ecpmlist.writeTo(new FileOutputStream("qttzq_ecpm_qbj.pb"))
-//    println("qttzq_ecpm_qbj.pb insert success!")
+
+    val list = new scala.collection.mutable.ListBuffer[qttzq_ecpm_Threshold]()
+    var cnt = 0
+    for (record <- tabzq.collect()) {
+      var adslotid0 = record.getAs[Long]("adslot_id")
+      var hour0 = record.getAs[Int]("hour")
+      var adclass0 = record.getAs[Long]("adclass")
+      var ecpmt0 = record.getAs[Double]("threshold")
+      var traffic0 = record.getAs[Double]("traffic")
+
+      println(
+        s"""adslot_id:${adslotid0},
+           |expcvr   :${hour0},
+           |adclass  :${adclass0},
+           |ecpm_t   :${ecpmt0},
+           |traffic  :${traffic0}
+           |""".stripMargin)
+
+      cnt += 1
+      val Item = qttzq_ecpm_Threshold(
+        adslotid_zq=adslotid0,
+        hour_zq=hour0,
+        adclass_zq=adclass0,
+        ecpmt_zq=ecpmt0,
+        traffic_zq=traffic0
+      )
+      list += Item
+    }
+    println("final userid cnt:" + cnt)
+    val result = list.toArray
+    val ecpmlist = Threshold_qttzq_ecpm(
+      det = result )
+    println("Array length:" + result.length)
+    ecpmlist.writeTo(new FileOutputStream("qttzq_ecpm_qbj.pb"))
+    println("qttzq_ecpm_qbj.pb insert success!")
 
 
 
