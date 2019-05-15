@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package dz_ecpm;
+package dz_ecpm_dev;
 
 message dz_ecpm_Threshold {
-    int64 adslot_id=1;
+    int64 adslotid=1;
     int64 hour=2;
     int64 adclass=3;
-    double  ecpm_t=4;
+    double  ecpmt=4;
     double  traffic=5;
-    int64  exp_id=6;
+    int64  expids=6;
 }
 
 message  Threshold_dz_ecpm  {

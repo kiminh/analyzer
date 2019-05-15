@@ -1,22 +1,9 @@
 package com.cpc.spark.dz_ecpm
 
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Calendar
 
-import com.google.protobuf.struct.Struct
+import dz_ecpm_dev.dz_ecpm_dev.{Threshold_dz_ecpm, dz_ecpm_Threshold}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions
-import org.apache.spark.sql.types.{StructField, StructType}
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import breeze.linalg.det
-import org.apache.spark.sql.SparkSession
-import dz_ecpm.dz_ecpm.dz_ecpm_Threshold
-import dz_ecpm.dz_ecpm.Threshold_dz_ecpm
-import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.dz_ecpm_Threshold
-import dz_ecpm.dz_ecpm.dz_ecpm_Threshold.Threshold_dz_ecpm
 
 /*2019-05-14 dz_ecpm工程开发*/
 
@@ -30,7 +17,6 @@ object dz_ecpm {
       .appName(s"""dz_ecpm_execute +'${date}' """)
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
     import java.text.SimpleDateFormat
     import java.util.Calendar
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -95,7 +81,39 @@ object dz_ecpm {
          |and     ideaid > 0
          |and     userid > 0
          |and     is_ocpc=0;
-         |
+         |and     adslot_id in (
+         |7722999,
+         |7052921,
+         |7757626,
+         |7140597,
+         |7525397,
+         |7489717,
+         |7488761,
+         |7566103,
+         |7217976,
+         |7001299,
+         |7998177,
+         |7137431,
+         |7988329,
+         |7271479,
+         |7333986,
+         |7696667,
+         |7771837,
+         |7563122,
+         |7933451,
+         |7063093,
+         |7275682,
+         |7773241,
+         |7403906,
+         |7029316,
+         |7050440,
+         |7786564,
+         |7648066,
+         |7557848,
+         |7572146,
+         |7323122,
+         |7882381
+         |)
        """.stripMargin
       val tab00=spark.sql(sql0).persist()
        tab00.createOrReplaceTempView("dzecpmmidtab")
@@ -335,7 +353,7 @@ object dz_ecpm {
          |group by nd.adslot_id,nd.hour,nd.adclass,
          |         case when expcpm<threshold    then '3ddrop>${traffic2}'
          |             when expcpm>=threshold   then '3dkeep<=${traffic2}' end,nd.dt,traffic
-         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").
+         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
       toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
     valitab2.show(10,false)
     valitab2.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
@@ -396,7 +414,7 @@ object dz_ecpm {
          |group by nd.adslot_id,nd.hour,nd.adclass,
          |         case when expcpm<threshold    then '3ddrop>${traffic3}'
          |             when expcpm>=threshold   then '3dkeep<=${traffic3}' end,nd.dt,traffic
-         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").
+         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
       toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
     valitab3.show(10,false)
     valitab3.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
@@ -417,45 +435,47 @@ object dz_ecpm {
 
    /*增加段子分组对应关系 */
     var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").
-      selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic",s"""'' as exp_id""")
+      selectExpr("adslot_id","hour","adclass", "threshold","traffic",s"""0 as exp_id""").na.fill(0)
 
 
     /*#########################################################################*/
     //   pb写法
 
+
     val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
     var cnt = 0
-    for (record <- threstab.collect()) {
-      var adslot_id = record.getAs[BigInt]("adslot_id")
-      var hour = record.getAs[Int]("hour")
-      var adclass = record.getAs[BigInt]("adclass")
-      var ecpm_t = record.getAs[Double]("threshold")
-      var traffic = record.getAs[Double]("traffic")
-      var expid =record.getAs[Double]("exp_id")
+    for (record <- tabg.collect()) {
+      var adslotid0 = record.getAs[Long]("adslot_id")
+      var hour0 = record.getAs[Long]("hour")
+      var adclass0 = record.getAs[Long]("adclass")
+      var ecpmt0 = record.getAs[Double]("threshold")
+      var traffic0 = record.getAs[Double]("traffic")
+      var expid0 =record.getAs[Long]("exp_id")
+
       println(
-        s"""adslot_id:${adslot_id},
-           |expcvr   :${hour},
-           |adclass  :${adclass},
-           |ecpm_t   :${ecpm_t},
-           |traffic  :${traffic},
-           |exp_id   :${expid},
+        s"""adslot_id:${adslotid0},
+           |expcvr   :${hour0},
+           |adclass  :${adclass0},
+           |ecpm_t   :${ecpmt0},
+           |traffic  :${traffic0},
+           |exp_id   :${expid0},
            |""".stripMargin)
 
       cnt += 1
       val Item = dz_ecpm_Threshold(
-        adslot_id=adslot_id,
-        hour=hour,
-        adclass=adclass,
-        ecpm_t=ecpm_t,
-        traffic=traffic,
-        expid=expid
+        adslotid=adslotid0,
+        hour=hour0,
+        adclass=adclass0,
+        ecpmt=ecpmt0,
+        traffic=traffic0,
+        expids=expid0
       )
       list += Item
     }
     println("final userid cnt:" + cnt)
     val result = list.toArray
     val ecpmlist = Threshold_dz_ecpm(
-      det = result)
+      det = result )
     println("Array length:" + result.length)
     ecpmlist.writeTo(new FileOutputStream("dz_ecpm.pb"))
     println("dz_ecpm.pb insert success!")
