@@ -123,12 +123,7 @@ object OcpcSampleToPb {
 
   def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
     var list = new ListBuffer[SingleItem]
-    var filename = ""
-    if (isHidden == 0) {
-      filename = s"Ocpc_" + version + "_known.pb"
-    } else {
-      filename = s"Ocpc_" + version + "_unknown.pb"
-    }
+    val filename = "ocpc_params_novel.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
@@ -153,10 +148,12 @@ object OcpcSampleToPb {
       val ocpcMincpm = 0
       val ocpcMinbid = 0
       val cpcbid = 0
-      val maxbid = 0
+      val maxbid = 100000
 
-      if (cnt % 100 == 0) {
-        println(s"key: $key,conversionGoal: $conversionGoal, jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor")
+      if (cnt % 1 == 0) {
+        println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +
+          s"cpaGiven: $cpaGiven,cpaSuggest: $cpaSuggest, paramT: $paramT, highBidFactor: $highBidFactor, lowBidFactor:$lowBidFactor," +
+          s"ocpcMincpm: $ocpcMincpm, ocpcMinbid:$ocpcMinbid, cpcbid:$cpcbid,maxbid :$maxbid ")
       }
       cnt += 1
 
