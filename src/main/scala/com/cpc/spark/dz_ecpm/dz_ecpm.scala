@@ -31,7 +31,7 @@ object dz_ecpm {
 //    val yesdate=yesday.split(" ")(0)
 //    val yestime=yesday.split(" ")(1)
 //    设定过去3天的时间点
-    calendar.add(Calendar.DATE, -4)
+    calendar.add(Calendar.DATE, -3)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -71,7 +71,7 @@ object dz_ecpm {
          |        day,
          |        hour
          |from    dl_cpc.cpc_basedata_union_events
-         |where   day=date_add('${date1}',3)
+         |where   day=date_add('${date1}',2)
          |and     media_appsid in ('80002819')
          |and     adsrc in (1,28)
          |and     (charge_type is null or charge_type=1)
@@ -116,7 +116,7 @@ object dz_ecpm {
          |)
        """.stripMargin
       val tab00=spark.sql(sql0).persist()
-       tab00.createOrReplaceTempView("dzecpmmidtab")
+//       tab00.createOrReplaceTempView("dzecpmmidtab")
 
     //-----阈值试算 traffic1----------
     val  threstab1 = spark.sql(
