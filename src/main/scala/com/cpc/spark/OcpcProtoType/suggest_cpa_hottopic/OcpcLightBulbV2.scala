@@ -112,7 +112,7 @@ object OcpcLightBulbV2{
          |    `hour` = '$hour'
          |and is_recommend = 1
          |and version = '$version'
-         |and industry in 'feedapp'
+         |and industry in ('feedapp')
          |and conversion_goal = 1
        """.stripMargin
 
