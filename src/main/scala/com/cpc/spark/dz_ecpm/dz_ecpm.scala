@@ -212,7 +212,6 @@ object dz_ecpm {
     //-----阈值试算 traffic3----------
     val  threstab3 = spark.sql(
       s"""
-         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt='${date}',traffic=${traffic3})
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm) as threshold
          |from
          |(
@@ -248,7 +247,7 @@ object dz_ecpm {
          |on  hd.dt=nd.dt
          |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
          |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic1} as traffic""").
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic3} as traffic""").
       toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
     threstab3.show(10,false)
     threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
