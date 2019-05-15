@@ -80,7 +80,7 @@ object dz_ecpm {
          |and     length(uid) in (14, 15, 36)
          |and     ideaid > 0
          |and     userid > 0
-         |and     is_ocpc=0;
+         |and     is_ocpc=0
          |and     adslot_id in (
          |7722999,
          |7052921,
@@ -306,7 +306,7 @@ object dz_ecpm {
          |from    dl_cpc.duanzi_ecpm_datadis_qbj
          |where   dt= date_add('${date1}',3)
          |and     traffic='${traffic1}'
-         |group by cate;
+         |group by cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab.show(10,false)
@@ -366,7 +366,7 @@ object dz_ecpm {
          |from    dl_cpc.duanzi_ecpm_datadis_qbj
          |where   dt= date_add('${date1}',3)
          |and     traffic='${traffic2}'
-         |group by cate;
+         |group by cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab.show(10,false)
@@ -427,7 +427,7 @@ object dz_ecpm {
          |from    dl_cpc.duanzi_ecpm_datadis_qbj
          |where   dt= date_add('${date1}',3)
          |and     traffic='${traffic3}'
-         |group by cate;
+         |group by cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab.show(10,false)
