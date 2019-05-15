@@ -261,7 +261,7 @@ object qttzq_ecpm {
     val result = list.toArray
     val ecpmlist = Threshold_qttzq_ecpm(
       det = result )
-    println("Array length:" + result.length)
+    println("Array length:" + result.length  + s" '${date}'")
     ecpmlist.writeTo(new FileOutputStream("qttzq_ecpm_qbj.pb"))
     println("qttzq_ecpm_qbj.pb insert success!")
 

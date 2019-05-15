@@ -297,7 +297,7 @@ object dz_ecpm {
     val result = list.toArray
     val ecpmlist = Threshold_dz_ecpm(
       det = result )
-    println("Array length:" + result.length)
+    println("Array length:" + result.length  + s" '${date}'")
     ecpmlist.writeTo(new FileOutputStream("dz_ecpm_qbj.pb"))
     println("dz_ecpm_qbj.pb insert success!")
 
