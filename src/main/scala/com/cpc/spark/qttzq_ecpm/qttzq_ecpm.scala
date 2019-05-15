@@ -1,5 +1,6 @@
 package com.cpc.spark.qttzq_ecpm
 import java.io.FileOutputStream
+
 import org.apache.spark.sql.SparkSession
 import qttzq_ecpm_dev.qttzq_ecpm_dev.{Threshold_qttzq_ecpm, qttzq_ecpm_Threshold}
 
@@ -240,7 +241,7 @@ object qttzq_ecpm {
 
       println(
         s"""adslot_id:${adslotid0},
-           |expcvr   :${hour0},
+           |hour     :${hour0},
            |adclass  :${adclass0},
            |ecpm_t   :${ecpmt0},
            |traffic  :${traffic0}
@@ -248,11 +249,11 @@ object qttzq_ecpm {
 
       cnt += 1
       val Item = qttzq_ecpm_Threshold(
-        adslotid_zq=adslotid0,
-        hour_zq=hour0,
-        adclass_zq=adclass0,
-        ecpmt_zq=ecpmt0,
-        traffic_zq=traffic0
+        adslotidzq=adslotid0,
+        hourzq=hour0,
+        adclasszq=adclass0,
+        ecpmtzq=ecpmt0,
+        trafficzq=traffic0
       )
       list += Item
     }
