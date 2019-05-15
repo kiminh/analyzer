@@ -1,6 +1,5 @@
 package com.cpc.spark.qttzq_ecpm
 import java.io.FileOutputStream
-
 import org.apache.spark.sql.SparkSession
 import qttzq_ecpm_dev.qttzq_ecpm_dev.{Threshold_qttzq_ecpm, qttzq_ecpm_Threshold}
 
@@ -22,7 +21,7 @@ object qttzq_ecpm {
     val newDate = date
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
-    calendar.setTime(today)
+     calendar.setTime(today)
 ////  设定前一天的时间点
 //    val cala=calendar.add(Calendar.DATE,0)
 //    val yes=cala.setTime
