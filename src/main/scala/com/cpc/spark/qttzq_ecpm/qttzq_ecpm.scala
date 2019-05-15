@@ -79,7 +79,7 @@ object qttzq_ecpm {
     val tab00=spark.sql(sql2).persist()
     tab00.show(10,false)
     tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qtt_ecpm_detail_mid_qbj")
-
+    println(s"dl_cpc.cpc_qtt_ecpm_detail_mid_qbj yesterday insert success")
     //-----阈值试算 traffic1----------
     val  threstab1 = spark.sql(
       s"""
@@ -123,7 +123,7 @@ object qttzq_ecpm {
            |group by nd.adslot_id,nd.hour,nd.adclass
        """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s"""'${date}' as dt""",s"""${traffic1} as traffic""").
       toDF("adslot_id","hour","adclass","threshold","dt","traffic")
-//      threstab1.show(10,false)
+      threstab1.show(10,false)
     threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
       println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic1} insert success")
 
