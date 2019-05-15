@@ -266,9 +266,9 @@ object dz_ecpm {
     val list = new scala.collection.mutable.ListBuffer[dz_ecpm_Threshold]()
     var cnt = 0
     for (record <- tabg.collect()) {
-      var adslotid0 = record.getAs[Int]("adslot_id")
+      var adslotid0 = record.getAs[Long]("adslot_id")
       var hour0 = record.getAs[Int]("hour")
-      var adclass0 = record.getAs[Int]("adclass")
+      var adclass0 = record.getAs[Long]("adclass")
       var ecpmt0 = record.getAs[Double]("threshold")
       var traffic0 = record.getAs[Double]("traffic")
       var expid0 =record.getAs[Int]("exp_id")
