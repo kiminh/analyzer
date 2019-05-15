@@ -413,14 +413,27 @@ object LRCVRTrain {
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
-    val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
     val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
-    model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_${prefix}/${name}_$date")
-    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_${prefix}/${name}_$date")
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
+    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
+
+    // backup on hdfs.
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
+
+    // backup on local machine.
+    model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
     model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
-    trainLog :+= "protobuf pack %s".format(lrfilepath)
+    // for go-live.
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
+
+    trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
+    trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
+    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
+    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
 
   }
 
