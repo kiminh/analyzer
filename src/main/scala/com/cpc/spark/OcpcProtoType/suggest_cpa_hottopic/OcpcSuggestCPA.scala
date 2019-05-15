@@ -61,15 +61,19 @@ object OcpcSuggestCPA {
 
     // 取基础数据部分
     val baseData = getBaseData(media, conversionGoal, hourInt, date, hour, spark)
+    baseData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190515a")
 
     // ocpc部分：kvalue
     val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
+    kvalue.write.mode("overwrite").saveAsTable("test.check_suggest_data20190515b")
 
     // 模型部分
     val aucData = getAucData(version, conversionGoal, date, hour, spark)
+    aucData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190515c")
 
     // 实时查询ocpc标记（从mysql抽取）
     val ocpcFlag = getOcpcFlag(conversionGoal, spark)
+    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_suggest_data20190515d")
 
     // 历史推荐cpa的pcoc数据
     val prevData = getPrevSuggestData(version, conversionGoal, date, hour, spark)
