@@ -9,7 +9,7 @@ import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions.{col, concat_ws, udf}
 
 import scala.collection.mutable
-import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
+//import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
@@ -134,5 +134,41 @@ object CalibrationCheckOnMidu {
       }
       flag
     }
+  }
+
+  def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
+    var index = 0
+    var min = 0
+    var max = boundaries.size - 1
+    while (min <= max) {
+      index = ((min + max)/ 2).toInt
+      if (num > boundaries(index)){
+        min = index + 1
+      }
+      else if (num < boundaries(index)) {
+        max = index - 1
+      }
+      else {
+        return index
+      }
+    }
+    return min
+  }
+
+  def computeCalibration(prob: Double, irModel: IRModel): Double = {
+    if (prob <= 0) {
+      return 0.0
+    }
+    var index = binarySearch(prob, irModel.boundaries)
+    if (index == 0) {
+      return  Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
+    }
+    if (index == irModel.boundaries.size) {
+      index = index - 1
+    }
+    return Math.max(0.0, Math.min(1.0, irModel.predictions(index-1) +
+      (irModel.predictions(index) - irModel.predictions(index-1))
+        * (prob - irModel.boundaries(index-1))
+        / (irModel.boundaries(index) - irModel.boundaries(index-1))))
   }
 }
