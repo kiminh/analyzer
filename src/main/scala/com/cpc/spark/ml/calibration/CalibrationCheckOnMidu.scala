@@ -70,7 +70,7 @@ object CalibrationCheckOnMidu {
     log.write.mode("overwrite").saveAsTable("test.wy00")
 
     val data = log.filter("length(group)>0")
-        .filter("len=38")
+        .filter("len=48")
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
@@ -141,7 +141,7 @@ object CalibrationCheckOnMidu {
     var min = 0
     var max = boundaries.size - 1
     while (min <= max) {
-      index = ((min + max)/ 2).toInt
+      index = (min + max)/ 2
       if (num > boundaries(index)){
         min = index + 1
       }
