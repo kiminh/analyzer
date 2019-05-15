@@ -63,7 +63,12 @@ object OcpcPIDcontrol {
   }
 
   def udfCalculatePID(kp: Double, ki: Double, kd: Double) = udf((currentError: Double, prevError: Double, lastError: Double) => {
-    val result = kp * currentError - ki * prevError + kd * lastError
+    var result = 0.0
+    if (currentError == 0 || prevError == 0 || lastError == 0) {
+      result = 0.0
+    } else {
+      result = kp * currentError - ki * prevError + kd * lastError
+    }
     result
   })
 
