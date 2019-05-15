@@ -37,7 +37,6 @@ object CalibrationCheckOnMidu {
 
     val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
-
     val timeRangeSql = Utils.getTimeRangeSql_3(dt, hour, dt, hour)
 
     // get union log
@@ -70,6 +69,7 @@ object CalibrationCheckOnMidu {
     log.write.mode("overwrite").saveAsTable("test.wy00")
 
     val data = log.filter("length(group)>0")
+        .filter(x=>x.getAs[String]("group") == x.getAs[String]("group1"))
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
