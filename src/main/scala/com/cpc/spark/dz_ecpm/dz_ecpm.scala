@@ -46,7 +46,7 @@ object dz_ecpm {
 //  每日更新前一天24小时的段子数据
     val sql0=
       s"""
-         |insert overwrite table dl_cpc.duanzi_ecpm_detail_mid_qbj partition ( dt,hour)
+
          |select  distinct
          |        searchid  ,
          |        is_ocpc   ,
@@ -116,12 +116,14 @@ object dz_ecpm {
          |)
        """.stripMargin
       val tab00=spark.sql(sql0).persist()
+      tab00.show(10,false)
+       tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_detail_mid_qbj")
 //       tab00.createOrReplaceTempView("dzecpmmidtab")
 
     //-----阈值试算 traffic1----------
     val  threstab1 = spark.sql(
       s"""
-           |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition (dt='${date}',traffic=${traffic1})
+           |
            |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
            |from
            |(
@@ -157,15 +159,15 @@ object dz_ecpm {
            |on  hd.dt=nd.dt
            |where   nd.ecpm_rank>round(hd.max_num*${traffic1},0)
            |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold","dt","traffic").
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic1} as traffic""").
       toDF("adslot_id","hour","adclass","threshold","dt","traffic")
       threstab1.show(10,false)
+      threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
       println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic1} insert success")
 
     //-----阈值试算 traffic2----------
     val  threstab2 = spark.sql(
       s"""
-         |insert   overwrite table dl_cpc.duanzi_ecpm_threshold_qbj partition ( dt='${date}',traffic=${traffic2})
          |select   nd.adslot_id,nd.hour,nd.adclass, max(nd.ecpm)
          |from
          |(
@@ -201,9 +203,10 @@ object dz_ecpm {
          |on  hd.dt=nd.dt
          |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
          |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic").
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic2} as traffic""").
       toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
-    threstab2.show(10,false)
+      threstab2.show(10,false)
+    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
     println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic2} insert success")
 
     //-----阈值试算 traffic3----------
@@ -245,14 +248,17 @@ object dz_ecpm {
          |on  hd.dt=nd.dt
          |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
          |group by nd.adslot_id,nd.hour,nd.adclass
-       """.stripMargin).selectExpr("adslot_id","hour","adclass", "threshold","dt","traffic").
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s""" '${date}' as dt""",s"""${traffic1} as traffic""").
       toDF("adslot_id","hour","adclass", "threshold","dt","traffic")
     threstab3.show(10,false)
+    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_threshold_qbj")
     println(s"dl_cpc.duanzi_ecpm_threshold_qbj traffic:${traffic3} insert success")
 
-    /*增加段子分组对应关系 */
-    var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").
-      selectExpr("adslot_id","hour","adclass", "threshold","traffic",s"""0 as exp_id""").na.fill(0)
+    /*增加段子分组对应关系,只取当天阈值 */
+    var tabg=spark.read.table("dl_cpc.duanzi_ecpm_threshold_qbj").filter(s"dt='${date}'").
+      selectExpr("adslot_id","hour","adclass", "threshold","traffic",s"""0 as exp_id""").
+      na.fill(0)
+
 
     /*#########################################################################*/
     //   pb写法
@@ -301,185 +307,185 @@ object dz_ecpm {
     /*#################################################################################*/
 
 
-    /*------调试ecpm参数,验证消耗比例 traffic1-------*/
-    val  valitab1 = spark.sql(
-       s"""
-          |select  nd.adslot_id,nd.hour,nd.adclass,
-          |        case when expcpm<threshold    then '3ddrop>${traffic1}'
-          |             when expcpm>=threshold   then '3dkeep<=${traffic1}' end as cate,
-          |        count(*) as nd_query,
-          |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
-          |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
-          |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
-          |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
-          |     nd.dt,traffic
-          |from
-          |(
-          |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
-          |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
-          |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
-          |    where  dt=date_add('${date1}',3)
-          |    and    media_appsid in ('80002819')
-          |    and adsrc in (1,28)
-          |    and (charge_type is null or charge_type=1)
-          |    and uid not like "%.%"
-          |    and uid not like "%000000%"
-          |    and length(uid) in (14, 15, 36)
-          |    and userid > 0
-          |    and  unitid>0
-          |)  nd
-          |left join
-          |(
-          |    select  dt,adslot_id,hour,adclass, threshold,traffic
-          |    from     dl_cpc.duanzi_ecpm_threshold_qbj
-          |    where  dt=date_add('${date1}',3)  and traffic =${traffic1}
-          |    group by dt,adslot_id,hour,adclass,threshold,traffic
-          |) nd2
-          |on  nd2.dt=nd.dt
-          |and nd2.adslot_id=nd.adslot_id
-          |and nd2.hour=nd.hour
-          |and nd2.adclass=nd.adclass
-    |group by nd.adslot_id,nd.hour,nd.adclass,
-    |         case when expcpm<threshold    then '3ddrop>${traffic1}'
-    |             when expcpm>=threshold   then '3dkeep<=${traffic1}' end,nd.dt,traffic
-    """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").
-      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
-    valitab1.show(10,false)
-    valitab1.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
-
-    //  -------测算请求&消耗占比-------
-    val checktab=spark.sql(
-      s"""
-         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
-         |where   dt= date_add('${date1}',3)
-         |and     traffic='${traffic1}'
-         |group by cate
-      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
-      toDF("cate","query","consume","dt","traffic")
-    checktab.show(10,false)
-    println(" check1 success!")
-
-    /*------调试ecpm参数,验证消耗比例 traffic2-------*/
-    val  valitab2 = spark.sql(
-      s"""
-         select  nd.adslot_id,nd.hour,nd.adclass,
-         |        case when expcpm<threshold    then '3ddrop>${traffic2}'
-         |             when expcpm>=threshold   then '3dkeep<=${traffic2}' end as cate,
-         |        count(*) as nd_query,
-         |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
-         |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
-         |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
-         |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
-         |     nd.dt,traffic
-         |from
-         |(
-         |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
-         |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
-         |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |    where  dt=date_add('${date1}',3)
-         |    and    media_appsid in ('80002819')
-         |    and adsrc in (1,28)
-         |    and (charge_type is null or charge_type=1)
-         |    and uid not like "%.%"
-         |    and uid not like "%000000%"
-         |    and length(uid) in (14, 15, 36)
-         |    and userid > 0
-         |    and  unitid>0
-         |)  nd
-         |left join
-         |(
-         |    select  dt,adslot_id,hour,adclass, threshold,traffic
-         |    from     dl_cpc.duanzi_ecpm_threshold_qbj
-         |    where  dt=date_add('${date1}',3)  and traffic =${traffic2}
-         |    group by dt,adslot_id,hour,adclass,threshold,traffic
-         |) nd2
-         |on  nd2.dt=nd.dt
-         |and nd2.adslot_id=nd.adslot_id
-         |and nd2.hour=nd.hour
-         |and nd2.adclass=nd.adclass
-         |group by nd.adslot_id,nd.hour,nd.adclass,
-         |         case when expcpm<threshold    then '3ddrop>${traffic2}'
-         |             when expcpm>=threshold   then '3dkeep<=${traffic2}' end,nd.dt,traffic
-         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
-      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
-    valitab2.show(10,false)
-    valitab2.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
-
-
-//  -------测算请求&消耗占比-------
-    val checktab2=spark.sql(
-      s"""
-         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
-         |where   dt= date_add('${date1}',3)
-         |and     traffic='${traffic2}'
-         |group by cate
-      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
-      toDF("cate","query","consume","dt","traffic")
-    checktab.show(10,false)
-    println(" check2 success!")
-
-
-    /*------调试ecpm参数,验证消耗比例 traffic3-------*/
-    val  valitab3 = spark.sql(
-      s"""
-         select  nd.adslot_id,nd.hour,nd.adclass,
-         |        case when expcpm<threshold    then '3ddrop>${traffic3}'
-         |             when expcpm>=threshold   then '3dkeep<=${traffic3}' end as cate,
-         |        count(*) as nd_query,
-         |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
-         |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
-         |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
-         |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
-         |     nd.dt,traffic
-         |from
-         |(
-         |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
-         |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
-         |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
-         |    where  dt=date_add('${date1}',3)
-         |    and    media_appsid in ('80002819')
-         |    and adsrc in (1,28)
-         |    and (charge_type is null or charge_type=1)
-         |    and uid not like "%.%"
-         |    and uid not like "%000000%"
-         |    and length(uid) in (14, 15, 36)
-         |    and userid > 0
-         |    and  unitid>0
-         |)  nd
-         |left join
-         |(
-         |    select  dt,adslot_id,hour,adclass, threshold,traffic
-         |    from     dl_cpc.duanzi_ecpm_threshold_qbj
-         |    where  dt=date_add('${date1}',3)  and traffic =${traffic3}
-         |    group by dt,adslot_id,hour,adclass,threshold,traffic
-         |) nd2
-         |on  nd2.dt=nd.dt
-         |and nd2.adslot_id=nd.adslot_id
-         |and nd2.hour=nd.hour
-         |and nd2.adclass=nd.adclass
-         |group by nd.adslot_id,nd.hour,nd.adclass,
-         |         case when expcpm<threshold    then '3ddrop>${traffic3}'
-         |             when expcpm>=threshold   then '3dkeep<=${traffic3}' end,nd.dt,traffic
-         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
-      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
-    valitab3.show(10,false)
-    valitab3.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
-
-
-    //  -------测算请求&消耗占比-------
-    val checktab3=spark.sql(
-      s"""
-         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
-         |where   dt= date_add('${date1}',3)
-         |and     traffic='${traffic3}'
-         |group by cate
-      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
-      toDF("cate","query","consume","dt","traffic")
-    checktab.show(10,false)
-    println(" check3 success!")
+//    /*------调试ecpm参数,验证消耗比例 traffic1-------*/
+//    val  valitab1 = spark.sql(
+//       s"""
+//          |select  nd.adslot_id,nd.hour,nd.adclass,
+//          |        case when expcpm<threshold    then '3ddrop>${traffic1}'
+//          |             when expcpm>=threshold   then '3dkeep<=${traffic1}' end as cate,
+//          |        count(*) as nd_query,
+//          |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
+//          |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
+//          |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
+//          |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
+//          |     nd.dt,traffic
+//          |from
+//          |(
+//          |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
+//          |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
+//          |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
+//          |    where  dt=date_add('${date1}',3)
+//          |    and    media_appsid in ('80002819')
+//          |    and adsrc in (1,28)
+//          |    and (charge_type is null or charge_type=1)
+//          |    and uid not like "%.%"
+//          |    and uid not like "%000000%"
+//          |    and length(uid) in (14, 15, 36)
+//          |    and userid > 0
+//          |    and  unitid>0
+//          |)  nd
+//          |left join
+//          |(
+//          |    select  dt,adslot_id,hour,adclass, threshold,traffic
+//          |    from     dl_cpc.duanzi_ecpm_threshold_qbj
+//          |    where  dt=date_add('${date1}',3)  and traffic =${traffic1}
+//          |    group by dt,adslot_id,hour,adclass,threshold,traffic
+//          |) nd2
+//          |on  nd2.dt=nd.dt
+//          |and nd2.adslot_id=nd.adslot_id
+//          |and nd2.hour=nd.hour
+//          |and nd2.adclass=nd.adclass
+//    |group by nd.adslot_id,nd.hour,nd.adclass,
+//    |         case when expcpm<threshold    then '3ddrop>${traffic1}'
+//    |             when expcpm>=threshold   then '3dkeep<=${traffic1}' end,nd.dt,traffic
+//    """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").
+//      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
+//    valitab1.show(10,false)
+//    valitab1.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
+//
+//    //  -------测算请求&消耗占比-------
+//    val checktab=spark.sql(
+//      s"""
+//         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
+//         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+//         |where   dt= date_add('${date1}',3)
+//         |and     traffic='${traffic1}'
+//         |group by cate
+//      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
+//      toDF("cate","query","consume","dt","traffic")
+//    checktab.show(10,false)
+//    println(" check1 success!")
+//
+//    /*------调试ecpm参数,验证消耗比例 traffic2-------*/
+//    val  valitab2 = spark.sql(
+//      s"""
+//         select  nd.adslot_id,nd.hour,nd.adclass,
+//         |        case when expcpm<threshold    then '3ddrop>${traffic2}'
+//         |             when expcpm>=threshold   then '3dkeep<=${traffic2}' end as cate,
+//         |        count(*) as nd_query,
+//         |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
+//         |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
+//         |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
+//         |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
+//         |     nd.dt,traffic
+//         |from
+//         |(
+//         |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
+//         |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
+//         |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |    where  dt=date_add('${date1}',3)
+//         |    and    media_appsid in ('80002819')
+//         |    and adsrc in (1,28)
+//         |    and (charge_type is null or charge_type=1)
+//         |    and uid not like "%.%"
+//         |    and uid not like "%000000%"
+//         |    and length(uid) in (14, 15, 36)
+//         |    and userid > 0
+//         |    and  unitid>0
+//         |)  nd
+//         |left join
+//         |(
+//         |    select  dt,adslot_id,hour,adclass, threshold,traffic
+//         |    from     dl_cpc.duanzi_ecpm_threshold_qbj
+//         |    where  dt=date_add('${date1}',3)  and traffic =${traffic2}
+//         |    group by dt,adslot_id,hour,adclass,threshold,traffic
+//         |) nd2
+//         |on  nd2.dt=nd.dt
+//         |and nd2.adslot_id=nd.adslot_id
+//         |and nd2.hour=nd.hour
+//         |and nd2.adclass=nd.adclass
+//         |group by nd.adslot_id,nd.hour,nd.adclass,
+//         |         case when expcpm<threshold    then '3ddrop>${traffic2}'
+//         |             when expcpm>=threshold   then '3dkeep<=${traffic2}' end,nd.dt,traffic
+//         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
+//      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
+//    valitab2.show(10,false)
+//    valitab2.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
+//
+//
+////  -------测算请求&消耗占比-------
+//    val checktab2=spark.sql(
+//      s"""
+//         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
+//         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+//         |where   dt= date_add('${date1}',3)
+//         |and     traffic='${traffic2}'
+//         |group by cate
+//      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
+//      toDF("cate","query","consume","dt","traffic")
+//    checktab.show(10,false)
+//    println(" check2 success!")
+//
+//
+//    /*------调试ecpm参数,验证消耗比例 traffic3-------*/
+//    val  valitab3 = spark.sql(
+//      s"""
+//         select  nd.adslot_id,nd.hour,nd.adclass,
+//         |        case when expcpm<threshold    then '3ddrop>${traffic3}'
+//         |             when expcpm>=threshold   then '3dkeep<=${traffic3}' end as cate,
+//         |        count(*) as nd_query,
+//         |        (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
+//         |      + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0 as  nd_consume,
+//         |      (sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end) + sum(case when isshow  = 1 and  charge_type = 2                          then price else 0 end)/1000.0)/100.0/count(*) as nd_cpq,
+//         |     (sum(if(isclick=1,1,0))/count(*))*1.0/(avg(raw_ctr/1000000)*1.0) as nd_pcoc,
+//         |     nd.dt,traffic
+//         |from
+//         |(
+//         |    select searchid,adslot_id,hour,adclass, exp_ctr*1.0*bid/100000 as expcpm,isclick,isshow,charge_type,price,raw_ctr,
+//         |          row_number() over (order by exp_ctr*1.0*bid/100000 desc ) as expcpm_rank,dt
+//         |    from  dl_cpc.duanzi_ecpm_detail_mid_qbj
+//         |    where  dt=date_add('${date1}',3)
+//         |    and    media_appsid in ('80002819')
+//         |    and adsrc in (1,28)
+//         |    and (charge_type is null or charge_type=1)
+//         |    and uid not like "%.%"
+//         |    and uid not like "%000000%"
+//         |    and length(uid) in (14, 15, 36)
+//         |    and userid > 0
+//         |    and  unitid>0
+//         |)  nd
+//         |left join
+//         |(
+//         |    select  dt,adslot_id,hour,adclass, threshold,traffic
+//         |    from     dl_cpc.duanzi_ecpm_threshold_qbj
+//         |    where  dt=date_add('${date1}',3)  and traffic =${traffic3}
+//         |    group by dt,adslot_id,hour,adclass,threshold,traffic
+//         |) nd2
+//         |on  nd2.dt=nd.dt
+//         |and nd2.adslot_id=nd.adslot_id
+//         |and nd2.hour=nd.hour
+//         |and nd2.adclass=nd.adclass
+//         |group by nd.adslot_id,nd.hour,nd.adclass,
+//         |         case when expcpm<threshold    then '3ddrop>${traffic3}'
+//         |             when expcpm>=threshold   then '3dkeep<=${traffic3}' end,nd.dt,traffic
+//         """.stripMargin).selectExpr("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic").na.fill(0).
+//      toDF("adslot_id","hour","adclass", "cate","nd_query","nd_consume","nd_cpq","nd_pcoc","dt","traffic")
+//    valitab3.show(10,false)
+//    valitab3.write.mode("overwrite").insertInto("dl_cpc.duanzi_ecpm_datadis_qbj")
+//
+//
+//    //  -------测算请求&消耗占比-------
+//    val checktab3=spark.sql(
+//      s"""
+//         |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
+//         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+//         |where   dt= date_add('${date1}',3)
+//         |and     traffic='${traffic3}'
+//         |group by cate
+//      """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
+//      toDF("cate","query","consume","dt","traffic")
+//    checktab.show(10,false)
+//    println(" check3 success!")
 
 
   }
