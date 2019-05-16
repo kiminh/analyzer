@@ -217,7 +217,7 @@ object OcpcCalibrationV2 {
     println(sqlRequestFinal)
     val dataFinal = spark
         .sql(sqlRequestFinal)
-        .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.3, 0.3).otherwise(col("low_bid_factor")))
+        .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.5, 0.5).otherwise(col("low_bid_factor")))
 
     dataFinal
   }
