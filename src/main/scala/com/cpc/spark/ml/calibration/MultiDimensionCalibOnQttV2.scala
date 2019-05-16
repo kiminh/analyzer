@@ -161,6 +161,7 @@ object MultiDimensionCalibOnQttV2 {
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
+    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
     var boundaries = Seq[Double]()
     var predictions = Seq[Double]()
     val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr")
@@ -201,17 +202,15 @@ object MultiDimensionCalibOnQttV2 {
         predictions
       )
     println(irModel.toString)
-      val calimap = keyset.select("group").rdd.map( x => {
+      val keymap = keyset.select("group").rdd.map( x => {
       val group = x.getString(0)
-      var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
       val key = calimodel + "_" + group
         val config = CalibrationConfig(
           name = key,
           ir = Option(irModel)
         )
       calimap += ((key,config))
-    }
-      calimap).toMap
+    }).toLocalIterator
 
     return calimap
   }
