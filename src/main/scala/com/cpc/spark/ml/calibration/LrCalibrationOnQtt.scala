@@ -81,7 +81,7 @@ object LrCalibrationOnQtt {
 
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
-    val profile_num = adslotid_sum + ideaid_sum
+    val profile_num = adslotid_sum + ideaid_sum + 2
 
     val sample = log.rdd.map {
       r =>
