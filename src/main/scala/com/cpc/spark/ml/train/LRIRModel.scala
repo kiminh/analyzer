@@ -224,6 +224,17 @@ class LRIRModel {
 
   private var irmodel: IsotonicRegressionModel = _
 
+  // fym 190515: remedy for legacy code.
+  def loadIRModel(
+                   hdfsPath: String
+                 ): Unit = {
+    irmodel = IsotonicRegressionModel
+      .load(
+        ctx.sparkContext,
+        hdfsPath
+      )
+  }
+
   def getIRmodel(): IsotonicRegressionModel = {
     irmodel
   }
