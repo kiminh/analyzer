@@ -3,7 +3,6 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
@@ -17,7 +16,13 @@ import scala.collection.mutable
 
 object LrCalibrationOnQtt {
   def main(args: Array[String]): Unit = {
-
+    val spark = SparkSession.builder()
+      .config("spark serializer", "org.apache.spark.serializer.KryoSerializer")
+      .config("spark.KryoSerializer.buffer.max", "2047MB")
+      .appName("prepare lookalike sample".format())
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
     // parse and process input
     val endDate = args(0)
     val endHour = args(1)
@@ -66,8 +71,10 @@ object LrCalibrationOnQtt {
 
     val ideaidID = mutable.Map[Int,Int]()
     var idxTemp1 = 0
-    val ideaid_feature = ideaidArray.map{r => ideaidID.update(r.getAs[Int]("city"), idxTemp1); idxTemp1 += 1; (("city" + r.getAs[Int]("city")), idxTemp1 -1)}
+    val ideaid_feature = ideaidArray.map{r => ideaidID.update(r.getAs[Int]("ideaid"), idxTemp1); idxTemp1 += 1; (("ideaid" + r.getAs[Int]("ideaid")), idxTemp1 -1)}
 
+    val feature_profile = adslotid_feature ++ideaid_feature
+    val feature_table =  spark.sparkContext.parallelize(feature_profile).toDF("feature", "index")
     //create cali pb
   }
 }
