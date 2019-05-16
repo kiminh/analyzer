@@ -150,7 +150,7 @@ object OcpcSampleToPb {
       val cpcbid = 0
       val maxbid = 100000
 
-      if (cnt % 1 == 0) {
+      if (cnt % 100 == 0) {
         println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +
           s"cpaGiven: $cpaGiven,cpaSuggest: $cpaSuggest, paramT: $paramT, highBidFactor: $highBidFactor, lowBidFactor:$lowBidFactor," +
           s"ocpcMincpm: $ocpcMincpm, ocpcMinbid:$ocpcMinbid, cpcbid:$cpcbid,maxbid :$maxbid ")

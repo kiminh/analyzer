@@ -88,8 +88,8 @@ object MultiDimensionCalibOnMiduV2 {
     val calimap3 = GroupToConfig(data3, session,calimodel)
     val calimap = calimap1 ++ calimap2 ++ calimap3
     val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal(model, califile)
-    saveFlatTextFileForDebug(model, califile)
+    val localPath = saveProtoToLocal(calimodel, califile)
+    saveFlatTextFileForDebug(calimodel, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
       println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$calimodel.mlm", conf))
