@@ -115,7 +115,7 @@ object LrCalibrationOnQtt {
         setThreshold(0.5).
         setRegParam(0.15).
         fit(trainingDF)
-      val predictions = lrModel.transform(testDF).select("label", "features", "prediction")
+      val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction")
 
         //使用BinaryClassificationEvaluator来评价我们的模型
         val evaluator = new BinaryClassificationEvaluator()
