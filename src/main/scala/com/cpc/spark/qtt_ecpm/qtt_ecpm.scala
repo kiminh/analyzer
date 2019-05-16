@@ -43,47 +43,47 @@ object qtt_ecpm {
 
     spark.sql("set hive.exec.dynamic.partition=true")
 //  每日更新前一天24qtt usertype 视频广告数据
-    val sql2 =
-      s"""
-         |select  distinct
-         |        searchid  ,
-         |        is_ocpc   ,
-         |        media_appsid  ,
-         |        adslot_id   ,
-         |        adclass     ,
-         |        adtype      ,
-         |        adsrc       ,
-         |        charge_type ,
-         |        unitid      ,
-         |        planid      ,
-         |        ideaid      ,
-         |        userid      ,
-         |        usertype    ,
-         |        uid         ,
-         |        city_level  ,
-         |        isshow      ,
-         |        isclick     ,
-         |        price       ,
-         |        bid         ,
-         |        exp_ctr     ,
-         |        raw_ctr     ,
-         |        exp_ctr*1.0*bid/100000        ,
-         |        day,
-         |        hour
-         |from    dl_cpc.cpc_basedata_union_events
-         |where   day=date_add('${date1}',2)
-         |and      adsrc in (0,1,28)
-         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
-         |and      adtype in (8,10)
-         |and     unitid > 0
-         |and     userid > 0
-         |and     is_ocpc=0
-         |
-       """.stripMargin
-    val tab00=spark.sql(sql2).persist()
-    tab00.show(10,false)
-    tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.qttusertype_ecpm_detail_mid_qbj")
-    println(s"dl_cpc.qttusertype_ecpm_detail_mid_qbj yesterday insert success")
+//    val sql2 =
+//      s"""
+//         |select  distinct
+//         |        searchid  ,
+//         |        is_ocpc   ,
+//         |        media_appsid  ,
+//         |        adslot_id   ,
+//         |        adclass     ,
+//         |        adtype      ,
+//         |        adsrc       ,
+//         |        charge_type ,
+//         |        unitid      ,
+//         |        planid      ,
+//         |        ideaid      ,
+//         |        userid      ,
+//         |        usertype    ,
+//         |        uid         ,
+//         |        city_level  ,
+//         |        isshow      ,
+//         |        isclick     ,
+//         |        price       ,
+//         |        bid         ,
+//         |        exp_ctr     ,
+//         |        raw_ctr     ,
+//         |        exp_ctr*1.0*bid/100000        ,
+//         |        day,
+//         |        hour
+//         |from    dl_cpc.cpc_basedata_union_events
+//         |where   day=date_add('${date1}',2)
+//         |and      adsrc in (0,1,28)
+//         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
+//         |and      adtype in (8,10)
+//         |and     unitid > 0
+//         |and     userid > 0
+//         |and     is_ocpc=0
+//         |
+//       """.stripMargin
+//    val tab00=spark.sql(sql2).persist()
+//    tab00.show(10,false)
+//    tab00.repartition(100).write.mode("overwrite").insertInto("dl_cpc.qttusertype_ecpm_detail_mid_qbj")
+//    println(s"dl_cpc.qttusertype_ecpm_detail_mid_qbj yesterday insert success")
     //-----阈值试算 traffic1----------
     val  threstab1 = spark.sql(
       s"""
@@ -112,7 +112,7 @@ object qtt_ecpm {
            |and     ideaid > 0
            |and     userid > 0
            |and     is_ocpc=0
-           |
+           |group by usertype
            |)  hd
            |on  hd.dt=nd.dt
            |and hd.usertype=nd.usertype
@@ -124,99 +124,85 @@ object qtt_ecpm {
     threstab1.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttall_ecpm_threshold_qbj")
       println(s"dl_cpc.cpc_qttall_ecpm_threshold_qbj traffic:${traffic1} insert success")
 
-//    //-----阈值试算 traffic2----------
-//    val  threstab2 = spark.sql(
-//      s"""
-//         |select   nd.adslot_id,nd.hour,nd.adclass,max(nd.ecpm) as threshold
-//         |from
-//         |(
-//         |select   '${date}' as dt,adslot_id, hour, adclass,ecpm,
-//         |         row_number() over (order by ecpm desc) as ecpm_rank
-//         |from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
-//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and      adsrc =1
-//         |and      media_appsid in ( '80000002')  --看详情页
-//         |and      adtype in (8,10)
-//         |--and      isshow=1
-//         |--and      adslot_id='7659152'
-//         |and      usertype=2
-//         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
-//         |and     unitid > 0
-//         |and     userid > 0
-//         |and     is_ocpc=0
-//         |)  nd
-//         |left join
-//         |(
-//         |   select  count(ecpm) as max_num,'${date}' as dt
-//         |   from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
-//         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and      adsrc =1
-//         |and      media_appsid in ( '80000002')  --看详情页
-//         |and      adtype in (8,10)
-//         |--and      isshow=1
-//         |--and      adslot_id='7659152'
-//         |and      usertype=2
-//         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
-//         |and     unitid > 0
-//         |and     userid > 0
-//         |and     is_ocpc=0
-//         |
-//           |)  hd
-//         |on  hd.dt=nd.dt
-//         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
-//         |group by nd.adslot_id,nd.hour,nd.adclass
-//       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s"""'${date}' as dt""",s"""${traffic2} as traffic""").
-//      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
-//    threstab2.show(10,false)
-//    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
-//    println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic2} insert success")
-//
-//    //-----阈值试算 traffic3----------
-//    val  threstab3 = spark.sql(
-//      s"""
-//         |select   nd.adslot_id,nd.hour,nd.adclass,max(nd.ecpm) as threshold
-//         |from
-//         |(
-//         |select   '${date}' as dt,adslot_id, hour, adclass,ecpm,
-//         |         row_number() over (order by ecpm desc) as ecpm_rank
-//         |from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
-//         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and      adsrc =1
-//         |and      media_appsid in ( '80000002')  --看详情页
-//         |and      adtype in (8,10)
-//         |--and      isshow=1
-//         |--and      adslot_id='7659152'
-//         |and      usertype=2
-//         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
-//         |and     unitid > 0
-//         |and     userid > 0
-//         |and     is_ocpc=0
-//         |)  nd
-//         |left join
-//         |(
-//         |   select  count(ecpm) as max_num,'${date}' as dt
-//         |   from    dl_cpc.cpc_qtt_ecpm_detail_mid_qbj
-//         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
-//         |and      adsrc =1
-//         |and      media_appsid in ( '80000002')  --看详情页
-//         |and      adtype in (8,10)
-//         |--and      isshow=1
-//         |--and      adslot_id='7659152'
-//         |and      usertype=2
-//         |and      (uid rlike '^\\w{14,16}' or uid like '________-____-____-____-____________')
-//         |and     unitid > 0
-//         |and     userid > 0
-//         |and     is_ocpc=0
-//         |
-//           |)  hd
-//         |on  hd.dt=nd.dt
-//         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
-//         |group by nd.adslot_id,nd.hour,nd.adclass
-//       """.stripMargin).selectExpr("adslot_id","hour","adclass","threshold",s"""'${date}' as dt""",s"""${traffic3} as traffic""").
-//      toDF("adslot_id","hour","adclass","threshold","dt","traffic")
-//    threstab3.show(10,false)
-//    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttzq_ecpm_threshold_qbj")
-//    println(s"dl_cpc.cpc_qttzq_ecpm_threshold_qbj traffic:${traffic3} insert success")
+    //-----阈值试算 traffic2----------
+    val  threstab2 = spark.sql(
+      s"""
+         |select   nd.adslot_id,nd.hour,nd.adclass,nd.usertype,max(nd.ecpm) as threshold
+         |from
+         |(
+         |select   '${date}' as dt,adslot_id, hour, adclass,usertype,ecpm,
+         |         row_number() over (order by ecpm desc) as ecpm_rank
+         |from    dl_cpc.qttusertype_ecpm_detail_mid_qbj
+         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc in (0,1,28)
+         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
+         |and      adtype in (8,10)
+         |and     ideaid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |)  nd
+         |left join
+         |(
+         |   select  count(ecpm) as max_num,usertype,'${date}' as dt
+         |   from    dl_cpc.qttusertype_ecpm_detail_mid_qbj
+         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc in (0,1,28)
+         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
+         |and      adtype in (8,10)
+         |and     ideaid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |group by usertype
+         |)  hd
+         |on  hd.dt=nd.dt
+         |and hd.usertype=nd.usertype
+         |where   nd.ecpm_rank>round(hd.max_num*${traffic2},0)
+         |group by nd.adslot_id,nd.hour,nd.adclass,nd.usertype
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","usertype","threshold",s"""'${date}' as dt""",s"""${traffic2} as traffic""").
+      toDF("adslot_id","hour","adclass","usertype","threshold","dt","traffic")
+    threstab2.show(10,false)
+    threstab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttall_ecpm_threshold_qbj")
+    println(s"dl_cpc.cpc_qttall_ecpm_threshold_qbj traffic:${traffic2} insert success")
+
+    //-----阈值试算 traffic3----------
+    val  threstab3 = spark.sql(
+      s"""
+         |select   nd.adslot_id,nd.hour,nd.adclass,nd.usertype,max(nd.ecpm) as threshold
+         |from
+         |(
+         |select   '${date}' as dt,adslot_id, hour, adclass,usertype,ecpm,
+         |         row_number() over (order by ecpm desc) as ecpm_rank
+         |from    dl_cpc.qttusertype_ecpm_detail_mid_qbj
+         |where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc in (0,1,28)
+         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
+         |and      adtype in (8,10)
+         |and     ideaid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |)  nd
+         |left join
+         |(
+         |   select  count(ecpm) as max_num,usertype,'${date}' as dt
+         |   from    dl_cpc.qttusertype_ecpm_detail_mid_qbj
+         |   where  dt>='${date1}' and dt<=date_add('${date1}',2)
+         |and      adsrc in (0,1,28)
+         |and      media_appsid in ('80000001', '80000002')  --看详情页、列表页
+         |and      adtype in (8,10)
+         |and     ideaid > 0
+         |and     userid > 0
+         |and     is_ocpc=0
+         |group by usertype
+         |)  hd
+         |on  hd.dt=nd.dt
+         |and hd.usertype=nd.usertype
+         |where   nd.ecpm_rank>round(hd.max_num*${traffic3},0)
+         |group by nd.adslot_id,nd.hour,nd.adclass,nd.usertype
+       """.stripMargin).selectExpr("adslot_id","hour","adclass","usertype","threshold",s"""'${date}' as dt""",s"""${traffic3} as traffic""").
+      toDF("adslot_id","hour","adclass","usertype","threshold","dt","traffic")
+    threstab3.show(10,false)
+    threstab3.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_qttall_ecpm_threshold_qbj")
+    println(s"dl_cpc.cpc_qttall_ecpm_threshold_qbj traffic:${traffic3} insert success")
 
     /*增加段子分组对应关系 */
     var taball=spark.read.table("dl_cpc.cpc_qttall_ecpm_threshold_qbj").filter(s"dt='${date}'").
