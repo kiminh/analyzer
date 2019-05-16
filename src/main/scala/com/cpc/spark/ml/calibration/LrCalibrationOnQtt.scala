@@ -70,7 +70,6 @@ object LrCalibrationOnQtt {
     val adslotidID = mutable.Map[String,Int]()
     var idxTemp = 0
     val adslotid_feature = adslotidArray.map{r => adslotidID.update(r.getAs[String]("adslotid"), idxTemp); idxTemp += 1; (("adslotid" + r.getAs[Int]("adslotid")), idxTemp -1)}
-    println(adslotid_feature.toString)
 
     val ideaidID = mutable.Map[Long,Int]()
     var idxTemp1 = 0
@@ -106,10 +105,11 @@ object LrCalibrationOnQtt {
         (label,els)
     }.filter(_ != null).toDF("label","els")
       .select($"label", SparseFeature(profile_num)($"els").alias("features"))
+    sample.show(5)
       val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
       val lrModel = new LogisticRegression().
-        setLabelCol("ctr").
+        setLabelCol("label").
         setFeaturesCol("features").
         setMaxIter(10000).
         setThreshold(0.5).
