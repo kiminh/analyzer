@@ -131,6 +131,6 @@ object LrCalibrationOnQtt {
       val new_els: Seq[(Int, Double)] = els.map(x => {
         (x.getInt(0), x.getDouble(1))
       })
-      Vectors.sparse(profile_num - 1, new_els)
+      Vectors.sparse(profile_num + 1, new_els)
   }
 }
