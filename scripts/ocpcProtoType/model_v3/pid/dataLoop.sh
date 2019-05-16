@@ -11,7 +11,7 @@ while [ ${h} -le $4 ]; do
         hour="${h}"
     fi
 
-    sh $1 $2 $hour $4
+    sh $1 $2 $hour $5
 
     let h=h+1
 done
