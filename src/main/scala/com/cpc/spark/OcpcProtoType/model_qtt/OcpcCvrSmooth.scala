@@ -83,8 +83,8 @@ object OcpcCvrSmooth {
       .withColumn("version", lit("qtt_demo"))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
@@ -151,6 +151,7 @@ object OcpcCvrSmooth {
       .na.fill(0.5, Seq("factor2", "factor3"))
       .na.fill(1.0, Seq("cali_value"))
       .withColumn("factor3", when(col("identifier") === "2041214", 0.3).otherwise(col("factor3")))
+      .withColumn("factor3", when(col("identifier") === "2083174", 0.7).otherwise(col("factor3")))
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
 //    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
