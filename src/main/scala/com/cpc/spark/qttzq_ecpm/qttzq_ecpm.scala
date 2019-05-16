@@ -322,10 +322,10 @@ object qttzq_ecpm {
     val checktab1=spark.sql(
       s"""
          |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+         |from    dl_cpc.cpc_qttzq_ecpm_datadis_qbj
          |where   dt= '${date}'
          |and     traffic='${traffic1}'
-         |group by cate
+         |group by dt,traffic,cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab1.show(10,false)
@@ -384,10 +384,10 @@ object qttzq_ecpm {
     val checktab2=spark.sql(
       s"""
          |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+         |from    dl_cpc.cpc_qttzq_ecpm_datadis_qbj
          |where   dt= '${date}'
          |and     traffic='${traffic2}'
-         |group by cate
+         |group by dt,traffic,cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab2.show(10,false)
@@ -447,10 +447,10 @@ object qttzq_ecpm {
     val checktab3=spark.sql(
       s"""
          |select  cate,sum(nd_query),sum(nd_consume),dt,traffic
-         |from    dl_cpc.duanzi_ecpm_datadis_qbj
+         |from    dl_cpc.cpc_qttzq_ecpm_datadis_qbj
          |where   dt= '${date}'
          |and     traffic='${traffic3}'
-         |group by cate
+         |group by dt,traffic,cate
       """.stripMargin).selectExpr("cate","query","consume","dt","traffic").
       toDF("cate","query","consume","dt","traffic")
     checktab3.show(10,false)
