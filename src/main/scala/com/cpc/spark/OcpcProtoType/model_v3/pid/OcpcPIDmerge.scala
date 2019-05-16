@@ -63,10 +63,23 @@ object OcpcPIDmerge {
       .select("unitid", "conversion_goal", "prev_k", "increment_k")
       .na.fill(1, Seq("prev_k"))
       .na.fill(0, Seq("increment_k"))
-      .withColumn("kvalue", col("prev_k") + col("increment_k"))
+      .withColumn("kvalue", udfCalculateKvalue(0.2, 5.0)(col("prev_k"), col("increment_k")))
 
     data
   }
+
+  def udfCalculateKvalue(lowerBound: Double, upperBound: Double) = udf((prevK: Double, incrementK: Double) => {
+    val result = prevK + incrementK
+    var updateK = 0.0
+    if (result < lowerBound) {
+      updateK = lowerBound
+    } else if (result > upperBound) {
+      updateK = upperBound
+    } else {
+      updateK = result
+    }
+    updateK
+  })
 
   def getPrevK(version: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
