@@ -3,7 +3,6 @@
 //import java.io.{File, FileOutputStream, PrintWriter}
 //import java.time.LocalDateTime
 //import java.time.format.DateTimeFormatter
-//
 //import com.cpc.spark.common.Utils
 //import com.cpc.spark.ml.common.{Utils => MUtils}
 //import com.typesafe.config.ConfigFactory
@@ -14,7 +13,6 @@
 //
 //
 //object LrCalibrationOnQtt {
-//
 //  def main(args: Array[String]): Unit = {
 //
 //    // parse and process input

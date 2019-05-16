@@ -13,7 +13,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import scala.collection.mutable
 
 object OcpcRegressionV2 {
-  val wz_discount = 0.9
+  val wz_discount = 0.7
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
