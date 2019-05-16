@@ -88,60 +88,6 @@ object LRTrain {
       .sql(queryRawDataFromUnionEvents)
       .filter(_.getAs[Int]("ideaid") > 0)
 
-    /*val ulog = getData(spark, "ctrdata_v1", ctrPathSep)
-      .filter(_.getAs[Int]("ideaid") > 0)
-      .randomSplit(Array(0.5, 0.5))(0)
-      .cache()*/
-
-    // trainLog :+= "union-events nums = %d".format(rawDataFromTrident.count())
-    // trainLog :+= "ulog NumPartitions = %d".format(rawDataFromTrident.rdd.getNumPartitions)
-
-    //qtt-list-parser3-hourly
-    /*model.clearResult()
-
-    val qttList = rawDataFromTrident
-      .filter(x =>
-        (
-          x.getAs[String]("media_appsid") == "80000001"
-            || x.getAs[String]("media_appsid") == "80000002")
-          && x.getAs[Int]("adslot_type") == 1
-      )
-
-    train(
-      spark,
-      "parser3",
-      "qtt-list-parser3-hourly",
-      getLeftJoinData(qttList, userAppIdx),
-      "qtt-list-parser3-hourly.lrm",
-      4e8
-    )
-
-    model.clearResult()
-    train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)
-
-    //qtt-content-parser3-hourly
-    model.clearResult()
-
-    val qttContent = rawDataFromTrident
-      .filter(x =>
-        (
-          x.getAs[String]("media_appsid") == "80000001"
-            || x.getAs[String]("media_appsid") == "80000002")
-          && x.getAs[Int]("adslot_type") == 2
-      )
-
-    train(
-      spark,
-      "parser3",
-      "qtt-content-parser3-hourly",
-      getLeftJoinData(qttContent, userAppIdx),
-      "qtt-content-parser3-hourly.lrm",
-      4e8
-    )
-
-    model.clearResult()
-    train(spark, "ctrparser3", "qtt-content-ctrparser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-ctrparser3-hourly.lrm", 4e8)*/
-
     //qtt-all-parser3-hourly
     model.clearResult()
 
@@ -160,56 +106,16 @@ object LRTrain {
       4e8
     )
 
-    //凌晨计算所有的模型
-    /*if (isMorning()) {
-      //external-all-parser2-hourly
-      model.clearResult()
-      val extAll = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      train(spark, "ctrparser2", "external-all-ctrparser2-hourly", extAll, "external-all-ctrparser2-hourly.lrm", 4e8)
-
-      //interact-all-parser3-hourly
-      model.clearResult()
-      val interactAll = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "ctrparser3", "interact-all-ctrparser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-ctrparser3-hourly.lrm", 4e8)
-
-      //按分区取数据
-      var cvrUlog = getData(spark, "cvrdata_v2", cvrPathSep).randomSplit(Array(0.5, 0.5))(0).cache()
-
-      //去掉长尾广告id
-      var minIdeaNum = 50
-      var ideaids = cvrUlog.select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
-
-      var sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
-      println(cvrUlog.count(), sample.count())
-      cvrUlog.unpersist()
-
-      var cvrUserAppIdx = getUidApp(spark, cvrPathSep)
-      initFeatureDict(spark, cvrPathSep)
-
-      trainLog :+= "cvr ulog nums = %d".format(sample.count())
-      trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
-      trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
-
-      var cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
-        .join(cvrUserAppIdx, Seq("uid"), "leftouter")
-        .cache()
-      sample.unpersist()
-
-      //cvr-qtt-all-parser3-hourly
-      model.clearResult()
-      train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
-
-      cvrQttAll.unpersist()
-    }*/
-
     Utils
       .sendMail(
         trainLog.mkString("\n"),
-        "TrainLog",
-        Seq("fanyiming@qutoutiao.net", "dongwei@qutoutiao.net", "tankaide@qutoutiao.net"/*"rd@aiclk.com"*/)
+        "[cpc-bs-q] qtt-bs-ctrparser4-daily 训练复盘",
+        Seq(
+          "fanyiming@qutoutiao.net",
+          "dongwei@qutoutiao.net",
+          "tankaide@qutoutiao.net",
+          "wangshixin@qutoutiao.net"
+        )
       )
 
     rawDataFromTrident.unpersist()
@@ -240,11 +146,27 @@ object LRTrain {
     println(inpath)
 
     import spark.implicits._
-    val uidApp = spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[WrappedArray[String]]("pkgs")))
+
+    val uidApp = spark
+      .read
+      .parquet(inpath)
+      .rdd
+      .map(x =>
+        (
+          x.getAs[String]("uid"),
+          x.getAs[WrappedArray[String]]("pkgs")
+        )
+      )
       .reduceByKey(_ ++ _)
-      .map(x => (x._1, x._2.distinct))
-      .toDF("uid", "pkgs").rdd.cache()
+      .map(x =>
+        (
+          x._1,
+          x._2.distinct
+        )
+      )
+      .toDF("uid", "pkgs")
+      .rdd
+      .cache()
 
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid", ids)
@@ -261,8 +183,14 @@ object LRTrain {
   def getTopApp(uidApp: RDD[Row], k: Int): Map[String, Int] = {
     var idx = 0
     val ids = mutable.Map[String, Int]()
+
     uidApp
-      .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_, 1)))
+      .flatMap(x =>
+        x.getAs[WrappedArray[String]]("pkgs")
+          .map(
+            (_, 1)
+          )
+      )
       .reduceByKey(_ + _)
       .sortBy(_._2, false)
       .toLocalIterator
@@ -273,10 +201,6 @@ object LRTrain {
           ids.update(id._1, idx)
       }
     ids.toMap
-  }
-
-  def isMorning(): Boolean = {
-    new SimpleDateFormat("HH").format(new Date().getTime) <= "17"
   }
 
   //用户安装列表对应的App idx
@@ -292,7 +216,7 @@ object LRTrain {
 
   //用户安装列表特征合并到原有特征
   def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame = {
-    data.join(userAppIdx, Seq("uid"), "leftouter")
+    data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
   def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
@@ -465,52 +389,6 @@ object LRTrain {
 
     spark.read.parquet(path: _*).coalesce(600)
   }
-
-  /*
-  def parseFeature(row: Row): Vector = {
-    val (ad, m, slot, u, loc, n, d, t) = unionLogToObject(row)
-    var svm = ""
-    getVector(ad, m, slot, u, loc, n, d, t)
-  }
-  */
-
-  /*def unionLogToObject(x: Row, seq: Seq[String]): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
-    val ad = AdInfo(
-      ideaid = x.getAs[Int]("ideaid"),
-      unitid = x.getAs[Int]("unitid"),
-      planid = x.getAs[Int]("planid"),
-      adtype = x.getAs[Int]("adtype"),
-      _class = x.getAs[Int]("adclass"),
-      showCount = x.getAs[Int]("user_req_ad_num")
-    )
-    val m = Media(
-      mediaAppsid = x.getAs[String]("media_appsid").toInt
-    )
-    val slot = AdSlot(
-      adslotid = x.getAs[String]("adslotid").toInt,
-      adslotType = x.getAs[Int]("adslot_type"),
-      pageNum = x.getAs[Int]("pagenum"),
-      bookId = x.getAs[String]("bookid")
-    )
-    val u = User(
-      sex = x.getAs[Int]("sex"),
-      age = x.getAs[Int]("age"),
-      installpkg = seq,
-      reqCount = x.getAs[Int]("user_req_num")
-    )
-    val n = Network(
-      network = x.getAs[Int]("network"),
-      isp = x.getAs[Int]("isp")
-    )
-    val loc = Location(
-      city = x.getAs[Int]("city")
-    )
-    val d = Device(
-      os = x.getAs[Int]("os"),
-      phoneLevel = x.getAs[Int]("phone_level")
-    )
-    (ad, m, slot, u, loc, n, d, x.getAs[Int]("timestamp") * 1000L)
-  }*/
 
   def getVectorParser1(x: Row): Vector = {
 
@@ -1332,7 +1210,7 @@ object LRTrain {
     if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
       els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
     }
-    i += 2 * 6 + 1
+    i += 2 * 6 + 1*/
 
     //user installed app
     val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
@@ -1340,7 +1218,7 @@ object LRTrain {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 1000 + 1*/
+    i += 1000 + 1
 
     try {
       Vectors.sparse(i, els)
