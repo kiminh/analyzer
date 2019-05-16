@@ -89,21 +89,21 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        var els = Seq[(Int, Double)]()
+        var features = Seq[(Int, Double)]()
         if (adslotid != null) {
-          els = els :+ (adslotidID(adslotid), 1.0)
+          features = features :+ (adslotidID(adslotid), 1.0)
         }
         if (ideaid != null) {
-          els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
+          features = features :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
         }
         if (raw_ctr != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
+          features = features :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
         }
         if (user_req_ad_num != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
+          features = features :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
         }
-        (label,els)
-    }.filter(_ != null).toDF("label", "els")
+        (label,features)
+    }.filter(_ != null).toDF("label", "features")
       val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
       val lrModel = new LogisticRegression().
