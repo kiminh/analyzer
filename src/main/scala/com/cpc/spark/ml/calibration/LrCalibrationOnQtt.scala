@@ -121,7 +121,7 @@ object LrCalibrationOnQtt {
         val evaluator = new BinaryClassificationEvaluator()
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
-      println("auc:%d".format(auc))
+      println("auc:%f".format(auc))
 
   }
 
