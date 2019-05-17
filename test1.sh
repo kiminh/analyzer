@@ -26,4 +26,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnMidu\
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/calibration-qtt-list-dnn-rawid-v4-postcali-2019-05-17-11.mlm 2019-05-17 13 calibration-qtt-list-dnn-rawid-v4-postcali
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/calibration-qtt-list-dnn-rawid-v4-postcali-2019-05-17-11.mlm 2019-05-17 13 qtt-list-dnn-rawid-v4-postcali
