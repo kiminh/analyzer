@@ -76,17 +76,18 @@ object LRTrain {
          |  , click_count as user_click_num
          |  , click_unit_count as user_click_unit_num
          |  , long_click_count as user_long_click_count
+         |  , day
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and isshow = 1
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 48))
+        .format(getSelectedHoursBefore(date, hour, 168))
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
-      .filter(_.getAs[Int]("ideaid") > 0)
+      // .filter(_.getAs[Int]("ideaid") > 0)
 
     //qtt-all-parser3-hourly
     model.clearResult()
@@ -96,6 +97,12 @@ object LRTrain {
         Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
           && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
       )
+      .randomSplit(
+        Array(0.04, 0.96), // 7G vs. 40M
+        new Date().getTime // seed
+      )(0)
+
+    println(qttAll.count())
 
     train(
       spark,
@@ -241,8 +248,15 @@ object LRTrain {
       testRate = 1e7 / num
     }
 
-    val Array(train, test, tmp) = ulog
-      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
+    /*val Array(train, test, tmp) = ulog
+      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)*/
+
+    val train = ulog
+      .filter(x => x.getAs[String]("day") != "2019-05-16")
+
+    val test = ulog
+      .filter(x => x.getAs[String]("day") == "2019-05-16")
+
     ulog.unpersist()
 
 
