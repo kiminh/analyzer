@@ -53,7 +53,7 @@ object LrCalibrationOnQtt {
 
     // get union log
     val sql = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num
+                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num, hour
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
@@ -80,7 +80,7 @@ object LrCalibrationOnQtt {
 
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
-    val profile_num = adslotid_sum + ideaid_sum + 2
+    val profile_num = adslotid_sum + ideaid_sum + 3
 
     val sample = log.rdd.map {
       r =>
@@ -89,6 +89,7 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+        val hour = r.getAs[String]("hour").toInt
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
           els = els :+ (adslotidID(adslotid), 1.0)
@@ -101,6 +102,9 @@ object LrCalibrationOnQtt {
         }
         if (user_req_ad_num != null) {
           els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
+        }
+        if (hour != null) {
+          els = els :+ (adslotid_sum + ideaid_sum + 3 , hour)
         }
         (label,els)
     }.filter(_ != null).toDF("label","els")
