@@ -122,6 +122,7 @@ object LrCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql2")
     val trainingDF = sample
+    trainingDF.write.mode("overwrite").saveAsTable("test.wy00")
 
     val testsample = session.sql(sql2)
     val testDF= testsample.rdd.map {
