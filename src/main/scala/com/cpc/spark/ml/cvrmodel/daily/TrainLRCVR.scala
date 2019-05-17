@@ -112,6 +112,7 @@ object TrainLRCVR {
            |    and unitid > 0
            |    and media_appsid in ('80000001', '80000002')
            |    and adslot_type in (1, 2)
+           |    and user_cvr_threshold > 0
            |),
            |conversion as (
            |  select
