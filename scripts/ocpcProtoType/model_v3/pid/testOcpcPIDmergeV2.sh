@@ -19,3 +19,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.OcpcProtoType.model_v3.pid.OcpcPIDmerge \
     /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 qtt $3 $4
+
+
+#qtt_pidv1: 24h
+#qtt_pidv2: 12h
