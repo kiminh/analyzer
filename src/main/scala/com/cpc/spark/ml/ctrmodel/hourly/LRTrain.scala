@@ -80,6 +80,8 @@ object LRTrain {
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and isshow = 1
+         |  and media_appsid in ("80000001", "80000002")
+         |  and adslot_type in (1, 2)
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
@@ -87,16 +89,10 @@ object LRTrain {
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
-      // .filter(_.getAs[Int]("ideaid") > 0)
 
-    //qtt-all-parser3-hourly
     model.clearResult()
 
     val qttAll = rawDataFromTrident
-      .filter(x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
-          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
-      )
       .randomSplit(
         Array(0.04, 0.96), // 7G vs. 40M
         new Date().getTime // seed
@@ -110,6 +106,7 @@ object LRTrain {
       "qtt-bs-ctrparser4-daily",
       getLeftJoinData(qttAll, userAppIdx),
       "qtt-bs-ctrparser4-daily.lrm",
+      date,
       4e8
     )
 
@@ -221,50 +218,49 @@ object LRTrain {
     }.toDF("uid", "appIdx")
   }
 
-  //用户安装列表特征合并到原有特征
+  // 用户安装列表特征合并到原有特征
   def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame = {
     data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(
+             spark: SparkSession,
+             parser: String,
+             name: String,
+             df: DataFrame,
+             destfile: String,
+             dateForTesting: String,
+             numDataToFeed: Double
+           ): Unit = {
+
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    val num = ulog.count().toDouble
+    val num = df.count().toDouble
     println("sample num", num)
     trainLog :+= "total size %.0f".format(num)
 
     // 最多n条训练数据
     var trainRate = 0.9
-    if (num * trainRate > n) {
-      trainRate = n / num
+    if (num * trainRate > numDataToFeed) {
+      trainRate = numDataToFeed / num
     }
 
-    // 最多1000w条测试数据
-    var testRate = 0.09
-    if (num * testRate > 1e7) {
-      testRate = 1e7 / num
-    }
+    val train = df
+      .filter(x => x.getAs[String]("day") != dateForTesting)
 
-    /*val Array(train, test, tmp) = ulog
-      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)*/
+    val test = df
+      .filter(x => x.getAs[String]("day") == dateForTesting)
 
-    val train = ulog
-      .filter(x => x.getAs[String]("day") != "2019-05-16")
-
-    val test = ulog
-      .filter(x => x.getAs[String]("day") == "2019-05-16")
-
-    ulog.unpersist()
-
+    df.unpersist()
 
     val tnum = train.count().toDouble
     val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
     val nnum = tnum - pnum
 
-    //保证训练数据正负比例 1:9
+    // 保证训练数据正负比例 1:9
     val rate = (pnum * 9 / nnum * 1000).toInt
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
@@ -278,7 +274,6 @@ object LRTrain {
 
     model.printLrTestLog()
     trainLog :+= model.getLrTestLog()
-
 
     val testNum = sampleTest.count().toDouble * 0.9
     val minBinSize = 1000d
@@ -308,16 +303,11 @@ object LRTrain {
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
     model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
+    // update trainLog.
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
     trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
     trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
-
-    /*trainLog :+= "\n-------update server data------"
-    if (destfile.length > 0) {
-      trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
-      MUtils.updateMlcppOnlineData(mlfilepath, "/home/work/mlcpp/data/" + destfile, ConfigFactory.load())
-    }*/
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
@@ -330,10 +320,6 @@ object LRTrain {
           p.map {
             u =>
               val vec = parser match {
-                case "parser1" =>
-                  getVectorParser1(u)
-                case "parser2" =>
-                  getVectorParser2(u)
                 case "parser3" =>
                   getVectorParser3(u)
                 case "ctrparser2" =>
@@ -402,224 +388,6 @@ object LRTrain {
     }
 
     spark.read.parquet(path: _*).coalesce(600)
-  }
-
-  def getVectorParser1(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    //els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    //i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-  def getVectorParser2(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //user_req_ad_num
-    var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12 + 1
-
-    //user_req_num
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
   }
 
 
@@ -1335,7 +1103,7 @@ object LRTrain {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     val cal = Calendar.getInstance()
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
-    for (t <- 0 to hours) {
+    for (t <- 0 until hours-1) {
       if (t > 0) {
         cal.add(Calendar.HOUR, -1)
       }
