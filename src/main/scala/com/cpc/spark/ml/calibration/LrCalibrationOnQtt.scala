@@ -12,7 +12,7 @@ import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer, VectorAssemble
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.functions.udf
-
+import org.apache.spark.sql.functions._
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 
@@ -175,10 +175,17 @@ object LrCalibrationOnQtt {
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
       println("auc:%f".format(auc))
-
+      val p1= predictions.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("rawPrediction")).alias("ectr"))
+    val ctr = p1.first().getAs[Double]("ctr")
+    val ectr = p1.first().getAs[Double]("ectr")
+    println("ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr, ctr/ectr))
     val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) score")
     val originalauc = CalcMetrics.getAuc(spark,modelData)
     println("originalauc:%f".format(originalauc))
+    val p2= predictions.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("rawPrediction")).alias("ectr"))
+    val ctr2 = p2.first().getAs[Double]("ctr")
+    val ectr2 = p2.first().getAs[Double]("ectr")
+    println("ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2, ctr2/ectr2))
 
   }
 
