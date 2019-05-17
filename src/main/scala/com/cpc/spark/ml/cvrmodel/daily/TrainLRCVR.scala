@@ -1,11 +1,9 @@
-package com.cpc.spark.ml.ctrmodel.hourly
+package com.cpc.spark.ml.cvrmodel.daily
 
-import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.spark.sql.SaveMode
-import org.apache.spark.storage.StorageLevel
 
 import scala.collection.immutable
 import scala.sys.process._
@@ -26,220 +24,202 @@ import scala.util.Random
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190511).
   */
-object GenTrain {
+object TrainLRCVR {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
-  // fym 190428.
-  def getSelectedHoursBefore(
+  private var dict: mutable.Map[String, Map[Int, Int]] = mutable.Map[String, Map[Int, Int]]()
+  private val dictStr: mutable.Map[String, Map[String, Int]] = mutable.Map[String, Map[String, Int]]()
+
+  val dictNames: Seq[String] = Seq(
+    "mediaid",
+    "planid",
+    "unitid",
+    "ideaid",
+    "slotid",
+    "adclass",
+    "cityid"
+  )
+
+
+  def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
+
+    val spark: SparkSession = model
+      .initSpark("[cpc-model] linear regression cvr v4")
+    // 按分区取数据
+    val ctrPathSep = getPathSeq(args(0).toInt)
+    //    val cvrPathSep = getPathSeq(args(1).toInt)
+    val cvrDays = args(1).toInt
+
+    val date = args(2)
+    val cachePrefix = "/tmp/cvr_cache/"
+
+    initFeatureDict(spark, ctrPathSep)
+
+    val minIdeaNum = 50
+
+    val dates = nDayBefore(date, cvrDays)
+    val dfPath = cachePrefix + date + ".parquet"
+    val idPath = cachePrefix + date + "apIndex" + ".parquet"
+
+    s"hdfs dfs -rm -r ${dfPath}" !
+
+    s"hdfs dfs -rm -r ${idPath}" !
+
+
+    val userAppIdx = getUidApp(spark, ctrPathSep)
+    println("LRCVR")
+    println(s"save data to $dfPath")
+    dates.foreach(dt => {
+      val trident_date_filter = getTridentDayFilter(dt)
+      val convertion_date_filter = getConvertionDayFilter(dt)
+      val queryRawDataFromUnionEvents =
+        s"""with features as (
+           |  select
+           |    searchid,
+           |    sex,
+           |    age,
+           |    os,
+           |    isp,
+           |    network,
+           |    city,
+           |    media_appsid,
+           |    phone_level,
+           |    `timestamp`,
+           |    adtype,
+           |    planid,
+           |    unitid,
+           |    ideaid,
+           |    adclass,
+           |    adslot_id as adslotid,
+           |    adslot_type,
+           |    interact_pagenum as pagenum,
+           |    interact_bookid as bookid,
+           |    brand_title,
+           |    user_req_ad_num,
+           |    user_req_num,
+           |    uid,
+           |    click_count as user_click_num,
+           |    click_unit_count as user_click_unit_num,
+           |    long_click_count as user_long_click_count
+           |  from
+           |    dl_cpc.cpc_basedata_union_events
+           |  where
+           |     $trident_date_filter
+           |    and isclick = 1
+           |    and ideaid > 0
+           |    and unitid > 0
+           |    and media_appsid in ('80000001', '80000002')
+           |    and adslot_type in (1, 2)
+           |),
+           |conversion as (
+           |  select
+           |    searchid,
+           |    ideaid,
+           |    1 as label
+           |  from
+           |    dl_cpc.dm_conversion_detail
+           |  where
+           |     $convertion_date_filter
+           |)
+           |select
+           |  features.*,
+           |  case
+           |    when conversion.label is not NULL then 1
+           |    else 0
+           |  end as label
+           |from
+           |  features
+           |  left join conversion on features.searchid = conversion.searchid
+           |  and features.ideaid = conversion.ideaid
+         """.stripMargin
+      val df = spark
+        .sql(queryRawDataFromUnionEvents)
+      var ideaids = df.select("ideaid")
+        .groupBy("ideaid")
+        .count()
+        .where("count > %d".format(minIdeaNum))
+
+      var sample = df.join(ideaids, Seq("ideaid")).cache()
+
+      val joined = getLeftJoinData(sample, userAppIdx)
+      joined.write.mode(SaveMode.Append).parquet(dfPath)
+      joined.unpersist()
+      ideaids.unpersist()
+      df.unpersist()
+    })
+
+    println("write complete")
+    model.clearResult()
+    val allData = spark.sqlContext.read.parquet(dfPath)
+    train(spark, "ctrparser4", "qtt-bs-cvrparser4-daily", allData, "qtt-bs-cvrparser4-daily.lrm", 1e8, args(1).toString)
+    allData.unpersist()
+    println(trainLog.mkString("\n"))
+    println("train complete")
+    s"hdfs dfs -rm -r $idPath" !
+
+    s"hdfs dfs -rm -r $dfPath" !
+
+  }
+
+  /**
+    * 取trident表的日期过滤条件
+    * 现在仅开始日期
+    * @param date 开始日期
+    * @return
+    */
+  def getTridentDayFilter(
                               date: String
                             ): String = {
-    val dateHourList = ListBuffer[String]()
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-    val cal = Calendar.getInstance()
-    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 1, 0, 0)
-    cal.add(Calendar.DAY_OF_MONTH,-4)
-    val str = dateFormat.format(cal.getTime)
-
-    s"day ='$str'"
+    s"day ='$date'"
   }
-  def getConvertionSelectedHoursBefore(
+
+  /**
+    * 取转化表的日期过滤条件
+    * 包括开始日期和后三天
+    * @param date 开始日期
+    * @return
+    */
+  def getConvertionDayFilter(
                                         date: String
                                       ): String = {
     val dateHourList = ListBuffer[String]()
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
 
-    val dts = 1.to(4).map(t=>{
+    val dts = 0.to(3).map(t => {
       val cal = Calendar.getInstance()
       cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 1, 0, 0)
-      cal.add(Calendar.DAY_OF_MONTH,-t)
+      cal.add(Calendar.DAY_OF_MONTH, t)
       dateFormat.format(cal.getTime)
     })
-    val dtString = dts.map(t=>s"'$t'").mkString(",")
-    s"`date` in ($dtString)"
+    val dtString = dts.map(t => s"'$t'").mkString(",")
+    s"`dt` in ($dtString)"
   }
 
-  def nDayBefore(dateStart:String,n:Int):immutable.IndexedSeq[String]={
+  /**
+    * 取前n天的日期字符串
+    * 自前一天起共n天
+    * @param dateStart 开始日期
+    * @param n 多少天
+    * @return 日期字符串
+    */
+  def nDayBefore(dateStart: String, n: Int): immutable.IndexedSeq[String] = {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-    1.to(n).map(c=>{
+    1.to(n).map(c => {
       val cal = Calendar.getInstance()
-      cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt,1, 0, 0)
-      cal.add(Calendar.DAY_OF_MONTH,-c)
+      cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 1, 0, 0)
+      cal.add(Calendar.DAY_OF_MONTH, -c)
       dateFormat.format(cal.getTime)
     })
 
   }
-  case class IdCC(k:String,kk:String,v:Int)
-  def main(args: Array[String]): Unit = {
-    Logger.getRootLogger.setLevel(Level.WARN)
-
-    val spark: SparkSession = model
-      .initSpark("[cpc-model] linear regression v5.0 train_file_gen")
-    import spark.sqlContext.implicits._
-    // 按分区取数据
-    val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
-    val cvrDays = args(1).toInt
-
-    val date = "2019-05-14"
-    val prefix = "/tmp/cvr_data_wsx/"
-
-    val hour = args(3)
-
-    initFeatureDict(spark, ctrPathSep)
-
-    var minIdeaNum = 50
-
-    val dates = nDayBefore(date,args(1).toInt)
-    val dfPath = prefix+args(1).toString
-    val idPath = prefix+args(1)+"apIndex"
-
-    if((s"hadoop fs -test -e $dfPath" !)!=0){
-      println(s"file $dfPath not exist")
-      val userAppIdx = getUidApp(spark, ctrPathSep)
-
-      println(s"save data to $dfPath")
-      dates.foreach(dt=>{
-        val trident_date_filter = getSelectedHoursBefore(dt)
-        val convertion_date_filter = getConvertionSelectedHoursBefore(dt)
-        val queryRawDataFromUnionEvents =
-          s"""
-              with features as (
-             |  select
-             |    searchid,
-             |    sex,
-             |    age,
-             |    os,
-             |    isp,
-             |    network,
-             |    city,
-             |    media_appsid,
-             |    phone_level,
-             |    `timestamp`,
-             |    adtype,
-             |    planid,
-             |    unitid,
-             |    ideaid,
-             |    adclass,
-             |    adslot_id as adslotid,
-             |    adslot_type,
-             |    interact_pagenum as pagenum,
-             |    interact_bookid as bookid,
-             |    brand_title,
-             |    user_req_ad_num,
-             |    user_req_num,
-             |    uid,
-             |    click_count as user_click_num,
-             |    click_unit_count as user_click_unit_num,
-             |    long_click_count as user_long_click_count
-             |  from
-             |    dl_cpc.cpc_basedata_union_events
-             |  where $trident_date_filter
-             |    and isclick = 1
-             |    and ideaid > 0
-             |    and unitid > 0
-             |    and media_appsid in ('80000001', '80000002')
-             |    and adslot_type in (1, 2)
-             |),
-             |raw_conversion as (
-             |  select
-             |    searchid,
-             |    ideaid,
-             |    label
-             |  from
-             |    dl_cpc.ml_cvr_feature_v1
-             |  where $convertion_date_filter
-             |    and ideaid > 0
-             |    and unitid > 0
-             |  union
-             |  select
-             |    searchid,
-             |    ideaid,
-             |    label
-             |  from
-             |    dl_cpc.ml_cvr_feature_v2
-             |  where $convertion_date_filter
-             |    and ideaid > 0
-             |    and unitid > 0
-             |),
-             |conversion as (
-             |  select
-             |    searchid,
-             |    ideaid,
-             |    max(label) as label
-             |  from
-             |    raw_conversion
-             |  group by
-             |    searchid,
-             |    ideaid
-             |)
-             |select
-             |  features.*,
-             |  conversion.label as label
-             |from
-             |  features
-             |
- |  join conversion on features.searchid = conversion.searchid
-             |  and features.ideaid = conversion.ideaid
-             |  and conversion.label is not NULL
-             |
-       """.stripMargin
-        val df = spark
-          .sql(queryRawDataFromUnionEvents)
-        var ideaids = df.select("ideaid")
-          .groupBy("ideaid")
-          .count()
-          .where("count > %d".format(minIdeaNum))
-
-        var sample = df.join(ideaids, Seq("ideaid")).cache()
-
-        val joined =getLeftJoinData(sample, userAppIdx)
-        joined.write.mode(SaveMode.Append).parquet(dfPath)
-        joined.unpersist()
-        ideaids.unpersist()
-        df.unpersist()
-      })
-      val index = spark.sparkContext.parallelize(dictStr.flatMap({case (k,v)=>{
-        v.map({case(kk,vv)=>
-          IdCC(k,kk,vv)
-        })
-      }}).toSeq).toDF()
-      index.write.parquet(idPath)
-      userAppIdx.unpersist()
-
-    }else{
-      println("parquet exists,just train")
-      val ds: Map[String, Map[String, Int]] =spark.sqlContext.read.parquet(idPath).map(row => {
-        IdCC(row.getString(row.fieldIndex("k")), row.getString(row.fieldIndex("kk")), row.getInt(row.fieldIndex("v")))
-      }).collect.groupBy(_.k).map({case (k,v)=>
-        k->v.map(obj=>obj.kk->obj.v).toMap
-      })
-      ds.foreach({case (k,v)=>
-
-        dictStr.update(k,v)
-      })
-
-
-    }
-
-
-    println("write complete")
-    model.clearResult()
-    val allData = spark.sqlContext.read.parquet(dfPath)
-    train(spark, "ctrparser4", "qtt-bs-cvrparser4-hourly", allData, "qtt-bs-cvrparser4-hourly.lrm", 1e8,args(1).toString)
-
-
-
-    allData.unpersist()
-    println("train complete")
-  }
-
 
   def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -((days+1) * 24 + 2))
+    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
     for (n <- 1 to days * 24) {
@@ -313,7 +293,7 @@ object GenTrain {
     data.join(userAppIdx, Seq("uid"), "leftouter")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double,prefix:String=""): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double, prefix: String = ""): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -361,29 +341,42 @@ object GenTrain {
     trainLog :+= model.getLrTestLog()
 
 
-//    val testNum = sampleTest.count().toDouble * 0.9
-//    val minBinSize = 1000d
-//    var binNum = 1000d
-//    if (testNum < minBinSize * binNum) {
-//      binNum = testNum / minBinSize
-//    }
+    val testNum = sampleTest.count().toDouble * 0.9
+    val minBinSize = 1000d
+    var binNum = 100d
+    if (testNum < minBinSize * binNum) {
+      binNum = testNum / minBinSize
+    }
 
-//    model.runIr(binNum.toInt, 0.95)
+    model.runIr(binNum.toInt, 0.95)
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
+
+    println("check before save")
+    println("check dict:")
+    dict.foreach({ case (k, v) =>
+      println(s"$k:${v.size}")
+    })
+    println(s"check dict_str:${dictStr.size}")
+
+
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_${prefix}/${name}_$date")
-//    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_${prefix}/${name}_$date")
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap,withIR = false)
-    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap,withIR = false)
+    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_${prefix}/${name}_$date")
+    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
+    val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
+    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
+    // for go-live.
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
-    trainLog :+= "protobuf pack %s".format(lrfilepath)
-    val fw = new FileWriter(s"/tmp/lr_cvr_${prefix}.log")
-    fw.write(trainLog.mkString("\n"))
-    fw.close()
-
+    trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
+    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
+    trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
+    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
@@ -414,17 +407,6 @@ object GenTrain {
       }
   }
 
-  var dict = mutable.Map[String, Map[Int, Int]]()
-  val dictNames = Seq(
-    "mediaid",
-    "planid",
-    "unitid",
-    "ideaid",
-    "slotid",
-    "adclass",
-    "cityid"
-  )
-  var dictStr = mutable.Map[String, Map[String, Int]]()
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
 
@@ -451,7 +433,6 @@ object GenTrain {
       trainLog :+= "%s=%d".format(name, ids.size)
     }
   }
-
 
 
   def getVectorParser1(x: Row): Vector = {
