@@ -66,17 +66,21 @@ object LrCalibrationOnQtt {
 
     val adslotidArray = log.select("adslotid").distinct().collect()
     val ideaidArray = log.select("ideaid").distinct().collect()
+    val hourArray = log.select("hour").distinct().collect()
 
     val adslotidID = mutable.Map[String,Int]()
     var idxTemp = 0
-    val adslotid_feature = adslotidArray.map{r => adslotidID.update(r.getAs[String]("adslotid"), idxTemp); idxTemp += 1; (("adslotid" + r.getAs[Int]("adslotid")), idxTemp -1)}
+    val adslotid_feature = adslotidArray.map{r => adslotidID.update(r.getAs[String]("adslotid"), idxTemp); idxTemp += 1; (( r.getAs[Int]("adslotid")), idxTemp -1)}
 
     val ideaidID = mutable.Map[Long,Int]()
     var idxTemp1 = 0
-    val ideaid_feature = ideaidArray.map{r => ideaidID.update(r.getAs[Long]("ideaid"), idxTemp1); idxTemp1 += 1; (("ideaid" + r.getAs[Int]("ideaid")), idxTemp1 -1)}
+    val ideaid_feature = ideaidArray.map{r => ideaidID.update(r.getAs[Long]("ideaid"), idxTemp1); idxTemp1 += 1; (( r.getAs[Int]("ideaid")), idxTemp1 -1)}
 
-    val feature_profile = adslotid_feature ++ideaid_feature
-    val feature_table =  spark.sparkContext.parallelize(feature_profile).toDF("feature", "index")
+//    val hourID = mutable.Map[String,Int]()
+//    var idxTemp2 = 0
+//    val hourid_feature = hourArray.map{r => hourID.update(r.getAs[String]("hour"), idxTemp1); idxTemp2 += 1; (( r.getAs[Int]("hour")), idxTemp2 -1)}
+
+    val feature_profile = adslotid_feature ++ ideaid_feature
 
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
