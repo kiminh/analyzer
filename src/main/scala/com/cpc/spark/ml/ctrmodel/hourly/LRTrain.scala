@@ -85,7 +85,7 @@ object LRTrain {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 144))
+        .format(getSelectedHoursBefore(date, hour, 168))
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
@@ -98,7 +98,7 @@ object LRTrain {
         new Date().getTime // seed
       )(0)
 
-    println(qttAll.count())
+    // println(qttAll.count())
 
     train(
       spark,
@@ -238,15 +238,15 @@ object LRTrain {
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    val num = df.count().toDouble
-    println("sample num", num)
-    trainLog :+= "total size %.0f".format(num)
+    // val num = df.count().toDouble
+    // println("sample num", num)
+    // trainLog :+= "total size %.0f".format(num)
 
     // 最多n条训练数据
-    var trainRate = 0.9
+    /*var trainRate = 0.9
     if (num * trainRate > numDataToFeed) {
       trainRate = numDataToFeed / num
-    }
+    }*/
 
     val train = df
       .filter(x => x.getAs[String]("day") != dateForTesting)
