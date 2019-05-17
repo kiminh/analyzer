@@ -85,7 +85,7 @@ object LRTrain {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 168))
+        .format(getSelectedHoursBefore(date, hour, 72))
 
     val rawDataFromTrident = spark
       .sql(queryRawDataFromUnionEvents)
@@ -94,7 +94,7 @@ object LRTrain {
 
     val qttAll = rawDataFromTrident
       .randomSplit(
-        Array(0.04, 0.96), // 7G vs. 40M
+        Array(0.14, 0.86), // 3G vs. 40M
         new Date().getTime // seed
       )(0)
 
