@@ -126,8 +126,6 @@ object LrCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql2")
     val trainingDF = sample
-    trainingDF.write.mode("overwrite").saveAsTable("test.wy00")
-
     val testsample = session.sql(sql2)
     val testDF= testsample.rdd.map {
       r =>
@@ -169,6 +167,7 @@ object LrCalibrationOnQtt {
         fit(trainingDF)
       val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction")
       predictions.show(5)
+      predictions.write.mode("overwrite").saveAsTable("test.wy00")
 
         //使用BinaryClassificationEvaluator来评价我们的模型
         val evaluator = new BinaryClassificationEvaluator()
