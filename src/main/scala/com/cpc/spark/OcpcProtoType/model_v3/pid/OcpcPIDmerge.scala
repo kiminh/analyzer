@@ -36,9 +36,9 @@ object OcpcPIDmerge {
 
     val data = updateK(prevK, incrementK, ocpcRecord, date, hour, spark)
 
-    data
+//    data
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
 
     val result = data
       .select("unitid", "conversion_goal", "kvalue")
