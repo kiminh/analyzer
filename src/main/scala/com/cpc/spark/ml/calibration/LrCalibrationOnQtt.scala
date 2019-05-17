@@ -125,9 +125,8 @@ object LrCalibrationOnQtt {
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql2")
-    val trainingDF = sample
     val testsample = session.sql(sql2)
-    val testDF= testsample.rdd.map {
+    val test= testsample.rdd.map {
       r =>
         val label = r.getAs[Long]("isclick").toInt
         val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
@@ -154,9 +153,9 @@ object LrCalibrationOnQtt {
         (label,els)
     }.filter(_ != null).toDF("label","els")
       .select($"label", SparseFeature(profile_num)($"els").alias("features"))
-    testDF.show(5)
+    test.show(5)
 
-//      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
+      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
       val lrModel = new LogisticRegression().
         setLabelCol("label").
@@ -174,6 +173,7 @@ object LrCalibrationOnQtt {
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
       println("auc:%f".format(auc))
+    val newprediction = lrModel.transform(test).select("label","probability")
       val p1= predictions.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("rawPrediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
