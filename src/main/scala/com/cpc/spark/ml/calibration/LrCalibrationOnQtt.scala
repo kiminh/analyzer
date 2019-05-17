@@ -3,7 +3,7 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.common.Utils
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
@@ -118,7 +118,9 @@ object LrCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql2")
     val trainingDF = sample
-    val testDF= session.sql(sql2).rdd.map {
+
+    val testsample = session.sql(sql2)
+    val testDF= testsample.rdd.map {
       r =>
         val label = r.getAs[Long]("isclick").toInt
         val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
@@ -164,6 +166,10 @@ object LrCalibrationOnQtt {
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
       println("auc:%f".format(auc))
+
+    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) score")
+    val originalauc = CalcMetrics.getAuc(spark,modelData)
+    println("originalauc:%f".format(originalauc))
 
   }
 
