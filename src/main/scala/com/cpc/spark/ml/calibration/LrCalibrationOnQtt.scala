@@ -106,7 +106,48 @@ object LrCalibrationOnQtt {
     }.filter(_ != null).toDF("label","els")
       .select($"label", SparseFeature(profile_num)($"els").alias("features"))
     sample.show(5)
-      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
+
+    val sql2 = s"""
+                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num
+                 | from dl_cpc.slim_union_log
+                 | where dt = '2019-05-16' and hour ='13'
+                 | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel')
+                 | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
+       """.stripMargin
+    println(s"sql:\n$sql2")
+    val trainingDF = sample
+    val testDF= session.sql(sql2).rdd.map {
+      r =>
+        val label = r.getAs[Long]("isclick").toInt
+        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+        val adslotid = r.getAs[String]("adslotid")
+        val ideaid = r.getAs[Long]("ideaid")
+        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+        var els = Seq[(Int, Double)]()
+        if (adslotid != null) {
+          if (adslotidID.contains(adslotid)){
+            els = els :+ (adslotidID(adslotid), 1.0)
+          }
+        }
+        if (ideaid != null) {
+          if (ideaidID.contains(ideaid)){
+            els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
+          }
+        }
+        if (raw_ctr != null) {
+          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
+        }
+        if (user_req_ad_num != null) {
+          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
+        }
+        (label,els)
+    }.filter(_ != null).toDF("label","els")
+      .select($"label", SparseFeature(profile_num)($"els").alias("features"))
+    testDF.show(5)
+
+//      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
       val lrModel = new LogisticRegression().
         setLabelCol("label").
