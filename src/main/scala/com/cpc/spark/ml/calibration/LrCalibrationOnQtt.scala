@@ -163,7 +163,7 @@ object LrCalibrationOnQtt {
       val lrModel = new LogisticRegression().
         setLabelCol("label").
         setFeaturesCol("features").
-        setMaxIter(10000).
+        setMaxIter(200).
         setThreshold(0.5).
         setRegParam(0.15).
         fit(trainingDF)
