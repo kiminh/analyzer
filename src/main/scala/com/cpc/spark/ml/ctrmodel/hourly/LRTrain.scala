@@ -238,15 +238,15 @@ object LRTrain {
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    // val num = df.count().toDouble
-    // println("sample num", num)
-    // trainLog :+= "total size %.0f".format(num)
+    val num = df.count().toDouble
+    println("sample num", num)
+    trainLog :+= "total size %.0f".format(num)
 
     // 最多n条训练数据
-    /*var trainRate = 0.9
+    var trainRate = 0.9
     if (num * trainRate > numDataToFeed) {
       trainRate = numDataToFeed / num
-    }*/
+    }
 
     val train = df
       .filter(x => x.getAs[String]("day") != dateForTesting)
@@ -277,7 +277,7 @@ object LRTrain {
 
     val testNum = sampleTest.count().toDouble * 0.9
     val minBinSize = 1000d
-    var binNum = 1000d
+    var binNum = 100d
     if (testNum < minBinSize * binNum) {
       binNum = testNum / minBinSize
     }
