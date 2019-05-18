@@ -174,7 +174,15 @@ object LrCalibrationOnQtt {
         val auc = evaluator.evaluate(predictions)
       println("auc:%f".format(auc))
     val newprediction = lrModel.transform(test).select("label","probability")
-      val p1= predictions.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("rawPrediction")).alias("ectr"))
+
+    //取出预测为1的probability
+    val reseult2 = newprediction.map(line => {
+      val label = line.get(line.fieldIndex("label"))
+      val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
+      val y = dense(1).toString
+      (label,y)
+    }).toDF("label","prediction")
+      val p1= reseult2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
     println("ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr, ctr/ectr))
