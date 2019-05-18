@@ -177,9 +177,9 @@ object LrCalibrationOnQtt {
 
     //取出预测为1的probability
     val reseult2 = newprediction.map(line => {
-      val label = line.get(line.fieldIndex("label"))
+      val label = line.get(line.fieldIndex("label")).toString.toInt
       val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
-      val y = dense(1).toString
+      val y = dense(1).toString.toDouble * 1e6d.toInt
       (label,y)
     }).toDF("label","prediction")
       val p1= reseult2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
