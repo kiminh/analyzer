@@ -116,7 +116,7 @@ object LrCalibrationOnQtt {
     sample.show(5)
 
     val sql2 = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num
+                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
                  | from dl_cpc.slim_union_log
                  | where dt = '2019-05-16' and hour ='13'
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
@@ -176,20 +176,23 @@ object LrCalibrationOnQtt {
     val newprediction = lrModel.transform(test).select("label","probability")
 
     //取出预测为1的probability
-    val reseult2 = newprediction.map(line => {
+    val result2 = newprediction.map(line => {
       val label = line.get(line.fieldIndex("label")).toString.toInt
       val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
       val y = dense(1).toString.toDouble * 1e6d.toInt
       (label,y)
     }).toDF("label","prediction")
-      val p1= reseult2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+    val testData = testsample.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
+    val testauc = CalcMetrics.getAuc(spark,testData)
+    println("testauc:%f".format(testauc))
+      val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
-    println("ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr, ctr/ectr))
+    println("ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
     val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) score")
     val originalauc = CalcMetrics.getAuc(spark,modelData)
     println("originalauc:%f".format(originalauc))
-    val p2= predictions.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("rawPrediction")).alias("ectr"))
+    val p2= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
     val ctr2 = p2.first().getAs[Double]("ctr")
     val ectr2 = p2.first().getAs[Double]("ectr")
     println("ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2, ctr2/ectr2))
