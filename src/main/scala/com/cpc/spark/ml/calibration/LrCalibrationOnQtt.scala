@@ -110,9 +110,9 @@ object LrCalibrationOnQtt {
         if (hour != null) {
           els = els :+ (adslotid_sum + ideaid_sum + 3 , hour)
         }
-        (label,els)
-    }.filter(_ != null).toDF("label","els")
-      .select($"label", SparseFeature(profile_num)($"els").alias("features"))
+        (label,els,ideaid)
+    }.filter(_ != null).toDF("label","els","ideaid")
+      .select($"label", SparseFeature(profile_num)($"els").alias("features"),$"ideaid")
     sample.show(5)
 
     val sql2 = s"""
@@ -151,7 +151,7 @@ object LrCalibrationOnQtt {
           els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
         }
         (label,els)
-    }.filter(_ != null).toDF("label","els")
+    }.filter(_ != null).toDF("label","els","ideaid")
       .select($"label", SparseFeature(profile_num)($"els").alias("features"),$"ideaid")
     test.show(5)
 
@@ -164,32 +164,32 @@ object LrCalibrationOnQtt {
         setThreshold(0.5).
         setRegParam(0.15).
         fit(trainingDF)
-      val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction")
+      val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction","ideaid")
       predictions.show(5)
-      predictions.write.mode("overwrite").saveAsTable("test.wy00")
 
         //使用BinaryClassificationEvaluator来评价我们的模型
         val evaluator = new BinaryClassificationEvaluator()
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
       println("model auc:%f".format(auc))
-    val newprediction = lrModel.transform(test).select("label","probability")
+    val newprediction = lrModel.transform(test).select("label","probability","ideaid")
 
     //取出预测为1的probability
     val result2 = newprediction.map(line => {
       val label = line.get(line.fieldIndex("label")).toString.toInt
       val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
       val y = dense(1).toString.toDouble * 1e6d.toInt
+      val ideaid = line.get(line.fieldIndex("label")).toString.toInt
       (label,y)
     }).toDF("label","prediction")
     //   lr calibration
     calculateAuc(result2,"lr",spark)
     //    raw data
-    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction")
+    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction","ideaid")
     calculateAuc(modelData,"original",spark)
 
 //    online calibration
-    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction")
+    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction","ideaid")
     calculateAuc(calibData,"online",spark)
 
   }
