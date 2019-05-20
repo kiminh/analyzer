@@ -14,7 +14,7 @@ while [ ${d} -le $3 ]; do
     echo $1
     echo $day
 
-#    sh $1 $day 23
+    sh $1 $day 23
 
     let d=d+1
 done
