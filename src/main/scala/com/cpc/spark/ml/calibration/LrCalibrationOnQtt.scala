@@ -186,7 +186,7 @@ object LrCalibrationOnQtt {
     val testData = result2.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val testauc = CalcMetrics.getAuc(spark,testData)
     println("test auc:%f".format(testauc))
-      val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+      val p1= testData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
     println("lr calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
@@ -197,7 +197,7 @@ object LrCalibrationOnQtt {
     val p2= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
     val ctr2 = p2.first().getAs[Double]("ctr")
     val ectr2 = p2.first().getAs[Double]("ectr")
-    println("original predition: ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
+    println("original predition: ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2/1e6d, ectr2/1e6d/ctr2))
 //    online calibration
     val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) score")
     val calibauc = CalcMetrics.getAuc(spark,calibData)
@@ -205,7 +205,7 @@ object LrCalibrationOnQtt {
     val p3= calibData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
     val ctr3 = p3.first().getAs[Double]("ctr")
     val ectr3 = p3.first().getAs[Double]("ectr")
-    println("online calibration predition: ctr3:%f,ectr3:%f,ectr3/ctr3:%f".format(ctr3, ectr3/1e6d, ctr3*1e6d/ectr3))
+    println("online calibration predition: ctr3:%f,ectr3:%f,ectr3/ctr3:%f".format(ctr3, ectr3/1e6d, ectr3/1e6d/ctr3))
 
   }
 
