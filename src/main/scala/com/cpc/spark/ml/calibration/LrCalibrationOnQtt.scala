@@ -152,7 +152,7 @@ object LrCalibrationOnQtt {
         }
         (label,els)
     }.filter(_ != null).toDF("label","els")
-      .select($"label", SparseFeature(profile_num)($"els").alias("features"))
+      .select($"label", SparseFeature(profile_num)($"els").alias("features"),$"ideaid")
     test.show(5)
 
       val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
@@ -183,29 +183,14 @@ object LrCalibrationOnQtt {
       (label,y)
     }).toDF("label","prediction")
     //   lr calibration
-    val testData = result2.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
-    val testauc = CalcMetrics.getAuc(spark,testData)
-    println("test auc:%f".format(testauc))
-      val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
-    val ctr = p1.first().getAs[Double]("ctr")
-    val ectr = p1.first().getAs[Double]("ectr")
-    println("lr calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
+    calculateAuc(result2,"lr",spark)
     //    raw data
-    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) score")
-    val originalauc = CalcMetrics.getAuc(spark,modelData)
-    println("original auc:%f".format(originalauc))
-    val p2= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
-    val ctr2 = p2.first().getAs[Double]("ctr")
-    val ectr2 = p2.first().getAs[Double]("ectr")
-    println("original predition: ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2/1e6d, ectr2/1e6d/ctr2))
+    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction")
+    calculateAuc(modelData,"original",spark)
+
 //    online calibration
-    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) score")
-    val calibauc = CalcMetrics.getAuc(spark,calibData)
-    println("original auc:%f".format(calibauc))
-    val p3= calibData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
-    val ctr3 = p3.first().getAs[Double]("ctr")
-    val ectr3 = p3.first().getAs[Double]("ectr")
-    println("online calibration predition: ctr3:%f,ectr3:%f,ectr3/ctr3:%f".format(ctr3, ectr3/1e6d, ectr3/1e6d/ctr3))
+    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction")
+    calculateAuc(calibData,"online",spark)
 
   }
 
@@ -216,5 +201,15 @@ object LrCalibrationOnQtt {
         (x.getInt(0), x.getDouble(1))
       })
       Vectors.sparse(profile_num + 1, new_els)
+  }
+
+  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
+    val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
+    val auc = CalcMetrics.getAuc(spark,testData)
+    println("%s auc:%f".format(cate,auc))
+    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+    val ctr = p1.first().getAs[Double]("ctr")
+    val ectr = p1.first().getAs[Double]("ectr")
+    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ctr*1e6d/ectr))
   }
 }
