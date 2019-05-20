@@ -182,7 +182,7 @@ object LrCalibrationOnQtt {
       val y = dense(1).toString.toDouble * 1e6d.toInt
       (label,y)
     }).toDF("label","prediction")
-    val testData = testsample.selectExpr("cast(isclick as Int) label","cast(prediction as Int) score")
+    val testData = result2.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val testauc = CalcMetrics.getAuc(spark,testData)
     println("testauc:%f".format(testauc))
       val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
