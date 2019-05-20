@@ -101,14 +101,14 @@ object LrCalibrationOnQtt {
         if (ideaid != null) {
           els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
         }
+        if (hour != null) {
+          els = els :+ (hourID(hour)+ adslotid_sum + ideaid_sum , 1.0)
+        }
         if (raw_ctr != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum , raw_ctr)
         }
         if (user_req_ad_num != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
-        }
-        if (hour != null) {
-          els = els :+ (hourID(hour)+ adslotid_sum + ideaid_sum + 2 , 1.0)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum + 1 , user_req_ad_num)
         }
         (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
@@ -200,7 +200,7 @@ object LrCalibrationOnQtt {
       val new_els: Seq[(Int, Double)] = els.map(x => {
         (x.getInt(0), x.getDouble(1))
       })
-      Vectors.sparse(profile_num + 1, new_els)
+      Vectors.sparse(profile_num, new_els)
   }
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
