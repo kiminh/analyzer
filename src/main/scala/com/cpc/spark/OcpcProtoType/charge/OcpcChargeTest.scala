@@ -10,7 +10,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
-object OcpcCharge {
+object OcpcChargeTest {
   def main(args: Array[String]): Unit = {
     /*
     根据最近四天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
