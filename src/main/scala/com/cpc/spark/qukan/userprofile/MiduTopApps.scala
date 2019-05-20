@@ -7,7 +7,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   * @author zhy
   * @date 2019/5/20 20:18
   * @version 1.0
-  * @desc 活跃用户大于2w的米读
+  * @desc
   */
 object MiduTopApps {
   def main(args: Array[String]): Unit = {
