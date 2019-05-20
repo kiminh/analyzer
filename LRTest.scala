@@ -30,8 +30,8 @@ object LRTest {
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
 
-    els = els :+ (1, 1d)
-    els = els :+ (27, 1d) // hour
+    els = els :+ (2, 1d)
+    els = els :+ (21, 1d) // hour
     els = els :+ (31, 1d) // sex
     els = els :+ (40, 1d) // age
     els = els :+ (141, 1d) // os
@@ -39,16 +39,16 @@ object LRTest {
     els = els :+ (171, 1d) // network
     els = els :+ (180, 1d) // cityid
     els = els :+ (549, 1d) // mediaid
-    els = els :+ (910, 1d) // slotid
-    els = els :+ (1831, 1d) // phone_level
-    els = els :+ (1837, 1d) // pagenum
-    els = els :+ (1937, 1d) // bookid
-    els = els :+ (2085, 1d) // adclass
-    els = els :+ (2132, 1d) // adtype
-    els = els :+ (2142, 1d) // adslot_type
-    els = els :+ (2151, 1d) // planid
-    els = els :+ (6617, 1d) // unitid
-    els = els :+ (12456, 1d) // ideaid
+    els = els :+ (923, 1d) // slotid
+    els = els :+ (1871, 1d) // phone_level
+    els = els :+ (1877, 1d) // pagenum
+    els = els :+ (1977, 1d) // bookid
+    els = els :+ (2129, 1d) // adclass
+    els = els :+ (2175, 1d) // adtype
+    els = els :+ (2183, 1d) // adslot_type
+    els = els :+ (2192, 1d) // planid
+    els = els :+ (7349, 1d) // unitid
+    els = els :+ (14124, 1d) // ideaid
 
     var i = 0
 
@@ -60,17 +60,17 @@ object LRTest {
     i += 20
     i += 10
     i += 367 + 1 // cityid
-    i += 358 + 1 // mediaid
-    i += 919 + 1 // slotid
+    i += 371 + 1 // mediaid
+    i += 946 + 1 // slotid
     i += 10
     i += 100
     i += 100
-    i += 93 + 1 // adclass
+    i += 94 + 1 // adclass
     i += 10
     i += 10
-    i += 4465 + 1 // planid
-    i += 5838 + 1 // unitid
-    i += 14398 + 1 // ideaid
+    i += 5156 + 1 // planid
+    i += 6774 + 1 // unitid
+    i += 16927 + 1 // ideaid
 
     val vectorToPredict : Vector = Vectors.sparse(i, els)
 

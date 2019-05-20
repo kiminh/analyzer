@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package qttall_ecpm_dev;
+
+message qttall_ecpm_Threshold {
+    int64 adslotidall=1;
+    int64 hourall=2;
+    int64 adclassall=3;
+    int64 usertypeall=4;
+    double  ecpmtall=5;
+    double  trafficall=6;
+}
+
+message  Threshold_qttall_ecpm  {
+    repeated qttall_ecpm_Threshold  det = 1;
+}
