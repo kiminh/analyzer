@@ -186,7 +186,7 @@ object LrCalibrationOnQtt {
     val testData = result2.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val testauc = CalcMetrics.getAuc(spark,testData)
     println("test auc:%f".format(testauc))
-      val p1= testData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+      val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
     println("lr calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
