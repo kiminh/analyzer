@@ -150,7 +150,7 @@ object LrCalibrationOnQtt {
         if (user_req_ad_num != null) {
           els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
         }
-        (label,els)
+        (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
       .select($"label", SparseFeature(profile_num)($"els").alias("features"),$"ideaid")
     test.show(5)
@@ -179,9 +179,9 @@ object LrCalibrationOnQtt {
       val label = line.get(line.fieldIndex("label")).toString.toInt
       val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
       val y = dense(1).toString.toDouble * 1e6d.toInt
-      val ideaid = line.get(line.fieldIndex("label")).toString.toInt
-      (label,y)
-    }).toDF("label","prediction")
+      val ideaid = line.get(line.fieldIndex("ideaid")).toString
+      (label,y,ideaid)
+    }).toDF("label","prediction","ideaid")
     //   lr calibration
     calculateAuc(result2,"lr",spark)
     //    raw data
@@ -211,5 +211,12 @@ object LrCalibrationOnQtt {
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
     println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ctr*1e6d/ectr))
+
+    val p2 = data.groupBy("ideaid")
+      .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+      .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
+    val ctr2 = p2.first().getAs[Double]("ctr")
+    val ectr2 = p2.first().getAs[Double]("ectr")
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,actr/ctr:%f".format(cate, ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
   }
 }
