@@ -78,7 +78,7 @@ object LrCalibrationOnQtt {
 
     val hourID = mutable.Map[String,Int]()
     var idxTemp2 = 0
-    val hourid_feature = hourArray.map{r => hourID.update(r.getAs[String]("hour"), idxTemp1); idxTemp2 += 1; (("hour" + r.getAs[String]("hour")), idxTemp2 -1)}
+    val hourid_feature = hourArray.map{r => hourID.update(r.getAs[String]("hour"), idxTemp2); idxTemp2 += 1; (("hour" + r.getAs[String]("hour")), idxTemp2 -1)}
 
     val feature_profile = adslotid_feature ++ ideaid_feature
 
@@ -93,7 +93,7 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        val hour = r.getAs[String]("hour").toDouble
+        val hour = r.getAs[String]("hour")
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
           els = els :+ (adslotidID(adslotid), 1.0)
@@ -108,7 +108,7 @@ object LrCalibrationOnQtt {
           els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
         }
         if (hour != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 3 , hour)
+          els = els :+ (hourID(hour)+ adslotid_sum + ideaid_sum + 2 , 1.0)
         }
         (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
@@ -215,8 +215,8 @@ object LrCalibrationOnQtt {
     val p2 = data.groupBy("ideaid")
       .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
       .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
-    val ctr2 = p2.first().getAs[Double]("ctr")
-    val ectr2 = p2.first().getAs[Double]("ectr")
+    val ctr2 = p2.first().getAs[Double]("avgctr")
+    val ectr2 = p2.first().getAs[Double]("avgectr")
     println("%s calibration by ideaid: avgctr:%f,avgectr:%f,actr/ctr:%f".format(cate, ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
   }
 }
