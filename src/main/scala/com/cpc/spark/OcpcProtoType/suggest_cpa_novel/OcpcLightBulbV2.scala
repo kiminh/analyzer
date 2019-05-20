@@ -64,7 +64,6 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-      //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
 
     // 清除redis里面的数据
