@@ -200,9 +200,9 @@ object LrCalibrationOnQtt {
     println("original predition: ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
 //    online calibration
     val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) score")
-    val calibauc = CalcMetrics.getAuc(spark,modelData)
+    val calibauc = CalcMetrics.getAuc(spark,calibData)
     println("original auc:%f".format(calibauc))
-    val p3= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
+    val p3= calibData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
     val ctr3 = p3.first().getAs[Double]("ctr")
     val ectr3 = p3.first().getAs[Double]("ectr")
     println("online calibration predition: ctr3:%f,ectr3:%f,ectr3/ctr3:%f".format(ctr3, ectr3/1e6d, ctr3*1e6d/ectr3))
