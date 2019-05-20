@@ -125,6 +125,10 @@ object InsertDspOutIncome {
     }
     println("~~~~~~write to union.dsp_out_income successfully")
 
+    //src=22，mediaid在80000001、80000002、80001011、80001098、80001292、80001539、80002480之外的impression的数据来源从show_event调整到union_events
+    updateDspIncomeTableImpression(day)
+    println("~~~~~~update union.dsp_income impression successfully")
+
     df.unpersist()
     println("----- done -----")
     spark.stop()
@@ -175,6 +179,30 @@ object InsertDspOutIncome {
            |   and adslot_id = "%s"
            |   and ad_src = 22
       """.stripMargin.format(dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id, adslot_id)
+      println("sql" + sql);
+      stmt.executeUpdate(sql);
+
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+
+  def updateDspIncomeTableImpression(day: String):Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        s"""
+           |update union.dsp_income
+           |set impression = dsp_impression
+           |where `date` = "$day"
+           |  and ad_src = 22
+           |  and media_id not in (80000001,80000002,80001011,80001098,80001292,80001539,80002480)
+      """.stripMargin
       println("sql" + sql);
       stmt.executeUpdate(sql);
 
