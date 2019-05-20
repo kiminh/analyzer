@@ -6,9 +6,9 @@ d=$2
 while [ ${d} -le $3 ]; do
     if ((${d}<10))
     then
-        day="2019-04-0${d}"
+        day="2019-05-0${d}"
     else
-        day="2019-04-${d}"
+        day="2019-05-${d}"
     fi
 
     echo $1
