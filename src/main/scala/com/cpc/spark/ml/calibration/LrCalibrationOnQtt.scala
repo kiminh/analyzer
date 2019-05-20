@@ -172,7 +172,7 @@ object LrCalibrationOnQtt {
         val evaluator = new BinaryClassificationEvaluator()
         evaluator.setMetricName("areaUnderROC")
         val auc = evaluator.evaluate(predictions)
-      println("auc:%f".format(auc))
+      println("model auc:%f".format(auc))
     val newprediction = lrModel.transform(test).select("label","probability")
 
     //取出预测为1的probability
@@ -182,20 +182,30 @@ object LrCalibrationOnQtt {
       val y = dense(1).toString.toDouble * 1e6d.toInt
       (label,y)
     }).toDF("label","prediction")
+    //   lr calibration
     val testData = result2.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val testauc = CalcMetrics.getAuc(spark,testData)
-    println("testauc:%f".format(testauc))
+    println("test auc:%f".format(testauc))
       val p1= result2.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
-    println("ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
+    println("lr calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(ctr, ectr/1e6d, ctr*1e6d/ectr))
+    //    raw data
     val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) score")
     val originalauc = CalcMetrics.getAuc(spark,modelData)
-    println("originalauc:%f".format(originalauc))
+    println("original auc:%f".format(originalauc))
     val p2= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
     val ctr2 = p2.first().getAs[Double]("ctr")
     val ectr2 = p2.first().getAs[Double]("ectr")
-    println("ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2, ctr2/ectr2))
+    println("original predition: ctr2:%f,ectr2:%f,ectr2/ctr2:%f".format(ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
+//    online calibration
+    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) score")
+    val calibauc = CalcMetrics.getAuc(spark,modelData)
+    println("original auc:%f".format(calibauc))
+    val p3= modelData.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("score")).alias("ectr"))
+    val ctr3 = p3.first().getAs[Double]("ctr")
+    val ectr3 = p3.first().getAs[Double]("ectr")
+    println("online calibration predition: ctr3:%f,ectr3:%f,ectr3/ctr3:%f".format(ctr3, ectr3/1e6d, ctr3*1e6d/ectr3))
 
   }
 
