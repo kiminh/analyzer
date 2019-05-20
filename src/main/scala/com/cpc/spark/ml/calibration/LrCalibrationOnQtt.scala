@@ -85,7 +85,7 @@ object LrCalibrationOnQtt {
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
     val hour_sum = hourID.size
-    val profile_num = adslotid_sum + ideaid_sum + hour_sum + 2
+    val profile_num = adslotid_sum + ideaid_sum + 3
     val sample = log.rdd.map {
       r =>
         val label = r.getAs[Long]("isclick").toInt
@@ -93,7 +93,7 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        val hour = r.getAs[String]("hour")
+        val hour = r.getAs[String]("hour").toDouble
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
           els = els :+ (adslotidID(adslotid), 1.0)
@@ -102,13 +102,13 @@ object LrCalibrationOnQtt {
           els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
         }
         if (hour != null) {
-          els = els :+ (hourID(hour)+ adslotid_sum + ideaid_sum , 1.0)
+          els = els :+ (adslotid_sum + ideaid_sum , 1.0)
         }
         if (raw_ctr != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + hour_sum , raw_ctr)
+          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
         }
         if (user_req_ad_num != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + hour_sum + 1 , user_req_ad_num)
+          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
         }
         (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
@@ -210,13 +210,13 @@ object LrCalibrationOnQtt {
     val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ctr*1e6d/ectr))
+    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ectr/ctr/1e6d))
 
     val p2 = data.groupBy("ideaid")
       .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
       .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
     val ctr2 = p2.first().getAs[Double]("avgctr")
     val ectr2 = p2.first().getAs[Double]("avgectr")
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,actr/ctr:%f".format(cate, ctr2, ectr2/1e6d, ctr2*1e6d/ectr2))
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgectr/avgctr:%f".format(cate, ctr2, ectr2/1e6d, ectr2/ctr2/1e6d))
   }
 }
