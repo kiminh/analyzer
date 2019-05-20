@@ -53,9 +53,9 @@ object OcpcChargeTestV1 {
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
 
-    result
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
-      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+//    result
+////      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
 
