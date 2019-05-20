@@ -84,8 +84,8 @@ object LrCalibrationOnQtt {
 
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
-    val profile_num = adslotid_sum + ideaid_sum + 3
-
+    val hour_sum = hourID.size
+    val profile_num = adslotid_sum + ideaid_sum + hour_sum
     val sample = log.rdd.map {
       r =>
         val label = r.getAs[Long]("isclick").toInt
