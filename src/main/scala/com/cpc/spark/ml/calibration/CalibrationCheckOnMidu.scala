@@ -70,7 +70,6 @@ object CalibrationCheckOnMidu {
     log.repartition(5).write.mode("overwrite").saveAsTable("test.wy01")
 
     val data = log.filter("length(group)>0")
-        .filter("len=48")
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
