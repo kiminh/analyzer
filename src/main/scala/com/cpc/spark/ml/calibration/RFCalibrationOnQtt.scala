@@ -63,7 +63,7 @@ object RFCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    var indices = List[String]("ideaid","adslot_id","raw_ctr", "user_req_ad_num","hour")
+    var indices = List[String]("ideaid","adslotid","raw_ctr", "user_req_ad_num","hour")
     val sample = log.withColumn("feature",concat_ws(" ", indices.map(col): _*))
       .withColumn("label",when(col("isclick")===1,1).otherwise(0))
       .rdd.map{
