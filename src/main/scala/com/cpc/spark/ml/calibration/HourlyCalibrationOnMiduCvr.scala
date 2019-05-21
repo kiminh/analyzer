@@ -44,12 +44,12 @@ object HourlyCalibrationOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select iscvr, cast(raw_cvr as bigint) as ectr, 0 as show_timestamp, cvr_model_name from
+                 |select iscvr, cast(raw_cvr as bigint) as ecvr, 0 as show_timestamp, cvr_model_name from
                  |(select *
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80001098', '80001292') and isshow = 1 and cvr_model_name <>''
-                 | and ctr_model_name != 'noctr'
+                 | and cvr_model_name != 'noctr'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1))a
                  | left join
