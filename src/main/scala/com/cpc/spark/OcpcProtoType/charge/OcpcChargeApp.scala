@@ -192,7 +192,7 @@ object OcpcChargeApp {
          |WHERE
          |  `date` >= '$date1'
          |AND
-         |  cvr_goal = 'cvr3'
+         |  cvr_goal = 'cvr2'
        """.stripMargin
     println(sqlRequest1)
     val cvData = spark.sql(sqlRequest1)
