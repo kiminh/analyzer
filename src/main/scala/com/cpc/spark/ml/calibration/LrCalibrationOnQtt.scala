@@ -155,7 +155,7 @@ object LrCalibrationOnQtt {
       .select($"label", SparseFeature(profile_num)($"els").alias("features"),$"ideaid")
     test.show(5)
 
-      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.7, 0.3), seed = 1)
+      val Array(trainingDF, testDF) = sample.randomSplit(Array(0.8, 0.2), seed = 1)
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
       val lrModel = new LogisticRegression().
         setLabelCol("label").
