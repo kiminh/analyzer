@@ -27,4 +27,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.calibration.HourlyCalibrationOnMiduCvr \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-05-21 10 24 0
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-05-21 10 6 0
