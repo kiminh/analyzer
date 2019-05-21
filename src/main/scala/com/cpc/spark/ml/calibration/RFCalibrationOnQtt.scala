@@ -10,8 +10,13 @@ import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.mllib.linalg._
 import scala.collection.mutable
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
+import org.apache.spark.ml.classification.RandomForestClassifier
+import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
+import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorAssembler}
+
 
 
 object RFCalibrationOnQtt {
@@ -90,14 +95,22 @@ object RFCalibrationOnQtt {
 //      r =>
 //        val label = r.getAs[Long]("isclick").toInt
 
+
       println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
-      val lrModel = new LogisticRegression().
-        setLabelCol("label").
-        setFeaturesCol("features").
-        setMaxIter(200).
-        setThreshold(0.5).
-        setRegParam(0.15).
-        fit(trainingDF)
+    val nFolds: Int = 10
+    val NumTrees: Int = 500
+    val indexer = new StringIndexer()
+      .setInputCol("label")
+      .setOutputCol("label_idx")
+    val rf = new RandomForestClassifier()
+      .setNumTrees(NumTrees)
+      .setFeaturesCol("features")
+      .setLabelCol("label_idx")
+      .setFeatureSubsetStrategy("auto")
+      .setImpurity("gini")
+      .setMaxDepth(10) //2,5,7
+      .setMaxBins(100)
+
       val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction","ideaid")
       predictions.show(5)
 

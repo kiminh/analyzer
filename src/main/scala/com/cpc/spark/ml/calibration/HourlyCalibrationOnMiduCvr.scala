@@ -48,7 +48,7 @@ object HourlyCalibrationOnMiduCvr {
                  |(select *
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1 and cvr_model_name <>''
+                 | and media_appsid in ('80001098', '80001292') and isclick = 1 and cvr_model_name <>''
                  | and cvr_model_name != 'noctr'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1))a
