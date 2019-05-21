@@ -118,7 +118,7 @@ object LrCalibrationOnQtt {
     val sql2 = s"""
                  |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
                  | from dl_cpc.slim_union_log
-                 | where dt = '2019-05-19' and hour ='15'
+                 | where dt = '2019-05-21' and hour ='03'
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
                  | and ctr_model_name in ('$model','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
