@@ -58,9 +58,9 @@ object HourlyCalibrationOnMiduCvr {
                  |) b on a.searchid = b.searchid
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).select("isclick","ecvr","show_timestamp","cvr_model_name")
-        .withColumn("isclick",when(col("isclick")===null,0).otherwise(col("isclick")))
-        .select("isclick","ecvr","show_timestamp","cvr_model_name")
+    val log = session.sql(sql).select("iscvr","ecvr","show_timestamp","cvr_model_name")
+        .withColumn("iscvr",when(col("iscvr")===null,0).otherwise(col("iscvr")))
+        .select("iscvr","ecvr","show_timestamp","cvr_model_name")
 
 
     HourlyCalibration.unionLogToConfig(log.rdd, session.sparkContext, softMode)
