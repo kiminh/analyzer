@@ -44,7 +44,7 @@ object HourlyCalibrationOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select iscvr, cast(raw_cvr as bigint) as ectr, show_timestamp, cvr_model_name from
+                 |select iscvr, cast(raw_cvr as bigint) as ectr, 0 as show_timestamp, cvr_model_name from
                  |(select *
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
