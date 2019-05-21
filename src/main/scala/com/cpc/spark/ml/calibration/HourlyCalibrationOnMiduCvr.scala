@@ -40,6 +40,7 @@ object HourlyCalibrationOnMiduCvr {
     val session = Utils.buildSparkSession("hourlyCalibration")
 
     val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
+    val timeRangeSql2 = Utils.getTimeRangeSql(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
@@ -53,7 +54,7 @@ object HourlyCalibrationOnMiduCvr {
                  | AND (charge_type IS NULL OR charge_type = 1))a
                  | left join
                  |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-                 |WHERE $timeRangeSql
+                 |WHERE $timeRangeSql2
                  |) b on a.searchid = b.searchid
        """.stripMargin
     println(s"sql:\n$sql")
