@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# sh dataLoop.sh testOcpcSampleHourlyV1.sh 2018-10-27 0 23
+# sh dataLoop.sh testOcpcChargeApp.sh 05 1 19
 
 d=$3
 while [ ${d} -le $4 ]; do
