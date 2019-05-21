@@ -1,5 +1,7 @@
 package com.cpc.spark.OcpcProtoType.model_v3.pid
 
+import java.io.FileOutputStream
+import java.net.FileNameMap
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -8,6 +10,9 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import ocpc.ocpc.{OcpcList, SingleRecord}
+
+import scala.collection.mutable.ListBuffer
 
 object OcpcPIDmerge {
   def main(args: Array[String]): Unit = {
@@ -26,6 +31,8 @@ object OcpcPIDmerge {
     val media = args(2).toString
     val version = args(3).toString
     val sampleHour = args(4).toInt
+
+    val fileName = "ocpc_pid_model_v1.pb"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media=$media, version=$version, sampleHour=$sampleHour")
@@ -48,6 +55,53 @@ object OcpcPIDmerge {
 
     result
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_k_data_hourly")
+
+    saveDataPbPack(result, fileName)
+  }
+
+  def saveDataPbPack(rawData: DataFrame, fileName: String) = {
+    var list = new ListBuffer[SingleRecord]
+    val dataset = rawData
+        .selectExpr("cast(unitid as string) identifier", "cast(conversion_goal as int) conversion_goal", "cast(kvalue as double) kvalue")
+    println("size of the dataframe")
+    println(dataset.count)
+    println(s"filename: $fileName")
+    dataset.show(10)
+    dataset.printSchema()
+    var cnt = 0
+
+    for (record <- dataset.collect()) {
+      val identifier = record.getAs[String]("identifier")
+      val cpaGiven = 0.0
+      val kvalue = record.getAs[Double]("kvalue")
+      val cvrCnt = 30
+      val conversionGoal = record.getAs[Int]("conversion_goal")
+
+      if (cnt % 100 == 0) {
+        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
+      }
+      cnt += 1
+
+      val currentItem = SingleRecord(
+        identifier = identifier,
+        conversiongoal = conversionGoal,
+        kvalue = kvalue,
+        cpagiven = cpaGiven,
+        cvrcnt = cvrCnt
+      )
+      list += currentItem
+
+    }
+    val result = list.toArray[SingleRecord]
+    val adRecordList = OcpcList(
+      adrecord = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(fileName))
+
+    println("complete save data into protobuffer")
   }
 
   def updateK(prevK: DataFrame, incrementK: DataFrame, ocpcRecord: DataFrame, date: String, hour: String, spark: SparkSession) = {
