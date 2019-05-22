@@ -91,7 +91,7 @@ object RFCalibrationOnQtt {
         (label,raw_ctr,user_req_ad_num,hour,adslotidvalue,ideaidvalue)
     }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue")
     val sample = data.withColumn("feature",concat_ws(" ", indices.map(col): _*))
-      .withColumn("label",when(col("isclick")===1,1).otherwise(0))
+      .withColumn("label",when(col("label")===1,1).otherwise(0))
       .rdd.map{
       r=>
         val label= r.getAs[Int]("label").toDouble
