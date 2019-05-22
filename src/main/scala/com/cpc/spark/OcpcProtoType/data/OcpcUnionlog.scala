@@ -217,6 +217,7 @@ object OcpcUnionlog {
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
          |and length(searchid) > 0
+         |and cvr_model_name != 'qtt-cvr-dnn-rawid-v2addchitufeainterests'
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
