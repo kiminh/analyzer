@@ -61,7 +61,6 @@ object RFCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-
     val adslotidArray = log.select("adslotid").distinct().collect()
     val ideaidArray = log.select("ideaid").distinct().collect()
     val hourArray = log.select("hour").distinct().collect()
@@ -110,7 +109,7 @@ object RFCalibrationOnQtt {
     val numTrees = 12 // Use more in practice.
     val featureSubsetStrategy = "auto" // Let the algorithm choose.
     val impurity = "variance"
-    val maxDepth = 4
+    val maxDepth = 10
     val maxBins = ideaid_sum + adslotid_sum + 32
 
     val model = RandomForest.trainRegressor(trainingData, categoricalFeaturesInfo,
@@ -133,7 +132,7 @@ object RFCalibrationOnQtt {
     val sql2 = s"""
                  |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr,hour
                  | from dl_cpc.slim_union_log
-                 | where dt = '2019-05-20' and hour = '15'
+                 | where dt = '2019-05-21'
                  | and media_appsid in ('80001098', '80001292') and isshow = 1
                  | and ctr_model_name in ('$model','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0

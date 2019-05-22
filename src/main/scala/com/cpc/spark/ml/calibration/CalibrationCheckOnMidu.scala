@@ -55,6 +55,8 @@ object CalibrationCheckOnMidu {
                  | and ctr_model_name in ('$modelName')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
+                 |left join
+                 |(select search
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql).withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
