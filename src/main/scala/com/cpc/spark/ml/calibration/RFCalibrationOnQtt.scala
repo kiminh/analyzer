@@ -149,8 +149,14 @@ object RFCalibrationOnQtt {
       val ideaid = r.getAs[Long]("ideaid")
       val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
       val hour = r.getAs[String]("hour").toDouble
-      val adslotidvalue = adslotidID(adslotid)
-      val ideaidvalue = ideaidID(ideaid)
+      var adslotidvalue = adslotid.toInt
+        if(adslotidID.contains(adslotid)){
+          adslotidvalue = adslotidID(adslotid)
+        }
+      var ideaidvalue = ideaid.toInt
+      if(ideaidID.contains(ideaid)){
+        ideaidvalue = ideaidID(ideaid)
+      }
       (label, raw_ctr, user_req_ad_num, hour, adslotidvalue, ideaidvalue, ideaid)
     }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
       .withColumn("feature",concat_ws(" ", indices.map(col): _*))
@@ -166,9 +172,8 @@ object RFCalibrationOnQtt {
       val prediction = model.predict(point.features)
       (point.label, prediction)
     }
-    val testMSE2 = labelsAndPredictions.map{ case(v, p) => math.pow((v - p), 2)}.mean()
+    val testMSE2 = labelsAndPredictions2.map{ case(v, p) => math.pow((v - p), 2)}.mean()
     println("Test Mean Squared Error = " + testMSE2)
-    println("Learned regression forest model:\n" + model.toDebugString)
 
     val predictionDF2 = labelsAndPredictions2.toDF("label","prediction")
       .selectExpr("cast(label as Int) label","cast(prediction*1e6d as Int) prediction")
