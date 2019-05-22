@@ -109,7 +109,7 @@ object RFCalibrationOnQtt {
     val numTrees = 12 // Use more in practice.
     val featureSubsetStrategy = "auto" // Let the algorithm choose.
     val impurity = "variance"
-    val maxDepth = 10
+    val maxDepth = 5
     val maxBins = ideaid_sum + adslotid_sum + 32
 
     val model = RandomForest.trainRegressor(trainingData, categoricalFeaturesInfo,
@@ -172,7 +172,7 @@ object RFCalibrationOnQtt {
       (point.label, prediction)
     }
     val testMSE2 = labelsAndPredictions2.map{ case(v, p) => math.pow((v - p), 2)}.mean()
-    println("Test Mean Squared Error = " + testMSE2)
+    println("Test2 Mean Squared Error = " + testMSE2)
 
     val predictionDF2 = labelsAndPredictions2.toDF("label","prediction")
       .selectExpr("cast(label as Int) label","cast(prediction*1e6d as Int) prediction")
