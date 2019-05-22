@@ -11,9 +11,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable
-import org.apache.spark.ml.classification.RandomForestClassifier
-import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorAssembler}
+import mutable.HashMap
 
 import scala.collection.mutable.ListBuffer
 
@@ -63,8 +61,36 @@ object RFCalibrationOnQtt {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    var indices = List[String]("ideaid","adslotid","raw_ctr", "user_req_ad_num","hour")
-    val sample = log.withColumn("feature",concat_ws(" ", indices.map(col): _*))
+
+    val adslotidArray = log.select("adslotid").distinct().collect()
+    val ideaidArray = log.select("ideaid").distinct().collect()
+    val hourArray = log.select("hour").distinct().collect()
+
+    val adslotidID = mutable.Map[String,Int]()
+    var idxTemp = 0
+    val adslotid_feature = adslotidArray.map{r => adslotidID.update(r.getAs[String]("adslotid"), idxTemp); idxTemp += 1; (("adslotid"+ r.getAs[String]("adslotid")), idxTemp -1)}
+
+    val ideaidID = mutable.Map[Long,Int]()
+    var idxTemp1 = 0
+    val ideaid_feature = ideaidArray.map{r => ideaidID.update(r.getAs[Long]("ideaid"), idxTemp1); idxTemp1 += 1; (( "ideaid"+ r.getAs[Long]("ideaid")), idxTemp1 -1)}
+
+    val adslotid_sum = adslotidID.size
+    val ideaid_sum = ideaidID.size
+
+    var indices = List[String]("ideaidvalue","adslotidvalue","raw_ctr", "user_req_ad_num","hour")
+    val data= log.rdd.map{
+      r=>
+        val label = r.getAs[Long]("isclick").toInt
+        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+        val adslotid = r.getAs[String]("adslotid")
+        val ideaid = r.getAs[Long]("ideaid")
+        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+        val hour = r.getAs[String]("hour").toDouble
+        val adslotidvalue = adslotidID(adslotid)
+        val ideaidvalue = ideaidID(ideaid)
+        (label,raw_ctr,user_req_ad_num,hour,adslotidvalue,ideaidvalue)
+    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue")
+    val sample = data.withColumn("feature",concat_ws(" ", indices.map(col): _*))
       .withColumn("label",when(col("isclick")===1,1).otherwise(0))
       .rdd.map{
       r=>
@@ -80,7 +106,7 @@ object RFCalibrationOnQtt {
     // Train a RandomForest model.
     //  Empty categoricalFeaturesInfo indicates all features are continuous.
     val numClasses = 2
-    val categoricalFeaturesInfo = Map[Int, Int]()
+    val categoricalFeaturesInfo = Map[Int, Int](0 -> ideaid_sum, 1 -> adslotid_sum)
     val numTrees = 3 // Use more in practice.
     val featureSubsetStrategy = "auto" // Let the algorithm choose.
     val impurity = "variance"
@@ -95,6 +121,9 @@ object RFCalibrationOnQtt {
       val prediction = model.predict(point.features)
       (point.label, prediction)
     }
+    val predictionDF = labelsAndPredictions.toDF()
+    predictionDF.show(20)
+
     val testMSE = labelsAndPredictions.map{ case(v, p) => math.pow((v - p), 2)}.mean()
     println("Test Mean Squared Error = " + testMSE)
     println("Learned regression forest model:\n" + model.toDebugString)
