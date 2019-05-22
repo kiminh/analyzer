@@ -11,7 +11,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable
-import mutable.HashMap
+import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 
 import scala.collection.mutable.ListBuffer
 
@@ -88,8 +88,8 @@ object RFCalibrationOnQtt {
         val hour = r.getAs[String]("hour").toDouble
         val adslotidvalue = adslotidID(adslotid)
         val ideaidvalue = ideaidID(ideaid)
-        (label,raw_ctr,user_req_ad_num,hour,adslotidvalue,ideaidvalue)
-    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue")
+        (label,raw_ctr,user_req_ad_num,hour,adslotidvalue,ideaidvalue,ideaid)
+    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
     val sample = data.withColumn("feature",concat_ws(" ", indices.map(col): _*))
       .withColumn("label",when(col("label")===1,1).otherwise(0))
       .rdd.map{
@@ -121,12 +121,14 @@ object RFCalibrationOnQtt {
       val prediction = model.predict(point.features)
       (point.label, prediction)
     }
-    val predictionDF = labelsAndPredictions.toDF()
-    predictionDF.show(20)
-
     val testMSE = labelsAndPredictions.map{ case(v, p) => math.pow((v - p), 2)}.mean()
     println("Test Mean Squared Error = " + testMSE)
     println("Learned regression forest model:\n" + model.toDebugString)
+
+    val predictionDF = labelsAndPredictions.toDF("label","prediction")
+      .selectExpr("cast(label as Int) label","cast(prediction as Int)*1e6d prediction")
+    predictionDF.show(20)
+    calculateAuc(predictionDF,"test",spark)
 
 //    val sql2 = s"""
 //                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
