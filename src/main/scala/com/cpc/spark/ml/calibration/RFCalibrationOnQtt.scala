@@ -88,7 +88,7 @@ object RFCalibrationOnQtt {
         val hour = r.getAs[String]("hour").toDouble
         val adslotidvalue = adslotidID(adslotid)
         val ideaidvalue = ideaidID(ideaid)
-        (label,raw_ctr,user_req_ad_num,hour,adslotidvalue,ideaidvalue,ideaid)
+        (label, raw_ctr, user_req_ad_num, hour, adslotidvalue, ideaidvalue, ideaid)
     }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
     val sample = data.withColumn("feature",concat_ws(" ", indices.map(col): _*))
       .withColumn("label",when(col("label")===1,1).otherwise(0))
@@ -130,39 +130,59 @@ object RFCalibrationOnQtt {
     predictionDF.show(20)
     calculateAuc(predictionDF,"test",spark)
 
-//    val sql2 = s"""
-//                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
-//                 | from dl_cpc.slim_union_log
-//                 | where dt = '2019-05-20'
-//                 | and media_appsid in ('80001098', '80001292') and isshow = 1
-//                 | and ctr_model_name in ('$model','$calimodel')
-//                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-//                 | AND (charge_type IS NULL OR charge_type = 1)
-//       """.stripMargin
-//    println(s"sql:\n$sql2")
-//    val testsample = session.sql(sql2)
-//    val test= testsample.rdd.map {
-//      r =>
-//        val label = r.getAs[Long]("isclick").toInt
+    val sql2 = s"""
+                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
+                 | from dl_cpc.slim_union_log
+                 | where dt = '2019-05-20'
+                 | and media_appsid in ('80001098', '80001292') and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel')
+                 | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
+       """.stripMargin
+    println(s"sql:\n$sql2")
+    val testsample = session.sql(sql2)
+    val test= testsample.rdd.map {
+      r =>
+      val label = r.getAs[Long]("isclick").toInt
+      val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+      val adslotid = r.getAs[String]("adslotid")
+      val ideaid = r.getAs[Long]("ideaid")
+      val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+      val hour = r.getAs[String]("hour").toDouble
+      val adslotidvalue = adslotidID(adslotid)
+      val ideaidvalue = ideaidID(ideaid)
+      (label, raw_ctr, user_req_ad_num, hour, adslotidvalue, ideaidvalue, ideaid)
+    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
+      .withColumn("feature",concat_ws(" ", indices.map(col): _*))
+      .withColumn("label",when(col("label")===1,1).otherwise(0))
+      .rdd.map{
+      r=>
+        val label= r.getAs[Int]("label").toDouble
+        val features= r.getAs[String]("feature")
+        LabeledPoint(label,Vectors.dense(features.split(' ').map(_.toDouble)))
+    }
 
-//
-//    //取出预测为1的probability
-//    val result2 = newprediction.map(line => {
-//      val label = line.get(line.fieldIndex("label")).toString.toInt
-//      val dense = line.get(line.fieldIndex("probability")).asInstanceOf[org.apache.spark.ml.linalg.DenseVector]
-//      val y = dense(1).toString.toDouble * 1e6d.toInt
-//      val ideaid = line.get(line.fieldIndex("ideaid")).toString
-//      (label,y,ideaid)
-//    }).toDF("label","prediction","ideaid")
-//    //   lr calibration
-//    calculateAuc(result2,"lr",spark)
-//    //    raw data
-//    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction","ideaid")
-//    calculateAuc(modelData,"original",spark)
-//
-////    online calibration
-//    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction","ideaid")
-//    calculateAuc(calibData,"online",spark)
+    val labelsAndPredictions2 = test.map { point =>
+      val prediction = model.predict(point.features)
+      (point.label, prediction)
+    }
+    val testMSE2 = labelsAndPredictions.map{ case(v, p) => math.pow((v - p), 2)}.mean()
+    println("Test Mean Squared Error = " + testMSE2)
+    println("Learned regression forest model:\n" + model.toDebugString)
+
+    val predictionDF2 = labelsAndPredictions2.toDF("label","prediction")
+      .selectExpr("cast(label as Int) label","cast(prediction*1e6d as Int) prediction")
+    predictionDF2.show(20)
+
+    calculateAuc(predictionDF2,"RF",spark)
+
+    //    raw data
+    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction","ideaid")
+    calculateAuc(modelData,"original",spark)
+
+    //    online calibration
+    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction","ideaid")
+    calculateAuc(calibData,"online",spark)
 
   }
 
@@ -184,12 +204,12 @@ object RFCalibrationOnQtt {
     val ectr = p1.first().getAs[Double]("ectr")
     println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ectr/ctr/1e6d))
 
-    val p2 = data.groupBy("ideaid")
-      .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
-      .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
-    val ctr2 = p2.first().getAs[Double]("avgctr")
-    val ectr2 = p2.first().getAs[Double]("avgectr")
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgectr/avgctr:%f".format(cate, ctr2, ectr2/1e6d, ectr2/ctr2/1e6d))
+//    val p2 = data.groupBy("ideaid")
+//      .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+//      .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
+//    val ctr2 = p2.first().getAs[Double]("avgctr")
+//    val ectr2 = p2.first().getAs[Double]("avgectr")
+//    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgectr/avgctr:%f".format(cate, ctr2, ectr2/1e6d, ectr2/ctr2/1e6d))
   }
   def nameValue(name: String) = udf((value: String) => {
     if (value == null) {
