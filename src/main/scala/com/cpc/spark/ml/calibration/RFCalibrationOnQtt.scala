@@ -126,7 +126,7 @@ object RFCalibrationOnQtt {
     println("Learned regression forest model:\n" + model.toDebugString)
 
     val predictionDF = labelsAndPredictions.toDF("label","prediction")
-      .selectExpr("cast(label as Int) label","cast(prediction as Int)*1e6d prediction")
+      .selectExpr("cast(label as Int) label","cast(prediction*1e6d as Int) prediction")
     predictionDF.show(20)
     calculateAuc(predictionDF,"test",spark)
 
