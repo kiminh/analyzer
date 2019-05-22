@@ -116,7 +116,7 @@ object LrCalibrationOnQtt {
     sample.show(5)
 
     val sql2 = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr
+                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr,hour
                  | from dl_cpc.slim_union_log
                  | where dt = '2019-05-19'  and hour = '22'
                  | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type = 1
