@@ -133,16 +133,16 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+        val hour = r.getAs[String]("hour").toDouble
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
-          if (adslotidID.contains(adslotid)){
-            els = els :+ (adslotidID(adslotid), 1.0)
-          }
+          els = els :+ (adslotidID(adslotid), 1.0)
         }
         if (ideaid != null) {
-          if (ideaidID.contains(ideaid)){
-            els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
-          }
+          els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
+        }
+        if (hour != null) {
+          els = els :+ (adslotid_sum + ideaid_sum , 1.0)
         }
         if (raw_ctr != null) {
           els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
