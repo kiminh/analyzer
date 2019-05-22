@@ -43,7 +43,7 @@ object OcpcLightBulbV2{
     // 抽取数据
     val cpcData = getRecommendationAd(version, date, hour, spark)
 //    cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
-    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
+    val ocpcData = getOcpcRecordV2(media, version, date, hour, spark)
 //    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
     val confData = getConfCPA(media, date, hour, spark)
     val cvUnit = getCPAgiven(date, hour, spark)
@@ -87,6 +87,79 @@ object OcpcLightBulbV2{
 
     resultDF
       .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+  }
+
+  def getOcpcRecordV2(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取最近三天所有广告单元的投放记录
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -3)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    unitid,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |    (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |    end) as industry
+         |FROM
+         |    dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    $mediaSelection
+         |AND
+         |    is_ocpc = 1
+         |AND
+         |    isclick = 1
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark
+      .sql(sqlRequest1)
+      .filter(s"is_hidden = 0")
+      .filter(s"industry in ('elds', 'feedapp')")
+      .distinct()
+
+    val sqlRequets2 =
+      s"""
+         |SELECT
+         |  cast(identifier as int) as unitid,
+         |  conversion_goal,
+         |  cpa_suggest * 1.0 / 100 as cpa2
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_k_once
+       """.stripMargin
+    println(sqlRequets2)
+    val suggestDataRaw = spark.sql(sqlRequets2)
+
+    val result = rawData
+      .join(suggestDataRaw, Seq("unitid", "conversion_goal"), "left_outer")
+      .select("unitid", "conversion_goal", "cpa2")
+      .na.fill(0, Seq("cpa2"))
+
+    result.show(10)
+    val resultDF = result.select("unitid", "conversion_goal", "cpa2")
+
+    resultDF
   }
 
 }

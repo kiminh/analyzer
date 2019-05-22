@@ -118,7 +118,7 @@ object OcpcCalibrationV2 {
          |  exp_cvr,
          |  isclick,
          |  isshow,
-         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr,
+         |  exp_cvr * 1.0 / pcoc as pcvr,
          |  post_cvr
          |FROM
          |  base_data
@@ -217,7 +217,7 @@ object OcpcCalibrationV2 {
     println(sqlRequestFinal)
     val dataFinal = spark
         .sql(sqlRequestFinal)
-        .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.3, 0.3).otherwise(col("low_bid_factor")))
+        .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.5, 0.5).otherwise(col("low_bid_factor")))
 
     dataFinal
   }

@@ -227,6 +227,7 @@ object OcpcCvrSmooth {
     result
   }
 
+
   def udfSetFactor3() = udf((factor3: Double, caliValue: Double) => {
     var factor = 0.5
     if (caliValue <= 1.3 && caliValue >= 0.769) {
