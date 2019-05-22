@@ -53,7 +53,7 @@ object SlotDeviceNum {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
           case u if u.contains("000000") => "zero_device"
-          case u if (u.length == 15 || u.length == 16 || u.length == 17) => "imei"
+          case u if (u.length == 14 || u.length == 15 || u.length == 16 || u.length == 17) => "imei"
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }

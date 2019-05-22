@@ -27,7 +27,28 @@ object NovelUnionEvents {
 
         println(sql)
 
-        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
+        spark.sql(sql).toDF
+          .write
+          .partitionBy("day", "hour", "minute")
+          .mode(SaveMode.Append) // 修改为Append
+          .parquet(
+            s"""
+               |hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/
+         """.stripMargin.trim)
 
+        var i = 0
+        while (i <60){
+            var minute = (i/10).toString
+            minute=minute + i%10
+            println(minute)
+            spark.sql(
+                s"""
+                   |ALTER TABLE dl_cpc.cpc_novel_union_events
+                   | add if not exists PARTITION(`day` = "$date", `hour` = "$hour", `minute`="$minute")
+                   | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_novel_union_events/day=$date/hour=$hour/minute=$minute'
+          """.stripMargin.trim)
+            i=i+1
+        }
+        println(" -- write cpc_novel_union_events to hive successfully -- ")
     }
 }

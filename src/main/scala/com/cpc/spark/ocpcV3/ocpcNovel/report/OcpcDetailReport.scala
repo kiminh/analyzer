@@ -1,13 +1,15 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import java.util.Properties
-import com.typesafe.config.ConfigFactory
 
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcDetailReport {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     小说媒体上的ocpc广告的详情数据，主要用来比对每个广告单元的ocpc cpa和 cpc cpa
      */
@@ -99,9 +101,9 @@ object OcpcDetailReport {
          |    (
          |        select
          |            searchid,
-         |            label2 as iscvr
-         |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition and label_type!=12
+         |            label as iscvr
+         |        from dl_cpc.ocpc_label_cvr_hourly
+         |        WHERE $selectCondition
          |    ) b on a.searchid = b.searchid
        """.stripMargin
 
@@ -179,9 +181,9 @@ object OcpcDetailReport {
          |    (
          |        select
          |            searchid,
-         |            label2 as iscvr
-         |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition and label_type!=12
+         |            label as iscvr
+         |        from dl_cpc.ocpc_label_cvr_hourly
+         |        WHERE $selectCondition
          |    ) as c
          |on  b.searchid = c.searchid
        """.stripMargin

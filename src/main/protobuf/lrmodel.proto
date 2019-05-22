@@ -4,7 +4,7 @@ package lrmodel;
 
 message LRModel {
     map<int32, double> weights = 1;
-    string parser = 2;
+    string parser = 2; // ctrparser4
     int32 feature_num = 3;
     double auPRC = 4;
     double auROC = 5;

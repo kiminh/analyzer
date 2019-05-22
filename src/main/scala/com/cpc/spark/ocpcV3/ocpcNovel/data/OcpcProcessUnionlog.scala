@@ -8,9 +8,11 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpc.utils.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import org.apache.log4j.{Level, Logger}
 
 object OcpcProcessUnionlog {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期

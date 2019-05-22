@@ -1,10 +1,12 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.data
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 object OcpcLabelCvr1 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -52,15 +54,15 @@ object OcpcLabelCvr1 {
       s"""
          |SELECT
          |  searchid,
-         |  label2 as label
+         |  label
          |FROM
-         |  dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  where $selectWhere
          |AND
-         |  label2=1
+         |  label = 1
          |AND
-         |  label_type != 12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

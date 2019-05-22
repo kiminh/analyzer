@@ -125,5 +125,56 @@ object Udfs {
       0
     }
   })
+
+  def checkStudent() = udf((value: String) => {
+    if(value.contains("224=100")){
+      "student"
+    }
+    else if (value.contains("225=100")){
+      "not_student"
+    }
+    else{
+      "notag"
+    }
+
+  })
+  def checkStudent2() = udf((value: String) => {
+    if(value.contains("239")){
+      "student"
+    }
+    else if(value.contains("240")){
+      "not_student"
+    }
+    else{
+      "notag"
+    }
+
+  })
+
+  def checkZfb() = udf((valueMain: String) => {
+    if(valueMain==null){
+      "0"
+    }
+    else{
+      "1"
+    }
+
+  })
+
+  def birthdayZfb() = udf((valueInf: String) => {
+    if (valueInf == null) {
+      null
+    }
+    else {
+      if(valueInf.contains("person_birthday")){
+        val index = valueInf.indexOf("person_birthday")
+        valueInf(index+18).toString+valueInf(index+19).toString+valueInf(index+20).toString+valueInf(index+21).toString+valueInf(index+22).toString+valueInf(index+23).toString+valueInf(index+24).toString+valueInf(index+25).toString
+      }
+      else {
+        null
+      }
+    }
+
+  })
 }
 

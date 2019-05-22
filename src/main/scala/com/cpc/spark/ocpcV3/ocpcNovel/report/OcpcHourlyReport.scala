@@ -1,9 +1,10 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import java.util.Properties
-import com.typesafe.config.ConfigFactory
 
-import org.apache.spark.sql.{DataFrame, SparkSession, SaveMode}
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcHourlyReport {
@@ -11,6 +12,7 @@ object OcpcHourlyReport {
   val mariadb_write_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -22,9 +24,9 @@ object OcpcHourlyReport {
     val tableName = "dl_cpc.ocpcv3_novel_report_detail_hourly"
     result
       .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    result.write.mode("overwrite").saveAsTable(tableName)
+    //    result.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
-//    saveDataToReport(result, spark)
+    //    saveDataToReport(result, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -58,16 +60,16 @@ object OcpcHourlyReport {
     val sqlRequest2 =
       s"""
          |SELECT
-         |    searchid,
-         |    label2 as iscvr1
+         |  searchid,
+         |  label as iscvr1
          |FROM
-         |    dl_cpc.ml_cvr_feature_v1
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    $selectCondition
+         |  where $selectCondition
          |AND
-         |    label2=1
+         |  label = 1
          |AND
-         |    label_type!=12
+         |  cvr_goal = 'cvr1'
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2).distinct()
@@ -75,14 +77,16 @@ object OcpcHourlyReport {
     val sqlRequest3 =
       s"""
          |SELECT
-         |    searchid,
-         |    label as iscvr2
+         |  searchid,
+         |  label  as iscvr2
          |FROM
-         |    dl_cpc.ml_cvr_feature_v2
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    $selectCondition
+         |  where $selectCondition
          |AND
-         |    label=1
+         |  label = 1
+         |AND
+         |  cvr_goal = 'cvr3'
        """.stripMargin
     println(sqlRequest3)
     val cvr2Data = spark.sql(sqlRequest3).distinct()

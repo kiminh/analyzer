@@ -224,6 +224,17 @@ class LRIRModel {
 
   private var irmodel: IsotonicRegressionModel = _
 
+  // fym 190515: remedy for legacy code.
+  def loadIRModel(
+                   hdfsPath: String
+                 ): Unit = {
+    irmodel = IsotonicRegressionModel
+      .load(
+        ctx.sparkContext,
+        hdfsPath
+      )
+  }
+
   def getIRmodel(): IsotonicRegressionModel = {
     irmodel
   }
@@ -270,7 +281,7 @@ class LRIRModel {
     w.close()
   }
 
-  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]]): Unit = {
+  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -283,14 +294,18 @@ class LRIRModel {
       auROC = auROC,
       weights = weights.toMap
     )
-    val ir = IRModel(
-      boundaries = irmodel.boundaries.toSeq,
-      predictions = irmodel.predictions.toSeq,
-      meanSquareError = irError * irError
-    )
+    val ir:Option[IRModel] = if(withIR) {
+      Option(IRModel(
+        boundaries = irmodel.boundaries.toSeq,
+        predictions = irmodel.predictions.toSeq,
+        meanSquareError = irError * irError
+      ))
+    }else{
+      None
+    }
     val pack = Pack(
       lr = Option(lr),
-      ir = Option(ir),
+      ir = ir,
       createTime = new Date().getTime,
       planid = dict("planid"),
       unitid = dict("unitid"),
@@ -304,7 +319,7 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def savePbPack2(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]]): Unit = {
+  def savePbPack2(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -317,11 +332,13 @@ class LRIRModel {
       auROC = auROC,
       weights = weights.toMap
     )
-    val ir = mlmodel.IRModel(
+    val ir = if(withIR){Option(mlmodel.IRModel(
       boundaries = irmodel.boundaries.toSeq,
       predictions = irmodel.predictions.toSeq,
       meanSquareError = irError * irError
-    )
+    ))}else{
+      None
+    }
     val dictpb = mlmodel.Dict(
       planid = dict("planid"),
       unitid = dict("unitid"),
@@ -334,7 +351,7 @@ class LRIRModel {
     )
     val pack = mlmodel.Pack(
       lr = Option(lr),
-      ir = Option(ir),
+      ir = ir,
       createTime = new Date().getTime,
       dict = Option(dictpb)
     )

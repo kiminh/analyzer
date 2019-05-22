@@ -6,6 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.IntegerType
@@ -13,6 +14,7 @@ import org.apache.spark.sql.types.IntegerType
 
 object OcpcPIDwithCPAV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
     val date = args(0).toString
@@ -173,14 +175,12 @@ object OcpcPIDwithCPAV2 {
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
 //    ocpcv3_novel_pb_v2_hourly
-    // TODO 去重
     val case2 = spark
       .table("dl_cpc.ocpcv3_novel_pb_v2_once")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
 
-//    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
     // 优先case1，然后case2
     val resultDF = baseData
       .join(case1, Seq("unitid", "new_adclass"), "left_outer")
@@ -259,8 +259,9 @@ object OcpcPIDwithCPAV2 {
          |  total_cost,
          |  ctr_cnt,
          |  cvr_cnt,
-         |  (case when total_cost is null then 1.0
-         |        when cvr_cnt=0 or cvr_cnt is null then 0.8
+         |  (case when total_cost is null or total_cost = 0 then 1.0
+         |        when (cvr_cnt = 0 or cvr_cnt is null) and total_cost > 50000 then 0.8
+         |        when (cvr_cnt = 0 or cvr_cnt is null) and total_cost <= 50000 then 1.0
          |        else cpa_given * cvr_cnt * 1.0 / total_cost end) as cpa_ratio
          |FROM
          |  join_table
@@ -295,10 +296,11 @@ object OcpcPIDwithCPAV2 {
       .join(cpaRatio, Seq("unitid", "new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")/2))
+      .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")*0.75))
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
+//    rawData.write.mode("overwrite").saveAsTable("test.wy05")
     val resultDF = rawData
       .select("unitid", "new_adclass", "updated_k", "conversion_goal")
       .withColumn("k_value", col("updated_k"))
@@ -306,7 +308,6 @@ object OcpcPIDwithCPAV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.wy05")
     resultDF
   }
 

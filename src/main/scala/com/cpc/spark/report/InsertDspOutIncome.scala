@@ -1,12 +1,11 @@
 package com.cpc.spark.report
 
-import java.sql.{Connection, DriverManager, Statement}
+import java.sql.DriverManager
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 /**
   * Created on 2018-12-12 16
@@ -41,11 +40,10 @@ object InsertDspOutIncome {
       .appName("insert dsp_out_income date " + day)
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
 
     /* 1.外媒dsp结算信息自动化 */
-    val sql2 =
+    /*val sql2 =
       s"""
          |SELECT
          |  `date`,
@@ -69,6 +67,33 @@ object InsertDspOutIncome {
          |  `date`,
          |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"]
+       """.stripMargin
+    println("sql2: " + sql2)*/
+
+    val sql2 =
+      s"""
+         |select
+         |  b.day as date,
+         |  b.adslot_id as adslotid,
+         |  a.adslotid as dsp_adslot_id,
+         |  sum(
+         |    CASE
+         |      WHEN b.isshow == 1 THEN b.bid/1000
+         |      ELSE 0
+         |    END
+         |  ) AS dsp_income,
+         |  sum(b.isclick) as dsp_click,
+         |  sum(b.isshow) as dsp_impression
+         |from dl_cpc.cpc_basedata_search_dsp a
+         |join dl_cpc.cpc_basedata_union_events b
+         |on a.searchid=b.searchid
+         |where a.day="$day" and b.day="$day"
+         |  and b.adsrc=22
+         |  and b.isshow=1
+         |group by
+         |  b.day,
+         |  b.adslot_id,
+         |  a.adslotid
        """.stripMargin
     println("sql2: " + sql2)
 
@@ -99,6 +124,10 @@ object InsertDspOutIncome {
       updateDspOutIncomeTable(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
     }
     println("~~~~~~write to union.dsp_out_income successfully")
+
+    //src=22，mediaid在80000001、80000002、80001011、80001098、80001292、80001539、80002480之外的impression的数据来源从show_event调整到union_events
+    updateDspIncomeTableImpression(day)
+    println("~~~~~~update union.dsp_income impression successfully")
 
     df.unpersist()
     println("----- done -----")
@@ -150,6 +179,30 @@ object InsertDspOutIncome {
            |   and adslot_id = "%s"
            |   and ad_src = 22
       """.stripMargin.format(dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id, adslot_id)
+      println("sql" + sql);
+      stmt.executeUpdate(sql);
+
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+
+  def updateDspIncomeTableImpression(day: String):Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        s"""
+           |update union.dsp_income
+           |set impression = dsp_impression
+           |where `date` = "$day"
+           |  and ad_src = 22
+           |  and media_id not in (80000001,80000002,80001011,80001098,80001292,80001539,80002480)
+      """.stripMargin
       println("sql" + sql);
       stmt.executeUpdate(sql);
 

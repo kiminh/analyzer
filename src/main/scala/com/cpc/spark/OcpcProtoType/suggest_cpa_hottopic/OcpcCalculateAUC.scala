@@ -24,6 +24,8 @@ object OcpcCalculateAUC {
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
+    println("parameters:")
+    println(s"date=$date, hour=$hour, media=$media, conversionGoal=$conversionGoal, version=$version")
 
     // 抽取数据
     val data = getData(media, conversionGoal, hourInt, version, date, hour, spark)

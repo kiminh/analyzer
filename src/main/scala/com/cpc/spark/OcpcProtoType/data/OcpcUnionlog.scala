@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType.data
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcUnionlog {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -193,7 +195,7 @@ object OcpcUnionlog {
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |    charge_type,
-         |    (case when antispam_score < 10000 and isclick=1 then 1 else 0 end) as antispam,
+         |    0 as antispam,
          |    usertype,
          |    conversion_goal,
          |    conversion_from,
@@ -203,11 +205,18 @@ object OcpcUnionlog {
          |    user_req_ad_num,
          |    user_req_num,
          |    is_new_ad,
-         |    is_auto_coin
+         |    is_auto_coin,
+         |    bid_discounted_by_ad_slot,
+         |    discount,
+         |    exp_cpm,
+         |    cvr_threshold,
+         |    dsp_cpm,
+         |    new_user_days
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
+         |and length(searchid) > 0
       """.stripMargin
     println(sqlRequest)
     val rawData = spark

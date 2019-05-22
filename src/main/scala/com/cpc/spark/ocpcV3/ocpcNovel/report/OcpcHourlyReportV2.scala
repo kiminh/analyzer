@@ -1,6 +1,7 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import com.cpc.spark.tools.OperateMySQL
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, _}
 import org.apache.spark.sql.types.IntegerType
@@ -8,6 +9,7 @@ import org.apache.spark.sql.types.IntegerType
 
 object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     新版报表程序
     1. 从ocpcv3_unionlog_label_hourly拉取ocpc广告记录
@@ -293,26 +295,29 @@ object OcpcHourlyReportV2 {
 
     // cvr1
     val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition2)
-      .filter(s"label2=1")
+      .filter("cvr_goal='cvr1'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr1", lit(1))
       .distinct()
 
     // cvr2
     val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition2)
-      .filter(s"label=1")
+      .filter("cvr_goal='cvr3'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr2", lit(1))
       .distinct()
 
     // cvr3
     val cvr3Data = spark
-      .table("dl_cpc.site_form_unionlog")
+      .table("dl_cpc.ml_cvr_feature_v2")
       .where(selectCondition2)
+      .filter(s"label=1")
       .select("searchid")
       .withColumn("iscvr3", lit(1))
       .distinct()
@@ -373,7 +378,7 @@ object OcpcHourlyReportV2 {
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 99999.9).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
-      .withColumn("cpa_ratio",when(col("new_adclass")===110110,col("cpa_ratio")*2).otherwise(col("cpa_ratio")))
+      .withColumn("cpa_ratio",when(col("new_adclass")===110110,col("cpa_ratio")*4/3).otherwise(col("cpa_ratio")))
       .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8 and col("cpa_ratio")<=1.2, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
@@ -470,29 +475,34 @@ object OcpcHourlyReportV2 {
     val selectCondition = s"`date`='$date'"
     // cvr1
     val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition)
-      .filter(s"label2=1")
+      .filter("cvr_goal='cvr1'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr1", lit(1))
       .distinct()
 
     // cvr2
     val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
+      .table("dl_cpc.ocpc_label_cvr_hourly")
       .where(selectCondition)
-      .filter(s"label=1")
+      .filter("cvr_goal='cvr3'")
+      .filter("label=1")
       .select("searchid")
       .withColumn("iscvr2", lit(1))
       .distinct()
 
     // cvr3
     val cvr3Data = spark
-      .table("dl_cpc.site_form_unionlog")
+      .table("dl_cpc.ml_cvr_feature_v2")
       .where(selectCondition)
+      .filter(s"label=1")
       .select("searchid")
       .withColumn("iscvr3", lit(1))
       .distinct()
+
+
 
     // 数据关联
     val resultDF = rawData

@@ -11,7 +11,7 @@ import org.apache.spark.sql.SparkSession
 
 /**
   * Created by Roy on 2017/5/18.
-  *
+  * new owner: fym (190428).
   */
 object ConditionTouchedUV {
 
@@ -19,7 +19,6 @@ object ConditionTouchedUV {
 
 
   var interestids = Seq(110, 125, 201, 202, 203, 204, 205, 206, 207, 208, 209)
-
 
 
   def main(args: Array[String]): Unit = {
@@ -39,12 +38,12 @@ object ConditionTouchedUV {
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
     redis.select(3)
     val ctx = SparkSession.builder()
-      .appName("cpc anal condition touched uv from %s".format(date))
+      .appName("[cpc-anal] condition touched uv from %s".format(date))
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
     var ulog = ctx.sql(
-      "select *,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and isshow=1 and ideaid>0"
+      "select *, share_coin, phone_level from dl_cpc.cpc_basedata_union_events where day = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and isshow=1 and ideaid>0"
         .format(date))
       //      .as[UnionLog]
       .rdd
