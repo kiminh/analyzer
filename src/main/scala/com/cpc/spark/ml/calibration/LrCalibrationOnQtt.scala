@@ -85,7 +85,7 @@ object LrCalibrationOnQtt {
     val adslotid_sum = adslotidID.size
     val ideaid_sum = ideaidID.size
     val hour_sum = hourID.size
-    val profile_num = adslotid_sum + ideaid_sum + 3
+    val profile_num = adslotid_sum + ideaid_sum + hour_sum +2
     val sample = log.rdd.map {
       r =>
         val label = r.getAs[Long]("isclick").toInt
@@ -93,7 +93,7 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        val hour = r.getAs[String]("hour").toDouble
+        val hour = r.getAs[String]("hour")
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
           els = els :+ (adslotidID(adslotid), 1.0)
@@ -102,13 +102,13 @@ object LrCalibrationOnQtt {
           els = els :+ (ideaidID(ideaid) + adslotid_sum , 1.0)
         }
         if (hour != null) {
-          els = els :+ (adslotid_sum + ideaid_sum , 1.0)
+          els = els :+ (adslotid_sum + ideaid_sum + hourID(hour), 1.0)
         }
         if (raw_ctr != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum , raw_ctr)
         }
         if (user_req_ad_num != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum+1 , user_req_ad_num)
         }
         (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
@@ -133,7 +133,7 @@ object LrCalibrationOnQtt {
         val adslotid = r.getAs[String]("adslotid")
         val ideaid = r.getAs[Long]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        val hour = r.getAs[String]("hour").toDouble
+        val hour = r.getAs[String]("hour")
         var els = Seq[(Int, Double)]()
         if (adslotid != null) {
           if (adslotidID.contains(adslotid)){
@@ -146,13 +146,13 @@ object LrCalibrationOnQtt {
           }
         }
         if (hour != null) {
-          els = els :+ (adslotid_sum + ideaid_sum , 1.0)
+          els = els :+ (adslotid_sum + ideaid_sum + hourID(hour), 1.0)
         }
         if (raw_ctr != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 1 , raw_ctr)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum , raw_ctr)
         }
         if (user_req_ad_num != null) {
-          els = els :+ (adslotid_sum + ideaid_sum + 2 , user_req_ad_num)
+          els = els :+ (adslotid_sum + ideaid_sum + hour_sum+1 , user_req_ad_num)
         }
         (label,els,ideaid)
     }.filter(_ != null).toDF("label","els","ideaid")
