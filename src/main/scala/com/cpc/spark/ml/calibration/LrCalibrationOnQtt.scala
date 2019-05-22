@@ -30,7 +30,7 @@ object LrCalibrationOnQtt {
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val model = "qtt-ctr-dnn-rawid-v8"
+    val model = "qtt-list-dnn-rawid-v4"
     val calimodel ="novel-ctr-dnn-rawid-v8-postcali"
 
 

@@ -28,8 +28,8 @@ object RFCalibrationOnQtt {
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val modelname = "novel-ctr-dnn-rawid-v8"
-    val calimodel ="novel-ctr-dnn-rawid-v8-postcali"
+    val modelname = "qtt-list-dnn-rawid-v4"
+    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -54,7 +54,7 @@ object RFCalibrationOnQtt {
                  |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num, hour
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1
+                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type =1
                  | and ctr_model_name in ('$modelname','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
@@ -132,9 +132,9 @@ object RFCalibrationOnQtt {
     val sql2 = s"""
                  |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr,hour
                  | from dl_cpc.slim_union_log
-                 | where dt = '2019-05-21'
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name in ('$model','$calimodel')
+                 | where dt = '2019-05-20'
+                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type =1
+                 | and ctr_model_name in ('$calimodel') and hour = '22'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
