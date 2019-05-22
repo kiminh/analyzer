@@ -107,7 +107,7 @@ object RFCalibrationOnQtt {
     //  Empty categoricalFeaturesInfo indicates all features are continuous.
     val numClasses = 2
     val categoricalFeaturesInfo = Map[Int, Int](0 -> ideaid_sum, 1 -> adslotid_sum)
-    val numTrees = 3 // Use more in practice.
+    val numTrees = 12 // Use more in practice.
     val featureSubsetStrategy = "auto" // Let the algorithm choose.
     val impurity = "variance"
     val maxDepth = 4
