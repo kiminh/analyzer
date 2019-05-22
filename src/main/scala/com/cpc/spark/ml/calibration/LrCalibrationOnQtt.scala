@@ -31,7 +31,7 @@ object LrCalibrationOnQtt {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="novel-ctr-dnn-rawid-v8-postcali"
+    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
