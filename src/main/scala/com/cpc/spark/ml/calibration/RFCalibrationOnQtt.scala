@@ -111,7 +111,7 @@ object RFCalibrationOnQtt {
     val featureSubsetStrategy = "auto" // Let the algorithm choose.
     val impurity = "variance"
     val maxDepth = 4
-    val maxBins = 32
+    val maxBins = ideaid_sum + adslotid_sum + 32
 
     val model = RandomForest.trainRegressor(trainingData, categoricalFeaturesInfo,
       numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins)
