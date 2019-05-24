@@ -119,9 +119,11 @@ object OcpcSuggestCPAV3 {
          |        b.conversion_target[0] as real_target
          |from dl_cpc.dm_conversions_for_model a
          |join dl_cpc.dw_unitid_detail b
-         |    on a.unitid=b.unitid and a.day = b.day
+         |    on a.unitid=b.unitid
+         |    and a.day = b.day
          |    and b.$selectCondition2
          |where a.$selectCondition2
+         |and size(a.conversion_target)>0
        """.stripMargin
     println(sqlRequest2)
     val cvrData0 = spark.sql(sqlRequest2)
@@ -166,11 +168,7 @@ object OcpcSuggestCPAV3 {
 
   def matchcvr = udf {
     (unit_target: Array[String],real_target:String) => {
-      var flag = 0
-      if (unit_target contains(real_target))  {
-        1
-      }
-      flag
+      if (unit_target contains(real_target))  1 else 0
     }
   }
 
