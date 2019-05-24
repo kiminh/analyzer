@@ -126,10 +126,8 @@ object OcpcSuggestCPAV3 {
          |and size(a.conversion_target)>0
        """.stripMargin
     println(sqlRequest2)
-    val cvrData0 = spark.sql(sqlRequest2)
-    cvrData0.show(10)
-    cvrData0.printSchema()
-     val cvrData=cvrData0 .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
+    val cvrData = spark.sql(sqlRequest2)
+      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
       .filter("iscvr = 1")
 
     // 数据关联
@@ -167,7 +165,7 @@ object OcpcSuggestCPAV3 {
   }
 
   def matchcvr = udf {
-    (unit_target: Array[String],real_target:String) => {
+    (unit_target: Seq[String],real_target:String) => {
       if (unit_target contains(real_target))  1 else 0
     }
   }
