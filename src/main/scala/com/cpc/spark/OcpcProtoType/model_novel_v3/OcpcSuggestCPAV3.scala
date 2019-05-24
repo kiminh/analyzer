@@ -124,8 +124,10 @@ object OcpcSuggestCPAV3 {
          |where a.$selectCondition2
        """.stripMargin
     println(sqlRequest2)
-    val cvrData = spark.sql(sqlRequest2)
-      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
+    val cvrData0 = spark.sql(sqlRequest2)
+    cvrData0.show(10)
+    cvrData0.printSchema()
+     val cvrData=cvrData0 .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
       .filter("iscvr = 1")
 
     // 数据关联
