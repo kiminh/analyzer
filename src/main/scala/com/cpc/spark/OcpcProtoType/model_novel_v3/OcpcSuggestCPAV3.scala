@@ -43,8 +43,8 @@ object OcpcSuggestCPAV3 {
     //根据dl_cpc.dw_unitid_detail定义转化目标
     val baseData = getBaseData(date, hour, spark)
 
-//    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
-//    val ocpcFlag = getOcpcFlag(conversionGoal, spark)
+    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
+    val ocpcFlag = getOcpcFlag(spark)
 //
 //    // ocpc部分：kvalue
 //    val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
@@ -153,7 +153,7 @@ object OcpcSuggestCPAV3 {
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(
-        sum(col("total_cost")).alias("cost"),
+        sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qttcpa",col("cost")/col("iscvr"))
@@ -173,7 +173,7 @@ object OcpcSuggestCPAV3 {
   }
 
 
-  def getOcpcFlag(conversionGoal: Int, spark: SparkSession) = {
+  def getOcpcFlag(spark: SparkSession) = {
     val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
