@@ -9,10 +9,10 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import adclassEcpc.adclassEcpc.{SingleItem, AdClassEcpcList}
+
 import scala.collection.mutable.ListBuffer
 
-object eCPCforElds {
+object eCPCforUsertype2 {
   def main(args: Array[String]): Unit = {
     /*
     计算新版的cvr平滑策略：
@@ -561,7 +561,7 @@ object eCPCforElds {
          |AND
          |  is_ocpc = 0
          |AND
-         |  (cast(adclass as string) like '134%' or cast(adclass as string) like '107%')
+         |  usertype = 2
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark.sql(sqlRequest1)
