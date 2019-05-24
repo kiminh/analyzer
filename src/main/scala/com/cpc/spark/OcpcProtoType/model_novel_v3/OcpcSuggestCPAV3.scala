@@ -150,6 +150,7 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
+      .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(
         sum(col("total_cost")).alias("cost"),
