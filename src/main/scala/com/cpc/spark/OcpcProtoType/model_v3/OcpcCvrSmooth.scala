@@ -87,8 +87,8 @@ object OcpcCvrSmooth {
       .withColumn("version", lit("qtt_demo"))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
@@ -218,6 +218,7 @@ object OcpcCvrSmooth {
       .na.fill(0.2, Seq("factor1"))
       .na.fill(0.5, Seq("factor2", "factor3"))
       .na.fill(1.0, Seq("cali_value"))
+      .withColumn("factor3", udfChangeFactor3ByUnitid(0.7)(col("identifier"), col("factor3")))
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
 //    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
@@ -226,6 +227,16 @@ object OcpcCvrSmooth {
 
     result
   }
+
+  def udfChangeFactor3ByUnitid(factorNew: Double) = udf((identifier: String, factor: Double) => {
+    var result = identifier match {
+      case "2128594" => factorNew
+      case "2064040" => factorNew
+      case "1907720" => factorNew
+      case _ => factor
+    }
+    result
+  })
 
 
   def udfSetFactor3() = udf((factor3: Double, caliValue: Double) => {
@@ -266,6 +277,8 @@ object OcpcCvrSmooth {
       .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cali_value")).alias("cali_value"))
       .select("identifier", "cali_value")
+      .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
+      .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
 
     result
   }
