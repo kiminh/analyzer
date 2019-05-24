@@ -47,13 +47,13 @@ object eCPCforUsertype2 {
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val data1 = calculateData1(baseData, 20, date, hour, spark)
-    data1.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514a")
+//    data1.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514a")
     val data2 = calculateData2(baseData, 20, date, hour, spark)
-    data2.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514b")
+//    data2.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514b")
     val data3 = calculateData3(baseData, 20, date, hour, spark)
-    data3.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514c")
+//    data3.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514c")
     val data4 = calculateData4(baseData, 20, date, hour, spark)
-    data4.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514d")
+//    data4.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514d")
 
     val data = dataMain
       .join(data1, Seq("adclass", "adtype", "slottype", "slotid"), "left_outer")
@@ -67,7 +67,7 @@ object eCPCforUsertype2 {
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
 
-    data.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514")
+//    data.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514")
 
 
     val resultDF = data
