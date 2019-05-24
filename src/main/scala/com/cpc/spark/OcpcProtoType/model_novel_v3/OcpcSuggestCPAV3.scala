@@ -201,8 +201,6 @@ object OcpcSuggestCPAV3 {
          |  is_ocpc
          |FROM
          |  base_data
-         |WHERE
-         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
