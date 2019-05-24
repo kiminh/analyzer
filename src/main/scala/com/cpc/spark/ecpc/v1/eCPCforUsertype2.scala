@@ -412,7 +412,7 @@ object eCPCforUsertype2 {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
-    val sqlRequest1 =
+    val sqlRequest =
       s"""
          |SELECT
          |  searchid,
@@ -423,6 +423,13 @@ object eCPCforUsertype2 {
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  exp_cvr,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then 3
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%' and is_api_callback=1) then 2
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%' and is_api_callback!=1) then 1
+         |      when (adclass = 110110100) then 1
+         |      else 0
+         |  end) as conversion_goal,
          |  isshow,
          |  isclick
          |FROM
@@ -435,17 +442,43 @@ object eCPCforUsertype2 {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 0
-         |AND
-         |  usertype = 2
        """.stripMargin
-    println(sqlRequest1)
-    val clickData = spark.sql(sqlRequest1)
+    println(sqlRequest)
+    val clickData = spark.sql(sqlRequest)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr1
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr1'
+       """.stripMargin
+    val cvrData1 = spark.sql(sqlRequest1)
 
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr
+         |  label as iscvr2
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr2'
+       """.stripMargin
+    val cvrData2 = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr3
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -453,14 +486,28 @@ object eCPCforUsertype2 {
          |AND
          |  cvr_goal = 'cvr3'
        """.stripMargin
-    val cvrData = spark.sql(sqlRequest2)
+    val cvrData3 = spark.sql(sqlRequest3)
 
     val data = clickData
-      .join(cvrData, Seq("searchid"), "left_outer")
-      .na.fill(0, Seq("iscvr"))
+      .join(cvrData1, Seq("searchid"), "left_outer")
+      .join(cvrData2, Seq("searchid"), "left_outer")
+      .join(cvrData3, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3"))
+      .filter(s"conversion_goal > 0")
+      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3")))
 
     data
   }
+
+  def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int) => {
+    val iscvr = conversionGoal match {
+      case 1 => iscvr1
+      case 2 => iscvr2
+      case 3 => iscvr3
+      case _ => 0
+    }
+    iscvr
+  })
 
 
 }
