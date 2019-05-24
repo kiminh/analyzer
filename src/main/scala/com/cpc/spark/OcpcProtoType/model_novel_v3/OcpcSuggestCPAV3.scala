@@ -156,7 +156,7 @@ object OcpcSuggestCPAV3 {
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
-      .withColumn("qttcpa",col("cost")/col("iscvr"))
+      .withColumn("qttcpa",col("cost")/col("cvrcnt"))
 
     resultDF.show(10)
     resultDF
