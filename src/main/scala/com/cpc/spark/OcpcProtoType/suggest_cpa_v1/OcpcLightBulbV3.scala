@@ -36,19 +36,15 @@ object OcpcLightBulbV3{
       .enableHiveSupport().getOrCreate()
 
     // todo 修改表名
-    val tableName = "dl_cpc.ocpc_light_control_version"
+    val tableName1 = "dl_cpc.ocpc_light_control_version"
+    val tableName2 = "dl_cpc.ocpc_light_control_daily"
+
+    val result = getUpdateTable(tableName1, tableName2, date, version, spark)
 
 
-    val jsonObj = new JSONObject
-    jsonObj.put("unit_id",270)
-    jsonObj.put("ocpc_light",1)
-    jsonObj.put("ocpc_suggest_price", "1.5")
-    val url = "service.aiclk.com/ocpc/update"
-    val client = new HttpClient();
-    client.getHostConfiguration().setHost(url)
-//    val post =
-//    val client = HttpClient.createDefault()
-//    val post: HttpPost = new HttpPost(url)
+  }
+
+  def getUpdateTable(table1: String, table2: String, date: String, version: String, spark: SparkSession) = {
 
   }
 
