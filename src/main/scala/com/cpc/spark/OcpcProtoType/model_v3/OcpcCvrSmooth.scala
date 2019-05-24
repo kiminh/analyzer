@@ -87,8 +87,8 @@ object OcpcCvrSmooth {
       .withColumn("version", lit("qtt_demo"))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
@@ -277,8 +277,6 @@ object OcpcCvrSmooth {
       .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cali_value")).alias("cali_value"))
       .select("identifier", "cali_value")
-      .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
-      .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
 
     result
   }
