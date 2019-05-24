@@ -743,12 +743,12 @@ object LRTrain {
     i += dict("ideaid").size + 1
 
     //user installed app
-    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    /*val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
     if (appIdx != null) {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 1000 + 1
+    i += 1000 + 1*/
 
     // 190523: dnn features.
 
