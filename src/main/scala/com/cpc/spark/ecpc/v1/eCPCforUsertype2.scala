@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-
+import adclassEcpc.adclassEcpc.{SingleItem, AdClassEcpcList}
 import scala.collection.mutable.ListBuffer
 
 object eCPCforUsertype2 {
@@ -62,23 +62,23 @@ object eCPCforUsertype2 {
       .join(data4, Seq("adclass"), "left_outer")
       .select("adclass", "adtype", "slottype", "slotid", "post_cvr1", "pcoc1", "post_cvr2", "pcoc2", "post_cvr3", "pcoc3", "post_cvr4", "pcoc4")
       .na.fill(0.0, Seq("post_cvr1", "pcoc1", "post_cvr2", "pcoc2", "post_cvr3", "pcoc3", "post_cvr4", "pcoc4"))
-      .withColumn("pcoc", udfSelectPCOC()(col("pcoc1"), col("pcoc2"), col("pcoc3"), col("pcoc4")))
       .withColumn("post_cvr", udfSelectPostCvr()(col("post_cvr1"), col("post_cvr2"), col("post_cvr3"), col("post_cvr4")))
+      .withColumn("pcoc", udfSelectPCOC()(col("pcoc1"), col("pcoc2"), col("pcoc3"), col("pcoc4")))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
 
     data.write.mode("overwrite").saveAsTable("test.check_ecpc_for_elds20190514")
 
 
-//    val resultDF = data
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//
-//    resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
-//
-//    savePbPack(resultDF, fileName, version, date, hour, spark)
+    val resultDF = data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+
+    savePbPack(resultDF, fileName, version, date, hour, spark)
 
   }
 
@@ -208,92 +208,93 @@ object eCPCforUsertype2 {
     data
   }
 
-//  def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
-//    /*
-//    int64 adclass = 1;
-//    int64 adtype = 2;
-//    int64 slottype = 3;
-//    string slotid = 4;
-//    double post_cvr = 5;
-//    double calCvrFactor = 6;
-//    double highBidFactor = 7;
-//    double lowBidFactor = 8;
-//     */
-//    var list = new ListBuffer[SingleItem]
-//    dataset.createOrReplaceTempView("raw_data")
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  1.0 / pcoc as cvr_cal_factor,
-//         |  post_cvr,
-//         |  high_bid_factor,
-//         |  low_bid_factor
-//         |FROM
-//         |  raw_data
-//       """.stripMargin
-//    println(sqlRequest)
-//    val resultData = spark
-//      .sql(sqlRequest)
-//      .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
-//      .cache()
-//
-//    println("size of the dataframe:")
-//    println(resultData.count)
-//    resultData.show(10)
-//    resultData.printSchema()
-//    resultData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
-////      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
-//    var cnt = 0
-//
-//    for (record <- resultData.collect()) {
-//      val adclass = record.getAs[Long]("adclass")
-//      val adtype = record.getAs[Long]("adtype")
-//      val slottype = record.getAs[Long]("slottype")
-//      val slotid = record.getAs[String]("slotid")
-//      val postCvr = record.getAs[Double]("post_cvr")
-//      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
-//      val highBidFactor = record.getAs[Double]("high_bid_factor")
-//      val lowBidFactor = record.getAs[Double]("low_bid_factor")
-//
-//      if (cnt % 100 == 0) {
-//        println(s"adclass:$adclass, adtype:$adtype, slottype:$slottype, slotid:$slotid, postCvr:$postCvr, cvrCalFactor:$cvrCalFactor, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
-//      }
-//      cnt += 1
-//
-//      val currentItem = SingleItem(
-//        adclass = adclass,
-//        adtype = adtype,
-//        slottype = slottype,
-//        slotid = slotid,
-//        postCvr = postCvr,
-//        calCvrFactor = cvrCalFactor,
-//        highBidFactor = highBidFactor,
-//        lowBidFactor = lowBidFactor
-//      )
-//      list += currentItem
-//
-//    }
-//
-//    val result = list.toArray[SingleItem]
-//    val adRecordList = AdClassEcpcList(
-//      records = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(filename))
-//
-//    println("complete save data into protobuffer")
-//
-//  }
+  def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
+    /*
+    int64 adclass = 1;
+    int64 adtype = 2;
+    int64 slottype = 3;
+    string slotid = 4;
+    double post_cvr = 5;
+    double calCvrFactor = 6;
+    double highBidFactor = 7;
+    double lowBidFactor = 8;
+     */
+    var list = new ListBuffer[SingleItem]
+    dataset.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  adclass,
+         |  adtype,
+         |  slottype,
+         |  slotid,
+         |  1.0 / pcoc as cvr_cal_factor,
+         |  post_cvr,
+         |  high_bid_factor,
+         |  low_bid_factor
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest)
+    val resultData = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
+      .filter(s"cvr_cal_factor > 0 and post_cvr > 0")
+      .cache()
+
+    println("size of the dataframe:")
+    println(resultData.count)
+    resultData.show(10)
+    resultData.printSchema()
+    resultData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+    var cnt = 0
+
+    for (record <- resultData.collect()) {
+      val adclass = record.getAs[Long]("adclass")
+      val adtype = record.getAs[Long]("adtype")
+      val slottype = record.getAs[Long]("slottype")
+      val slotid = record.getAs[String]("slotid")
+      val postCvr = record.getAs[Double]("post_cvr")
+      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
+      val highBidFactor = record.getAs[Double]("high_bid_factor")
+      val lowBidFactor = record.getAs[Double]("low_bid_factor")
+
+      if (cnt % 100 == 0) {
+        println(s"adclass:$adclass, adtype:$adtype, slottype:$slottype, slotid:$slotid, postCvr:$postCvr, cvrCalFactor:$cvrCalFactor, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        adclass = adclass,
+        adtype = adtype,
+        slottype = slottype,
+        slotid = slotid,
+        postCvr = postCvr,
+        calCvrFactor = cvrCalFactor,
+        highBidFactor = highBidFactor,
+        lowBidFactor = lowBidFactor
+      )
+      list += currentItem
+
+    }
+
+    val result = list.toArray[SingleItem]
+    val adRecordList = AdClassEcpcList(
+      records = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(filename))
+
+    println("complete save data into protobuffer")
+
+  }
 
   def udfSlottypeMap() = udf((slottype: Int) => {
     /*
