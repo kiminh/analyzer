@@ -41,13 +41,19 @@ object GetDayUv {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
-      .appName("[cpc-anal] get uv report from %s %s".format(table, date))
+      .appName("[cpc-anal] report_media_uv_daily %s".format(date))
       .enableHiveSupport()
       .getOrCreate()
 
     val unionLog = ctx.sql(
       s"""
-         |select * from dl_cpc.%s where `day` = "%s" and adslot_id > 0 and isshow = 1
+         |select
+         |  media_appsid
+         |  , adslot_id
+         |  , adslot_type
+         |  , uid
+         |  , day
+         |from dl_cpc.%s where `day` = "%s" and adslot_id > 0 and isshow = 1
        """.stripMargin.format(table, date))
       //      .as[UnionLog]
       .rdd
