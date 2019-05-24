@@ -43,8 +43,8 @@ object OcpcSuggestCPAV3 {
     //根据dl_cpc.dw_unitid_detail定义转化目标
     val baseData = getBaseData(date, hour, spark)
 
-    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
-    val ocpcFlag = getOcpcFlag(spark)
+//    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
+//    val ocpcFlag = getOcpcFlag(spark)
 //
 //    // ocpc部分：kvalue
 //    val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
