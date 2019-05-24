@@ -126,7 +126,7 @@ object eCPCforUsertype2 {
          |  sum(iscvr) as cv
          |FROM
          |  base_data
-         |GROUP BY adclass, adtype
+         |GROUP BY adclass
        """.stripMargin
     println(sqlRequest)
     val data = spark
@@ -347,131 +347,6 @@ object eCPCforUsertype2 {
     }
     result
   })
-
-//  def calculateData2(baseData: DataFrame, highBidFactor: Double, date: String, hour: String, spark: SparkSession) = {
-//    /*
-//    int64 adclass = 1;
-//    int64 adtype = 2;
-//    int64 slottype = 3;
-//    string slotid = 4;
-//    double post_cvr = 5;
-//    double calCvrFactor = 6;
-//    double highBidFactor = 7;
-//    double lowBidFactor = 8;
-//     */
-//    baseData.createOrReplaceTempView("base_data")
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  bid,
-//         |  price,
-//         |  exp_cvr,
-//         |  isclick,
-//         |  isshow,
-//         |  exp_cvr * 1.0 / (jfb * pcoc) as pcvr,
-//         |  post_cvr
-//         |FROM
-//         |  base_data
-//       """.stripMargin
-//    println(sqlRequest)
-//    val rawData = spark
-//      .sql(sqlRequest)
-//      .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
-//
-//    rawData.createOrReplaceTempView("raw_data")
-//    val sqlRequest1 =
-//      s"""
-//         |SELECT
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  sum(isclick) as click,
-//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-//         |FROM
-//         |  raw_data
-//         |GROUP BY adclass, adtype, slottype, slotid
-//       """.stripMargin
-//    println(sqlRequest1)
-//    val data1 = spark
-//      .sql(sqlRequest1)
-//      .withColumn("calc_total", col("pre_cvr") * col("click"))
-//      .select("adclass", "adtype", "slottype", "slotid", "calc_total")
-//
-//    val sqlRequest2 =
-//      s"""
-//         |SELECT
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  sum(isclick) as click,
-//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-//         |FROM
-//         |  raw_data
-//         |WHERE
-//         |  pcvr_group = "high"
-//         |GROUP BY adclass, adtype, slottype, slotid
-//       """.stripMargin
-//    println(sqlRequest2)
-//    val data2 = spark
-//      .sql(sqlRequest2)
-//      .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-//      .select("adclass", "adtype", "slottype", "slotid", "calc_high")
-//
-//    val sqlRequest3 =
-//      s"""
-//         |SELECT
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  sum(isclick) as click,
-//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
-//         |FROM
-//         |  raw_data
-//         |WHERE
-//         |  pcvr_group = "low"
-//         |GROUP BY adclass, adtype, slottype, slotid
-//       """.stripMargin
-//    println(sqlRequest3)
-//    val data3 = spark
-//      .sql(sqlRequest3)
-//      .withColumn("calc_low", col("pre_cvr") * col("click"))
-//      .select("adclass", "adtype", "slottype", "slotid", "calc_low")
-//
-//    val data = data1
-//      .join(data2, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
-//      .join(data3, Seq("adclass", "adtype", "slottype", "slotid"), "inner")
-//      .select("adclass", "adtype", "slottype", "slotid", "calc_total", "calc_high", "calc_low")
-//
-//    data.createOrReplaceTempView("data")
-//    val sqlRequestFinal =
-//      s"""
-//         |SELECT
-//         |  adclass,
-//         |  adtype,
-//         |  slottype,
-//         |  slotid,
-//         |  calc_total,
-//         |  calc_high,
-//         |  calc_low,
-//         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
-//         |FROM
-//         |  data
-//       """.stripMargin
-//    println(sqlRequestFinal)
-//    val dataFinal = spark
-//      .sql(sqlRequestFinal)
-//      .withColumn("low_bid_factor", when(col("low_bid_factor") <= 0.3, 0.3).otherwise(col("low_bid_factor")))
-//
-//    dataFinal
-//  }
 
   def calculateData1(baseData: DataFrame, minCv: Int, date: String, hour: String, spark: SparkSession) = {
     /*
