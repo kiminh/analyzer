@@ -40,24 +40,14 @@ object OcpcSuggestCPAV3 {
       .appName(s"ocpc suggest cpa v2: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    //根据dl_cpc.dw_unitid_detail定义转化目标
+    //根据dl_cpc.dw_unitid_detail确定unitid的conversionGoal以及
     val baseData = getBaseData(date, hour, spark)
 
-//    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
-//    val ocpcFlag = getOcpcFlag(spark)
-//
-//    // ocpc部分：kvalue
-//    val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
-//
-//    // 模型部分
-//    val aucData = getAucData(version, conversionGoal, date, hour, spark)
-//
-//
-//    // 历史推荐cpa的pcoc数据
-//    val prevData = getPrevSuggestData(version, conversionGoal, date, hour, spark)
-//
-//    // 数据组装
-//    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, conversionGoal, spark)
+    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
+    val ocpcFlag = getOcpcFlag(spark)
+
+    // 数据组装
+    val result = assemblyData(baseData, ocpcFlag, spark)
 //
 //    val resultDF = result
 //      .withColumn("cv_goal", lit(conversionGoal))
@@ -68,8 +58,8 @@ object OcpcSuggestCPAV3 {
 //    resultDF.show(10)
 //
 //    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
-//    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_suggest_cpa_recommend_hourly_v2")
+//    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -153,13 +143,16 @@ object OcpcSuggestCPAV3 {
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
-      .groupBy("unitid", "new_adclass")
+      .groupBy("unitid", "new_adclass","unit_target")
       .agg(
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qttcpa",col("cost")/col("cvrcnt"))
-
+      .withColumn("conversion_goal",when(col("unit_target")==="sdk_app_install",1).otherwise(null))
+      .withColumn("conversion_goal",when(col("unit_target")==="api",2).otherwise(col("conversion_goal")))
+      .withColumn("conversion_goal",when(col("unit_target")==="site_form",3).otherwise(col("conversion_goal")))
+      .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",4).otherwise(col("conversion_goal")))
     resultDF.show(10)
     resultDF
   }
@@ -169,7 +162,6 @@ object OcpcSuggestCPAV3 {
       if (unit_target contains(real_target))  1 else 0
     }
   }
-
 
   def getOcpcFlag(spark: SparkSession) = {
     val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
@@ -186,24 +178,29 @@ object OcpcSuggestCPAV3 {
       .option("dbtable", table)
       .load()
 
-    val base = data
+    val resultDF = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal")
-
-    base.createOrReplaceTempView("base_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  is_ocpc
-         |FROM
-         |  base_data
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+      .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal","ocpc_bid")
 
     resultDF.show(10)
     resultDF
+  }
+
+  def assemblyData(baseData: DataFrame,ocpcFlag: DataFrame,spark: SparkSession) = {
+    /*
+    assemlby the data together
+     */
+    val result = baseData
+      .join(ocpcFlag, Seq("unitid"), "left_outer")
+
+    result.show(50)
+//      .select("unitid", "new_adclass", "cost", "cvrcnt", "is_ocpc", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue", "auc", "is_ocpc", "pcoc1", "pcoc2")
+
+//      .withColumn("original_conversion", lit(conversionGoal))
+//      .withColumn("conversion_goal", lit(conversionGoal))
+//      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+
+    result
   }
 }
