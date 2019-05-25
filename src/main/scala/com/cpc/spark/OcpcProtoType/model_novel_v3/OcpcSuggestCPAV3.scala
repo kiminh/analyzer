@@ -44,8 +44,8 @@ object OcpcSuggestCPAV3 {
     val baseData = getBaseData(date, hour, spark)
 
     // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
-//    val ocpcFlag = getOcpcFlag(spark)
-//
+    val ocpcFlag = getOcpcFlag(spark)
+
 //    // 数据组装
 //    val result = assemblyData(baseData, ocpcFlag, spark)
 //
@@ -89,9 +89,7 @@ object OcpcSuggestCPAV3 {
          |    adclass,
          |    price,
          |    bid,
-         |    ocpc_log,
-         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
-         |          else cast(bid as double) end) as real_bid
+         |    ocpc_log
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE $selectCondition
@@ -125,20 +123,47 @@ object OcpcSuggestCPAV3 {
     // 数据关联
     val data = ctrData
       .join(cvrData, Seq("searchid"), "left_outer")
-      .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
 
-    //计算qtt cpa
-    val resultDF = data
-      .groupBy("unitid", "new_adclass","unit_target")
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    adclass,
+         |    price,
+         |    bid as original_bid,
+         |    ocpc_log,
+         |    iscvr,
+         |
+         |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
+         |          else cast(bid as double) end) as real_bid
+         |FROM
+         |    base_data
+       """.stripMargin
+    println(sqlRequest)
+    val basedata = spark.sql(sqlRequest)
+      .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
+    val qttCpa = basedata.groupBy("unitid", "new_adclass","unit_target")
       .agg(
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
-      .withColumn("qttcpa",col("cost")/col("cvrcnt"))
+      .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
       .withColumn("conversion_goal",when(col("unit_target")==="sdk_app_install",1).otherwise(null))
       .withColumn("conversion_goal",when(col("unit_target")==="api",2).otherwise(col("conversion_goal")))
       .withColumn("conversion_goal",when(col("unit_target")==="site_form",3).otherwise(col("conversion_goal")))
       .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",4).otherwise(col("conversion_goal")))
+
+    //抽取趣头条广告的行业类别cpa
+
+    val resultDF = basedata
+      .groupBy("new_adclass")
+      .agg(
+        sum(col("price")).alias("cost"),
+        sum(col("iscvr")).alias("cvrcnt"))
+      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
+
     resultDF.show(10)
     resultDF
   }
