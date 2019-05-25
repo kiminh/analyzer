@@ -135,7 +135,7 @@ object OcpcSuggestCPAV3 {
          |    bid as original_bid,
          |    ocpc_log,
          |    iscvr,
-         |
+         |    unit_target,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid
          |FROM
