@@ -195,8 +195,8 @@ object OcpcSuggestCPAV3 {
          |  cvrcnt > 1
          |GROUP BY new_adclass
        """.stripMargin
-    println(sqlRequest1)
-    val alpha1Data = spark.sql(sqlRequest1)
+    println(sqlRequest4)
+    val alpha1Data = spark.sql(sqlRequest4)
     val resultDF = qttCpa.join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
 
