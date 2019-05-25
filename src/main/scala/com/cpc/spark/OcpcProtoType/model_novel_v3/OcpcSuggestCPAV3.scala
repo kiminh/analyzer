@@ -120,9 +120,26 @@ object OcpcSuggestCPAV3 {
       .withColumn("iscvr",matchcvr(col("real_target"),col("unit_target")))
       .filter("iscvr = 1")
 
+    val sqlRequest3 =
+      s"""
+         |select
+         |  distinct unitid,
+         |  (case when conversion_target[0] = "sdk_app_install" then 1
+         |          when conversion_target[0] = "api" then 2
+         |          when conversion_target[0] = "site_form" then 3
+         |          when conversion_target[0] = "sdk_site_wz" then 4
+         |          else 0 end) as conversion_goal
+         |from dl_cpc.dw_unitid_detail
+         |where $selectCondition2
+       """.stripMargin
+
+    val conversionData = spark.sql(sqlRequest3)
+
     // 数据关联
     val data = ctrData
       .join(cvrData, Seq("searchid"), "left_outer")
+      .join(conversionData, Seq("unitid"),"inner")
+      .filter("conversion_goal>0")
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
 
     data.createOrReplaceTempView("base_data")
@@ -139,12 +156,7 @@ object OcpcSuggestCPAV3 {
          |    real_target,
          |    new_adclass,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
-         |          else cast(bid as double) end) as real_bid,
-         |    (case when unit_target = "sdk_app_install" then 1
-         |          when unit_target = "api" then 2
-         |          when unit_target = "site_form" then 3
-         |          when unit_target = "sdk_site_wz" then 4
-         |          else 0 end) as conversion_goal
+         |          else cast(bid as double) end) as real_bid
          |FROM
          |    base_data
        """.stripMargin
@@ -153,7 +165,7 @@ object OcpcSuggestCPAV3 {
 
     basedata.show(10)
     basedata.printSchema()
-    val qttCpa = basedata.groupBy("unitid", "new_adclass","unit_target")
+    val qttCpa = basedata.groupBy("unitid", "new_adclass")
       .agg(
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"),
@@ -171,7 +183,7 @@ object OcpcSuggestCPAV3 {
       .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
     adclassCpa.show(10)
 
-    val sqlRequest3 =
+    val sqlRequest4 =
       s"""
          |SELECT
          |  new_adclass,
@@ -186,7 +198,6 @@ object OcpcSuggestCPAV3 {
     val alpha1Data = spark.sql(sqlRequest1)
     val resultDF = qttCpa.join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
-
 
     resultDF.show(10)
     resultDF
