@@ -37,7 +37,7 @@ object OcpcSuggestCPAV3 {
 
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc suggest cpa v2: $date, $hour")
+      .appName(s"ocpc suggest cpa novel_v3: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
     //根据dl_cpc.dw_unitid_detail确定unitid的conversionGoal以及
