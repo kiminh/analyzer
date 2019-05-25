@@ -188,7 +188,7 @@ object OcpcSuggestCPAV3 {
       s"""
          |SELECT
          |  new_adclass,
-         |  percentile(alpha, $alpha) as alpha1_max
+         |  percentile(alpha, $alpha) as alpha_max
          |FROM
          |  qtt_cpa_table
          |WHERE
@@ -199,6 +199,9 @@ object OcpcSuggestCPAV3 {
     val alpha1Data = spark.sql(sqlRequest4)
     val resultDF = qttCpa.join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
+        .withColumn("cpa_max",col("alpha_max")*col("qtt_avgbid"))
+        .withColumn("cpagiven",when(col("qtt_cpa")<col("adclass_cpa"),col("qtt_cpa")).otherwise(col("adclass_cpa")))
+        .withColumn("cpagiven",when(col("cpagiven")<col("cpa_max"),col("cpagiven")).otherwise(col("cpa_max")))
 
     resultDF.show(10)
     resultDF
@@ -229,6 +232,7 @@ object OcpcSuggestCPAV3 {
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
       .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal","ocpc_bid")
+      .filter("conversion_goal > 0")
 
     resultDF.show(10)
     resultDF
