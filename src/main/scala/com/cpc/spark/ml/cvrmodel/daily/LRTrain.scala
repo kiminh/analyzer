@@ -178,19 +178,19 @@ object LRTrain {
       val df = spark
         .sql(queryRawDataFromUnionEvents)
 
-      val ideaids = df
+      /*val ideaids = df
         .select("ideaid")
         .groupBy("ideaid")
         .count()
         .where("count > %d".format(minIdeaNum))
 
-      val sample = df.join(ideaids, Seq("ideaid")).cache()
+      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-      val joined = getLeftJoinData(sample, userAppIdx)
+      val joined = getLeftJoinData(df, userAppIdx)
       joined.write.mode(SaveMode.Append).parquet(dfPath)
 
       joined.unpersist()
-      ideaids.unpersist()
+      // ideaids.unpersist()
       df.unpersist()
     })
 
@@ -224,9 +224,6 @@ object LRTrain {
                               date: String
                             ): String = {
     s"day = '$date'"
-
-
-
   }
 
   // today.
@@ -379,7 +376,7 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
+    val sampleTrain = formatSample(spark, parser, train)/*.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))*/
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
@@ -743,12 +740,12 @@ object LRTrain {
     i += dict("ideaid").size + 1
 
     //user installed app
-    /*val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
     if (appIdx != null) {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 1000 + 1*/
+    i += 1000 + 1
 
     // 190523: dnn features.
 
