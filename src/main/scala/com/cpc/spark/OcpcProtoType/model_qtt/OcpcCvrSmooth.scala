@@ -72,7 +72,7 @@ object OcpcCvrSmooth {
     val suggestCPA = getCPAsuggestV4(suggestCpaPath, date, hour, spark)
 
     // 获取cali_value
-    val caliValue = getCaliValue(date, hour, spark)
+    val caliValue = getCaliValueV2(date, hour, spark)
 
     // 组装数据
     val result = assemblyDataV2(cvrData, factorData, expData, suggestCPA, caliValue, spark)
@@ -88,6 +88,38 @@ object OcpcCvrSmooth {
 
     savePbPack(resultDF, fileName)
 
+  }
+
+  def getCaliValueV2(date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  1.0 / pcoc as cali_value,
+         |  jfb,
+         |  kvalue,
+         |  conversion_goal,
+         |  version
+         |FROM
+         |  dl_cpc.ocpc_kvalue_smooth_strat
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version in ('qtt_hidden', 'qtt_demo')
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+    val result = rawData
+      .select("identifier", "conversion_goal", "cali_value")
+      .groupBy("identifier", "conversion_goal")
+      .agg(avg(col("cali_value")).alias("cali_value"))
+      .select("identifier", "cali_value")
+      .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
+      .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
+
+    result
   }
 
   def getCPAsuggestV4(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {
@@ -150,8 +182,7 @@ object OcpcCvrSmooth {
       .na.fill(0.2, Seq("factor1"))
       .na.fill(0.5, Seq("factor2", "factor3"))
       .na.fill(1.0, Seq("cali_value"))
-      .withColumn("factor3", when(col("identifier") === "2041214", 0.3).otherwise(col("factor3")))
-      .withColumn("factor3", when(col("identifier") === "2083174", 0.7).otherwise(col("factor3")))
+      .withColumn("factor3", udfChangeFactor3ByUnitid(0.7)(col("identifier"), col("factor3")))
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
 //    // 如果cali_value在1/1.3到1.3之间，则factor变成0.2
@@ -160,6 +191,17 @@ object OcpcCvrSmooth {
 
     result
   }
+
+  def udfChangeFactor3ByUnitid(factorNew: Double) = udf((identifier: String, factor: Double) => {
+    var result = identifier match {
+      case "2128594" => factorNew
+      case "2064040" => factorNew
+      case "1907720" => factorNew
+      case "2041214" => factorNew
+      case _ => factor
+    }
+    result
+  })
 
 
 
