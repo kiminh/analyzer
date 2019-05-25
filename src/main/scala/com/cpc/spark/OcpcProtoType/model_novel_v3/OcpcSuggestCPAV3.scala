@@ -153,10 +153,10 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
-      .withColumn("conversion_goal",when(col("unit_target")==="sdk_app_install",1).otherwise(null))
-      .withColumn("conversion_goal",when(col("unit_target")==="api",2).otherwise(col("conversion_goal")))
-      .withColumn("conversion_goal",when(col("unit_target")==="site_form",3).otherwise(col("conversion_goal")))
-      .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",4).otherwise(col("conversion_goal")))
+      .withColumn("conversion_goal",when(col("unit_target")==="sdk_app_install",lit(1)).otherwise(null))
+      .withColumn("conversion_goal",when(col("unit_target")==="api",lit(2)).otherwise(col("conversion_goal")))
+      .withColumn("conversion_goal",when(col("unit_target")==="site_form",lit(3)).otherwise(col("conversion_goal")))
+      .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",lit(4)).otherwise(col("conversion_goal")))
 
     //抽取趣头条广告的行业类别cpa
 
