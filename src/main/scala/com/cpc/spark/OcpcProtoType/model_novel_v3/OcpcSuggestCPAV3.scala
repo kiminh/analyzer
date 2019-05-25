@@ -144,6 +144,9 @@ object OcpcSuggestCPAV3 {
     println(sqlRequest)
     val basedata = spark.sql(sqlRequest)
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
+
+    basedata.show(10)
+    basedata.printSchema()
     val qttCpa = basedata.groupBy("unitid", "new_adclass","unit_target")
       .agg(
         sum(col("price")).alias("cost"),
