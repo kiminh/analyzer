@@ -361,11 +361,16 @@ object LRTrain {
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
+    val BcDictStr = spark.sparkContext.broadcast(dictStr)
+    val BcDictLong = spark.sparkContext.broadcast(dictLong)
 
     ulog.rdd
       .mapPartitions {
         p =>
           dict = BcDict.value
+          dictStr = BcDictStr.value
+          dictLong = BcDictLong.value
+          
           p.map {
             u =>
               val vec = parser match {
