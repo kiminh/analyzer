@@ -137,7 +137,12 @@ object OcpcSuggestCPAV3 {
          |    iscvr,
          |    unit_target,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
-         |          else cast(bid as double) end) as real_bid
+         |          else cast(bid as double) end) as real_bid,
+         |    (case when unit_target = "sdk_app_install" then 1
+         |          when unit_target = "api" then 2
+         |          when unit_target = "site_form" then 3
+         |          when unit_target = "sdk_site_wz" then 4
+         |          else 0 end) as conversion_goal
          |FROM
          |    base_data
        """.stripMargin
@@ -153,19 +158,35 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
-      .withColumn("conversion_goal",when(col("unit_target")==="sdk_app_install",lit(1)).otherwise(null))
-      .withColumn("conversion_goal",when(col("unit_target")==="api",lit(2)).otherwise(col("conversion_goal")))
-      .withColumn("conversion_goal",when(col("unit_target")==="site_form",lit(3)).otherwise(col("conversion_goal")))
-      .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",lit(4)).otherwise(col("conversion_goal")))
 
-    //抽取趣头条广告的行业类别cpa
-
-    val resultDF = basedata
-      .groupBy("new_adclass")
-      .agg(
-        sum(col("price")).alias("cost"),
-        sum(col("iscvr")).alias("cvrcnt"))
-      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
+//    //抽取趣头条广告的行业类别cpa
+//    val resultDF = basedata
+//      .groupBy("new_adclass")
+//      .agg(
+//        sum(col("price")).alias("cost"),
+//        sum(col("iscvr")).alias("cvrcnt"))
+//      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
+//
+//    val sqlRequest3 =
+//      s"""
+//         |SELECT
+//         |  new_adclass,
+//         |  percentile(alpha1, $alpha) as alpha1_max
+//         |FROM
+//         |  cvr1_table
+//         |WHERE
+//         |  cvr1cnt > 1
+//         |GROUP BY new_adclass
+//       """.stripMargin
+//    println(sqlRequest1)
+//    val alpha1Data = spark.sql(sqlRequest1)
+//    val cvr1alpha = cvr1Data
+//      .join(alpha1Data, Seq("new_adclass"), "left_outer")
+//      .select("unitid", "new_adclass", "cvr1cnt", "cpa1", "avg_bid", "alpha1", "alpha1_max")
+//      .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
+//      .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max") && col("cpa1_max") > 0, col("cpa1_max")).otherwise(col("cpa1")))
+//    val cvr1Final = cvr1alpha
+//      .select("unitid", "new_adclass", "cpa1_history_" + media)
 
     resultDF.show(10)
     resultDF
