@@ -4,10 +4,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.tools.CalcMetrics
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 object unit_auc {
+  Logger.getRootLogger.setLevel(Level.WARN)
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("unit auc calculation")
