@@ -32,9 +32,11 @@ object OcpcCalculateAUCv2 {
 
     // 获取identifier与industry之间的关联表
     val unitidIndustry = getIndustry(tableName, conversionGoal, version, date, hour, spark)
+    unitidIndustry.show(10)
 
     // 计算auc
     val aucData = getAuc(tableName, conversionGoal, version, date, hour, spark)
+    aucData.show(10)
 
     val result = aucData
       .join(unitidIndustry, Seq("identifier"), "left_outer")
