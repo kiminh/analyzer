@@ -105,8 +105,8 @@ object OcpcSuggestCPAV3 {
     val sqlRequest2 =
       s"""
          |select distinct a.searchid,
-         |        a.conversion_target as unit_target,
-         |        b.conversion_target[0] as real_target
+         |        a.conversion_target as real_target,
+         |        b.conversion_target[0] as unit_target
          |from dl_cpc.dm_conversions_for_model a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
@@ -117,7 +117,7 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)
-      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
+      .withColumn("iscvr",matchcvr(col("real_target"),col("unit_target")))
       .filter("iscvr = 1")
 
     // 数据关联
@@ -136,7 +136,7 @@ object OcpcSuggestCPAV3 {
          |    bid as original_bid,
          |    ocpc_log,
          |    iscvr,
-         |    unit_target,
+         |    real_target,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid,
          |    (case when unit_target = "sdk_app_install" then 1
@@ -160,8 +160,7 @@ object OcpcSuggestCPAV3 {
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
 
     //抽取趣头条广告的行业类别cpa
-    val resultDF = basedata
-      .groupBy("new_adclass")
+    val resultDF = basedata.groupBy("new_adclass")
       .agg(
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"))
@@ -193,8 +192,8 @@ object OcpcSuggestCPAV3 {
   }
 
   def matchcvr = udf {
-    (unit_target: Seq[String],real_target:String) => {
-      if (unit_target contains(real_target))  1 else 0
+    (real_target: Seq[String],unit_target:String) => {
+      if (real_target contains(unit_target))  1 else 0
     }
   }
 
