@@ -37,8 +37,7 @@ object OcpcLightBulbV3{
     val result = getUpdateTable(date, version, spark)
     val resultDF = result
       .withColumn("unit_id", col("unitid"))
-      .withColumn("ocpc_suggest_price", col("current_cpa"))
-      .select("unit_id", "ocpc_light", "ocpc_suggest_price")
+      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
