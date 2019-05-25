@@ -201,7 +201,7 @@ object OcpcSuggestCPAV3 {
         .join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
         .withColumn("cpa_max",col("alpha_max")*col("qtt_avgbid"))
-        .withColumn("cpagiven",when(col("qtt_cpa").isNull,col("qtt_cpa")).otherwise(col("adclass_cpa")))
+        .withColumn("cpagiven",when(col("qtt_cpa").isNotNull,col("qtt_cpa")).otherwise(col("adclass_cpa")))
         .withColumn("cpagiven",when(col("cpagiven")<col("cpa_max"),col("cpagiven")).otherwise(col("cpa_max")))
 
     resultDF.show(10)
