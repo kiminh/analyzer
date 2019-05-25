@@ -156,7 +156,8 @@ object OcpcSuggestCPAV3 {
          |    real_target,
          |    new_adclass,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
-         |          else cast(bid as double) end) as real_bid
+         |          else cast(bid as double) end) as real_bid,
+         |    conversion_goal
          |FROM
          |    base_data
        """.stripMargin
