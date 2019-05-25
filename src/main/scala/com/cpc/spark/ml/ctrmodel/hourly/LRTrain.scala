@@ -124,6 +124,7 @@ object LRTrain {
          |  , is_new_ad
          |  , uid
          |  , isclick as label
+         |  , day
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and isshow = 1
@@ -520,61 +521,6 @@ object LRTrain {
     //ideaid
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
-
-    //user_req_ad_num
-    /*var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12 + 1
-
-    //user_req_num
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1
-
-    var user_click = x.getAs[Int]("user_click_num")
-    if (user_click >= 5) {
-      user_click = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    var user_click_unit = x.getAs[Int]("user_click_unit_num")
-    if (user_click_unit >= 5) {
-      user_click_unit = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    //sex - age
-    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
-      els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
-    }
-    i += 2 * 6 + 1*/
-
-    //user installed app
-    /*val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null) {
-      val inxList = appIdx.map(p => (p + i, 1d))
-      els = els ++ inxList
-    }
-    i += 1000 + 1*/
 
     try {
       Vectors.sparse(i, els)
