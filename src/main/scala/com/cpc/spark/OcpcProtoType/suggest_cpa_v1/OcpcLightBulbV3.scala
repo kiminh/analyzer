@@ -39,7 +39,11 @@ object OcpcLightBulbV3{
       .withColumn("unit_id", col("unitid"))
       .withColumn("ocpc_suggest_price", col("current_cpa"))
       .select("unit_id", "ocpc_light", "ocpc_suggest_price")
+      .withColumn("date", lit(date))
       .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
 
 
   }
@@ -99,7 +103,7 @@ object OcpcLightBulbV3{
       .na.fill(-1, Seq("current_cpa", "prev_cpa"))
       .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190525")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190525")
 
     data
 
