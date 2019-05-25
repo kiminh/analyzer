@@ -31,12 +31,8 @@ object OcpcLightBulbV3{
 
     val spark = SparkSession
       .builder()
-      .appName(s"OcpcLightBulbV2: $date, $hour, $version, $media")
+      .appName(s"OcpcLightBulbV2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
-
-    // todo 修改表名
-    val tableName1 = "dl_cpc.ocpc_light_control_version"
-    val tableName2 = "dl_cpc.ocpc_light_control_daily"
 
     val result = getUpdateTable(date, version, spark)
     val resultDF = result
