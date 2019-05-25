@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcSuggestCPA._
+import com.cpc.spark.ocpcV3.ocpcNovel.model.OcpcCPAhistoryV2.checkCPAhistory
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -43,11 +44,17 @@ object OcpcSuggestCPAV3 {
     //根据dl_cpc.dw_unitid_detail确定unitid的conversionGoal以及
     val baseData = getBaseData(date, hour, spark)
 
-    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
-    val ocpcFlag = getOcpcFlag(spark)
+    val qttData = getQttCPA(baseData, date, hour, spark)
 
-    // 数据组装
-    val result = assemblyData(baseData, ocpcFlag, spark)
+//    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
+//
+//    val qttAlpha = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark)
+//
+//    // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
+//    val ocpcFlag = getOcpcFlag(spark)
+//
+//    // 数据组装
+//    val result = assemblyData(baseData, ocpcFlag, spark)
 //
 //    val resultDF = result
 //      .withColumn("cv_goal", lit(conversionGoal))
@@ -135,6 +142,7 @@ object OcpcSuggestCPAV3 {
          |    bid as original_bid,
          |    ocpc_log,
          |    iscvr,
+         |    unit_target,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid
          |FROM
@@ -142,6 +150,15 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getQttCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取趣头条cpa数据
+     */
+    val resultDF = base
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
       .groupBy("unitid", "new_adclass","unit_target")
       .agg(
@@ -154,8 +171,34 @@ object OcpcSuggestCPAV3 {
       .withColumn("conversion_goal",when(col("unit_target")==="site_form",3).otherwise(col("conversion_goal")))
       .withColumn("conversion_goal",when(col("unit_target")==="sdk_site_wz",4).otherwise(col("conversion_goal")))
     resultDF.show(10)
+
     resultDF
   }
+
+  def getAdclassCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取趣头条广告的行业类别cpa
+     */
+    val resultDF = base
+      .groupBy("new_adclass")
+      .agg(
+        sum(col("total_cost")).alias("cost"),
+        sum(col("cvr1cnt")).alias("cvr1cnt"),
+        sum(col("cvr2cnt")).alias("cvr2cnt"))
+      .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
+      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+
+
+    val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
+    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
+    resultDF
+  }
+
 
   def matchcvr = udf {
     (unit_target: Seq[String],real_target:String) => {
