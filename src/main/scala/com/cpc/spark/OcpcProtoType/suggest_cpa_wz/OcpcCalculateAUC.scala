@@ -134,6 +134,7 @@ object OcpcCalculateAUC {
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
          |and adclass = 110110100
+         |and exp_cvr >= 0
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
