@@ -49,8 +49,8 @@ object OcpcCalculateAUCv2 {
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-    //        .write.mode("overwrite").saveAsTable(finalTableName)
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
+      .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
 }
