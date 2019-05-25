@@ -778,10 +778,6 @@ object LRTrain {
 
     // 190523: dnn features.
 
-    // adtype
-    els = els :+ (x.getAs[Int]("adtype") + i - 1, 1d)
-    i += 10
-
     // brand
     els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand"), 0) + i, 1d)
     i += dictStr("brand").size + 1
