@@ -41,7 +41,7 @@ object OcpcSuggestCPAV3 {
       .enableHiveSupport().getOrCreate()
 
     //根据dl_cpc.dw_unitid_detail确定unitid的conversionGoal以及
-    val baseData = getBaseData(date, hour, spark)
+    val baseData = getBaseData(date, hour, spark, 0.8)
 
     // 实时查询ocpc标记（从mysql抽取）,如广告主是ocpc广告，取广告主给定cpa
     val ocpcFlag = getOcpcFlag(spark)
@@ -62,7 +62,7 @@ object OcpcSuggestCPAV3 {
 //    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
-  def getBaseData(date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(date: String, hour: String, spark: SparkSession, alpha: Double) = {
     /*
     抽取基础表，只包括前一天趣头条上有记录的unitid和对应adclass
      */
@@ -137,6 +137,7 @@ object OcpcSuggestCPAV3 {
          |    ocpc_log,
          |    iscvr,
          |    real_target,
+         |    new_adclass,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid,
          |    (case when unit_target = "sdk_app_install" then 1
@@ -158,34 +159,34 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
+      .withColumn("alpha", col("qtt_cpa") * 1.0 / col("qtt_avgbid"))
+    qttCpa.createOrReplaceTempView("qtt_cpa_table")
+    qttCpa.show(10)
 
     //抽取趣头条广告的行业类别cpa
-    val resultDF = basedata.groupBy("new_adclass")
+    val adclassCpa = basedata.groupBy("new_adclass")
       .agg(
         sum(col("price")).alias("cost"),
         sum(col("iscvr")).alias("cvrcnt"))
       .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
+    adclassCpa.show(10)
 
-//    val sqlRequest3 =
-//      s"""
-//         |SELECT
-//         |  new_adclass,
-//         |  percentile(alpha1, $alpha) as alpha1_max
-//         |FROM
-//         |  cvr1_table
-//         |WHERE
-//         |  cvr1cnt > 1
-//         |GROUP BY new_adclass
-//       """.stripMargin
-//    println(sqlRequest1)
-//    val alpha1Data = spark.sql(sqlRequest1)
-//    val cvr1alpha = cvr1Data
-//      .join(alpha1Data, Seq("new_adclass"), "left_outer")
-//      .select("unitid", "new_adclass", "cvr1cnt", "cpa1", "avg_bid", "alpha1", "alpha1_max")
-//      .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
-//      .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max") && col("cpa1_max") > 0, col("cpa1_max")).otherwise(col("cpa1")))
-//    val cvr1Final = cvr1alpha
-//      .select("unitid", "new_adclass", "cpa1_history_" + media)
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  new_adclass,
+         |  percentile(alpha, $alpha) as alpha1_max
+         |FROM
+         |  qtt_cpa_table
+         |WHERE
+         |  cvrcnt > 1
+         |GROUP BY new_adclass
+       """.stripMargin
+    println(sqlRequest1)
+    val alpha1Data = spark.sql(sqlRequest1)
+    val resultDF = qttCpa.join(adclassCpa,Seq("new_adclass"),"left")
+        .join(alpha1Data,Seq("new_adclass"),"left")
+
 
     resultDF.show(10)
     resultDF
