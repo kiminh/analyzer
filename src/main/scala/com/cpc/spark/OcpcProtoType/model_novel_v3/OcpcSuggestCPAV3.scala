@@ -197,7 +197,7 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest4)
     val alpha1Data = spark.sql(sqlRequest4)
-    val resultDF = qttCpa..join(conversionData, Seq("unitid"),"inner")
+    val resultDF = qttCpa.join(conversionData, Seq("unitid"),"inner")
         .join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
         .withColumn("cpa_max",col("alpha_max")*col("qtt_avgbid"))
