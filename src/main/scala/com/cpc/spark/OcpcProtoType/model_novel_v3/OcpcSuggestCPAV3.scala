@@ -137,9 +137,9 @@ object OcpcSuggestCPAV3 {
 
     // 数据关联
     val data = ctrData
-      .join(cvrData, Seq("searchid"), "left_outer")
       .join(conversionData, Seq("unitid"),"inner")
       .filter("conversion_goal>0")
+      .join(cvrData, Seq("searchid"), "left_outer")
       .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
 
     data.createOrReplaceTempView("base_data")
