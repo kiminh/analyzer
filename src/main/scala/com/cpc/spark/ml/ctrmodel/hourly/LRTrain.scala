@@ -370,7 +370,7 @@ object LRTrain {
           dict = BcDict.value
           dictStr = BcDictStr.value
           dictLong = BcDictLong.value
-          
+
           p.map {
             u =>
               val vec = parser match {
