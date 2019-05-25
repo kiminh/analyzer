@@ -123,6 +123,7 @@ object OcpcSuggestCPAV3 {
     // 数据关联
     val data = ctrData
       .join(cvrData, Seq("searchid"), "left_outer")
+      .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -148,7 +149,6 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest)
     val basedata = spark.sql(sqlRequest)
-      .withColumn("new_adclass", (col("adclass")/1000).cast(IntegerType))
 
     basedata.show(10)
     basedata.printSchema()
@@ -159,14 +159,14 @@ object OcpcSuggestCPAV3 {
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
 
-//    //抽取趣头条广告的行业类别cpa
-//    val resultDF = basedata
-//      .groupBy("new_adclass")
-//      .agg(
-//        sum(col("price")).alias("cost"),
-//        sum(col("iscvr")).alias("cvrcnt"))
-//      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
-//
+    //抽取趣头条广告的行业类别cpa
+    val resultDF = basedata
+      .groupBy("new_adclass")
+      .agg(
+        sum(col("price")).alias("cost"),
+        sum(col("iscvr")).alias("cvrcnt"))
+      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
+
 //    val sqlRequest3 =
 //      s"""
 //         |SELECT
