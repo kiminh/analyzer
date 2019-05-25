@@ -2,8 +2,6 @@ package com.cpc.spark.OcpcProtoType.model_novel_v3
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
-import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcSuggestCPA._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -13,18 +11,7 @@ import org.apache.spark.sql.types.IntegerType
 object OcpcSuggestCPAV3 {
   def main(args: Array[String]): Unit = {
     /*
-    新版推荐cpa程序：
-    unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, cal_bid, auc, kvalue, industry, is_recommend, ocpc_flag, usertype, pcoc1, pcoc2
-
-    主要源表：dl_cpc.ocpc_base_unionlog, dl_cpc.ocpc_label_cvr_hourly
-
-    数据构成分为以下部分:
-    1. 基础数据部分：unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
-    2. ocpc部分：kvalue
-    3. 模型部分：auc
-    4. 实时查询：ocpc_flag
-    5. 历史推荐cpa数据：pcoc1, pcoc2
-    6.
+    author:wy
      */
     // 计算日期周期
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -55,9 +42,9 @@ object OcpcSuggestCPAV3 {
       .withColumn("version", lit(version))
 
     resultDF.show(10)
-//
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_suggest_cpa_recommend_hourly_v2")
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_cpagiven_hourly_novel")
 //    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
@@ -162,9 +149,8 @@ object OcpcSuggestCPAV3 {
        """.stripMargin
     println(sqlRequest)
     val basedata = spark.sql(sqlRequest)
-
     basedata.show(10)
-    basedata.printSchema()
+
     val qttCpa = basedata.groupBy("unitid", "new_adclass")
       .agg(
         sum(col("price")).alias("cost"),
