@@ -5,7 +5,7 @@ import java.util.{Calendar, Date}
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
 import mlmodel.mlmodel
-import lrmodelv6.Lrmodelv6
+// import lrmodelv6.Lrmodelv6
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, RegressionMetrics}
 import org.apache.spark.mllib.optimization.L1Updater
@@ -321,7 +321,7 @@ class LRIRModel {
   }
 
   // fym 190525.
-  def savePbPackV6(
+  /*def savePbPackV6(
                     parser: String,
                     path: String,
                     dict: Map[String, Map[Int, Int]],
@@ -379,7 +379,7 @@ class LRIRModel {
     )
 
     pack.writeTo(new FileOutputStream(path))
-  }
+  }*/
 
   def savePbPack2(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
