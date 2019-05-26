@@ -216,3 +216,23 @@ smoothfactor double
 )
 PARTITIONED by (date STRING, hour STRING,version STRING)
 STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_cpagiven_novel_v3_hourly
+(
+unitid int,
+new_adclass int,
+cost bigint,
+cvrcnt bigint,
+qtt_avgbid double,
+qtt_cpa double,
+maxbid double,
+alpha double,
+conversion_goal int,
+alpha_max double,
+cpa_max double,
+cpagiven double,
+adv_conversion_goal int,
+ocpc_bid bigint
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;

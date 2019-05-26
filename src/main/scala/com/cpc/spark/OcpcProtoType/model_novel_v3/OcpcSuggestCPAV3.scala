@@ -44,8 +44,8 @@ object OcpcSuggestCPAV3 {
     resultDF.show(10)
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cpagiven_novel_v3_hourly")
-//    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_cpagiven_novel_v3_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_cpagiven_novel_v3_hourly")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession, alpha: Double) = {
