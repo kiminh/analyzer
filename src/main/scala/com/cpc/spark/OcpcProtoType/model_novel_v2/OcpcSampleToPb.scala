@@ -55,9 +55,16 @@ object OcpcSampleToPb {
     // 组装数据
     val resultDF = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
       .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
+      .withColumn("cpagiven",lit(0.0))
+      .withColumn("maxbid",lit(100000))
       .withColumn("smoothfactor", lit(0.5))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
 
-    savePbPack(resultDF, version, isHidden)
+    resultDF.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_novel_pb_hourly")
+
+//    savePbPack(resultDF, version, isHidden)
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {

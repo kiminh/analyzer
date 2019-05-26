@@ -53,19 +53,23 @@ object OcpcSampleToPb {
 
     // 组装数据
     val result = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
+      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","maxbid")
       .withColumn("smoothfactor", lit(0.5))
     result.show(10)
 
     val avgkandpcoc = result.groupBy("new_adclass")
         .agg(
           avg("kvalue").alias("adclass_kvalue"),
-          avg("pcoc").alias("adclass_pcoc")
-        ).select("new_adclass","adclass_kvalue","adclass_pcoc")
+          avg("cvrcalfactor").alias("adclass_cvrcalfactor")
+        ).select("new_adclass","adclass_kvalue","adclass_cvrcalfactor")
 
     val resultDF = result.join(avgkandpcoc,Seq("new_adclass"),"left")
-        .withColumn("kvalue",when(col("kvalue")isNull,col("adclass_kvalue")).otherwise(col("kvalue")))
-      .withColumn("pcoc",when(col("pcoc")isNull,col("adclass_pcoc")).otherwise(col("pcoc")))
+      .withColumn("kvalue",when(col("kvalue")isNull,col("adclass_kvalue")).otherwise(col("kvalue")))
+      .withColumn("cvrcalfactor",when(col("cvrcalfactor")isNull,col("adclass_cvrcalfactor")).otherwise(col("cvrcalfactor")))
+      .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","cpagiven","maxbid","smoothfactor")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
     savePbPack(resultDF, version, isHidden)
   }
 
