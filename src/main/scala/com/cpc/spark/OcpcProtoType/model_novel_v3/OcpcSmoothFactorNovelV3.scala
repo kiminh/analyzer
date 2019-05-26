@@ -57,7 +57,8 @@ object OcpcSmoothFactorNovelV3{
     val result = pcocData
         .join(jfbData, Seq("unitid"), "outer")
         .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr")
-        .filter(s"pcoc is not null and pcoc != 0")
+
+    result.show(10)
 
     result
   }
@@ -69,9 +70,8 @@ object OcpcSmoothFactorNovelV3{
         sum(col("price")).alias("total_price"),
         sum(col("bid")).alias("total_bid")
       )
-      .select("unitid", "total_price", "total_bid")
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
-      .select("unitid", "jfb")
+      .select("unitid", "total_price","jfb")
 
     jfbData.show()
 
