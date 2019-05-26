@@ -64,7 +64,7 @@ object OcpcSampleToPb {
 
     resultDF.repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
 
-//    savePbPack(resultDF, version, isHidden)
+    savePbPack(resultDF, version, isHidden)
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
