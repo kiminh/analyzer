@@ -179,7 +179,7 @@ object OcpcSuggestCPAV3 {
     val resultDF = qttCpa.join(conversionData, Seq("unitid"),"inner")
         .join(alpha1Data,Seq("new_adclass"),"left")
         .withColumn("cpa_max",col("alpha_max")*col("qtt_avgbid"))
-        .withColumn("cpagiven",when(col("cpagiven")<col("cpa_max"),col("cpagiven")).otherwise(col("cpa_max")))
+        .withColumn("cpagiven",when(col("qtt_cpa")<col("cpa_max"),col("qtt_cpa")).otherwise(col("cpa_max")))
 
     resultDF.show(10)
     resultDF

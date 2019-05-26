@@ -51,14 +51,21 @@ object OcpcSampleToPb {
     println(cvrData.count())
     cvrData.show(10)
 
-
-    // 获取postcvr数据
-
     // 组装数据
-    val resultDF = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
+    val result = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
       .withColumn("smoothfactor", lit(0.5))
+    result.show(10)
 
+    val avgkandpcoc = result.groupBy("new_adclass")
+        .agg(
+          avg("kvalue").alias("adclass_kvalue"),
+          avg("pcoc").alias("adclass_pcoc")
+        ).select("new_adclass","adclass_kvalue","adclass_pcoc")
+
+    val resultDF = result.join(avgkandpcoc,Seq("new_adclass"),"left")
+        .withColumn("kvalue",when(col("kvalue")isNull,col("adclass_kvalue")).otherwise(col("kvalue")))
+      .withColumn("pcoc",when(col("pcoc")isNull,col("adclass_pcoc")).otherwise(col("pcoc")))
     savePbPack(resultDF, version, isHidden)
   }
 
@@ -67,9 +74,10 @@ object OcpcSampleToPb {
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid,
+         |  unitid as identifier,
          |  conversion_goal,
-         |  cpagiven as identifier
+         |  new_adclass,
+         |  maxbid
          |FROM
          |  test.ocpc_cpagiven_novel_v3_hourly
          |WHERE
@@ -107,7 +115,7 @@ object OcpcSampleToPb {
        |AND
        |  jfb > 0
        |AND
-       |  pcoc>0
+       |  pcoc > 0
        """.stripMargin
 
     println(sqlRequest)
@@ -145,7 +153,7 @@ object OcpcSampleToPb {
       val ocpcMincpm = 0
       val ocpcMinbid = 0
       val cpcbid = 0
-      val maxbid = 100000
+      val maxbid = record.getAs[Double]("maxbid").toInt
 
       if (cnt % 100 == 0) {
         println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +

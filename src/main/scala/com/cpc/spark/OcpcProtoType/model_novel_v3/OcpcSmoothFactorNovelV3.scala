@@ -89,7 +89,6 @@ object OcpcSmoothFactorNovelV3{
       )
       .select("unitid", "click", "cv", "pre_cvr")
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .select("unitid", "post_cvr", "pre_cvr")
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .select("unitid", "pcoc", "post_cvr")
 
@@ -184,7 +183,9 @@ object OcpcSmoothFactorNovelV3{
     // 数据关联
     val resultDF = clickData
       .join(cvrData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "adclass","isclick", "exp_cvr", "iscvr", "price", "bid")
+      .select("searchid", "unitid","isclick", "exp_cvr", "iscvr", "price", "bid")
+
+    resultDF.show(10)
 
     resultDF
   }
