@@ -173,7 +173,7 @@ object OcpcSmoothFactorNovelV3{
          |    on a.unitid=b.unitid
          |    and a.day = b.day
          |    and b.$selectCondition2
-         |where a.$selectCondition2
+         |where a.$selectCondition3
          |and size(a.conversion_target)>0
        """.stripMargin
     println(sqlRequest2)
