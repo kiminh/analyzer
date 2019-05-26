@@ -202,3 +202,17 @@ CREATE TABLE IF NOT EXISTS dl_cpc.recall_filter_number_report_v3
 )
 PARTITIONED by (`dt` STRING, `hour` STRING)
 STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_novel_pb_hourly
+(
+identifier string,
+kvalue double,
+conversion_goal int,
+post_cvr double,
+cvrcalfactor double,
+cpagiven double,
+maxbid int,
+smoothfactor double
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;

@@ -62,7 +62,7 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    resultDF.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_novel_pb_hourly")
+    resultDF.repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
 
 //    savePbPack(resultDF, version, isHidden)
   }
