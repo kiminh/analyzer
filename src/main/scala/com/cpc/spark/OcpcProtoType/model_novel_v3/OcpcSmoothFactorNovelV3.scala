@@ -168,13 +168,15 @@ object OcpcSmoothFactorNovelV3{
          |select distinct a.searchid,
          |       a.conversion_target as unit_target,
          |       b.conversion_target[0] as real_target
-         |from dl_cpc.dm_conversions_for_model a
+         |from
+         |   (select *
+         |    from dl_cpc.dm_conversions_for_model
+         |   where $selectCondition2
+         |and size(a.conversion_target)>0) a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
          |    and a.day = b.day
          |    and b.$selectCondition3
-         |where a.$selectCondition2
-         |and size(a.conversion_target)>0
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)
