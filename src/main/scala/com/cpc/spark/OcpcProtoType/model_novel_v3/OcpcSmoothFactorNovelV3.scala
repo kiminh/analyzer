@@ -117,6 +117,7 @@ object OcpcSmoothFactorNovelV3{
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
     val selectCondition2 = getTimeRangeSql4(date1, hour1, date, hour)
+    val selectCondition3 = s"day between '$date1' and '$date'"
 
     val sqlRequest =
       s"""
@@ -165,8 +166,8 @@ object OcpcSmoothFactorNovelV3{
     val sqlRequest2 =
       s"""
          |select distinct a.searchid,
-         |        a.conversion_target as unit_target,
-         |        b.conversion_target[0] as real_target
+         |       a.conversion_target as unit_target,
+         |       b.conversion_target[0] as real_target
          |from dl_cpc.dm_conversions_for_model a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
