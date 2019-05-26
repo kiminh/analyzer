@@ -172,7 +172,7 @@ object OcpcSmoothFactorNovelV3{
          |   (select *
          |    from dl_cpc.dm_conversions_for_model
          |   where $selectCondition2
-         |and size(a.conversion_target)>0) a
+         |and size(conversion_target)>0) a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
          |    and a.day = b.day
