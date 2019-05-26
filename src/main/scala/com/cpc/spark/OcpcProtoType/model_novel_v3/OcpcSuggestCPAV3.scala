@@ -34,7 +34,7 @@ object OcpcSuggestCPAV3 {
     val ocpcFlag = getOcpcFlag(spark)
 
     // 数据组装
-    val result = assemblyData(cpaData, ocpcFlag, spark)
+    val result = assemblyData(cpaData, ocpcFlag, spark, 0.7)
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -44,7 +44,7 @@ object OcpcSuggestCPAV3 {
     resultDF.show(10)
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cpagiven_hourly_novel_v3")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_cpagiven_novel_v3_hourly")
 //    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
@@ -157,18 +157,11 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
+      .withColumn("maxbid",col("qtt_cpa"))
       .withColumn("alpha", col("qtt_cpa") * 1.0 / col("qtt_avgbid"))
+      .filter("qtt_cpa is not null")
     qttCpa.createOrReplaceTempView("qtt_cpa_table")
     qttCpa.show(10)
-
-    //抽取趣头条广告的行业类别cpa
-    val adclassCpa = basedata.groupBy("new_adclass")
-      .agg(
-        sum(col("price")).alias("cost"),
-        sum(col("iscvr")).alias("cvrcnt"))
-      .withColumn("adclass_cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .select("new_adclass","adclass_cpa")
-    adclassCpa.show(10)
 
     val sqlRequest4 =
       s"""
@@ -184,10 +177,8 @@ object OcpcSuggestCPAV3 {
     println(sqlRequest4)
     val alpha1Data = spark.sql(sqlRequest4)
     val resultDF = qttCpa.join(conversionData, Seq("unitid"),"inner")
-        .join(adclassCpa,Seq("new_adclass"),"left")
         .join(alpha1Data,Seq("new_adclass"),"left")
         .withColumn("cpa_max",col("alpha_max")*col("qtt_avgbid"))
-        .withColumn("cpagiven",when(col("qtt_cpa").isNotNull,col("qtt_cpa")).otherwise(col("adclass_cpa")))
         .withColumn("cpagiven",when(col("cpagiven")<col("cpa_max"),col("cpagiven")).otherwise(col("cpa_max")))
 
     resultDF.show(10)
@@ -225,13 +216,14 @@ object OcpcSuggestCPAV3 {
     resultDF
   }
 
-  def assemblyData(baseData: DataFrame,ocpcFlag: DataFrame,spark: SparkSession) = {
+  def assemblyData(baseData: DataFrame,ocpcFlag: DataFrame,spark: SparkSession, wz_discount: Double) = {
     /*
     assemlby the data together
      */
     val result = baseData
       .join(ocpcFlag, Seq("unitid"), "left_outer")
       .withColumn("cpagiven",when(col("ocpc_bid") isNotNull,col("ocpc_bid")).otherwise(col("cpagiven")))
+      .withColumn("cpagiven",when(col("new_adclass")===110110,col("cpagiven")* wz_discount).otherwise(col("cpagiven")))
       .withColumn("conversion_goal",when(col("adv_conversion_goal") isNotNull,col("adv_conversion_goal")).otherwise(col("conversion_goal")))
 
     result.show(50)

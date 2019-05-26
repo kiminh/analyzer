@@ -184,7 +184,7 @@ object OcpcSmoothFactorNovelV3{
     // 数据关联
     val resultDF = clickData
       .join(cvrData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid")
+      .select("searchid", "unitid", "adclass","isclick", "exp_cvr", "iscvr", "price", "bid")
 
     resultDF
   }

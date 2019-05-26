@@ -43,44 +43,41 @@ object OcpcSampleToPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isHidden:$isHidden")
 
+    val cvGoal = getCpagiven(date, hour, spark)
+
     val cvrData = getPostCvrAndK(date, hour, version, spark)
 
     println("NewK")
     println(cvrData.count())
     cvrData.show(10)
 
-    val cvGoal = getConversionGoal(date, hour, spark)
+
     // 获取postcvr数据
 
     // 组装数据
     val resultDF = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
+      .select("identifier", "cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
       .withColumn("smoothfactor", lit(0.5))
 
     savePbPack(resultDF, version, isHidden)
   }
 
-  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+  def getCpagiven(date: String, hour: String, spark: SparkSession) = {
+    // 从表中抽取数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  cpagiven as identifier
+         |FROM
+         |  test.ocpc_cpagiven_novel_v3_hourly
+         |WHERE
+         |  `date` = '$date' and `hour` = '$hour'
+       """.stripMargin
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .withColumn("cv_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier", "cast(conversion_goal as int) conversion_goal", "cv_flag")
-      .distinct()
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
 
     resultDF.show(10)
     resultDF
@@ -102,7 +99,7 @@ object OcpcSampleToPb {
        |  conversion_goal,
        |  post_cvr
        |FROM
-       |  dl_cpc.ocpc_pcoc_jfb_hourly
+       |  test.ocpc_pcoc_jfb_novel_v3_hourly
        |WHERE
        |  `date` = '$date' and `hour` = '$hour'
        |AND
@@ -123,7 +120,7 @@ object OcpcSampleToPb {
 
   def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
     var list = new ListBuffer[SingleItem]
-    val filename = "ocpc_params_novel.pb"
+    val filename = "ocpc_params_novel_hidden.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
@@ -140,7 +137,7 @@ object OcpcSampleToPb {
       val jfbFactor = record.getAs[Double]("kvalue")
       val smoothFactor = record.getAs[Double]("smoothfactor")
       val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = 0.0
+      val cpaGiven = record.getAs[Double]("cpagiven")
       val cpaSuggest = 0.0
       val paramT = 0.0
       val highBidFactor = 0.0
