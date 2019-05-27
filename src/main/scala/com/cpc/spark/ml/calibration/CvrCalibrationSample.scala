@@ -31,7 +31,7 @@ object CvrCalibrationSample {
                  | and media_appsid in ('80000001', '80000002') and isclick = 1
                  | and cvr_model_name = 'qtt-cvr-dnn-rawid-v1-180'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1))
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val ctrdata = spark.sql(sql)

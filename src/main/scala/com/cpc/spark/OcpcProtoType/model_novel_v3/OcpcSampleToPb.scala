@@ -123,7 +123,7 @@ object OcpcSampleToPb {
        |  post_cvr,
        |  total_price
        |FROM
-       |  test.ocpc_pcoc_jfb_novel_v3_hourly
+       |  dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly
        |WHERE
        |  `date` = '$date' and `hour` = '$hour'
        |AND
