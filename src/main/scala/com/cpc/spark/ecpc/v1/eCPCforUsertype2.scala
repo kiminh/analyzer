@@ -78,7 +78,7 @@ object eCPCforUsertype2 {
     resultDF
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
 
-    savePbPack(resultDF, fileName, version, date, hour, spark)
+//    savePbPack(resultDF, fileName, version, date, hour, spark)
 
   }
 
@@ -208,93 +208,93 @@ object eCPCforUsertype2 {
     data
   }
 
-  def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
-    /*
-    int64 adclass = 1;
-    int64 adtype = 2;
-    int64 slottype = 3;
-    string slotid = 4;
-    double post_cvr = 5;
-    double calCvrFactor = 6;
-    double highBidFactor = 7;
-    double lowBidFactor = 8;
-     */
-    var list = new ListBuffer[SingleItem]
-    dataset.createOrReplaceTempView("raw_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  adclass,
-         |  adtype,
-         |  slottype,
-         |  slotid,
-         |  1.0 / pcoc as cvr_cal_factor,
-         |  post_cvr,
-         |  high_bid_factor,
-         |  low_bid_factor
-         |FROM
-         |  raw_data
-       """.stripMargin
-    println(sqlRequest)
-    val resultData = spark
-      .sql(sqlRequest)
-      .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
-      .filter(s"cvr_cal_factor > 0 and post_cvr > 0")
-      .cache()
-
-    println("size of the dataframe:")
-    println(resultData.count)
-    resultData.show(10)
-    resultData.printSchema()
-    resultData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
-    var cnt = 0
-
-    for (record <- resultData.collect()) {
-      val adclass = record.getAs[Long]("adclass")
-      val adtype = record.getAs[Long]("adtype")
-      val slottype = record.getAs[Long]("slottype")
-      val slotid = record.getAs[String]("slotid")
-      val postCvr = record.getAs[Double]("post_cvr")
-      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
-      val highBidFactor = record.getAs[Double]("high_bid_factor")
-      val lowBidFactor = record.getAs[Double]("low_bid_factor")
-
-      if (cnt % 100 == 0) {
-        println(s"adclass:$adclass, adtype:$adtype, slottype:$slottype, slotid:$slotid, postCvr:$postCvr, cvrCalFactor:$cvrCalFactor, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
-      }
-      cnt += 1
-
-      val currentItem = SingleItem(
-        adclass = adclass,
-        adtype = adtype,
-        slottype = slottype,
-        slotid = slotid,
-        postCvr = postCvr,
-        calCvrFactor = cvrCalFactor,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor
-      )
-      list += currentItem
-
-    }
-
-    val result = list.toArray[SingleItem]
-    val adRecordList = AdClassEcpcList(
-      records = result
-    )
-
-    println("length of the array")
-    println(result.length)
-    adRecordList.writeTo(new FileOutputStream(filename))
-
-    println("complete save data into protobuffer")
-
-  }
+//  def savePbPack(dataset: DataFrame, filename: String, version: String, date: String, hour: String, spark: SparkSession): Unit = {
+//    /*
+//    int64 adclass = 1;
+//    int64 adtype = 2;
+//    int64 slottype = 3;
+//    string slotid = 4;
+//    double post_cvr = 5;
+//    double calCvrFactor = 6;
+//    double highBidFactor = 7;
+//    double lowBidFactor = 8;
+//     */
+//    var list = new ListBuffer[SingleItem]
+//    dataset.createOrReplaceTempView("raw_data")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  adclass,
+//         |  adtype,
+//         |  slottype,
+//         |  slotid,
+//         |  1.0 / pcoc as cvr_cal_factor,
+//         |  post_cvr,
+//         |  high_bid_factor,
+//         |  low_bid_factor
+//         |FROM
+//         |  raw_data
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultData = spark
+//      .sql(sqlRequest)
+//      .selectExpr("cast(adclass as bigint) adclass", "cast(adtype as bigint) adtype", "cast(slottype as bigint) slottype", "cast(slotid as string) slotid", "cast(cvr_cal_factor as double) cvr_cal_factor", "cast(post_cvr as double) post_cvr", "cast(high_bid_factor as double) high_bid_factor", "cast(low_bid_factor as double) low_bid_factor")
+//      .filter(s"cvr_cal_factor > 0 and post_cvr > 0")
+//      .cache()
+//
+//    println("size of the dataframe:")
+//    println(resultData.count)
+//    resultData.show(10)
+//    resultData.printSchema()
+//    resultData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
+////      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+//    var cnt = 0
+//
+//    for (record <- resultData.collect()) {
+//      val adclass = record.getAs[Long]("adclass")
+//      val adtype = record.getAs[Long]("adtype")
+//      val slottype = record.getAs[Long]("slottype")
+//      val slotid = record.getAs[String]("slotid")
+//      val postCvr = record.getAs[Double]("post_cvr")
+//      val cvrCalFactor = record.getAs[Double]("cvr_cal_factor")
+//      val highBidFactor = record.getAs[Double]("high_bid_factor")
+//      val lowBidFactor = record.getAs[Double]("low_bid_factor")
+//
+//      if (cnt % 100 == 0) {
+//        println(s"adclass:$adclass, adtype:$adtype, slottype:$slottype, slotid:$slotid, postCvr:$postCvr, cvrCalFactor:$cvrCalFactor, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor")
+//      }
+//      cnt += 1
+//
+//      val currentItem = SingleItem(
+//        adclass = adclass,
+//        adtype = adtype,
+//        slottype = slottype,
+//        slotid = slotid,
+//        postCvr = postCvr,
+//        calCvrFactor = cvrCalFactor,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor
+//      )
+//      list += currentItem
+//
+//    }
+//
+//    val result = list.toArray[SingleItem]
+//    val adRecordList = AdClassEcpcList(
+//      records = result
+//    )
+//
+//    println("length of the array")
+//    println(result.length)
+//    adRecordList.writeTo(new FileOutputStream(filename))
+//
+//    println("complete save data into protobuffer")
+//
+//  }
 
   def udfSlottypeMap() = udf((slottype: Int) => {
     /*
@@ -425,12 +425,13 @@ object eCPCforUsertype2 {
          |  price,
          |  exp_cvr,
          |  (case
-         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then 3
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%' and is_api_callback=1) then 2
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%' and is_api_callback!=1) then 1
-         |      when (adclass = 110110100) then 1
-         |      else 0
-         |  end) as conversion_goal,
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass = 110110100 then "wz"
+         |        else "others"
+         |    end) as industry,
+         |  is_api_callback,
          |  isshow,
          |  isclick
          |FROM
@@ -445,7 +446,10 @@ object eCPCforUsertype2 {
          |  is_ocpc = 0
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark.sql(sqlRequest)
+    val clickData = spark
+      .sql(sqlRequest)
+      .filter(s"industry in ('elds', 'feedapp', 'wz')")
+      .withColumn("conversion_goal", udfDecideConversionGoal()(col("industry"), col("is_api_callback")))
 
     val sqlRequest1 =
       s"""
@@ -497,8 +501,22 @@ object eCPCforUsertype2 {
       .filter(s"conversion_goal > 0")
       .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3")))
 
+    data.write.mode("overwrite").saveAsTable("test.check_ecpc_for_usertype20190527")
+
     data
   }
+
+  def udfDecideConversionGoal() = udf((industry: String, isApiCallback: Int) => {
+    var cvGoal= 1
+    if (industry == "feedapp" && isApiCallback == 1) {
+      cvGoal = 2
+    } else if (industry == "elds") {
+      cvGoal = 3
+    } else {
+      cvGoal = 1
+    }
+    cvGoal
+  })
 
   def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int) => {
     val iscvr = conversionGoal match {
