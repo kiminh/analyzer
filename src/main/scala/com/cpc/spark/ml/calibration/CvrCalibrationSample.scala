@@ -55,7 +55,7 @@ object CvrCalibrationSample {
       .filter("iscvr = 1")
 
     val sample = ctrdata.join(cvrData,Seq("searchid"),"left")
-      .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","date","hour")
+      .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","dt","hour")
 
     sample.write.mode("overwrite").saveAsTable("dl_cpc.qtt_cvr_calibration_sample")
   }
