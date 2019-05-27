@@ -25,17 +25,25 @@ object CvrCalibrationSample {
 
     // get union log
     val sql = s"""
-                 |select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt , hour
+                 |select a.*,b.conversion_target[0] as unit_target
+                 |from
+                 |(
+                 |  select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt,hour
                  | from dl_cpc.slim_union_log
                  | where dt = '$date'
                  | and media_appsid in ('80000001', '80000002') and isclick = 1
                  | and cvr_model_name = 'qtt-cvr-dnn-rawid-v1-180'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
+                 | )a
+                 |left join dl_cpc.dw_unitid_detail b
+                 |on a.unitid = b.unitid and b.day = '$date'
        """.stripMargin
     println(s"sql:\n$sql")
-    val ctrdata = spark.sql(sql)
+    val ctrdata = spark.sql(sql).filter("unit_target is not null")
+      .filter("unit_target != 'none'")
 
+    ctrdata.show(10)
     val sqlRequest2 =
       s"""
          |select distinct a.searchid,
@@ -53,10 +61,12 @@ object CvrCalibrationSample {
     val cvrData = spark.sql(sqlRequest2)
       .withColumn("iscvr",matchcvr(col("real_target"),col("unit_target")))
       .filter("iscvr = 1")
+    cvrData.show(10)
 
     val sample = ctrdata.join(cvrData,Seq("searchid"),"left")
       .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","dt","hour")
 
+    sample.show(10)
     sample.repartition(1).write.mode("overwrite").insertInto("dl_cpc.qtt_cvr_calibration_sample")
   }
 }
