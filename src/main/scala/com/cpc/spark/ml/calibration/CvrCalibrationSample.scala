@@ -25,7 +25,7 @@ object CvrCalibrationSample {
 
     // get union log
     val sql = s"""
-                 |select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,date , hour
+                 |select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt , hour
                  | from dl_cpc.slim_union_log
                  | where dt = '$date'
                  | and media_appsid in ('80000001', '80000002') and isclick = 1
@@ -56,5 +56,7 @@ object CvrCalibrationSample {
 
     val sample = ctrdata.join(cvrData,Seq("searchid"),"left")
       .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","date","hour")
+
+    sample.write.mode("overwrite").saveAsTable("dl_cpc.qtt_cvr_calibration_sample")
   }
 }
