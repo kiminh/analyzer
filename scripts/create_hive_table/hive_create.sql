@@ -242,8 +242,8 @@ create table if not exists dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly
 identifier string,
 pcoc double,
 jfb double,
-post_cvr double
-
+post_cvr double,
+total_price bigint
 )
 PARTITIONED by (date STRING, hour STRING,version STRING)
 STORED as PARQUET;

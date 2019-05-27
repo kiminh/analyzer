@@ -224,7 +224,7 @@ object OcpcSuggestCPAV3 {
       .withColumn("cpagiven",when(col("new_adclass")===110110,col("cpagiven")* wz_discount).otherwise(col("cpagiven")))
       .withColumn("conversion_goal",when(col("adv_conversion_goal") isNotNull,col("adv_conversion_goal")).otherwise(col("conversion_goal")))
 
-    result.show(50)
+    result.show(10)
     result
   }
 }
