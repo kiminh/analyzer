@@ -5,13 +5,12 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
-object OcpcCharge {
+object OcpcChargeTotal {
   def main(args: Array[String]): Unit = {
     /*
     根据最近四天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
@@ -41,7 +40,7 @@ object OcpcCharge {
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
     val dataFilter = data
-      .filter(s"conversion > 10")
+      .filter(s"conversion > 30")
       .filter(s"pay > 0")
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
@@ -138,7 +137,6 @@ object OcpcCharge {
   }
 
   def getDataFromMysql(spark: SparkSession) = {
-    import spark.implicits._
 
     // 设置mysql库
     val conf = ConfigFactory.load("ocpc")
@@ -188,7 +186,37 @@ object OcpcCharge {
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr
+         |  label as iscvr1
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr1'
+       """.stripMargin
+    println(sqlRequest1)
+    val cvData1 = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr2
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr2'
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData2 = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr3
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -196,20 +224,25 @@ object OcpcCharge {
          |AND
          |  cvr_goal = 'cvr3'
        """.stripMargin
-    println(sqlRequest1)
-    val cvData = spark.sql(sqlRequest1)
+    println(sqlRequest3)
+    val cvData3 = spark.sql(sqlRequest3)
 
     // 数据关联
     val baseData = clickData
-        .join(cvData, Seq("searchid"), "left_outer")
-        .na.fill(0, Seq("iscvr"))
-        .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "iscvr", "date", "hour")
+        .join(cvData1, Seq("searchid"), "left_outer")
+        .join(cvData2, Seq("searchid"), "left_outer")
+        .join(cvData3, Seq("searchid"), "left_outer")
+        .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3"))
+        .withColumn("iscvr", udfSelectCV()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3")))
+        .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "iscvr1", "iscvr2", "iscvr3", "iscvr", "date", "hour")
         .withColumn("ocpc_time", concat_ws(" ", col("date"), col("hour")))
+
+    baseData.filter(s"iscvr = 1").show(10)
 
     baseData.createOrReplaceTempView("base_data")
 
     // 数据汇总
-    val sqlRequest2 =
+    val sqlRequestFinal =
       s"""
          |SELECT
          |  unitid,
@@ -220,9 +253,9 @@ object OcpcCharge {
          |  base_data
          |GROUP BY unitid
        """.stripMargin
-    println(sqlRequest2)
+    println(sqlRequestFinal)
     val summaryData1 = spark
-      .sql(sqlRequest2)
+      .sql(sqlRequestFinal)
       .withColumn("pred_cost", col("cv") * col("cpagiven") * 1.2)
       .withColumn("pay", udfCalculatePay()(col("cost"), col("pred_cost")))
       .withColumn("cpareal", col("cost") * 1.0 / col("cv"))
@@ -238,6 +271,16 @@ object OcpcCharge {
 
     summaryData
   }
+
+  def udfSelectCV() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int) => {
+    val iscvr = conversionGoal match {
+      case 1 => iscvr1
+      case 2 => iscvr2
+      case 3 => iscvr3
+      case _ => 0
+    }
+    iscvr
+  })
 
   def udfCalculatePay() = udf((cost: Double, pred_cost: Double) => {
     var result = 0.0
@@ -297,6 +340,13 @@ object OcpcCharge {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isclick,
          |  price,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |    end) as industry,
          |  date,
          |  hour
          |FROM
@@ -309,17 +359,15 @@ object OcpcCharge {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-      .filter(s"is_hidden = 0 and conversion_goal = 3")
+      .filter(s"is_hidden = 0")
+      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
 
     rawData.createOrReplaceTempView("raw_data")
 
-//        .filter(s"is_hidden = 0 and conversion_goal = 3")
     val sqlRequest2 =
       s"""
          |SELECT

@@ -2,18 +2,19 @@
 
 # sh dataLoop.sh testOcpcSampleHourlyV1.sh 2018-10-27 0 23
 
-d=$1
-while [ ${d} -le $2 ]; do
+d=$2
+while [ ${d} -le $3 ]; do
     if ((${d}<10))
     then
-        day="2019-04-0${d}"
+        day="2019-05-0${d}"
     else
-        day="2019-04-${d}"
+        day="2019-05-${d}"
     fi
 
+    echo $1
     echo $day
 
-#    sh testOcpcChargeLoop.sh $day 23
+    sh $1 $day 23
 
     let d=d+1
 done

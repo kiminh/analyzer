@@ -1,5 +1,7 @@
 package com.cpc.spark.OcpcProtoType.model_v3.pid
 
+import java.io.FileOutputStream
+import java.net.FileNameMap
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -8,6 +10,9 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import ocpc.ocpc.{OcpcList, SingleRecord}
+
+import scala.collection.mutable.ListBuffer
 
 object OcpcPIDmerge {
   def main(args: Array[String]): Unit = {
@@ -27,6 +32,8 @@ object OcpcPIDmerge {
     val version = args(3).toString
     val sampleHour = args(4).toInt
 
+    val fileName = "ocpc_pid_model_v1.pb"
+
     println("parameters:")
     println(s"date=$date, hour=$hour, media=$media, version=$version, sampleHour=$sampleHour")
 
@@ -36,9 +43,9 @@ object OcpcPIDmerge {
 
     val data = updateK(prevK, incrementK, ocpcRecord, date, hour, spark)
 
-    data
+//    data
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_data_20190514")
 
     val result = data
       .select("unitid", "conversion_goal", "kvalue")
@@ -48,6 +55,53 @@ object OcpcPIDmerge {
 
     result
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_k_data_hourly")
+
+    saveDataPbPack(result, fileName)
+  }
+
+  def saveDataPbPack(rawData: DataFrame, fileName: String) = {
+    var list = new ListBuffer[SingleRecord]
+    val dataset = rawData
+        .selectExpr("cast(unitid as string) identifier", "cast(conversion_goal as int) conversion_goal", "cast(kvalue as double) kvalue")
+    println("size of the dataframe")
+    println(dataset.count)
+    println(s"filename: $fileName")
+    dataset.show(10)
+    dataset.printSchema()
+    var cnt = 0
+
+    for (record <- dataset.collect()) {
+      val identifier = record.getAs[String]("identifier")
+      val cpaGiven = 0.0
+      val kvalue = record.getAs[Double]("kvalue")
+      val cvrCnt = 30
+      val conversionGoal = record.getAs[Int]("conversion_goal")
+
+      if (cnt % 100 == 0) {
+        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
+      }
+      cnt += 1
+
+      val currentItem = SingleRecord(
+        identifier = identifier,
+        conversiongoal = conversionGoal,
+        kvalue = kvalue,
+        cpagiven = cpaGiven,
+        cvrcnt = cvrCnt
+      )
+      list += currentItem
+
+    }
+    val result = list.toArray[SingleRecord]
+    val adRecordList = OcpcList(
+      adrecord = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(fileName))
+
+    println("complete save data into protobuffer")
   }
 
   def updateK(prevK: DataFrame, incrementK: DataFrame, ocpcRecord: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -63,10 +117,23 @@ object OcpcPIDmerge {
       .select("unitid", "conversion_goal", "prev_k", "increment_k")
       .na.fill(1, Seq("prev_k"))
       .na.fill(0, Seq("increment_k"))
-      .withColumn("kvalue", col("prev_k") + col("increment_k"))
+      .withColumn("kvalue", udfCalculateKvalue(0.2, 5.0)(col("prev_k"), col("increment_k")))
 
     data
   }
+
+  def udfCalculateKvalue(lowerBound: Double, upperBound: Double) = udf((prevK: Double, incrementK: Double) => {
+    val result = prevK + incrementK
+    var updateK = 0.0
+    if (result < lowerBound) {
+      updateK = lowerBound
+    } else if (result > upperBound) {
+      updateK = upperBound
+    } else {
+      updateK = result
+    }
+    updateK
+  })
 
   def getPrevK(version: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据

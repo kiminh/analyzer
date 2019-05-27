@@ -5,13 +5,12 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
-object OcpcCharge {
+object OcpcChargeTestV1 {
   def main(args: Array[String]): Unit = {
     /*
     根据最近四天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
@@ -54,8 +53,8 @@ object OcpcCharge {
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
 
-    result
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+//    result
+////      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
 //      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
@@ -77,7 +76,7 @@ object OcpcCharge {
     val password = conf.getString("ocpc_pay_mysql.test.password")
     val driver = conf.getString("ocpc_pay_mysql.test.driver")
 //    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
-    val delSQL = s"delete from adv.ocpc_compensate where date(ocpc_charge_time) = '$date1'"
+    val delSQL = s"delete from adv.ocpc_compensate_test_v1 where date(ocpc_charge_time) = '$date1'"
 
     var connection: Connection = null
     try {
@@ -105,7 +104,7 @@ object OcpcCharge {
 //    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
 //    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    val tableName = "adv.ocpc_compensate"
+    val tableName = "adv.ocpc_compensate_test_v1"
     val mariadb_write_url = conf.getString("ocpc_pay_mysql.test.url")
     mariadb_write_prop.put("user", conf.getString("ocpc_pay_mysql.test.user"))
     mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
@@ -138,7 +137,6 @@ object OcpcCharge {
   }
 
   def getDataFromMysql(spark: SparkSession) = {
-    import spark.implicits._
 
     // 设置mysql库
     val conf = ConfigFactory.load("ocpc")
@@ -146,7 +144,7 @@ object OcpcCharge {
     val user = conf.getString("ocpc_pay_mysql.test.user")
     val passwd = conf.getString("ocpc_pay_mysql.test.password")
     val driver = conf.getString("ocpc_pay_mysql.test.driver")
-    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
+    val table = "(select unit_id from adv.ocpc_compensate_test_v1) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)

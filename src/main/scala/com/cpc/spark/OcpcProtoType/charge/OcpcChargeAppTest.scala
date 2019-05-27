@@ -5,13 +5,12 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
-object OcpcCharge {
+object OcpcChargeAppTest {
   def main(args: Array[String]): Unit = {
     /*
     根据最近四天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
@@ -50,13 +49,13 @@ object OcpcCharge {
 
     saveDataToMysql(dataFilter, spark)
 
-    val result = data
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-
-    result
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+//    val result = data
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//
+//    result
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+////      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
 
@@ -76,8 +75,8 @@ object OcpcCharge {
     val username = conf.getString("ocpc_pay_mysql.test.user")
     val password = conf.getString("ocpc_pay_mysql.test.password")
     val driver = conf.getString("ocpc_pay_mysql.test.driver")
-//    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
-    val delSQL = s"delete from adv.ocpc_compensate where date(ocpc_charge_time) = '$date1'"
+//    val table = "(select unit_id from adv.ocpc_compensate_app10) as tmp"
+    val delSQL = s"delete from adv.ocpc_compensate_app10 where date(ocpc_charge_time) = '$date1'"
 
     var connection: Connection = null
     try {
@@ -105,7 +104,7 @@ object OcpcCharge {
 //    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
 //    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    val tableName = "adv.ocpc_compensate"
+    val tableName = "adv.ocpc_compensate_app10"
     val mariadb_write_url = conf.getString("ocpc_pay_mysql.test.url")
     mariadb_write_prop.put("user", conf.getString("ocpc_pay_mysql.test.user"))
     mariadb_write_prop.put("password", conf.getString("ocpc_pay_mysql.test.password"))
@@ -138,7 +137,6 @@ object OcpcCharge {
   }
 
   def getDataFromMysql(spark: SparkSession) = {
-    import spark.implicits._
 
     // 设置mysql库
     val conf = ConfigFactory.load("ocpc")
@@ -146,7 +144,7 @@ object OcpcCharge {
     val user = conf.getString("ocpc_pay_mysql.test.user")
     val passwd = conf.getString("ocpc_pay_mysql.test.password")
     val driver = conf.getString("ocpc_pay_mysql.test.driver")
-    val table = "(select unit_id from adv.ocpc_compensate) as tmp"
+    val table = "(select unit_id from adv.ocpc_compensate_app10) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -194,7 +192,7 @@ object OcpcCharge {
          |WHERE
          |  `date` >= '$date1'
          |AND
-         |  cvr_goal = 'cvr3'
+         |  cvr_goal = 'cvr2'
        """.stripMargin
     println(sqlRequest1)
     val cvData = spark.sql(sqlRequest1)
@@ -297,6 +295,13 @@ object OcpcCharge {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  isclick,
          |  price,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |    end) as industry,
          |  date,
          |  hour
          |FROM
@@ -309,13 +314,11 @@ object OcpcCharge {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-      .filter(s"is_hidden = 0 and conversion_goal = 3")
+      .filter(s"is_hidden = 0 and conversion_goal = 2 and industry = 'feedapp'")
 
     rawData.createOrReplaceTempView("raw_data")
 

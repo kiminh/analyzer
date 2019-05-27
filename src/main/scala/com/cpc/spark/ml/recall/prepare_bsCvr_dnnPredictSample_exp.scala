@@ -86,6 +86,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
       s"""
          |select distinct unitid from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
          |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297')
+         |or (cast(tag as int) between 365 and 384)
        """.stripMargin
     ).createOrReplaceTempView("precision_unit")
 
@@ -110,7 +111,8 @@ object prepare_bsCvr_dnnPredictSample_exp {
          |lateral view explode(split(age,',')) age as age1
          |lateral view explode(split(sex,',')) sex as sex1
          |lateral view explode(split(regions,',')) regions as regions1 where unitid
-         |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$today' group by unitid)) ta join
+         |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$today' group by unitid)
+         |) ta join
          |(select unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and label=1 group by unitid) tb
          |on ta.unitid=tb.unitid
          |join (select unitid from dl_cpc.cpc_recall_unitid_ctr_dif where dt='$day' and ratio<1.5 group by unitid) tc

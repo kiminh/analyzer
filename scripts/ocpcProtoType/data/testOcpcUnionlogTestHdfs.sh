@@ -2,7 +2,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -12,10 +12,10 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 20g --driver-memory 20g \
+    --executor-memory 20g --driver-memory 4g \
     --executor-cores 10 --num-executors 20  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.model_v3.pid.OcpcPIDcontrol \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 qtt qtt_pidv1 3 24 20 0.5 0.5 0.5
+    --class com.cpc.spark.OcpcProtoType.data.OcpcUnionlogTestHdfs \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2
