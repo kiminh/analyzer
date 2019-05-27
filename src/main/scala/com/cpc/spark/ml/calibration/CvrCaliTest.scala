@@ -34,7 +34,7 @@ object CvrCaliTest{
     val log = spark.sql(sql)
 
     println("datasum: %d".format(log.count()))
-    println("datasum: %d".format(log.filter("iscvr is not null").count()))
+    println("datasum: %d".format(log.filter("iscvr = 1").count()))
 
 //    val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
 //      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
@@ -54,9 +54,9 @@ object CvrCaliTest{
 //    val data3 = log.join(group3,Seq("ideaid"),"inner")
 //
 //    //create cali pb
-//    val calimap1 = GroupToConfig(data1, session,calimodel)
-//    val calimap2 = GroupToConfig(data2, session,calimodel)
-//    val calimap3 = GroupToConfig(data3, session,calimodel)
+//    val calimap1 = GroupToConfig(data1, spark,calimodel)
+//    val calimap2 = GroupToConfig(data2, spark,calimodel)
+//    val calimap3 = GroupToConfig(data3, spark,calimodel)
 //    val calimap = calimap1 ++ calimap2 ++ calimap3
 //    val califile = PostCalibrations(calimap.toMap)
 //    val localPath = saveProtoToLocal(calimodel, califile)
@@ -104,11 +104,7 @@ object CvrCaliTest{
             println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
-            val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
-            val irModel = IRModel(
-              boundaries = irFullModel.boundaries,
-              predictions = irFullModel.predictions
-            )
+            val calik =
             println(s"bin size: ${irFullModel.boundaries.length}")
             println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             val config = CalibrationConfig(
