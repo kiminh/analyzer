@@ -78,7 +78,7 @@ object OcpcSuggestCPAV3 {
          |    dl_cpc.ocpc_base_unionlog a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid = b.unitid
-         |    and a.day = b.day
+         |    and a.`date`  = b.day
          |    and b.$selectCondition2
          |    and b.conversion_target[0] not in ('none','site_uncertain')
          |WHERE a.$selectCondition
