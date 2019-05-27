@@ -78,9 +78,11 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
+    resultDF.show(10)
+
     resultDF
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
-//    savePbPack(resultDF, version, isHidden)
+    savePbPack(resultDF, version, isHidden)
   }
 
   def getCpagiven(date: String, hour: String, spark: SparkSession) = {
