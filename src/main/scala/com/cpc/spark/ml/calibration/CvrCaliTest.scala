@@ -148,7 +148,7 @@ object CvrCaliTest{
       return 0
     }
     if (num >= boundaries.last._1) {
-      val a= boundaries.size
+      val a = boundaries.size
       return boundaries.size
     }
     val mid = boundaries.size / 2
