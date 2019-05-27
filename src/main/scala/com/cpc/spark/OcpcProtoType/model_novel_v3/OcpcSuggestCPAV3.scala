@@ -64,7 +64,7 @@ object OcpcSuggestCPAV3 {
     val selectCondition = s"`date` between '$date2' and '$date1'"
     val selectCondition2 = s"day between '$date2' and '$date1'"
 
-    // 点击数据 todo：去掉无转化目标的
+    // 点击数据
     val sqlRequest1 =
       s"""
          |SELECT
