@@ -154,7 +154,7 @@ object OcpcSampleToPb {
       s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
     val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
       .withColumn("target",lit(1))
-      .selectExpr("cast(unitid as int)unitid","target")
+      .selectExpr("cast(unitid as int) identifier","target")
 
     resultDF
   }
