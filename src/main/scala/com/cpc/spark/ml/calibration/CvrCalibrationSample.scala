@@ -42,6 +42,7 @@ object CvrCalibrationSample {
     println(s"sql:\n$sql")
     val ctrdata = spark.sql(sql).filter("unit_target is not null")
       .filter("unit_target != 'none'")
+      .filter("unit_target != 'site_uncertain'")
 
     ctrdata.show(10)
     val sqlRequest2 =

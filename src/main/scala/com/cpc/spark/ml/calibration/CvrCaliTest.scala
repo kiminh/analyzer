@@ -28,7 +28,7 @@ object CvrCaliTest{
 
     // get union log
     val sql = s"""
-                 |select * from dl_cpc.qtt_cvr_calibration_sample where dt < '2019-05-26'
+                 |select * from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26'
        """.stripMargin
     println(s"sql:\n$sql")
     val log = spark.sql(sql)
