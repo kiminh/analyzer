@@ -90,7 +90,7 @@ object OcpcSmoothFactorNovelV3{
       .select("unitid", "click", "cv", "pre_cvr")
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "pcoc", "post_cvr")
+      .select("unitid", "pcoc", "post_cvr","total_price")
 
     pcocData.show(10)
 
