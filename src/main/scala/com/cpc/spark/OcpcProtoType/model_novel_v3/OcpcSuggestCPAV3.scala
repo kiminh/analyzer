@@ -18,8 +18,6 @@ object OcpcSuggestCPAV3 {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val media = args(3).toString
-    val hourInt = args(4).toInt
 
 
     val spark = SparkSession
