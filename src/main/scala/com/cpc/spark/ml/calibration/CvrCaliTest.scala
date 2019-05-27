@@ -12,7 +12,6 @@
 //import org.apache.spark.sql.functions._
 //import org.apache.spark.sql.{DataFrame, SparkSession}
 //
-//
 //object CvrCaliTest{
 //
 //  val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
@@ -103,6 +102,11 @@
 //            println("bin size too small, don't output the calibration")
 //            CalibrationConfig()
 //          } else {
+//            val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
+//            val irModel = IRModel(
+//              boundaries = irFullModel.boundaries,
+//              predictions = irFullModel.predictions
+//            )
 //            val calik =
 //            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
 //            val config = CalibrationConfig(
@@ -218,4 +222,9 @@
 //    }
 //    return (bins, totalSize, allClickSum)
 //  }
+//
+//  case class kcalimap(
+//                     var boundries: Seq[Double] = null
+//                     )
 //}
+//

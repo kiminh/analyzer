@@ -85,7 +85,7 @@ object OcpcSuggestCPAV3 {
          |  AND a.adslot_type in (1,2,3)
          |  AND a.adsrc = 1
          |  and a.isclick = 1
-         |  AND a.(charge_type is null or charge_type = 1)
+         |  AND (a.charge_type is null or a.charge_type = 1)
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
