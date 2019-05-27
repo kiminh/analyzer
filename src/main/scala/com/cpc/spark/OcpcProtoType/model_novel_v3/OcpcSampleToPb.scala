@@ -119,7 +119,6 @@ object OcpcSampleToPb {
        |  1.0 / pcoc cvrcalfactor,
        |  jfb,
        |  1.0 / jfb as kvalue,
-       |  conversion_goal,
        |  post_cvr,
        |  total_price
        |FROM
