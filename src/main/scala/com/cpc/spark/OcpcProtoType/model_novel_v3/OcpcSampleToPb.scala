@@ -172,7 +172,7 @@ object OcpcSampleToPb {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val identifier = record.getAs[String]("identifier")
+      val identifier = record.getAs[Int]("identifier").toString
       val HiddenOcpc = isHidden
       val key = "oCPCNovel&" + identifier + "&" + HiddenOcpc
       val conversionGoal = record.getAs[Int]("conversion_goal")
