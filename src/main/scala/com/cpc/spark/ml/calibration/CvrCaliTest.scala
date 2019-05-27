@@ -105,7 +105,6 @@ object CvrCaliTest{
 //            CalibrationConfig()
 //          } else {
 //            val calik =
-//            println(s"bin size: ${irFullModel.boundaries.length}")
 //            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
 //            val config = CalibrationConfig(
 //              name = modelName,
