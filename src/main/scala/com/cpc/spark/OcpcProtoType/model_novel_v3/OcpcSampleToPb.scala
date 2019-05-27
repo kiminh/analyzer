@@ -91,9 +91,10 @@ object OcpcSampleToPb {
          |  unitid as identifier,
          |  conversion_goal,
          |  new_adclass,
-         |  maxbid
+         |  maxbid,
+         |  cpagiven
          |FROM
-         |  test.ocpc_cpagiven_novel_v3_hourly
+         |  dl_cpc.ocpc_cpagiven_novel_v3_hourly
          |WHERE
          |  `date` = '$date' and `hour` = '$hour'
        """.stripMargin
