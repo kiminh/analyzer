@@ -25,7 +25,7 @@ object CvrCalibrationSample {
 
     // get union log
     val sql = s"""
-                 |select a.*,b.conversion_target[0] as unit_target
+                 |select a.*,b.conversion_target[0] as unit_target, if(c.searchid is null,0,1) iscvr
                  |from
                  |(
                  |  select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt,hour,unitid
@@ -36,33 +36,13 @@ object CvrCalibrationSample {
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
                  | )a
-                 |left join dl_cpc.dw_unitid_detail b
+                 |join dl_cpc.dw_unitid_detail b
                  |on a.unitid = b.unitid and b.day = '$date'
+                 |left join dl_cpc.dm_conversion_detail c
+                 |on a.searchid = c.searchid and c.dt = '$date'
        """.stripMargin
     println(s"sql:\n$sql")
-    val ctrdata = spark.sql(sql).filter("unit_target is not null and unit_target not in ('none','site_uncertain')")
-
-    ctrdata.show(10)
-    val sqlRequest2 =
-      s"""
-         |select distinct a.searchid,
-         |        a.conversion_target as real_target,
-         |        b.conversion_target[0] as unit_target
-         |from dl_cpc.dm_conversions_for_model a
-         |join dl_cpc.dw_unitid_detail b
-         |    on a.unitid=b.unitid
-         |    and a.day = b.day
-         |    and b.day = '$date'
-         |where a.day = '$date'
-         |and size(a.conversion_target)>0
-       """.stripMargin
-    println(sqlRequest2)
-    val cvrData = spark.sql(sqlRequest2)
-      .withColumn("iscvr",matchcvr(col("real_target"),col("unit_target")))
-      .filter("iscvr = 1")
-    cvrData.show(10)
-
-    val sample = ctrdata.join(cvrData,Seq("searchid"),"left")
+    val sample = spark.sql(sql).filter("unit_target is not null and unit_target not in ('none','site_uncertain')")
       .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","dt","hour")
 
     sample.show(10)
