@@ -56,7 +56,7 @@ object OcpcSampleToPb {
 
     // 组装数据
     val result = cvGoal.join(cvrData, Seq("identifier"), "left")
-      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","maxbid")
+      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","maxbid","total_price")
       .withColumn("smoothfactor", lit(0.5))
     result.show(10)
 
