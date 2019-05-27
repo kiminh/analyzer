@@ -32,8 +32,8 @@ object OcpcLightBulbV3{
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_daily")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
 
 
   }
