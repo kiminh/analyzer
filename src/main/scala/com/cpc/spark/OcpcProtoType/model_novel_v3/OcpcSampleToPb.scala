@@ -67,7 +67,7 @@ object OcpcSampleToPb {
         ).select("new_adclass","adclass_kvalue","adclass_cvrcalfactor")
 
     val resultDF = result.join(avgkandpcoc,Seq("new_adclass"),"left")
-      .join(targetmiduDF,Seq("unitid"),"left")
+      .join(targetmiduDF,Seq("identifier"),"left")
       .filter("target is null")
       .withColumn("flag",when(col("total_price")>100000 and col("cvrcalfactor").isNull,lit(0)).otherwise(1))
       .filter("flag = 1")
