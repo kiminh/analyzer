@@ -247,3 +247,16 @@ total_price bigint
 )
 PARTITIONED by (date STRING, hour STRING,version STRING)
 STORED as PARQUET;
+
+create table if not exists dl_cpc.qtt_cvr_calibration_sample
+(
+searchid string,
+raw_cvr bigint,
+cvr_model_name string,
+adslotid string,
+ideaid bigint,
+user_req_ad_num bigint,
+iscvr int
+)
+PARTITIONED by (dt STRING, hour STRING)
+STORED as PARQUET;
