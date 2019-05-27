@@ -110,7 +110,7 @@ object eCPCforUsertype2 {
          |  sum(iscvr) as cv
          |FROM
          |  base_data
-         |GROUP BY adclass
+         |GROUP BY unitid, is_api_callback
        """.stripMargin
     println(sqlRequest)
     val data = spark
