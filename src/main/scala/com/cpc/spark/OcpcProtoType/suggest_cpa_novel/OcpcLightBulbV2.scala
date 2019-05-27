@@ -158,7 +158,7 @@ object OcpcLightBulbV2{
          |AND
          |    $mediaSelection
          |AND
-         |    is_ocpc = 1
+         |    ocpc_status = 1
          |AND
          |    isclick = 1
        """.stripMargin
