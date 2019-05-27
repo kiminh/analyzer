@@ -68,55 +68,55 @@ object CvrCaliTest{
 //    }
   }
 
-
-  def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
-    val irTrainer = new IsotonicRegression()
-    val sc = session.sparkContext
-    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
-      .rdd.map( x => {
-      var isClick = 0d
-      if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
-      }
-      val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(5)
-      val group = x.getString(6)
-      val key = calimodel + "_" + group
-      (key, (ectr, isClick))
-    }).groupByKey()
-      .mapValues(
-        x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-      )
-      .toLocalIterator
-      .map {
-        x =>
-          val modelName: String = x._1
-          val bins = x._2._1
-          val samples = x._2._2
-          val size = bins._2
-          val positiveSize = bins._3
-          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-          println(s"bin size: ${bins._1.size}")
-          if (bins._1.size < minBinCount) {
-            println("bin size too small, don't output the calibration")
-            CalibrationConfig()
-          } else {
-            val calik =
-            println(s"bin size: ${irFullModel.boundaries.length}")
-            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-            val config = CalibrationConfig(
-              name = modelName,
-              ir = Option(irModel)
-            )
-            calimap += ((modelName,config))
-            config
-          }
-      }.toList
-    return calimap
-  }
+//
+//  def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
+//                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
+//    val irTrainer = new IsotonicRegression()
+//    val sc = session.sparkContext
+//    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
+//    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+//      .rdd.map( x => {
+//      var isClick = 0d
+//      if (x.get(3) != null) {
+//        isClick = x.getLong(3).toDouble
+//      }
+//      val ectr = x.getLong(4).toDouble / 1e6d
+//      val model = x.getString(5)
+//      val group = x.getString(6)
+//      val key = calimodel + "_" + group
+//      (key, (ectr, isClick))
+//    }).groupByKey()
+//      .mapValues(
+//        x =>
+//          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+//      )
+//      .toLocalIterator
+//      .map {
+//        x =>
+//          val modelName: String = x._1
+//          val bins = x._2._1
+//          val samples = x._2._2
+//          val size = bins._2
+//          val positiveSize = bins._3
+//          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
+//          println(s"bin size: ${bins._1.size}")
+//          if (bins._1.size < minBinCount) {
+//            println("bin size too small, don't output the calibration")
+//            CalibrationConfig()
+//          } else {
+//            val calik =
+//            println(s"bin size: ${irFullModel.boundaries.length}")
+//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+//            val config = CalibrationConfig(
+//              name = modelName,
+//              ir = Option(irModel)
+//            )
+//            calimap += ((modelName,config))
+//            config
+//          }
+//      }.toList
+//    return calimap
+//  }
 
   // input: (<ectr, click>)
   // output: original ectr/ctr, calibrated ectr/ctr
