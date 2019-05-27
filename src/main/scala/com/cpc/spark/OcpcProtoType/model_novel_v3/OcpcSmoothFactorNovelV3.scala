@@ -44,8 +44,8 @@ object OcpcSmoothFactorNovelV3{
     resultDF.show()
 
     resultDF
-      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_pcoc_jfb_novel_v3_hourly")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+      .repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly")
   }
 
 

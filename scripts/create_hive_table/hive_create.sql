@@ -236,3 +236,14 @@ ocpc_bid bigint
 )
 PARTITIONED by (date STRING, hour STRING,version STRING)
 STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly
+(
+identifier string,
+pcoc double,
+jfb double,
+post_cvr double
+
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;
