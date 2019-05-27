@@ -28,7 +28,7 @@ object CvrCalibrationSample {
                  |select a.*,b.conversion_target[0] as unit_target
                  |from
                  |(
-                 |  select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt,hour
+                 |  select searchid, raw_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt,hour,unitid
                  | from dl_cpc.slim_union_log
                  | where dt = '$date'
                  | and media_appsid in ('80000001', '80000002') and isclick = 1
