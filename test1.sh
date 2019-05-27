@@ -5,6 +5,7 @@ SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 #day=`date +"%Y-%m-%d" -d "-2 hour"`
 #hour=`date +"%H" -d "-2 hour"`
+day=$1
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -25,5 +26,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.CalibrationCheckOnMidu\
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/calibration-novel-ctr-dnn-rawid-v8-postcali-2019-05-21-11.mlm 2019-05-21 13 novel-ctr-dnn-rawid-v8-postcali
+    --class com.cpc.spark.ml.calibration.CvrCalibrationSample\
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day
