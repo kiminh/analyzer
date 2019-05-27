@@ -42,7 +42,7 @@ object OcpcSuggestCPAV3 {
     resultDF.show(10)
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_cpagiven_novel_v3_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpagiven_novel_v3_hourly")
     println("successfully save data into table: dl_cpc.ocpc_cpagiven_novel_v3_hourly")
   }
 
