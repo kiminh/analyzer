@@ -48,8 +48,6 @@ object OcpcSmoothFactorNovelV3{
     println("successfully save data into table: dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly")
   }
 
-
-
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
     val pcocData = calculatePCOC(rawData, spark)
     val jfbData = calculateJFB(rawData, spark)
@@ -90,7 +88,7 @@ object OcpcSmoothFactorNovelV3{
       .select("unitid", "click", "cv", "pre_cvr")
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "pcoc", "post_cvr","total_price")
+      .select("unitid", "pcoc", "post_cvr")
 
     pcocData.show(10)
 
