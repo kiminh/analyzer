@@ -3,6 +3,7 @@ package com.cpc.spark.novel
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -11,6 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object NovelUnionEvents {
     def main(args: Array[String]): Unit = {
+        Logger.getRootLogger.setLevel(Level.WARN)
         val date = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()

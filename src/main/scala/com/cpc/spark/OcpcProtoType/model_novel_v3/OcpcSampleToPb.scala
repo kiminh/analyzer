@@ -1,6 +1,7 @@
-package com.cpc.spark.OcpcProtoType.model_novel_v2
+package com.cpc.spark.OcpcProtoType.model_novel_v3
 
 import java.io.FileOutputStream
+import java.util.Properties
 
 import ocpcParams.OcpcParams
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
@@ -43,51 +44,65 @@ object OcpcSampleToPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isHidden:$isHidden")
 
+    val cvGoal = getCpagiven(date, hour, spark)
+
     val cvrData = getPostCvrAndK(date, hour, version, spark)
+
+    val targetmiduDF = targetmidu(spark)
 
     println("NewK")
     println(cvrData.count())
     cvrData.show(10)
 
-    val cvGoal = getConversionGoal(date, hour, spark)
-    // 获取postcvr数据
-
     // 组装数据
-    val resultDF = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
-      .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor")
-      .withColumn("cpagiven",lit(0.0))
-      .withColumn("maxbid",lit(100000))
+    val result = cvGoal.join(cvrData, Seq("identifier"), "left")
+      .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","maxbid","total_price")
       .withColumn("smoothfactor", lit(0.5))
+    result.show(10)
+
+    val avgkandpcoc = result.groupBy("new_adclass")
+        .agg(
+          avg("kvalue").alias("adclass_kvalue"),
+          avg("cvrcalfactor").alias("adclass_cvrcalfactor")
+        ).select("new_adclass","adclass_kvalue","adclass_cvrcalfactor")
+
+    val resultDF = result.join(avgkandpcoc,Seq("new_adclass"),"left")
+      .join(targetmiduDF,Seq("identifier"),"left")
+      .filter("target is null")
+      .withColumn("flag",when(col("total_price")>100000 and col("cvrcalfactor").isNull,lit(0)).otherwise(1))
+      .filter("flag = 1")
+      .withColumn("kvalue",when(col("kvalue")isNull,col("adclass_kvalue")).otherwise(col("kvalue")))
+      .withColumn("cvrcalfactor",when(col("cvrcalfactor")isNull,col("adclass_cvrcalfactor")).otherwise(col("cvrcalfactor")))
+      .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","cpagiven","maxbid","smoothfactor")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    resultDF.repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
+    resultDF.show(10)
 
+    resultDF
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
     savePbPack(resultDF, version, isHidden)
   }
 
-  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+  def getCpagiven(date: String, hour: String, spark: SparkSession) = {
+    // 从表中抽取数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid as identifier,
+         |  conversion_goal,
+         |  new_adclass,
+         |  maxbid,
+         |  cpagiven
+         |FROM
+         |  dl_cpc.ocpc_cpagiven_novel_v3_hourly
+         |WHERE
+         |  `date` = '$date' and `hour` = '$hour'
+       """.stripMargin
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .withColumn("cv_flag", lit(1))
-      .selectExpr("cast(unitid as string) identifier", "cast(conversion_goal as int) conversion_goal", "cv_flag")
-      .distinct()
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
 
     resultDF.show(10)
     resultDF
@@ -99,6 +114,7 @@ object OcpcSampleToPb {
     2. 计算新的kvalue
      */
     // 从表中抽取数据
+    //todo:过滤无转化消耗大于1000
     val sqlRequest =
     s"""
        |SELECT
@@ -106,10 +122,10 @@ object OcpcSampleToPb {
        |  1.0 / pcoc cvrcalfactor,
        |  jfb,
        |  1.0 / jfb as kvalue,
-       |  conversion_goal,
-       |  post_cvr
+       |  post_cvr,
+       |  total_price
        |FROM
-       |  dl_cpc.ocpc_pcoc_jfb_hourly
+       |  dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly
        |WHERE
        |  `date` = '$date' and `hour` = '$hour'
        |AND
@@ -117,7 +133,7 @@ object OcpcSampleToPb {
        |AND
        |  jfb > 0
        |AND
-       |  pcoc>0
+       |  pcoc > 0
        """.stripMargin
 
     println(sqlRequest)
@@ -127,10 +143,27 @@ object OcpcSampleToPb {
 
   }
 
+  def targetmidu(spark: SparkSession) = {
+    //    连接adv_test
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "adv_live_read")
+    jdbcProp.put("password", "seJzIPUc7xU")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+
+    //从adv后台mysql获取人群包的url
+    val table=s"(select id as unitid FROM adv.unit " +
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
+    val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
+      .withColumn("target",lit(1))
+      .selectExpr("cast(unitid as int) identifier","target")
+
+    resultDF
+  }
 
   def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
     var list = new ListBuffer[SingleItem]
-    val filename = "ocpc_params_novel.pb"
+    val filename = "ocpc_params_novel_hidden.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
@@ -147,7 +180,7 @@ object OcpcSampleToPb {
       val jfbFactor = record.getAs[Double]("kvalue")
       val smoothFactor = record.getAs[Double]("smoothfactor")
       val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = 0.0
+      val cpaGiven = record.getAs[Double]("cpagiven")
       val cpaSuggest = 0.0
       val paramT = 0.0
       val highBidFactor = 0.0
@@ -155,7 +188,7 @@ object OcpcSampleToPb {
       val ocpcMincpm = 0
       val ocpcMinbid = 0
       val cpcbid = 0
-      val maxbid = 100000
+      val maxbid = record.getAs[Double]("maxbid").toInt
 
       if (cnt % 100 == 0) {
         println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +

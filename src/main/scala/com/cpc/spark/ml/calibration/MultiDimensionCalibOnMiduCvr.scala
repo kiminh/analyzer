@@ -3,23 +3,20 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import sys.process._
+
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.HourlyCalibration._
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object MultiDimensionCalibOnQtt {
-
-  val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
-  val destDir = "/home/work/mlcpp/calibration/"
-  val newDestDir = "/home/cpc/model_server/calibration/"
-  val MAX_BIN_COUNT = 10
-  val MIN_BIN_SIZE = 100000
+object MultiDimensionCalibOnMiduCvr {
 
   def main(args: Array[String]): Unit = {
 
@@ -28,8 +25,8 @@ object MultiDimensionCalibOnQtt {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
+    val model = "novel-ctr-dnn-rawid-v7-cali"
+    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -47,21 +44,20 @@ object MultiDimensionCalibOnQtt {
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
-
-    val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql_2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 | from dl_cpc.slim_union_log
+                 | from dl_cpc.cpc_novel_union_events
                  | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
-                 | and ctr_model_name in ('$model','$calimodel')
+                 | and media_appsid in ('80001098', '80001292') and isshow = 1
+                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
@@ -86,43 +82,41 @@ object MultiDimensionCalibOnQtt {
     val data3 = log.join(group3,Seq("ideaid"),"inner")
 
     //create cali pb
-    val calimap1 = GroupToConfig(data1, session,calimodel)
-    val calimap2 = GroupToConfig(data2, session,calimodel)
-    val calimap3 = GroupToConfig(data3, session,calimodel)
+    val calimap1 = GroupToConfig(data1, session,calimodelname)
+    val calimap2 = GroupToConfig(data2, session,calimodelname)
+    val calimap3 = GroupToConfig(data3, session,calimodelname)
     val calimap = calimap1 ++ calimap2 ++ calimap3
     val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal(calimodel, califile)
-    saveFlatTextFileForDebug(calimodel, califile)
+    val localPath = saveProtoToLocal(model, califile)
+    saveFlatTextFileForDebug(model, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$calimodel.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$calimodel.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
     }
   }
 
-
-  def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
+  def GroupToConfig(data:DataFrame, session: SparkSession, calimodelname: String, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
-    import session.implicits._
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
     val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
+        isClick = x.getInt(3).toDouble
       }
       val ectr = x.getLong(4).toDouble / 1e6d
       val model = x.getString(5)
       val group = x.getString(6)
-      val key = calimodel + "_" + group
+      val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
         x =>
           (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-      )
+          )
       .toLocalIterator
       .map {
         x =>
@@ -171,6 +165,22 @@ object MultiDimensionCalibOnQtt {
     return (ectr / click, calibrated / click)
   }
 
+  def getauccali(samples: Array[(Double, Double)],sc: SparkContext, irModel: IRModel): Double = {
+    //val data=Array(Double, Double)
+    val dataListBuffer = scala.collection.mutable.ListBuffer[(Double,Double)]()
+    samples.foreach(x => {
+      val calibrated = computeCalibration(x._1, irModel)
+      val label = x._2
+      val t = (calibrated,label)
+      dataListBuffer += t
+    })
+    val data = dataListBuffer.toArray
+    val ScoreAndLabel = sc.parallelize(data)
+    val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
+    val aucROC = metrics.areaUnderROC
+    return aucROC
+  }
+
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
     if (num < boundaries(0)) {
       return 0
@@ -192,7 +202,7 @@ object MultiDimensionCalibOnQtt {
     }
     var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return  Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
+      return Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
     }
     if (index == irModel.boundaries.size) {
       index = index - 1
@@ -204,7 +214,7 @@ object MultiDimensionCalibOnQtt {
   }
 
   def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"calibration-$modelName.mlm"
+    val filename = s"post-calibration-$modelName.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
@@ -213,7 +223,7 @@ object MultiDimensionCalibOnQtt {
   }
 
   def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"calibration-flat-$modelName.txt"
+    val filename = s"post-calibration-flat-$modelName.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()

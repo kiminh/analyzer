@@ -54,8 +54,6 @@ CREATE TABLE IF NOT EXISTS dl_cpc.slim_unionlog (
 PARTITIONED BY (dt string, hour string)
 STORED AS PARQUET;
 
----------------------
-
 CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_detail_report_hourly_v3
 (
     identifier              string,
@@ -87,9 +85,6 @@ PARTITIONED by (`date` STRING, `hour` STRING, version STRING)
 STORED as PARQUET;
 
 
-
-
-
 CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_summary_report_hourly_v3
 (
     conversion_goal         int,
@@ -115,6 +110,25 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_summary_report_hourly_v3
 PARTITIONED by (`date` STRING, `hour` STRING, version STRING)
 STORED as PARQUET;
 
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_post_cvr_unitid_hourly_novel (
+    identifier string,
+    min_bid double,
+    cvr1 double,
+    cvr2 double,
+    cvr3 double,
+    cvr4 double,
+    min_cpm double,
+    factor1 double,
+    factor2 double,
+    factor3 double,
+    factor4 double,
+    cpc_bid double,
+    cpa_suggest int,
+    param_t int,
+    cali_value double
+)
+PARTITIONED BY (date string, hour string, version string)
+STORED AS PARQUET;
 
 CREATE TABLE IF NOT EXISTS dl_cpc.recall_filter_number_report_v3
 (
@@ -187,4 +201,62 @@ CREATE TABLE IF NOT EXISTS dl_cpc.recall_filter_number_report_v3
     media_appsid string
 )
 PARTITIONED by (`dt` STRING, `hour` STRING)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_novel_pb_hourly
+(
+identifier string,
+kvalue double,
+conversion_goal int,
+post_cvr double,
+cvrcalfactor double,
+cpagiven double,
+maxbid int,
+smoothfactor double
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_cpagiven_novel_v3_hourly
+(
+unitid int,
+new_adclass int,
+cost bigint,
+cvrcnt bigint,
+qtt_avgbid double,
+qtt_cpa double,
+maxbid double,
+alpha double,
+conversion_goal int,
+alpha_max double,
+cpa_max double,
+cpagiven double,
+adv_conversion_goal int,
+ocpc_bid bigint
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.ocpc_pcoc_jfb_novel_v3_hourly
+(
+identifier string,
+pcoc double,
+jfb double,
+post_cvr double,
+total_price bigint
+)
+PARTITIONED by (date STRING, hour STRING,version STRING)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.qtt_cvr_calibration_sample
+(
+searchid string,
+raw_cvr bigint,
+cvr_model_name string,
+adslotid string,
+ideaid bigint,
+user_req_ad_num bigint,
+iscvr int
+)
+PARTITIONED by (dt STRING, hour STRING)
 STORED as PARQUET;
