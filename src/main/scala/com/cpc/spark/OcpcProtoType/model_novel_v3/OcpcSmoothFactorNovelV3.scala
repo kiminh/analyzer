@@ -36,7 +36,7 @@ object OcpcSmoothFactorNovelV3{
     val result = calculateSmooth(baseData, spark)
 
     val resultDF = result
-        .select("identifier", "pcoc", "jfb", "post_cvr")
+        .select("identifier", "pcoc", "jfb", "post_cvr","total_price")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
@@ -56,7 +56,7 @@ object OcpcSmoothFactorNovelV3{
 
     val result = pcocData
         .join(jfbData, Seq("unitid"), "outer")
-        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr")
+        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr","total_price")
 
     result.show(10)
 

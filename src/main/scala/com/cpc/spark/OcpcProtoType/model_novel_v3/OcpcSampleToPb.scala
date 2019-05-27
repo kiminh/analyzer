@@ -1,6 +1,7 @@
 package com.cpc.spark.OcpcProtoType.model_novel_v3
 
 import java.io.FileOutputStream
+import java.util.Properties
 
 import ocpcParams.OcpcParams
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
@@ -47,12 +48,14 @@ object OcpcSampleToPb {
 
     val cvrData = getPostCvrAndK(date, hour, version, spark)
 
+    val targetmiduDF = targetmidu(spark)
+
     println("NewK")
     println(cvrData.count())
     cvrData.show(10)
 
     // 组装数据
-    val result = cvrData.join(cvGoal, Seq("identifier", "conversion_goal"), "inner")
+    val result = cvGoal.join(cvrData, Seq("identifier"), "left")
       .select("identifier", "new_adclass","cpagiven","kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","maxbid")
       .withColumn("smoothfactor", lit(0.5))
     result.show(10)
@@ -64,13 +67,17 @@ object OcpcSampleToPb {
         ).select("new_adclass","adclass_kvalue","adclass_cvrcalfactor")
 
     val resultDF = result.join(avgkandpcoc,Seq("new_adclass"),"left")
+      .join(targetmiduDF,Seq("unitid"),"left")
+      .filter("target is null")
+      .withColumn("flag",when(col("total_price")>100000 and col("cvrcalfactor").isNull,lit(0)).otherwise(1))
+      .filter("flag = 1")
       .withColumn("kvalue",when(col("kvalue")isNull,col("adclass_kvalue")).otherwise(col("kvalue")))
       .withColumn("cvrcalfactor",when(col("cvrcalfactor")isNull,col("adclass_cvrcalfactor")).otherwise(col("cvrcalfactor")))
       .select("identifier", "kvalue", "conversion_goal", "post_cvr", "cvrcalfactor","cpagiven","maxbid","smoothfactor")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    savePbPack(resultDF, version, isHidden)
+//    savePbPack(resultDF, version, isHidden)
   }
 
   def getCpagiven(date: String, hour: String, spark: SparkSession) = {
@@ -110,7 +117,8 @@ object OcpcSampleToPb {
        |  jfb,
        |  1.0 / jfb as kvalue,
        |  conversion_goal,
-       |  post_cvr
+       |  post_cvr,
+       |  total_price
        |FROM
        |  test.ocpc_pcoc_jfb_novel_v3_hourly
        |WHERE
@@ -130,6 +138,23 @@ object OcpcSampleToPb {
 
   }
 
+  def targetmidu(spark: SparkSession) = {
+    //    连接adv_test
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "adv_live_read")
+    jdbcProp.put("password", "seJzIPUc7xU")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+
+    //从adv后台mysql获取人群包的url
+    val table=s"(select id as unitid FROM adv.unit " +
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
+    val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
+      .withColumn("target",lit(1))
+      .selectExpr("cast(unitid as int)unitid","target")
+
+    resultDF
+  }
 
   def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
     var list = new ListBuffer[SingleItem]
