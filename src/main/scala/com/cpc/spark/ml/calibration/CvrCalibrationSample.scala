@@ -40,9 +40,7 @@ object CvrCalibrationSample {
                  |on a.unitid = b.unitid and b.day = '$date'
        """.stripMargin
     println(s"sql:\n$sql")
-    val ctrdata = spark.sql(sql).filter("unit_target is not null")
-      .filter("unit_target != 'none'")
-      .filter("unit_target != 'site_uncertain'")
+    val ctrdata = spark.sql(sql).filter("unit_target is not null and unit_target not in ('none','site_uncertain')")
 
     ctrdata.show(10)
     val sqlRequest2 =

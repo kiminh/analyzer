@@ -68,19 +68,24 @@ object OcpcSuggestCPAV3 {
     val sqlRequest1 =
       s"""
          |SELECT
-         |    searchid,
-         |    unitid,
-         |    adclass,
-         |    price,
-         |    bid,
-         |    ocpc_log
+         |    a.searchid,
+         |    a.unitid,
+         |    a.adclass,
+         |    a.price,
+         |    a.bid,
+         |    a.ocpc_log
          |FROM
          |    dl_cpc.ocpc_base_unionlog
-         |WHERE $selectCondition
-         |  AND adslot_type in (1,2,3)
-         |  AND adsrc = 1
-         |  and isclick = 1
-         |  AND (charge_type is null or charge_type = 1)
+         |join dl_cpc.dw_unitid_detail b
+         |    on a.unitid=b.unitid
+         |    and a.day = b.day
+         |    and b.$selectCondition2
+         |    and b.conversion_target[0] not in ('none','site_uncertain')
+         |WHERE a.$selectCondition
+         |  AND a.adslot_type in (1,2,3)
+         |  AND a.adsrc = 1
+         |  and a.isclick = 1
+         |  AND a.(charge_type is null or charge_type = 1)
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
