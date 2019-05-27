@@ -224,7 +224,7 @@
 //  }
 //
 //  case class kcalimap(
-//                     var boundries: Seq[Double] = null
+//                     var boundries = Seq[Double]()
 //                     )
 //}
 //
