@@ -54,12 +54,9 @@ object eCPCforUsertype2 {
       .select("unitid", "is_api_callback", "post_cvr", "pcoc")
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
 
-    resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
 
     savePbPack(resultDF, fileName, version, date, hour, spark)
 
@@ -160,8 +157,8 @@ object eCPCforUsertype2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_v2_pb_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.adclass_ecpc_hourly")
     var cnt = 0
 
     for (record <- resultData.collect()) {
