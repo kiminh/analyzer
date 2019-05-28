@@ -47,14 +47,14 @@ object CalibrationCheckOnMiduCvr {
                  |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26'
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-      .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
-      .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
-      .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(concat_ws("_",col("ctr_model_name"),lit("0"))))
+    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("cvr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .withColumn("group2",concat_ws("_",col("cvr_model_name"),col("ideaid"),col("user_req_ad_num")))
+      .withColumn("group3",concat_ws("_",col("cvr_model_name"),col("ideaid")))
+      .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(concat_ws("_",col("cvr_model_name"),lit("0"))))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslot_id","ideaid","user_req_ad_num","len")
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","cvr_model_name","adslot_id","ideaid","user_req_ad_num","len")
 
     log.show(50)
     println("total data:%d".format(log.count()))
