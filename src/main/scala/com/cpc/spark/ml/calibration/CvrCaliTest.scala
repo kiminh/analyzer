@@ -94,8 +94,8 @@ object CvrCaliTest{
       val ectr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
-      val model = calimap.get(group).get
-      val calibrated = computeCalibration(ectr, model)
+      val kvalue = calimap.get(group).get
+      val calibrated = kvalue * ectr
       var mistake = 0
       if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         mistake = 1
@@ -121,8 +121,8 @@ object CvrCaliTest{
         val ectr = x.getLong(1).toDouble / 1e6d
         val onlineCtr = x.getLong(2).toDouble / 1e6d
         val group = x.getString(4)
-        val model = calimap.get(group).get
-        val calibrated = computeCalibration(ectr, model)
+        val kvalue = calimap.get(group).get
+        val calibrated = kvalue * ectr
         val ideaid = x.getString(10)
         (ectr,calibrated,ideaid, isClick)
       }).toDF("ectr","calibrated","ideaid","isclick")
@@ -133,9 +133,10 @@ object CvrCaliTest{
 
 
   def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 1): scala.collection.mutable.Map[String,Seq[(Double, Double)]] = {
+                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 1): scala.collection.mutable.Map[String,Double] = {
     val sc = session.sparkContext
-    var calimap = scala.collection.mutable.Map[String,Seq[(Double, Double)]]()
+    import session.implicits._
+    var calimap = scala.collection.mutable.Map[String,Double]()
     val result = data.select("user_req_ad_num","adslotid","ideaid","isclick","ectr","cvr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
@@ -146,29 +147,25 @@ object CvrCaliTest{
       val model = x.getString(5)
       val group = x.getString(6)
       val key = calimodel + "_" + group
-      (key, (ectr, isClick))
-    }).groupByKey()
-      .mapValues(
-        x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+      (key, ectr, isClick)
+    }).toDF("key","ectr","isclick")
+      .groupBy("key")
+      .agg(avg(col("ectr")).alias("avg_ectr"),
+        sum(col("isclick")).alias("ctrcnt"),
+        count(col("ectr")).alias("show")
       )
-      .toLocalIterator
-      .map {
-        x =>
-          val modelName: String = x._1
-          val bins = x._2._1
-          val samples = x._2._2
-          val size = bins._2
-          val positiveSize = bins._3
-          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-          println(s"bin size: ${bins._1.size}")
-          if (bins._1.size < minBinCount) {
-            println("bin size too small, don't output the calibration")
-          } else {
-            val kcalivalue = bins._1
-            calimap += ((modelName,kcalivalue))
-          }
-      }.toList
+      .withColumn("ctr",col("ctr_num")/col("show"))
+      .withColumn("kvalue",col("ctr")/col("avg_ectr"))
+      .rdd.map {
+        x =>{
+          val modelName = x.getAs[String]("key")
+          val show = x.getAs[Int]("show")
+          val ctrcnt = x.getAs[Int]("ctrcnt")
+          val kvalue = x.getAs[Double]("kvalue")
+          println(s"model: $modelName has data of size $show, of positive number of $ctrcnt")
+          calimap += ((modelName, kvalue))
+        }
+      }
     return calimap
   }
 
