@@ -102,11 +102,13 @@ object CalibrationCheckOnMiduCvr {
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(ectr, irModel.ir.get)
       val ideaid = x.getString(10)
-      (ectr,calibrated,ideaid, isClick)
-    }).toDF("ectr","calibrated","ideaid","isclick")
+      (ectr,calibrated,ideaid, isClick,onlineCtr)
+    }).toDF("ectr","calibrated","ideaid","isclick","onlinectr")
 
      val original=result2.selectExpr("cast(isclick as Int) label","cast(ectr* 1e6d as Int) prediction","ideaid")
     calculateAuc(original,"original",spark)
+    val online=result2.selectExpr("cast(isclick as Int) label","cast(onlinectr* 1e6d as Int) prediction","ideaid")
+    calculateAuc(online,"online",spark)
     val cali=result2.selectExpr("cast(isclick as Int) label","cast(calibrated * 1e6d as Int) prediction","ideaid")
     calculateAuc(cali,"postcali",spark)
   }
