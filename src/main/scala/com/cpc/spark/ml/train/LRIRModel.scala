@@ -320,8 +320,8 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  // fym 190525.
-  /*def savePbPackV6(
+  // fym 190527.
+  def savePbPackV5(
                     parser: String,
                     path: String,
                     dict: Map[String, Map[Int, Int]],
@@ -337,7 +337,7 @@ class LRIRModel {
         weights.update(i, d)
     }
 
-    val lr = Lrmodelv6.LRModel(
+    val lr = LRModel(
       parser = parser,
       featureNum = lrmodel.numFeatures,
       auPRC = auPRC,
@@ -357,7 +357,7 @@ class LRIRModel {
       None
     }
 
-    val pack = Lrmodelv6.Pack(
+    val pack = Pack(
       lr = Option(lr),
       ir = ir,
       createTime = new Date().getTime,
@@ -368,18 +368,11 @@ class LRIRModel {
       adclass = dict("adclass"),
       cityid = dict("cityid"),
       mediaid = dict("mediaid"),
-      appid = dictStr("appid"),
-      userid = dict("userid"),
-      siteid = dict("siteid"),
-      doc_cat = dict("doc_cat"),
-      channel = dictStr("channel"),
-      dtu_id = dictStr("dtu_id"),
-      brand = dictStr("brand"),
-      doc_id = dictLong("doc_id")
+      appid = dictStr("appid")
     )
 
     pack.writeTo(new FileOutputStream(path))
-  }*/
+  }
 
   def savePbPack2(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()

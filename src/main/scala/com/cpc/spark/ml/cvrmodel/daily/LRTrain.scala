@@ -82,7 +82,7 @@ object LRTrain {
 
     val cachePrefix = "/tmp/cvr_cache/"
 
-    if (parser == "cvrparser6") {
+    if (parser == "cvrparser6" || parser == "cvrparser7") {
       initIntFeatureDictV6(spark, cvrPathSep)
       initLongFeatureDictV6(spark, cvrPathSep)
       initStringFeatureDictV6(spark, cvrPathSep)
@@ -104,7 +104,7 @@ object LRTrain {
     }
 
     dates.foreach(dt => {
-      val union_events_date_filter = getUnionEventsDayFilter(dt)
+
       val queryRawDataFromUnionEvents =
         s"""with features as (
            |  select
@@ -144,7 +144,7 @@ object LRTrain {
            |  from
            |    dl_cpc.cpc_basedata_union_events
            |  where
-           |    $union_events_date_filter
+           |    day = "$dt"
            |    and isclick = 1
            |    and ideaid > 0
            |    and unitid > 0
@@ -160,7 +160,7 @@ object LRTrain {
            |  from
            |    dl_cpc.dm_conversion_detail
            |  where
-           |    $union_events_date_filter
+           |    dt = "$dt"
            |)
            |select
            |  features.*,
@@ -217,31 +217,6 @@ object LRTrain {
 
     s"hdfs dfs -rm -r $dfPath" !
 
-  }
-
-  // previous 3 days.
-  def getUnionEventsDayFilter(
-                              date: String
-                            ): String = {
-    s"day = '$date'"
-  }
-
-  // today.
-  def getConversionDayFilter(
-                                        date: String
-                                      ): String = {
-    val dateHourList = ListBuffer[String]()
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-
-    val dts = 0.to(3).map(t => {
-      val cal = Calendar.getInstance()
-      cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 1, 0, 0)
-      cal.add(Calendar.DAY_OF_MONTH, t)
-      dateFormat.format(cal.getTime)
-    })
-    val dtString = dts.map(t => s"'$t'").mkString(",")
-
-    s"`dt` in ($dtString)"
   }
 
   /**
@@ -420,12 +395,12 @@ object LRTrain {
 
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
 //    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_${prefix}/${name}_$date")
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
+    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
 //    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
 //    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
 //    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
