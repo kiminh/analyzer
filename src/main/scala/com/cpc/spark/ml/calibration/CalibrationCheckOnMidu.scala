@@ -123,7 +123,7 @@ object CalibrationCheckOnMidu {
     println(s"no calibration: ${ectr / ctr}")
     println(s"online calibration: ${onlineCtr / ctr}")
     println(s"new calibration: ${calibrated_ctr / ctr}")
-
+}
 
   def searchMap(modelset:Set[String])= udf{
     (key: String)=>{
