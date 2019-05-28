@@ -212,15 +212,15 @@ object LrCalibrationOnQtt {
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val auc = CalcMetrics.getAuc(spark,testData)
     println("%s auc:%f".format(cate,auc))
-    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
+    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")/1e6d).alias("ectr"))
     val ctr = p1.first().getAs[Double]("ctr")
     val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr/1e6d, ectr/ctr/1e6d))
+    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
 
     val p2 = data.groupBy("ideaid")
       .agg(
         avg(col("label")).alias("ctr"),
-        avg(col("prediction")).alias("ectr"),
+        avg(col("prediction")/1e6d).alias("ectr"),
         count(col("label")).alias("ctrnum")
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
@@ -245,6 +245,6 @@ object LrCalibrationOnQtt {
     val pcoc = p3.groupBy().agg(sum(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.05 and pcoc>0.95").count().toDouble
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 0.05 error:%f".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d, rightnum/allnum))
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 0.05 error:%f".format(cate, ctr2, ectr2, pcoc, rightnum/allnum))
   }
 }
