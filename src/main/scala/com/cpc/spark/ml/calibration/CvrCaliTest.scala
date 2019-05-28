@@ -160,11 +160,12 @@ object CvrCaliTest{
         x =>{
           val modelName = x.getAs[String]("key")
           val show = x.getAs[Long]("show")
-          val ctrcnt = x.getAs[Int]("ctrcnt")
+          val ctrnum = x.getAs[Int]("ctrnum")
           val kvalue = x.getAs[Double]("kvalue")
-          println(s"model: $modelName has data of size $show, of positive number of $ctrcnt")
+          println(s"model: $modelName has data of size $show, of positive number of $ctrnum")
           calimap += ((modelName, kvalue))
         }
+        calimap.toIterator
       }.toLocalIterator.toList
     return calimap
   }
