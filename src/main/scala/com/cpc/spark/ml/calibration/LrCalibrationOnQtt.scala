@@ -223,10 +223,13 @@ object LrCalibrationOnQtt {
         count(col("label")).alias("ctrnum")
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
-    val p3 = p2.groupBy()
+    val ctrnum = p2.groupBy()
       .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("avgctr")
 
-//    val p4 =
+    val p3 = p2.rdd.map{
+      r=>
+        val label=r.getAs[Double]("label")
+    }
     val ctr2 = p2.first().getAs[Double]("avgctr")
     val ectr2 = p2.first().getAs[Double]("avgectr")
     val pcoc = p2.first().getAs[Double]("avgpcoc")
