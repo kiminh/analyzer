@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.calibration
 
 import java.io.{File, FileOutputStream, PrintWriter}
+
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
@@ -8,6 +9,7 @@ import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.ml.calibration.CalibrationCheckOnMidu.searchMap
+import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.saveFlatTextFileForDebug
 
 object CvrCaliTest{
 
@@ -24,7 +26,13 @@ object CvrCaliTest{
     val calimodel = "qtt-cvr-dnn-rawid-v1-180"
     // get union log
     val sql = s"""
-                 |select * from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-25'
+                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid, cast(ideaid as string) ideaid,
+                 |case when user_req_ad_num = 1 then '1'
+                 |  when user_req_ad_num = 2 then '2'
+                 |  when user_req_ad_num in (3,4) then '4'
+                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_req_ad_num
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-25'
        """.stripMargin
     println(s"sql:\n$sql")
     val log = spark.sql(sql)
@@ -57,7 +65,16 @@ object CvrCaliTest{
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
 
     val modelset=calimap.toMap.keySet
-    val test = spark.sql("select * from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26' and hour = '12'")
+    val sql2 = s"""
+                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid, cast(ideaid as string) ideaid,
+                 |case when user_req_ad_num = 1 then '1'
+                 |  when user_req_ad_num = 2 then '2'
+                 |  when user_req_ad_num in (3,4) then '4'
+                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_req_ad_num
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26'
+       """.stripMargin
+    val test = spark.sql(sql2)
       .withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
       .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
