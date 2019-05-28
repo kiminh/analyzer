@@ -229,15 +229,16 @@ object LrCalibrationOnQtt {
 
     var num = 0
     val p3 = p2.rdd.map{
-      r=>
+      r=>{
         val ctr = r.getAs[Double]("ctr")
         val ectr = r.getAs[Double]("ectr")
         val ctrnum = r.getAs[Int]("ctrnum")
         val pcoc = r.getAs[Double]("pcoc")
         num += ctrnum
         var flag = 1
-        if(num > ctrnum ) flag = 0
+        if( num > ctrnum ) flag = 0
         (ctr,ectr,ctrnum,pcoc,flag)
+      }
     }.toDF("ctr","ectr","etrnum","flag").filter("flag = 1")
     val ctr2 = p3.groupBy().agg(sum(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
     val ectr2 = p3.groupBy().agg(sum(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
