@@ -159,7 +159,7 @@ object CvrCaliTest{
       .rdd.map {
         x =>{
           val modelName = x.getAs[String]("key")
-          val show = x.getAs[Int]("show")
+          val show = x.getAs[Long]("show")
           val ctrcnt = x.getAs[Int]("ctrcnt")
           val kvalue = x.getAs[Double]("kvalue")
           println(s"model: $modelName has data of size $show, of positive number of $ctrcnt")
