@@ -50,7 +50,7 @@ object CalibrationCheckOnMiduCvr {
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26'
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-21'
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql).withColumn("group1",concat_ws("_",col("cvr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
