@@ -156,14 +156,14 @@ object CvrCaliTest{
       )
       .withColumn("ctr",col("ctrnum")/col("show"))
       .withColumn("kvalue",col("ctr")/col("avg_ectr"))
-      .rdd.toLocalIterator.map {
+      .rdd.collect().foreach {
         x =>{
           val modelName = x.getAs[String]("key")
           val show = x.getAs[Long]("show")
           val ctrnum = x.getAs[Double]("ctrnum")
           val kvalue = x.getAs[Double]("kvalue")
           println(s"model: $modelName has data of size $show, of positive number of $ctrnum")
-          calimap += ((modelName, kvalue))
+          calimap.update(modelName, kvalue)
         }
         calimap
       }
