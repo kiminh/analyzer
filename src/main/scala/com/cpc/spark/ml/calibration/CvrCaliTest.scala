@@ -62,9 +62,14 @@ object CvrCaliTest{
     val calimap2 = GroupToConfig(data2, spark,calimodel)
     val calimap3 = GroupToConfig(data3, spark,calimodel)
     val calimap4 = GroupToConfig(log.withColumn("group",lit("0")), spark,calimodel)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
+    val calimap = (calimap1 ++ calimap2 ++ calimap3 ++ calimap4).toMap
 
-    val modelset=calimap.toMap.keySet
+    val localPath ="/home/cpc/wy/qtt_v180_k_cali.txt"
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    new PrintWriter(localPath) { write(calimap.toString); close() }
+
+    val modelset=calimap.keySet
     val sql2 = s"""
                  |select iscvr as isclick,searchid, raw_cvr as raw_ctr, cast(exp_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
@@ -103,7 +108,7 @@ object CvrCaliTest{
     val calibrated_ctr = result._3 / result._4
     val onlineCtr = result._5 / result._4
     println(s"impression: ${result._4}")
-    println(s"mistake: ${result._6}")
+//    println(s"mistake: ${result._6}")
     println(s"ctr: $ctr")
     println(s"ectr: $ectr")
     println(s"online ctr: $onlineCtr")
@@ -175,6 +180,23 @@ object CvrCaliTest{
     }
   }
 
+  def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
+    val filename = s"test-calibration-$modelName.mlm"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    config.writeTo(new FileOutputStream(localPath))
+    return localPath
+  }
+
+  def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
+    val filename = s"test-calibration-flat-$modelName.txt"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    new PrintWriter(localPath) { write(config.toString); close() }
+  }
+
   def computeCalibration(prob: Double, model: Seq[(Double, Double)]): Double = {
 
     if (prob <= 0) {
@@ -188,23 +210,6 @@ object CvrCaliTest{
       index = index - 1
     }
     return Math.max(0.0, Math.min(1.0, model(index)._2 * prob))
-  }
-
-  def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"calibration-$modelName.mlm"
-    val localPath = localDir + filename
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    config.writeTo(new FileOutputStream(localPath))
-    return localPath
-  }
-
-  def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"calibration-flat-$modelName.txt"
-    val localPath = localDir + filename
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    new PrintWriter(localPath) { write(config.toString); close() }
   }
 
   // input: Seq<(<ectr, click>)
