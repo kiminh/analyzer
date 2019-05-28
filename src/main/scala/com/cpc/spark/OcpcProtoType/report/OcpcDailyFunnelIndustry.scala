@@ -117,6 +117,7 @@ object OcpcDailyFunnelIndustry {
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
+    data1.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190528")
 
     // 预算数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
