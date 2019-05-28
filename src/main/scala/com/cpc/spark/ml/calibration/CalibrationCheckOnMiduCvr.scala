@@ -63,7 +63,7 @@ object CalibrationCheckOnMiduCvr {
     val data = log.filter("length(group)>0")
     println("calibration data:%d".format(data.count()))
     val result = data.rdd.map( x => {
-      val isClick = x.getLong(0).toDouble
+      val isClick = x.getInt(0).toDouble
       val ectr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
