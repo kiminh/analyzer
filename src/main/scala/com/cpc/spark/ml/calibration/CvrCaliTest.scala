@@ -117,7 +117,16 @@ object CvrCaliTest{
     println(s"online calibration: ${onlineCtr / ctr}")
     println(s"new calibration: ${calibrated_ctr / ctr}")
 
-
+//    result2 = test.rdd.map( x => {
+//      val isClick = x.getInt(0).toDouble
+//      val ectr = x.getLong(1).toDouble / 1e6d
+//      val onlineCtr = x.getLong(2).toDouble / 1e6d
+//      val group = x.getString(4)
+//      val model = calimap.get(group).get
+//      val calibrated = computeCalibration(ectr, model)
+//      ()
+//      }
+//    calculateAuc(result2,"lr",spark)
   }
 
 
@@ -180,23 +189,6 @@ object CvrCaliTest{
     }
   }
 
-  def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"test-calibration-$modelName.mlm"
-    val localPath = localDir + filename
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    config.writeTo(new FileOutputStream(localPath))
-    return localPath
-  }
-
-  def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"test-calibration-flat-$modelName.txt"
-    val localPath = localDir + filename
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    new PrintWriter(localPath) { write(config.toString); close() }
-  }
-
   def computeCalibration(prob: Double, model: Seq[(Double, Double)]): Double = {
 
     if (prob <= 0) {
@@ -240,7 +232,7 @@ object CvrCaliTest{
         showSum = showSum + 1
         if (showSum >= binSize) {
           val ctr = clickSum / showSum
-          bins = bins :+((ectr, ctr/ectr))
+          bins = bins :+((ectr, ctr * showSum / eCtrSum))
           n = n + 1
           clickSum = 0d
           showSum = 0d
