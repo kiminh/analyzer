@@ -218,9 +218,11 @@ object LrCalibrationOnQtt {
 
     val p2 = data.groupBy("ideaid")
       .agg(avg(col("label")).alias("ctr"),avg(col("prediction")).alias("ectr"))
-      .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"))
+      .withColumn("pcoc",col("ectr")/col("ctr"))
+      .groupBy().agg(avg(col("ctr")).alias("avgctr"),avg(col("ectr")).alias("avgectr"),avg(col("pcoc")).alias("avgpcoc"))
     val ctr2 = p2.first().getAs[Double]("avgctr")
     val ectr2 = p2.first().getAs[Double]("avgectr")
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgectr/avgctr:%f".format(cate, ctr2, ectr2/1e6d, ectr2/ctr2/1e6d))
+    val pcoc = p2.first().getAs[Double]("avgpcoc")
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d))
   }
 }
