@@ -239,7 +239,7 @@ object LrCalibrationOnQtt {
         if( num > ctrnum ) flag = 0
         (ctr,ectr,ctrnum,pcoc,flag)
       }
-    }.toDF("ctr","ectr","etrnum","flag").filter("flag = 1")
+    }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
     val ctr2 = p3.groupBy().agg(sum(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
     val ectr2 = p3.groupBy().agg(sum(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
     val pcoc = p3.groupBy().agg(sum(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
