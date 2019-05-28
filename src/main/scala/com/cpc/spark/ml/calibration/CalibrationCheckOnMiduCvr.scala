@@ -38,7 +38,7 @@ object CalibrationCheckOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select iscvr as isclick, raw_cvr, cast(exp_cvr as bigint) as ecvr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select searchid, iscvr as isclick, raw_cvr, cast(exp_cvr as bigint) as ecvr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
