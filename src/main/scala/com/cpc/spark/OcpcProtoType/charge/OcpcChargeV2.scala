@@ -33,8 +33,14 @@ object OcpcChargeV2 {
       .join(cvData, Seq("searchid"), "left_outer")
 
     val payData = calculatePay(data, date, dayCnt, spark)
+    val result = payData
+      .selectExpr("unitid", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "start_date")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
 
-    payData.write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data")
+    result
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+//    payData.write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data")
   }
 
   def calculatePay(baseData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
