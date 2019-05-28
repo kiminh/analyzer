@@ -3,13 +3,11 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.ml.calibration.CalibrationCheckOnMidu.searchMap
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.saveFlatTextFileForDebug
+import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 
 object CvrCaliTest{
 
@@ -23,6 +21,7 @@ object CvrCaliTest{
 
     // build spark session
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    import spark.implicits._
     val calimodel = "qtt-cvr-dnn-rawid-v1-180"
     // get union log
     val sql = s"""
@@ -108,7 +107,6 @@ object CvrCaliTest{
     val calibrated_ctr = result._3 / result._4
     val onlineCtr = result._5 / result._4
     println(s"impression: ${result._4}")
-//    println(s"mistake: ${result._6}")
     println(s"ctr: $ctr")
     println(s"ectr: $ectr")
     println(s"online ctr: $onlineCtr")
@@ -117,16 +115,20 @@ object CvrCaliTest{
     println(s"online calibration: ${onlineCtr / ctr}")
     println(s"new calibration: ${calibrated_ctr / ctr}")
 
-//    result2 = test.rdd.map( x => {
-//      val isClick = x.getInt(0).toDouble
-//      val ectr = x.getLong(1).toDouble / 1e6d
-//      val onlineCtr = x.getLong(2).toDouble / 1e6d
-//      val group = x.getString(4)
-//      val model = calimap.get(group).get
-//      val calibrated = computeCalibration(ectr, model)
-//      ()
-//      }
-//    calculateAuc(result2,"lr",spark)
+    val result2 = test.rdd.map(
+      x =>{
+        val isClick = x.getInt(0).toDouble
+        val ectr = x.getLong(1).toDouble / 1e6d
+        val onlineCtr = x.getLong(2).toDouble / 1e6d
+        val group = x.getString(4)
+        val model = calimap.get(group).get
+        val calibrated = computeCalibration(ectr, model)
+        val ideaid = x.getString(10)
+        (ectr,calibrated,ideaid, isClick)
+      }).toDF("ectr","calibrated","ideaid","isclick")
+      .selectExpr("cast(isclick as Int) label","cast(calibrated*1ed6 as Int) prediction","ideaid")
+
+    calculateAuc(result2,"k value",spark)
   }
 
 
