@@ -284,6 +284,8 @@ object OcpcDailyFunnelIndustry {
       .withColumn("iscvr", when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3")))
       .na.fill(0, Seq("iscvr"))
 
+    resultDF.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429new")
+
     resultDF
 
   }
