@@ -33,8 +33,8 @@ object OcpcDailyFunnelIndustry {
 
     result1
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
+      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
 
 
     val data2 = calculateCnt(rawData, date, hour, spark)
@@ -45,8 +45,8 @@ object OcpcDailyFunnelIndustry {
 
     result2
       .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
@@ -242,7 +242,7 @@ object OcpcDailyFunnelIndustry {
       .sql(sqlRequestCtr)
       .filter(s"conversion_goal in (2, 3)")
 
-//    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
+    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
 
     // cvr2Data
     val sqlRequest2 =
