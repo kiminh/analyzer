@@ -245,6 +245,6 @@ object LrCalibrationOnQtt {
     val pcoc = p3.groupBy().agg(sum(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.05 and pcoc>0.95").count().toDouble
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 5% error :%f ".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d, rightnum/allnum))
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 0.05 error:%f".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d, rightnum/allnum))
   }
 }
