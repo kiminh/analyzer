@@ -81,7 +81,7 @@ object MultiDimensionCalibOnMiduCvr {
     val calimap2 = GroupToConfig(data2, session,calimodelname)
     val calimap3 = GroupToConfig(data3, session,calimodelname)
     val calimap4 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodelname)
-    val calimap = calimap1 ++ calimap2 ++ calimap3
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
     saveFlatTextFileForDebug(model, califile)
