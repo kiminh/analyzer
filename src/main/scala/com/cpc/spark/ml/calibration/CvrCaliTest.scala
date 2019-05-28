@@ -154,7 +154,7 @@ object CvrCaliTest{
         sum(col("isclick")).alias("ctrcnt"),
         count(col("ectr")).alias("show")
       )
-      .withColumn("ctr",col("ctr_num")/col("show"))
+      .withColumn("ctr",col("ctrcnt")/col("show"))
       .withColumn("kvalue",col("ctr")/col("avg_ectr"))
       .rdd.map {
         x =>{
