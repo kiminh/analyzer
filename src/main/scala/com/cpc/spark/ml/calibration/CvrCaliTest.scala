@@ -117,7 +117,7 @@ object CvrCaliTest{
 
 
   def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,Seq[(Double, Double)]] = {
+                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 1): scala.collection.mutable.Map[String,Seq[(Double, Double)]] = {
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,Seq[(Double, Double)]]()
     val result = data.select("user_req_ad_num","adslotid","ideaid","isclick","ectr","cvr_model_name","group")
