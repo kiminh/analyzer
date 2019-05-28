@@ -212,6 +212,7 @@ object OcpcDailyFunnelIndustry {
     println(sqlRequest)
     val ctrBaseData = spark
       .sql(sqlRequest)
+    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429base")
 
     ctrBaseData.createOrReplaceTempView("base_ctr")
     val sqlRequestCtr =
