@@ -26,7 +26,7 @@ object CvrCaliTest{
     val calimodel = "qtt-cvr-dnn-rawid-v1-180"
     // get union log
     val sql = s"""
-                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, ctr_model_name, adslotid, cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -66,7 +66,7 @@ object CvrCaliTest{
 
     val modelset=calimap.toMap.keySet
     val sql2 = s"""
-                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, ctr_model_name, adslotid, cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -75,14 +75,14 @@ object CvrCaliTest{
                  |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26'
        """.stripMargin
     val test = spark.sql(sql2)
-      .withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
-      .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
-      .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
+      .withColumn("group1",concat_ws("_",col("cvr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
+      .withColumn("group2",concat_ws("_",col("cvr_model_name"),col("ideaid"),col("user_req_ad_num")))
+      .withColumn("group3",concat_ws("_",col("cvr_model_name"),col("ideaid")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(lit("0")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslotid","ideaid","user_req_ad_num","len")
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","cvr_model_name","adslotid","ideaid","user_req_ad_num","len")
 
 
     val result = test.rdd.map( x => {
@@ -120,7 +120,7 @@ object CvrCaliTest{
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,Seq[(Double, Double)]] = {
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,Seq[(Double, Double)]]()
-    val result = data.select("user_req_ad_num","adslotid","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("user_req_ad_num","adslotid","ideaid","isclick","ectr","cvr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
