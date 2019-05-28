@@ -32,10 +32,10 @@ object CvrCaliTest{
     println("datasum: %d".format(log.count()))
     println("datasum: %d".format(log.filter("iscvr = 1").count()))
 
-    val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+    val group1 = log.groupBy("ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .filter("count1>100000")
-      .select("ideaid","user_req_ad_num","adslot_id","group")
+      .select("ideaid","user_req_ad_num","adslotid","group")
     val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
       .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
       .filter("count2>100000")
@@ -45,7 +45,7 @@ object CvrCaliTest{
       .withColumn("group",col("ideaid"))
       .select("ideaid","group")
 
-    val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
+    val data1 = log.join(group1,Seq("user_req_ad_num","adslotid","ideaid"),"inner")
     val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
     val data3 = log.join(group3,Seq("ideaid"),"inner")
 
@@ -58,14 +58,14 @@ object CvrCaliTest{
 
     val modelset=calimap.toMap.keySet
     val test = spark.sql("select * from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-26' and hour = '12'")
-      .withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+      .withColumn("group1",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .withColumn("group2",concat_ws("_",col("ctr_model_name"),col("ideaid"),col("user_req_ad_num")))
       .withColumn("group3",concat_ws("_",col("ctr_model_name"),col("ideaid")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(lit("0")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslot_id","ideaid","user_req_ad_num","len")
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","ctr_model_name","adslotid","ideaid","user_req_ad_num","len")
 
 
     val result = test.rdd.map( x => {
@@ -103,7 +103,7 @@ object CvrCaliTest{
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,Seq[(Double, Double)]] = {
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,Seq[(Double, Double)]]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("user_req_ad_num","adslotid","ideaid","isclick","ectr","ctr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
