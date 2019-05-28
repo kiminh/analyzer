@@ -105,9 +105,9 @@ object CalibrationCheckOnMiduCvr {
       (ectr,calibrated,ideaid, isClick)
     }).toDF("ectr","calibrated","ideaid","isclick")
 
-     val original=result2.selectExpr("cast(isclick as Int) label","cast(calibrated* 1e6d as Int) prediction","ideaid")
+     val original=result2.selectExpr("cast(isclick as Int) label","cast(ectr* 1e6d as Int) prediction","ideaid")
     calculateAuc(original,"original",spark)
-    val cali=result2.selectExpr("cast(isclick as Int) label","cast(ectr * 1e6d as Int) prediction","ideaid")
+    val cali=result2.selectExpr("cast(isclick as Int) label","cast(calibrated * 1e6d as Int) prediction","ideaid")
     calculateAuc(cali,"postcali",spark)
   }
 
