@@ -42,7 +42,7 @@ object CvrCalibrationSample {
        """.stripMargin
     println(s"sql:\n$sql")
     val sample = spark.sql(sql).filter("unit_target is not null and unit_target not in ('none','site_uncertain')")
-      .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","dt","hour")
+      .select("searchid","raw_cvr","cvr_model_name","adslotid","ideaid","user_req_ad_num","iscvr","exp_cvr","dt","hour")
 
     sample.show(10)
     sample.repartition(1).write.mode("overwrite").insertInto("dl_cpc.qtt_cvr_calibration_sample")

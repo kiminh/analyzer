@@ -148,10 +148,10 @@ object CvrCaliTest{
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size < minBinCount) {
             println("bin size too small, don't output the calibration")
-            CalibrationConfig()
           } else {
             val kcalivalue = bins._1
             calimap += ((modelName,kcalivalue))
+            println(s"bin size: ${kcalivalue.toString()}")
           }
       }.toList
     return calimap
