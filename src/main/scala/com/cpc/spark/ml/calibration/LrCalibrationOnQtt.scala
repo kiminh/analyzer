@@ -224,6 +224,7 @@ object LrCalibrationOnQtt {
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
 
+
     val ctr2 = p2.first().getAs[Double]("avgctr")
     val ectr2 = p2.first().getAs[Double]("avgectr")
     val pcoc = p2.first().getAs[Double]("avgpcoc")

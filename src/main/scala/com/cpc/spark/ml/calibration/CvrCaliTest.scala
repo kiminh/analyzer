@@ -151,10 +151,10 @@ object CvrCaliTest{
     }).toDF("key","ectr","isclick")
       .groupBy("key")
       .agg(avg(col("ectr")).alias("avg_ectr"),
-        sum(col("isclick")).alias("ctrcnt"),
+        sum(col("isclick")).alias("ctrnum"),
         count(col("ectr")).alias("show")
       )
-      .withColumn("ctr",col("ctr_num")/col("show"))
+      .withColumn("ctr",col("ctrnum")/col("show"))
       .withColumn("kvalue",col("ctr")/col("avg_ectr"))
       .rdd.map {
         x =>{
