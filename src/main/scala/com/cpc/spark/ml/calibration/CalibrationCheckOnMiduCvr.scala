@@ -38,7 +38,7 @@ object CalibrationCheckOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select iscvr as isclick, raw_ctr, cast(exp_ctr as bigint) as ectr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, raw_cvr, cast(exp_cvr as bigint) as ecvr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -54,7 +54,7 @@ object CalibrationCheckOnMiduCvr {
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","cvr_model_name","adslot_id","ideaid","user_req_ad_num","len")
+      .select("isclick","raw_cvr","ecvr","searchid","group","group1","group2","group3","cvr_model_name","adslot_id","ideaid","user_req_ad_num","len")
 
     log.show(50)
     println("total data:%d".format(log.count()))
