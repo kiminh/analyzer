@@ -243,7 +243,7 @@ object OcpcDailyFunnelIndustry {
       .sql(sqlRequestCtr)
       .filter(s"conversion_goal in (2, 3)")
 
-    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
+    ctrData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
 
     // cvr2Data
     val sqlRequest2 =
