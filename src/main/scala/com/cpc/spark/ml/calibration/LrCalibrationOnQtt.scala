@@ -208,6 +208,7 @@ object LrCalibrationOnQtt {
   }
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
+    import spark.implicits._
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val auc = CalcMetrics.getAuc(spark,testData)
     println("%s auc:%f".format(cate,auc))
@@ -224,7 +225,7 @@ object LrCalibrationOnQtt {
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
     val ctrnum = p2.groupBy()
-      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("avgctr")
+      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("avgctr")*0.8
 
     var num = 0
     val p3 = p2.rdd.map{
@@ -236,11 +237,14 @@ object LrCalibrationOnQtt {
         num += ctrnum
         var flag = 1
         if(num > ctrnum ) flag = 0
-        (ctr,ectr,ctrnum,pcoc)
-    }.toDF
-    val ctr2 = p2.first().getAs[Double]("avgctr")
-    val ectr2 = p2.first().getAs[Double]("avgectr")
-    val pcoc = p2.first().getAs[Double]("avgpcoc")
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d))
+        (ctr,ectr,ctrnum,pcoc,flag)
+    }.toDF("ctr","ectr","etrnum","flag")
+      .filter("flag = 1")
+    val ctr2 = p3.groupBy().agg(sum(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
+    val ectr2 = p3.groupBy().agg(sum(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
+    val pcoc = p3.groupBy().agg(sum(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
+    val allnum = p3.count().toDouble
+    val rightnum = p3.filter("pcoc<1.05 and pcoc>0.95").count().toDouble
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 5% error :%f ".format(cate, ctr2, ectr2/1e6d, pcoc/1e6d, rightnum/allnum))
   }
 }
