@@ -48,18 +48,13 @@ object MultiDimensionCalibOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 | from dl_cpc.cpc_novel_union_events
-                 | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
-                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-25'
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
