@@ -67,7 +67,7 @@ object OcpcChargeV2 {
       s"""
          |SELECT
          |  unitid,
-         |  cost - 1.2 * cv * cpagiven as pay
+         |  cost - 1.2 * cv * cpagiven as pay,
          |  cost,
          |  cost * 1.0 / cv as cpareal,
          |  cpagiven
