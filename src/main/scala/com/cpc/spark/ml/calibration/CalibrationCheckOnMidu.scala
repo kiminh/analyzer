@@ -4,6 +4,7 @@ import java.io.{File, FileInputStream, PrintWriter}
 
 import org.apache.spark.sql.functions._
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.spark.sql.functions.{col, concat_ws, udf}
@@ -122,7 +123,7 @@ object CalibrationCheckOnMidu {
     println(s"no calibration: ${ectr / ctr}")
     println(s"online calibration: ${onlineCtr / ctr}")
     println(s"new calibration: ${calibrated_ctr / ctr}")
-  }
+
 
   def searchMap(modelset:Set[String])= udf{
     (key: String)=>{

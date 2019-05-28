@@ -3,8 +3,11 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileInputStream, PrintWriter}
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.CalibrationCheckOnMidu.computeCalibration
+import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
@@ -14,6 +17,9 @@ import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
   */
 object CalibrationCheckOnMiduCvr {
   def main(args: Array[String]): Unit = {
+
+    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    import spark.implicits._
     val modelPath = args(0)
     val dt = args(1)
     val hour = args(2)
@@ -87,6 +93,22 @@ object CalibrationCheckOnMiduCvr {
     println(s"no calibration: ${ectr / ctr}")
     println(s"online calibration: ${onlineCtr / ctr}")
     println(s"new calibration: ${calibrated_ctr / ctr}")
+
+    val result2 = data.rdd.map( x => {
+      val isClick = x.getLong(0).toDouble
+      val ectr = x.getLong(1).toDouble / 1e6d
+      val onlineCtr = x.getLong(2).toDouble / 1e6d
+      val group = x.getString(4)
+      val irModel = calimap.get(group).get
+      val calibrated = computeCalibration(ectr, irModel.ir.get)
+      val ideaid = x.getString(10)
+      (ectr,calibrated,ideaid, isClick)
+    }).toDF("ectr","calibrated","ideaid","isclick")
+
+     val original=result2.selectExpr("cast(isclick as Int) label","cast(calibrated* 1e6d as Int) prediction","ideaid")
+    calculateAuc(original,"original",spark)
+    val cali=result2.selectExpr("cast(isclick as Int) label","cast(ectr * 1e6d as Int) prediction","ideaid")
+    calculateAuc(cali,"postcali",spark)
   }
 
   def searchMap(modelset:Set[String])= udf{
