@@ -66,7 +66,7 @@ object CvrCaliTest{
 
     val modelset=calimap.toMap.keySet
     val sql2 = s"""
-                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, raw_cvr as raw_ctr, cast(exp_cvr as bigint) as ectr, cvr_model_name, adslotid, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
