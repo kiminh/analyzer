@@ -227,12 +227,12 @@ object LrCalibrationOnQtt {
     val ctrnum = p2.groupBy()
       .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Long]("all_ctrnum").toDouble*0.8
 
-    var num = 0
+    var num = 0.0
     val p3 = p2.rdd.map{
       r=>{
         val ctr = r.getAs[Double]("ctr")
         val ectr = r.getAs[Double]("ectr")
-        val ctrnum = r.getAs[Int]("ctrnum")
+        val ctrnum = r.getAs[Long]("ctrnum").toDouble
         val pcoc = r.getAs[Double]("pcoc")
         num += ctrnum
         var flag = 1
