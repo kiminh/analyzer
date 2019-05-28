@@ -95,7 +95,7 @@ object CalibrationCheckOnMiduCvr {
     println(s"new calibration: ${calibrated_ctr / ctr}")
 
     val result2 = data.rdd.map( x => {
-      val isClick = x.getLong(0).toDouble
+      val isClick = x.getInt(0).toDouble
       val ectr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
