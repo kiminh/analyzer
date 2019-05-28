@@ -165,7 +165,7 @@ object CvrCaliTest{
           println(s"model: $modelName has data of size $show, of positive number of $ctrcnt")
           calimap += ((modelName, kvalue))
         }
-      }
+      }.toLocalIterator
     return calimap
   }
 
