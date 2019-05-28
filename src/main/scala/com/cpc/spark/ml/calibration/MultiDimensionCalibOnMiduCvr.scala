@@ -25,8 +25,8 @@ object MultiDimensionCalibOnMiduCvr {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = "novel-ctr-dnn-rawid-v7-cali"
-    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
+    val model = "qtt-cvr-dnn-rawid-v1-180"
+    val calimodelname ="qtt-cvr-dnn-rawid-v1-180"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
