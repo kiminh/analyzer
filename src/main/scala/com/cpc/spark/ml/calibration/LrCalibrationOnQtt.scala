@@ -240,11 +240,11 @@ object LrCalibrationOnQtt {
         (ctr,ectr,ctrnum,pcoc,flag)
       }
     }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
-    val ctr2 = p3.groupBy().agg(sum(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
-    val ectr2 = p3.groupBy().agg(sum(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
-    val pcoc = p3.groupBy().agg(sum(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
+    val ctr2 = p3.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
+    val ectr2 = p3.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
+    val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.05 and pcoc>0.95").count().toDouble
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,ratio of 0.05 error:%f".format(cate, ctr2, ectr2, pcoc, rightnum/allnum))
+    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.05 error:%f".format(cate, ctr2, ectr2, pcoc,allnum,rightnum,rightnum/allnum))
   }
 }
