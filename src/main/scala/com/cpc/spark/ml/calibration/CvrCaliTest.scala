@@ -94,14 +94,14 @@ object CvrCaliTest{
       val ectr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
-      val kvalue = calimap.get(group).get
-      val calibrated = kvalue * ectr
+      val k = calimap.get(group).get
+      val calibrated = k*ectr
       var mistake = 0
       if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         mistake = 1
       }
-      (isClick, ectr, calibrated, 1.0, onlineCtr, mistake)
-    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
+      (isClick, ectr, calibrated, 1.0, onlineCtr)
+    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5))
     val ctr = result._1 / result._4
     val ectr = result._2 / result._4
     val calibrated_ctr = result._3 / result._4
@@ -121,8 +121,8 @@ object CvrCaliTest{
         val ectr = x.getLong(1).toDouble / 1e6d
         val onlineCtr = x.getLong(2).toDouble / 1e6d
         val group = x.getString(4)
-        val kvalue = calimap.get(group).get
-        val calibrated = kvalue * ectr
+        val k = calimap.get(group).get
+        val calibrated = k*ectr
         val ideaid = x.getString(10)
         (ectr,calibrated,ideaid, isClick)
       }).toDF("ectr","calibrated","ideaid","isclick")
@@ -154,7 +154,7 @@ object CvrCaliTest{
         sum(col("isclick")).alias("ctrcnt"),
         count(col("ectr")).alias("show")
       )
-      .withColumn("ctr",col("ctrcnt")/col("show"))
+      .withColumn("ctr",col("ctr_num")/col("show"))
       .withColumn("kvalue",col("ctr")/col("avg_ectr"))
       .rdd.map {
         x =>{
