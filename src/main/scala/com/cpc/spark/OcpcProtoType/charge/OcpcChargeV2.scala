@@ -33,14 +33,105 @@ object OcpcChargeV2 {
       .join(cvData, Seq("searchid"), "left_outer")
 
     val payData = calculatePay(data, date, dayCnt, spark)
-    val result = payData
+    val prevData = getPrevData(date, dayCnt, version, spark)
+    val cntData = getPayCnt(date, version, spark)
+
+    val result1 = payData
+      .join(prevData, Seq("unitid"), "left_outer")
+      .na.fill(0, Seq("flag"))
+      .filter(s"flag = 0")
+
+    val result2 = result1
+      .join(cntData, Seq("unitid"), "outer")
+      .na.fill(1, Seq("prev_cnt", "flag"))
+      .withColumn("current_cnt", udfCalculateCnt()(col("prev_cnt"), col("flag")))
+
+    val resultDF1 = result2
+      .filter(s"current_cnt <= 4")
       .selectExpr("unitid", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "start_date")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-    result
+    resultDF1
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
-//    payData.write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data")
+
+    val resultDF2 = result2
+      .withColumn("pay_cnt", when(col("current_cnt") <= 4, col("current_cnt")).otherwise(4))
+      .selectExpr("unitid", "pay_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+
+    resultDF2
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+
+
+
+  }
+
+  def udfCalculateCnt() = udf((prevCnt: Int, flag: Int) => {
+    var currentCnt = prevCnt
+    if (flag == 0) {
+      currentCnt += 1
+    }
+    currentCnt
+  })
+
+  def getPayCnt(date: String, version: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  pay_cnt as prev_cnt
+         |FROM
+         |  dl_cpc.ocpc_pay_cnt_daily
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  version = '$version'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
+  }
+
+  def getPrevData(date: String, dayCnt: Int, version: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` >= '$date1'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  1 as flag
+         |FROM
+         |  dl_cpc.ocpc_pay_data_daily
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  version = '$version'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).distinct()
+
+    data
   }
 
   def calculatePay(baseData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
@@ -52,7 +143,6 @@ object OcpcChargeV2 {
     calendar.add(Calendar.DATE, -dayCnt)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` >= '$date1'"
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest1 =
