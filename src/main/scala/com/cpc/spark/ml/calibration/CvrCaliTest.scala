@@ -126,7 +126,7 @@ object CvrCaliTest{
         val ideaid = x.getString(10)
         (ectr,calibrated,ideaid, isClick)
       }).toDF("ectr","calibrated","ideaid","isclick")
-      .selectExpr("cast(isclick as Int) label","cast(calibrated*1ed6 as Int) prediction","ideaid")
+      .selectExpr("cast(isclick as Int) label","cast(calibrated* 1e6d as Int) prediction","ideaid")
 
     calculateAuc(result2,"k value",spark)
   }
