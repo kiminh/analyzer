@@ -93,9 +93,9 @@ object OcpcGetPbV2 {
     val data = data2
       .join(data1, Seq("identifier"), "left_outer")
       .na.fill(0, Seq("flag"))
-      .withColumn("pcoc", udfSelectData()(col("flag"), col("pcoc1"), col("pcoc2")))
-      .withColumn("jfb", udfSelectData()(col("flag"), col("jfb1"), col("jfb2")))
-      .withColumn("post_cvr", udfSelectData()(col("flag"), col("post_cvr1"), col("post_cvr2")))
+      .withColumn("pcoc", when(col("flag") === 1, col("pcoc1")).otherwise(col("pcoc2")))
+      .withColumn("jfb", when(col("flag") === 1, col("jfb1")).otherwise(col("jfb2")))
+      .withColumn("post_cvr", when(col("flag") === 1, col("post_cvr1")).otherwise(col("post_cvr2")))
 
     data.show()
     data
