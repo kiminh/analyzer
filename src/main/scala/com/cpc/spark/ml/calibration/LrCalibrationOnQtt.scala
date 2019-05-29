@@ -227,7 +227,7 @@ object LrCalibrationOnQtt {
         count(col("label")).cast(DoubleType).alias("ctrnum")
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
-    val ctrnum = p2.groupBy()
+    val allctrnum = p2.groupBy()
       .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
 
     //todo:降序排列
@@ -241,7 +241,7 @@ object LrCalibrationOnQtt {
         val pcoc = r.getAs[Double]("pcoc")
         num += ctrnum
         var flag = 1
-        if( num > ctrnum ) flag = 0
+        if( num > allctrnum ) flag = 0
         (ctr,ectr,ctrnum,pcoc,flag)
       }
     }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
