@@ -228,23 +228,30 @@ object LrCalibrationOnQtt {
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
     println("ideaid sum:%d".format(p2.count()))
-    val allctrnum = p2.groupBy()
-      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
-    println("allctrnum:%f".format(allctrnum))
-    var num = 0.0
-    val p3 = p2.sort($"ctrnum".desc)
-    .rdd.map{
-      r=>{
-        val ctr = r.getAs[Double]("ctr")
-        val ectr = r.getAs[Double]("ectr")
-        val ctrnum = r.getAs[Double]("ctrnum")
-        val pcoc = r.getAs[Double]("pcoc")
-        num += ctrnum
-        var flag = 1
-        if( num > allctrnum ) flag = 0
-        (ctr,ectr,ctrnum,pcoc,flag)
-      }
-    }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
+    p2.createOrReplaceTempView("idea")
+    val sql =
+      s"""
+         |select ideaid,ctr,ectr,ctrnum ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
+         |from idea
+       """.stripMargin
+    val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
+//    val allctrnum = p2.groupBy()
+//      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
+//    println("allctrnum:%f".format(allctrnum))
+//    var num = 0.0
+//    val p3 = p2.sort($"ctrnum".desc)
+//    .rdd.map{
+//      r=>{
+//        val ctr = r.getAs[Double]("ctr")
+//        val ectr = r.getAs[Double]("ectr")
+//        val ctrnum = r.getAs[Double]("ctrnum")
+//        val pcoc = r.getAs[Double]("pcoc")
+//        num += ctrnum
+//        var flag = 1
+//        if( num > allctrnum ) flag = 0
+//        (ctr,ectr,ctrnum,pcoc,flag)
+//      }
+//    }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
     val ctr2 = p3.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
     val ectr2 = p3.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
     val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
