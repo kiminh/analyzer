@@ -1,7 +1,9 @@
 package com.cpc.spark.ml.recall
 
+import java.sql.DriverManager
 import java.util.Properties
 
+import com.cpc.spark.ml.recall.report_userprofile_effect.{mariaReport2dbProp, mariaReport2dbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -49,18 +51,20 @@ object ReporTagByIndustry {
 
     spark.sql(s""" select * from report_table limit 100 """).show(10,false)
 
+    clearReportData(date)
+
     spark.sql(
       s"""
         |select
-        |	b.category as class_id,
-        | b.name as name,
-        |	a.tag as tag,
-        |	sum(a.ctrwithtag) as ctrwithtag,
-        |	sum(a.ctrwithouttag) as ctrwithouttag,
-        | sum(a.costwithtag) as costwithtag,
-        | sum(a.costwithouttag) as costwithouttag,
-        | sum(a.cvrwithtag) as cvrwithtag,
-        | sum(a.cvrwithouttag) as cvrwithouttag,
+        |	cast(coalesce(b.category,0) as int) as class_id,
+        | coalesce(b.name,'Unknown') as name,
+        |	cast(coalesce(a.tag,0) as int) as tag,
+        |	cast(coalesce(sum(a.ctrwithtag),0) as int) as ctrwithtag,
+        | cast(coalesce(sum(a.ctrwithouttag),0) as int) as ctrwithouttag,
+        |	cast(coalesce(sum(a.costwithtag),0) as int) as costwithtag,
+        |	cast(coalesce(sum(a.costwithouttag),0) as int) as costwithouttag,
+        |	cast(coalesce(sum(a.cvrwithtag),0) as int) as cvrwithtag,
+        |	cast(coalesce(sum(a.cvrwithouttag),0) as int) as cvrwithouttag,
         | to_date('$date') as date
         |from
         |(
@@ -68,7 +72,7 @@ object ReporTagByIndustry {
         |) a
         |join
         |(
-        |select user_id,category,name from adv_table where name is not null
+        |select user_id,category,name from adv_table
         |) b
         |on a.userid=b.user_id
         |group by
@@ -79,23 +83,22 @@ object ReporTagByIndustry {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   }
 
+  def clearReportData(date: String): Unit = {
+    try {
+      val conn = DriverManager.getConnection(
+        mariaReport2dbUrl,
+        mariaReport2dbProp.getProperty("user"),
+        mariaReport2dbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from report2.cpc_profiletag_report_v1 where `date` = "%s"
+        """.stripMargin.format(date)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
+  }
 }
