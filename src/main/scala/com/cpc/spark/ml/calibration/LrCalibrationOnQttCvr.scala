@@ -9,7 +9,7 @@ import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.functions.{udf, _}
-import org.apache.spark.sql.types.DoubleType
+import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
@@ -91,13 +91,8 @@ object LrCalibrationOnQttCvr {
     sample.show(5)
 
     val sql2 = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr,hour
-                 | from dl_cpc.slim_union_log
-                 | where dt = '2019-05-19'  and hour = '22'
-                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type = 1
-                 | and ctr_model_name in ('$calimodel')
-                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 |select iscvr as isclick,raw_cvr as raw_ctr,exp_cvr as exp_ctr, adslotid, ideaid, user_req_ad_num,hour
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-21'
        """.stripMargin
     println(s"sql:\n$sql2")
     val testsample = session.sql(sql2)
@@ -180,48 +175,5 @@ object LrCalibrationOnQttCvr {
         (x.getInt(0), x.getDouble(1))
       })
       Vectors.sparse(profile_num, new_els)
-  }
-
-  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
-    import spark.implicits._
-    val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
-    val auc = CalcMetrics.getAuc(spark,testData)
-    println("%s auc:%f".format(cate,auc))
-    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")/1e6d).alias("ectr"))
-    val ctr = p1.first().getAs[Double]("ctr")
-    val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
-
-    val p2 = data.groupBy("ideaid")
-      .agg(
-        avg(col("label")).alias("ctr"),
-        avg(col("prediction")/1e6d).alias("ectr"),
-        count(col("label")).cast(DoubleType).alias("ctrnum")
-      )
-      .withColumn("pcoc",col("ectr")/col("ctr"))
-    println("ideaid sum:%d".format(p2.count()))
-    val allctrnum = p2.groupBy()
-      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
-    
-    var num = 0.0
-    val p3 = p2.sort($"ctrnum".desc)
-    .rdd.map{
-      r=>{
-        val ctr = r.getAs[Double]("ctr")
-        val ectr = r.getAs[Double]("ectr")
-        val ctrnum = r.getAs[Double]("ctrnum")
-        val pcoc = r.getAs[Double]("pcoc")
-        num += ctrnum
-        var flag = 1
-        if( num > allctrnum ) flag = 0
-        (ctr,ectr,ctrnum,pcoc,flag)
-      }
-    }.toDF("ctr","ectr","ctrnum","pcoc","flag").filter("flag = 1")
-    val ctr2 = p3.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
-    val ectr2 = p3.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
-    val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
-    val allnum = p3.count().toDouble
-    val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count().toDouble
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.1 error:%f".format(cate, ctr2, ectr2, pcoc,allnum,rightnum,rightnum/allnum))
   }
 }
