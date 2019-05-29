@@ -28,26 +28,27 @@ object OcpcChargeV2 {
 
     val unitidList = getUnitList(date, media, version, dayCnt, spark)
 
-    val clickData = getClickData(date, media, dayCnt, spark)
-    val cvData = getCvData(date, dayCnt, spark)
 
-    val data = clickData
-      .join(cvData, Seq("searchid"), "left_outer")
-      .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
-
-    val payData = calculatePay(data, date, dayCnt, spark)
-
-    val resultDF1 = payData
-      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-
-    resultDF1.show(10)
-
-    resultDF1
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
-
+//    val clickData = getClickData(date, media, dayCnt, spark)
+//    val cvData = getCvData(date, dayCnt, spark)
+//
+//    val data = clickData
+//      .join(cvData, Seq("searchid"), "left_outer")
+//      .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
+//
+//    val payData = calculatePay(data, date, dayCnt, spark)
+//
+//    val resultDF1 = payData
+//      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//
+//    resultDF1.show(10)
+//
+//    resultDF1
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+//
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
       .withColumn("date", lit(date))
@@ -56,8 +57,8 @@ object OcpcChargeV2 {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
