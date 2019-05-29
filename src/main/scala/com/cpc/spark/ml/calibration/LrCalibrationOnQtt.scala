@@ -237,7 +237,7 @@ object LrCalibrationOnQtt {
       r=>{
         val ctr = r.getAs[Double]("ctr")
         val ectr = r.getAs[Double]("ectr")
-        val ctrnum = r.getAs[Long]("ctrnum").toDouble
+        val ctrnum = r.getAs[Double]("ctrnum")
         val pcoc = r.getAs[Double]("pcoc")
         num += ctrnum
         var flag = 1
