@@ -137,9 +137,9 @@ object OcpcSmoothFactor{
          |  unitid,
          |  isshow,
          |  isclick,
-         |  bid as original_bid,
+         |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  exp_cvr,
+         |  cast(exp_cvr as double) as exp_cvr,
          |  ocpc_log
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -151,28 +151,28 @@ object OcpcSmoothFactor{
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val base = spark
+    val clickData = spark
       .sql(sqlRequest)
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-
-    base.createOrReplaceTempView("base_table")
-    val sqlRequestBase =
-      s"""
-         |select
-         |    searchid,
-         |    unitid,
-         |    price,
-         |    original_bid,
-         |    cast(exp_cvr as double) as exp_cvr,
-         |    isclick,
-         |    isshow,
-         |    ocpc_log,
-         |    ocpc_log_dict,
-         |    (case when length(ocpc_log)>0 then cast(cast(ocpc_log_dict['dynamicbid'] as double) + 0.5 as int) else original_bid end) as bid
-         |from base_table
-       """.stripMargin
-    println(sqlRequestBase)
-    val clickData = spark.sql(sqlRequestBase)
+//      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+//
+//    base.createOrReplaceTempView("base_table")
+//    val sqlRequestBase =
+//      s"""
+//         |select
+//         |    searchid,
+//         |    unitid,
+//         |    price,
+//         |    original_bid,
+//         |    cast(exp_cvr as double) as exp_cvr,
+//         |    isclick,
+//         |    isshow,
+//         |    ocpc_log,
+//         |    ocpc_log_dict,
+//         |    (case when length(ocpc_log)>0 then cast(cast(ocpc_log_dict['dynamicbid'] as double) + 0.5 as int) else original_bid end) as bid
+//         |from base_table
+//       """.stripMargin
+//    println(sqlRequestBase)
+//    val clickData = spark.sql(sqlRequestBase)
     // 抽取cv数据
     val sqlRequest2 =
       s"""
