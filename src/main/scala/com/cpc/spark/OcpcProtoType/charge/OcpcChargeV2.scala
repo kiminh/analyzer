@@ -33,7 +33,7 @@ object OcpcChargeV2 {
 
     val data = clickData
       .join(cvData, Seq("searchid"), "left_outer")
-      .join(unitidList, Seq("unitid"), "inner")
+      .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
 
     val payData = calculatePay(data, date, dayCnt, spark)
 
@@ -143,13 +143,12 @@ object OcpcChargeV2 {
          |SELECT
          |  unitid,
          |  pay_cnt prev_pay_cnt,
-         |  pay_date prev_pay_date
+         |  pay_date prev_pay_date,
+         |  (case when pay_date = '$date1' then 1 else 0 end) as flag
          |FROM
          |  dl_cpc.ocpc_pay_cnt_daily
          |WHERE
          |  `date` = '$date3'
-         |AND
-         |  pay_date = '$date1'
          |AND
          |  version = '$version'
        """.stripMargin
@@ -161,29 +160,33 @@ object OcpcChargeV2 {
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
-      .select("unitid", "prev_pay_cnt", "prev_pay_date")
+      .select("unitid", "prev_pay_cnt", "prev_pay_date", "flag")
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
-      .withColumn("pay_date", udfCalculatePayDate(date2)(col("prev_pay_cnt"), col("prev_pay_date")))
-      .withColumn("pay_cnt", udfCalculateCnt()(col("prev_pay_cnt")))
+      .na.fill(1, Seq("flag"))
+      .withColumn("pay_date", udfCalculatePayDate(date2)(col("prev_pay_cnt"), col("prev_pay_date"), col("flag")))
+      .withColumn("pay_cnt", udfCalculateCnt()(col("prev_pay_cnt"), col("flag")))
 
     data.show(10)
 
     val result = data
-      .select("unitid", "pay_cnt", "pay_date")
+      .select("unitid", "pay_cnt", "pay_date", "flag")
 
     result
 
   }
 
-  def udfCalculateCnt() = udf((prevPayCnt: Int) => {
-    var result = prevPayCnt + 1
+  def udfCalculateCnt() = udf((prevPayCnt: Int, flag: Int) => {
+    var result = prevPayCnt
+    if (flag == 1) {
+      result += 1
+    }
     result
   })
 
-  def udfCalculatePayDate(date: String) = udf((prevPayCnt: Int, prevPayDate: String) => {
+  def udfCalculatePayDate(date: String) = udf((prevPayCnt: Int, prevPayDate: String, flag: Int) => {
     var result = prevPayDate
-    if (prevPayCnt < 4) {
+    if (prevPayCnt < 4  && flag ==  1) {
       result = date
     }
     result
