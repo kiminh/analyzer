@@ -200,34 +200,34 @@ object OcpcChargeV2 {
 //    currentCnt
 //  })
 
-  def getPayCnt(date: String, version: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1'"
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  pay_cnt as prev_cnt
-         |FROM
-         |  dl_cpc.ocpc_pay_cnt_daily
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  version = '$version'
-       """.stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-
-    data
-  }
+//  def getPayCnt(date: String, version: String, spark: SparkSession) = {
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -1)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//    val selectCondition = s"`date` = '$date1'"
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  pay_cnt as prev_cnt
+//         |FROM
+//         |  dl_cpc.ocpc_pay_cnt_daily
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  version = '$version'
+//       """.stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//
+//    data
+//  }
 
 //  def getPrevData(date: String, dayCnt: Int, version: String, spark: SparkSession) = {
 //    // 取历史数据
@@ -281,7 +281,7 @@ object OcpcChargeV2 {
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1).na.fill(0, Seq("cv"))
     rawData.createOrReplaceTempView("raw_data")
 
     val sqlRequest2 =
@@ -290,6 +290,7 @@ object OcpcChargeV2 {
          |  unitid,
          |  cost - 1.2 * cv * cpagiven as pay,
          |  cost,
+         |  cv,
          |  cost * 1.0 / cv as cpareal,
          |  cpagiven
          |FROM
@@ -299,6 +300,7 @@ object OcpcChargeV2 {
     val result = spark
       .sql(sqlRequest2)
       .withColumn("pay", when(col("pay") <= 0.0, 0.0).otherwise(col("pay")))
+      .withColumn("pay", when(col("cv") === 0, col("cost")).otherwise(col("pay")))
       .withColumn("start_date", lit(date1))
 
     result
