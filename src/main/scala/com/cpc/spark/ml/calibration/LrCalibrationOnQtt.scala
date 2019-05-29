@@ -227,7 +227,7 @@ object LrCalibrationOnQtt {
         count(col("label")).cast(DoubleType).alias("ctrnum")
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
-    println("ideaid sum:%d".format("p2"))
+    println("ideaid sum:%d".format(p2.count()))
     val allctrnum = p2.groupBy()
       .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
 
