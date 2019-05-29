@@ -44,12 +44,14 @@ object OcpcSmoothFactor{
     } else {
       conversionGoal = 3
     }
+
+    val finalVersion = version + minCV.toString
     val resultDF = result
         .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
+        .withColumn("version", lit(finalVersion))
 
     resultDF.show()
 
@@ -68,8 +70,6 @@ object OcpcSmoothFactor{
         .join(jfbData, Seq("unitid"), "inner")
         .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "cv")
         .filter(s"pcoc is not null and pcoc != 0 and jfb is not null and cv >= $minCV")
-
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190529")
 
     result
   }
