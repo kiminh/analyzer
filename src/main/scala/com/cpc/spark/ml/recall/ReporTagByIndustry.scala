@@ -3,7 +3,7 @@ package com.cpc.spark.ml.recall
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * created by xiongyao on 2019/5/29
@@ -45,9 +45,9 @@ object ReporTagByIndustry {
     tagReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
     tagReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    spark.sql(s""" select * from adv_table limit 100 """).show(100,false)
+    spark.sql(s""" select * from adv_table limit 100 """).show(10,false)
 
-    spark.sql(s""" select * from report_table limit 100 """).show(100,false)
+    spark.sql(s""" select * from report_table limit 100 """).show(10,false)
 
     spark.sql(
       s"""
@@ -65,17 +65,17 @@ object ReporTagByIndustry {
         |(
         |select userid,tag,name,ctrwithtag,ctrwithouttag,costwithtag,costwithouttag,cvrwithtag,cvrwithouttag from report_table
         |) a
-        |left join
+        |join
         |(
-        |select user_id,category,name from adv_table
+        |select user_id,category,name from adv_table where name is not null
         |) b
         |on a.userid=b.user_id
         |group by
         |	b.category,
         | b.name,
         |	a.tag
-      """.stripMargin).repartition(100).show(100)
-//      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
+      """.stripMargin).repartition(100)
+      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report_v1", mariaReport2dbProp)
 
 
 
