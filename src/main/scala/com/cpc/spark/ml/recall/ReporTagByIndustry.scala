@@ -45,6 +45,9 @@ object ReporTagByIndustry {
     tagReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
     tagReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
+    spark.sql(s""" select * from adv_table limit 100 """).show(100,false)
+
+    spark.sql(s""" select * from report_table limit 100 """).show(100,false)
 
     spark.sql(
       s"""
@@ -62,7 +65,7 @@ object ReporTagByIndustry {
         |(
         |select userid,tag,name,ctrwithtag,ctrwithouttag,costwithtag,costwithouttag,cvrwithtag,cvrwithouttag from report_table
         |) a
-        |join
+        |left join
         |(
         |select user_id,category,name from adv_table
         |) b
