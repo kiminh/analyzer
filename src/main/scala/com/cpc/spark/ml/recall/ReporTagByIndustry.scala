@@ -74,7 +74,7 @@ object ReporTagByIndustry {
         |	b.category,
         | b.name,
         |	a.tag
-      """.stripMargin).repartition(100).write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report_v1", mariaReport2dbProp)
+      """.stripMargin).repartition(100).write.mode(SaveMode.Append).jdbc(tagReport2dbUrl, "report2.cpc_profiletag_report_v1", tagReport2dbProp)
 
 
 
