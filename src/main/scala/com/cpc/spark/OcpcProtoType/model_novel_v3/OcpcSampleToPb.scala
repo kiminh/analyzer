@@ -3,7 +3,6 @@ package com.cpc.spark.OcpcProtoType.model_novel_v3
 import java.io.FileOutputStream
 import java.util.Properties
 
-import ocpcParams.OcpcParams
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -82,7 +81,9 @@ object OcpcSampleToPb {
 
     resultDF
       .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
-    savePbPack(resultDF, version, isHidden)
+
+    val resultUnion = spark.table("dl_cpc.ocpc_novel_pb_once").union(resultDF)
+    savePbPack(resultUnion)
   }
 
   def getCpagiven(date: String, hour: String, spark: SparkSession) = {
@@ -114,7 +115,6 @@ object OcpcSampleToPb {
     2. 计算新的kvalue
      */
     // 从表中抽取数据
-    //todo:过滤无转化消耗大于1000
     val sqlRequest =
     s"""
        |SELECT
@@ -161,9 +161,9 @@ object OcpcSampleToPb {
     resultDF
   }
 
-  def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
+  def savePbPack(dataset: DataFrame): Unit = {
     var list = new ListBuffer[SingleItem]
-    val filename = "ocpc_params_novel_hidden.pb"
+    val filename = "ocpc_params_novel.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
@@ -172,8 +172,10 @@ object OcpcSampleToPb {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val identifier = record.getAs[String]("identifier")
-      val HiddenOcpc = isHidden
+      val identifier = record.getAs[Int]("identifier").toString
+      val version = record.getAs[String]("version")
+      var HiddenOcpc = 0
+      if(version == "novel_v3") HiddenOcpc = 1
       val key = "oCPCNovel&" + identifier + "&" + HiddenOcpc
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cvrcalfactor")
