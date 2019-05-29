@@ -79,7 +79,7 @@ object OcpcGetPbV2 {
       .withColumn("jfb1", col("jfb"))
       .withColumn("post_cvr1", col("post_cvr"))
       .withColumn("flag", lit(1))
-      .select("identifer", "pcoc1", "jfb1", "post_cvr1")
+      .select("identifier", "pcoc1", "jfb1", "post_cvr1", "flag")
 
     // 备用校准模型
     val dataRaw2 = getCalibrationData(conversionGoal, version, hourInt2, date, hour, spark)
@@ -87,7 +87,7 @@ object OcpcGetPbV2 {
       .withColumn("pcoc2", col("pcoc"))
       .withColumn("jfb2", col("jfb"))
       .withColumn("post_cvr2", col("post_cvr"))
-      .select("identifer", "pcoc2", "jfb2", "post_cvr2")
+      .select("identifier", "pcoc2", "jfb2", "post_cvr2")
 
     // 数据表关联
     val data = data2
