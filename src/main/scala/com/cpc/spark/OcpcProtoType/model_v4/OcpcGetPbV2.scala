@@ -106,9 +106,9 @@ object OcpcGetPbV2 {
   }
 
   def udfSelectData() = udf((flag: Int, value1: Double, value2: Double) => {
-    var result = value1
-    if (flag == 0) {
-      result = value2
+    var result = value2
+    if (flag == 1) {
+      result = value1
     }
     result
   })
