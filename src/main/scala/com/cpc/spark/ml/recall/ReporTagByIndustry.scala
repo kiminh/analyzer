@@ -37,7 +37,7 @@ object ReporTagByIndustry {
     jdbcProp_report.put("driver", "com.mysql.jdbc.Driver")
 
     val report_table=s"(select userid,tag,name,ctrwithtag,ctrwithouttag,costwithtag,costwithouttag,cvrwithtag,cvrwithouttag from report2.cpc_profiletag_report  where date=$date ) as tmp"
-    spark.read.jdbc(jdbcProp_report, report_table, jdbcProp_report).createTempView("report_table")
+    spark.read.jdbc(jdbcUrl_report, report_table, jdbcProp_report).createTempView("report_table")
 
     val conf = ConfigFactory.load()
     tagReport2dbUrl = conf.getString("mariadb.report2_write.url")
