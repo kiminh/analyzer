@@ -106,13 +106,7 @@ object OcpcGetPbV2 {
   }
 
   def udfSelectData() = udf((flag: Int, value1: Double, value2: Double) => {
-    var result = value2
-    if (flag == 1) {
-      result = value1
-    } else {
-      result = value2
-    }
-    result
+    var result = value1
   })
 
   def getCalibrationData(conversionGoal: Int, version: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
