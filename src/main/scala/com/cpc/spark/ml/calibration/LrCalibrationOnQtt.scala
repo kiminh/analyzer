@@ -231,7 +231,7 @@ object LrCalibrationOnQtt {
     p2.createOrReplaceTempView("idea")
     val sql =
       s"""
-         |select ideaid,ctr,ectr,ctrnum ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
+         |select ideaid,ctr,ectr,ctrnum,ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
          |from idea
        """.stripMargin
     val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
