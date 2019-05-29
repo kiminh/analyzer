@@ -38,14 +38,15 @@ object OcpcChargeV2 {
     val payData = calculatePay(data, date, dayCnt, spark)
 
     val resultDF1 = payData
-      .selectExpr("unitid", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "start_date")
+      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
     resultDF1.show(10)
 
     resultDF1
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -55,7 +56,8 @@ object OcpcChargeV2 {
     resultDF2.show(10)
 
     resultDF2
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -273,12 +275,13 @@ object OcpcChargeV2 {
       s"""
          |SELECT
          |  unitid,
+         |  adslot_type,
          |  sum(case when isclick=1 then price else 0 end) as cost,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid
+         |GROUP BY unitid, adslot_type
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1).na.fill(0, Seq("cv"))
@@ -288,6 +291,7 @@ object OcpcChargeV2 {
       s"""
          |SELECT
          |  unitid,
+         |  adslot_type,
          |  cost - 1.2 * cv * cpagiven as pay,
          |  cost,
          |  cv,
@@ -359,6 +363,7 @@ object OcpcChargeV2 {
          |  timestamp,
          |  unitid,
          |  userid,
+         |  adslot_type,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
