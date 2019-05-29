@@ -228,7 +228,7 @@ object LrCalibrationOnQtt {
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
     val ctrnum = p2.groupBy()
-      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Long]("all_ctrnum").toDouble*0.8
+      .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Double]("all_ctrnum")*0.8
 
     //todo:降序排列
     var num = 0.0
