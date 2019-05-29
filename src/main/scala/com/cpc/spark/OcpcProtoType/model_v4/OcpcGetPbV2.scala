@@ -98,6 +98,8 @@ object OcpcGetPbV2 {
       .withColumn("post_cvr", udfSelectData()(col("flag"), col("post_cvr1"), col("post_cvr2")))
 
     data.show()
+    data
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data20190529")
 
     data
 
