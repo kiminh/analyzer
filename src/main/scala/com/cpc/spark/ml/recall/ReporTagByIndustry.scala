@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 /**
   * created by xiongyao on 2019/5/29
   */
-object Report_tag_by_industry {
+object ReporTagByIndustry {
 
   var tagReport2dbUrl = ""
   val tagReport2dbProp = new Properties()
