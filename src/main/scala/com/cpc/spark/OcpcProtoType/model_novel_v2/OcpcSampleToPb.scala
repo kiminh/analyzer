@@ -63,8 +63,8 @@ object OcpcSampleToPb {
       .withColumn("version", lit(version))
 
     resultDF.repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
+    resultDF.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_novel_pb_once")
 
-    savePbPack(resultDF, version, isHidden)
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
@@ -124,76 +124,6 @@ object OcpcSampleToPb {
     val resultDF = spark.sql(sqlRequest)
 
     resultDF
-
-  }
-
-
-  def savePbPack(dataset: DataFrame, version: String, isHidden: Int): Unit = {
-    var list = new ListBuffer[SingleItem]
-    val filename = "ocpc_params_novel.pb"
-    println("size of the dataframe")
-    println(dataset.count)
-    println(s"filename: $filename")
-    dataset.show(10)
-    dataset.printSchema()
-    var cnt = 0
-
-    for (record <- dataset.collect()) {
-      val identifier = record.getAs[String]("identifier")
-      val HiddenOcpc = isHidden
-      val key = "oCPCNovel&" + identifier + "&" + HiddenOcpc
-      val conversionGoal = record.getAs[Int]("conversion_goal")
-      val cvrCalFactor = record.getAs[Double]("cvrcalfactor")
-      val jfbFactor = record.getAs[Double]("kvalue")
-      val smoothFactor = record.getAs[Double]("smoothfactor")
-      val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = 0.0
-      val cpaSuggest = 0.0
-      val paramT = 0.0
-      val highBidFactor = 0.0
-      val lowBidFactor = 0.0
-      val ocpcMincpm = 0
-      val ocpcMinbid = 0
-      val cpcbid = 0
-      val maxbid = 100000
-
-      if (cnt % 100 == 0) {
-        println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +
-          s"cpaGiven: $cpaGiven,cpaSuggest: $cpaSuggest, paramT: $paramT, highBidFactor: $highBidFactor, lowBidFactor:$lowBidFactor," +
-          s"ocpcMincpm: $ocpcMincpm, ocpcMinbid:$ocpcMinbid, cpcbid:$cpcbid,maxbid :$maxbid ")
-      }
-      cnt += 1
-
-      val currentItem = SingleItem(
-        key = key,
-        conversionGoal = conversionGoal,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = ocpcMincpm,
-        ocpcMinbid = ocpcMinbid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-      )
-      list += currentItem
-
-    }
-    val result = list.toArray[SingleItem]
-    val adRecordList = OcpcParamsList(
-      records = result
-    )
-
-    println("length of the array")
-    println(result.length)
-    adRecordList.writeTo(new FileOutputStream(filename))
-
-    println("complete save data into protobuffer")
 
   }
 }
