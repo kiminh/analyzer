@@ -114,7 +114,6 @@ object OcpcSampleToPb {
     2. 计算新的kvalue
      */
     // 从表中抽取数据
-    //todo:过滤无转化消耗大于1000
     val sqlRequest =
     s"""
        |SELECT

@@ -3,6 +3,7 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
 import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.common.Utils
 import org.apache.spark.ml.classification.LogisticRegression
@@ -13,6 +14,8 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.DoubleType
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 
@@ -221,7 +224,7 @@ object LrCalibrationOnQtt {
       .agg(
         avg(col("label")).alias("ctr"),
         avg(col("prediction")/1e6d).alias("ectr"),
-        count(col("label")).alias("ctrnum")
+        count(col("label")).cast(DoubleType).alias("ctrnum")
       )
       .withColumn("pcoc",col("ectr")/col("ctr"))
     val ctrnum = p2.groupBy()
