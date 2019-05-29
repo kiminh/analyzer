@@ -52,15 +52,16 @@ object ReporTagByIndustry {
     spark.sql(
       s"""
         |select
-        |	b.category,
-        | b.name,
-        |	a.tag,
-        |	sum(a.ctrwithtag),
-        |	sum(a.ctrwithouttag),
-        | sum(a.costwithtag),
-        | sum(a.costwithouttag),
-        | sum(a.cvrwithtag),
-        | sum(a.cvrwithouttag)
+        |	b.category as class_id,
+        | b.name as name,
+        |	a.tag as tag,
+        |	sum(a.ctrwithtag) as ctrwithtag,
+        |	sum(a.ctrwithouttag) as ctrwithouttag,
+        | sum(a.costwithtag) as costwithtag,
+        | sum(a.costwithouttag) as costwithouttag,
+        | sum(a.cvrwithtag) as cvrwithtag,
+        | sum(a.cvrwithouttag) as cvrwithouttag,
+        | to_date('$date') as date
         |from
         |(
         |select userid,tag,name,ctrwithtag,ctrwithouttag,costwithtag,costwithouttag,cvrwithtag,cvrwithouttag from report_table
