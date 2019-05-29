@@ -31,9 +31,9 @@ object ReporTagByIndustry {
 
     //  连接report2
     val jdbcProp_report = new Properties()
-    val jdbcUrl_report = "jdbc:mysql://rm-2zemny6nzg818jcdn.mysql.rds.aliyuncs.com"
-    jdbcProp_report.put("user", "rd")
-    jdbcProp_report.put("password", "rdv587@123")
+    val jdbcUrl_report = "jdbc:mysql://rm-2zemny6nzg818jcdn.mysql.rds.aliyuncs.com:3306/report2"
+    jdbcProp_report.put("user", "report")
+    jdbcProp_report.put("password", "report!@#")
     jdbcProp_report.put("driver", "com.mysql.jdbc.Driver")
 
     val report_table=s"(select userid,tag,name,ctrwithtag,ctrwithouttag,costwithtag,costwithouttag,cvrwithtag,cvrwithouttag from report2.cpc_profiletag_report  where date=$date ) as tmp"
