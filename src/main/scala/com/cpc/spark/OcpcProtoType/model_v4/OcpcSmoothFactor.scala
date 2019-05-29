@@ -54,8 +54,8 @@ object OcpcSmoothFactor{
     resultDF.show()
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
   }
 
 
@@ -68,6 +68,8 @@ object OcpcSmoothFactor{
         .join(jfbData, Seq("unitid"), "inner")
         .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "cv")
         .filter(s"pcoc is not null and pcoc != 0 and jfb is not null and cv >= $minCV")
+
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190529")
 
     result
   }
