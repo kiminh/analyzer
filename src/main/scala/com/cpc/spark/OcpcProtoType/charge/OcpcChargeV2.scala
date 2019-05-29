@@ -54,6 +54,8 @@ object OcpcChargeV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
+    unitidList
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily20190529")
     resultDF2.show(10)
 
     resultDF2
