@@ -28,17 +28,23 @@ object OcpcConversionNovel {
       // cvr4数据
       sqlRequest =
         s"""
-           |SELECT
-           |  searchid,
-           |  1 as label
-           |FROM
-           |  dl_cpc.ml_cvr_feature_v1
-           |WHERE
-           |  $selectCondition
-           |AND
-           |  access_channel="sdk"
-           |and array_contains(cvr_list,"sdk_site_wz")
-           |GROUP BY searchid
+           |select
+           |    distinct searchid,1 as label
+           |from dl_cpc.ml_cvr_feature_v1
+           |lateral view explode(cvr_list) b as a
+           |where $selectCondition
+           |and access_channel="sdk"
+           |and a = "sdk_site_wz"
+           |
+           |union
+           |
+           |select
+           |    distinct searchid,1 as label
+           |from dl_cpc.ml_cvr_feature_v1
+           |lateral view explode(cvr_list) b as a
+           |where $selectCondition
+           |and access_channel="site"
+           |and a = "site_nosdk_wz"
        """.stripMargin
       cvrPt = "cvr4"
     }
