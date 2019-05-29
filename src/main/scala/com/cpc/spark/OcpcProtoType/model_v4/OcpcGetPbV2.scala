@@ -109,6 +109,8 @@ object OcpcGetPbV2 {
     var result = value2
     if (flag == 1) {
       result = value1
+    } else {
+      result = value2
     }
     result
   })
