@@ -98,8 +98,8 @@ object OcpcGetPbV2 {
       .withColumn("post_cvr", when(col("flag") === 1, col("post_cvr1")).otherwise(col("post_cvr2")))
 
     data.show()
-    data
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data20190529")
+//    data
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data20190529")
 
     data
 
