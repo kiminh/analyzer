@@ -227,8 +227,10 @@ object LrCalibrationOnQtt {
     val ctrnum = p2.groupBy()
       .agg(sum(col("ctrnum")).alias("all_ctrnum")).first().getAs[Long]("all_ctrnum").toDouble*0.8
 
+    //todo:降序排列
     var num = 0.0
-    val p3 = p2.rdd.map{
+    val p3 = p2.sort($"ctrnum".desc)
+    .rdd.map{
       r=>{
         val ctr = r.getAs[Double]("ctr")
         val ectr = r.getAs[Double]("ectr")
