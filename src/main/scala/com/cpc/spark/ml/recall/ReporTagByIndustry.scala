@@ -79,7 +79,7 @@ object ReporTagByIndustry {
         |	b.category,
         | b.name,
         |	a.tag
-      """.stripMargin).repartition(100).filter{x=> { x.getAs("class_id")==132101100}}.show(100,false)
+      """.stripMargin).repartition(100).filter{x=> { x.getAs("class_id")==132101100 && (x.getAs("ctrwithtag") < 0 || x.getAs("ctrwithouttag") < 0)}}.show(100,false)
 //      write.mode(SaveMode.Append).jdbc(tagReport2dbUrl, "report2.cpc_profiletag_report_v1", tagReport2dbProp)
 
   }
