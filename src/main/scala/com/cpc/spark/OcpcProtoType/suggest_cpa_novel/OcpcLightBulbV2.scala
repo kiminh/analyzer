@@ -199,8 +199,8 @@ object OcpcLightBulbV2{
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null" +
-      "and (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204))) as tmp"
+    val table = s"(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null" +
+      s"and (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204))) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
