@@ -48,14 +48,13 @@ object OcpcGetPbV2 {
 
     val result = getPbByConversion(conversionGoal, version, hourInt1, hourInt2, date, hour, spark)
 
-    val finalVersion = version + conversionGoal.toString
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "pcoc", "jfb", "post_cvr")
         .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-        .withColumn("version", lit(finalVersion))
+        .withColumn("version", lit(version))
 
     resultDF
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcoc_jfb_hourly")
