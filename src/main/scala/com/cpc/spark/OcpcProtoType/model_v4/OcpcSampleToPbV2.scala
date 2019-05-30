@@ -111,7 +111,7 @@ object OcpcSampleToPbV2 {
       val identifier = record.getAs[String]("identifier")
       val cpaGiven = record.getAs[Double]("cpagiven")
       val kvalue = record.getAs[Double]("kvalue")
-      val cvrCnt = record.getAs[Long]("cvrcnt")
+      val cvrCnt = record.getAs[Int]("cvrcnt").toLong
       val conversionGoal = record.getAs[Int]("conversion_goal")
 
       if (cnt % 100 == 0) {
