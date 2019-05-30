@@ -3,9 +3,11 @@ package com.cpc.spark.ml.recall
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
 object unitid_inAndOut {
+  Logger.getRootLogger.setLevel(Level.WARN)
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("unit in and out")

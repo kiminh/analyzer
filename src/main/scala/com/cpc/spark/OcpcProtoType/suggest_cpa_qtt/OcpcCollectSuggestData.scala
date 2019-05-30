@@ -24,41 +24,25 @@ object OcpcCollectSuggestData {
       .appName(s"OcpcCollectSuggestData: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    // 安装类feedapp广告单元: 40 ~ 60
-//    val feedapp1 = getSuggestData("qtt_hidden", "feedapp", 2, 100000, date, hour, spark)
+//    // 安装类feedapp广告单元: 40 ~ 60
+//    val feedapp1 = getSuggestDataV2("qtt_hidden", "feedapp", 2, 100000, 40, 60, date, hour, spark)
 //    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-    val feedapp1 = getSuggestDataV2("qtt_hidden", "feedapp", 2, 100000, 40, 60, date, hour, spark)
-    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-
-    // 二类电商：30~60
-    val elds1 = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 60, date, hour, spark)
-    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-
-//    // 二类电商：40~50
-//    val elds2raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 40, 50, date, hour, spark)
-//    val elds2 = elds2raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 //
-//    // 二类电商：30~40
-//    val elds3raw = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 40, date, hour, spark)
-//    val elds3 = elds3raw.withColumn("exp_tag", lit("OcpcHiddenAdv"))
-//
-//    val elds = elds1
-//      .union(elds2)
-//      .union(elds3)
-//    elds.write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once20190423a")
+//    // 二类电商：30~60
+//    val elds1 = getSuggestDataV2("qtt_hidden", "elds", 3, 300000, 30, 60, date, hour, spark)
+//    val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
+
 
     // 从网赚推荐cpa抽取数据
     val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
-    feedapp.printSchema()
-    elds.printSchema()
+//    feedapp.printSchema()
+//    elds.printSchema()
     wz.printSchema()
 
     // 数据串联
-    val cpaData = feedapp
-      .union(elds)
-      .union(wz)
+    val cpaData = wz
 
 
     // 整理每个网赚广告单元最近24小时ocpc消费的成本和cpm

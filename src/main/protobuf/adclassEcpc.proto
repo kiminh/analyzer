@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package adclassEcpc;
+message SingleItem {
+    string key = 1;
+    double post_cvr = 2;
+    double calCvrFactor = 3;
+    double highBidFactor = 4;
+    double lowBidFactor = 5;
+}
+
+message AdClassEcpcList {
+    repeated SingleItem records = 1;
+}

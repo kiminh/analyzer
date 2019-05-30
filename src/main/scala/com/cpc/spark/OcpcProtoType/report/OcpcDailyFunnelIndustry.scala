@@ -117,6 +117,7 @@ object OcpcDailyFunnelIndustry {
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
+//    data1.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190528")
 
     // 预算数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -211,6 +212,7 @@ object OcpcDailyFunnelIndustry {
     println(sqlRequest)
     val ctrBaseData = spark
       .sql(sqlRequest)
+//    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429base")
 
     ctrBaseData.createOrReplaceTempView("base_ctr")
     val sqlRequestCtr =
@@ -242,7 +244,7 @@ object OcpcDailyFunnelIndustry {
       .sql(sqlRequestCtr)
       .filter(s"conversion_goal in (2, 3)")
 
-//    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
+//    ctrData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
 
     // cvr2Data
     val sqlRequest2 =
@@ -282,6 +284,8 @@ object OcpcDailyFunnelIndustry {
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3")))
       .na.fill(0, Seq("iscvr"))
+
+//    resultDF.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429new")
 
     resultDF
 

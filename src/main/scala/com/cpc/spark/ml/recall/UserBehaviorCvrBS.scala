@@ -1,9 +1,11 @@
 package com.cpc.spark.ml.recall
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.expr
 
 object UserBehaviorCvrBS {
+  Logger.getRootLogger.setLevel(Level.WARN)
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()

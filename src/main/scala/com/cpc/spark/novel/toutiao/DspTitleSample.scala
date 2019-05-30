@@ -46,13 +46,13 @@ object DspTitleSample {
          |distinct
          |adid, title
          |FROM dl_cpc.slim_union_log
-         |WHERE dt> date_sub('$date', 7) and adid != '' and adsrc = 22
+         |WHERE dt> date_sub('$date', 3) and adid != '' and adsrc = 22
          |and media_appsid in ("80001098", "80001292","80000001", "80000002")
          |and title != ''
              """.stripMargin
     println(sql2)
     val data2 = spark.sql(sql2)
-    data2.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_dsp_sample")
+    data2.repartition(6).write.mode("overwrite").saveAsTable("dl_cpc.midu_toutiao_dsp_sample")
     val avgs2 = data2.rdd
       .map( t=>
         t(0).toString()+"\001"+t(1).toString())

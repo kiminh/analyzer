@@ -41,45 +41,36 @@ object GetDayUv {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
-      .appName("[cpc-anal] get uv report from %s %s".format(table, date))
+      .appName("[cpc-anal] report_media_uv_daily %s".format(date))
       .enableHiveSupport()
       .getOrCreate()
 
-    val unionLog = ctx.sql(
+    val dataToGo = ctx.sql(
       s"""
-         |select * from dl_cpc.%s where `day` = "%s" and adslot_id > 0 and isshow = 1
-       """.stripMargin.format(table, date))
-      //      .as[UnionLog]
-      .rdd
-
-    val uvData = unionLog
-      .map {
-        x =>
-          val r = MediaUvReport(
-            media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslot_id").toInt,
-            adslot_type = x.getAs[Int]("adslot_type"),
-            uniq_user = 1,
-            date = x.getAs[String]("day")
-          )
-          ("%d-%d-%s".format(r.media_id, r.adslot_id, x.getAs[String]("uid")), r)
-      }
-      .reduceByKey((x, y) => x)
-      .map {
-        x =>
-          val r = x._2
-          ("%d-%d".format(r.media_id, r.adslot_id), r)
-      }
-      .reduceByKey((x, y) => x.sum(y))
-      .map(_._2)
+         |select
+         |  media_appsid as media_id
+         |  , adslot_id
+         |  , adslot_type
+         |  , day as `date`
+         |  , count(distinct uid) as uniq_user
+         |from dl_cpc.cpc_basedata_union_events
+         |where `day` = "%s"
+         |and adslot_id > 0
+         |and isshow = 1
+         |group by
+         |  media_appsid
+         |  , adslot_id
+         |  , adslot_type
+         |  , day
+       """.stripMargin.format(date))
 
     clearReportHourData(date)
-    ctx.createDataFrame(uvData)
+    dataToGo
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_uv_daily", mariadbProp)
 
-    println("done", uvData.count())
+    println("done", dataToGo.count())
     ctx.stop()
   }
 

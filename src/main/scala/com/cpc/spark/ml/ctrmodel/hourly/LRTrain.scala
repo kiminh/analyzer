@@ -29,11 +29,49 @@ object LRTrain {
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
 
+  private var dict = mutable.Map[String, Map[Int, Int]]()
+
+  val dictNames = Seq(
+    "mediaid",
+    "planid",
+    "unitid",
+    "ideaid",
+    "slotid",
+    "adclass",
+    "cityid"
+  )
+
+  private var dictStr: mutable.Map[String, Map[String, Int]] = mutable.Map[String, Map[String, Int]]()
+  private var dictLong: mutable.Map[String, Map[Long, Int]] = mutable.Map[String, Map[Long, Int]]()
+
+  val dictIntNamesForV6: Seq[String] = Seq(
+    "mediaid",
+    "planid",
+    "unitid",
+    "ideaid",
+    "slotid",
+    "adclass",
+    "cityid",
+    "userid",
+    "siteid",
+    "doc_cat"
+  )
+
+  val dictStrNamesForV6: Seq[String] = Seq(
+    "channel",
+    "dtu_id",
+    "brand"
+  )
+
+  val dictLongNamesForV6: Seq[String] = Seq(
+    "doc_id"
+  )
+
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model
-      .initSpark("[cpc-model] linear regression")
+      .initSpark("[cpc-model] qtt-bs-ctrparser6-daily")
 
     // 按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
@@ -42,7 +80,11 @@ object LRTrain {
     val date = args(2)
     val hour = args(3)
 
-    initFeatureDict(spark, ctrPathSep)
+    // initFeatureDict(spark, ctrPathSep)
+
+    initIntFeatureDictV6(spark, ctrPathSep)
+    initLongFeatureDictV6(spark, ctrPathSep)
+    initStringFeatureDictV6(spark, ctrPathSep)
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
@@ -51,12 +93,11 @@ object LRTrain {
       s"""
          |select
          |  searchid
-         |  , isclick as label
          |  , sex
          |  , age
          |  , os
-         |  , isp
          |  , network
+         |  , isp
          |  , city
          |  , media_appsid
          |  , phone_level
@@ -66,16 +107,23 @@ object LRTrain {
          |  , unitid
          |  , ideaid
          |  , adclass
-         |  , adslot_id as adslotid -- bottom-up compatibility.
+         |  , adslot_id as adslotid
          |  , adslot_type
-         |  , interact_pagenum as pagenum -- bottom-up compatibility.
-         |  , interact_bookid as bookid -- bottom-up compatibility.
-         |  , brand_title
-         |  , user_req_num
+         |  , brand_title as brand
+         |  , media_type
+         |  , channel
+         |  , client_type as sdk_type
+         |  , dtu_id
+         |  , interaction
+         |  , userid
+         |  , siteid
+         |  , province
+         |  , city_level
+         |  , content_id as doc_id
+         |  , category as doc_cat
+         |  , is_new_ad
          |  , uid
-         |  , click_count as user_click_num
-         |  , click_unit_count as user_click_unit_num
-         |  , long_click_count as user_long_click_count
+         |  , isclick as label
          |  , day
          |from dl_cpc.cpc_basedata_union_events
          |where %s
@@ -102,10 +150,10 @@ object LRTrain {
 
     train(
       spark,
-      "ctrparser4",
-      "qtt-bs-ctrparser4-daily",
+      "ctrparser6",
+      "qtt-bs-ctrparser6-daily",
       getLeftJoinData(qttAll, userAppIdx),
-      "qtt-bs-ctrparser4-daily.lrm",
+      "qtt-bs-ctrparser6-daily.lrm",
       date,
       4e8
     )
@@ -113,19 +161,20 @@ object LRTrain {
     Utils
       .sendMail(
         trainLog.mkString("\n"),
-        "[cpc-bs-q] qtt-bs-ctrparser4-daily 训练复盘",
+        "[cpc-bs-q] qtt-bs-ctrparser6-daily 训练复盘",
         Seq(
-          "fanyiming@qutoutiao.net",
+          "fanyiming@qutoutiao.net"/*,
           "dongwei@qutoutiao.net",
           "tankaide@qutoutiao.net",
-          "wangshixin@qutoutiao.net"
+          "wangshixin@qutoutiao.net",
+          "chuquanquan@qutoutiao.net",
+          "huangweidong@qutoutiao.net"*/
         )
       )
 
     rawDataFromTrident.unpersist()
     userAppIdx.unpersist()
   }
-
 
   def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
@@ -143,7 +192,6 @@ object LRTrain {
 
     pathSep
   }
-
 
   def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     val inpath = "hdfs://emr-cluster/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
@@ -261,11 +309,12 @@ object LRTrain {
     val nnum = tnum - pnum
 
     // 保证训练数据正负比例 1:9
+    // fym 190521: no need for IR but we kept prompting pnum/nnum/rate.
     val rate = (pnum * 9 / nnum * 1000).toInt
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
+    val sampleTrain = formatSample(spark, parser, train)/*.filter(x => x.getAs[Int]("label") > 0))*/
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
@@ -275,7 +324,7 @@ object LRTrain {
     model.printLrTestLog()
     trainLog :+= model.getLrTestLog()
 
-    val testNum = sampleTest.count().toDouble * 0.9
+    /*val testNum = sampleTest.count().toDouble * 0.9
     val minBinSize = 1000d
     var binNum = 100d
     if (testNum < minBinSize * binNum) {
@@ -283,13 +332,13 @@ object LRTrain {
     }
 
     model.runIr(binNum.toInt, 0.95)
-    trainLog :+= model.binsLog.mkString("\n")
+    trainLog :+= model.binsLog.mkString("\n")*/
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
-    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
-    val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
+//    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
+//    val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
 
     // backup on hdfs.
     model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
@@ -297,48 +346,45 @@ object LRTrain {
 
     // backup on local machine.
     model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
+//    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
+//    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     // update trainLog.
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
-    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
+//    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
+//    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
+    val BcDictStr = spark.sparkContext.broadcast(dictStr)
+    val BcDictLong = spark.sparkContext.broadcast(dictLong)
 
     ulog.rdd
       .mapPartitions {
         p =>
           dict = BcDict.value
+          dictStr = BcDictStr.value
+          dictLong = BcDictLong.value
+          
           p.map {
             u =>
               val vec = parser match {
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
+                case "ctrparser5" =>
+                  getCtrVectorParser5(u)
+                case "ctrparser6" =>
+                  getCtrVectorParser6(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
       }
   }
-
-  var dict = mutable.Map[String, Map[Int, Int]]()
-  val dictNames = Seq(
-    "mediaid",
-    "planid",
-    "unitid",
-    "ideaid",
-    "slotid",
-    "adclass",
-    "cityid"
-  )
-  var dictStr = mutable.Map[String, Map[String, Int]]()
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
 
@@ -385,6 +431,112 @@ object LRTrain {
   }
 
   def getCtrVectorParser4(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+  def getCtrVectorParser5(x: Row): Vector = {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
@@ -529,12 +681,175 @@ object LRTrain {
     i += 2 * 6 + 1*/
 
     //user installed app
-    /*val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
     if (appIdx != null) {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 1000 + 1*/
+    i += 1000 + 1
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+  def getCtrVectorParser6(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    //user installed app
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    if (appIdx != null) {
+      val inxList = appIdx.map(p => (p + i, 1d))
+      els = els ++ inxList
+    }
+    i += 1000 + 1
+
+    // 190523: dnn features.
+
+    // brand
+    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand"), 0) + i, 1d)
+    i += dictStr("brand").size + 1
+
+    // channel
+    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
+    i += dictStr("channel").size + 1
+
+    // city_level
+    els = els :+ (x.getAs[Int]("city_level") + i - 1, 1d)
+    i += 6
+
+    // doc_cat
+    els = els :+ (dict("doc_cat").getOrElse(x.getAs[Int]("doc_cat"), 0) + i, 1d)
+    i += dict("doc_cat").size + 1
+
+    // doc_cat
+    els = els :+ (dictLong("doc_id").getOrElse(x.getAs[Long]("doc_id"), 0) + i, 1d)
+    i += dictLong("doc_id").size + 1
+
+    // dtu_id
+    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
+    i += dictStr("dtu_id").size + 1
+
+    // interaction
+    els = els :+ (x.getAs[Int]("interaction") + i, 1d)
+    i += 7
+
+    // is_new_ad
+    els = els :+ (x.getAs[Int]("is_new_ad") + i, 1d)
+    i += 2
+
+    // media_type
+    els = els :+ (x.getAs[Int]("media_type") + i, 1d)
+    i += 4
+
+    // province
+    els = els :+ (x.getAs[Int]("province") + i, 1d)
+    i += 35
+
+    // sdk_type
+    val sdk_type_to_int : Int = x.getAs[String]("sdk_type") match {
+      case "QTT" =>
+        1
+      case "HZ" =>
+        2
+      case "JSSDK" =>
+        3
+      case "OPENAPI" =>
+        4
+      case "NATIVESDK" =>
+        5
+      case "FUN" =>
+        6
+      case _ => 0
+    }
+
+    els = els :+ (sdk_type_to_int + i, 1d)
+    i += 7
+
+    // userid
+    els = els :+ (dict("userid").getOrElse(x.getAs[Int]("userid"), 0) + i, 1d)
+    i += dict("userid").size + 1
+
+    // siteid
+    els = els :+ (dict("siteid").getOrElse(x.getAs[Int]("siteid"), 0) + i, 1d)
+    i += dict("siteid").size + 1
 
     try {
       Vectors.sparse(i, els)
@@ -650,5 +965,83 @@ object LRTrain {
     }
 
     "(" + dateHourList.mkString(" or ") + ")"
+  }
+
+  def initIntFeatureDictV6(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
+
+    trainLog :+= "\n------dict size------"
+    for (name <- dictIntNamesForV6) {
+      val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
+      var n = 0
+      val ids = mutable.Map[Int, Int]()
+      println(pathTpl.format(name, pathSep.keys.mkString(",")))
+      spark.read
+        .parquet(pathTpl.format(name, pathSep.keys.mkString(",")))
+        .rdd
+        .map(x => x.getInt(0))
+        .distinct()
+        .sortBy(x => x)
+        .toLocalIterator
+        .foreach {
+          id =>
+            n += 1
+            ids.update(id, n)
+        }
+      dict.update(name, ids.toMap)
+      println("dict", name, ids.size)
+      trainLog :+= "%s=%d".format(name, ids.size)
+    }
+  }
+
+  def initStringFeatureDictV6(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
+
+    trainLog :+= "\n------dict size------"
+    for (name <- dictStrNamesForV6) {
+      val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
+      var n = 0
+      val ids = mutable.Map[String, Int]()
+      println(pathTpl.format(name, pathSep.keys.mkString(",")))
+      spark.read
+        .parquet(pathTpl.format(name, pathSep.keys.mkString(",")))
+        .rdd
+        .map(x => x.getString(0))
+        .distinct()
+        .sortBy(x => x)
+        .toLocalIterator
+        .foreach {
+          id =>
+            n += 1
+            ids.update(id, n)
+        }
+      dictStr.update(name, ids.toMap)
+      println("dict-str", name, ids.size)
+      trainLog :+= "%s=%d".format(name, ids.size)
+    }
+  }
+
+  def initLongFeatureDictV6(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
+
+    trainLog :+= "\n------dict size------"
+    for (name <- dictLongNamesForV6) {
+      val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
+      var n = 0
+      val ids = mutable.Map[Long, Int]()
+      println(pathTpl.format(name, pathSep.keys.mkString(",")))
+      spark.read
+        .parquet(pathTpl.format(name, pathSep.keys.mkString(",")))
+        .rdd
+        .map(x => x.getLong(0))
+        .distinct()
+        .sortBy(x => x)
+        .toLocalIterator
+        .foreach {
+          id =>
+            n += 1
+            ids.update(id, n)
+        }
+      dictLong.update(name, ids.toMap)
+      println("dict-long", name, ids.size)
+      trainLog :+= "%s=%d".format(name, ids.size)
+    }
   }
 }

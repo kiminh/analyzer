@@ -41,7 +41,7 @@ object OcpcCharge {
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
     val dataFilter = data
-      .filter(s"conversion > 30")
+      .filter(s"conversion > 10")
       .filter(s"pay > 0")
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
