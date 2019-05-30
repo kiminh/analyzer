@@ -69,6 +69,8 @@ object OcpcLightBulbV3{
          |  `date` = '$date1'
          |AND
          |  version = '$version'
+         |AND
+         |  cpa > -1
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -87,6 +89,8 @@ object OcpcLightBulbV3{
          |  dl_cpc.ocpc_light_control_version
          |WHERE
          |  version = '$version'
+         |AND
+         |  cpa > -1
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
