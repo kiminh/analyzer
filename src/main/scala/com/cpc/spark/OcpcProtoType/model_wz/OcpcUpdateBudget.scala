@@ -53,13 +53,11 @@ object OcpcUpdateBudget {
          |  planid,
          |  unitid,
          |  exp_tag,
-         |  budget,
+         |  0 as budget,
          |  0 as consume,
          |  1 as is_open
          |FROM
-         |  dl_cpc.check_unitid_consume
-         |WHERE
-         |  `date` = '$date'
+         |  test.check_unitid_consume
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -69,8 +67,8 @@ object OcpcUpdateBudget {
 
     result
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_unitid_consume")
-//      .write.mode("overwrite").insertInto("dl_cpc.check_unitid_consume")
+//      .write.mode("overwrite").saveAsTable("test.check_unitid_consume")
+      .write.mode("overwrite").insertInto("dl_cpc.check_unitid_consume")
 
 
   }
