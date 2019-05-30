@@ -38,7 +38,7 @@ object OcpcSampleToPbV2 {
 
     val data = getBaseData(version, date, hour, spark)
     val result = data
-      .withColumn("cpagiven", lit(1))
+      .withColumn("cpagiven", lit(1.0))
       .withColumn("cvrcnt", lit(30))
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "pcoc", "jfb")
 
@@ -60,10 +60,10 @@ object OcpcSampleToPbV2 {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
-//    savePbPack(resultDF, version, isKnown)
+    savePbPack(resultDF, version, isKnown)
   }
 
   def getBaseData(version: String, date: String, hour: String, spark: SparkSession) = {
