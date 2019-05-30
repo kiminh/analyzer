@@ -74,6 +74,7 @@ object OcpcSampleToPbV2 {
          |  pcoc,
          |  jfb,
          |  post_cvr,
+         |  conversion_goal,
          |  1.0 / jfb as kvalue
          |FROM
          |  dl_cpc.ocpc_pcoc_jfb_hourly
