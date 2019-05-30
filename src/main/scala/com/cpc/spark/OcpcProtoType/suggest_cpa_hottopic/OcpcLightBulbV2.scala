@@ -68,21 +68,21 @@ object OcpcLightBulbV2{
 
     resultDF.show(10)
 
+//    resultDF
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+//
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ##########################")
+
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ##########################")
-
-    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto(tableName)
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto(tableName)
 
 
   }
@@ -205,7 +205,7 @@ object OcpcLightBulbV2{
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and target_medias = '80002819') as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and target_medias = '80002819' and adslot_type in (1, 2)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
