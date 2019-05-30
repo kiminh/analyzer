@@ -57,14 +57,14 @@ object ReporTagByIndustry {
       s"""
         |select
         |	cast(coalesce(b.category,0) as int) as class_id,
-        | coalesce(b.name,'Unknown') as name,
-        |	cast(coalesce(a.tag,0) as int) as tag,
+        | b.name as name,
+        |	a.tag as tag,
         |	cast(cast(sum(a.ctrwithtag) as string) as int) as ctrwithtag,
+        |cast(cast(sum(a.ctrwithouttag) as string) as int) as ctrwithouttag,
+        |	cast(sum(a.costwithtag), as double) as costwithtag,
+        |	cast(sum(a.costwithouttag) as double) as costwithouttag,
+        |	cast(cast(sum(a.cvrwithtag) as string) as int) as cvrwithtag,
         |cast(cast(sum(a.cvrwithouttag) as string) as int) as cvrwithouttag,
-        |	cast(coalesce(sum(a.costwithtag),0) as int) as costwithtag,
-        |	cast(coalesce(sum(a.costwithouttag),0) as int) as costwithouttag,
-        |	cast(coalesce(sum(a.cvrwithtag),0) as int) as cvrwithtag,
-        |	cast(coalesce(sum(a.cvrwithouttag),0) as int) as cvrwithouttag,
         | to_date('$date') as date
         |from
         |(
