@@ -36,7 +36,7 @@ object OcpcSampleToPbV2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
 
-    val data = getBaseData(version, date, hour, spark)
+//    val data = getBaseData(version, date, hour, spark)
 
 //    val result1raw  = getPbData(version, date, hour, spark)
 //    val result1 = result1raw
