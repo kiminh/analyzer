@@ -36,41 +36,22 @@ object OcpcSampleToPbV2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
 
-//    val data = getBaseData(version, date, hour, spark)
+    val data = getBaseData(version, date, hour, spark)
+    val result = data
+      .withColumn("cpagiven", lit(1))
+      .withColumn("cvrcnt", lit(30))
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "pcoc", "jfb")
 
-//    val result1raw  = getPbData(version, date, hour, spark)
-//    val result1 = result1raw
-//      .withColumn("kvalue1", col("kvalue"))
-//      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1")
-//
-//    println("result1")
-//    result1.show(10)
-//
-//    val result2raw = getNewK(date, hour, version, spark)
-//    val ocpcUnit = getConversionGoal(date, hour, spark)
-//    val result2 = result2raw
-//      .join(ocpcUnit, Seq("identifier", "conversion_goal"), "left_outer")
-//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb", "cv_flag")
-//      .filter(s"cv_flag is not null")
-//      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
-//    println("result2")
-//    result2.show(10)
-//    val result = result1
-//      .join(result2, Seq("identifier", "conversion_goal"), "left_outer")
-//      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue1", "kvalue2", "flag", "pcoc", "jfb")
-//      .withColumn("kvalue", when(col("flag") === 1 && col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
-//
-//    println("result")
-//    result.show(10)
-//    val smoothData = result
-//      .filter(s"flag = 1 and kvalue2 is not null")
-//      .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal")
-//
-//    smoothData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
+    result.show(10)
+
+    val smoothData = result
+      .select("identifier", "pcoc", "jfb", "kvalue", "conversion_goal")
+
+    smoothData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
 //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
 //
 //    val resultDF = result
@@ -85,91 +66,30 @@ object OcpcSampleToPbV2 {
 //    savePbPack(resultDF, version, isKnown)
   }
 
-
-
-  def getNewK(date: String, hour: String, version: String, spark: SparkSession) = {
-    /*
-    1. 从配置文件和dl_cpc.ocpc_pcoc_jfb_hourly表中抽取需要的jfb数据
-    2. 计算新的kvalue
-     */
-    // 从表中抽取数据
-    val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
+  def getBaseData(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
          |  identifier,
          |  pcoc,
          |  jfb,
-         |  1.0 / jfb as kvalue2,
-         |  conversion_goal
+         |  post_cvr,
+         |  1.0 / jfb as kvalue
          |FROM
          |  dl_cpc.ocpc_pcoc_jfb_hourly
          |WHERE
-         |  $selectCondition
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
          |AND
          |  version = '$version'
-         |AND
-         |  pcoc > 0
-         |AND
-         |  jfb > 0
-       """.stripMargin
-//    2018851
-//    1995684
-//    1971569
-//    1981958
-//    2010532
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-
-    val resultDF  =data
-      .select("identifier", "conversion_goal", "pcoc", "jfb", "kvalue2")
-      .withColumn("flag", lit(1))
-      .select("identifier", "conversion_goal", "kvalue2", "flag", "pcoc", "jfb")
-
-    resultDF
-
-  }
-
-  def getPbData(version: String, date: String, hour: String, spark: SparkSession) = {
-    /*
-    string identifier = 1;
-    int32 conversiongoal = 2;
-    double kvalue = 3;
-    double cpagiven = 4;
-    int64 cvrcnt = 5;
-    1. 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
-    2. 按照实验配置文件给出cpagiven
-     */
-    // 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version'"
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  identifier,
-         |  conversion_goal,
-         |  kvalue,
-         |  cpagiven as cpagiven,
-         |  cvrcnt
-         |FROM
-         |  dl_cpc.ocpc_pb_result_hourly_v2
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-
-    val result = data
-    result.printSchema()
-    result.show(10)
-
-    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
-
-
-    resultDF
+    data
   }
+
+
 
   def savePbPack(dataset: DataFrame, version: String, isKnown: Int): Unit = {
     var list = new ListBuffer[SingleRecord]
