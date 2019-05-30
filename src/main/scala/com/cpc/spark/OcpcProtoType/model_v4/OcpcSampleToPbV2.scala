@@ -53,16 +53,16 @@ object OcpcSampleToPbV2 {
       .withColumn("version", lit(version))
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_kvalue_smooth_strat")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_kvalue_smooth_strat")
-//
-//    val resultDF = result
-//      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
-//
-//    resultDF
-//        .withColumn("version", lit(version))
-//        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-////        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+
+    resultDF
+        .withColumn("version", lit(version))
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
 //        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
-//
+
 //    savePbPack(resultDF, version, isKnown)
   }
 
