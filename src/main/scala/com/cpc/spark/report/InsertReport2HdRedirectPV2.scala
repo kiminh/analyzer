@@ -12,7 +12,7 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
   * 每5min统计每个adslotid 的pv数
   * 统计逻辑： 根据adslotid分组求sum(1)
   *
-  * 输入: hive, dl_cpc.logparsed_cpc_cfg_minute
+  * 输入: hive, dl_cpc.cpc_basedata_cfg_event_test
   * 输出：mysql, report2.report_hd_redirect_pv_minute
   *
   */

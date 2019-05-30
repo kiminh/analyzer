@@ -4,14 +4,11 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.antispam.log.GetAntispamLog.{mariadbProp, mariadbUrl}
-import com.cpc.spark.common.Utils
-import com.cpc.spark.log.parser.{HuDongLog, LogParser, TraceLog, UnionLog}
+import com.cpc.spark.log.parser.HuDongLog
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.rdd
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
 /**
@@ -74,8 +71,8 @@ object AnalHuDongLog {
     var hudongLog = spark.sql(
       """
         |SELECT trace_type, adslot_id
-        |FROM dl_cpc.logparsed_cpc_trace_minute
-        |WHERE thedate="%s" AND thehour="%s"
+        |FROM dl_cpc.cpc_basedata_trace_event
+        |WHERE day="%s" AND hour="%s"
       """.stripMargin.format(date, hour))
       .rdd
       .filter {
