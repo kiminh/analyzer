@@ -28,7 +28,7 @@ object ReporTagByIndustry {
     jdbcProp_adv.put("driver", "com.mysql.jdbc.Driver")
 
     val adv_table="(select a.user_id as user_id,a.category as category,b.name as name from (select user_id,category from adv.idea) a " +
-      "left join (select id,name from adv.category) b on a.category=b.id group by a.user_id,a.category,b.name) as tmp"
+      "left join (select id,name from adv.category) b on a.category=b.id group by a.user_id,a.category,b.name where b.name is not null) as tmp"
     spark.read.jdbc(jdbcUrl_adv, adv_table, jdbcProp_adv).createTempView("adv_table")
 
     //  连接report2
@@ -56,12 +56,12 @@ object ReporTagByIndustry {
     spark.sql(
       s"""
         |select
-        |	cast(coalesce(b.category,0) as int) as class_id,
+        |	b.category as class_id,
         | b.name as name,
         |	a.tag as tag,
         |	cast(cast(sum(a.ctrwithtag) as string) as int) as ctrwithtag,
         |cast(cast(sum(a.ctrwithouttag) as string) as int) as ctrwithouttag,
-        |	cast(sum(a.costwithtag), as double) as costwithtag,
+        |	cast(sum(a.costwithtag) as double) as costwithtag,
         |	cast(sum(a.costwithouttag) as double) as costwithouttag,
         |	cast(cast(sum(a.cvrwithtag) as string) as int) as cvrwithtag,
         |cast(cast(sum(a.cvrwithouttag) as string) as int) as cvrwithouttag,
