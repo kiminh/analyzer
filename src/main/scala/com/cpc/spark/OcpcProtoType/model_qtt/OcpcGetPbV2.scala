@@ -58,7 +58,7 @@ object OcpcGetPbV2 {
 
     resultDF
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcoc_jfb_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_final_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
 
   }
 
