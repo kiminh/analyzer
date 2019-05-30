@@ -28,7 +28,7 @@ object ReporTagByIndustry {
     jdbcProp_adv.put("driver", "com.mysql.jdbc.Driver")
 
     val adv_table="(select a.user_id as user_id,a.category as category,b.name as name from (select user_id,category from adv.idea) a " +
-      "left join (select id,name from adv.category) b on a.category=b.id group by a.user_id,a.category,b.name where b.name is not null) as tmp"
+      "left join (select id,name from adv.category) b on a.category=b.id where b.name is not null group by a.user_id,a.category,b.name ) as tmp"
     spark.read.jdbc(jdbcUrl_adv, adv_table, jdbcProp_adv).createTempView("adv_table")
 
     //  连接report2
