@@ -135,7 +135,7 @@ object OcpcLightBulbV3{
     val data = spark
       .table("dl_cpc.ocpc_light_api_control_daily")
       .where(s"version = '$version' and `date` = '$date' and ocpc_light = 0")
-      .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
+      .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
       .repartition(2)
     //    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
     data.show(10)
@@ -180,7 +180,7 @@ object OcpcLightBulbV3{
     val data = spark
       .table("dl_cpc.ocpc_light_api_control_daily")
       .where(s"version = '$version' and `date` = '$date' and ocpc_light = 1")
-      .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
+      .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
       .repartition(2)
 
     data.show(10)
