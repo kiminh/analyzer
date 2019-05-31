@@ -77,9 +77,9 @@ object MultiDimensionCalibOnMiduCvr {
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
-    val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
-    val data3 = log.join(group3,Seq("ideaid"),"inner")
+    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslot_id"),"inner")
+    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
+    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
     val data4 = log.join(group4,Seq("adclass"),"inner")
 
     //create cali pb

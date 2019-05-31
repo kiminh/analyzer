@@ -52,7 +52,7 @@ object MultiDimensionCalibOnQttV2 {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -68,38 +68,42 @@ object MultiDimensionCalibOnQttV2 {
     println(s"sql:\n$sql")
     val log = session.sql(sql)
 
-    val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
       .filter("count1>100000")
-      .select("ideaid","user_req_ad_num","adslot_id","group")
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .select("adclass","ideaid","user_req_ad_num","adslot_id","group")
+    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
       .filter("count2>100000")
-      .select("ideaid","user_req_ad_num","group")
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
-      .withColumn("flag",when(col("count3")>10000,lit(1)).otherwise(lit(0)))
-      .withColumn("group",col("ideaid"))
-      .select("ideaid","group","flag")
+      .select("adclass","ideaid","user_req_ad_num","group")
+    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
+      .filter("count3>10000")
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
+      .select("adclass","ideaid","group")
+    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
+      .filter("count4>10000")
+      .withColumn("group",col("adclass"))
+      .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
-    val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
-    val data3 = log.join(group3.filter("flag = 1"),Seq("ideaid"),"inner")
-    val data4 = group3.filter("flag = 0").select("group").distinct()
-    data4.show(10)
+    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslot_id"),"inner")
+    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
+    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
+    val data4 = log.join(group4,Seq("adclass"),"inner")
 
     //create cali pb
-    val calimap1 = GroupToConfig(data1, session, calimodel)
-    val calimap2 = GroupToConfig(data2, session, calimodel)
-    val calimap3 = GroupToConfig(data3, session, calimodel)
-    val calimap4 = AllToConfig(log, data4, session, calimodel)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
+    val calimap1 = GroupToConfig(data1, session,calimodel)
+    val calimap2 = GroupToConfig(data2, session,calimodel)
+    val calimap3 = GroupToConfig(data3, session,calimodel)
+    val calimap4 = GroupToConfig(data4, session,calimodel)
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodel)
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(calimodel, califile)
     saveFlatTextFileForDebug(calimodel, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"postcalibration-$calimodel.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"postcalibration-$calimodel.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"postcalibration-$calimodel-test.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"postcalibration-$calimodel-test.mlm", conf))
     }
   }
 
