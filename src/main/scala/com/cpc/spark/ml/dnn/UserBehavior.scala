@@ -81,21 +81,25 @@ object UserBehavior {
 
     println(show_sql)
 
-    spark.sql(show_sql)
+    val tmpDF=spark.sql(show_sql)
       .select($"uid",
         $"show_ideaid",
         $"show_adclass",
         expr("row_number() over (partition by uid order by timestamp desc)").alias("rn"))
       .where("rn <= 5000")
       .coalesce(50)
-      .join(click_data, Seq("uid", "rn"), "left")
-      .write.mode("overwrite")
-      .parquet(s"/warehouse/dl_cpc.db/cpc_user_behaviors/load_date=$date")
+      .join(click_data, Seq("uid", "rn"), "left").cache()
+
+    println("tmpDF count = " + tmpDF.count())
+
+    tmpDF.write.mode("overwrite")
+      .parquet(s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_user_behaviors/load_date=$date")
+
 
     spark.sql(
       s"""
          |alter table dl_cpc.cpc_user_behaviors add partition(load_date='$date')
-         |location '/warehouse/dl_cpc.db/cpc_user_behaviors/load_date=$date'
+         |location 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_user_behaviors/load_date=$date'
       """.stripMargin)
 
     //汇总三天数据
