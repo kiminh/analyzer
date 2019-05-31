@@ -102,4 +102,5 @@ object ReporTagByIndustry {
       case e: Exception => println("exception caught: " + e);
     }
   }
+
 }
