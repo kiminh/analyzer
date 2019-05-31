@@ -72,13 +72,13 @@ object OcpcLightBulbV2{
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
 
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ##########################")
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ##########################")
 
     resultDF
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
