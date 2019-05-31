@@ -85,7 +85,7 @@ object OcpcCvrSmoothV2 {
       .join(adclassList, Seq("identifier"), "left_outer")
       .withColumn("cali_value", when(col("adclass").isNotNull && col("adclass") === 110110100, 1.0).otherwise(col("cali_value")))
 
-    result2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190531")
+//    result2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190531")
 
     val result = result2
       .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
@@ -96,8 +96,8 @@ object OcpcCvrSmoothV2 {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
