@@ -1,6 +1,8 @@
 package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import com.typesafe.config.ConfigFactory
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
@@ -8,7 +10,8 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.model_v4.OcpcCvrSmoothV2._
-
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 import scala.collection.mutable.ListBuffer
 
 object OcpcCvrSmoothV2 {
@@ -73,10 +76,19 @@ object OcpcCvrSmoothV2 {
     val suggestCPA = getCPAsuggest(suggestCpaPath, date, hour, spark)
 
     // 获取cali_value
-    val caliValue = getCaliValue(date, hour, spark)
+    val caliValue = getCaliValueV2(version, date, hour, spark)
 
     // 组装数据
-    val result = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val result1 = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val adclassList = getAdclassWZ(date, hour, media, spark)
+    val result2 = result1
+      .join(adclassList, Seq("identifier"), "left_outer")
+      .withColumn("cali_value", when(col("adclass").isNotNull && col("adclass") === 110110100, 1.0).otherwise(col("cali_value")))
+
+//    result2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190531")
+
+    val result = result2
+      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -90,254 +102,106 @@ object OcpcCvrSmoothV2 {
     savePbPack(resultDF, fileName)
 
   }
-//
-//  def getCaliValue(date: String, hour: String, spark: SparkSession) = {
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  identifier,
-//         |  1.0 / pcoc as cali_value,
-//         |  jfb,
-//         |  kvalue,
-//         |  conversion_goal,
-//         |  version
-//         |FROM
-//         |  dl_cpc.ocpc_kvalue_smooth_strat
-//         |WHERE
-//         |  `date` = '$date'
-//         |AND
-//         |  `hour` = '$hour'
-//         |AND
-//         |  version in ('qtt_hidden', 'qtt_demo')
-//       """.stripMargin
-//    println(sqlRequest)
-//    val rawData = spark.sql(sqlRequest)
-//    val result = rawData
-//      .select("identifier", "conversion_goal", "cali_value")
-//      .groupBy("identifier", "conversion_goal")
-//      .agg(avg(col("cali_value")).alias("cali_value"))
-//      .select("identifier", "cali_value")
-//      .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
-//      .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
-//
-//    result
-//  }
-//
-//  def getCPAsuggest(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {
-//    /*
-//    两条来源：
-//    1. 从mysql读取实时正在跑ocpc的广告单元和对应转化目标，按照unitid和conversion_goal设置对应推荐cpa
-//    2. 从配置文件读取推荐cpa
-//    3. 数据关联，优先配置文件的推荐cpa
-//     */
-//
-//    // 从推荐cpa表中读取：dl_cpc.ocpc_suggest_cpa_k_once
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  cast(unitid as string) identifier,
-//         |  cpa * 100 as cpa_suggest,
-//         |  2 as param_t
-//         |FROM
-//         |  test.ocpc_qtt_light_control_v2
-//       """.stripMargin
-//    println(sqlRequest)
-//    val resultDF  = spark
-//      .sql(sqlRequest)
-//      .groupBy("identifier")
-//      .agg(
-//        min(col("cpa_suggest")).alias("cpa_suggest"),
-//        min(col("param_t")).alias("param_t")
-//      )
-//      .select("identifier", "cpa_suggest", "param_t")
-//
-//    resultDF
-//  }
-//
-//  def assemblyData(cvrData: DataFrame, factorData: DataFrame, expData: DataFrame, suggestCPA: DataFrame, caliValue: DataFrame, spark: SparkSession) = {
-//    /*
-//      identifier      string  NULL
-//      min_bid double  NULL
-//      cvr1    double  NULL
-//      cvr2    double  NULL
-//      cvr3    double  NULL
-//      min_cpm double  NULL
-//      factor1 double  NULL
-//      factor2 double  NULL
-//      factor3 double  NULL
-//      cpc_bid double  NULL
-//      cpa_suggest     double  NULL
-//      param_t double  NULL
-//      cali_value      double  NULL
-//     */
-//    val result = cvrData
-//      .join(factorData, Seq("identifier"), "outer")
-//      .join(expData, Seq("identifier"), "outer")
-//      .join(suggestCPA, Seq("identifier"), "outer")
-//      .join(caliValue, Seq("identifier"), "left_outer")
-//      .select("identifier", "cvr1", "cvr2", "cvr3", "factor1", "factor2", "factor3", "cpc_bid", "cpa_suggest", "param_t", "cali_value")
-//      .withColumn("min_bid", lit(0))
-//      .withColumn("min_cpm", lit(0))
-//      .na.fill(0, Seq("min_bid", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
-//      .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
-//      .na.fill(0.2, Seq("factor1"))
-//      .na.fill(0.5, Seq("factor2", "factor3"))
-//      .na.fill(1.0, Seq("cali_value"))
-//      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
-//
-//    result
-//  }
-//
-//
-//  def getPostCvr(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-//    val cvrType = "cvr" + conversionGoal.toString
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  identifier,
-//         |  post_cvr
-//         |FROM
-//         |  dl_cpc.ocpc_pcoc_jfb_hourly
-//         |WHERE
-//         |  `date` = '$date'
-//         |AND
-//         |  `hour` = '$hour'
-//         |AND
-//         |  version = '$version'
-//         |AND
-//         |  conversion_goal = $conversionGoal
-//       """.stripMargin
-//    println(sqlRequest)
-//    val data = spark.sql(sqlRequest)
-//
-//    val resultDF = data
-//      .select("identifier", "post_cvr")
-//      .groupBy("identifier")
-//      .agg(avg(col("post_cvr")).alias(cvrType))
-//      .select("identifier", cvrType)
-//
-//    resultDF
-//  }
-//
-//  def savePbPack(dataset: DataFrame, filename: String): Unit = {
-//    var list = new ListBuffer[SingleOcpcCpcBid]
-//    println("size of the dataframe")
-//    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3", "cast(cpa_suggest as double) cpa_suggest", "cast(param_t as double) param_t", "cast(cali_value as double) cali_value")
-//    println(resultData.count)
-//    resultData.show(10)
-//    resultData.printSchema()
-//    var cnt = 0
-//
-//    for (record <- resultData.collect()) {
-//      val unit_id = record.getAs[String]("identifier").toLong
-//      val cpc_bid = record.getAs[Double]("cpc_bid")
-//      val min_bid = record.getAs[Double]("min_bid")
-//      val post_cvr1 = record.getAs[Double]("cvr1")
-//      val post_cvr2 = record.getAs[Double]("cvr2")
-//      val post_cvr3 = record.getAs[Double]("cvr3")
-//      val min_cpm = record.getAs[Double]("min_cpm").toLong
-//      val factor1 = record.getAs[Double]("factor1")
-//      val factor2 = record.getAs[Double]("factor2")
-//      val factor3 = record.getAs[Double]("factor3")
-//      val cpa_suggest = record.getAs[Double]("cpa_suggest")
-//      val param_t = record.getAs[Double]("param_t")
-//      val caliValue = record.getAs[Double]("cali_value")
-//
-//
-//      if (cnt % 100 == 0) {
-//        println(s"unit_id:$unit_id, cpc_bid:$cpc_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3, min_bid:$min_bid, cpa_suggest:$cpa_suggest, param_t:$param_t, caliValue:$caliValue")
-//      }
-//      cnt += 1
-//
-//
-//      cnt += 1
-//      val currentItem = SingleOcpcCpcBid(
-//        unitid = unit_id,
-//        cpcBid = cpc_bid,
-//        cvGoal1PostCvr = post_cvr1,
-//        cvGoal2PostCvr = post_cvr2,
-//        cvGoal3PostCvr = post_cvr3,
-//        minCpm = min_cpm,
-//        cvGoal1Smooth = factor1,
-//        cvGoal2Smooth = factor2,
-//        cvGoal3Smooth = factor3,
-//        minBid = min_bid,
-//        cpaSuggest = cpa_suggest,
-//        paramT = param_t,
-//        cvrCalFactor = caliValue
-//      )
-//      list += currentItem
-//
-//    }
-//
-//    val result = list.toArray[SingleOcpcCpcBid]
-//    val adRecordList = OcpcCpcBidList(
-//      adrecord = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(filename))
-//
-//    println("complete save data into protobuffer")
-//
-//  }
-//
-//
-//  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-//    val user = "adv_live_read"
-//    val passwd = "seJzIPUc7xU"
-//    val driver = "com.mysql.jdbc.Driver"
-//    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
-//
-//    val data = spark.read.format("jdbc")
-//      .option("url", url)
-//      .option("driver", driver)
-//      .option("user", user)
-//      .option("password", passwd)
-//      .option("dbtable", table)
-//      .load()
-//
-//    val resultDF = data
-//      .withColumn("unitid", col("id"))
-//      .withColumn("userid", col("user_id"))
-//      .select("unitid",  "conversion_goal")
-//      .distinct()
-//
-//    resultDF.show(10)
-//    resultDF
-//  }
-//
-//  def getCpcBidData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
-//    val data = spark.read.format("json").json(dataPath)
-//
-//    val resultDF = data
-//      .groupBy("identifier")
-//      .agg(
-//        min(col("cpc_bid")).alias("cpc_bid")
-//      )
-//      .select("identifier", "cpc_bid")
-//
-//    resultDF.show(10)
-//    resultDF
-//  }
-//
-//  def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
-//    val data = spark.read.format("json").json(dataPath)
-//
-//    val resultDF = data
-//      .groupBy("unitid")
-//      .agg(
-//        min(col("factor1")).alias("factor1"),
-//        min(col("factor2")).alias("factor2"),
-//        min(col("factor3")).alias("factor3")
-//      )
-//      .withColumn("identifier", col("unitid"))
-//      .selectExpr("cast(identifier as string) identifier", "factor1", "factor2", "factor3")
-//
-//    resultDF.show(10)
-//    resultDF
-//  }
+
+  def getAdclassWZ(date: String, hour: String, media: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -96)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  count(distinct searchid) cnt
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  isclick = 1
+         |GROUP BY unitid, adclass
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  row_number() over(partition by unitid, adclass order by cnt desc) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val data = spark
+      .sql(sqlRequest2)
+      .filter(s"seq = 1")
+      .selectExpr("cast(unitid as string) identifier", "adclass")
+
+    data
+  }
+
+  def getCaliValueV2(version: String, date: String, hour: String, spark: SparkSession) = {
+    // 从dl_cpc.ocpc_kvalue_smooth_strat中组装数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  1.0 / pcoc as cali_value,
+         |  jfb,
+         |  kvalue,
+         |  conversion_goal,
+         |  version
+         |FROM
+         |  dl_cpc.ocpc_kvalue_smooth_strat
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version in ('$version', 'qtt_hidden')
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+
+    // 抽取转化目标
+    val unitCV = getConversionGoal(date, hour, spark)
+    val unitCvGoal = unitCV
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal")
+      .distinct()
+
+
+
+    val result = rawData
+      .select("identifier", "conversion_goal", "cali_value")
+      .groupBy("identifier", "conversion_goal")
+      .agg(avg(col("cali_value")).alias("cali_value"))
+      .join(unitCvGoal, Seq("identifier", "conversion_goal"), "inner")
+      .select("identifier", "cali_value")
+      .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
+      .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
+
+    result
+  }
 
 }
