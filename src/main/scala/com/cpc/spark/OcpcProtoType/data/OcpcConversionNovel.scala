@@ -52,6 +52,7 @@ object OcpcConversionNovel {
     val resultDF = spark
         .sql(sqlRequest)
         .select("searchid", "label")
+        .distinct()
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("cvr_goal", lit(cvrPt))
