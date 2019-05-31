@@ -48,7 +48,7 @@ object MultiDimensionCalibOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, round(adclass/1000) as adclass, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -58,30 +58,37 @@ object MultiDimensionCalibOnMiduCvr {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
+    log.show(10)
 
-    val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
       .filter("count1>100000")
-      .select("ideaid","user_req_ad_num","adslot_id","group")
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
+      .select("adclass","ideaid","user_req_ad_num","adslot_id","group")
+    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
       .filter("count2>100000")
-      .select("ideaid","user_req_ad_num","group")
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
+      .select("adclass","ideaid","user_req_ad_num","group")
+    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter("count3>10000")
       .withColumn("group",col("ideaid"))
-      .select("ideaid","group")
+      .select("adclass","ideaid","group")
+    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
+      .filter("count4>10000")
+      .withColumn("group",col("adclass"))
+      .select("adclass","group")
 
     val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
     val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
     val data3 = log.join(group3,Seq("ideaid"),"inner")
+    val data4 = log.join(group4,Seq("adclass"),"inner")
 
     //create cali pb
     val calimap1 = GroupToConfig(data1, session,calimodelname)
     val calimap2 = GroupToConfig(data2, session,calimodelname)
     val calimap3 = GroupToConfig(data3, session,calimodelname)
-    val calimap4 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodelname)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
+    val calimap4 = GroupToConfig(data4, session,calimodelname)
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodelname)
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
     saveFlatTextFileForDebug(model, califile)
