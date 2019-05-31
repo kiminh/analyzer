@@ -15,6 +15,7 @@ import scala.sys.process._
 /**
   * Created by roydong on 15/12/2017.
   */
+@deprecated
 object SaveFeatures {
 
   Logger.getRootLogger.setLevel(Level.WARN)

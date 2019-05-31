@@ -1,19 +1,15 @@
 package com.cpc.spark.streaming.anal
 
-import kafka.serializer.StringDecoder
-import kafka.serializer.DefaultDecoder
+import com.cpc.spark.common.LogData
+import com.cpc.spark.streaming.parser.StreamingDataParser
+import com.cpc.spark.streaming.tools.MDBManager
+import data.Data
 import kafka.producer.KeyedMessage
+import kafka.serializer.{DefaultDecoder, StringDecoder}
+import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
-import org.apache.spark.SparkConf
-import com.cpc.spark.common.LogData
-import com.cpc.spark.common.Ui
-import com.cpc.spark.common.Event
-import com.cpc.spark.streaming.parser.StreamingDataParser
-import org.apache.spark.rdd.RDD
-import com.cpc.spark.streaming.tools.MDBManager
-import com.mysql.jdbc.Statement
-import data.Data
 
 object CpcStreamingAnal {
   def main(args: Array[String]) {

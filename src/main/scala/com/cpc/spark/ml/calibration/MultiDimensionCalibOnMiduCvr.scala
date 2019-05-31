@@ -25,8 +25,8 @@ object MultiDimensionCalibOnMiduCvr {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = "novel-ctr-dnn-rawid-v7-cali"
-    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
+    val model = "qtt-cvr-dnn-rawid-v1-180"
+    val calimodelname ="qtt-cvr-dnn-rawid-v1-180"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -48,18 +48,13 @@ object MultiDimensionCalibOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
+                 |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 | from dl_cpc.cpc_novel_union_events
-                 | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
-                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-21'
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
@@ -85,7 +80,8 @@ object MultiDimensionCalibOnMiduCvr {
     val calimap1 = GroupToConfig(data1, session,calimodelname)
     val calimap2 = GroupToConfig(data2, session,calimodelname)
     val calimap3 = GroupToConfig(data3, session,calimodelname)
-    val calimap = calimap1 ++ calimap2 ++ calimap3
+    val calimap4 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodelname)
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
     saveFlatTextFileForDebug(model, califile)
@@ -101,7 +97,7 @@ object MultiDimensionCalibOnMiduCvr {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","cvr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
