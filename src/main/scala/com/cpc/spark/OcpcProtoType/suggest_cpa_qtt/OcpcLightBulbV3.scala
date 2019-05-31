@@ -42,6 +42,8 @@ object OcpcLightBulbV3{
     println(s"############## cleaning redis database ##########################")
     cleanRedis(version, date, hour, spark)
 
+    println(s"############## finish cleaning redis database ##########################")
+
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ################")
