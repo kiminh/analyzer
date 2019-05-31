@@ -1,6 +1,8 @@
 package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import com.typesafe.config.ConfigFactory
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
@@ -8,6 +10,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.model_v4.OcpcCvrSmoothV2._
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 
 import scala.collection.mutable.ListBuffer
 
@@ -76,7 +79,16 @@ object OcpcCvrSmoothV2 {
     val caliValue = getCaliValueV2(version, date, hour, spark)
 
     // 组装数据
-    val result = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val result1 = assemblyData(cvrData, factorData, expData, suggestCPA, caliValue, spark)
+    val adclassList = getAdclassWZ(date, hour, media, spark)
+    val result2 = result1
+      .join(adclassList, Seq("identifier"), "left_outer")
+      .withColumn("cali_value", when(col("adclass").isNotNull && col("adclass") === 110110100, 1.0).otherwise(col("cali_value")))
+
+    result2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190531")
+
+    val result = result2
+      .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cast(cpc_bid as double) cpc_bid", "cpa_suggest", "param_t", "cali_value")
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -84,14 +96,73 @@ object OcpcCvrSmoothV2 {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(resultDF, fileName)
 
   }
 
+  def getAdclassWZ(date: String, hour: String, media: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -96)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  count(distinct searchid) cnt
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  isclick = 1
+         |GROUP BY unitid, adclass
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  row_number() over(partition by unitid, adclass order by cnt desc) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val data = spark
+      .sql(sqlRequest2)
+      .filter(s"seq = 1")
+      .selectExpr("cast(unitid as string) identifier", "adclass")
+
+    data
+  }
+
   def getCaliValueV2(version: String, date: String, hour: String, spark: SparkSession) = {
+    // 从dl_cpc.ocpc_kvalue_smooth_strat中组装数据
     val sqlRequest =
       s"""
          |SELECT
