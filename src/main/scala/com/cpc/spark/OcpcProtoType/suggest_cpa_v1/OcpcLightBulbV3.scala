@@ -153,13 +153,7 @@ object OcpcLightBulbV3{
       val identifier = record.getAs[Int]("unitid").toString
       val valueDouble = record.getAs[Double]("cpa")
       var key = "new_algorithm_unit_ocpc_" + identifier
-      if (valueDouble >= 0) {
-        var valueString = valueDouble.toString
-        if (valueString == "0.0") {
-          valueString = "0"
-        }
-        println(s"key:$key, value:$valueString")
-      }
+      println(s"key:$key")
     }
 
 //    data.foreachPartition(iterator => {
