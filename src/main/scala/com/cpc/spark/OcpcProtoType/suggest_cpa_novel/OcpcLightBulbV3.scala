@@ -3,8 +3,10 @@ package com.cpc.spark.OcpcProtoType.suggest_cpa_novel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcLightBulbV3.{cleanRedis, saveDataToRedis}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcLightBulbV3._
 
 
 object OcpcLightBulbV3{
@@ -36,80 +38,17 @@ object OcpcLightBulbV3{
     resultDF
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_daily")
 
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(version, date, hour, spark)
+
+    println(s"############## finish cleaning redis database ##########################")
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
+
 
   }
-
-  def getUpdateTable(date: String, version: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  conversion_goal,
-         |  cpa
-         |FROM
-         |  dl_cpc.ocpc_light_control_daily
-         |WHERE
-         |  `date` = '$date1'
-         |AND
-         |  version = '$version'
-       """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark
-      .sql(sqlRequest1)
-      .groupBy("unitid", "conversion_goal")
-      .agg(min(col("cpa")).alias("prev_cpa"))
-      .select("unitid", "conversion_goal", "prev_cpa")
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  conversion_goal,
-         |  cpa
-         |FROM
-         |  dl_cpc.ocpc_light_control_version
-         |WHERE
-         |  version = '$version'
-       """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark
-      .sql(sqlRequest2)
-      .groupBy("unitid", "conversion_goal")
-      .agg(min(col("cpa")).alias("current_cpa"))
-      .select("unitid", "conversion_goal", "current_cpa")
-
-    // 数据关联
-    val data = data2
-      .join(data1, Seq("unitid", "conversion_goal"), "outer")
-      .select("unitid", "conversion_goal", "current_cpa", "prev_cpa")
-      .na.fill(-1, Seq("current_cpa", "prev_cpa"))
-      .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
-
-//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190525")
-
-    data
-
-  }
-
-  def udfSetLightSwitch() = udf((currentCPA: Double, prevCPA: Double) => {
-    var result = 1
-    if (currentCPA >= 0) {
-      result = 1
-    } else {
-      result = 0
-    }
-    result
-  })
-
-
 
 }
