@@ -11,7 +11,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.model_v4.OcpcCvrSmoothV2._
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 import scala.collection.mutable.ListBuffer
 
 object OcpcCvrSmoothV2 {
@@ -163,7 +163,7 @@ object OcpcCvrSmoothV2 {
 
   def getCaliValueV2(version: String, date: String, hour: String, spark: SparkSession) = {
     // 从dl_cpc.ocpc_kvalue_smooth_strat中组装数据
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |  identifier,
@@ -179,14 +179,24 @@ object OcpcCvrSmoothV2 {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version = '$version'
+         |  version in ('$version', 'qtt_hidden')
        """.stripMargin
-    println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+
+    // 抽取转化目标
+    val unitCV = getConversionGoal(date, hour, spark)
+    val unitCvGoal = unitCV
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal")
+      .distinct()
+
+
+
     val result = rawData
       .select("identifier", "conversion_goal", "cali_value")
       .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cali_value")).alias("cali_value"))
+      .join(unitCvGoal, Seq("identifier", "conversion_goal"), "inner")
       .select("identifier", "cali_value")
       .withColumn("cali_value", when(col("cali_value") < 0.1, 0.1).otherwise(col("cali_value")))
       .withColumn("cali_value", when(col("cali_value") > 3.0, 3.0).otherwise(col("cali_value")))
