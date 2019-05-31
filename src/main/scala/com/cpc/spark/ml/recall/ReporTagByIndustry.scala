@@ -59,6 +59,7 @@ object ReporTagByIndustry {
         |	b.category as class_id,
         | b.name as name,
         |	a.tag as tag,
+        | a.name as tag_name,
         |	cast(cast(sum(a.ctrwithtag) as string) as int) as ctrwithtag,
         |cast(cast(sum(a.ctrwithouttag) as string) as int) as ctrwithouttag,
         |	cast(sum(a.costwithtag) as double) as costwithtag,
@@ -78,7 +79,8 @@ object ReporTagByIndustry {
         |group by
         |	b.category,
         | b.name,
-        |	a.tag
+        |	a.tag,
+        | a.name
       """.stripMargin).repartition(100).
       write.mode(SaveMode.Append).jdbc(tagReport2dbUrl, "report2.cpc_profiletag_report_v1", tagReport2dbProp)
 
