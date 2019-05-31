@@ -35,6 +35,13 @@ object OcpcLightBulbV3{
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_daily")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
 
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(version, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
   }
 
