@@ -42,7 +42,16 @@ object OcpcLightBulbV3{
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_daily")
+
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(version, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
 
 
   }
@@ -118,6 +127,108 @@ object OcpcLightBulbV3{
     result
   })
 
+
+  def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    将对应key的值设成空的json字符串
+     */
+    val data = spark
+      .table("dl_cpc.ocpc_light_api_control_daily")
+      .where(s"version = '$version' and `date` = '$date' and ocpc_light = 0")
+      .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
+      .repartition(2)
+    //    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
+    data.show(10)
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    // 测试
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
+        }
+        println(s"key:$key, value:$valueString")
+      }
+    }
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          redis.del(key)
+//        }
+//      }
+//      redis.disconnect
+//    })
+  }
+
+  def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_light_api_control_daily")
+      .where(s"version = '$version' and `date` = '$date' and ocpc_light = 1")
+      .selectExpr("unitid", "cast(round(cpa, 2) as double) as cpa")
+      .repartition(2)
+
+    data.show(10)
+    data.printSchema()
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    // 测试
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
+        }
+        println(s"key:$key, value:$valueString")
+      }
+    }
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          val valueDouble = record.getAs[Double]("cpa")
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          if (valueDouble >= 0) {
+//            var valueString = valueDouble.toString
+//            if (valueString == "0.0") {
+//              valueString = "0"
+//            }
+//            println(s"key:$key, value:$valueString")
+//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+//          }
+//        }
+//      }
+//      redis.disconnect
+//    })
+  }
 
 
 }
