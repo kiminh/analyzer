@@ -305,11 +305,13 @@ object eCPCforUsertype2 {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 0
+         |AND
+         |  usertype = 2
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .filter(s"industry in ('elds', 'feedapp', 'wz')")
+      .filter(s"industry in ('feedapp', 'wz')")
       .withColumn("conversion_goal", udfDecideConversionGoal()(col("industry"), col("is_api_callback")))
 
     val sqlRequest1 =

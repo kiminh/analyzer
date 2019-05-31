@@ -5,15 +5,12 @@ import java.util.{Calendar, Date}
 
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.cpc.spark.streaming.tools.Gzip
-import com.redis.RedisClient
-import com.redis.serialization.Parse.Implicits._
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import redis.clients.jedis.{HostAndPort, JedisCluster}
-import userprofile.Userprofile.{APPPackage, UserProfile, UserProfileV2}
+import userprofile.Userprofile.{APPPackage, UserProfileV2}
 
 
 /**
@@ -53,8 +50,8 @@ object UpdateInstallApp {
 
     val stmt =
       """
-        |select trace_op1, trace_op2, trace_op3 from dl_cpc.logparsed_cpc_trace_minute
-        |where `thedate` = "%s" and trace_type = "%s"
+        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_basedata_trace_event
+        |where `day` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
@@ -142,7 +139,7 @@ object UpdateInstallApp {
     added.map(x => (x._1, x._2._1)).take(10).foreach(println)
 
 //    保存新增数据 redis
-    val sum = added.map(x => (x._1, x._2._1))
+    /*val sum = added.map(x => (x._1, x._2._1))
       .repartition(100)
       .mapPartitions {
         p =>
@@ -190,7 +187,7 @@ object UpdateInstallApp {
       .reduceByKey(_ + _)
       .take(10)
     println("update redis")
-    sum.foreach(println)
+    sum.foreach(println)*/
 
     //新增数据迁移至新的redis集群
     val result = added.map(x => (x._1, x._2._1))
