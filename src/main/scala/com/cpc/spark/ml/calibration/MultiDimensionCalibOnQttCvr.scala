@@ -55,7 +55,7 @@ object MultiDimensionCalibOnQttCvr {
 
     // get union log
     val clicksql = s"""
-                 |select iscvr as isclick, searrchid, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name, adslotid, ideaid,
+                 |select searrchid, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name, adslotid, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -88,6 +88,7 @@ object MultiDimensionCalibOnQttCvr {
       .filter("iscvr = 1")
       .select("searchid", "iscvr")
     val log = clickData.join(cvrData,Seq("searchid"),"left")
+        .withColumn("isclick",col("iscvr"))
     log.show(10)
 
     LogToPb(log, session, model, softMode)
