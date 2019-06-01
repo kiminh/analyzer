@@ -64,7 +64,7 @@ object MultiDimensionCalibOnQttCvr {
                  |  from dl_cpc.slim_union_log
                  |  where $timeRangeSql
                  |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name = $model
+                 |  and cvr_model_name = '$model'
                  |  and ideaid > 0 and adsrc = 1 AND userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
