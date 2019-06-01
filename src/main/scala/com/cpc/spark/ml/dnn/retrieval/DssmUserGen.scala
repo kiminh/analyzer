@@ -51,6 +51,7 @@ object DssmUserGen {
 
     val date = args(0)
     val firstTime = args(1).toBoolean
+    val lastDate = args(2)
 
     val userInfo = getData(spark, date)
 
@@ -61,7 +62,7 @@ object DssmUserGen {
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
 
-      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info")
+      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + lastDate)
       allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
         .cogroup(keyedUser)
         .map {
@@ -100,7 +101,7 @@ object DssmUserGen {
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
-      .parquet("/user/cpc/hzh/dssm/all-user-info")
+      .parquet("/user/cpc/hzh/dssm/all-user-info/" + date)
 
     finalOutput.repartition(100)
       .write
@@ -115,7 +116,6 @@ object DssmUserGen {
       s"""
          |select uid, content from dl_cpc.user_day_feature
          |where dt = '$date' and (pt = 'merge' or pt = 'app')
-         |limit 10000
        """.stripMargin
     ).rdd.groupBy(row => row.getAs[String]("uid")).flatMap(x => {
       var featureList = new ListBuffer[(String, Int, Seq[String])]()
@@ -181,7 +181,6 @@ object DssmUserGen {
          |  and uid not like "%000000%" -- 去除无效uid
          |  and length(uid) in (14, 15, 36) -- 去除无效uid
          |group by uid
-         |limit 10000
       """.stripMargin
     println("--------------------------------")
     println(sql)
