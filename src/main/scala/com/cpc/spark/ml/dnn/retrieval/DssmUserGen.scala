@@ -128,13 +128,14 @@ object DssmUserGen {
       val uid = x._1
       x._2.foreach(row => {
         val fs = FeatureStore.newBuilder().mergeFrom(Base64.decodeBase64(row.getAs[String]("content")))
-        if (featureSizeCounter.value <= 10) {
-          println(user_day_feature_map)
-        }
+//        if (featureSizeCounter.value <= 10) {
+//          println(user_day_feature_map)
+//        }
         featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
-          if (user_day_feature_map.contains(name)) {
+          if (true) {
+//          if (user_day_feature_map.contains(name)) {
             featureSizeMatchCounter.add(1)
             val featureType = feature.getType
             var featureValue = Seq[String]()
@@ -167,8 +168,9 @@ object DssmUserGen {
       })
       (uid, multiArray)
     })
-    println(featureSizeCounter.value)
-    println(featureSizeMatchCounter.value)
+    println("result: " + result.count())
+    println("feature size: " + featureSizeCounter.value)
+    println("feature match size: " + featureSizeMatchCounter.value)
     result
   }
 
