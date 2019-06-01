@@ -28,7 +28,7 @@ object MultiDimensionCalibOnQttV2 {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = "qtt-list-dnn-rawid-v4"
+    val model = args(4)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
@@ -50,7 +50,7 @@ object MultiDimensionCalibOnQttV2 {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass, ctr_model_name, adslotid, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
