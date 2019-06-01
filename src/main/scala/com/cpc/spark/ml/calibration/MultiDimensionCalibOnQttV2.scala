@@ -8,6 +8,7 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -22,6 +23,7 @@ object MultiDimensionCalibOnQttV2 {
   val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // parse and process input
     val endDate = args(0)
@@ -106,8 +108,8 @@ object MultiDimensionCalibOnQttV2 {
     saveFlatTextFileForDebug(model, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model-test.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model-test.mlm", conf))
     }
   }
 
