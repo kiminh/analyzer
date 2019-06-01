@@ -118,6 +118,7 @@ object DssmUserGen {
     val sql = s"""
                  |select uid, content from dl_cpc.user_day_feature
                  |where dt = '$date' and (pt = 'merge' or pt = 'app')
+                 |limit 10000
        """.stripMargin
     println(sql)
     val df = spark.sql(sql)
@@ -154,7 +155,7 @@ object DssmUserGen {
                 }
               }
             }
-            featureList += ((uid, user_day_feature_map.getOrElse(name, -1), featureValue.toSeq))
+            featureList += ((uid, user_day_feature_map.getOrElse(name, 0), featureValue.toSeq))
           }
         }
       })
