@@ -32,18 +32,32 @@ object DssmUserGen {
     "c_list_ideaid_4_7",
     "c_list_adclass_4_7"
   )
-  var user_day_feature_map: mutable.Map[String, Int] = mutable.Map[String, Int]()
+  var user_day_feature_map: Map[String, Int] = Map[String, Int](
+    "app" -> 0,
+    "s_list_ideaid_1" -> 1,
+  "s_list_ideaid_3" -> 2,
+  "s_list_adclass_1" -> 3,
+  "s_list_adclass_2" -> 4,
+  "s_list_adclass_3" -> 5,
+  "c_list_ideaid_1" -> 6,
+  "c_list_ideaid_2" -> 7,
+  "c_list_ideaid_3" -> 8,
+  "c_list_adclass_1" -> 9,
+  "c_list_adclass_2" -> 10,
+  "c_list_adclass_3" -> 11,
+  "c_list_ideaid_4_7" -> 12,
+  "c_list_adclass_4_7" -> 13
+  )
 
-  def set_user_day_map(): Unit = {
-    var index = 0
-    for (ele <- user_day_feature_list) {
-      user_day_feature_map += (ele -> index)
-      index += 1
-    }
-  }
+//  def set_user_day_map(): Unit = {
+//    var index = 0
+//    for (ele <- user_day_feature_list) {
+//      user_day_feature_map += (ele -> index)
+//      index += 1
+//    }
+//  }
 
   def main(args: Array[String]): Unit = {
-    set_user_day_map()
 
     val spark = SparkSession.builder()
       .appName("dssm-user-gen")
@@ -132,8 +146,8 @@ object DssmUserGen {
         featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
-          if (true) {
-//          if (user_day_feature_map.contains(name)) {
+//          if (true) {
+          if (user_day_feature_map.contains(name)) {
             featureSizeMatchCounter.add(1)
             val featureType = feature.getType
             val featureValue = mutable.ArrayBuffer[String]()
