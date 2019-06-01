@@ -55,17 +55,23 @@ object MultiDimensionCalibOnQttCvr {
 
     // get union log
     val clicksql = s"""
-                 |select searchid, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name as model, adslotid, ideaid,
+                 |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
+                 |a.cvr_model_name as model, a.adslotid, a.ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 |  from dl_cpc.slim_union_log
+                 |  from dl_cpc.slim_union_log a
+                 |  join dl_cpc.dw_unitid_detail b
+                 |    on a.unitid = b.unitid
+                 |    and a.`date`  = b.day
+                 |    and b.$selectCondition2
+                 |    and b.conversion_target[0] not in ('none','site_uncertain')
                  |  where $timeRangeSql
-                 |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name = '$model'
-                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
+                 |  and a.$mediaSelection and isclick = 1
+                 |  and a.cvr_model_name = '$model'
+                 |  and a.ideaid > 0 and a.adsrc = 1 AND a.userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$clicksql")
