@@ -28,7 +28,8 @@ object MultiDimensionCalibOnQttV2 {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = args(4)
+    val media = args(4)
+    val model = args(5)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
