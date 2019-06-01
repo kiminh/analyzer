@@ -55,7 +55,7 @@ object MultiDimensionCalibOnQttCvr {
 
     // get union log
     val clicksql = s"""
-                 |select searchid, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name, adslotid, ideaid,
+                 |select searchid, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name as model, adslotid, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
@@ -140,7 +140,7 @@ object MultiDimensionCalibOnQttCvr {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","ctr_model_name","group")
+    val result = data.select("isclick","ectr","model","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
