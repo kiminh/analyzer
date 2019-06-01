@@ -44,7 +44,6 @@ object DssmUserGen {
 
   def main(args: Array[String]): Unit = {
     set_user_day_map()
-    print(user_day_feature_map)
 
     val spark = SparkSession.builder()
       .appName("dssm-user-gen")
