@@ -44,6 +44,7 @@ object DssmUserGen {
 
   def main(args: Array[String]): Unit = {
     set_user_day_map()
+    print(user_day_feature_map)
 
     val spark = SparkSession.builder()
       .appName("dssm-user-gen")
@@ -113,7 +114,9 @@ object DssmUserGen {
   }
 
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
-    spark.sql(
+    val featureSizeCounter = spark.sparkContext.longAccumulator("inner_userDayCounter")
+    val featureSizeMatchCounter = spark.sparkContext.longAccumulator("inner_userDayCounter_match")
+    val result = spark.sql(
       s"""
          |select uid, content from dl_cpc.user_day_feature
          |where dt = '$date' and (pt = 'merge' or pt = 'app')
@@ -123,9 +126,14 @@ object DssmUserGen {
       val uid = x._1
       x._2.foreach(row => {
         val fs = FeatureStore.newBuilder().mergeFrom(Base64.decodeBase64(row.getAs[String]("content")))
+        if (featureSizeCounter.value <= 10) {
+          println(user_day_feature_map)
+        }
+        featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
           if (user_day_feature_map.contains(name)) {
+            featureSizeMatchCounter.add(1)
             val featureType = feature.getType
             var featureValue = Seq[String]()
             // str: 1/ int: 2 / float: 3
@@ -157,6 +165,9 @@ object DssmUserGen {
       })
       (uid, multiArray)
     })
+    println(featureSizeCounter.value)
+    println(featureSizeMatchCounter.value)
+    result
   }
 
   def getUserLogFeatures(spark: SparkSession, date: String): RDD[(String, Array[Long])] = {
@@ -264,8 +275,7 @@ object DssmUserGen {
           x._1._3._4
         )
       }
-      .toDF("sample_idx", "uid",
-        "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
+      .toDF("sample_idx", "uid", "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
     println("user day match count: " + userDayCounter.value)
     for (i <- featureCounters.indices) {
       println(s"${user_day_feature_list(i)} match counts: ${featureCounters(i).value}")
