@@ -65,8 +65,8 @@ object MultiDimensionCalibOnQttCvr {
                  |  from dl_cpc.slim_union_log a
                  |  join dl_cpc.dw_unitid_detail b
                  |    on a.unitid = b.unitid
-                 |    and a.`date`  = b.day
-                 |    and b.$selectCondition2
+                 |    and a.dt  = b.day
+                 |    and $selectCondition2
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
                  |  where $timeRangeSql
                  |  and a.$mediaSelection and isclick = 1
