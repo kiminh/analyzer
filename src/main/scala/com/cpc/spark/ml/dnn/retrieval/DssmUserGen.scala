@@ -116,12 +116,15 @@ object DssmUserGen {
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
     val featureSizeCounter = spark.sparkContext.longAccumulator("inner_userDayCounter")
     val featureSizeMatchCounter = spark.sparkContext.longAccumulator("inner_userDayCounter_match")
-    val result = spark.sql(
-      s"""
-         |select uid, content from dl_cpc.user_day_feature
-         |where dt = '$date' and (pt = 'merge' or pt = 'app')
+    val sql = s"""
+                 |select uid, content from dl_cpc.user_day_feature
+                 |where dt = '$date' and (pt = 'merge' or pt = 'app')
        """.stripMargin
-    ).rdd.groupBy(row => row.getAs[String]("uid")).flatMap(x => {
+    println(sql)
+    val df = spark.sql(sql)
+    println("user day df count: " + df.count())
+    println(user_day_feature_map)
+    val result = df.rdd.groupBy(row => row.getAs[String]("uid")).flatMap(x => {
       var featureList = new ListBuffer[(String, Int, Seq[String])]()
       val uid = x._1
       x._2.foreach(row => {
