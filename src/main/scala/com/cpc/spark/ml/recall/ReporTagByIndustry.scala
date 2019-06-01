@@ -1,9 +1,6 @@
 package com.cpc.spark.ml.recall
-
 import java.sql.DriverManager
 import java.util.Properties
-
-import com.cpc.spark.ml.recall.report_userprofile_effect.{mariaReport2dbProp, mariaReport2dbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -89,9 +86,9 @@ object ReporTagByIndustry {
   def clearReportData(date: String): Unit = {
     try {
       val conn = DriverManager.getConnection(
-        mariaReport2dbUrl,
-        mariaReport2dbProp.getProperty("user"),
-        mariaReport2dbProp.getProperty("password"))
+        tagReport2dbUrl,
+        tagReport2dbProp.getProperty("user"),
+        tagReport2dbProp.getProperty("password"))
       val stmt = conn.createStatement()
       val sql =
         """
@@ -102,5 +99,6 @@ object ReporTagByIndustry {
       case e: Exception => println("exception caught: " + e);
     }
   }
+
 
 }
