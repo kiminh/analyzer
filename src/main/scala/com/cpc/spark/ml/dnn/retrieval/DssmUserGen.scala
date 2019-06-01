@@ -35,27 +35,19 @@ object DssmUserGen {
   var user_day_feature_map: Map[String, Int] = Map[String, Int](
     "app" -> 0,
     "s_list_ideaid_1" -> 1,
-  "s_list_ideaid_3" -> 2,
-  "s_list_adclass_1" -> 3,
-  "s_list_adclass_2" -> 4,
-  "s_list_adclass_3" -> 5,
-  "c_list_ideaid_1" -> 6,
-  "c_list_ideaid_2" -> 7,
-  "c_list_ideaid_3" -> 8,
-  "c_list_adclass_1" -> 9,
-  "c_list_adclass_2" -> 10,
-  "c_list_adclass_3" -> 11,
-  "c_list_ideaid_4_7" -> 12,
-  "c_list_adclass_4_7" -> 13
+    "s_list_ideaid_3" -> 2,
+    "s_list_adclass_1" -> 3,
+    "s_list_adclass_2" -> 4,
+    "s_list_adclass_3" -> 5,
+    "c_list_ideaid_1" -> 6,
+    "c_list_ideaid_2" -> 7,
+    "c_list_ideaid_3" -> 8,
+    "c_list_adclass_1" -> 9,
+    "c_list_adclass_2" -> 10,
+    "c_list_adclass_3" -> 11,
+    "c_list_ideaid_4_7" -> 12,
+    "c_list_adclass_4_7" -> 13
   )
-
-//  def set_user_day_map(): Unit = {
-//    var index = 0
-//    for (ele <- user_day_feature_list) {
-//      user_day_feature_map += (ele -> index)
-//      index += 1
-//    }
-//  }
 
   def main(args: Array[String]): Unit = {
 
@@ -129,10 +121,11 @@ object DssmUserGen {
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
     val featureSizeCounter = spark.sparkContext.longAccumulator("inner_userDayCounter")
     val featureSizeMatchCounter = spark.sparkContext.longAccumulator("inner_userDayCounter_match")
-    val sql = s"""
-                 |select uid, content from dl_cpc.user_day_feature
-                 |where dt = '$date' and (pt = 'merge' or pt = 'app')
-                 |limit 10000
+    val sql =
+      s"""
+         |select uid, content from dl_cpc.user_day_feature
+         |where dt = '$date' and (pt = 'merge' or pt = 'app')
+         |limit 10000
        """.stripMargin
     println(sql)
     val df = spark.sql(sql)
@@ -146,7 +139,7 @@ object DssmUserGen {
         featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
-//          if (true) {
+          //          if (true) {
           if (user_day_feature_map.contains(name)) {
             featureSizeMatchCounter.add(1)
             val featureType = feature.getType
@@ -277,7 +270,6 @@ object DssmUserGen {
     for (i <- featureCounters.indices) {
       featureCounters(i) = spark.sparkContext.longAccumulator("feature_counter_" + user_day_feature_list(i))
     }
-
     val result = userLogFeatures.leftOuterJoin(userDayFeatures).map(x => {
       val uid = x._1
       val dense = x._2._1.toSeq
@@ -298,11 +290,11 @@ object DssmUserGen {
         )
       }
       .toDF("sample_idx", "uid", "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
+    println("result joined size: " + result.count())
     println("user day match count: " + userDayCounter.value)
     for (i <- featureCounters.indices) {
       println(s"${user_day_feature_list(i)} match counts: ${featureCounters(i).value}")
     }
-
     result
   }
 }
