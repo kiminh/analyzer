@@ -173,7 +173,6 @@ object OcpcSmoothFactorNovelV3{
          |and size(conversion_target)>0) a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
-         |    and a.day = b.day
          |    and b.$selectCondition3
        """.stripMargin
     println(sqlRequest2)
