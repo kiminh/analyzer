@@ -142,7 +142,7 @@ object DssmUserGen {
             // str: 1/ int: 2 / float: 3
             featureType match {
               case 1 => if (feature.getStrListCount > 0) {
-                featureValue = feature.getStrListList
+                featureValue = feature.getStrListList.toSeq
               }
               case 2 => if (feature.getIntListCount > 0) {
                 featureValue = feature.getIntListList.map(_.toString)
