@@ -284,30 +284,30 @@ object OcpcCvrSmoothV2 {
   }
 
 
-  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
-
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .select("unitid",  "conversion_goal")
-      .distinct()
-
-    resultDF.show(10)
-    resultDF
-  }
+//  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+//    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null and is_ocpc=1) as tmp"
+//
+//    val data = spark.read.format("jdbc")
+//      .option("url", url)
+//      .option("driver", driver)
+//      .option("user", user)
+//      .option("password", passwd)
+//      .option("dbtable", table)
+//      .load()
+//
+//    val resultDF = data
+//      .withColumn("unitid", col("id"))
+//      .withColumn("userid", col("user_id"))
+//      .select("unitid",  "conversion_goal")
+//      .distinct()
+//
+//    resultDF.show(10)
+//    resultDF
+//  }
 
   def getCpcBidData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark.read.format("json").json(dataPath)

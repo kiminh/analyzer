@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.dnn.dssm
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -13,6 +14,9 @@ import org.apache.spark.sql.functions._
   */
 object UserBehavior {
   def main(args: Array[String]): Unit = {
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+
     val spark = SparkSession.builder()
       .enableHiveSupport()
       .getOrCreate()

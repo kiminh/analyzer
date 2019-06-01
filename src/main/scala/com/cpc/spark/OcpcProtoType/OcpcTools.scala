@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v4
+package com.cpc.spark.OcpcProtoType
 
 import java.io.FileOutputStream
 
