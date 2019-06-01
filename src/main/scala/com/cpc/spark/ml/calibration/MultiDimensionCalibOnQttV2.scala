@@ -51,7 +51,7 @@ object MultiDimensionCalibOnQttV2 {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass, ctr_model_name as model, adslotid, ideaid,
+                 |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass, ctr_model_name as model, adslotid, ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
