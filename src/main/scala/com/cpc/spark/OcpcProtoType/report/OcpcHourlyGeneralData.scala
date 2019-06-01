@@ -198,7 +198,7 @@ object OcpcHourlyGeneralData {
       .withColumn("high_cost", col("ocpc_cost") -  col("pred_cost") * 1.2)
       .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
 
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423a")
+//    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
@@ -312,8 +312,6 @@ object OcpcHourlyGeneralData {
          |  $selectCondition
          |AND
          |  $mediaSelection
-         |AND
-         |  isclick = 1
          |AND
          |  is_ocpc = 1
          |and round(adclass/1000) != 132101  --去掉互动导流
