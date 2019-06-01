@@ -111,21 +111,21 @@ object MultiDimensionCalibOnQttV2 {
     }
   }
 
-  def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
+  def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("isclick","ectr","model","group")
       .rdd.map( x => {
       var isClick = 0d
-      if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
+      if (x.get(0) != null) {
+        isClick = x.getInt(0).toDouble
       }
-      val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(5)
-      val group = x.getString(6)
-      val key = calimodel + "_" + group
+      val ectr = x.getLong(1).toDouble / 1e6d
+      val model = x.getString(2)
+      val group = x.getString(3)
+      val key = model + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
