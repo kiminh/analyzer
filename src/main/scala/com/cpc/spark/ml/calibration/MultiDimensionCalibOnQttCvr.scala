@@ -28,7 +28,7 @@ object MultiDimensionCalibOnQttCvr {
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
     val media = args(4)
-    val model = "qtt-cvr-dnn-rawid-v1-180"
+    val model = args(5)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
