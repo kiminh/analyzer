@@ -125,7 +125,6 @@ object DssmUserGen {
       s"""
          |select uid, content from dl_cpc.user_day_feature
          |where dt = '$date' and (pt = 'merge' or pt = 'app')
-         |limit 10000
        """.stripMargin
     println(sql)
     val df = spark.sql(sql)
