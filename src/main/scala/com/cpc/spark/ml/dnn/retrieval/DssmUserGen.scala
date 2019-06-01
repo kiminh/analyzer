@@ -113,7 +113,9 @@ object DssmUserGen {
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
     spark.sql(
       s"""
-         |select uid, content from dl_cpc.user_day_feature where dt = '$date' and (pt = 'merge' or pt = 'app')
+         |select uid, content from dl_cpc.user_day_feature
+         |where dt = '$date' and (pt = 'merge' or pt = 'app')
+         |limit 10000
        """.stripMargin
     ).rdd.groupBy(row => row.getAs[String]("uid")).flatMap(x => {
       var featureList = new ListBuffer[(String, Int, Seq[String])]()
@@ -179,6 +181,7 @@ object DssmUserGen {
          |  and uid not like "%000000%" -- 去除无效uid
          |  and length(uid) in (14, 15, 36) -- 去除无效uid
          |group by uid
+         |limit 10000
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -213,7 +216,7 @@ object DssmUserGen {
     // add default hash when value is null
     if (value == null || value.length == 0) {
       for (i <- user_day_feature_list.indices) {
-        re ++= Seq(i, 0, Murmur3Hash.stringHash64("u" + i.toString, 0))
+        re ++= Seq((i, 0, Murmur3Hash.stringHash64("u" + i.toString, 0)))
       }
     } else {
       for (feature <- value) {
