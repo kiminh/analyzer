@@ -29,8 +29,6 @@ object MultiDimensionCalibOnQttV2 {
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
     val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
-
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
@@ -61,17 +59,22 @@ object MultiDimensionCalibOnQttV2 {
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
-                 | and ctr_model_name in ('$model','$calimodel')
+                 | and ctr_model_name = '$model'
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
+    log.show(10)
 
-    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+    LogToPb(log, session, model, softMode)
+  }
+
+  def LogToPb(log:DataFrame, session: SparkSession, model: String, softMode:Int)={
+    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .filter("count1>100000")
-      .select("adclass","ideaid","user_req_ad_num","adslot_id","group")
+      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
     val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
       .filter("count2>100000")
@@ -85,28 +88,27 @@ object MultiDimensionCalibOnQttV2 {
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslot_id"),"inner")
+    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
     val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
     val data4 = log.join(group4,Seq("adclass"),"inner")
 
     //create cali pb
-    val calimap1 = GroupToConfig(data1, session,calimodel)
-    val calimap2 = GroupToConfig(data2, session,calimodel)
-    val calimap3 = GroupToConfig(data3, session,calimodel)
-    val calimap4 = GroupToConfig(data4, session,calimodel)
-    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,calimodel)
+    val calimap1 = GroupToConfig(data1, session,model)
+    val calimap2 = GroupToConfig(data2, session,model)
+    val calimap3 = GroupToConfig(data3, session,model)
+    val calimap4 = GroupToConfig(data4, session,model)
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal(calimodel, califile)
-    saveFlatTextFileForDebug(calimodel, califile)
+    val localPath = saveProtoToLocal(model, califile)
+    saveFlatTextFileForDebug(model, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"postcalibration-$calimodel-test.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"postcalibration-$calimodel-test.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
     }
   }
-
 
   def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
