@@ -128,9 +128,6 @@ object DssmUserGen {
       val uid = x._1
       x._2.foreach(row => {
         val fs = FeatureStore.newBuilder().mergeFrom(Base64.decodeBase64(row.getAs[String]("content")))
-//        if (featureSizeCounter.value <= 10) {
-//          println(user_day_feature_map)
-//        }
         featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
@@ -138,20 +135,26 @@ object DssmUserGen {
 //          if (user_day_feature_map.contains(name)) {
             featureSizeMatchCounter.add(1)
             val featureType = feature.getType
-            var featureValue = Seq[String]()
+            val featureValue = mutable.ArrayBuffer[String]()
             // str: 1/ int: 2 / float: 3
             featureType match {
               case 1 => if (feature.getStrListCount > 0) {
-                featureValue = feature.getStrListList.toSeq
+                for (fv <- feature.getStrListList) {
+                  featureValue.add(fv)
+                }
               }
               case 2 => if (feature.getIntListCount > 0) {
-                featureValue = feature.getIntListList.map(_.toString)
+                for (fv <- feature.getIntListList) {
+                  featureValue.add(fv.toString)
+                }
               }
               case 3 => if (feature.getFloatListCount > 0) {
-                featureValue = feature.getFloatListList.map(_.toString)
+                for (fv <- feature.getFloatListList) {
+                  featureValue.add(fv.toString)
+                }
               }
             }
-            featureList += ((uid, user_day_feature_map.getOrElse(name, -1), featureValue))
+            featureList += ((uid, user_day_feature_map.getOrElse(name, -1), featureValue.toSeq))
           }
         }
       })
