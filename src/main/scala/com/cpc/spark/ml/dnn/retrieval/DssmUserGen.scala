@@ -7,6 +7,7 @@ import org.apache.commons.codec.binary.Base64
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.util.LongAccumulator
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
@@ -209,7 +210,7 @@ object DssmUserGen {
   }
 
   // transform to spark vector format
-  def sparseVector(value: Array[Array[Long]]): (Seq[Int], Seq[Int], Seq[Int], Seq[Long]) = {
+  def sparseVector(value: Array[Array[Long]], counters: Array[LongAccumulator]): (Seq[Int], Seq[Int], Seq[Int], Seq[Long]) = {
     var i = 0
     var re = Seq[(Int, Int, Long)]()
     // add default hash when value is null
@@ -221,6 +222,7 @@ object DssmUserGen {
       for (feature <- value) {
         if (feature != null && feature.length > 0) {
           re ++= feature.zipWithIndex.map(x => (i, x._2, x._1))
+          counters(i).add(1)
         } else {
           re ++= Seq((i, 0, Murmur3Hash.stringHash64("u" + i.toString, 0)))
         }
@@ -234,11 +236,22 @@ object DssmUserGen {
   def getData(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     val userDayFeatures = getUserDayFeatures(spark, date)
+    println("user day size: " + userDayFeatures.count())
     val userLogFeatures = getUserLogFeatures(spark, date)
-    userLogFeatures.leftOuterJoin(userDayFeatures).map(x => {
+    println("user log size: " + userLogFeatures.count())
+    val userDayCounter = spark.sparkContext.longAccumulator("userDayCounter")
+    val featureCounters = new Array[LongAccumulator](user_day_feature_list.length)
+    for (i <- featureCounters.indices) {
+      featureCounters(i) = spark.sparkContext.longAccumulator("feature_counter_" + user_day_feature_list(i))
+    }
+
+    val result = userLogFeatures.leftOuterJoin(userDayFeatures).map(x => {
       val uid = x._1
       val dense = x._2._1.toSeq
-      val sparseResult = sparseVector(x._2._2.orNull)
+      if (x._2._2.orNull != null) {
+        userDayCounter.add(1)
+      }
+      val sparseResult = sparseVector(x._2._2.orNull, featureCounters)
       (uid, dense, sparseResult)
     }).zipWithUniqueId()
       .map { x =>
@@ -253,5 +266,11 @@ object DssmUserGen {
       }
       .toDF("sample_idx", "uid",
         "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
+    println("user day match count: " + userDayCounter.value)
+    for (i <- featureCounters.indices) {
+      println(s"${user_day_feature_list(i)} match counts: ${featureCounters(i).value}")
+    }
+
+    result
   }
 }
