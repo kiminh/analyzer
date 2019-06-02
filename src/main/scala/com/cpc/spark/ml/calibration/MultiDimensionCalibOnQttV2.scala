@@ -83,7 +83,7 @@ object MultiDimensionCalibOnQttV2 {
       .filter("count2>100000")
       .select("adclass","ideaid","user_req_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
-      .filter("count3>10000")
+      .filter("count3>100000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
