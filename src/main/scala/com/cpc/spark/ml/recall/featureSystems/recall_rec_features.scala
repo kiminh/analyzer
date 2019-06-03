@@ -43,7 +43,7 @@ object recall_rec_features {
     }
     val result = exposed_result.leftOuterJoin(read_rdd).join(feature_rdd).map{
       r =>
-        val isclick = if(r._2._1._2 != null) {1} else 0
+        val isclick = if(r._2._1._2.isDefined) {1} else 0
         val lineArray = r._2._2.split(" ", 10)
         val uid = lineArray(2)
         val did = lineArray(3)
@@ -546,7 +546,7 @@ object recall_rec_features {
 //        |       'hdfs://emr-cluster/warehouse/dl_cpc.db/recall_rec_feature/%s/%s'
 //                """.stripMargin.format(curday, hour, curday, hour)
 //    spark.sql(sql)
-    result.repartition(100).createOrReplaceTempView("feature_result")
+    result.repartition(150).createOrReplaceTempView("feature_result")
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.recall_rec_feature partition(day='$curday', hour='$hour')
