@@ -11,6 +11,7 @@ import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
@@ -19,6 +20,7 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 object MultiDimensionCalibOnQttCvr {
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // new calibration
     val endDate = args(0)
