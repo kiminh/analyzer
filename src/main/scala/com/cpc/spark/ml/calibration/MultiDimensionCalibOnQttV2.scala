@@ -141,7 +141,7 @@ object MultiDimensionCalibOnQttV2 {
         x =>
           val modelName: String = x._1
           val bins = x._2._1
-          val samples = x._2._2
+//          val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
@@ -156,7 +156,7 @@ object MultiDimensionCalibOnQttV2 {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
