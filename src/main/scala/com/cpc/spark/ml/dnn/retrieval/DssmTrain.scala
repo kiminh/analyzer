@@ -114,6 +114,6 @@ object DssmTrain {
     println("--------------------------------")
     println(sql)
     println("--------------------------------")
-    null
+    spark.sql(sql)
   }
 }
