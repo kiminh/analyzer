@@ -234,13 +234,14 @@ object DssmUserGen {
   }
 
   // transform to spark vector format
-  def sparseVector(value: Array[Array[Long]], counters: Array[LongAccumulator]): (Seq[Int], Seq[Int], Seq[Int], Seq[Long]) = {
+  def sparseVector(value: Array[Array[Long]], counters: Array[LongAccumulator],
+                   featureList: Seq[String], prefix: String): (Seq[Int], Seq[Int], Seq[Int], Seq[Long]) = {
     var i = 0
     var re = Seq[(Int, Int, Long)]()
     // add default hash when value is null
     if (value == null || value.length == 0) {
-      for (i <- user_day_feature_list.indices) {
-        re ++= Seq((i, 0, Murmur3Hash.stringHash64("u" + i.toString, 0)))
+      for (i <- featureList.indices) {
+        re ++= Seq((i, 0, Murmur3Hash.stringHash64(prefix + i.toString, 0)))
       }
     } else {
       for (feature <- value) {
@@ -248,7 +249,7 @@ object DssmUserGen {
           re ++= feature.zipWithIndex.map(x => (i, x._2, x._1))
           counters(i).add(1)
         } else {
-          re ++= Seq((i, 0, Murmur3Hash.stringHash64("u" + i.toString, 0)))
+          re ++= Seq((i, 0, Murmur3Hash.stringHash64(prefix + i.toString, 0)))
         }
         i += 1
       }
@@ -274,7 +275,7 @@ object DssmUserGen {
       if (x._2._2.orNull != null) {
         userDayCounter.add(1)
       }
-      val sparseResult = sparseVector(x._2._2.orNull, featureCounters)
+      val sparseResult = sparseVector(x._2._2.orNull, featureCounters, user_day_feature_list, "u")
       (uid, dense, sparseResult)
     }).zipWithUniqueId()
       .map { x =>

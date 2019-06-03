@@ -41,12 +41,12 @@ object DssmAdGen {
 
     println(s"Ad Info：total = ${adInfo.count()}")
 
-    adInfo.repartition(100)
+    adInfo.repartition(10)
       .write
       .mode("overwrite")
       .parquet("/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
 
-    adInfo.repartition(100)
+    adInfo.repartition(10)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -155,7 +155,7 @@ object DssmAdGen {
         val index = entry._2
         multiArray(index) = new Array[Long](entry._3.size)
         for (i <- entry._3.indices) {
-          multiArray(index)(i) = Murmur3Hash.stringHash64("u" + index.toString + entry._3.get(i), 0)
+          multiArray(index)(i) = Murmur3Hash.stringHash64("a" + index.toString + entry._3.get(i), 0)
         }
       })
       (uid, multiArray)
@@ -182,7 +182,7 @@ object DssmAdGen {
       if (x._2._2.orNull != null) {
         multiHotCounter.add(1)
       }
-      val sparseResult = sparseVector(x._2._2.orNull, featureCounters)
+      val sparseResult = sparseVector(x._2._2.orNull, featureCounters, ad_day_feature_list, "a")
       (ideaID, unitID, dense, sparseResult)
     }).zipWithUniqueId()
       .map { x =>
