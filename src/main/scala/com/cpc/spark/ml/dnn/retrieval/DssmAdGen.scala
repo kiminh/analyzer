@@ -2,13 +2,12 @@ package com.cpc.spark.ml.dnn.retrieval
 
 import com.cpc.spark.common.Murmur3Hash
 import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
-import com.cpc.spark.ml.dnn.retrieval.DssmUserGen.{sparseVector, user_day_feature_list}
+import com.cpc.spark.ml.dnn.retrieval.DssmUserGen.sparseVector
 import com.qtt.aiclk.featurestore.Feaconf.FeatureStore
 import org.apache.commons.codec.binary.Base64
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.array
 import org.apache.spark.util.LongAccumulator
 
 import scala.collection.mutable
@@ -40,8 +39,12 @@ object DssmAdGen {
 
     val adInfo = getData(spark, date)
 
-    val n = adInfo.count()
-    println("Ad Info：total = %d".format(n))
+    println(s"Ad Info：total = ${adInfo.count()}")
+
+    adInfo.repartition(100)
+      .write
+      .mode("overwrite")
+      .parquet("/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
 
     adInfo.repartition(100)
       .write
@@ -173,9 +176,9 @@ object DssmAdGen {
       featureCounters(i) = spark.sparkContext.longAccumulator("ad_counter_" + ad_day_feature_list(i))
     }
     val result = adOneHotFeatures.leftOuterJoin(adMultiHotFeatures).map(x => {
-      val ideaID = x._1
-      val unitID = x._2._1
-      val dense = x._2._1._2.toSeq
+      val ideaID: String = x._1
+      val unitID: String = x._2._1._1
+      val dense: Seq[Long] = x._2._1._2.toSeq
       if (x._2._2.orNull != null) {
         multiHotCounter.add(1)
       }
