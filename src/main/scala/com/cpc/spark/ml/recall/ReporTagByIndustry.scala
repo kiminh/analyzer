@@ -70,7 +70,48 @@ object ReporTagByIndustry {
         |) a
         |join
         |(
-        |select user_id,category,name from adv_table
+        |select
+        |user_id,
+        |100000000,
+        |case
+        |when category like '100101%' then '移动游戏'
+        |when category like '100102%' then '移动应用'
+        |when category like '101%' then '汽车'
+        |when category like '102%' then '奢侈品'
+        |when category like '103%' then '教育培训'
+        |when category like '104%' then '金融保险'
+        |when category like '105%' then '食品饮料'
+        |when category like '106%' then '家电'
+        |when category like '107%' then 'IT数码'
+        |when category like '108%' then '文化娱乐'
+        |when category like '109%' then '旅游'
+        |when category like '110%' then '互联网服务'
+        |when category like '111%' then '家居建材'
+        |when category like '112%' then '房地产'
+        |when category like '113%' then '本地服务'
+        |when category like '114%' then '日用百货'
+        |when category like '115%' then '母婴儿童'
+        |when category like '116%' then '体育户外'
+        |when category like '117%' then '服装服饰'
+        |when category like '118%' then '美容化妆'
+        |when category like '119%' then '法律服务'
+        |when category like '120%' then '商务服务'
+        |when category like '121%' then '安全安保'
+        |when category like '122%' then '营销/广告/包装'
+        |when category like '123%' then '招商加盟'
+        |when category like '124%' then '工农业'
+        |when category like '125%' then '彩票'
+        |when category like '126%' then '节能环保'
+        |when category like '127%' then '婚恋交友'
+        |when category like '128%' then '公益'
+        |when category like '129%' then '成人用品'
+        |when category like '130%' then '医疗'
+        |when category like '131%' then '宠物用品'
+        |when category like '132%' then '内部测试'
+        |when category like '134%' then '电商购物'
+        |when category like '135%' then '品牌医护类'
+        |else 'null' end as name
+        |from adv_table
         |) b
         |on a.userid=b.user_id
         |group by
