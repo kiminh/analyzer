@@ -129,14 +129,23 @@ val sqlRequest2 =
      |  a.isshow,
      |  COALESCE(a.price, 0) price,
      |  a.interests,
-     |  case when b.label=1 then 1 else 0 end as iscvr
+     |  if(c.searchid is null,0,1) iscvr
      |from
      |  unionlog_table as a
+     | join
+     | (
+     |  select * from
+     |  dl_cpc.dw_unitid_detail
+     |  where day='$date'
+     |  and conversion_target[0] is not null
+     |  and conversion_target[0] not in ('none','site_uncertain')
+     | ) b
+     | on a.unitid=b.unitid
      |left join
-     |  (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry
-     |  where dt='$date' and pt in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as b
+     |  (select searchid,ideaid from dl_cpc.dm_conversion_detail
+     |  where dt='$date' and industry in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as c
      |on
-     |  a.searchid=b.searchid and a.ideaid=b.ideaid
+     |  a.searchid=c.searchid and a.ideaid=c.ideaid
     """.stripMargin
 
     val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
@@ -218,7 +227,7 @@ val sqlRequest2 =
     mariaReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
     mariaReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
-    clearReportData(date)
+//    clearReportData(date)
     spark.sql(
       s"""
         |select
@@ -236,8 +245,8 @@ val sqlRequest2 =
         |sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v2
         |where date='$date' group by date,userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
         |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tc.profile_tag is not null or tb.tag is not null or cast(coalesce(ta.tag,0) as int)<1000
-      """.stripMargin).
-      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
+      """.stripMargin).show(100,false)
+//      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
 
     unionlog.unpersist()
     base.unpersist()
