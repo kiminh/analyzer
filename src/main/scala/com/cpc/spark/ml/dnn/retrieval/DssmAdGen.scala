@@ -88,10 +88,8 @@ object DssmAdGen {
       hash("a6")($"planid").alias("a6"),
       hash("a7")($"userid").alias("a7"),
       hash("a8")($"adclass").alias("a8"),
-      hash("a9")($"site_id").alias("a9"),
-
-      // ad multi-hot
-      array($"am1").alias("ad_sparse_raw")
+      hash("a9")($"site_id").alias("a9")
+      
     ).rdd.map(row => {
       val ideaID = row.getAs[String]("ideaid")
       val unitID = row.getAs[String]("unitid")
