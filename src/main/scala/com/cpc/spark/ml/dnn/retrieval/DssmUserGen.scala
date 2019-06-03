@@ -138,7 +138,6 @@ object DssmUserGen {
         featureSizeCounter.add(fs.getFeaturesCount)
         for (feature <- fs.getFeaturesList) {
           val name = feature.getName
-          //          if (true) {
           if (user_day_feature_map.contains(name)) {
             featureSizeMatchCounter.add(1)
             val featureType = feature.getType

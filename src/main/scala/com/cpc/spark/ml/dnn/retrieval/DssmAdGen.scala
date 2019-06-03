@@ -1,9 +1,19 @@
 package com.cpc.spark.ml.dnn.retrieval
 
+import com.cpc.spark.common.Murmur3Hash
 import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
+import com.cpc.spark.ml.dnn.retrieval.DssmUserGen.{sparseVector, user_day_feature_list}
+import com.qtt.aiclk.featurestore.Feaconf.FeatureStore
+import org.apache.commons.codec.binary.Base64
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.array
+import org.apache.spark.util.LongAccumulator
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.collection.JavaConversions._
 
 /**
   * author: huazhenhao
@@ -11,6 +21,14 @@ import org.apache.spark.sql.functions.array
   */
 object DssmAdGen {
   Logger.getRootLogger.setLevel(Level.WARN)
+
+  val ad_day_feature_list: Seq[String] = Seq(
+    "ad_title_token"
+  )
+
+  val ad_day_feature_map: Map[String, Int] = Map[String, Int] (
+    "ad_title_token" -> 0
+  )
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -33,37 +51,34 @@ object DssmAdGen {
       .save("/user/cpc/hzh/dssm/ad-info-v0/" + date)
   }
 
-  def getData(spark: SparkSession, date: String): DataFrame = {
+  def getAdOneHotFeatures(spark: SparkSession, date: String): RDD[(String, (String, Array[Long]))] = {
     import spark.implicits._
-
     val sql =
       s"""
          |select
-         |  ideaid,
-         |  max(unitid) as unitid,
+         |  cast(ideaid as string) as ideaid,
+         |  cast(unitid as string) as unitid,
          |  max(adtype) as adtype,
          |  max(interaction) as interaction,
          |  max(bid) as bid,
          |  max(planid) as planid,
          |  max(userid) as userid,
-         |  max(ext['adclass'].int_value) as adclass,
-         |  max(ext_int['siteid']) as site_id,
-         |  max(split(ext['materialid'].string_value, ',')) as material_ids
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |  max(adclass) as adclass,
+         |  max(siteid) as site_id,
+         |  max(ad_title) as ad_title
+         |from dl_cpc.cpc_basedata_union_events where `day` = '$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and length(uid) > 1
-         |group by ideaid
+         |group by ideaid, unitid
       """.stripMargin
     println("--------------------------------")
     println(sql)
     println("--------------------------------")
 
-    val re =
-      spark.sql(sql).withColumn("am1", hashSeq("am1", "string")($"material_ids"))
-
-    re.select(
+    spark.sql(sql).select(
       $"ideaid",
+      $"unitid",
 
       hash("a1")($"ideaid").alias("a1"),
       hash("a2")($"unitid").alias("a2"),
@@ -77,31 +92,115 @@ object DssmAdGen {
 
       // ad multi-hot
       array($"am1").alias("ad_sparse_raw")
-      )
-      .select(
-        $"ideaid",
-        array($"a1", $"a2", $"a3", $"a4", $"a5", $"a6", $"a7", $"a8", $"a9").alias("ad_dense"),
-        mkSparseFeature_ad($"ad_sparse_raw").alias("ad_sparse")
-      )
-      .select(
-        $"ideaid",
-        $"ad_dense",
-        $"ad_sparse".getField("_1").alias("ad_idx0"),
-        $"ad_sparse".getField("_2").alias("ad_idx1"),
-        $"ad_sparse".getField("_3").alias("ad_idx2"),
-        $"ad_sparse".getField("_4").alias("ad_id_arr")
-      )
-      .rdd.zipWithUniqueId()
+    ).rdd.map(row => {
+      val ideaID = row.getAs[String]("ideaid")
+      val unitID = row.getAs[String]("unitid")
+
+      val denseArray = new Array[Long](9)
+      for (i <- 0 until 9) {
+        denseArray(i) = row.getAs[Long]("a" + (i + 1).toString)
+      }
+      (ideaID, (unitID, denseArray))
+    })
+  }
+
+  def getAdMultiHotFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
+    val sql =
+      s"""
+         |select ideaid, content from dl_cpc.ad_day_feature
+         |where dt = '$date' and (pt = 'merge')
+       """.stripMargin
+    println(sql)
+    val df = spark.sql(sql)
+    println("ad df count: " + df.count())
+    println(ad_day_feature_map)
+    val result = df.rdd.groupBy(row => row.getAs[String]("ideaid")).flatMap(x => {
+      var featureList = new ListBuffer[(String, Int, Seq[String])]()
+      val uid = x._1
+      x._2.foreach(row => {
+        val fs = FeatureStore.newBuilder().mergeFrom(Base64.decodeBase64(row.getAs[String]("content")))
+        for (feature <- fs.getFeaturesList) {
+          val name = feature.getName
+          if (ad_day_feature_map.contains(name)) {
+            val featureType = feature.getType
+            val featureValue = mutable.ArrayBuffer[String]()
+            // str: 1/ int: 2 / float: 3
+            featureType match {
+              case 1 => if (feature.getStrListCount > 0) {
+                for (fv <- feature.getStrListList) {
+                  featureValue.add(fv)
+                }
+              }
+              case 2 => if (feature.getIntListCount > 0) {
+                for (fv <- feature.getIntListList) {
+                  featureValue.add(fv.toString)
+                }
+              }
+              case 3 => if (feature.getFloatListCount > 0) {
+                for (fv <- feature.getFloatListList) {
+                  featureValue.add(fv.toString)
+                }
+              }
+            }
+            featureList += ((uid, ad_day_feature_map.getOrElse(name, 0), featureValue))
+          }
+        }
+      })
+      featureList.iterator
+    }).groupBy(_._1).map(x => {
+      val uid = x._1
+      val multiArray = new Array[Array[Long]](ad_day_feature_list.size)
+      x._2.foreach(entry => {
+        val index = entry._2
+        multiArray(index) = new Array[Long](entry._3.size)
+        for (i <- entry._3.indices) {
+          multiArray(index)(i) = Murmur3Hash.stringHash64("u" + index.toString + entry._3.get(i), 0)
+        }
+      })
+      (uid, multiArray)
+    })
+    result
+  }
+
+  def getData(spark: SparkSession, date: String): DataFrame = {
+    import spark.implicits._
+    val adOneHotFeatures = getAdOneHotFeatures(spark, date)
+    println("ad onehot size: " + adOneHotFeatures.count())
+    val adMultiHotFeatures = getAdMultiHotFeatures(spark, date)
+    println("ad multihot size: " + adMultiHotFeatures.count())
+
+    val multiHotCounter = spark.sparkContext.longAccumulator("multiHotCounter")
+    val featureCounters = new Array[LongAccumulator](ad_day_feature_list.length)
+    for (i <- featureCounters.indices) {
+      featureCounters(i) = spark.sparkContext.longAccumulator("ad_counter_" + ad_day_feature_list(i))
+    }
+    val result = adOneHotFeatures.leftOuterJoin(adMultiHotFeatures).map(x => {
+      val ideaID = x._1
+      val unitID = x._2._1
+      val dense = x._2._1._2.toSeq
+      if (x._2._2.orNull != null) {
+        multiHotCounter.add(1)
+      }
+      val sparseResult = sparseVector(x._2._2.orNull, featureCounters)
+      (ideaID, unitID, dense, sparseResult)
+    }).zipWithUniqueId()
       .map { x =>
         (x._2,
-          x._1.getAs[Number]("ideaid").toString,
-          x._1.getAs[Seq[Long]]("ad_dense"),
-          x._1.getAs[Seq[Int]]("ad_idx0"),
-          x._1.getAs[Seq[Int]]("ad_idx1"),
-          x._1.getAs[Seq[Int]]("ad_idx2"),
-          x._1.getAs[Seq[Long]]("ad_id_arr")
+          x._1._1,
+          x._1._2,
+          x._1._3,
+          x._1._4._1,
+          x._1._4._2,
+          x._1._4._3,
+          x._1._4._4,
         )
       }
-      .toDF("sample_idx", "ideaid", "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
+      .toDF("sample_idx", "ideaid", "unitid", "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
+    println("result joined size: " + result.count())
+    println("ad day match count: " + multiHotCounter.value)
+    for (i <- featureCounters.indices) {
+      println(s"${ad_day_feature_list(i)} match counts: ${featureCounters(i).value}")
+    }
+    result
   }
 }
