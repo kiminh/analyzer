@@ -136,8 +136,8 @@ object MultiDimensionCalibOnQttCvr {
     saveFlatTextFileForDebug(model, califile)
     if (softMode == 0) {
       val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model-test.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model-test.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
+      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
     }
   }
 
