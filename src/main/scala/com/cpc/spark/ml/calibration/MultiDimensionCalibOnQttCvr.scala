@@ -26,9 +26,8 @@ object MultiDimensionCalibOnQttCvr {
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val softMode = args(3).toInt
-    val media = args(4)
-    val model = args(5)
+    val media = args(3)
+    val model = args(4)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -45,7 +44,6 @@ object MultiDimensionCalibOnQttCvr {
     println(s"hourRange=$hourRange")
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
-    println(s"softMode=$softMode")
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
@@ -97,11 +95,11 @@ object MultiDimensionCalibOnQttCvr {
         .withColumn("isclick",col("iscvr"))
     log.show(10)
 
-    LogToPb(log, session, model, softMode)
+    LogToPb(log, session, model)
 
   }
 
-  def LogToPb(log:DataFrame, session: SparkSession, model: String, softMode:Int)={
+  def LogToPb(log:DataFrame, session: SparkSession, model: String)={
     val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .filter("count1>100000")
@@ -136,11 +134,6 @@ object MultiDimensionCalibOnQttCvr {
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
     saveFlatTextFileForDebug(model, califile)
-    if (softMode == 0) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model.mlm", conf))
-    }
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
