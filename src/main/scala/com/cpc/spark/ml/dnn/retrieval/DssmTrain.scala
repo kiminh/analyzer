@@ -20,7 +20,7 @@ object DssmTrain {
     val date = args(0)
     val userFeature = getUserFeature(spark, date)
     userFeature.createOrReplaceTempView("userfeature")
-    val adFeature = getUserFeature(spark, date)
+    val adFeature = getAdFeature(spark, date)
     adFeature.createOrReplaceTempView("adfeature")
     val samples = getSample(spark, date)
     samples.createOrReplaceTempView("samples")
