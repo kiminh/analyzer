@@ -189,8 +189,7 @@ object OcpcHourlyAucReportV3 {
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .join(cvr4Data, Seq("searchid"), "left_outer")
       .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr1", "iscvr2", "iscvr3", "is_hidden")
-      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2"))
-        .otherwise(when(col("conversion_goal") === 3, col("iscvr3")).otherwise(col("iscvr4")))))
+      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(when(col("conversion_goal") === 3, col("iscvr3")).otherwise(col("iscvr4")))))
       .select("searchid", "unitid", "userid", "isclick", "isshow", "exp_cvr", "cpagiven", "bid", "conversion_goal", "price", "iscvr", "is_hidden")
       .na.fill(0, Seq("iscvr"))
 
