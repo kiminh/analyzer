@@ -3,10 +3,13 @@ package com.cpc.spark.ml.recall.featureSystems
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+
 import scala.collection.mutable
 
 object recall_rec_features {
+  Logger.getRootLogger.setLevel(Level.WARN)
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("recall_rec_features").enableHiveSupport().getOrCreate()
     val curday = args(0)
