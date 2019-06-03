@@ -85,14 +85,12 @@ object DssmTrain {
 
   }
 
-
   def getUserFeature(spark: SparkSession, date: String): DataFrame = {
     spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + date)
   }
 
   def getAdFeature(spark: SparkSession, date: String): DataFrame = {
-    spark.read.format("tfrecords").option("recordType", "Example")
-      .load("/user/cpc/hzh/dssm/user-info-v0/" + date)
+    spark.read.parquet("/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
