@@ -63,12 +63,16 @@ object recall_rec_features {
               features.foreach {
                 feature =>
                   val featureInfo = feature.split(":")
-                  val slotid = featureInfo(0)
-                  if(featureMap.contains(slotid)){
-                    val updatedValue = featureMap(slotid) ++ Seq(featureInfo(1))
-                    featureMap.update(slotid, updatedValue)
+                  if(featureInfo.length != 5){
+                    null
                   } else {
-                    featureMap.update(slotid, mutable.Seq(featureInfo(1)))
+                    val slotid = featureInfo(0)
+                    if(featureMap.contains(slotid)){
+                      val updatedValue = featureMap(slotid) ++ Seq(featureInfo(1))
+                      featureMap.update(slotid, updatedValue)
+                    } else {
+                      featureMap.update(slotid, mutable.Seq(featureInfo(1)))
+                    }
                   }
               }
             }
