@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import scala.collection.mutable
 
@@ -535,12 +535,19 @@ object recall_rec_features {
       "slotid225",
       "slotid226"
     )
-    result.repartition(200).createOrReplaceTempView("feature_result")
-    spark.sql(
-      s"""
-         |insert overwrite table dl_cpc.recall_rec_feature partition(day='$curday', hour='$hour')
-         |select * from feature_result
-       """.stripMargin)
+    result.coalesce(100).write.mode(SaveMode.Append).parquet("hdfs://emr-cluster/warehouse/dl_cpc.db/cdl_cpc.recall_rec_feature/%s/%s".format(curday, hour))
+    val sql =
+      """
+        |ALTER TABLE dl_cpc.recall_rec_feature add if not exists PARTITION (day="%s", hour="%s")  LOCATION
+        |       'hdfs://emr-cluster/warehouse/dl_cpc.db/recall_rec_feature/%s/%s'
+                """.stripMargin.format(curday, hour, curday, hour)
+    spark.sql(sql)
+//    result.repartition(200).createOrReplaceTempView("feature_result")
+//    spark.sql(
+//      s"""
+//         |insert overwrite table dl_cpc.recall_rec_feature partition(day='$curday', hour='$hour')
+//         |select * from feature_result
+//       """.stripMargin)
   }
   case class featuresResult(var uid: String="",
                              var did: String="",
