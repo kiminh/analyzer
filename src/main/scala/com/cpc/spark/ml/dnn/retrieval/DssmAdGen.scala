@@ -89,7 +89,7 @@ object DssmAdGen {
       hash("a7")($"userid").alias("a7"),
       hash("a8")($"adclass").alias("a8"),
       hash("a9")($"site_id").alias("a9")
-      
+
     ).rdd.map(row => {
       val ideaID = row.getAs[String]("ideaid")
       val unitID = row.getAs[String]("unitid")
@@ -105,7 +105,7 @@ object DssmAdGen {
   def getAdMultiHotFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
     val sql =
       s"""
-         |select ideaid, content from dl_cpc.ad_day_feature
+         |select cast(ideaid as string) as ideaid, content from dl_cpc.ad_day_feature
          |where dt = '$date' and (pt = 'merge')
        """.stripMargin
     println(sql)
