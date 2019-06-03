@@ -68,7 +68,7 @@ object MultiDimensionCalibOnQttCvr {
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
                  |  where $timeRangeSql
                  |  and a.$mediaSelection and isclick = 1
-                 |  and a.cvr_model_name = '$model'
+                 |  and a.cvr_model_name in ('$model','qtt-cvr-dnn-rawid-v1-180')
                  |  and a.ideaid > 0 and a.adsrc = 1 AND a.userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
