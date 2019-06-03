@@ -53,7 +53,7 @@ object ReporTagByIndustry {
     spark.sql(
       s"""
         |select
-        |	b.category as class_id,
+        |	b.category1 as class_id,
         | b.name as name,
         |	a.tag as tag,
         | a.name as tag_name,
@@ -72,7 +72,7 @@ object ReporTagByIndustry {
         |(
         |select
         |user_id,
-        |100000000,
+        |100000000 as category1,
         |case
         |when category like '100101%' then '移动游戏'
         |when category like '100102%' then '移动应用'
@@ -115,7 +115,7 @@ object ReporTagByIndustry {
         |) b
         |on a.userid=b.user_id
         |group by
-        |	b.category,
+        |	b.category1,
         | b.name,
         |	a.tag,
         | a.name
