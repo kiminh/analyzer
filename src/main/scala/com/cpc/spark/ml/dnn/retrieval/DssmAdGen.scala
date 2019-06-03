@@ -192,7 +192,7 @@ object DssmAdGen {
           x._1._4._1,
           x._1._4._2,
           x._1._4._3,
-          x._1._4._4,
+          x._1._4._4
         )
       }
       .toDF("sample_idx", "ideaid", "unitid", "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
