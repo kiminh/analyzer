@@ -21,7 +21,7 @@ object OcpcHourlyAucReportV3 {
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
 
     var isHidden = 0
-    if (version == "novel_v3") {
+    if (version == "novel_v2") {
       isHidden = 0
     } else {
       isHidden = 1

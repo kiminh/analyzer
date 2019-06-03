@@ -37,7 +37,7 @@ object OcpcHourlyReportV3 {
 
     // 拉取点击、消费、转化等基础数据
     var isHidden = 0
-    if (version == "novel_v3") {
+    if (version == "novel_v2") {
       isHidden = 0
     } else {
       isHidden = 1
