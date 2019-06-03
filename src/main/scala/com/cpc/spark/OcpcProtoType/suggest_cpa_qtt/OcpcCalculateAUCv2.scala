@@ -32,9 +32,11 @@ object OcpcCalculateAUCv2 {
 
     // 获取identifier与industry之间的关联表
     val unitidIndustry = getIndustry(tableName, conversionGoal, version, date, hour, spark)
+    unitidIndustry.show(10)
 
     // 计算auc
     val aucData = getAuc(tableName, conversionGoal, version, date, hour, spark)
+    aucData.show(10)
 
     val result = aucData
       .join(unitidIndustry, Seq("identifier"), "left_outer")
@@ -46,11 +48,12 @@ object OcpcCalculateAUCv2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+    resultDF.show(10)
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-    //        .write.mode("overwrite").saveAsTable(finalTableName)
+//    resultDF
+////      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
+//      .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
 }

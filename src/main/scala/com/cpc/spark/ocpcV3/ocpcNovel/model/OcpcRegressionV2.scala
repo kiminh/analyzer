@@ -13,6 +13,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import scala.collection.mutable
 
 object OcpcRegressionV2 {
+  val wz_discount = 0.7
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -182,7 +183,7 @@ object OcpcRegressionV2 {
     val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
     if (cpasrc == "110110") {
-      targetK = 0.95
+      targetK = wz_discount
     } else {
       targetK = 0.95
     }

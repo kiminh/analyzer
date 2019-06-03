@@ -8,9 +8,11 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcSuggestKcpa._
+import org.apache.log4j.{Level, Logger}
 
 object OcpcSuggestKcpa {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     /*
     identifier维度下的累积最新版的kvalue和cpa_suggest
     

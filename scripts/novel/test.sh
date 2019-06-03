@@ -26,5 +26,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.OcpcProtoType.data.OcpcConversionNovel \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-05-08 00 4
+    --class com.cpc.spark.ml.calibration.CalibrationCheckOnMiduCvr\
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/scheduled_job/hourly_calibration/post-calibration-qtt-cvr-dnn-rawid-v1-180.mlm 2019-05-28 00 qtt-cvr-dnn-rawid-v1-180

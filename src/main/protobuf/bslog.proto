@@ -75,28 +75,28 @@ message SearchCond {
 
 message GroupStats {
     required int32 len_groups = 1;
-    required int32 group_media_num = 2;
-    required int32 group_region_num = 3;
-    required int32 group_l_v_num = 4;
-    required int32 group_os_type_num = 5;
-    required int32 group_p_l_num = 6;
-    required int32 group_dislike_num = 7;
-    required int32 group_interest_num = 8;
-    required int32 group_student_num = 9;
-    required int32 group_acc_user_type_num = 10;
-    required int32 group_new_user_num = 11;
-    required int32 group_content_category_num = 12;
-    required int32 group_black_install_pkg_num = 13;
-    required int32 group_white_install_pkg_num = 14;
-    required int32 group_show_count_num = 15;
-    required int32 group_click_count_num = 16;
-    required int32 matched_group_num = 17;
-    required int32 involved_group_num = 18;
-    required int32 group_age_num = 19;
-    required int32 group_gender_num = 20;
-    required int32 group_network_num = 21;
-    required int32 group_ad_slot_type_num = 22;
-    required int32 group_map_match_count_num = 23;
+    required int32 group_media_num = 2; //媒体定向
+    required int32 group_region_num = 3; //地域定向
+    required int32 group_l_v_num = 4; //用户等级定向
+    required int32 group_os_type_num = 5; //操作系统定向
+    required int32 group_p_l_num = 6; //手机等级定向
+    required int32 group_dislike_num = 7; //排除人群包
+    required int32 group_interest_num = 8; //人群包
+    required int32 group_student_num = 9; //职业定向
+    required int32 group_acc_user_type_num = 10; //广告主类型
+    required int32 group_new_user_num = 11; //新用户定向
+    required int32 group_content_category_num = 12; //详情页定向
+    required int32 group_black_install_pkg_num = 13; //安装包过滤
+    required int32 group_white_install_pkg_num = 14; //安装包定向
+    required int32 group_show_count_num = 15; //展现频控
+    required int32 group_click_count_num = 16; //点击频控
+    required int32 matched_group_num = 17; //匹配后的单元
+    required int32 involved_group_num = 18; //参与召回的单元
+    required int32 group_age_num = 19; //年龄定向
+    required int32 group_gender_num = 20; //性别定向
+    required int32 group_network_num = 21; //网络类型定向
+    required int32 group_ad_slot_type_num = 22; //广告位类型定向
+    required int32 group_map_match_count_num = 23; //媒体类型定向
     repeated int32 groups_hit_media_ids = 24;
     repeated int32 groups_hit_age_ids = 25;
     repeated int32 groups_hit_gender_ids = 26;
@@ -115,21 +115,28 @@ message GroupStats {
     repeated int32 groups_hit_interest_or_user_signal_ids = 39;
     repeated int32 groups_filtered_by_ad_show_ids = 40;
     repeated int32 groups_filtered_by_ad_click_ids = 41;
-    repeated int32 groups_filtered_by_black_user_ids = 42;
-    repeated int32 groups_filtered_by_black_sid_ids = 43;
-    repeated int32 groups_filtered_by_not_delivery_pr_ids = 44;
+    repeated int32 groups_filtered_by_black_user_ids = 42; //广告主id过滤
+    repeated int32 groups_filtered_by_black_sid_ids = 43; //媒体id过滤
+    repeated int32 groups_filtered_by_not_delivery_pr_ids = 44; //配送概率过滤
+    repeated int32 groups_hit_ad_slot_id = 45; //广告位定向
+    repeated int32 groups_hit_not_allow_delivery = 46; //不允许配送广告
 };
 
 message IdeaStats {
-    repeated int32 ideas_filtered_by_material_type = 1;
-    repeated int32 ideas_filtered_by_interaction = 2;
-    repeated int32 ideas_filtered_by_black_class = 3;
-    repeated int32 ideas_filtered_by_acc_class = 4;
-    repeated int32 ideas_filtered_by_material_level = 5;
-    repeated int32 ideas_filtered_by_only_site = 6;
-    repeated int32 ideas_filtered_by_filter_goods = 7;
-    repeated int32 ideas_filtered_by_pkg_filter = 8;
-    repeated int32 ideas_filtered_by_chitu = 9;
+    repeated int32 ideas_filtered_by_material_type = 1; //素材类型
+    repeated int32 ideas_filtered_by_interaction = 2; //交互类型
+    repeated int32 ideas_filtered_by_black_class = 3; //行业黑名单
+    repeated int32 ideas_filtered_by_acc_class = 4; //行业白名单
+    repeated int32 ideas_filtered_by_material_level = 5; //物料等级
+    repeated int32 ideas_filtered_by_only_site = 6; //只出建站
+    repeated int32 ideas_filtered_by_filter_goods = 7; //二类电商商品过滤
+    repeated int32 ideas_filtered_by_pkg_filter = 8; //创意安装包过滤
+    repeated int32 ideas_filtered_by_chitu = 9; //只要赤兔
+    repeated int32 ideas_filtered_by_bidrankcut = 10; //被竞价截断过滤的广告
+    repeated int32 ideas_filtered_by_middle_page = 11; //二类电商中间页
+    repeated int32 involved_ideas = 12; //单元映射到的广告
+    repeated int32 matched_ideas = 13; //匹配的广告
+    repeated int32 rnd_ideas = 14; //截断后的广告
 }
 message NoticeLogBody {
     required string searchid = 1;
@@ -137,7 +144,7 @@ message NoticeLogBody {
     required int64 process_time = 3;
     required string bs_rank_tag = 4;
     required string ctr_version = 5;
-    repeated int64 module_times = 6;
+    repeated int64 module_times = 6; //bs模块的运行时间
     required int64 rnd_idea_num = 7;
     required int64 matched_idea_num = 8;
     required int64 involved_idea_num = 9;
