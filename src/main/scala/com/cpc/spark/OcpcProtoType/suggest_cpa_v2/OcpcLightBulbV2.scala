@@ -63,18 +63,21 @@ object OcpcLightBulbV2{
         .select("unitid", "conversion_goal", "cpa")
         .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
         .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
+        .cache()
 
     resultDF.show(10)
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-//
-//    resultDF
-////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-//
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+
+    resultDF
+      .select("unitid", "conversion_goal", "cpa", "date", "version")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+
 //    resultDF
 //      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -241,7 +244,7 @@ object OcpcLightBulbV2{
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where and is_ocpc=1 ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
