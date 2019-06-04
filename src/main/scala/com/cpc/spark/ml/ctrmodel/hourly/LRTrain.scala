@@ -142,7 +142,7 @@ object LRTrain {
 
     val qttAll = rawDataFromTrident
       .randomSplit(
-        Array(0.14, 0.86), // 3G vs. 40M
+        Array(0.1, 0.9), // 3G vs. 40M
         new Date().getTime // seed
       )(0)
 
