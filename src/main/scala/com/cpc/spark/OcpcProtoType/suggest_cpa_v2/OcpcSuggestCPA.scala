@@ -289,7 +289,7 @@ object OcpcSuggestCPA {
       .select("searchid", "unitid", "pre_cvr", "kvalue", "cpa")
       .withColumn("cal_bid", col("pre_cvr") * col("cpa") * col("kvalue"))
       .withColumn("conversion_goal", lit(conversionGoal))
-      .groupBy("untid", "conversion_goal")
+      .groupBy("unitid", "conversion_goal")
       .agg(
         avg(col("cal_bid")).alias("cal_bid_new"),
         avg(col("kvalue")).alias("kvalue_new")
