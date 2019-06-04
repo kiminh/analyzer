@@ -138,8 +138,8 @@ object OcpcLightBulbV3{
     将对应key的值设成空的json字符串
      */
     val data = spark
-      .table("dl_cpc.ocpc_light_api_control_daily")
-      .where(s"version = '$version' and `date` = '$date' and ocpc_light = 0")
+      .table("test.ocpc_light_api_control_hourly")
+      .where(s"version = '$version' and `date` = '$date' and `hour` = '$hour' and ocpc_light = 0")
       .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
       .repartition(2)
     //    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
@@ -177,8 +177,8 @@ object OcpcLightBulbV3{
 
   def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .table("dl_cpc.ocpc_light_api_control_daily")
-      .where(s"version = '$version' and `date` = '$date' and ocpc_light = 1")
+      .table("test.ocpc_light_api_control_hourly")
+      .where(s"version = '$version' and `date` = '$date' and `hour` = '$hour' and ocpc_light = 1")
       .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
       .repartition(2)
 
