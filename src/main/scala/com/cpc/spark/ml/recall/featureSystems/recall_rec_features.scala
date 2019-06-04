@@ -558,8 +558,8 @@ object recall_rec_features {
 
     val sample = spark.sql(
       s"""
-         |select * from dl_cpc.recall_rec_feature where day='$curday' and hour='$hour'
-       """.stripMargin).select($"uid", $"isclick", mkSparseFeature_m(array(
+         |select if(isclick>0, array(1,0), array(0,1)) as label, * from dl_cpc.recall_rec_feature where day='$curday' and hour='$hour'
+       """.stripMargin).select($"uid", $"label", mkSparseFeature_m(array(
       hashSeq("m1", "string")($"slotid1").alias("slotid1"),
       hashSeq("m2", "string")($"slotid2").alias("slotid2"),
       hashSeq("m3", "string")($"slotid3").alias("slotid3"),
@@ -787,16 +787,17 @@ object recall_rec_features {
       hashSeq("m225", "string")($"slotid225").alias("slotid225"),
       hashSeq("m226", "string")($"slotid226").alias("slotid226")
     )).alias("sparse")).select($"uid",
+      $"label",
       $"sparse".getField("_1").alias("idx0"),
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr")
     ).rdd.zipWithUniqueId().map { x =>
-        (x._2, x._1.getAs[Seq[Long]]("uid"),
+        (x._2, x._1.getAs[Seq[Long]]("uid"), x._1.getAs[Seq[Int]]("label"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr")
           )
-      }.toDF("sample_idx", "uid", "idx0", "idx1", "idx2", "id_arr")
+      }.toDF("sample_idx", "uid", "label", "idx0", "idx1", "idx2", "id_arr")
     sample.repartition(150).write.mode("overwrite").format("tfrecords").option("recordType", "Example").save(s"hdfs://emr-cluster/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour")
   }
   case class featuresResult(var uid: String="",
