@@ -170,9 +170,10 @@ object DssmUserGen {
       val multiArray = new Array[Array[Long]](user_day_feature_list.size)
       x._2.foreach(entry => {
         val index = entry._2
-        multiArray(index) = new Array[Long](entry._3.size)
-        for (i <- entry._3.indices) {
-          multiArray(index)(i) = Murmur3Hash.stringHash64("u" + index.toString + entry._3.get(i), 0)
+        val values = entry._3.slice(0, 1000)
+        multiArray(index) = new Array[Long](values.size)
+        for (i <- values.indices) {
+          multiArray(index)(i) = Murmur3Hash.stringHash64("u" + index.toString + values.get(i), 0)
         }
       })
       (uid, multiArray)
