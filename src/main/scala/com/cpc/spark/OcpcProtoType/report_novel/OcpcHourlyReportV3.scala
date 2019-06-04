@@ -42,7 +42,10 @@ object OcpcHourlyReportV3 {
     } else {
       isHidden = 1
     }
+    println("is_hidden=%d".format(isHidden))
     val baseData = getBaseData2(media, date, hour, spark).filter(s"is_hidden = $isHidden")
+
+    baseData.show(50)
 
     // 分unitid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
