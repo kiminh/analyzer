@@ -93,38 +93,40 @@ object LRTrain {
       s"""
          |select
          |  searchid
-         |  , sex
-         |  , age
-         |  , os
-         |  , network
-         |  , isp
-         |  , city
-         |  , media_appsid
-         |  , phone_level
-         |  , `timestamp`
-         |  , adtype
-         |  , planid
-         |  , unitid
-         |  , ideaid
-         |  , adclass
-         |  , adslot_id as adslotid
-         |  , adslot_type
-         |  , brand_title as brand
-         |  , media_type
-         |  , channel
-         |  , client_type as sdk_type
-         |  , dtu_id
-         |  , interaction
-         |  , userid
-         |  , siteid
-         |  , province
-         |  , city_level
-         |  , content_id as doc_id
-         |  , category as doc_cat
-         |  , is_new_ad
-         |  , uid
-         |  , isclick as label
-         |  , day
+         |    , sex
+         |    , age
+         |    , os
+         |    , network
+         |    , isp
+         |    , city
+         |    , media_appsid
+         |    , phone_level
+         |    , `timestamp`
+         |    , adtype
+         |    , planid
+         |    , unitid
+         |    , ideaid
+         |    , adclass
+         |    , adslot_id as adslotid
+         |    , adslot_type
+         |    , brand_title as brand
+         |    , media_type
+         |    , channel
+         |    , client_type as sdk_type
+         |    , dtu_id
+         |    , interaction
+         |    , interact_pagenum as pagenum
+         |    , interact_bookid as bookid
+         |    , userid
+         |    , siteid
+         |    , province
+         |    , city_level
+         |    , content_id as doc_id
+         |    , category as doc_cat
+         |    , is_new_ad
+         |    , uid
+         |    , isclick as label
+         |    , day
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and isshow = 1
