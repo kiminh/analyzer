@@ -24,3 +24,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.OcpcProtoType.suggest_cpa_v2.OcpcLightBulbV3 \
     /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
+
+#val date = args(0).toString
+#val hour = args(1).toString
+#val version = args(2).toString
