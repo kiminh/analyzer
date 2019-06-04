@@ -39,37 +39,37 @@ object OcpcLightBulbV2{
 
 
     // 抽取数据
-//    val cpcData = getRecommendationAd(version, date, hour, spark)
-////    cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
-//    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
+    val cpcData = getRecommendationAd(version, date, hour, spark)
+//    cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
+    val ocpcData = getOcpcRecord(media, version, date, hour, spark)
 //    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
     val confData = getConfCPA(media, date, hour, spark)
-//    val cvUnit = getCPAgiven(date, hour, spark)
-//
-//
-//    val data = cpcData
-//        .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
-//        .join(confData, Seq("unitid", "conversion_goal"), "outer")
-//        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa3")
-//        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3"))
-//        .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
-//        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
-////    data.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511c")
-//
-//    data.show(10)
-//
-//    val resultDF = data
-//        .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
-//        .select("unitid", "conversion_goal", "cpa")
-//        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
-//        .withColumn("date", lit(date))
-//        .withColumn("version", lit(version))
-//
-//    resultDF.show(10)
-//
-//    resultDF
-////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_daily")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
+    val cvUnit = getCPAgiven(date, hour, spark)
+
+
+    val data = cpcData
+        .join(ocpcData, Seq("unitid", "conversion_goal"), "outer")
+        .join(confData, Seq("unitid", "conversion_goal"), "outer")
+        .select("unitid", "conversion_goal", "cpa1", "cpa2", "cpa3")
+        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3"))
+        .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
+        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511c")
+
+    data.show(10)
+
+    val resultDF = data
+        .join(cvUnit, Seq("unitid", "conversion_goal"), "inner")
+        .select("unitid", "conversion_goal", "cpa")
+        .selectExpr("cast(unitid as string) unitid", "conversion_goal", "cpa")
+        .withColumn("date", lit(date))
+        .withColumn("version", lit(version))
+
+    resultDF.show(10)
+
+    resultDF
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
 //
 //    resultDF
 ////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
