@@ -72,30 +72,29 @@ object MultiDimensionCalibOnQttV2 {
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql)
+    val log = session.sql(sql).repartition(2000)
     log.show(10)
-
+    log.persist()
     LogToPb(log, session, model, softMode)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, softMode:Int)={
-    log.persist()
     val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .filter("count1>100000")
-      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
+      .select("adclass","ideaid","user_req_ad_num","adslotid","group").persist()
     val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
       .filter("count2>100000")
-      .select("adclass","ideaid","user_req_ad_num","group")
+      .select("adclass","ideaid","user_req_ad_num","group").persist()
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter("count3>100000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
-      .select("adclass","ideaid","group")
+      .select("adclass","ideaid","group").persist()
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
       .filter("count4>10000")
       .withColumn("group",col("adclass"))
-      .select("adclass","group")
+      .select("adclass","group").persist()
 
     val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
     val calimap1 = GroupToConfig(data1, session,model)
@@ -111,6 +110,10 @@ object MultiDimensionCalibOnQttV2 {
 
     val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     log.unpersist()
+    group1.unpersist()
+    group2.unpersist()
+    group3.unpersist()
+    group4.unpersist()
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)

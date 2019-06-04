@@ -181,3 +181,21 @@ message ID2idx {
 message ad_idx {
     repeated ID2idx ideaid = 1;
 }
+
+message FeatureStore {
+    repeated Feature features = 1;
+}
+
+message Feature {
+ // also serves as hash_prefix
+ string name = 1;
+
+ // str / int32 / float / int64
+ int32 type = 2;
+
+ repeated string str_list = 3;
+ repeated int32 int_list = 4;
+ repeated float float_list = 5;
+
+ repeated int64 int64_list = 6;
+}
