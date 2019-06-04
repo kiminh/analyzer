@@ -97,8 +97,8 @@ object OcpcSuggestCPA {
       .join(prevData, Seq("unitid"), "left_outer")
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "cal_bid_new", "kvalue_new", "auc", "is_ocpc", "pcoc1", "pcoc2")
       .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
-      .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
-      .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
+      .withColumn("kvalue", col("kvalue_new"))
+      .withColumn("cal_bid", col("cal_bid_new"))
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
 
     rawData.createOrReplaceTempView("raw_data")
