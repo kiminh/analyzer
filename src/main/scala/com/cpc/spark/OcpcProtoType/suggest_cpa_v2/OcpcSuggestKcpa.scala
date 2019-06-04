@@ -180,7 +180,7 @@ object OcpcSuggestKcpa {
          |WHERE
          |  `date`='$date'
          |AND
-         |  `hour` = '06'
+         |  `hour` = '$hour'
          |AND
          |  version='$version'
          |AND
