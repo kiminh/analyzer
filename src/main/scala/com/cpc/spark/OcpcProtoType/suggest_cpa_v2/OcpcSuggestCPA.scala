@@ -616,6 +616,8 @@ object OcpcSuggestCPA {
          |    (charge_type is null or charge_type = 1)
          |AND
          |    conversion_goal = $conversionGoal
+         |AND
+         |    is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1)
