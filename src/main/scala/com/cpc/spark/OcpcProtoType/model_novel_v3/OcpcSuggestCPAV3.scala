@@ -160,7 +160,7 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
-      .withColumn("maxbid",col("qtt_cpa"))
+      .withColumn("maxbid",col("qtt_avgbid"))
       .withColumn("alpha", col("qtt_cpa") * 1.0 / col("qtt_avgbid"))
       .filter("qtt_cpa is not null")
     qttCpa.createOrReplaceTempView("qtt_cpa_table")
