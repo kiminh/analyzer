@@ -88,6 +88,8 @@ object OcpcLightBulbV3{
       .agg(min(col("cpa")).alias("prev_cpa"))
       .select("unitid", "conversion_goal", "prev_cpa")
 
+    data1.show(10)
+
     val sqlRequest2 =
       s"""
          |SELECT
@@ -105,6 +107,7 @@ object OcpcLightBulbV3{
       .groupBy("unitid", "conversion_goal")
       .agg(min(col("cpa")).alias("current_cpa"))
       .select("unitid", "conversion_goal", "current_cpa")
+    data2.show(10)
 
     // 数据关联
     val data = data2
