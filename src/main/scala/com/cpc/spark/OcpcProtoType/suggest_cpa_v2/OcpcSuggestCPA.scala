@@ -478,7 +478,8 @@ object OcpcSuggestCPA {
         avg(col("exp_cvr")).alias("pcvr")
       )
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
-      .select("unitid", "pcvr", "post_cvr")
+      .withColumn("pcoc", col("pcvr") * 1.0 / col("post_cvr"))
+      .select("unitid", "pcvr", "post_cvr", "pcoc")
 
 //    val caliData1 = rawData
 //      .join(data, Seq("unitid"), "left_outer")
