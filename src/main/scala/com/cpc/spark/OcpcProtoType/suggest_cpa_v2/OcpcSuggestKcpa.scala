@@ -39,7 +39,7 @@ object OcpcSuggestKcpa {
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
 
-    // 读取前一天的时间分区中的所有cpa与kvalue
+    // 读取前一小时的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
@@ -57,8 +57,8 @@ object OcpcSuggestKcpa {
 
     resultDF.show(10)
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
-//    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k_hourly")
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k_hourly")
     resultDF
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration", "date", "version")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k_version")
