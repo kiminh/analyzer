@@ -55,6 +55,8 @@ object OcpcSuggestKcpa {
       .withColumn("version", lit(version))
       .cache()
 
+    resultDF.show(10)
+
     resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
 //    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_k_hourly")
     resultDF
