@@ -80,9 +80,9 @@ object OcpcSuggestCPA {
 
     resultDF.show(10)
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
@@ -90,19 +90,35 @@ object OcpcSuggestCPA {
     /*
     assemlby the data together
      */
-    val result = baseData
+    val rawData = baseData
       .join(kvalue, Seq("unitid"), "left_outer")
       .join(aucData, Seq("unitid"), "left_outer")
       .join(ocpcFlag, Seq("unitid"), "left_outer")
       .join(prevData, Seq("unitid"), "left_outer")
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue", "auc", "is_ocpc", "pcoc1", "pcoc2")
       .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
-      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
+      .withColumn("kvalue", when(col("kvalue_new").isNotNull, col("kvalue_new")).otherwise(col("kvalue_old")))
+      .withColumn("cal_bid", when(col("cal_bid_new").isNotNull, col("cal_bid_new")).otherwise(col("cal_bid_old")))
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
+
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *,
+         |  (case when industry in ('elds', 'feedapp') then 10
+         |        else 60 end) as cv_threshold
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("zerobid_percent", lit(0.0))
       .withColumn("bottom_halfbid_percent", lit(0.0))
       .withColumn("top_halfbid_percent", lit(0.0))
@@ -111,7 +127,8 @@ object OcpcSuggestCPA {
       .withColumn("conversion_goal", lit(conversionGoal))
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
 
-    result
+    resultDF
+
   }
 
   def getPrevSuggestData(version: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
@@ -208,7 +225,7 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  unitid,
-         |  is_ocpc
+         |  (case when ocpc_status=2 then 1 else 0 end) as is_ocpc
          |FROM
          |  base_data
          |WHERE
@@ -272,19 +289,26 @@ object OcpcSuggestCPA {
       .select("searchid", "unitid", "pre_cvr", "kvalue", "cpa")
       .withColumn("cal_bid", col("pre_cvr") * col("cpa") * col("kvalue"))
       .withColumn("conversion_goal", lit(conversionGoal))
+      .groupBy("untid", "conversion_goal")
+      .agg(
+        avg(col("cal_bid")).alias("cal_bid_new"),
+        avg(col("kvalue")).alias("kvalue_new")
+      )
+      .select("unitid", "conversion_goal", "cal_bid_new", "kvalue_new")
 
 //    val result = data
 //      .join(cvrData, Seq("unitid"), "inner")
 //      .withColumn("conversion_goal", lit(conversionGoal))
 //      .select("unitid", "conversion_goal", "pre_cvr", "kvalue")
 
-    val resultDF = data
-      .select("unitid", "conversion_goal", "cpa", "pre_cvr", "kvalue")
-      .withColumn("cal_bid_new", col("cpa") * col("pre_cvr") * col("kvalue"))
-      .withColumn("kvalue_new", col("kvalue"))
-      .select("unitid", "conversion_goal", "cal_bid_new", "kvalue_new")
+//    val resultDF = data
+//      .select("unitid", "conversion_goal", "cpa", "pre_cvr", "kvalue")
+//      .withColumn("cal_bid_new", col("cpa") * col("pre_cvr") * col("kvalue"))
+//      .withColumn("kvalue_new", col("kvalue"))
+//      .select("unitid", "conversion_goal", "cal_bid_new", "kvalue_new")
+    data
 
-    resultDF
+//    resultDF
   }
 
   def getBaseData(media: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
