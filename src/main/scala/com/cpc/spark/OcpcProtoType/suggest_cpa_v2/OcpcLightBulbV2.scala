@@ -43,7 +43,7 @@ object OcpcLightBulbV2{
 //    cpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511a")
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
 //    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
-    val confData = getConfCPA(media, date, hour, spark)
+    val confData = getConfCPA(media, version, date, hour, spark)
     val cvUnit = getCPAgiven(date, hour, spark)
 
 
@@ -92,7 +92,7 @@ object OcpcLightBulbV2{
     cpa
   })
 
-  def getConfCPA(media: String, date: String, hour: String, spark: SparkSession) = {
+  def getConfCPA(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
     val suggestCpaPath = conf.getString("ocpc_all.light_control.suggest_path")
@@ -111,7 +111,8 @@ object OcpcLightBulbV2{
         .select("unitid", "conversion_goal", "cpa")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-        .repartition(5).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_light_qtt_manul_list")
+        .withColumn("version", lit(version))
+        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
     data
   }
 
@@ -187,7 +188,9 @@ object OcpcLightBulbV2{
          |  conversion_goal,
          |  cpa * 1.0 / 100 as cpa_manual
          |FROM
-         |  dl_cpc.ocpc_light_qtt_manul_list
+         |  dl_cpc.ocpc_light_qtt_manual_list
+         |WHERE
+         |  version = '$version'
        """.stripMargin
     println(sqlRequest3)
     val suggestDataRaw2 = spark.sql(sqlRequest3)
