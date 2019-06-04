@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.HourlyCalibration.{MAX_BIN_COUNT, MIN_BIN_SIZE, localDir}
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
@@ -47,7 +48,11 @@ object MultiDimensionCalibOnQttV2 {
     println(s"softMode=$softMode")
 
     // build spark session
-    val session = Utils.buildSparkSession("hourlyCalibration")
+    val session = SparkSession.builder()
+      .appName("Hourly calibration")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .enableHiveSupport()
+      .getOrCreate()
 
     val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
 
@@ -74,6 +79,7 @@ object MultiDimensionCalibOnQttV2 {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, softMode:Int)={
+    log.persist()
     val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
       .filter("count1>100000")
@@ -104,15 +110,11 @@ object MultiDimensionCalibOnQttV2 {
     val calimap4 = GroupToConfig(data4, session,model)
 
     val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
+    log.unpersist()
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
     saveFlatTextFileForDebug(model, califile)
-    if (softMode == 0) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"post-calibration-$model-test.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"post-calibration-$model-test.mlm", conf))
-    }
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
@@ -141,7 +143,7 @@ object MultiDimensionCalibOnQttV2 {
         x =>
           val modelName: String = x._1
           val bins = x._2._1
-//          val samples = x._2._2
+          val samples = x._2._2
           val size = bins._2
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
@@ -156,7 +158,7 @@ object MultiDimensionCalibOnQttV2 {
               predictions = irFullModel.predictions
             )
             println(s"bin size: ${irFullModel.boundaries.length}")
-//            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             val config = CalibrationConfig(
               name = modelName,
               ir = Option(irModel)
@@ -169,7 +171,7 @@ object MultiDimensionCalibOnQttV2 {
   }
 
   def AllToConfig(data:DataFrame, keyset:DataFrame,session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
+                  maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
@@ -208,18 +210,18 @@ object MultiDimensionCalibOnQttV2 {
           println(s"bin size: ${irFullModel.boundaries.length}")
           println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
       }.toList
-      val irModel = IRModel(
-        boundaries,
-        predictions
-      )
+    val irModel = IRModel(
+      boundaries,
+      predictions
+    )
     println(irModel.toString)
-      val keymap = keyset.select("group").rdd.map( x => {
+    val keymap = keyset.select("group").rdd.map( x => {
       val group = x.getString(0)
       val key = calimodel + "_" + group
-        val config = CalibrationConfig(
-          name = key,
-          ir = Option(irModel)
-        )
+      val config = CalibrationConfig(
+        name = key,
+        ir = Option(irModel)
+      )
       calimap += ((key,config))
     }).toLocalIterator
 
@@ -275,7 +277,7 @@ object MultiDimensionCalibOnQttV2 {
   }
 
   def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"postcalibration-$modelName.mlm"
+    val filename = s"post-calibration-$modelName.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
@@ -284,7 +286,7 @@ object MultiDimensionCalibOnQttV2 {
   }
 
   def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"postcalibration-flat-$modelName.txt"
+    val filename = s"post-calibration-flat-$modelName.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
