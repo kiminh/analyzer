@@ -202,10 +202,10 @@ object LRTrain {
 
     train(
       spark,
-      parser,
-      "qtt-bs-%s-daily".format(parser),
+      "ctrparser4",
+      "qtt-bs-cvrparser4-daily",
       allData,
-      "qtt-bs-cvrparser6-daily.lrm".format(parser),
+      "qtt-bs-cvrparser4-daily.lrm",
       1e8
     )
 
@@ -371,7 +371,7 @@ object LRTrain {
     trainLog :+= model.getLrTestLog()
 
 
-    /*val testNum = sampleTest.count().toDouble * 0.9
+    val testNum = sampleTest.count().toDouble * 0.9
     val minBinSize = 1000d
     var binNum = 100d
     if (testNum < minBinSize * binNum) {
@@ -379,11 +379,11 @@ object LRTrain {
     }
 
     model.runIr(binNum.toInt, 0.95)
-    trainLog :+= model.binsLog.mkString("\n")*/
+    trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
-//    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
+    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
 
     println("check before save")
     println("check dict:")
@@ -394,19 +394,19 @@ object LRTrain {
 
 
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
-//    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_${prefix}/${name}_$date")
+    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
-//    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
-//    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
+    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
-//    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
-//    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
+    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-//    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
+    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
@@ -425,7 +425,7 @@ object LRTrain {
               val vec = parser match {
                 case "cvrparser5" =>
                   getCvrVectorParser5(u)
-                case "cvrparser4" =>
+                case "ctrparser4" =>
                   getCvrVectorParser4(u)
                 case "cvrparser6" =>
                   getCvrVectorParser6(u)
@@ -623,7 +623,7 @@ object LRTrain {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
+    i += 11
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
@@ -731,7 +731,7 @@ object LRTrain {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
+    i += 11
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
@@ -917,7 +917,7 @@ object LRTrain {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
+    i += 11
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
@@ -1080,7 +1080,7 @@ object LRTrain {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
+    i += 11
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
