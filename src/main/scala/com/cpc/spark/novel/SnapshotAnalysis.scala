@@ -44,6 +44,7 @@ object SnapshotAnalysis {
           var md5 = ""
           var i = 0
           var postcali_value = 0
+          var expvalue = 0
           while (i < contentvalue.size){
             val name = contentvalue(i).name
             if (name == "calibrations_key")
@@ -58,11 +59,15 @@ object SnapshotAnalysis {
             {
              postcali_value = contentvalue(i).intList.get(0)
             }
+            else if (name == "snapshot_expvalue")
+            {
+              expvalue = contentvalue(i).intList.get(0)
+            }
             i += 1
           }
-          (searchid,postcali_value,key,md5)
-        }).toDF("searchid","postcali_value","key","md5")
-            .filter("postcali_value>0")
+          (searchid,postcali_value,key,md5,expvalue)
+        }).toDF("searchid","postcali_value","key","md5","expvalue")
+            .filter("expvalue>0")
 
         data.show(10)
       data.write.mode("overwrite").saveAsTable("test.wy00")
