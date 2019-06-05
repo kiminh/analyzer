@@ -74,14 +74,24 @@ object DssmTrain {
       "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr",
       "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
     val n = train.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
-
-    train.repartition(200)
+    println("所有数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
+    val data = train.randomSplit(Array[Double](0.95, 0.05))
+    val trainSample = data(0)
+    val testSample = data(1)
+    println("train: ", trainSample.count())
+    trainSample.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/hzh/dssm/train-v0/" + date)
+    println("test: ", testSample.count())
+    testSample.repartition(200)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save("/user/cpc/hzh/dssm/test-v0/" + date)
 
   }
 
