@@ -49,11 +49,11 @@ object SnapshotAnalysis {
             val name = contentvalue(i).name
             if (name == "calibrations_key")
               {
-                key = contentvalue(i).strList.mkString("")
+                key = contentvalue(i).strList.get(0)
               }
             else if (name == "calibrations_md5")
             {
-              md5 = contentvalue(i).strList.mkString("")
+              md5 = contentvalue(i).strList.get(0)
             }
             else if (name == "snapshot_postcali_vaule")
             {
@@ -67,7 +67,7 @@ object SnapshotAnalysis {
           }
           (searchid,postcali_value,key,md5,expvalue)
         }).toDF("searchid","postcali_value","key","md5","expvalue")
-            .filter("postcali_value > 0")
+            .filter("key is not null")
 
         data.show(10)
       data.write.mode("overwrite").saveAsTable("test.wy00")
