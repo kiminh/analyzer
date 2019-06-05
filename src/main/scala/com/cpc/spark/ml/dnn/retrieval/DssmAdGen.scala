@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.dnn.retrieval
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.dnn.Utils.ConstantUtils
+import com.cpc.spark.ml.dnn.Utils.CommonUtils
 import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
 import com.cpc.spark.ml.dnn.retrieval.DssmUserGen.sparseVector
 import com.qtt.aiclk.featurestore.Feaconf.FeatureStore
@@ -45,14 +45,14 @@ object DssmAdGen {
     adInfo.repartition(10)
       .write
       .mode("overwrite")
-      .parquet(ConstantUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
+      .parquet(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
 
     adInfo.repartition(10)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(ConstantUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0/" + date)
+      .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0/" + date)
   }
 
   def getAdOneHotFeatures(spark: SparkSession, date: String): RDD[(String, (String, Array[Long]))] = {
