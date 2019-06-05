@@ -42,22 +42,23 @@ object SnapshotAnalysis {
           val contentvalue = new FeatureStore().mergeFrom(CodedInputStream.newInstance(content)).features
           var key = ""
           var md5 = ""
+          var i = 0
           var postcali_value = 0
-          for (i <- contentvalue.size){
+          while (i < contentvalue.size){
             val name = contentvalue(i).name
             if (name == "calibrations_key")
               {
                 key = contentvalue(i).strList.mkString("")
               }
-            if (name == "calibrations_md5")
+            else if (name == "calibrations_md5")
             {
               md5 = contentvalue(i).strList.mkString("")
             }
-            if (name == "calibrations_md5")
+            else if (name == "calibrations_md5")
             {
              postcali_value = contentvalue(i).intList.get(0)
             }
-
+            i += 1
           }
           (searchid,postcali_value,key,md5)
         }).toDF("searchid","postcali_value","key","md5")
