@@ -15,7 +15,7 @@ object userprofileCost {
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$date"))
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, -1)
-    
+
   }
 
 }

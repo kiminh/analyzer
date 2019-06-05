@@ -3,13 +3,16 @@ package com.cpc.spark.ml.recall.featureSystems
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.functions.{array, udf}
+import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
 
 object recall_rec_features {
   Logger.getRootLogger.setLevel(Level.WARN)
+  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("recall_rec_features").enableHiveSupport().getOrCreate()
     val curday = args(0)
@@ -552,6 +555,250 @@ object recall_rec_features {
          |insert overwrite table dl_cpc.recall_rec_feature partition(day='$curday', hour='$hour')
          |select * from feature_result
        """.stripMargin)
+
+    val sample = spark.sql(
+      s"""
+         |select if(isclick>0, array(1,0), array(0,1)) as label, * from dl_cpc.recall_rec_feature where day='$curday' and hour='$hour'
+       """.stripMargin).select($"uid", $"label", mkSparseFeature_m(array(
+      hashSeq("m1", "string")($"slotid1").alias("slotid1"),
+      hashSeq("m2", "string")($"slotid2").alias("slotid2"),
+      hashSeq("m3", "string")($"slotid3").alias("slotid3"),
+      hashSeq("m4", "string")($"slotid4").alias("slotid4"),
+      hashSeq("m5", "string")($"slotid5").alias("slotid5"),
+      hashSeq("m6", "string")($"slotid6").alias("slotid6"),
+      hashSeq("m7", "string")($"slotid7").alias("slotid7"),
+      hashSeq("m8", "string")($"slotid8").alias("slotid8"),
+      hashSeq("m9", "string")($"slotid9").alias("slotid9"),
+      hashSeq("m10", "string")($"slotid10").alias("slotid10"),
+      hashSeq("m11", "string")($"slotid11").alias("slotid11"),
+      hashSeq("m12", "string")($"slotid12").alias("slotid12"),
+      hashSeq("m13", "string")($"slotid13").alias("slotid13"),
+      hashSeq("m14", "string")($"slotid14").alias("slotid14"),
+      hashSeq("m15", "string")($"slotid15").alias("slotid15"),
+      hashSeq("m16", "string")($"slotid16").alias("slotid16"),
+      hashSeq("m17", "string")($"slotid17").alias("slotid17"),
+      hashSeq("m18", "string")($"slotid18").alias("slotid18"),
+      hashSeq("m19", "string")($"slotid19").alias("slotid19"),
+      hashSeq("m20", "string")($"slotid20").alias("slotid20"),
+      hashSeq("m21", "string")($"slotid21").alias("slotid21"),
+      hashSeq("m22", "string")($"slotid22").alias("slotid22"),
+      hashSeq("m23", "string")($"slotid23").alias("slotid23"),
+      hashSeq("m24", "string")($"slotid24").alias("slotid24"),
+      hashSeq("m25", "string")($"slotid25").alias("slotid25"),
+      hashSeq("m26", "string")($"slotid26").alias("slotid26"),
+      hashSeq("m27", "string")($"slotid27").alias("slotid27"),
+      hashSeq("m28", "string")($"slotid28").alias("slotid28"),
+      hashSeq("m29", "string")($"slotid29").alias("slotid29"),
+      hashSeq("m30", "string")($"slotid30").alias("slotid30"),
+      hashSeq("m31", "string")($"slotid31").alias("slotid31"),
+      hashSeq("m32", "string")($"slotid32").alias("slotid32"),
+      hashSeq("m33", "string")($"slotid33").alias("slotid33"),
+      hashSeq("m34", "string")($"slotid34").alias("slotid34"),
+      hashSeq("m35", "string")($"slotid35").alias("slotid35"),
+      hashSeq("m36", "string")($"slotid36").alias("slotid36"),
+      hashSeq("m37", "string")($"slotid37").alias("slotid37"),
+      hashSeq("m38", "string")($"slotid38").alias("slotid38"),
+      hashSeq("m39", "string")($"slotid39").alias("slotid39"),
+      hashSeq("m40", "string")($"slotid40").alias("slotid40"),
+      hashSeq("m41", "string")($"slotid41").alias("slotid41"),
+      hashSeq("m42", "string")($"slotid42").alias("slotid42"),
+      hashSeq("m43", "string")($"slotid43").alias("slotid43"),
+      hashSeq("m44", "string")($"slotid44").alias("slotid44"),
+      hashSeq("m45", "string")($"slotid45").alias("slotid45"),
+      hashSeq("m46", "string")($"slotid46").alias("slotid46"),
+      hashSeq("m47", "string")($"slotid47").alias("slotid47"),
+      hashSeq("m48", "string")($"slotid48").alias("slotid48"),
+      hashSeq("m49", "string")($"slotid49").alias("slotid49"),
+      hashSeq("m50", "string")($"slotid50").alias("slotid50"),
+      hashSeq("m51", "string")($"slotid51").alias("slotid51"),
+      hashSeq("m52", "string")($"slotid52").alias("slotid52"),
+      hashSeq("m53", "string")($"slotid53").alias("slotid53"),
+      hashSeq("m54", "string")($"slotid54").alias("slotid54"),
+      hashSeq("m55", "string")($"slotid55").alias("slotid55"),
+      hashSeq("m56", "string")($"slotid56").alias("slotid56"),
+      hashSeq("m57", "string")($"slotid57").alias("slotid57"),
+      hashSeq("m58", "string")($"slotid58").alias("slotid58"),
+      hashSeq("m59", "string")($"slotid59").alias("slotid59"),
+      hashSeq("m60", "string")($"slotid60").alias("slotid60"),
+      hashSeq("m61", "string")($"slotid61").alias("slotid61"),
+      hashSeq("m62", "string")($"slotid62").alias("slotid62"),
+      hashSeq("m63", "string")($"slotid63").alias("slotid63"),
+      hashSeq("m64", "string")($"slotid64").alias("slotid64"),
+      hashSeq("m65", "string")($"slotid65").alias("slotid65"),
+      hashSeq("m66", "string")($"slotid66").alias("slotid66"),
+      hashSeq("m67", "string")($"slotid67").alias("slotid67"),
+      hashSeq("m68", "string")($"slotid68").alias("slotid68"),
+      hashSeq("m69", "string")($"slotid69").alias("slotid69"),
+      hashSeq("m70", "string")($"slotid70").alias("slotid70"),
+      hashSeq("m71", "string")($"slotid71").alias("slotid71"),
+      hashSeq("m72", "string")($"slotid72").alias("slotid72"),
+      hashSeq("m73", "string")($"slotid73").alias("slotid73"),
+      hashSeq("m74", "string")($"slotid74").alias("slotid74"),
+      hashSeq("m75", "string")($"slotid75").alias("slotid75"),
+      hashSeq("m76", "string")($"slotid76").alias("slotid76"),
+      hashSeq("m77", "string")($"slotid77").alias("slotid77"),
+      hashSeq("m78", "string")($"slotid78").alias("slotid78"),
+      hashSeq("m79", "string")($"slotid79").alias("slotid79"),
+      hashSeq("m80", "string")($"slotid80").alias("slotid80"),
+      hashSeq("m81", "string")($"slotid81").alias("slotid81"),
+      hashSeq("m82", "string")($"slotid82").alias("slotid82"),
+      hashSeq("m83", "string")($"slotid83").alias("slotid83"),
+      hashSeq("m84", "string")($"slotid84").alias("slotid84"),
+      hashSeq("m85", "string")($"slotid85").alias("slotid85"),
+      hashSeq("m86", "string")($"slotid86").alias("slotid86"),
+      hashSeq("m87", "string")($"slotid87").alias("slotid87"),
+      hashSeq("m88", "string")($"slotid88").alias("slotid88"),
+      hashSeq("m89", "string")($"slotid89").alias("slotid89"),
+      hashSeq("m90", "string")($"slotid90").alias("slotid90"),
+      hashSeq("m91", "string")($"slotid91").alias("slotid91"),
+      hashSeq("m92", "string")($"slotid92").alias("slotid92"),
+      hashSeq("m93", "string")($"slotid93").alias("slotid93"),
+      hashSeq("m94", "string")($"slotid94").alias("slotid94"),
+      hashSeq("m95", "string")($"slotid95").alias("slotid95"),
+      hashSeq("m96", "string")($"slotid96").alias("slotid96"),
+      hashSeq("m97", "string")($"slotid97").alias("slotid97"),
+      hashSeq("m98", "string")($"slotid98").alias("slotid98"),
+      hashSeq("m99", "string")($"slotid99").alias("slotid99"),
+      hashSeq("m100", "string")($"slotid100").alias("slotid100"),
+      hashSeq("m101", "string")($"slotid101").alias("slotid101"),
+      hashSeq("m102", "string")($"slotid102").alias("slotid102"),
+      hashSeq("m103", "string")($"slotid103").alias("slotid103"),
+      hashSeq("m104", "string")($"slotid104").alias("slotid104"),
+      hashSeq("m105", "string")($"slotid105").alias("slotid105"),
+      hashSeq("m106", "string")($"slotid106").alias("slotid106"),
+      hashSeq("m107", "string")($"slotid107").alias("slotid107"),
+      hashSeq("m108", "string")($"slotid108").alias("slotid108"),
+      hashSeq("m109", "string")($"slotid109").alias("slotid109"),
+      hashSeq("m110", "string")($"slotid110").alias("slotid110"),
+      hashSeq("m111", "string")($"slotid111").alias("slotid111"),
+      hashSeq("m112", "string")($"slotid112").alias("slotid112"),
+      hashSeq("m113", "string")($"slotid113").alias("slotid113"),
+      hashSeq("m114", "string")($"slotid114").alias("slotid114"),
+      hashSeq("m115", "string")($"slotid115").alias("slotid115"),
+      hashSeq("m116", "string")($"slotid116").alias("slotid116"),
+      hashSeq("m117", "string")($"slotid117").alias("slotid117"),
+      hashSeq("m118", "string")($"slotid118").alias("slotid118"),
+      hashSeq("m119", "string")($"slotid119").alias("slotid119"),
+      hashSeq("m120", "string")($"slotid120").alias("slotid120"),
+      hashSeq("m121", "string")($"slotid121").alias("slotid121"),
+      hashSeq("m122", "string")($"slotid122").alias("slotid122"),
+      hashSeq("m123", "string")($"slotid123").alias("slotid123"),
+      hashSeq("m124", "string")($"slotid124").alias("slotid124"),
+      hashSeq("m125", "string")($"slotid125").alias("slotid125"),
+      hashSeq("m126", "string")($"slotid126").alias("slotid126"),
+      hashSeq("m127", "string")($"slotid127").alias("slotid127"),
+      hashSeq("m128", "string")($"slotid128").alias("slotid128"),
+      hashSeq("m129", "string")($"slotid129").alias("slotid129"),
+      hashSeq("m130", "string")($"slotid130").alias("slotid130"),
+      hashSeq("m131", "string")($"slotid131").alias("slotid131"),
+      hashSeq("m132", "string")($"slotid132").alias("slotid132"),
+      hashSeq("m133", "string")($"slotid133").alias("slotid133"),
+      hashSeq("m134", "string")($"slotid134").alias("slotid134"),
+      hashSeq("m135", "string")($"slotid135").alias("slotid135"),
+      hashSeq("m136", "string")($"slotid136").alias("slotid136"),
+      hashSeq("m137", "string")($"slotid137").alias("slotid137"),
+      hashSeq("m138", "string")($"slotid138").alias("slotid138"),
+      hashSeq("m139", "string")($"slotid139").alias("slotid139"),
+      hashSeq("m140", "string")($"slotid140").alias("slotid140"),
+      hashSeq("m141", "string")($"slotid141").alias("slotid141"),
+      hashSeq("m142", "string")($"slotid142").alias("slotid142"),
+      hashSeq("m143", "string")($"slotid143").alias("slotid143"),
+      hashSeq("m144", "string")($"slotid144").alias("slotid144"),
+      hashSeq("m145", "string")($"slotid145").alias("slotid145"),
+      hashSeq("m146", "string")($"slotid146").alias("slotid146"),
+      hashSeq("m147", "string")($"slotid147").alias("slotid147"),
+      hashSeq("m148", "string")($"slotid148").alias("slotid148"),
+      hashSeq("m149", "string")($"slotid149").alias("slotid149"),
+      hashSeq("m150", "string")($"slotid150").alias("slotid150"),
+      hashSeq("m151", "string")($"slotid151").alias("slotid151"),
+      hashSeq("m152", "string")($"slotid152").alias("slotid152"),
+      hashSeq("m153", "string")($"slotid153").alias("slotid153"),
+      hashSeq("m154", "string")($"slotid154").alias("slotid154"),
+      hashSeq("m155", "string")($"slotid155").alias("slotid155"),
+      hashSeq("m156", "string")($"slotid156").alias("slotid156"),
+      hashSeq("m157", "string")($"slotid157").alias("slotid157"),
+      hashSeq("m158", "string")($"slotid158").alias("slotid158"),
+      hashSeq("m159", "string")($"slotid159").alias("slotid159"),
+      hashSeq("m160", "string")($"slotid160").alias("slotid160"),
+      hashSeq("m161", "string")($"slotid161").alias("slotid161"),
+      hashSeq("m162", "string")($"slotid162").alias("slotid162"),
+      hashSeq("m163", "string")($"slotid163").alias("slotid163"),
+      hashSeq("m164", "string")($"slotid164").alias("slotid164"),
+      hashSeq("m165", "string")($"slotid165").alias("slotid165"),
+      hashSeq("m166", "string")($"slotid166").alias("slotid166"),
+      hashSeq("m167", "string")($"slotid167").alias("slotid167"),
+      hashSeq("m168", "string")($"slotid168").alias("slotid168"),
+      hashSeq("m169", "string")($"slotid169").alias("slotid169"),
+      hashSeq("m170", "string")($"slotid170").alias("slotid170"),
+      hashSeq("m171", "string")($"slotid171").alias("slotid171"),
+      hashSeq("m172", "string")($"slotid172").alias("slotid172"),
+      hashSeq("m173", "string")($"slotid173").alias("slotid173"),
+      hashSeq("m174", "string")($"slotid174").alias("slotid174"),
+      hashSeq("m175", "string")($"slotid175").alias("slotid175"),
+      hashSeq("m176", "string")($"slotid176").alias("slotid176"),
+      hashSeq("m177", "string")($"slotid177").alias("slotid177"),
+      hashSeq("m178", "string")($"slotid178").alias("slotid178"),
+      hashSeq("m179", "string")($"slotid179").alias("slotid179"),
+      hashSeq("m180", "string")($"slotid180").alias("slotid180"),
+      hashSeq("m181", "string")($"slotid181").alias("slotid181"),
+      hashSeq("m182", "string")($"slotid182").alias("slotid182"),
+      hashSeq("m183", "string")($"slotid183").alias("slotid183"),
+      hashSeq("m184", "string")($"slotid184").alias("slotid184"),
+      hashSeq("m185", "string")($"slotid185").alias("slotid185"),
+      hashSeq("m186", "string")($"slotid186").alias("slotid186"),
+      hashSeq("m187", "string")($"slotid187").alias("slotid187"),
+      hashSeq("m188", "string")($"slotid188").alias("slotid188"),
+      hashSeq("m189", "string")($"slotid189").alias("slotid189"),
+      hashSeq("m190", "string")($"slotid190").alias("slotid190"),
+      hashSeq("m191", "string")($"slotid191").alias("slotid191"),
+      hashSeq("m192", "string")($"slotid192").alias("slotid192"),
+      hashSeq("m193", "string")($"slotid193").alias("slotid193"),
+      hashSeq("m194", "string")($"slotid194").alias("slotid194"),
+      hashSeq("m195", "string")($"slotid195").alias("slotid195"),
+      hashSeq("m196", "string")($"slotid196").alias("slotid196"),
+      hashSeq("m197", "string")($"slotid197").alias("slotid197"),
+      hashSeq("m198", "string")($"slotid198").alias("slotid198"),
+      hashSeq("m199", "string")($"slotid199").alias("slotid199"),
+      hashSeq("m200", "string")($"slotid200").alias("slotid200"),
+      hashSeq("m201", "string")($"slotid201").alias("slotid201"),
+      hashSeq("m202", "string")($"slotid202").alias("slotid202"),
+      hashSeq("m203", "string")($"slotid203").alias("slotid203"),
+      hashSeq("m204", "string")($"slotid204").alias("slotid204"),
+      hashSeq("m205", "string")($"slotid205").alias("slotid205"),
+      hashSeq("m206", "string")($"slotid206").alias("slotid206"),
+      hashSeq("m207", "string")($"slotid207").alias("slotid207"),
+      hashSeq("m208", "string")($"slotid208").alias("slotid208"),
+      hashSeq("m209", "string")($"slotid209").alias("slotid209"),
+      hashSeq("m210", "string")($"slotid210").alias("slotid210"),
+      hashSeq("m211", "string")($"slotid211").alias("slotid211"),
+      hashSeq("m212", "string")($"slotid212").alias("slotid212"),
+      hashSeq("m213", "string")($"slotid213").alias("slotid213"),
+      hashSeq("m214", "string")($"slotid214").alias("slotid214"),
+      hashSeq("m215", "string")($"slotid215").alias("slotid215"),
+      hashSeq("m216", "string")($"slotid216").alias("slotid216"),
+      hashSeq("m217", "string")($"slotid217").alias("slotid217"),
+      hashSeq("m218", "string")($"slotid218").alias("slotid218"),
+      hashSeq("m219", "string")($"slotid219").alias("slotid219"),
+      hashSeq("m220", "string")($"slotid220").alias("slotid220"),
+      hashSeq("m221", "string")($"slotid221").alias("slotid221"),
+      hashSeq("m222", "string")($"slotid222").alias("slotid222"),
+      hashSeq("m223", "string")($"slotid223").alias("slotid223"),
+      hashSeq("m224", "string")($"slotid224").alias("slotid224"),
+      hashSeq("m225", "string")($"slotid225").alias("slotid225"),
+      hashSeq("m226", "string")($"slotid226").alias("slotid226")
+    )).alias("sparse")).select($"uid",
+      $"label",
+      $"sparse".getField("_1").alias("idx0"),
+      $"sparse".getField("_2").alias("idx1"),
+      $"sparse".getField("_3").alias("idx2"),
+      $"sparse".getField("_4").alias("id_arr")
+    ).rdd.zipWithUniqueId().map { x =>
+        (x._2, x._1.getAs[String]("uid"), x._1.getAs[Seq[Int]]("label"),
+          x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
+          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr")
+          )
+      }.toDF("sample_idx", "uid", "label", "idx0", "idx1", "idx2", "id_arr")
+    sample.repartition(150).write.mode("overwrite").format("tfrecords").option("recordType", "Example").save(s"hdfs://emr-cluster2/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour")
   }
   case class featuresResult(var uid: String="",
                              var did: String="",
@@ -783,4 +1030,34 @@ object recall_rec_features {
                              var slotid225: Seq[String]=null,
                              var slotid226: Seq[String]=null
                            )
+
+  private def mkSparseFeature_m = udf {
+    features: Seq[Seq[Long]] =>
+      var i = 0
+      var re = Seq[(Int, Int, Long)]()
+      for (feature <- features) {
+        re = re ++
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
+        i = i + 1
+      }
+      val c = re.map(x => (0, x._1, x._2, x._3))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  private def hashSeq(prefix: String, t: String) = {
+    t match {
+      case "int" => udf {
+        seq: Seq[Int] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
+      case "string" => udf {
+        seq: Seq[String] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
+    }
+  }
 }
