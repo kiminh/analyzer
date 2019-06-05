@@ -1,9 +1,9 @@
 package com.cpc.spark.OcpcProtoType.suggest_cpa_novel_hourly
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v2.OcpcLightBulbV3._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 
 object OcpcLightBulbV3{
