@@ -20,13 +20,13 @@ import mlmodel.mlmodel.{Feature, FeatureStore}
   */
 object SnapshotAnalysis {
     def main(args: Array[String]): Unit = {
-      import spark.implicits._
         val date = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()
           .appName(s"Snapshot Analysis date = $date and hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
+      import spark.implicits._
 
         val sql =
             s"""
