@@ -36,8 +36,12 @@ object OcpcLightBulbV4{
          |  conversion_goal,
          |  cpa
          |FROM
-         |  dl_cpc.ocpc_light_control_version
+         |  dl_cpc.ocpc_light_control_hourly
          |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
          |  version = '$version'
        """.stripMargin
     println(sqlRequest)
