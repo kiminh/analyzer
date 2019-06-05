@@ -20,9 +20,10 @@ import mlmodel.mlmodel.{Feature, FeatureStore}
   */
 object SnapshotAnalysis {
     def main(args: Array[String]): Unit = {
-        val date = args(0)
-        val hour = args(1)
-        val spark = SparkSession.builder()
+      val date = args(0)
+      val hour = args(1)
+      val min = args(2)
+      val spark = SparkSession.builder()
           .appName(s"Snapshot Analysis date = $date and hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
@@ -30,7 +31,7 @@ object SnapshotAnalysis {
 
         val sql =
             s"""
-               |select * from dl_cpc.cpc_snapshot where dt = '$date' and hour = '$hour'
+               |select * from dl_cpc.cpc_snapshot where dt = '$date' and hour = '$hour' and pt = 'qtt-cvr'
              """.stripMargin
 
         println(sql)
