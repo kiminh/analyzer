@@ -1,12 +1,18 @@
 package com.cpc.spark.novel
 
+import java.io.FileInputStream
+
 import com.alibaba.fastjson.JSON
 import com.cpc.spark.streaming.tools.Gzip.decompress
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import java.util.Base64
+
+import com.google.protobuf.CodedInputStream
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import mlmodel.mlmodel.{Feature, FeatureStore}
 
 /**
   * @author WangYao
@@ -14,6 +20,7 @@ import scala.collection.mutable
   */
 object SnapshotAnalysis {
     def main(args: Array[String]): Unit = {
+      import spark.implicits._
         val date = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()
@@ -29,8 +36,34 @@ object SnapshotAnalysis {
         println(sql)
         val data = spark.sql(sql)
           .withColumn("decode_content",decode(col("content")))
+          .rdd.map(r=>{
+          val searchid = r.getAs[String]("searchid")
+          val content = r.getAs[Array[Byte]]("decode_content")
+          val contentvalue = new FeatureStore().mergeFrom(CodedInputStream.newInstance(content)).features
+          var key = ""
+          var md5 = ""
+          var postcali_value = 0
+          for (i <- contentvalue.size){
+            val name = contentvalue(i).name
+            if (name == "calibrations_key")
+              {
+                key = contentvalue(i).strList.mkString("")
+              }
+            if (name == "calibrations_md5")
+            {
+              md5 = contentvalue(i).strList.mkString("")
+            }
+            if (name == "calibrations_md5")
+            {
+             postcali_value = contentvalue(i).intList.get(0)
+            }
 
-        data.show(5)
+          }
+          (searchid,postcali_value,key,md5)
+        }).toDF("searchid","postcali_value","key","md5")
+
+        data.show(10)
+      data.write.mode("overwrite").saveAsTable("test.wy00")
     }
 
     def decode = udf {
@@ -40,24 +73,6 @@ object SnapshotAnalysis {
           }
           else
             null
-        }
-    }
-
-    def unzip = udf {
-        (x:Array[Byte]) =>
-            if (x != null) decompress(x) else null
-    }
-
-    def strToMap= udf{
-        (str: String)=>{
-
-          val json = JSON.parseObject(str)
-          var map = mutable.LinkedHashMap[String,String]()
-
-          for (k <- json.keySet()) {
-            map += (k -> json.getString(k))
-          }
-          map
         }
     }
 }
