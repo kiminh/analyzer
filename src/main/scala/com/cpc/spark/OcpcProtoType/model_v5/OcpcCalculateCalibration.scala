@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType.model_v5
 
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+//import com.cpc.spark.OcpcProtoType.model_v5.OcpcSmoothFactor
 
 
-object OcpcGetPb {
+object OcpcCalculateCalibration {
   def main(args: Array[String]): Unit = {
     /*
     pb文件格式：
@@ -33,32 +35,20 @@ object OcpcGetPb {
     val hourInt1 = args(5).toInt
     // 备用校准回溯时间长度
     val hourInt2 = args(6).toInt
-    //
+
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if (media == "novel") {
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2")
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+    val cvrType = "cvr" + conversionGoal.toString
 
-    val result = getPbByConversion(conversionGoal, version, hourInt1, hourInt2, date, hour, spark)
+    val data1 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt1, cvrType, spark)
+    val data2 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt2, cvrType, spark)
 
-    val resultDF = result
-        .withColumn("cpagiven", lit(1))
-        .select("identifier", "pcoc", "jfb", "post_cvr")
-        .withColumn("conversion_goal", lit(conversionGoal))
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-
-    resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcoc_jfb_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+    
   }
 
   def getPbByConversion(conversionGoal: Int, version: String, hourInt1: Int, hourInt2: Int, date: String, hour: String, spark: SparkSession) = {
