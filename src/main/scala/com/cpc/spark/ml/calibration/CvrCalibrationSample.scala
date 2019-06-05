@@ -31,12 +31,12 @@ object CvrCalibrationSample {
                  | from dl_cpc.slim_union_log
                  | where dt = '$date'
                  | and media_appsid in ('80000001', '80000002') and isclick = 1
-                 | and cvr_model_name = 'qtt-cvr-dnn-rawid-v1-180'
+                 | and cvr_model_name in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
                  | )a
                  |join dl_cpc.dw_unitid_detail b
-                 |on a.unitid = b.unitid and b.day = '$date'
+                 |on a.unitid = b.unitid and b.day = '2019-06-04'
                  |left join dl_cpc.dm_conversion_detail c
                  |on a.searchid = c.searchid and c.dt = '$date'
        """.stripMargin
