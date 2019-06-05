@@ -150,7 +150,7 @@ object MultiDimensionCalibOnQttCvr {
       val ectr = x.getLong(1).toDouble / 1e6d
       val model = x.getString(2)
       val group = x.getString(3)
-      val key = model + "_" + group
+      val key = group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
