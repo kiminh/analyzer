@@ -40,7 +40,7 @@ object OcpcLightBulbV2{
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
 //    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
     val confData = getConfCPA(media, version, date, hour, spark)
-    val cvUnit = getCPAgivenV2(date, hour, spark)
+    val cvUnit = getCPAgiven(date, hour, spark)
 
 
     val data = cpcData
@@ -66,16 +66,16 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-//
-//    resultDF
-//      .select("unitid", "conversion_goal", "cpa", "date", "version")
-////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-//
-//    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+
+    resultDF
+      .select("unitid", "conversion_goal", "cpa", "date", "version")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+
+    resultDF
+      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def getCPAgivenV2(date: String, hour: String, spark: SparkSession) = {
