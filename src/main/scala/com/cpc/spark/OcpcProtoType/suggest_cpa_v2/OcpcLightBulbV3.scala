@@ -37,8 +37,8 @@ object OcpcLightBulbV3{
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_hourly")
 
     // 清除redis里面的数据
     println(s"############## cleaning redis database ##########################")
@@ -65,7 +65,6 @@ object OcpcLightBulbV3{
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
 
-
     val sqlRequest1 =
       s"""
          |SELECT
@@ -73,20 +72,34 @@ object OcpcLightBulbV3{
          |  conversion_goal,
          |  cpa
          |FROM
-         |  dl_cpc.ocpc_light_control_hourly
+         |  dl_cpc.ocpc_light_control_prev_version
          |WHERE
-         |  `date` = '$date1'
-         |AND
-         |  `hour` = '$hour1'
-         |AND
          |  version = '$version'
        """.stripMargin
+
+//    val sqlRequest1 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  conversion_goal,
+//         |  cpa
+//         |FROM
+//         |  dl_cpc.ocpc_light_control_hourly
+//         |WHERE
+//         |  `date` = '$date1'
+//         |AND
+//         |  `hour` = '$hour1'
+//         |AND
+//         |  version = '$version'
+//       """.stripMargin
+
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
       .groupBy("unitid", "conversion_goal")
       .agg(min(col("cpa")).alias("prev_cpa"))
       .select("unitid", "conversion_goal", "prev_cpa")
+      .cache()
 
     data1.show(10)
 
@@ -107,7 +120,14 @@ object OcpcLightBulbV3{
       .groupBy("unitid", "conversion_goal")
       .agg(min(col("cpa")).alias("current_cpa"))
       .select("unitid", "conversion_goal", "current_cpa")
+      .cache()
     data2.show(10)
+
+    data2
+      .withColumn("cpa", col("current_cpa"))
+      .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "cpa", "version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_prev_version")
 
     // 数据关联
     val data = data2
