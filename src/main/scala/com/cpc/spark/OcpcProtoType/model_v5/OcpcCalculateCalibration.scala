@@ -45,10 +45,11 @@ object OcpcCalculateCalibration {
     val mediaSelection = conf.getString(conf_key)
     val cvrType = "cvr" + conversionGoal.toString
 
-    val data1 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt1, cvrType, spark)
-    val data2 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt2, cvrType, spark)
+    val data1 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt1, cvrType, spark).cache()
+    data1.show(10)
+    val data2 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt2, cvrType, spark).cache()
+    data2.show(10)
 
-    
   }
 
   def getPbByConversion(conversionGoal: Int, version: String, hourInt1: Int, hourInt2: Int, date: String, hour: String, spark: SparkSession) = {

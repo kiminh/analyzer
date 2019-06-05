@@ -33,7 +33,7 @@ object OcpcSmoothFactor{
     OcpcSmoothFactor(date, hour, version, media, hourInt, cvrType, spark)
   }
 
-  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession): Unit = {
+  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
