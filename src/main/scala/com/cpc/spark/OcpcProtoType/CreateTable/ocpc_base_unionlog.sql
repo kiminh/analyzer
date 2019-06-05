@@ -61,3 +61,7 @@ STORED as PARQUET;
 
 --alter table dl_cpc.ocpc_base_unionlog add columns (dsp_cpm bigint);
 --alter table dl_cpc.ocpc_base_unionlog add columns (new_user_days int);
+
+alter table dl_cpc.ocpc_base_unionlog add columns (ocpc_step int);
+
+alter table dl_cpc.ocpc_base_unionlog add columns (previous_id string);
