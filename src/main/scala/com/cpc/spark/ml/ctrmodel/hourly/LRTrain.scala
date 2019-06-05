@@ -137,16 +137,16 @@ object LRTrain {
        """.stripMargin
         .format(getSelectedHoursBefore(date, hour, 72))
 
-    val rawDataFromTrident = spark
+    val qttAll = spark
       .sql(queryRawDataFromUnionEvents)
 
     model.clearResult()
 
-    val qttAll = rawDataFromTrident
+    /*val qttAll = rawDataFromTrident
       .randomSplit(
         Array(0.1, 0.9), // 3G vs. 40M
         new Date().getTime // seed
-      )(0)
+      )(0)*/
 
     // println(qttAll.count())
 
@@ -174,7 +174,7 @@ object LRTrain {
         )
       )
 
-    rawDataFromTrident.unpersist()
+    qttAll.unpersist()
     userAppIdx.unpersist()
   }
 
@@ -316,7 +316,7 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train)/*.filter(x => x.getAs[Int]("label") > 0))*/
+    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0))
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
