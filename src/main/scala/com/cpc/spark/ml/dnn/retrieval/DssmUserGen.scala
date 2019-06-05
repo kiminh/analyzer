@@ -62,7 +62,7 @@ object DssmUserGen {
     val firstTime = args(1).toBoolean
     val lastDate = args(2)
 
-    val traincount=123
+    val traincount=789
     val testcount=456
 
 
