@@ -71,7 +71,7 @@ object DssmUserGen {
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
 
-      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + "2019-05-29")
+      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + lastDate)
       allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
         .cogroup(keyedUser)
         .map {
