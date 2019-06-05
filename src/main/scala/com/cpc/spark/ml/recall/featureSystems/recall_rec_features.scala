@@ -798,7 +798,7 @@ object recall_rec_features {
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr")
           )
       }.toDF("sample_idx", "uid", "label", "idx0", "idx1", "idx2", "id_arr")
-    sample.repartition(150).write.mode("overwrite").format("tfrecords").option("recordType", "Example").save(s"hdfs://emr-cluster/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour")
+    sample.repartition(150).write.mode("overwrite").format("tfrecords").option("recordType", "Example").save(s"hdfs://emr-cluster2/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour")
   }
   case class featuresResult(var uid: String="",
                              var did: String="",
