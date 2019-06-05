@@ -55,7 +55,7 @@ object SnapshotAnalysis {
             {
               md5 = contentvalue(i).strList.mkString("")
             }
-            else if (name == "calibrations_md5")
+            else if (name == "snapshot_postcali_vaule")
             {
              postcali_value = contentvalue(i).intList.get(0)
             }
