@@ -211,7 +211,9 @@ object OcpcUnionlog {
          |    exp_cpm,
          |    cvr_threshold,
          |    dsp_cpm,
-         |    new_user_days
+         |    new_user_days,
+         |    ocpc_step,
+         |    previous_id
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
