@@ -66,18 +66,16 @@ object DssmUserGen {
     val testcount=456
 
 
-    val hadoopConf=spark.sparkContext.hadoopConfiguration
-    val hdfs=FileSystem.get(hadoopConf)
-    val trainCountPathName = ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/2019-05-30/count"
-    val trainCountPath=new Path(trainCountPathName)
-    if(hdfs.exists(trainCountPath)){
-      hdfs.delete(trainCountPath,true)
-    }
-    val arr = Array(traincount)
-    val rdd=spark.sparkContext.parallelize(arr)
-    rdd.saveAsTextFile(trainCountPathName)
+    val trainCountPathTmpName = ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/tmp/"
 
-//    val userInfo = getData(spark, date)
+    val trainCountPathName = ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/2019-05-30/count"
+
+    val arr = Array(traincount)
+    val rdd=spark.sparkContext.parallelize(arr).repartition(1)
+
+    rddWriteFile(spark, trainCountPathTmpName, trainCountPathName, rdd)
+
+    //    val userInfo = getData(spark, date)
 //
 //    println("DAU User count = %d".format(userInfo.count()))
 //
@@ -133,6 +131,24 @@ object DssmUserGen {
 //      .format("tfrecords")
 //      .option("recordType", "Example")
 //      .save(ConstantUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + date)
+  }
+
+  private def rddWriteFile(spark: SparkSession, tmpOutputPath: String, outputPath: String, rdd: RDD[Int]) = {
+    val hadoopConf = spark.sparkContext.hadoopConfiguration
+    val hdfs = FileSystem.get(hadoopConf)
+
+    val trainCountPath = new Path(tmpOutputPath)
+    if (hdfs.exists(trainCountPath)) {
+      hdfs.delete(trainCountPath, true)
+    }
+
+    rdd.saveAsTextFile(tmpOutputPath)
+
+    if (hdfs.exists(new Path(outputPath))) {
+      hdfs.delete(new Path(outputPath), true)
+    }
+
+    hdfs.rename(new Path(tmpOutputPath + "part-00000"), new Path(outputPath))
   }
 
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
