@@ -110,10 +110,6 @@ object MultiDimensionCalibOnQttV2 {
 
     val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     log.unpersist()
-    group1.unpersist()
-    group2.unpersist()
-    group3.unpersist()
-    group4.unpersist()
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)
@@ -141,7 +137,6 @@ object MultiDimensionCalibOnQttV2 {
         x =>
           (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
       )
-      .toLocalIterator
       .map {
         x =>
           val modelName: String = x._1
@@ -169,7 +164,7 @@ object MultiDimensionCalibOnQttV2 {
             calimap += ((modelName,config))
             config
           }
-      }.toList
+      }.toLocalIterator
     return calimap
   }
 
