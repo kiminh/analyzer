@@ -32,7 +32,7 @@ object userprofileCost {
     spark.read.jdbc(jdbcUrl, unit, jdbcProp).createOrReplaceTempView("table_unit")
     val cost =
       s"""
-         |(select unit_id, sum(cost) as cost from adv.cost where date='yesterday' and cost>0 group by unit_id) temp
+         |(select unit_id, sum(cost) as cost from adv.cost where date='$yesterday' and cost>0 group by unit_id) temp
        """.stripMargin
     spark.read.jdbc(jdbcUrl, cost, jdbcProp).createOrReplaceTempView("table_cost")
 
