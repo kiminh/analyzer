@@ -56,15 +56,11 @@ object OcpcSmoothFactor{
     val finalVersion = version + hourInt.toString
     val resultDF = result
       .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(finalVersion))
 
     resultDF.show()
 
-    resultDF
-          .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190605")
+//    resultDF
+//          .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190605")
 
     resultDF
   }
