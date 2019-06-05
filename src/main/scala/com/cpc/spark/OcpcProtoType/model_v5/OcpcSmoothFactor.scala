@@ -55,7 +55,7 @@ object OcpcSmoothFactor{
 
     val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "pcoc", "jfb", "post_cvr", "cv")
+      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -72,51 +72,21 @@ object OcpcSmoothFactor{
 
 
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
-    val pcocData = calculatePCOC(rawData, spark)
-    val jfbData = calculateJFB(rawData, spark)
-
-    val result = pcocData
-        .join(jfbData, Seq("unitid"), "inner")
-        .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "cv")
-        .filter(s"pcoc is not null and pcoc != 0 and jfb is not null")
-
-    result
-  }
-
-  def calculateJFB(rawData: DataFrame, spark: SparkSession) = {
-    val jfbData = rawData
-      .groupBy("unitid")
-      .agg(
-        sum(col("price")).alias("total_price"),
-        sum(col("bid")).alias("total_bid")
-      )
-      .select("unitid", "total_price", "total_bid")
-      .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
-      .select("unitid", "jfb")
-
-    jfbData.show()
-
-    jfbData
-  }
-
-
-  def calculatePCOC(rawData: DataFrame, spark: SparkSession) = {
-    val pcocData = rawData
+    val data  =rawData
       .groupBy("unitid")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
-        avg(col("exp_cvr")).alias("pre_cvr")
+        avg(col("exp_cvr")).alias("pre_cvr"),
+        sum(col("price")).alias("total_price"),
+        sum(col("bid")).alias("total_bid")
       )
-      .select("unitid", "click", "cv", "pre_cvr")
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .select("unitid", "post_cvr", "pre_cvr", "cv")
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "pcoc", "post_cvr", "cv")
+      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid")
 
-    pcocData.show(10)
+    val result = data
+        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
 
-    pcocData
+    result
   }
 
   def getBaseData(media: String, cvrType: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
@@ -162,26 +132,7 @@ object OcpcSmoothFactor{
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-//      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-//
-//    base.createOrReplaceTempView("base_table")
-//    val sqlRequestBase =
-//      s"""
-//         |select
-//         |    searchid,
-//         |    unitid,
-//         |    price,
-//         |    original_bid,
-//         |    cast(exp_cvr as double) as exp_cvr,
-//         |    isclick,
-//         |    isshow,
-//         |    ocpc_log,
-//         |    ocpc_log_dict,
-//         |    (case when length(ocpc_log)>0 then cast(cast(ocpc_log_dict['dynamicbid'] as double) + 0.5 as int) else original_bid end) as bid
-//         |from base_table
-//       """.stripMargin
-//    println(sqlRequestBase)
-//    val clickData = spark.sql(sqlRequestBase)
+
     // 抽取cv数据
     val sqlRequest2 =
       s"""
