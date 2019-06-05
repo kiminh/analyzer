@@ -22,16 +22,6 @@ object DssmUserTest {
     val date = args(0)
     val userFeature = getUserFeature(spark, date)
     userFeature.createOrReplaceTempView("userfeature")
-
-    var useResult = spark.sql(
-      s"""
-         |select uid, u_dense, u_idx0, u_idx1, u_idx2, u_id_arr from userfeature where u_dense is null
-       """.stripMargin)
-
-    println("result count = " + useResult.count())
-
-    useResult.show(10)
-
     val adFeature = getAdFeature(spark, date)
     adFeature.createOrReplaceTempView("adfeature")
     val samples = getSample(spark, date)
@@ -81,7 +71,7 @@ object DssmUserTest {
           )
       }
     println(s"full result: ${result.count()}")
-    result = result.filter(_._2 != null)
+    result = result.filter(_._3 != null)
     println(s"uid is not null: ${result.count()}")
     result = result.filter(_._8 != null)
     println(s"ad is not null: ${result.count()}")
@@ -92,8 +82,12 @@ object DssmUserTest {
 
     train.show(10)
 
-    val trainFilter=train.filter("u_dense is null")
-    trainFilter.show(10)
+    train.createOrReplaceTempView("train")
+
+    spark.sql(s"""
+                 |insert overwrite table dl_cpc.cpc_dssm_feature_test_qizhi partition (`date`='${date}')
+                 |select * from train
+       """.stripMargin)
 
   }
 
