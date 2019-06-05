@@ -1,5 +1,6 @@
 package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hourly
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -12,6 +13,7 @@ object OcpcLightBulbV4{
     2. mappartition打开redis，并存储数据
      */
     // 计算日期周期
+    Logger.getRootLogger.setLevel(Level.WARN)
 //    2019-02-02 10 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
