@@ -38,10 +38,13 @@ object SnapshotAnalysis {
           .withColumn("decode_content",decode(col("content")))
           .rdd.map(r=>{
           val searchid = r.getAs[String]("searchid")
+          val ideaid = r.getAs[Long]("ideaid")
+          val adslotid = r.getAs[String]("adslotid")
           val content = r.getAs[Array[Byte]]("decode_content")
           val contentvalue = new FeatureStore().mergeFrom(CodedInputStream.newInstance(content)).features
           var key = ""
           var md5 = ""
+          var user_req_ad_num = 0
           var i = 0
           var postcali_value = 0
           var expvalue = 0
@@ -63,11 +66,15 @@ object SnapshotAnalysis {
             {
               expvalue = contentvalue(i).intList.get(0)
             }
+            else if (name == "user_req_ad_num")
+            {
+              user_req_ad_num = contentvalue(i).intList.get(0)
+            }
             i += 1
           }
-          (searchid,postcali_value,key,md5,expvalue)
-        }).toDF("searchid","postcali_value","key","md5","expvalue")
-            .filter("postcali_value>0")
+          (searchid,postcali_value,key,md5,expvalue,user_req_ad_num,ideaid,adslotid)
+        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid")
+         .filter("postcali_value>0")
 
         data.show(10)
       data.write.mode("overwrite").saveAsTable("test.wy00")
