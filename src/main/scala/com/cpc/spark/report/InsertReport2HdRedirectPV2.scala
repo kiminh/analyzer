@@ -12,7 +12,7 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
   * 每5min统计每个adslotid 的pv数
   * 统计逻辑： 根据adslotid分组求sum(1)
   *
-  * 输入: hive, dl_cpc.cpc_basedata_cfg_event_test
+  * 输入: hive, dl_cpc.cpc_basedata_cfg_event
   * 输出：mysql, report2.report_hd_redirect_pv_minute
   *
   */
@@ -63,7 +63,7 @@ object InsertReport2HdRedirectPV2 {
          |, hour
          |, ip
          |, ua
-         |from dl_cpc.cpc_basedata_cfg_event_test
+         |from dl_cpc.cpc_basedata_cfg_event
          |where day='$argDay' and hour='$argHour' and (minute between $argMinute and %s)
        """.stripMargin.format(argMinute.toInt + 4)
     println("sql: " + sql, "count: " + spark.sql(sql).count())
@@ -83,7 +83,7 @@ object InsertReport2HdRedirectPV2 {
          |, hour
          |, ip
          |, ua
-         |from dl_cpc.cpc_basedata_cfg_event_test
+         |from dl_cpc.cpc_basedata_cfg_event
          |where day='$argDay' and hour='$argHour' and (minute between %s and $eminute)
        """.stripMargin.format(argMinute.toInt + 5)
     println("sql2: " + sql2, "count: " + spark.sql(sql2).count())
