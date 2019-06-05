@@ -127,6 +127,7 @@ object OcpcLightBulbV3{
       .withColumn("cpa", col("current_cpa"))
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "cpa", "version")
+      .repartition(10)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_prev_version")
 
     // 数据关联
