@@ -78,6 +78,9 @@ object DssmTrain {
     val train = result.toDF("sample_idx", "label",
       "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr",
       "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
+
+    train.show(10)
+
     val n = train.count()
     println("所有数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
     val data = train.randomSplit(Array[Double](0.95, 0.05))
