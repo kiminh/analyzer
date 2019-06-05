@@ -316,7 +316,7 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0))
+    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
