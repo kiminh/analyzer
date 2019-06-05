@@ -123,12 +123,6 @@ object OcpcLightBulbV3{
       .cache()
     data2.show(10)
 
-    data2
-      .withColumn("cpa", col("current_cpa"))
-      .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "cpa", "version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_prev_version")
-
     // 数据关联
     val data = data2
       .join(data1, Seq("unitid", "conversion_goal"), "outer")

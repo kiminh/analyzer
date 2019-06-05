@@ -2,7 +2,6 @@ package com.cpc.spark.OcpcProtoType.model_v5
 
 import java.io.FileOutputStream
 
-
 import com.typesafe.config.ConfigFactory
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
 import org.apache.log4j.{Level, Logger}
@@ -11,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable.ListBuffer
 
-object OcpcCvrSmoothV2 {
+object OcpcCvrSmooth {
   def main(args: Array[String]): Unit = {
     /*
     计算重构后的cvr平滑数据:
@@ -87,7 +86,7 @@ object OcpcCvrSmoothV2 {
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(resultDF, fileName)
+//    savePbPack(resultDF, fileName)
 
   }
 
