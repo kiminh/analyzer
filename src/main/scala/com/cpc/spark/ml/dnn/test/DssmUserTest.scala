@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.dnn.test
 
 import com.cpc.spark.ml.dnn.Utils.CommonUtils
+import com.cpc.spark.ml.dnn.retrieval.DssmTrain.{getAdFeature, getSample}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -22,14 +23,77 @@ object DssmUserTest {
     val userFeature = getUserFeature(spark, date)
     userFeature.createOrReplaceTempView("userfeature")
 
-    var result = spark.sql(
+    var useResult = spark.sql(
       s"""
          |select uid, u_dense, u_idx0, u_idx1, u_idx2, u_id_arr from userfeature where u_dense is null
        """.stripMargin)
 
-    println("result count = " + result.count())
+    println("result count = " + useResult.count())
 
-    result.show(10)
+    useResult.show(10)
+
+    val adFeature = getAdFeature(spark, date)
+    adFeature.createOrReplaceTempView("adfeature")
+    val samples = getSample(spark, date)
+    samples.createOrReplaceTempView("samples")
+
+    println("userFeature count : ",userFeature.count())
+    println("adFeature count : ",adFeature.count())
+    println("samples count : ",samples.count())
+
+    var result = spark.sql(
+      s"""
+         |select
+         |  a.label as label,
+         |  c.u_dense as u_dense,
+         |  c.u_idx0 as u_idx0,
+         |  c.u_idx1 as u_idx1,
+         |  c.u_idx2 as u_idx2,
+         |  c.u_id_arr as u_id_arr,
+         |  b.ad_dense as ad_dense,
+         |  b.ad_idx0 as ad_idx0,
+         |  b.ad_idx1 as ad_idx1,
+         |  b.ad_idx2 as ad_idx2,
+         |  b.ad_id_arr as ad_id_arr
+         |from (select * from samples) a
+         | left join
+         | (select ideaid, unitid, ad_dense, ad_idx0, ad_idx1, ad_idx2, ad_id_arr from adfeature) b
+         | on (a.ideaid = b.ideaid and a.unitid = b.unitid)
+         | left join
+         | (select uid, u_dense, u_idx0, u_idx1, u_idx2, u_id_arr from userfeature) c
+         | on (a.uid = c.uid)
+       """.stripMargin).rdd.zipWithUniqueId()
+      .map {
+        x =>
+          (
+            x._2,
+            x._1.getAs[Seq[Int]]("label"),
+            x._1.getAs[Seq[Long]]("u_dense"),
+            x._1.getAs[Seq[Int]]("u_idx0"),
+            x._1.getAs[Seq[Int]]("u_idx1"),
+            x._1.getAs[Seq[Int]]("u_idx2"),
+            x._1.getAs[Seq[Long]]("u_id_arr"),
+            x._1.getAs[Seq[Long]]("ad_dense"),
+            x._1.getAs[Seq[Int]]("ad_idx0"),
+            x._1.getAs[Seq[Int]]("ad_idx1"),
+            x._1.getAs[Seq[Int]]("ad_idx2"),
+            x._1.getAs[Seq[Long]]("ad_id_arr")
+          )
+      }
+    println(s"full result: ${result.count()}")
+    result = result.filter(_._2 != null)
+    println(s"uid is not null: ${result.count()}")
+    result = result.filter(_._8 != null)
+    println(s"ad is not null: ${result.count()}")
+
+    val train = result.toDF("sample_idx", "label",
+      "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr",
+      "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
+
+    train.show(10)
+
+    val trainFilter=train.filter("u_dense is null")
+    trainFilter.show(10)
 
   }
 
