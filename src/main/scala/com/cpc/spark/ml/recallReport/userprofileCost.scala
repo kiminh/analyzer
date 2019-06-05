@@ -26,7 +26,7 @@ object userprofileCost {
          |(select id, tag_orient from (SELECT id,
          |if(audience_orient>0 and audience_orient_filter>0, CONCAT(audience_orient,",",audience_orient_filter),
          |if(audience_orient>0,audience_orient,
-         |if(audience_orient_filter>0, audience_orient_filter, ''))) as tag_orient FROM `unit`) t
+         |if(audience_orient_filter>0, audience_orient_filter, ''))) as tag_orient FROM adv.`unit`) t
          |where tag_orient>0 group by id, tag_orient) temp
       """.stripMargin
     spark.read.jdbc(jdbcUrl, unit, jdbcProp).createOrReplaceTempView("table_unit")
@@ -55,7 +55,7 @@ object userprofileCost {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.recall_report_userprofile_cost partition(day=$yesterday)
+         |insert overwrite table dl_cpc.recall_report_userprofile_cost partition (day='$yesterday')
          |select * from union_table
        """.stripMargin)
 
