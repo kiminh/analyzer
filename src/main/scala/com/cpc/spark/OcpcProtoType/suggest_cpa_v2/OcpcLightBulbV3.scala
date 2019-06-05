@@ -37,8 +37,8 @@ object OcpcLightBulbV3{
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_hourly")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_api_control_hourly")
 
     // 清除redis里面的数据
     println(s"############## cleaning redis database ##########################")
