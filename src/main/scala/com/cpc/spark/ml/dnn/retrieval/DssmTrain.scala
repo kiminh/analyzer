@@ -70,7 +70,7 @@ object DssmTrain {
           )
       }
     println(s"full result: ${result.count()}")
-    result = result.filter(_._2 != null)
+    result = result.filter(_._3 != null)
     println(s"uid is not null: ${result.count()}")
     result = result.filter(_._8 != null)
     println(s"ad is not null: ${result.count()}")
