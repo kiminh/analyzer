@@ -40,7 +40,7 @@ object OcpcLightBulbV2{
     val ocpcData = getOcpcRecord(media, version, date, hour, spark)
 //    ocpcData.write.mode("overwrite").saveAsTable("test.check_ocpc_light_control_20190511b")
     val confData = getConfCPA(media, version, date, hour, spark)
-    val cvUnit = getCPAgiven(date, hour, spark)
+    val cvUnit = getCPAgivenV2(date, hour, spark)
 
 
     val data = cpcData
@@ -66,17 +66,61 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-
-    resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+//
+//    resultDF
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+//
+//    resultDF
+//      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
+  def getCPAgivenV2(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null and (target_medias = '80000001,80000002' or adslot_type = 3)) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "conversion_goal")
+
+
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    cast(conversion_goal as int) as conversion_goal
+         |FROM
+         |    base_table
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val resultDF = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal > 0")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+
+
+  }
 
 }
