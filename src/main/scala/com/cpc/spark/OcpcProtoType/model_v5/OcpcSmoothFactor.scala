@@ -27,14 +27,13 @@ object OcpcSmoothFactor{
     val media = args(3).toString
     val hourInt = args(4).toInt
     val cvrType = args(5).toString
-    val minCV = 20
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType, minCV:$minCV")
+    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType")
 
-    OcpcSmoothFactor(date, hour, version, media, hourInt, cvrType, minCV, spark)
+    OcpcSmoothFactor(date, hour, version, media, hourInt, cvrType, spark)
   }
 
-  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, minCV: Int, spark: SparkSession): Unit = {
+  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession): Unit = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
@@ -43,7 +42,7 @@ object OcpcSmoothFactor{
     val baseData = getBaseData(media, cvrType, hourInt, date, hour, spark)
 
     // 计算结果
-    val result = calculateSmooth(baseData, minCV, spark)
+    val result = calculateSmooth(baseData, spark)
 
     var conversionGoal = 1
     if (cvrType == "cvr1") {
@@ -54,9 +53,9 @@ object OcpcSmoothFactor{
       conversionGoal = 3
     }
 
-    val finalVersion = version + minCV.toString
+    val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "pcoc", "jfb", "post_cvr")
+      .select("identifier", "pcoc", "jfb", "post_cvr", "cv")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -73,14 +72,14 @@ object OcpcSmoothFactor{
 
 
 
-  def calculateSmooth(rawData: DataFrame, minCV: Int, spark: SparkSession) = {
+  def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
     val pcocData = calculatePCOC(rawData, spark)
     val jfbData = calculateJFB(rawData, spark)
 
     val result = pcocData
         .join(jfbData, Seq("unitid"), "inner")
         .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "cv")
-        .filter(s"pcoc is not null and pcoc != 0 and jfb is not null and cv >= $minCV")
+        .filter(s"pcoc is not null and pcoc != 0 and jfb is not null")
 
     result
   }
