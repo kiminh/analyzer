@@ -31,6 +31,15 @@ object OcpcSmoothFactor{
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType, minCV:$minCV")
 
+    OcpcSmoothFactor(date, hour, version, media, hourInt, cvrType, minCV, spark)
+  }
+
+  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, minCV: Int, spark: SparkSession): Unit = {
+    /*
+    动态计算alpha平滑系数
+    1. 基于原始pcoc，计算预测cvr的量纲系数
+    2. 二分搜索查找到合适的平滑系数
+     */
     val baseData = getBaseData(media, cvrType, hourInt, date, hour, spark)
 
     // 计算结果
@@ -47,17 +56,19 @@ object OcpcSmoothFactor{
 
     val finalVersion = version + minCV.toString
     val resultDF = result
-        .select("identifier", "pcoc", "jfb", "post_cvr")
-        .withColumn("conversion_goal", lit(conversionGoal))
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(finalVersion))
+      .select("identifier", "pcoc", "jfb", "post_cvr")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(finalVersion))
 
     resultDF.show()
 
     resultDF
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+          .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+
+    resultDF
   }
 
 
