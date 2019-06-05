@@ -135,17 +135,36 @@ object OcpcSuggestCPA {
     /*
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
      */
+//    // 时间区间选择
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val endDayTime = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(endDayTime)
+//    calendar.add(Calendar.DATE, -1)
+//    val startDateTime1 = calendar.getTime
+//    val date1 = dateConverter.format(startDateTime1)
+//    calendar.add(Calendar.DATE, -1)
+//    val startDateTime2 = calendar.getTime
+//    val date2 = dateConverter.format(startDateTime2)
+
+
     // 时间区间选择
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val endDayTime = dateConverter.parse(date)
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val endDay = date + " " + hour
+    val endDayTime = dateConverter.parse(endDay)
     val calendar = Calendar.getInstance
     calendar.setTime(endDayTime)
-    calendar.add(Calendar.DATE, -1)
-    val startDateTime1 = calendar.getTime
-    val date1 = dateConverter.format(startDateTime1)
-    calendar.add(Calendar.DATE, -1)
-    val startDateTime2 = calendar.getTime
-    val date2 = dateConverter.format(startDateTime2)
+    calendar.add(Calendar.HOUR, -1)
+    val yesterday1 = calendar.getTime
+    val tmpDate1 = dateConverter.format(yesterday1)
+    val date1 = tmpDate1.split(" ")(0)
+    val hour1 = tmpDate1.split(" ")(1)
+    calendar.add(Calendar.HOUR, -1)
+    val yesterday2 = calendar.getTime
+    val tmpDate2 = dateConverter.format(yesterday2)
+    val date2 = tmpDate2.split(" ")(0)
+    val hour2 = tmpDate2.split(" ")(1)
+
 
     val sqlRequest1 =
       s"""
@@ -157,7 +176,7 @@ object OcpcSuggestCPA {
          |WHERE
          |  `date` = '$date1'
          |AND
-         |  `hour` = '$hour'
+         |  `hour` = '$hour1'
          |AND
          |  version = '$version'
          |AND
@@ -180,7 +199,7 @@ object OcpcSuggestCPA {
          |WHERE
          |  `date` = '$date2'
          |AND
-         |  `hour` = '$hour'
+         |  `hour` = '$hour2'
          |AND
          |  version = '$version'
          |AND
