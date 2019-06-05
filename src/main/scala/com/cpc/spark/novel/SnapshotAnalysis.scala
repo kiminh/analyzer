@@ -67,7 +67,7 @@ object SnapshotAnalysis {
           }
           (searchid,postcali_value,key,md5,expvalue)
         }).toDF("searchid","postcali_value","key","md5","expvalue")
-            .filter("expvalue>0")
+            .filter("postcali_value > 0")
 
         data.show(10)
       data.write.mode("overwrite").saveAsTable("test.wy00")
