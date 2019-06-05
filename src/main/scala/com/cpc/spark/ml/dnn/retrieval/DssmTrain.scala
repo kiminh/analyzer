@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.dnn.retrieval
 
+import com.cpc.spark.ml.dnn.Utils.ConstantUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -84,23 +85,23 @@ object DssmTrain {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/hzh/dssm/train-v0/" + date)
+      .save(ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/" + date)
     println("test: ", testSample.count())
     testSample.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/hzh/dssm/test-v0/" + date)
+      .save(ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/test-v0/" + date)
 
   }
 
   def getUserFeature(spark: SparkSession, date: String): DataFrame = {
-    spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + date)
+    spark.read.parquet(ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + date)
   }
 
   def getAdFeature(spark: SparkSession, date: String): DataFrame = {
-    spark.read.parquet("/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
+    spark.read.parquet(ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {

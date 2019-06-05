@@ -1,9 +1,11 @@
 package com.cpc.spark.ml.dnn.retrieval
 
 import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.dnn.Utils.ConstantUtils
 import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
 import com.qtt.aiclk.featurestore.Feaconf.FeatureStore
 import org.apache.commons.codec.binary.Base64
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -60,62 +62,77 @@ object DssmUserGen {
     val firstTime = args(1).toBoolean
     val lastDate = args(2)
 
-    val userInfo = getData(spark, date)
+    val traincount=123
+    val testcount=456
 
-    println("DAU User count = %d".format(userInfo.count()))
 
-    val finalOutput = if (!firstTime) {
-      import spark.implicits._
-
-      val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
-
-      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + lastDate)
-      allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
-        .cogroup(keyedUser)
-        .map {
-          x => {
-            val row =
-              if (x._2._2 != null && x._2._2.iterator != null && x._2._2.iterator.hasNext) {
-                x._2._2.iterator.next()
-              } else if (x._2._1 != null && x._2._1.iterator != null && x._2._1.iterator.hasNext) {
-                x._2._1.iterator.next()
-              } else {
-                null
-              }
-            if (row != null) {
-              (row.getAs[Number]("sample_idx").longValue(),
-                row.getAs[String]("uid"),
-                row.getAs[Seq[Long]]("u_dense"),
-                row.getAs[Seq[Int]]("u_idx0"),
-                row.getAs[Seq[Int]]("u_idx1"),
-                row.getAs[Seq[Int]]("u_idx2"),
-                row.getAs[Seq[Long]]("u_id_arr"))
-            } else {
-              (-1L, "", Seq(0L), Seq(0), Seq(0), Seq(0), Seq(0L))
-            }
-          }
-        }
-        .toDF("sample_idx", "uid",
-          "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
-        .filter(row => row.getAs[Long]("sample_idx") > 0)
-    } else {
-      userInfo
+    val hadoopConf=spark.sparkContext.hadoopConfiguration
+    val hdfs=FileSystem.get(hadoopConf)
+    val trainCountPathName = ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/2019-05-30/count"
+    val trainCountPath=new Path(trainCountPathName)
+    if(hdfs.exists(trainCountPath)){
+      hdfs.delete(trainCountPath,true)
     }
+    val arr = Array(traincount)
+    val rdd=spark.sparkContext.parallelize(arr)
+    rdd.saveAsTextFile(trainCountPathName)
 
-    val n = finalOutput.count()
-    println("Final user count = %d".format(n))
-
-    finalOutput.repartition(100)
-      .write
-      .mode("overwrite")
-      .parquet("/user/cpc/hzh/dssm/all-user-info/" + date)
-
-    finalOutput.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/hzh/dssm/user-info-v0/" + date)
+//    val userInfo = getData(spark, date)
+//
+//    println("DAU User count = %d".format(userInfo.count()))
+//
+//    val finalOutput = if (!firstTime) {
+//      import spark.implicits._
+//
+//      val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
+//
+//      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + lastDate)
+//      allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
+//        .cogroup(keyedUser)
+//        .map {
+//          x => {
+//            val row =
+//              if (x._2._2 != null && x._2._2.iterator != null && x._2._2.iterator.hasNext) {
+//                x._2._2.iterator.next()
+//              } else if (x._2._1 != null && x._2._1.iterator != null && x._2._1.iterator.hasNext) {
+//                x._2._1.iterator.next()
+//              } else {
+//                null
+//              }
+//            if (row != null) {
+//              (row.getAs[Number]("sample_idx").longValue(),
+//                row.getAs[String]("uid"),
+//                row.getAs[Seq[Long]]("u_dense"),
+//                row.getAs[Seq[Int]]("u_idx0"),
+//                row.getAs[Seq[Int]]("u_idx1"),
+//                row.getAs[Seq[Int]]("u_idx2"),
+//                row.getAs[Seq[Long]]("u_id_arr"))
+//            } else {
+//              (-1L, "", Seq(0L), Seq(0), Seq(0), Seq(0), Seq(0L))
+//            }
+//          }
+//        }
+//        .toDF("sample_idx", "uid",
+//          "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
+//        .filter(row => row.getAs[Long]("sample_idx") > 0)
+//    } else {
+//      userInfo
+//    }
+//
+//    val n = finalOutput.count()
+//    println("Final user count = %d".format(n))
+//
+//    finalOutput.repartition(100)
+//      .write
+//      .mode("overwrite")
+//      .parquet(ConstantUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + date)
+//
+//    finalOutput.repartition(100)
+//      .write
+//      .mode("overwrite")
+//      .format("tfrecords")
+//      .option("recordType", "Example")
+//      .save(ConstantUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + date)
   }
 
   def getUserDayFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
