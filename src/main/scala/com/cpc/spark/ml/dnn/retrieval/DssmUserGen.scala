@@ -71,7 +71,7 @@ object DssmUserGen {
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
 
-      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info/" + lastDate)
+      val allUserInfo = spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + lastDate)
       allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
         .cogroup(keyedUser)
         .map {
@@ -104,8 +104,8 @@ object DssmUserGen {
       userInfo
     }
 
-    val n = finalOutput.count()
-    println("Final user count = %d".format(n))
+    val userCount = finalOutput.count()
+    println("Final user count = %d".format(userCount))
 
     finalOutput.repartition(100)
       .write
@@ -118,6 +118,10 @@ object DssmUserGen {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + date)
+
+    val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-info-v0/tmp"
+    val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-v0/${date}/count"
+    CommonUtils.writeCountToFile(spark, userCount, userCountPathTmpName, userCountPathName)
   }
 
 

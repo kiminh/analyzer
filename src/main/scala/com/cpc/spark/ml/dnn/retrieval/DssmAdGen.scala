@@ -40,7 +40,9 @@ object DssmAdGen {
 
     val adInfo = getData(spark, date)
 
-    println(s"Ad Info：total = ${adInfo.count()}")
+    val adCount=adInfo.count()
+
+    println(s"Ad Info：total = ${adCount}")
 
     adInfo.repartition(10)
       .write
@@ -53,6 +55,10 @@ object DssmAdGen {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0/" + date)
+
+    val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0/tmp"
+    val adCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-v0/${date}/count"
+    CommonUtils.writeCountToFile(spark, adCount, adCountPathTmpName, adCountPathName)
   }
 
   def getAdOneHotFeatures(spark: SparkSession, date: String): RDD[(String, (String, Array[Long]))] = {

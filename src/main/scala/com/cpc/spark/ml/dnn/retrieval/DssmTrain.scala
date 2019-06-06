@@ -108,20 +108,15 @@ object DssmTrain {
 
     val trainCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/tmp/"
     val trainCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/train-v0/${date}/count"
-    writeCountToFile(spark, traincount, trainCountPathTmpName, trainCountPathName)
+    CommonUtils.writeCountToFile(spark, traincount, trainCountPathTmpName, trainCountPathName)
 
     val testCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/test-v0/tmp/"
     val testCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-v0/${date}/count"
-    writeCountToFile(spark, testcount, testCountPathTmpName, testCountPathName)
+    CommonUtils.writeCountToFile(spark, testcount, testCountPathTmpName, testCountPathName)
 
   }
 
-  private def writeCountToFile(spark: SparkSession, count: Long, trainCountPathTmpName: String, trainCountPathName: String) = {
-    val arr = Array(count)
-    val rdd = spark.sparkContext.parallelize(arr).repartition(1)
 
-    CommonUtils.rddWriteFile(spark, trainCountPathTmpName, trainCountPathName, rdd)
-  }
 
   def getUserFeature(spark: SparkSession, date: String): DataFrame = {
     spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + date)
