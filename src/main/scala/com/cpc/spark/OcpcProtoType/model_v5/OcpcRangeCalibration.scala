@@ -39,18 +39,19 @@ object OcpcRangeCalibration {
     val lowBidFactor = args(5).toDouble
     val hourInt = args(6).toInt
     val conversionGoal = args(7).toInt
+    val minCV = args(8).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal")
 
     // 抽取基础数据
-    OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, spark)
+    OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
 
 //    result.show(10)
 
   }
 
-  def OcpcRangeCalibration(date: String, hour: String, version: String, media: String, highBidFactor: Double, lowBidFactor: Double, hourInt: Int, conversionGoal: Int, spark:SparkSession) = {
+  def OcpcRangeCalibration(date: String, hour: String, version: String, media: String, highBidFactor: Double, lowBidFactor: Double, hourInt: Int, conversionGoal: Int, minCV: Int, spark:SparkSession) = {
     /*
     val expTag: Nothing = 1
     val unitid: Nothing = 2
@@ -79,7 +80,10 @@ object OcpcRangeCalibration {
       .select("searchid", "unitid", "bid", "price", "exp_cvr", "isclick", "isshow", "iscvr")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data1 = calculateData1(baseData, date, hour, spark).cache()
+    val dataRaw1 = calculateData1(baseData, date, hour, spark)
+    val data1 = dataRaw1
+        .filter(s"cv >= $minCV")
+        .cache()
     data1.show(10)
     //    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
@@ -218,7 +222,8 @@ object OcpcRangeCalibration {
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
          |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
-         |  sum(isclick) as click
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv
          |FROM
          |  base_data
          |GROUP BY unitid
@@ -228,7 +233,7 @@ object OcpcRangeCalibration {
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .withColumn("jfb", col("acp") * 1.0 / col("acb"))
-      .select("unitid", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click")
+      .select("unitid", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
 
     data
   }
