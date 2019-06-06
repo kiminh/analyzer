@@ -44,18 +44,9 @@ object OcpcSmoothFactor{
     // 计算结果
     val result = calculateSmooth(baseData, spark)
 
-    var conversionGoal = 1
-    if (cvrType == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrType == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
     val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
+      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     resultDF.show()
 
@@ -75,12 +66,13 @@ object OcpcSmoothFactor{
         sum(col("iscvr")).alias("cv"),
         avg(col("exp_cvr")).alias("pre_cvr"),
         sum(col("price")).alias("total_price"),
-        sum(col("bid")).alias("total_bid")
+        sum(col("bid")).alias("total_bid"),
+        countDistinct(col("hour")).alias("hour_cnt")
       )
-      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid")
+      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     val result = data
-        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
+        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     result
   }
@@ -115,7 +107,8 @@ object OcpcSmoothFactor{
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  cast(exp_cvr as double) as exp_cvr,
-         |  ocpc_log
+         |  ocpc_log,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
