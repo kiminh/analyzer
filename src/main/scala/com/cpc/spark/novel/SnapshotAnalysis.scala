@@ -46,7 +46,8 @@ object SnapshotAnalysis {
           var md5 = ""
           var user_req_ad_num = ""
           var i = 0
-          var postcali_value = 0
+          var raw_cvr = 0
+          var postcali_cvr = 0
           var expvalue = 0
           var model = ""
           while (i < contentvalue.size){
@@ -61,7 +62,7 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_postcali_vaule")
             {
-             postcali_value = contentvalue(i).intList.get(0)
+             postcali_cvr = contentvalue(i).intList.get(0)
             }
             else if (name == "snapshot_expvalue")
             {
@@ -77,8 +78,8 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_value,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model)
-        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model")
+          (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr)
+        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr")
          .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
 
         data.show(10)
