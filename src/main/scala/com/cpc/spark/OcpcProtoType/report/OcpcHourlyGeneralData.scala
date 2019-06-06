@@ -313,8 +313,6 @@ object OcpcHourlyGeneralData {
          |AND
          |  $mediaSelection
          |AND
-         |  isclick = 1
-         |AND
          |  is_ocpc = 1
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
