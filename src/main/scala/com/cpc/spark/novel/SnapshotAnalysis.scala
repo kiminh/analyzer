@@ -76,6 +76,10 @@ object SnapshotAnalysis {
             {
               model = contentvalue(i).strList.get(0)
             }
+            else if (name == "snapshot_raw_expvalue")
+            {
+              raw_cvr = contentvalue(i).intList.get(0)
+            }
             i += 1
           }
           (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr)
