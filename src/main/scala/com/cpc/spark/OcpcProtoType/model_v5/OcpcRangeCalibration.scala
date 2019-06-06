@@ -44,9 +44,9 @@ object OcpcRangeCalibration {
     println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal")
 
     // 抽取基础数据
-    val result = OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, spark)
+    OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, spark)
 
-    result.show(10)
+//    result.show(10)
 
   }
 
@@ -77,26 +77,25 @@ object OcpcRangeCalibration {
       .join(cvrData, Seq("searchid"), "left_outer")
       .na.fill(0, Seq("iscvr"))
       .select("searchid", "unitid", "bid", "price", "exp_cvr", "isclick", "isshow", "iscvr")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("version", lit(version))
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data1 = calculateData1(baseData, date, hour, spark)
+    val data1 = calculateData1(baseData, date, hour, spark).cache()
+    data1.show(10)
     //    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
-    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
-    val baseData2 = baseData
-      .join(data1, Seq("unitid"), "inner")
-
-    val data2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
-    //    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
-
-    val resultDF = data1
-      .join(data2, Seq("unitid"), "inner")
-      .withColumn("high_bid_factor", lit(highBidFactor))
-      .select("unitid", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
-
-    resultDF
+//    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+//    val baseData2 = baseData
+//      .join(data1, Seq("unitid"), "inner")
+//
+//    val data2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
+//    //    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
+//
+//    val resultDF = data1
+//      .join(data2, Seq("unitid"), "inner")
+//      .withColumn("high_bid_factor", lit(highBidFactor))
+//      .select("unitid", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+//
+//    resultDF
 
   }
 
