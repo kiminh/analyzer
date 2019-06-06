@@ -48,6 +48,7 @@ object SnapshotAnalysis {
           var i = 0
           var postcali_value = 0
           var expvalue = 0
+          var model = ""
           while (i < contentvalue.size){
             val name = contentvalue(i).name
             if (name == "calibrations_key")
@@ -72,13 +73,13 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_model_name")
             {
-              user_req_ad_num = contentvalue(i).intList.get(0)
+              model = contentvalue(i).strList.get(0)
             }
             i += 1
           }
           (searchid,postcali_value,key,md5,expvalue,user_req_ad_num,ideaid,adslotid)
         }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid")
-         .filter("postcali_value>0")
+         .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
 
         data.show(10)
       data.write.mode("overwrite").saveAsTable("test.wy00")
