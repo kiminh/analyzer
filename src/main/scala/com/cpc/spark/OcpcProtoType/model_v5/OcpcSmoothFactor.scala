@@ -142,7 +142,7 @@ object OcpcSmoothFactor{
     // 数据关联
     val resultDF = clickData
       .join(cvData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid")
+      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
 
     resultDF
   }
