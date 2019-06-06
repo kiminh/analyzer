@@ -30,6 +30,6 @@ object CommonUtils {
       hdfs.delete(new Path(outputPath), true)
     }
 
-    hdfs.rename(new Path(tmpOutputPath + "part-00000"), new Path(outputPath))
+    hdfs.rename(new Path(tmpOutputPath + "/part-00000"), new Path(outputPath))
   }
 }

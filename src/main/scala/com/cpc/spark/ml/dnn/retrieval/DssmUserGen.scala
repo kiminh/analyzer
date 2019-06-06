@@ -119,7 +119,7 @@ object DssmUserGen {
       .option("recordType", "Example")
       .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + date)
 
-    val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-info-v0/tmp"
+    val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-info-v0/tmp/"
     val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-v0/${date}/count"
     CommonUtils.writeCountToFile(spark, userCount, userCountPathTmpName, userCountPathName)
   }

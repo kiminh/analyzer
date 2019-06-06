@@ -56,7 +56,7 @@ object DssmAdGen {
       .option("recordType", "Example")
       .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0/" + date)
 
-    val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0/tmp"
+    val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0/tmp/"
     val adCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-v0/${date}/count"
     CommonUtils.writeCountToFile(spark, adCount, adCountPathTmpName, adCountPathName)
   }
