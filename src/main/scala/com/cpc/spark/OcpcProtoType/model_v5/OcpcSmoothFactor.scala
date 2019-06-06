@@ -49,11 +49,6 @@ object OcpcSmoothFactor{
       .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
       .filter(s"cv > 0")
 
-    resultDF.show()
-
-//    resultDF
-//          .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190605")
-
     resultDF
   }
 
