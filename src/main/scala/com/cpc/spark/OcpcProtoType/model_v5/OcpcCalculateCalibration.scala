@@ -80,10 +80,6 @@ object OcpcCalculateCalibration {
     val resultDF = calibration
       .select("identifier", "pcoc", "jfb", "post_cvr")
 
-//    resultDF
-//      //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
-
     resultDF
 
   }
