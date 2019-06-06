@@ -71,7 +71,7 @@ object SnapshotAnalysis {
             {
               user_req_ad_num = contentvalue(i).strList.mkString("")
             }
-            else if (name == "snapshot_model_name")
+            else if (name == "model_name")
             {
               model = contentvalue(i).strList.get(0)
             }
