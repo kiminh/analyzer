@@ -66,7 +66,11 @@ object SnapshotAnalysis {
             {
               expvalue = contentvalue(i).intList.get(0)
             }
-            else if (name == "user_req_ad_num")
+            else if (name == "snapshot_user_req_ad_num")
+            {
+              user_req_ad_num = contentvalue(i).intList.get(0)
+            }
+            else if (name == "snapshot_model_name")
             {
               user_req_ad_num = contentvalue(i).intList.get(0)
             }
