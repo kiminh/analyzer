@@ -28,6 +28,9 @@ object OcpcGetPb {
     // 兜底校准时长
     val hourInt3 = args(11).toInt
 
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
+
     val calibraionData = OcpcCalculateCalibration.OcpcCalculateCalibration(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
     calibraionData.show(10)
     val factorData = OcpcRangeCalibration.OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark).cache()
