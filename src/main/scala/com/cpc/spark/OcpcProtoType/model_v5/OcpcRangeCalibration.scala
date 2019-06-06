@@ -45,9 +45,9 @@ object OcpcRangeCalibration {
     println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV")
 
     // 抽取基础数据
-    OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
+    val resultDF = OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
 
-//    result.show(10)
+    resultDF.show(10)
 
   }
 

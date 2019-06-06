@@ -20,9 +20,9 @@ object OcpcCalculateCalibration {
     // bash: 2019-01-02 12 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val conversionGoal = args(2).toInt
-    val version = args(3).toString
-    val media = args(4).toString
+    val version = args(2).toString
+    val media = args(3).toString
+    val conversionGoal = args(4).toInt
     val minCV = args(5).toInt
 
     // 主校准回溯时间长度
@@ -35,6 +35,14 @@ object OcpcCalculateCalibration {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2")
+    // 抽取媒体id
+
+    val resultDF = OcpcCalculateCalibration(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    resultDF.show(10)
+
+  }
+
+  def OcpcCalculateCalibration(date: String, hour: String, conversionGoal: Int, version: String, media: String, minCV: Int, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
@@ -71,15 +79,12 @@ object OcpcCalculateCalibration {
 
     val resultDF = calibration
       .select("identifier", "pcoc", "jfb", "post_cvr")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
+
+//    resultDF
+//      //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
-
 
   }
 
