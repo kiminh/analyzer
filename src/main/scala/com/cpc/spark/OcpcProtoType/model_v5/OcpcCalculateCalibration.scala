@@ -66,12 +66,19 @@ object OcpcCalculateCalibration {
       .withColumn("post_cvr", when(col("post_cvr3").isNotNull, col("post_cvr3")).otherwise(col("post_cvr_new")))
       .withColumn("pcoc", when(col("pcoc3").isNotNull, col("pcoc3")).otherwise(col("pcoc_new")))
       .withColumn("jfb", when(col("jfb3").isNotNull, col("jfb3")).otherwise(col("jfb_new")))
+      .cache()
 
     calibration.show(10)
+    data1.unpersist()
+    data2.unpersist()
+    data3.unpersist()
 
+    calibration
+      .repartition(5).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration20190606")
 
-
-
+    val resultDF = calibration
+      .select("identifier", "pcoc", "jfb", "post_cvr")
+    
 
   }
 
