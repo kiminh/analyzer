@@ -69,7 +69,7 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_user_req_ad_num")
             {
-              user_req_ad_num = contentvalue(i).strList.get(0)
+              user_req_ad_num = contentvalue(i).strList.mkString("")
             }
             else if (name == "snapshot_model_name")
             {
