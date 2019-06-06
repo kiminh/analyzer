@@ -77,8 +77,8 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_value,key,md5,expvalue,user_req_ad_num,ideaid,adslotid)
-        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid")
+          (searchid,postcali_value,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model)
+        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model")
          .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
 
         data.show(10)
