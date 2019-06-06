@@ -71,7 +71,7 @@ object OcpcRangeCalibration {
 
     // 抽取基础数据
     val cvrType = "cvr" + conversionGoal.toString
-    val baseDataClick = getBaseData(media, hourInt, date, hour, spark)
+    val baseDataClick = getBaseData(media, hourInt, conversionGoal, date, hour, spark)
     val cvrData = getCvrData(cvrType, hourInt, date, hour, spark)
     val baseData = baseDataClick
       .join(cvrData, Seq("searchid"), "left_outer")
@@ -266,7 +266,7 @@ object OcpcRangeCalibration {
     data
   }
 
-  def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, hourInt: Int, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     val expTag: Nothing = 1
     val unitid: Nothing = 2
@@ -318,6 +318,8 @@ object OcpcRangeCalibration {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
