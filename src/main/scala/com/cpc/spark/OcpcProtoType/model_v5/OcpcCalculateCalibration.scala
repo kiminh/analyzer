@@ -12,10 +12,6 @@ object OcpcCalculateCalibration {
     /*
     校准策略：
     主校准 + 备用校准：
-
-
-
-
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
