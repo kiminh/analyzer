@@ -33,18 +33,18 @@ object OcpcRangeCalibration {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val media = args(2).toString
-    val version = args(3).toString
-    val expTag = args(4).toString
-    val highBidFactor = args(5).toDouble
+    val version = args(2).toString
+    val media = args(3).toString
+    val highBidFactor = args(4).toDouble
+    val lowBidFactor = args(5).toDouble
     val hourInt = args(6).toInt
     val conversionGoal = args(7).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, version:$version, expTag:$expTag, highBidFactor:$highBidFactor, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal")
 
     // 抽取基础数据
-    val result = OcpcRangeCalibration(date, hour, version, media, highBidFactor, 1.0, hourInt, conversionGoal, spark)
+    val result = OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, spark)
 
     result.show(10)
 
