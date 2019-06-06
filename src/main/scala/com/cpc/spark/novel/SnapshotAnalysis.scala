@@ -44,7 +44,7 @@ object SnapshotAnalysis {
           val contentvalue = new FeatureStore().mergeFrom(CodedInputStream.newInstance(content)).features
           var key = ""
           var md5 = ""
-          var user_req_ad_num = 0
+          var user_req_ad_num = ""
           var i = 0
           var postcali_value = 0
           var expvalue = 0
