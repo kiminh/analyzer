@@ -47,6 +47,7 @@ object OcpcSmoothFactor{
     val finalVersion = version + hourInt.toString
     val resultDF = result
       .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .filter(s"cv > 0")
 
     resultDF.show()
 
@@ -117,6 +118,8 @@ object OcpcSmoothFactor{
          |  $mediaSelection
          |AND
          |  isclick = 1
+         |AND
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
