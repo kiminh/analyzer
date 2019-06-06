@@ -85,12 +85,13 @@ object OcpcRangeCalibration {
         .filter(s"cv >= $minCV")
         .cache()
     data1.show(10)
-    //    data1.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration1")
 
-//    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
-//    val baseData2 = baseData
-//      .join(data1, Seq("unitid"), "inner")
-//
+    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+    val baseData2 = baseData
+      .join(data1, Seq("unitid"), "inner")
+
+    baseData2.show(10)
+
 //    val data2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
 //    //    data2.repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration2")
 //
