@@ -355,13 +355,31 @@ object eCPCforUsertype2 {
        """.stripMargin
     val cvrData3 = spark.sql(sqlRequest3)
 
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr3
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr4'
+       """.stripMargin
+    val cvrData4 = spark.sql(sqlRequest4)
+
     val data = clickData
       .join(cvrData1, Seq("searchid"), "left_outer")
       .join(cvrData2, Seq("searchid"), "left_outer")
       .join(cvrData3, Seq("searchid"), "left_outer")
-      .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3"))
+      .join(cvrData4, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3", "iscvr4"))
       .filter(s"conversion_goal > 0")
-      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3")))
+      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3"), col("iscvr4")))
+
+    data
+      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ecpc_data20190610")
 
     data
   }
@@ -372,17 +390,20 @@ object eCPCforUsertype2 {
       cvGoal = 2
     } else if (industry == "elds") {
       cvGoal = 3
+    } else if (industry == "wz") {
+      cvGoal = 4
     } else {
       cvGoal = 1
     }
     cvGoal
   })
 
-  def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int) => {
+  def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int, iscvr4: Int) => {
     val iscvr = conversionGoal match {
       case 1 => iscvr1
       case 2 => iscvr2
       case 3 => iscvr3
+      case 4 => iscvr4
       case _ => 0
     }
     iscvr
