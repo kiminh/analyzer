@@ -80,6 +80,7 @@ object DssmEvaluate {
     import spark.implicits._
     val data = spark.read.parquet(userHDFSDir + date)
     data.show(10)
+    println("user embedding data = " + data.count())
     data.rdd.map(
       x => {
         val uid = x.getAs[Array[Byte]](64).map(_.toChar).mkString
