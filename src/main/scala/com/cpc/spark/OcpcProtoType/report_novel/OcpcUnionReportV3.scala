@@ -1,6 +1,6 @@
 package com.cpc.spark.OcpcProtoType.report_novel
 
-import com.cpc.spark.tools.testOperateMySQL
+import com.cpc.spark.tools.OperateMySQL
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -246,8 +246,8 @@ object OcpcUnionReportV3 {
     val reportTableUnit = "report2.report_ocpc_data_detail_v2_novel"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    testOperateMySQL.update(delSQLunit) //先删除历史数据
-    testOperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
 
     // userid详情表
@@ -259,8 +259,8 @@ object OcpcUnionReportV3 {
     val reportTableUser = "report2.report_ocpc_data_user_detail_novel"
     val delSQLuser = s"delete from $reportTableUser where `date` = '$date' and hour = $hourInt"
 
-    testOperateMySQL.update(delSQLuser) //先删除历史数据
-    testOperateMySQL.insert(dataUserMysql, reportTableUser) //插入数据
+    OperateMySQL.update(delSQLuser) //先删除历史数据
+    OperateMySQL.insert(dataUserMysql, reportTableUser) //插入数据
 
     // 汇总表
     val dataConversionMysql = dataConversion
@@ -271,8 +271,8 @@ object OcpcUnionReportV3 {
     val reportTableConversion = "report2.report_ocpc_data_summary_v2_novel"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-    testOperateMySQL.update(delSQLconversion) //先删除历史数据
-    testOperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+    OperateMySQL.update(delSQLconversion) //先删除历史数据
+    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
 }
