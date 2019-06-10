@@ -29,6 +29,7 @@ object eCPCforUsertype2 {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
+    val minCV = args(6).toInt
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
@@ -42,7 +43,7 @@ object eCPCforUsertype2 {
       .select("searchid", "unitid", "is_api_callback", "adclass", "adtype", "slottype", "slotid", "bid", "price", "exp_cvr", "isshow", "isclick", "iscvr")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data = calculateData(baseData, 20, date, hour, spark)
+    val data = calculateData(baseData, minCV, date, hour, spark)
 
 //    string key = 1;
 //    double post_cvr = 2;
@@ -157,8 +158,8 @@ object eCPCforUsertype2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.adclass_ecpc_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ecpc_pb_data")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.adclass_ecpc_hourly")
     var cnt = 0
 
     for (record <- resultData.collect()) {
