@@ -79,6 +79,7 @@ object DssmEvaluate {
   def getUserEmbedding(date: String, spark: SparkSession): DataFrame = {
     import spark.implicits._
     val data = spark.read.parquet(userHDFSDir + date)
+    data.show(10)
     data.rdd.map(
       x => {
         val uid = x.getAs[Array[Byte]](64).map(_.toChar).mkString
