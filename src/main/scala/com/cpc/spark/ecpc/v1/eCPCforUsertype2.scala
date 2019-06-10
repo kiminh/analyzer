@@ -29,7 +29,7 @@ object eCPCforUsertype2 {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
-    val minCV = args(6).toInt
+    val minCV = 20
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
@@ -378,8 +378,8 @@ object eCPCforUsertype2 {
       .filter(s"conversion_goal > 0")
       .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3"), col("iscvr4")))
 
-    data
-      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ecpc_data20190610")
+//    data
+//      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ecpc_data20190610")
 
     data
   }
