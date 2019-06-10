@@ -102,7 +102,7 @@ object DssmEvaluate {
         val embedding = new Array[Double](64)
 
         for (i <- 1 to 64) {
-          embedding(i) = row.getAs[Number](i).doubleValue()
+          embedding(i-1) = row.getAs[Number](i).doubleValue()
         }
         (adid, embedding)
       }
