@@ -39,7 +39,7 @@ object OcpcGetPb {
     factorData.show(10)
 
     val resultDF = calibraionData
-      .join(factorData, Seq("identifier"), "left_outer")
+      .join(factorData.select("identifier", "high_bid_factor", "low_bid_factor"), Seq("identifier"), "left_outer")
       .cache()
 
     resultDF.show(10)
@@ -48,6 +48,7 @@ object OcpcGetPb {
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190610")
 
 
+    println("successfully save data into hive")
 
   }
 
