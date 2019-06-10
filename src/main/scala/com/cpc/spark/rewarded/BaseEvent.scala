@@ -20,7 +20,7 @@ object BaseEvent {
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day= '$date' and hour = '$hour' and adtype in (9, 11)
+         |where day= '$date' and hour = '$hour' and adtype = 11
          """.stripMargin
 
     println(sql)
