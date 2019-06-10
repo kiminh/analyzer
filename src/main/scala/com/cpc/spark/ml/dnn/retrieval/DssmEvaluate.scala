@@ -94,6 +94,7 @@ object DssmEvaluate {
   def getAdEmbedding(date: String, spark: SparkSession): DataFrame = {
     import spark.implicits._
     val data = spark.read.parquet(adHDFSDir + date)
+    data.show(10)
     data.rdd.map(
       row => {
         val adid = row.getAs[Array[Byte]](64).map(_.toChar).mkString
