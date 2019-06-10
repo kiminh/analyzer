@@ -46,8 +46,8 @@ object DssmTrain {
          |  b.ad_id_arr as ad_id_arr
          |from (select * from samples) a
          | left join
-         | (select ideaid, unitid, ad_dense, ad_idx0, ad_idx1, ad_idx2, ad_id_arr from adfeature) b
-         | on (a.ideaid = b.ideaid and a.unitid = b.unitid)
+         | (select adid, ad_dense, ad_idx0, ad_idx1, ad_idx2, ad_id_arr from adfeature) b
+         | on concat(cast(a.ideaid as string),'_',cast(a.unitid as string)) = b.adid
          | left join
          | (select uid, u_dense, u_idx0, u_idx1, u_idx2, u_id_arr from userfeature) c
          | on (a.uid = c.uid)

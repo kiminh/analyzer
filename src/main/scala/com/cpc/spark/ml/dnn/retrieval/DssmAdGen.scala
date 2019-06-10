@@ -195,8 +195,7 @@ object DssmAdGen {
     }).zipWithUniqueId()
       .map { x =>
         (x._2,
-          x._1._1,
-          x._1._2,
+          x._1._1 + '_' + x._1._2,
           x._1._3,
           x._1._4._1,
           x._1._4._2,
@@ -204,7 +203,7 @@ object DssmAdGen {
           x._1._4._4
         )
       }
-      .toDF("sample_idx", "ideaid", "unitid", "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
+      .toDF("sample_idx", "adid", "ad_dense", "ad_idx0", "ad_idx1", "ad_idx2", "ad_id_arr")
     println("result joined size: " + result.count())
     println("ad day match count: " + multiHotCounter.value)
     for (i <- featureCounters.indices) {

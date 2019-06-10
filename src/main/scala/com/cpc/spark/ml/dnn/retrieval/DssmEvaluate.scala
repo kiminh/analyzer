@@ -22,10 +22,10 @@ object DssmEvaluate {
     val userEmbedding = getUserEmbedding(date, spark)
     val adEmbeding = getAdEmbedding(date, spark)
     val df = labels.join(userEmbedding, Seq("uid"), "left")
-      .join(adEmbeding, Seq("ideaid"), "left")
+      .join(adEmbeding, Seq("adid"), "left")
       .rdd.map(x => {
       val uid = x.getAs[String]("uid")
-      val ideaid = x.getAs[Number]("ideaid").intValue()
+      val adid = x.getAs[String]("adid")
       val userEmbedding = x.getAs[mutable.WrappedArray[Double]]("user_embedding")
       val adEmbedding = x.getAs[mutable.WrappedArray[Double]]("ad_embedding")
       val userisNull = if (userEmbedding == null) 1 else 0
@@ -43,8 +43,8 @@ object DssmEvaluate {
         userEmbeddingStr = userEmbedding.mkString(",")
         adEmbeddingStr = adEmbedding.mkString(",")
       }
-      (uid, ideaid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
-    }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
+      (uid, adid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
+    }).toDF("uid", "adid", "clickCount", "score", "userNull", "adNull",
       "userEmbeddingStr", "adEmbeddingStr","dt")
 
     val metrics = new BinaryClassificationMetrics(
@@ -54,7 +54,7 @@ object DssmEvaluate {
     println(s"auc: ${metrics.areaUnderROC()}")
 
     df.write.mode("overwrite")
-      .insertInto("dl_cpc.dssm_eval_raw")
+      .insertInto("dl_cpc.dssm_eval_raw_new")
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
@@ -62,13 +62,13 @@ object DssmEvaluate {
       s"""
          |select
          |  uid as uid,
-         |  ideaid as ideaid,
+         |  concat(cast(ideaid as string),'_',cast(unitid as string)) as adid,
          |  sum(isclick) as click
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour = '20'
+         |from dl_cpc.cpc_basedata_union_events where `day` = '$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and length(uid) > 1
-         |group by uid, ideaid
+         |group by uid, concat(cast(ideaid as string),'_',cast(unitid as string))
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -96,14 +96,14 @@ object DssmEvaluate {
     val data = spark.read.parquet(adHDFSDir + date)
     data.rdd.map(
       row => {
-        val ideaid = row.getAs[Array[Byte]](64).map(_.toChar).mkString.toInt
+        val adid = row.getAs[Array[Byte]](64).map(_.toChar).mkString
         val embedding = new Array[Double](64)
 
         for (i <- 0 to 63) {
           embedding(i) = row.getAs[Number](i).doubleValue()
         }
-        (ideaid, embedding)
+        (adid, embedding)
       }
-    ).toDF("ideaid", "ad_embedding")
+    ).toDF("adid", "ad_embedding")
   }
 }
