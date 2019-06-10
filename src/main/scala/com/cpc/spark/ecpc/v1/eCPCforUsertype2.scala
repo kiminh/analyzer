@@ -33,7 +33,7 @@ object eCPCforUsertype2 {
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt, highBidFactor:$highBidFactor, minCV:$minCV")
 
     // 抽取基础数据
     val rawData = getBaseData(media, hourInt, date, hour, spark)
