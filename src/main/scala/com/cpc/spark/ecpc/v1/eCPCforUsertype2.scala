@@ -359,7 +359,7 @@ object eCPCforUsertype2 {
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr3
+         |  label as iscvr4
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
