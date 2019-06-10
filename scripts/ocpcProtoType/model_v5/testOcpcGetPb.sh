@@ -10,6 +10,19 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
+date=${1}
+hour=${2}
+version=${3}
+media=${4}
+highBidFactor=${5}
+lowBidFactor=${6}
+hourInt=${7}
+conversionGoal=${8}
+minCV=${9}
+hourInt1=${10}
+hourInt2=${11}
+hourInt3=${12}
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 20g \
@@ -18,7 +31,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.OcpcProtoType.model_v5.OcpcGetPb \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar ${date} ${hour} ${version} ${media} ${highBidFactor} ${lowBidFactor} ${hourInt} ${conversionGoal} ${minCV} ${hourInt1} ${hourInt2} ${hourInt3}
 
 
 #val date = args(0).toString
