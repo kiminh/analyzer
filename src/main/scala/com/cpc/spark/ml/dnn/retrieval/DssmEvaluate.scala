@@ -98,10 +98,10 @@ object DssmEvaluate {
     data.show(10)
     data.rdd.map(
       row => {
-        val adid = row.getAs[Array[Byte]](64).map(_.toChar).mkString
+        val adid = row.getAs[Array[Byte]](0).map(_.toChar).mkString
         val embedding = new Array[Double](64)
 
-        for (i <- 0 to 63) {
+        for (i <- 1 to 64) {
           embedding(i) = row.getAs[Number](i).doubleValue()
         }
         (adid, embedding)
