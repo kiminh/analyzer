@@ -97,7 +97,7 @@ object OcpcRangeCalibration {
     val resultDF = data1
       .join(data2, Seq("unitid"), "inner")
       .withColumn("high_bid_factor", lit(highBidFactor))
-      .select("unitid", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
     resultDF
 
