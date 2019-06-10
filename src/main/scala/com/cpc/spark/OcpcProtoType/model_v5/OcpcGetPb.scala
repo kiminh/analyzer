@@ -42,6 +42,9 @@ object OcpcGetPb {
       .join(factorData, Seq("identifier"), "left_outer")
 
     resultDF.show(10)
+    resultDF
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190610")
 
 
 
