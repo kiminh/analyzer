@@ -172,7 +172,7 @@ object OcpcChargeTotal {
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
       .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "date", "hour")
 
-    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
 
     // 取转化数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
