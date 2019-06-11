@@ -58,7 +58,7 @@ object KFactorCali {
                  |from
                  |(select searchid,isclick
                  |from dl_cpc.slim_union_log
-                 |  where dt > '2019-05-31' and dt <'2019-06-06' and adslot_id = '1029077' and adtype = 11 and isshow > 0
+                 |  where dt > '2019-05-31' and dt <'2019-06-06' and adslotid = '1029077' and adtype = 11 and isshow > 0
                  |  and ctr_model_name in ('$model','$calimodel')) a
                  |left join
                  |(select * from dl_cpc.cpc_basedata_trace_event

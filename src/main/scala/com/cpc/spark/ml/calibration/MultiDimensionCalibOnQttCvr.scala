@@ -56,6 +56,12 @@ object MultiDimensionCalibOnQttCvr {
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
                  |a.cvr_model_name as model, a.adslotid, a.ideaid,
                  |case
+                 |              when is_ocpc = 1 then 'ocpc'
+                 |              when user_cvr_threshold = 200 then "cvr2"
+                 |              when user_cvr_threshold >0 then "cvr1"
+                 |              else "other"
+                 |         end as exp_cvr_type
+                 |case
                  |  when user_req_ad_num = 0 then '0'
                  |  when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
