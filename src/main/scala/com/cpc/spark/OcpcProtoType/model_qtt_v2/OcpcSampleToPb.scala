@@ -78,7 +78,7 @@ object OcpcSampleToPb {
          |SELECT
          |  cast(unitid as string) identifier,
          |  conversion_goal,
-         |  cpa as cpa_suggest
+         |  cpa * 100.0 as cpa_suggest
          |FROM
          |  test.ocpc_qtt_light_control_v2
        """.stripMargin
