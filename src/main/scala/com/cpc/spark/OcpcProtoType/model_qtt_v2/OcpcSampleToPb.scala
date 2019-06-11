@@ -1,7 +1,7 @@
 package com.cpc.spark.OcpcProtoType.model_qtt_v2
 
 import java.io.FileOutputStream
-
+import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
