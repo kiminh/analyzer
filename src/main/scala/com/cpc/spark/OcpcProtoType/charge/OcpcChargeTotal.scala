@@ -26,40 +26,40 @@ object OcpcChargeTotal {
     val dayCnt = args(4).toInt
 
     val ocpcOpenTime = getOcpcOpenTime(3, date, hour, spark)
-    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
+//    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
     val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark).cache()
     costData.show(10)
-    costData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
-//    cleanDataInMysql(3, date, hour, spark)
-//
-//    val prevData = getDataFromMysql(spark)
-//    val data = costData
-//      .join(prevData, Seq("unitid"), "left_outer")
-//      .filter(s"flag is null")
-//      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
-//
-//    val dataFilter = data
-//      .filter(s"conversion > 30")
-//      .filter(s"pay > 0")
-//      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
-//
-//
-////    dataFilter.show(10)
-//    dataFilter
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_check_charge_total20190611")
-//
-////    saveDataToMysql(dataFilter, spark)
-//
-//    val result = data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//
-//    result
-////      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+//    costData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+    cleanDataInMysql(3, date, hour, spark)
+
+    val prevData = getDataFromMysql(spark)
+    val data = costData
+      .join(prevData, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+    val dataFilter = data
+      .filter(s"conversion > 30")
+      .filter(s"pay > 0")
+      .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
+
+
+//    dataFilter.show(10)
+    dataFilter
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_charge_total20190611")
+
+//    saveDataToMysql(dataFilter, spark)
+
+    val result = data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+
+    result
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
 
@@ -172,7 +172,7 @@ object OcpcChargeTotal {
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
       .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "date", "hour")
 
-    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
+//    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
 
     // 取转化数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -264,15 +264,9 @@ object OcpcChargeTotal {
       .withColumn("pay", udfCalculatePay()(col("cost"), col("pred_cost")))
       .withColumn("cpareal", col("cost") * 1.0 / col("cv"))
 
-    summaryData1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418d")
-
     val summaryData2 = baseData
       .filter(s"seq = 1")
       .select("unitid", "ocpc_time")
-
-    summaryData2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418e")
 
     val summaryData = summaryData1
       .join(summaryData2, Seq("unitid"), "left_outer")
