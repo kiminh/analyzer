@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions._
 
 import scala.collection.mutable.ListBuffer
 
-
+@deprecated
 object OcpcSampleToPb {
   def main(args: Array[String]): Unit = {
     /*

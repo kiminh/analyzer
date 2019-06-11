@@ -38,7 +38,7 @@ object OcpcSampleToPb {
     val data = getCalibrationData(date, hour, version, spark)
 
     data
-        .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
+        .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
@@ -55,6 +55,7 @@ object OcpcSampleToPb {
          |SELECT
          |  identifier,
          |  conversion_goal,
+         |  is_hidden,
          |  1.0 / pcoc as cali_value,
          |  1.0 / jfb as jfb_factor,
          |  post_cvr,
@@ -89,7 +90,7 @@ object OcpcSampleToPb {
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
       .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
-      .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
+      .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
       .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor"))
       .cache()
 
@@ -133,7 +134,8 @@ object OcpcSampleToPb {
 
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
-      val key = "oCPCQtt&" + identifier + "&0"
+      val isHidden = record.getAs[Int]("is_hidden").toString
+      val key = "oCPCQtt&" + identifier + "&" + isHidden
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cali_value")
       val jfbFactor = record.getAs[Double]("jfb_factor")
