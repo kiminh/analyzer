@@ -21,6 +21,7 @@ object OcpcGetPb {
     val hourInt = args(6).toInt
     val conversionGoal = args(7).toInt
     val minCV = args(8).toInt
+    val isHidden = 1
 
     // 主校准回溯时间长度
     val hourInt1 = args(9).toInt
@@ -45,6 +46,7 @@ object OcpcGetPb {
     resultDF.show(10)
     resultDF
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .withColumn("is_hidden", lit(isHidden))
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
