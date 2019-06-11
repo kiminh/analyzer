@@ -56,7 +56,7 @@ object KFactorCali {
     val sql = s"""
                  |select count(*) as show,sum(if(b.searchid is null,0,1))*1e6d/sum(exp_ctr) as k
                  |from
-                 |(select searchid,isclick
+                 |(select searchid,isclick,exp_ctr
                  |from dl_cpc.slim_union_log
                  |  where dt > '2019-05-31' and dt <'2019-06-06' and adslotid = '1029077' and adtype = 11 and isshow > 0
                  |  and ctr_model_name in ('$model','$calimodel')) a

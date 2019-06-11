@@ -102,7 +102,8 @@ object MultiDimensionCalibOnQttCvr {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
-    LogToPb(log, session, calimodel)
+    log.write.mode("overwrite").saveAsTable("test.wy11")
+//    LogToPb(log, session, calimodel)
     val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
       sum("ectr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
