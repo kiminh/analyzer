@@ -42,7 +42,7 @@ object CvrCalibrationSample {
                  | AND (charge_type IS NULL OR charge_type = 1)
                  | )a
                  |join dl_cpc.dw_unitid_detail b
-                 |on a.unitid = b.unitid and b.day = '2019-06-04'
+                 |on a.unitid = b.unitid and b.day = '$date'
                  |left join dl_cpc.dm_conversion_detail c
                  |on a.searchid = c.searchid and c.dt = '$date'
        """.stripMargin
