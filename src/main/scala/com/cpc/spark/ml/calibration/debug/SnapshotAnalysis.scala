@@ -76,7 +76,7 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_adclass")
             {
-              adclass = contentvalue(i).strList.get(0)
+              adclass = contentvalue(i).strList.mkString("")
             }
             i += 1
           }
