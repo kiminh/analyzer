@@ -80,7 +80,7 @@ object MultiDimensionCalibOnQttCvr {
                  |  join dl_cpc.dw_unitid_detail b
                  |    on a.unitid = b.unitid
                  |    and a.day  = b.day
-                 |    and $selectCondition3
+                 |    and b.$selectCondition3
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
