@@ -4,6 +4,8 @@ package com.cpc.spark.OcpcProtoType.model_v5
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import com.cpc.spark.OcpcProtoType.model_v5.OcpcCalculateCalibration.OcpcCalculateCalibrationMain
+import com.cpc.spark.OcpcProtoType.model_v5.OcpcRangeCalibration.OcpcRangeCalibrationMain
 
 
 object OcpcGetPb {
@@ -31,8 +33,8 @@ object OcpcGetPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    val calibraionData = OcpcCalculateCalibration.OcpcCalculateCalibration(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
-    val factorData = OcpcRangeCalibration.OcpcRangeCalibration(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark).cache()
+    val calibraionData = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
+    val factorData = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark).cache()
 
     println(s"print result:")
     calibraionData.show(10)

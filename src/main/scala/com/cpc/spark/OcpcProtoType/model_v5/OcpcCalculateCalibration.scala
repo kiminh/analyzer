@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-//import com.cpc.spark.OcpcProtoType.model_v5.OcpcSmoothFactor
+import com.cpc.spark.OcpcProtoType.model_v5.OcpcSmoothFactor.OcpcSmoothFactorMain
 
 
 object OcpcCalculateCalibration {
@@ -37,23 +37,23 @@ object OcpcCalculateCalibration {
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2")
     // 抽取媒体id
 
-    val resultDF = OcpcCalculateCalibration(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    val resultDF = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
     resultDF.show(10)
 
   }
 
-  def OcpcCalculateCalibration(date: String, hour: String, conversionGoal: Int, version: String, media: String, minCV: Int, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
+  def OcpcCalculateCalibrationMain(date: String, hour: String, conversionGoal: Int, version: String, media: String, minCV: Int, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
     val cvrType = "cvr" + conversionGoal.toString
 
-    val data1 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt1, cvrType, spark).cache()
+    val data1 = OcpcSmoothFactorMain(date, hour, version, media, hourInt1, cvrType, spark).cache()
     data1.show(10)
-    val data2 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt2, cvrType, spark).cache()
+    val data2 = OcpcSmoothFactorMain(date, hour, version, media, hourInt2, cvrType, spark).cache()
     data2.show(10)
-    val data3 = OcpcSmoothFactor.OcpcSmoothFactor(date, hour, version, media, hourInt3, cvrType, spark).cache()
+    val data3 = OcpcSmoothFactorMain(date, hour, version, media, hourInt3, cvrType, spark).cache()
     data3.show(10)
 
     val calibration1 = calculateCalibrationValue(data1, data2, minCV, spark)
