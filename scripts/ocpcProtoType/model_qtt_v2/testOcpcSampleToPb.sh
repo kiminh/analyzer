@@ -24,4 +24,3 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 #val date = args(0).toString
 #val hour = args(1).toString
 #val version = args(2).toString
-#val isKnown = args(3).toInt

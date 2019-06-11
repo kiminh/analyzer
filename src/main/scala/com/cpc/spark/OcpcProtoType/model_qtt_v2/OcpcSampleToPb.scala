@@ -32,7 +32,8 @@ object OcpcSampleToPb {
     val version = args(2).toString
     val fileName = args(3).toString
 
-//    val fileName = "ocpc_params_qtt.pb"
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
     val data = getCalibrationData(date, hour, version, spark)
 
