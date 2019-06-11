@@ -1,16 +1,11 @@
 package com.cpc.spark.OcpcProtoType.model_v5
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPbV2 {
+object OcpcGetPb {
   def main(args: Array[String]): Unit = {
     /*
     pb文件格式：
