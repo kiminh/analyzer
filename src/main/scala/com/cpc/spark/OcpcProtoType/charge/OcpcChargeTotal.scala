@@ -46,6 +46,9 @@ object OcpcChargeTotal {
 
 
     dataFilter.show(10)
+    dataFilter
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_charge_total20190611")
 
 //    saveDataToMysql(dataFilter, spark)
 
