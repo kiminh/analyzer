@@ -88,14 +88,26 @@ object OcpcSampleToPb {
 
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
-      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest"))
+      .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
+      .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
+      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor"))
       .cache()
 
     data.show(10)
 
     data
   }
+
+  def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
+    var factor = conversionGoal match {
+      case 1 => 0.2
+      case 2 => 0.5
+      case 3 => 0.5
+      case 4 => 0.0
+      case _ => 0.0
+    }
+    factor
+  })
 
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
@@ -125,7 +137,7 @@ object OcpcSampleToPb {
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cali_value")
       val jfbFactor = record.getAs[Double]("jfb_factor")
-      val smoothFactor = 0.5
+      val smoothFactor = record.getAs[Double]("smooth_factor")
       val postCvr = record.getAs[Double]("post_cvr")
       val cpaGiven = 1.0
       val cpaSuggest = record.getAs[Double]("cpa_suggest")
