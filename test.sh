@@ -2,7 +2,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 #date=`date +"%Y-%m-%d" -d "-1day"`
 day=$1
 hour=$2
