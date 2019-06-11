@@ -46,7 +46,7 @@ object OcpcChargeTotal {
       .select("unitid", "cost", "conversion", "pay", "ocpc_time", "cpagiven", "cpareal")
 
 
-    dataFilter.show(10)
+//    dataFilter.show(10)
     dataFilter
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.ocpc_check_charge_total20190611")
@@ -424,6 +424,7 @@ object OcpcChargeTotal {
       .withColumn("ocpc_last_open_hour", udfConvertHour2String()(col("ocpc_last_open_hour")))
       .select("unitid", "conversion_goal", "last_ocpc_opentime", "ocpc_last_open_date", "ocpc_last_open_hour")
       .filter(s"ocpc_last_open_date = '$date1'")
+      .cache()
 
     data.show(10)
 //    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")
