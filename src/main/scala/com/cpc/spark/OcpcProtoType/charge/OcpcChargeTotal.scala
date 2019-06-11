@@ -47,15 +47,15 @@ object OcpcChargeTotal {
 
     dataFilter.show(10)
 
-    saveDataToMysql(dataFilter, spark)
+//    saveDataToMysql(dataFilter, spark)
 
     val result = data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
 
     result
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_charge_daily")
+      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_charge_daily")
 
   }
 
