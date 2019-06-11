@@ -264,9 +264,15 @@ object OcpcChargeTotal {
       .withColumn("pay", udfCalculatePay()(col("cost"), col("pred_cost")))
       .withColumn("cpareal", col("cost") * 1.0 / col("cv"))
 
+    summaryData1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418d")
+
     val summaryData2 = baseData
       .filter(s"seq = 1")
       .select("unitid", "ocpc_time")
+
+    summaryData2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418e")
 
     val summaryData = summaryData1
       .join(summaryData2, Seq("unitid"), "left_outer")
