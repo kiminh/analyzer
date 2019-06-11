@@ -54,7 +54,7 @@ object KFactorCali {
 //       """.stripMargin
 
     val sql = s"""
-                 |select count(*) as show,sum(isclick)/sum(if(b.searchid is null,0,1)) as k
+                 |select count(*) as show,sum(if(b.searchid is null,0,1))*1e6d/sum(exp_ctr) as k
                  |from
                  |(select searchid,isclick
                  |from dl_cpc.slim_union_log
