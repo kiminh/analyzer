@@ -31,19 +31,20 @@ object OcpcSampleToPb {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val isKnown = args(3).toInt
+    val fileName = args(3).toString
 
-    val fileName = "ocpc_params_qtt.pb"
+//    val fileName = "ocpc_params_qtt.pb"
 
     val data = getCalibrationData(date, hour, version, spark)
 
     data
+        .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
         .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly")
-//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
+//        .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
 
     savePbPack(data, fileName, spark)
   }
