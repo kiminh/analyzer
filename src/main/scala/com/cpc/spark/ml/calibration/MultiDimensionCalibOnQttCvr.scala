@@ -68,17 +68,20 @@ object MultiDimensionCalibOnQttCvr {
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 |  from dl_cpc.slim_union_log a
+                 |  from
+                 |  (select *
+                 |  from dl_cpc.cpc_basedata_union_events
+                 |  where $selectCondition2
+                 |  and $mediaSelection and isclick = 1
+                 |  and cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
+                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
+                 |  AND (charge_type IS NULL OR charge_type = 1)
+                 |  )a
                  |  join dl_cpc.dw_unitid_detail b
                  |    on a.unitid = b.unitid
-                 |    and a.dt  = b.day
+                 |    and a.day  = b.day
                  |    and $selectCondition3
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
-                 |  where $timeRangeSql
-                 |  and a.$mediaSelection and isclick = 1
-                 |  and a.cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
-                 |  and a.ideaid > 0 and a.adsrc = 1 AND a.userid > 0
-                 |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$clicksql")
     val clickData = session.sql(clicksql)
