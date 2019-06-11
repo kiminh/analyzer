@@ -38,7 +38,7 @@ object OcpcSampleToPb {
     val data = getCalibrationData(date, hour, version, spark)
 
     data
-        .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
+        .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
