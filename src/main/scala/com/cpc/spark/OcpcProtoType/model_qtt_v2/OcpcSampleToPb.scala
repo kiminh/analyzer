@@ -103,7 +103,7 @@ object OcpcSampleToPb {
       case 1 => 0.2
       case 2 => 0.5
       case 3 => 0.5
-      case 4 => 0.0
+      case 4 => 0.2
       case _ => 0.0
     }
     factor
