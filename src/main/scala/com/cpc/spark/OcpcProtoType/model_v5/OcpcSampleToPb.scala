@@ -3,14 +3,9 @@ package com.cpc.spark.OcpcProtoType.model_v5
 import java.io.FileOutputStream
 
 import org.apache.spark.sql.DataFrame
-
-//import hiddenTest.Hiddentest
-
-//import ocpc.ocpc.{OcpcList, SingleRecord}
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-
 import scala.collection.mutable.ListBuffer
 
 
@@ -45,7 +40,7 @@ object OcpcSampleToPb {
         .repartition(5)
         .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly")
 
-    savePbPack(data, fileName, spark)
+//    savePbPack(data, fileName, spark)
   }
 
   def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
