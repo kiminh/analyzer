@@ -39,8 +39,8 @@ object OcpcGetPb {
     calibraionData.show(10)
 
     val resultDF = calibraionData
-      .withColumn("high_bid_factor", lit(0.0))
-      .withColumn("low_bid_factor", lit(0.0))
+      .withColumn("high_bid_factor", lit(1.0))
+      .withColumn("low_bid_factor", lit(1.0))
       .cache()
 
     resultDF.show(10)
