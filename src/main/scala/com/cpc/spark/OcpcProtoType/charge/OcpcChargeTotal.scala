@@ -241,7 +241,7 @@ object OcpcChargeTotal {
         .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "iscvr1", "iscvr2", "iscvr3", "iscvr", "date", "hour")
         .withColumn("ocpc_time", concat_ws(" ", col("date"), col("hour")))
 
-    baseData.filter(s"iscvr = 1").show(10)
+//    baseData.filter(s"iscvr = 1").show(10)
 
     baseData.createOrReplaceTempView("base_data")
 
