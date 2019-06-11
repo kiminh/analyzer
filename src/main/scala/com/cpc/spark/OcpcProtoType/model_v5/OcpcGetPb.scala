@@ -45,13 +45,14 @@ object OcpcGetPb {
 
     resultDF.show(10)
     resultDF
+      .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly")
 
 
     println("successfully save data into hive")
