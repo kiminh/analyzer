@@ -50,8 +50,8 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly")
 
 
     println("successfully save data into hive")
