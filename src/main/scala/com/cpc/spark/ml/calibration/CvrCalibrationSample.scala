@@ -27,7 +27,7 @@ object CvrCalibrationSample {
                  |select a.*,b.conversion_target[0] as unit_target, if(c.searchid is null,0,1) iscvr
                  |from
                  |(
-                 |  select searchid, raw_cvr, exp_cvr, cvr_model_name, adslotid, ideaid, user_req_ad_num,dt,hour,unitid,adclass,
+                 |  select searchid, raw_cvr, exp_cvr, cvr_model_name, adslot_id as adslotid, ideaid, user_req_ad_num,dt,hour,unitid,adclass,
                  |  case
                  |  when is_ocpc = 1 then 'ocpc'
                  |  when user_cvr_threshold = 200 then "cvr2"
