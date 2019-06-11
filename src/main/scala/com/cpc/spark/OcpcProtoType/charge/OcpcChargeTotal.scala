@@ -189,8 +189,8 @@ object OcpcChargeTotal {
     val sqlRequest1 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr1
+         |  distinct searchid,
+         |  1 as iscvr1
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -204,8 +204,8 @@ object OcpcChargeTotal {
     val sqlRequest2 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr2
+         |  distinct searchid,
+         |  1 as iscvr2
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -219,8 +219,8 @@ object OcpcChargeTotal {
     val sqlRequest3 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr3
+         |  distinct searchid,
+         |  1 as iscvr3
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
