@@ -68,7 +68,7 @@ object KFactorCali {
        """.stripMargin
     println(s"sql:\n$sql")
     val k = session.sql(sql).first().getAs[Double]("k")
-    val show = session.sql(sql).first().getAs[Double]("show")
+    val show = session.sql(sql).first().getAs[Long]("show")
 
     if (show>100000){
       val irModel = IRModel(

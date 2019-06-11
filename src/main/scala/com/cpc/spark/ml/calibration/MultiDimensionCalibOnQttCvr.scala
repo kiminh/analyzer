@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import com.cpc.spark.OcpcProtoType.model_novel_v3.OcpcSuggestCPAV3.matchcvr
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.calibration.HourlyCalibration._
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveFlatTextFileForDebug, saveProtoToLocal, _}
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
 import com.typesafe.config.ConfigFactory
@@ -27,7 +27,7 @@ object MultiDimensionCalibOnQttCvr {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val media = args(3)
-    val model = args(4)
+    val calimodel = args(4)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -56,11 +56,11 @@ object MultiDimensionCalibOnQttCvr {
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
                  |a.cvr_model_name as model, a.adslotid, a.ideaid,
                  |case
-                 |              when is_ocpc = 1 then 'ocpc'
-                 |              when user_cvr_threshold = 200 then "cvr2"
-                 |              when user_cvr_threshold >0 then "cvr1"
-                 |              else "other"
-                 |         end as exp_cvr_type
+                 |  when is_ocpc = 1 then 'ocpc'
+                 |  when user_cvr_threshold = 200 then "cvr2"
+                 |  when user_cvr_threshold >0 then "cvr1"
+                 |  else "other"
+                 |  end as exp_cvr_type,
                  |case
                  |  when user_req_ad_num = 0 then '0'
                  |  when user_req_ad_num = 1 then '1'
@@ -76,7 +76,7 @@ object MultiDimensionCalibOnQttCvr {
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
                  |  where $timeRangeSql
                  |  and a.$mediaSelection and isclick = 1
-                 |  and a.cvr_model_name in ('$model','qtt-cvr-dnn-rawid-v1-180')
+                 |  and a.cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
                  |  and a.ideaid > 0 and a.adsrc = 1 AND a.userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
@@ -102,9 +102,23 @@ object MultiDimensionCalibOnQttCvr {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
-
-    LogToPb(log, session, model)
-
+    LogToPb(log, session, calimodel)
+    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
+      sum("ectr").alias("ctrnum"),
+      sum("isclick").alias("clicknum"))
+      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
+      .first().getAs[Double]("k")
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,k)
+    )
+    println(s"k is: $k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
@@ -140,8 +154,8 @@ object MultiDimensionCalibOnQttCvr {
     val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal(model, califile)
-    saveFlatTextFileForDebug(model, califile)
+    val localPath = saveProtoToLocal2(model, califile)
+    saveFlatTextFileForDebug2(model, califile)
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
@@ -303,7 +317,7 @@ object MultiDimensionCalibOnQttCvr {
         / (irModel.boundaries(index) - irModel.boundaries(index-1))))
   }
 
-  def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
+  def saveProtoToLocal2(modelName: String, config: PostCalibrations): String = {
     val filename = s"post-calibration-$modelName.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
@@ -312,7 +326,7 @@ object MultiDimensionCalibOnQttCvr {
     return localPath
   }
 
-  def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
+  def saveFlatTextFileForDebug2(modelName: String, config: PostCalibrations): Unit = {
     val filename = s"post-calibration-flat-$modelName.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
