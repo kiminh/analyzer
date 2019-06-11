@@ -43,6 +43,7 @@ object SnapshotAnalysis {
           var postcali_cvr = 0
           var expvalue = 0
           var model = ""
+          var adclass = ""
           while (i < contentvalue.size){
             val name = contentvalue(i).name
             if (name == "calibrations_key")
@@ -73,10 +74,14 @@ object SnapshotAnalysis {
             {
               raw_cvr = contentvalue(i).intList.get(0)
             }
+            else if (name == "snapshot_adclass")
+            {
+              adclass = contentvalue(i).strList.get(0)
+            }
             i += 1
           }
-          (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr)
-        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr")
+          (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
+        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
          .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
 
         data.show(10)
