@@ -40,22 +40,22 @@ object WzCpaDiscount {
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
-
-    val data = ((1,))
-
-    println("NewK")
-    println(cvrData.count())
-    cvrData.show(10)
-
-    // 组装数据
-
-    resultDF.show(10)
-
-    resultDF
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
-
-    val resultUnion = spark.table("dl_cpc.ocpc_novel_pb_once").union(resultDF)
-    savePbPack(resultUnion)
+//
+//    val data = ((1,))
+//
+//    println("NewK")
+//    println(cvrData.count())
+//    cvrData.show(10)
+//
+//    // 组装数据
+//
+//    resultDF.show(10)
+//
+//    resultDF
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
+//
+//    val resultUnion = spark.table("dl_cpc.ocpc_novel_pb_once").union(resultDF)
+//    savePbPack(resultUnion)
   }
 
   def savePbPack(dataset: DataFrame): Unit = {
