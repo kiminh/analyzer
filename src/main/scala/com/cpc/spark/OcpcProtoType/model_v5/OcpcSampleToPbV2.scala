@@ -7,14 +7,13 @@ import org.apache.spark.sql.DataFrame
 //import hiddenTest.Hiddentest
 
 //import ocpc.ocpc.{OcpcList, SingleRecord}
-import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable.ListBuffer
 
 
-object OcpcSampleToPb {
+object OcpcSampleToPbV2 {
   def main(args: Array[String]): Unit = {
     /*
     pb文件格式：
@@ -39,61 +38,24 @@ object OcpcSampleToPb {
 
     val fileName = "ocpc_params_qtt.pb"
 
-    val data = getCalibrationData(date, hour, version, spark)
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_post_cvr_unitid_hourly
+         |WHERE
+         |  `date` = '2019-06-03'
+         |AND
+         |  `hour` = '12'
+         |AND
+         |  version = 'qtt_demo'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
 
-    data
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly")
 
     savePbPack(data, fileName, spark)
-  }
-
-  def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  identifier,
-         |  conversion_goal,
-         |  1.0 / pcoc as cali_value,
-         |  1.0 / jfb as jfb_factor,
-         |  post_cvr,
-         |  high_bid_factor,
-         |  low_bid_factor
-         |FROM
-         |  dl_cpc.ocpc_param_calibration_hourly
-         |WHERE
-         |  `date` = '$date'
-         |AND
-         |  `hour` = '$hour'
-         |AND
-         |  version = '$version'
-       """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1).cache()
-    data1.show(10)
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  cast(unitid as string) identifier,
-         |  conversion_goal,
-         |  cpa as cpa_suggest
-         |FROM
-         |  test.ocpc_qtt_light_control_v2
-       """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2).cache()
-    data2.show(10)
-
-    val data = data1
-      .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
-      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest"))
-      .cache()
-
-    data.show(10)
-
-    data
   }
 
 
@@ -117,25 +79,40 @@ object OcpcSampleToPb {
     int64    cpcbid = 14;
     int64    maxbid = 15;
      */
+//    val key = "oCPCQtt&270&0"
+//    val conversionGoal = 3
+//    val cvrCalFactor = 0.5
+//    val jfbFactor = 1.1
+//    val smoothFactor = 0.5
+//    val postCvr = 0.032
+//    val cpaGiven = 1000.0
+//    val cpaSuggest = 1200.0
+//    val paramT = 2.0
+//    val highBidFactor = 1.1
+//    val lowBidFactor = 1.0
+//    val minCPM = 0
+//    val minBid = 0
+//    val cpcbid = 12
+//    val maxbid = 0
     var list = new ListBuffer[SingleItem]
     var cnt = 0
 
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
       val key = "oCPCQtt&" + identifier + "&0"
-      val conversionGoal = record.getAs[Int]("conversion_goal")
+      val conversionGoal = 3
       val cvrCalFactor = record.getAs[Double]("cali_value")
-      val jfbFactor = record.getAs[Double]("jfb_factor")
+      val jfbFactor = 1.1
       val smoothFactor = 0.5
-      val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = 1.0
+      val postCvr = record.getAs[Double]("cvr3")
+      val cpaGiven = 1000.0
       val cpaSuggest = record.getAs[Double]("cpa_suggest")
       val paramT = 2.0
-      val highBidFactor = record.getAs[Double]("high_bid_factor")
-      val lowBidFactor = record.getAs[Double]("low_bid_factor")
+      val highBidFactor = 1.1
+      val lowBidFactor = 1.0
       val minCPM = 0
       val minBid = 0
-      val cpcbid = 0
+      val cpcbid = 12
       val maxbid = 0
 
       if (cnt % 100 == 0) {
