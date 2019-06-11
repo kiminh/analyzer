@@ -91,7 +91,8 @@ object OcpcSampleToPb {
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
       .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
       .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
-      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor"))
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
       .cache()
 
     data.show(10)
