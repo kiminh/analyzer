@@ -91,93 +91,6 @@ object OcpcSampleToPb {
     data
   }
 
-
-
-//  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
-//    /*
-//    oCPCQTT&unitid&isHiddenOcpc
-//    string   key = 1;
-//    int32    conversionGoal = 2;
-//    double   cvrCalFactor = 3;
-//    double   jfbFactor = 4;
-//    double   smoothFactor = 5;
-//    double   postCvr = 6;
-//    double   cpaGiven = 7;
-//    double   cpaSuggest = 8;
-//    double   paramT = 9;
-//    double   highBidFactor = 10;
-//    double   lowBidFactor = 11;
-//    int64    ocpcMincpm = 12;
-//    int64    ocpcMinbid = 13;
-//    int64    cpcbid = 14;
-//    int64    maxbid = 15;
-//     */
-//    var list = new ListBuffer[SingleItem]
-//    var cnt = 0
-//
-//    for (record <- data.collect()) {
-//      val identifier = record.getAs[String]("identifier")
-//      val key = "oCPCQtt&" + identifier + "&0"
-//      val conversionGoal = record.getAs[Int]("conversion_goal")
-//      val cvrCalFactor = record.getAs[Double]("cali_value")
-//      val jfbFactor = record.getAs[Double]("jfb_factor")
-//      val smoothFactor = 0.5
-//      val postCvr = record.getAs[Double]("post_cvr")
-//      val cpaGiven = 1.0
-//      val cpaSuggest = record.getAs[Double]("cpa_suggest")
-//      val paramT = 2.0
-//      val highBidFactor = record.getAs[Double]("high_bid_factor")
-//      val lowBidFactor = record.getAs[Double]("low_bid_factor")
-//      val minCPM = 0
-//      val minBid = 0
-//      val cpcbid = 0
-//      val maxbid = 0
-//
-//      if (cnt % 100 == 0) {
-//        println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
-//      }
-//      cnt += 1
-//
-//      //      string identifier = 1;
-//      //      int32 conversiongoal = 2;
-//      //      double kvalue = 3;
-//      //      double cpagiven = 4;
-//      //      int64 cvrcnt = 5;
-//
-//      val currentItem = SingleItem(
-//        key = key,
-//        conversionGoal = conversionGoal,
-//        cvrCalFactor = cvrCalFactor,
-//        jfbFactor = jfbFactor,
-//        smoothFactor = smoothFactor,
-//        postCvr = postCvr,
-//        cpaGiven = cpaGiven,
-//        cpaSuggest = cpaSuggest,
-//        paramT = paramT,
-//        highBidFactor = highBidFactor,
-//        lowBidFactor = lowBidFactor,
-//        ocpcMincpm = minCPM,
-//        ocpcMinbid = minBid,
-//        cpcbid = cpcbid,
-//        maxbid = maxbid
-//
-//      )
-//      list += currentItem
-//
-//    }
-//    val result = list.toArray[SingleItem]
-//    val adRecordList = OcpcParamsList(
-//      records = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(fileName))
-//
-//    println("complete save data into protobuffer")
-//
-//  }
-
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
     oCPCQTT&unitid&isHiddenOcpc
@@ -197,40 +110,25 @@ object OcpcSampleToPb {
     int64    cpcbid = 14;
     int64    maxbid = 15;
      */
-    //    val key = "oCPCQtt&270&0"
-    //    val conversionGoal = 3
-    //    val cvrCalFactor = 0.5
-    //    val jfbFactor = 1.1
-    //    val smoothFactor = 0.5
-    //    val postCvr = 0.032
-    //    val cpaGiven = 1000.0
-    //    val cpaSuggest = 1200.0
-    //    val paramT = 2.0
-    //    val highBidFactor = 1.1
-    //    val lowBidFactor = 1.0
-    //    val minCPM = 0
-    //    val minBid = 0
-    //    val cpcbid = 12
-    //    val maxbid = 0
     var list = new ListBuffer[SingleItem]
     var cnt = 0
 
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
       val key = "oCPCQtt&" + identifier + "&0"
-      val conversionGoal = 3
+      val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cali_value")
-      val jfbFactor = 1.1
+      val jfbFactor = record.getAs[Double]("jfb_factor")
       val smoothFactor = 0.5
       val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = 1000.0
+      val cpaGiven = 1.0
       val cpaSuggest = record.getAs[Double]("cpa_suggest")
       val paramT = 2.0
-      val highBidFactor = 1.1
-      val lowBidFactor = 1.0
+      val highBidFactor = record.getAs[Double]("high_bid_factor")
+      val lowBidFactor = record.getAs[Double]("low_bid_factor")
       val minCPM = 0
       val minBid = 0
-      val cpcbid = 12
+      val cpcbid = 0
       val maxbid = 0
 
       if (cnt % 100 == 0) {
@@ -277,6 +175,106 @@ object OcpcSampleToPb {
     println("complete save data into protobuffer")
 
   }
+
+//  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
+//    /*
+//    oCPCQTT&unitid&isHiddenOcpc
+//    string   key = 1;
+//    int32    conversionGoal = 2;
+//    double   cvrCalFactor = 3;
+//    double   jfbFactor = 4;
+//    double   smoothFactor = 5;
+//    double   postCvr = 6;
+//    double   cpaGiven = 7;
+//    double   cpaSuggest = 8;
+//    double   paramT = 9;
+//    double   highBidFactor = 10;
+//    double   lowBidFactor = 11;
+//    int64    ocpcMincpm = 12;
+//    int64    ocpcMinbid = 13;
+//    int64    cpcbid = 14;
+//    int64    maxbid = 15;
+//     */
+//    //    val key = "oCPCQtt&270&0"
+//    //    val conversionGoal = 3
+//    //    val cvrCalFactor = 0.5
+//    //    val jfbFactor = 1.1
+//    //    val smoothFactor = 0.5
+//    //    val postCvr = 0.032
+//    //    val cpaGiven = 1000.0
+//    //    val cpaSuggest = 1200.0
+//    //    val paramT = 2.0
+//    //    val highBidFactor = 1.1
+//    //    val lowBidFactor = 1.0
+//    //    val minCPM = 0
+//    //    val minBid = 0
+//    //    val cpcbid = 12
+//    //    val maxbid = 0
+//    var list = new ListBuffer[SingleItem]
+//    var cnt = 0
+//
+//    for (record <- data.collect()) {
+//      val identifier = record.getAs[String]("identifier")
+//      val key = "oCPCQtt&" + identifier + "&0"
+//      val conversionGoal = 3
+//      val cvrCalFactor = record.getAs[Double]("cali_value")
+//      val jfbFactor = 1.1
+//      val smoothFactor = 0.5
+//      val postCvr = record.getAs[Double]("post_cvr")
+//      val cpaGiven = 1000.0
+//      val cpaSuggest = record.getAs[Double]("cpa_suggest")
+//      val paramT = 2.0
+//      val highBidFactor = 1.1
+//      val lowBidFactor = 1.0
+//      val minCPM = 0
+//      val minBid = 0
+//      val cpcbid = 12
+//      val maxbid = 0
+//
+//      if (cnt % 100 == 0) {
+//        println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
+//      }
+//      cnt += 1
+//
+//      //      string identifier = 1;
+//      //      int32 conversiongoal = 2;
+//      //      double kvalue = 3;
+//      //      double cpagiven = 4;
+//      //      int64 cvrcnt = 5;
+//
+//      val currentItem = SingleItem(
+//        key = key,
+//        conversionGoal = conversionGoal,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//
+//      )
+//      list += currentItem
+//
+//    }
+//    val result = list.toArray[SingleItem]
+//    val adRecordList = OcpcParamsList(
+//      records = result
+//    )
+//
+//    println("length of the array")
+//    println(result.length)
+//    adRecordList.writeTo(new FileOutputStream(fileName))
+//
+//    println("complete save data into protobuffer")
+//
+//  }
 
 }
 

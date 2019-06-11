@@ -52,7 +52,7 @@ object OcpcSampleToPbV2 {
     val data = spark.sql(sqlRequest)
 
 
-//    savePbPack(data, fileName, spark)
+    savePbPack(data, fileName, spark)
   }
 
 
