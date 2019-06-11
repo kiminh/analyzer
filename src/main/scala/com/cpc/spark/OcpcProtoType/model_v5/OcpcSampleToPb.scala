@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.model_v5
 import java.io.FileOutputStream
 
 import org.apache.spark.sql.DataFrame
-import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
+//import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import scala.collection.mutable.ListBuffer
