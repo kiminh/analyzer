@@ -55,7 +55,9 @@ object MultiDimensionCalibOnQttCvr {
     val clicksql = s"""
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
                  |a.cvr_model_name as model, a.adslotid, a.ideaid,
-                 |case when user_req_ad_num = 1 then '1'
+                 |case
+                 |  when user_req_ad_num = 0 then '0'
+                 |  when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
