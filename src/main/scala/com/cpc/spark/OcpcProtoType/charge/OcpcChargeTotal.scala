@@ -29,7 +29,8 @@ object OcpcChargeTotal {
 //    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
-    val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
+    val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark).cache()
+    costData.show(10)
 //    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
     cleanDataInMysql(3, date, hour, spark)
 
