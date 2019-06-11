@@ -7,6 +7,7 @@ import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import scala.collection.mutable.ListBuffer
+import org.apache.spark.sql.functions._
 
 
 object OcpcSampleToPb {
@@ -37,8 +38,12 @@ object OcpcSampleToPb {
     val data = getCalibrationData(date, hour, version, spark)
 
     data
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
         .repartition(5)
         .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
 
     savePbPack(data, fileName, spark)
   }
