@@ -11,6 +11,7 @@ import scala.collection.mutable.ListBuffer
 object WzCpaDiscount {
   def main(args: Array[String]): Unit = {
     /*
+    author by wy
     pb文件格式：
     key值这样设计：
     qtt_wz&adslot_type&adtype
