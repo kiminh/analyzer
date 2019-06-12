@@ -62,9 +62,9 @@ object WzCpaDiscount {
 
     for (record <- dataset.collect()) {
       val adslot_type = record.getAs[String]("adslot_type")
-      val adtype = record.getAs[String]("adtype").toDouble
+      val adtype = record.getAs[String]("adtype")
       val key = "qtt_wz&" + adslot_type + "&" + adtype
-      val discount = record.getAs[Double]("discount")
+      val discount = record.getAs[String]("discount").toDouble
 
       println(s"key: $key,discount: $discount")
 
