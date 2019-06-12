@@ -32,24 +32,25 @@ object OcpcChargeV2 {
 
     val clickData = getClickData(date, media, dayCnt, spark)
     val cvData = getCvData(date, dayCnt, spark)
+    val cpcData = getCPCdata(date, media, dayCnt, spark)
 
     val data = clickData
       .join(cvData, Seq("searchid"), "left_outer")
       .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
 
-    val payData = calculatePay(data, date, dayCnt, spark).cache()
+    val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
     payData.show(10)
 
     val resultDF1 = payData
-      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date")
+      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -59,9 +60,60 @@ object OcpcChargeV2 {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
+  }
+
+  def getCPCdata(date: String, media: String, dayCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayCnt)
+    calendar.add(Calendar.DATE, +1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` between '$date1' and '$date'"
+
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  isclick=1
+         |AND
+         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
+         |AND
+         |  length(ocpc_log) = 0
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark
+        .sql(sqlRequest)
+        .select("unitid")
+        .withColumn("cpc_flag", lit(1))
+        .distinct()
+        .cache()
+
+
+    result.printSchema()
+    result.show(10)
+    result
   }
 
   def getUnitList(date: String, media: String, version: String, dayCnt: Int, spark: SparkSession) = {
@@ -263,7 +315,7 @@ object OcpcChargeV2 {
 //    data
 //  }
 
-  def calculatePay(baseData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
+  def calculatePay(baseData: DataFrame, cpcData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -309,6 +361,8 @@ object OcpcChargeV2 {
       .withColumn("pay", when(col("pay") <= 0.0, 0.0).otherwise(col("pay")))
       .withColumn("pay", when(col("cv") === 0, col("cost")).otherwise(col("pay")))
       .withColumn("start_date", lit(date1))
+      .join(cpcData, Seq("unitid"), "left_outer")
+      .na.fill(0, Seq("cpc_flag"))
 
     result
 
