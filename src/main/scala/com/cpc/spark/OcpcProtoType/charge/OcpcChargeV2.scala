@@ -48,21 +48,19 @@ object OcpcChargeV2 {
     resultDF1.show(10)
 
     resultDF1
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-//    unitidList
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily20190529")
     resultDF2.show(10)
 
     resultDF2
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -330,8 +328,8 @@ object OcpcChargeV2 {
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr
+         |  distinct searchid,
+         |  1 as iscvr
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
