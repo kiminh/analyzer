@@ -113,7 +113,7 @@ object OcpcLightBulbV2{
          |and is_recommend = 1
          |and version = '$version'
          |and industry in ('feedapp')
-         |and conversion_goal = 1
+         |and conversion_goal in (1, 2)
        """.stripMargin
 
     println(sqlRequest)
