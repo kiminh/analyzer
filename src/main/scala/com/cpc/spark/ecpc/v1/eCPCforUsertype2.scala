@@ -29,7 +29,7 @@ object eCPCforUsertype2 {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
-    val minCV = 20
+    val minCV = 10
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
