@@ -3,11 +3,13 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
 import com.cpc.spark.ml.calibration.HourlyCalibration._
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.rdd.RDD
@@ -17,6 +19,7 @@ import org.apache.spark.sql.Row
 object KFactorCali {
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // parse and process input
     val endDate = args(0)
