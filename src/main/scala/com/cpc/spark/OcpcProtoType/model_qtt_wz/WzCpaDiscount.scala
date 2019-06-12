@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.model_qtt_wz
 import java.io.FileOutputStream
 import java.util.Properties
 
-import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
+import ocpcCpaDiscount.ocpcCpaDiscount.{OcpcCpaDiscountList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -60,7 +60,7 @@ object WzCpaDiscount {
 
   def savePbPack(dataset: DataFrame): Unit = {
     var list = new ListBuffer[SingleItem]
-    val filename = "ocpc_params_novel.pb"
+    val filename = "ocpc_cpa_discount.pb"
     println("size of the dataframe")
     println(dataset.count)
     println(s"filename: $filename")
@@ -69,62 +69,31 @@ object WzCpaDiscount {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val identifier = record.getAs[Int]("identifier").toString
-      val version = record.getAs[String]("version")
-      var HiddenOcpc = 0
-      if(version == "novel_v3") HiddenOcpc = 1
-      val key = "oCPCNovel&" + identifier + "&" + HiddenOcpc
-      val conversionGoal = record.getAs[Int]("conversion_goal")
-      val cvrCalFactor = record.getAs[Double]("cvrcalfactor")
-      val jfbFactor = record.getAs[Double]("kvalue")
-      val smoothFactor = record.getAs[Double]("smoothfactor")
-      val postCvr = record.getAs[Double]("post_cvr")
-      val cpaGiven = record.getAs[Double]("cpagiven")
-      val cpaSuggest = 0.0
-      val paramT = 0.0
-      val highBidFactor = 0.0
-      val lowBidFactor = 0.0
-      val ocpcMincpm = 0
-      val ocpcMinbid = 0
-      val cpcbid = 0
-      val maxbid = record.getAs[Double]("maxbid").toInt
+      val adslot_type = record.getAs[Int]("adslot_type")
+      val adtype = record.getAs[Int]("adtype")
+      val key = "qtt_wz&" + adslot_type + "&" + adtype
+      val discount = record.getAs[Double]("discount")
 
-      if (cnt % 100 == 0) {
-        println(s"key: $key,conversionGoal: $conversionGoal, cvrCalFactor:$cvrCalFactor,jfbFactor:$jfbFactor, postCvr:$postCvr, smoothFactor:$smoothFactor," +
-          s"cpaGiven: $cpaGiven,cpaSuggest: $cpaSuggest, paramT: $paramT, highBidFactor: $highBidFactor, lowBidFactor:$lowBidFactor," +
-          s"ocpcMincpm: $ocpcMincpm, ocpcMinbid:$ocpcMinbid, cpcbid:$cpcbid,maxbid :$maxbid ")
+      if (cnt % 2 == 0) {
+        println(s"key: $key,discount: $discount")
       }
       cnt += 1
 
       val currentItem = SingleItem(
         key = key,
-        conversionGoal = conversionGoal,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = ocpcMincpm,
-        ocpcMinbid = ocpcMinbid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
+        discount = discount
       )
       list += currentItem
 
     }
     val result = list.toArray[SingleItem]
-    val adRecordList = OcpcParamsList(
+    val adRecordList = OcpcCpaDiscountList(
       records = result
     )
 
     println("length of the array")
     println(result.length)
     adRecordList.writeTo(new FileOutputStream(filename))
-
     println("complete save data into protobuffer")
 
   }
