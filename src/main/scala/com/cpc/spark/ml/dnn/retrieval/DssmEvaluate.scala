@@ -2,7 +2,9 @@ package com.cpc.spark.ml.dnn.retrieval
 
 import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
 import com.cpc.spark.ml.dnn.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
@@ -13,16 +15,40 @@ import scala.collection.mutable
   */
 object DssmEvaluate {
   def main(args: Array[String]): Unit = {
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+
     val spark = SparkSession.builder().appName("dssm-ad-eval").enableHiveSupport().getOrCreate()
+
+    val yesterday = args(0)
+    val twodayago = args(1)
+
+
+    println("=======yesterday eval start========")
+    eval(spark, yesterday, yesterday, "left",1)
+    println("=======yesterday eval end========")
+
+    println("=======twodayago eval start========")
+    eval(spark, yesterday, twodayago, "inner",2)
+    println("=======twodayago eval end========")
+
+  }
+
+  def eval(spark: SparkSession, yesterday: String, testday:String, joinType:String, dateago:Int): Unit = {
     import spark.implicits._
+    val labels = getLabels(yesterday, spark)
+    val labelCount = labels.count()
 
-    val date = args(0)
+    val userEmbedding = getUserEmbedding(testday, spark)
+    val userEmbeddingCount = userEmbedding.count()
+    println("user embedding data = " + userEmbeddingCount)
 
-    val labels = getLabels(date, spark)
-    val userEmbedding = getUserEmbedding(date, spark)
-    val adEmbeding = getAdEmbedding(date, spark)
-    val df = labels.join(userEmbedding, Seq("uid"), "left")
-      .join(adEmbeding, Seq("adid"), "left")
+    val adEmbeding = getAdEmbedding(testday, spark)
+    val adEmbeddingCount = adEmbeding.count()
+    println("ad embedding data = " + adEmbeddingCount)
+
+    var df = labels.join(userEmbedding, Seq("uid"), joinType)
+      .join(adEmbeding, Seq("adid"), joinType)
       .rdd.map(x => {
       val uid = x.getAs[String]("uid")
       val adid = x.getAs[String]("adid")
@@ -43,18 +69,60 @@ object DssmEvaluate {
         userEmbeddingStr = userEmbedding.mkString(",")
         adEmbeddingStr = adEmbedding.mkString(",")
       }
-      (uid, adid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
-    }).toDF("uid", "adid", "clickCount", "score", "userNull", "adNull",
-      "userEmbeddingStr", "adEmbeddingStr","dt")
+      (uid, adid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr)
+    }).toDF("uid", "adid", "clickcount", "score", "usernull", "adnull",
+      "userembedding", "adembedding").repartition(1000).cache()
+
+    println("labels count = " + labelCount)
+    println("user embedding data = " + userEmbeddingCount)
+    println("ad embedding data = " + adEmbeddingCount)
+    val dfCount = df.count()
+    println("df count = " + dfCount)
 
     val metrics = new BinaryClassificationMetrics(
-      df.filter(row => row.getAs[Int]("userNull") == 0 && row.getAs[Int]("adNull") == 0)
+      df.filter(row => row.getAs[Int]("usernull") == 0 && row.getAs[Int]("adnull") == 0)
         .rdd.map(row =>
-        (row.getAs[Double]("score"), if (row.getAs[Long]("clickCount") > 0) 1 else 0)))
-    println(s"auc: ${metrics.areaUnderROC()}")
+        (row.getAs[Double]("score"), if (row.getAs[Long]("clickcount") > 0) 1 else 0)))
+    val auc=metrics.areaUnderROC()
+    println(s"auc: ${auc}")
 
-    df.write.mode("overwrite")
-      .insertInto("dl_cpc.dssm_eval_raw_new")
+    println("df user embedding distinct count = " + df.select($"userembedding").distinct().count())
+    df.createOrReplaceTempView("tmp_table")
+    spark.sql(
+      s"""
+         |insert overwrite table dl_cpc.dssm_eval_raw_new partition (`dt`='$yesterday', dateago=$dateago)
+         |select * from tmp_table
+       """.stripMargin)
+
+    val sigmoidUdf = udf((x: Double) => {
+      1.0 / (1.0 + Math.exp(-x))
+    })
+    df = df.withColumn("scoresigmod", sigmoidUdf(df("score")))
+    val isClickUdf = udf((x: Long) => {
+      if (x > 0) 1 else 0
+    })
+    df = df.withColumn("isclick", isClickUdf(df("clickcount")))
+
+    df.show(10)
+
+    df.createOrReplaceTempView("tmp_table2")
+    spark.sql(
+      s"""
+         |insert overwrite table dl_cpc.dssm_eval_new partition (`dt`='$yesterday', dateago=$dateago)
+         |select mean(scoresigmod) as scoresigmod,mean(isclick) as isclick,${auc} as auc from tmp_table2
+       """.stripMargin)
+
+    val meanDF = spark.sql(
+      s"""
+         |select * from dl_cpc.dssm_eval_new where `dt`='$yesterday' and dateago=$dateago
+       """.stripMargin)
+    meanDF.show(10)
+
+
+    df.unpersist()
+    userEmbedding.unpersist()
+    adEmbeding.unpersist()
+    meanDF.unpersist()
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
@@ -80,7 +148,6 @@ object DssmEvaluate {
     import spark.implicits._
     val data = spark.read.parquet(userHDFSDir + date)
     data.show(10)
-    println("user embedding data = " + data.count())
     data.rdd.map(
       x => {
         val uid = x.getAs[Array[Byte]](64).map(_.toChar).mkString
