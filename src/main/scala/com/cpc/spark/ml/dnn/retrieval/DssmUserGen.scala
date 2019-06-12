@@ -58,15 +58,15 @@ object DssmUserGen {
       .enableHiveSupport()
       .getOrCreate()
 
-    val date = args(0)
-    val firstTime = args(1).toBoolean
+    val yesterday = args(0)
     val lastDate = args(2)
+    val userFirstGen = args(2).toBoolean
 
-    val userInfo = getData(spark, date)
+    val userInfo = getData(spark, yesterday)
 
     println("DAU User count = %d".format(userInfo.count()))
 
-    val finalOutput = if (!firstTime) {
+    val finalOutput = if (!userFirstGen) {
       import spark.implicits._
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
@@ -110,17 +110,17 @@ object DssmUserGen {
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
-      .parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + date)
+      .parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + yesterday)
 
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + date)
+      .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + yesterday)
 
     val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-info-v0/tmp/"
-    val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-v0/${date}/count"
+    val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-v0/${yesterday}/count"
     CommonUtils.writeCountToFile(spark, userCount, userCountPathTmpName, userCountPathName)
   }
 
