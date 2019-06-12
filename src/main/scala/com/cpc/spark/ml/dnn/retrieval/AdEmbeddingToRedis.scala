@@ -15,11 +15,12 @@ object AdEmbeddingToRedis {
 
     val date = args(0)
     val data = spark.read.parquet(hdfsDir + date+"")
+    println("start write to redis")
     data.rdd.repartition(10).foreachPartition(
       iterator => {
         val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
         iterator.foreach(x => {
-          val uid = x.getAs[Array[Byte]](0).map(_.toChar).mkString
+          val aid = x.getAs[Array[Byte]](0).map(_.toChar).mkString
           val embedding = new Array[Double](64)
 
           for (i <- 1 to 64) {
@@ -29,7 +30,7 @@ object AdEmbeddingToRedis {
             size = 64,
             embeddings = embedding
           )
-          jedis.setex(("dssm-a-" + uid).getBytes(), 3600 * 24 * 30, embPb.toByteArray)
+          jedis.setex(("dssm-a-" + aid).getBytes(), 3600 * 24 * 30, embPb.toByteArray)
         })
         jedis.close()
       }

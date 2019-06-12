@@ -15,6 +15,7 @@ object UserEmbeddingToRedis {
 
     val date = args(0)
     val data = spark.read.parquet(hdfsDir + date)
+    println("start write to redis")
     data.rdd.repartition(10).foreachPartition(
       iterator => {
         val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
