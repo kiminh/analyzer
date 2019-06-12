@@ -1,8 +1,6 @@
 package com.cpc.spark.OcpcProtoType.model_qtt_wz
 
 import java.io.FileOutputStream
-import java.util.Properties
-
 import ocpcCpaDiscount.ocpcCpaDiscount.{OcpcCpaDiscountList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -40,22 +38,15 @@ object WzCpaDiscount {
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
-//
-//    val data = ((1,))
-//
-//    println("NewK")
-//    println(cvrData.count())
-//    cvrData.show(10)
-//
-//    // 组装数据
-//
-//    resultDF.show(10)
-//
-//    resultDF
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_pb_hourly")
-//
-//    val resultUnion = spark.table("dl_cpc.ocpc_novel_pb_once").union(resultDF)
-//    savePbPack(resultUnion)
+    val df = spark.read.format("com.databricks.spark.csv")
+      .option("header", "false")
+      .option("inferSchema", "false") //是否自动推到内容的类型
+      .option("delimiter",",")  //分隔符，默认为 ,
+      .load("hdfs://emr-cluster/user/cpc/wy/wz_cpa_discount.csv")
+    df.show()
+
+//    val resultDF = df
+//    savePbPack(resultDF)
   }
 
   def savePbPack(dataset: DataFrame): Unit = {
@@ -74,10 +65,7 @@ object WzCpaDiscount {
       val key = "qtt_wz&" + adslot_type + "&" + adtype
       val discount = record.getAs[Double]("discount")
 
-      if (cnt % 2 == 0) {
-        println(s"key: $key,discount: $discount")
-      }
-      cnt += 1
+      println(s"key: $key,discount: $discount")
 
       val currentItem = SingleItem(
         key = key,
