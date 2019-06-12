@@ -1,13 +1,12 @@
-package com.cpc.spark.OcpcProtoType.model_v5
+package com.cpc.spark.OcpcProtoType.model_qtt_v2
 
 import java.io.FileOutputStream
-
-import org.apache.spark.sql.DataFrame
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
-import scala.collection.mutable.ListBuffer
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+
+import scala.collection.mutable.ListBuffer
 
 
 object OcpcSampleToPb {
@@ -33,12 +32,13 @@ object OcpcSampleToPb {
     val version = args(2).toString
     val fileName = args(3).toString
 
-//    val fileName = "ocpc_params_qtt.pb"
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
     val data = getCalibrationData(date, hour, version, spark)
 
     data
-        .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
+        .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
@@ -55,6 +55,7 @@ object OcpcSampleToPb {
          |SELECT
          |  identifier,
          |  conversion_goal,
+         |  is_hidden,
          |  1.0 / pcoc as cali_value,
          |  1.0 / jfb as jfb_factor,
          |  post_cvr,
@@ -78,7 +79,7 @@ object OcpcSampleToPb {
          |SELECT
          |  cast(unitid as string) identifier,
          |  conversion_goal,
-         |  cpa as cpa_suggest
+         |  cpa * 100.0 as cpa_suggest
          |FROM
          |  test.ocpc_qtt_light_control_v2
        """.stripMargin
@@ -88,14 +89,27 @@ object OcpcSampleToPb {
 
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest")
-      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest"))
+      .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
+      .select("identifier", "conversion_goal", "is_hidden", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor")
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
       .cache()
 
     data.show(10)
 
     data
   }
+
+  def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
+    var factor = conversionGoal match {
+      case 1 => 0.2
+      case 2 => 0.5
+      case 3 => 0.5
+      case 4 => 0.2
+      case _ => 0.0
+    }
+    factor
+  })
 
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
@@ -121,11 +135,12 @@ object OcpcSampleToPb {
 
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
-      val key = "oCPCQtt&" + identifier + "&0"
+      val isHidden = record.getAs[Int]("is_hidden").toString
+      val key = "oCPCQtt&" + identifier + "&" + isHidden
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cali_value")
       val jfbFactor = record.getAs[Double]("jfb_factor")
-      val smoothFactor = 0.5
+      val smoothFactor = record.getAs[Double]("smooth_factor")
       val postCvr = record.getAs[Double]("post_cvr")
       val cpaGiven = 1.0
       val cpaSuggest = record.getAs[Double]("cpa_suggest")
@@ -181,106 +196,6 @@ object OcpcSampleToPb {
     println("complete save data into protobuffer")
 
   }
-
-//  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
-//    /*
-//    oCPCQTT&unitid&isHiddenOcpc
-//    string   key = 1;
-//    int32    conversionGoal = 2;
-//    double   cvrCalFactor = 3;
-//    double   jfbFactor = 4;
-//    double   smoothFactor = 5;
-//    double   postCvr = 6;
-//    double   cpaGiven = 7;
-//    double   cpaSuggest = 8;
-//    double   paramT = 9;
-//    double   highBidFactor = 10;
-//    double   lowBidFactor = 11;
-//    int64    ocpcMincpm = 12;
-//    int64    ocpcMinbid = 13;
-//    int64    cpcbid = 14;
-//    int64    maxbid = 15;
-//     */
-//    //    val key = "oCPCQtt&270&0"
-//    //    val conversionGoal = 3
-//    //    val cvrCalFactor = 0.5
-//    //    val jfbFactor = 1.1
-//    //    val smoothFactor = 0.5
-//    //    val postCvr = 0.032
-//    //    val cpaGiven = 1000.0
-//    //    val cpaSuggest = 1200.0
-//    //    val paramT = 2.0
-//    //    val highBidFactor = 1.1
-//    //    val lowBidFactor = 1.0
-//    //    val minCPM = 0
-//    //    val minBid = 0
-//    //    val cpcbid = 12
-//    //    val maxbid = 0
-//    var list = new ListBuffer[SingleItem]
-//    var cnt = 0
-//
-//    for (record <- data.collect()) {
-//      val identifier = record.getAs[String]("identifier")
-//      val key = "oCPCQtt&" + identifier + "&0"
-//      val conversionGoal = 3
-//      val cvrCalFactor = record.getAs[Double]("cali_value")
-//      val jfbFactor = 1.1
-//      val smoothFactor = 0.5
-//      val postCvr = record.getAs[Double]("post_cvr")
-//      val cpaGiven = 1000.0
-//      val cpaSuggest = record.getAs[Double]("cpa_suggest")
-//      val paramT = 2.0
-//      val highBidFactor = 1.1
-//      val lowBidFactor = 1.0
-//      val minCPM = 0
-//      val minBid = 0
-//      val cpcbid = 12
-//      val maxbid = 0
-//
-//      if (cnt % 100 == 0) {
-//        println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
-//      }
-//      cnt += 1
-//
-//      //      string identifier = 1;
-//      //      int32 conversiongoal = 2;
-//      //      double kvalue = 3;
-//      //      double cpagiven = 4;
-//      //      int64 cvrcnt = 5;
-//
-//      val currentItem = SingleItem(
-//        key = key,
-//        conversionGoal = conversionGoal,
-//        cvrCalFactor = cvrCalFactor,
-//        jfbFactor = jfbFactor,
-//        smoothFactor = smoothFactor,
-//        postCvr = postCvr,
-//        cpaGiven = cpaGiven,
-//        cpaSuggest = cpaSuggest,
-//        paramT = paramT,
-//        highBidFactor = highBidFactor,
-//        lowBidFactor = lowBidFactor,
-//        ocpcMincpm = minCPM,
-//        ocpcMinbid = minBid,
-//        cpcbid = cpcbid,
-//        maxbid = maxbid
-//
-//      )
-//      list += currentItem
-//
-//    }
-//    val result = list.toArray[SingleItem]
-//    val adRecordList = OcpcParamsList(
-//      records = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(fileName))
-//
-//    println("complete save data into protobuffer")
-//
-//  }
 
 }
 

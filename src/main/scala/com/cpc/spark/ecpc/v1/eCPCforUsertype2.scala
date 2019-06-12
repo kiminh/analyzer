@@ -29,10 +29,11 @@ object eCPCforUsertype2 {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
+    val minCV = 20
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt, highBidFactor:$highBidFactor, minCV:$minCV")
 
     // 抽取基础数据
     val rawData = getBaseData(media, hourInt, date, hour, spark)
@@ -42,7 +43,7 @@ object eCPCforUsertype2 {
       .select("searchid", "unitid", "is_api_callback", "adclass", "adtype", "slottype", "slotid", "bid", "price", "exp_cvr", "isshow", "isclick", "iscvr")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
-    val data = calculateData(baseData, 20, date, hour, spark)
+    val data = calculateData(baseData, minCV, date, hour, spark)
 
 //    string key = 1;
 //    double post_cvr = 2;
@@ -305,8 +306,6 @@ object eCPCforUsertype2 {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 0
-         |AND
-         |  usertype = 2
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -356,13 +355,31 @@ object eCPCforUsertype2 {
        """.stripMargin
     val cvrData3 = spark.sql(sqlRequest3)
 
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr4
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+         |AND
+         |  cvr_goal = 'cvr4'
+       """.stripMargin
+    val cvrData4 = spark.sql(sqlRequest4)
+
     val data = clickData
       .join(cvrData1, Seq("searchid"), "left_outer")
       .join(cvrData2, Seq("searchid"), "left_outer")
       .join(cvrData3, Seq("searchid"), "left_outer")
-      .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3"))
+      .join(cvrData4, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("iscvr1", "iscvr2", "iscvr3", "iscvr4"))
       .filter(s"conversion_goal > 0")
-      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3")))
+      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("iscvr1"), col("iscvr2"), col("iscvr3"), col("iscvr4")))
+
+//    data
+//      .repartition(100).write.mode("overwrite").saveAsTable("test.check_ecpc_data20190610")
 
     data
   }
@@ -373,17 +390,20 @@ object eCPCforUsertype2 {
       cvGoal = 2
     } else if (industry == "elds") {
       cvGoal = 3
+    } else if (industry == "wz") {
+      cvGoal = 4
     } else {
       cvGoal = 1
     }
     cvGoal
   })
 
-  def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int) => {
+  def udfSelectCv() = udf((conversionGoal: Int, iscvr1: Int, iscvr2: Int, iscvr3: Int, iscvr4: Int) => {
     val iscvr = conversionGoal match {
       case 1 => iscvr1
       case 2 => iscvr2
       case 3 => iscvr3
+      case 4 => iscvr4
       case _ => 0
     }
     iscvr

@@ -1,5 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v5
-
+package com.cpc.spark.OcpcProtoType.model_qtt_v2
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
