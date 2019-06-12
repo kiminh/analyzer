@@ -56,10 +56,10 @@ object eCPCforUsertype2 {
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
 
-    resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data20190612")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data20190612")
 
-//    savePbPack(resultDF, fileName, version, date, hour, spark)
+    savePbPack(resultDF, fileName, version, date, hour, spark)
 
   }
 
