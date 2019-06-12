@@ -37,6 +37,7 @@ object WzCpaDiscount {
     adslottype 激励 7 9
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    import spark.implicits._
     Logger.getRootLogger.setLevel(Level.WARN)
     val df = spark.read.format("com.databricks.spark.csv")
       .option("header", "false")
@@ -45,8 +46,8 @@ object WzCpaDiscount {
       .load("hdfs://emr-cluster/user/cpc/wy/wz_cpa_discount.csv")
     df.show()
 
-//    val resultDF = df
-//    savePbPack(resultDF)
+    val resultDF = df.select($"_c1".alias("adtype"),$"_c3".alias("adslot_type"),$"_c4".alias("discount"))
+    savePbPack(resultDF)
   }
 
   def savePbPack(dataset: DataFrame): Unit = {
