@@ -8,7 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object recall_prepare_training_samples {
+object recall_prepare_training_samples_v2 {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
