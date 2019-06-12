@@ -26,7 +26,8 @@ object OcpcChargeV2 {
     val media = args(2).toString
     val dayCnt = args(3).toInt
 
-    val unitidList = getUnitList(date, media, version, dayCnt, spark)
+    val unitidList = getUnitList(date, media, version, dayCnt, spark).cache()
+    unitidList.show(10)
 
 
     val clickData = getClickData(date, media, dayCnt, spark)
@@ -36,7 +37,8 @@ object OcpcChargeV2 {
       .join(cvData, Seq("searchid"), "left_outer")
       .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
 
-    val payData = calculatePay(data, date, dayCnt, spark)
+    val payData = calculatePay(data, date, dayCnt, spark).cache()
+    payData.show(10)
 
     val resultDF1 = payData
       .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date")
@@ -46,8 +48,8 @@ object OcpcChargeV2 {
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -59,8 +61,8 @@ object OcpcChargeV2 {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
