@@ -5,8 +5,8 @@ import mlmodel.mlmodel.RetrievalEmbedding
 import org.apache.spark.sql.SparkSession
 import redis.clients.jedis.{HostAndPort, JedisCluster}
 
-object UserEmbeddingToRedis {
-  val hdfsDir = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-output/"
+object AdEmbeddingToRedis {
+  val hdfsDir = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-output/"
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dssm-user-embedding-upload")
@@ -14,22 +14,22 @@ object UserEmbeddingToRedis {
       .getOrCreate()
 
     val date = args(0)
-    val data = spark.read.parquet(hdfsDir + date)
+    val data = spark.read.parquet(hdfsDir + date+"")
     data.rdd.repartition(10).foreachPartition(
       iterator => {
         val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
         iterator.foreach(x => {
-          val uid = x.getAs[Array[Byte]](64).map(_.toChar).mkString
+          val uid = x.getAs[Array[Byte]](0).map(_.toChar).mkString
           val embedding = new Array[Double](64)
 
-          for (i <- 0 to 63) {
-            embedding(i) = x.getAs[Number](i).doubleValue()
+          for (i <- 1 to 64) {
+            embedding(i-1) = x.getAs[Number](i).doubleValue()
           }
           val embPb = new RetrievalEmbedding(
             size = 64,
             embeddings = embedding
           )
-          jedis.setex(("dssm-u-" + uid).getBytes(), 3600 * 24 * 30, embPb.toByteArray)
+          jedis.setex(("dssm-a-" + uid).getBytes(), 3600 * 24 * 30, embPb.toByteArray)
         })
         jedis.close()
       }
