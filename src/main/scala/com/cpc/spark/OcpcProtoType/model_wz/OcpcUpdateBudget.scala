@@ -58,6 +58,8 @@ object OcpcUpdateBudget {
          |  1 as is_open
          |FROM
          |  test.check_unitid_consume
+         |WHERE
+         |  userid not in (1565736, 1626187)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
