@@ -18,7 +18,7 @@ object AdEmbeddingToRedis {
     println("start write to redis")
     data.rdd.repartition(10).foreachPartition(
       iterator => {
-        val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+        val jedis = new JedisCluster(new HostAndPort("192.168.86.36", 7107))
         iterator.foreach(x => {
           val aid = x.getAs[Array[Byte]](0).map(_.toChar).mkString
           val embedding = new Array[Double](64)
