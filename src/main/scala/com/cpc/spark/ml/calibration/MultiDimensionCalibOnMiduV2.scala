@@ -52,7 +52,7 @@ object MultiDimensionCalibOnMiduV2 {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
                  |ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case
                  |  when user_req_ad_num = 0 then '0'
