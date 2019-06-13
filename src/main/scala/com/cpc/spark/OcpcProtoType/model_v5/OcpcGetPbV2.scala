@@ -1,6 +1,7 @@
-package com.cpc.spark.OcpcProtoType.model_wz_v2
+package com.cpc.spark.OcpcProtoType.model_v5
 
-import com.cpc.spark.OcpcProtoType.model_wz_v2.OcpcCalculateCalibration.OcpcCalculateCalibrationMain
+import com.cpc.spark.OcpcProtoType.model_v5.OcpcCalculateCalibration.OcpcCalculateCalibrationMain
+import com.cpc.spark.OcpcProtoType.model_v5.OcpcRangeCalibration.OcpcRangeCalibrationMain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -21,7 +22,7 @@ object OcpcGetPbV2 {
     val conversionGoal = args(7).toInt
     val minCV = args(8).toInt
     val expTag = args(9).toString
-    val isHidden = 1
+    val isHidden = 0
 
     // 主校准回溯时间长度
     val hourInt1 = args(10).toInt
@@ -31,18 +32,19 @@ object OcpcGetPbV2 {
     val hourInt3 = args(12).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
+    println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     val calibraionData = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
-    val cpaGiven = getCPAgiven(date, hour, spark)
+    val factorData = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark).cache()
 
     println(s"print result:")
     calibraionData.show(10)
+    factorData.show(10)
 
     val resultDF = calibraionData
-      .withColumn("high_bid_factor", lit(1.0))
-      .withColumn("low_bid_factor", lit(1.0))
-      .join(cpaGiven, Seq("identifier"), "inner")
+      .join(factorData.select("identifier", "high_bid_factor", "low_bid_factor"), Seq("identifier"), "left_outer")
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
+      .withColumn("cpagiven", lit(1.0))
       .cache()
 
     resultDF.show(10)
@@ -61,23 +63,6 @@ object OcpcGetPbV2 {
 
     println("successfully save data into hive")
 
-  }
-
-  def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  cast(unitid as string) as identifier,
-         |  cpagiven
-         |FROM
-         |  dl_cpc.ocpc_auto_budget_wz
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest).cache()
-
-    resultDF.show(10)
-
-    resultDF
   }
 
 
