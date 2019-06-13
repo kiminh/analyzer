@@ -51,7 +51,7 @@ object userprofileCost {
          |select * from totalcost
          |union
          |select * from tagcost
-       """.stripMargin).repartition(20).createOrReplaceTempView("union_table")
+       """.stripMargin).repartition(10).createOrReplaceTempView("union_table")
 
     spark.sql(
       s"""
