@@ -107,22 +107,22 @@ object MultiDimensionCalibOnQttCvr {
     log.show(10)
     log.write.mode("overwrite").saveAsTable("test.wy11")
     LogToPb(log, session, calimodel)
-//    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
-//      sum("ectr").alias("ctrnum"),
-//      sum("isclick").alias("clicknum"))
-//      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
-//      .first().getAs[Double]("k")
-//    val irModel = IRModel(
-//      boundaries = Seq(0.0,1.0),
-//      predictions = Seq(0.0,k)
-//    )
-//    println(s"k is: $k")
-//    val caliconfig = CalibrationConfig(
-//      name = calimodel,
-//      ir = Option(irModel)
-//    )
-//    val localPath = saveProtoToLocal(calimodel, caliconfig)
-//    saveFlatTextFileForDebug(calimodel, caliconfig)
+    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
+      sum("ectr").alias("ctrnum"),
+      sum("isclick").alias("clicknum"))
+      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
+      .first().getAs[Double]("k")
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,1.8)
+    )
+    println(s"k is: $k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
