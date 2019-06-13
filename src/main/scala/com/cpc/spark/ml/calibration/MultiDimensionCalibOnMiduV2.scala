@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter
 import com.cpc.spark.common.Utils
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
@@ -20,6 +21,7 @@ object MultiDimensionCalibOnMiduV2 {
   val MIN_BIN_SIZE = 100000
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // parse and process input
     val endDate = args(0)
