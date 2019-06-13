@@ -130,7 +130,7 @@ object OcpcHourlyReportV3 {
        |    exp_ctr,
        |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
        |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
-       |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+       |    cast(ocpc_log_dict['jfbCalFactor'] as double) as kvalue,
        |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
        |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
        |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
@@ -138,7 +138,7 @@ object OcpcHourlyReportV3 {
        |    cast(ocpc_log_dict['pcvr'] as double) as cali_pcvr,
        |    cast(ocpc_log_dict['postCvr'] as double) as cali_postcvr,
        |    cast(ocpc_log_dict['smoothFactor'] as double) as smooth_factor,
-       |    cast(ocpc_log_dict['CpaSuggest'] as double) as cpa_suggest,
+       |    cast(ocpc_log_dict['cpasuggest'] as double) as cpa_suggest,
        |    hour as hr
        |FROM
        |    dl_cpc.ocpc_filter_unionlog
