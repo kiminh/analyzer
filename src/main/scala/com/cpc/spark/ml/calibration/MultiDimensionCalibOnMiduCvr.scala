@@ -49,7 +49,9 @@ object MultiDimensionCalibOnMiduCvr {
     // get union log
     val sql = s"""
                  |select iscvr as isclick, cast(raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass, cvr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
-                 |case when user_req_ad_num = 1 then '1'
+                 |case
+                 |  when user_req_ad_num = 0 then '0'
+                 |  when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
