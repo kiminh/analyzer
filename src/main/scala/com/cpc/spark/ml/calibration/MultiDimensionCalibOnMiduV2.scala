@@ -161,6 +161,22 @@ object MultiDimensionCalibOnMiduV2 {
     return calimap
   }
 
+  // input: (<ectr, click>)
+  // output: original ectr/ctr, calibrated ectr/ctr
+  def computeCalibration(samples: Array[(Double, Double)], irModel: IRModel): (Double, Double) = {
+    var imp = 0.0
+    var click = 0.0
+    var ectr = 0.0
+    var calibrated = 0.0
+    samples.foreach(x => {
+      imp += 1
+      click += x._2
+      ectr += x._1
+      calibrated += computeCalibration(x._1, irModel)
+    })
+    return (ectr / click, calibrated / click)
+  }
+
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
     if (num < boundaries(0)) {
       return 0
