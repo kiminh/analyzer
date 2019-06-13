@@ -116,7 +116,7 @@ object MultiDimensionCalibOnQttCvr {
       boundaries = Seq(0.0,1.0),
       predictions = Seq(0.0,1.8)
     )
-    println(s"k is: $k")
+//    println(s"k is: $k")
     val caliconfig = CalibrationConfig(
       name = calimodel,
       ir = Option(irModel)
