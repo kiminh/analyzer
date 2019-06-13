@@ -233,7 +233,6 @@ object OcpcUnionReportV3 {
 
   }
 
-
   def saveDataToMysql(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val hourInt = hour.toInt
     // unitid详情表
