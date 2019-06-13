@@ -59,7 +59,7 @@ object DssmUserGen {
       .getOrCreate()
 
     val yesterday = args(0)
-    val lastDate = args(2)
+    val lastDate = args(1)
     val userFirstGen = args(2).toBoolean
 
     val userInfo = getData(spark, yesterday)
