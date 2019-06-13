@@ -29,8 +29,9 @@ object OcpcChargeTotal {
 //    ocpcOpenTime.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418a")
     val baseData = getOcpcData(media, dayCnt, date, hour, spark)
 
-    val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark)
-//    costData.write.mode("overwrite").saveAsTable("test.ocpc_charge_daily20190419")
+    val costData = assemblyData(dayCnt, baseData, ocpcOpenTime, date, hour, spark).cache()
+    costData.show(10)
+//    costData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
     cleanDataInMysql(3, date, hour, spark)
 
     val prevData = getDataFromMysql(spark)
@@ -46,6 +47,9 @@ object OcpcChargeTotal {
 
 
     dataFilter.show(10)
+//    dataFilter
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_charge_total20190611")
 
     saveDataToMysql(dataFilter, spark)
 
@@ -168,7 +172,7 @@ object OcpcChargeTotal {
       .join(ocpcOpenTime, Seq("unitid", "conversion_goal"), "inner")
       .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "date", "hour")
 
-//    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418b")
+//    clickData.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190418c")
 
     // 取转化数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -185,8 +189,8 @@ object OcpcChargeTotal {
     val sqlRequest1 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr1
+         |  distinct searchid,
+         |  1 as iscvr1
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -200,8 +204,8 @@ object OcpcChargeTotal {
     val sqlRequest2 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr2
+         |  distinct searchid,
+         |  1 as iscvr2
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -215,8 +219,8 @@ object OcpcChargeTotal {
     val sqlRequest3 =
       s"""
          |SELECT
-         |  searchid,
-         |  label as iscvr3
+         |  distinct searchid,
+         |  1 as iscvr3
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
@@ -237,7 +241,7 @@ object OcpcChargeTotal {
         .select("searchid", "timestamp", "unitid", "userid", "conversion_goal", "cpagiven", "isclick", "price", "seq", "iscvr1", "iscvr2", "iscvr3", "iscvr", "date", "hour")
         .withColumn("ocpc_time", concat_ws(" ", col("date"), col("hour")))
 
-    baseData.filter(s"iscvr = 1").show(10)
+//    baseData.filter(s"iscvr = 1").show(10)
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -420,6 +424,7 @@ object OcpcChargeTotal {
       .withColumn("ocpc_last_open_hour", udfConvertHour2String()(col("ocpc_last_open_hour")))
       .select("unitid", "conversion_goal", "last_ocpc_opentime", "ocpc_last_open_date", "ocpc_last_open_hour")
       .filter(s"ocpc_last_open_date = '$date1'")
+      .cache()
 
     data.show(10)
 //    data.write.mode("overwrite").saveAsTable("test.check_ocpc_charge20190425a")

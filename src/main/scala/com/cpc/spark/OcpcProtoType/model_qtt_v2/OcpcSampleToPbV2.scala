@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v5
+package com.cpc.spark.OcpcProtoType.model_qtt_v2
 
 import java.io.FileOutputStream
 
@@ -35,7 +35,7 @@ object OcpcSampleToPbV2 {
 
     //    val fileName = "ocpc_params_qtt.pb"
 
-    val data = getCalibrationData(date, hour, version, spark)
+    val data = getCalibrationDataV2(date, hour, version, spark)
 
     data
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -49,7 +49,7 @@ object OcpcSampleToPbV2 {
     savePbPack(data, fileName, spark)
   }
 
-  def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
+  def getCalibrationDataV2(date: String, hour: String, version: String, spark: SparkSession) = {
     val sqlRequest1 =
       s"""
          |SELECT
