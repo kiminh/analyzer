@@ -37,7 +37,7 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     val calibraionData = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
-    val cpaGiven = getCPAgivenV2(date, hour, spark)
+    val cpaGiven = getCPAgiven(date, hour, spark)
 
     println(s"print result:")
     calibraionData.show(10)

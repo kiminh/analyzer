@@ -113,6 +113,8 @@ object OcpcSmoothFactor{
          |AND
          |  isclick = 1
          |AND
+         |  is_ocpc = 1
+         |AND
          |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
@@ -130,7 +132,7 @@ object OcpcSmoothFactor{
          |WHERE
          |  `date` >= '$date1'
          |AND
-         |  cvr_goal = '$cvrType'
+         |  cvr_goal = 'wz'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
