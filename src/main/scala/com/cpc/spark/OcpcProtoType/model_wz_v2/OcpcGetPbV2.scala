@@ -1,5 +1,8 @@
 package com.cpc.spark.OcpcProtoType.model_wz_v2
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.OcpcProtoType.model_wz_v2.OcpcCalculateCalibration.OcpcCalculateCalibrationMain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
@@ -34,7 +37,7 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     val calibraionData = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
-    val cpaGiven = getCPAgiven(date, hour, spark)
+    val cpaGiven = getCPAgivenV2(date, hour, spark)
 
     println(s"print result:")
     calibraionData.show(10)
@@ -80,6 +83,34 @@ object OcpcGetPbV2 {
     resultDF
   }
 
+  def getCPAgivenV2(date: String, hour: String, spark: SparkSession) = {
+    // 时间分区
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1' and `hour` = '06' and version = 'qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpagiven
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  industry in ('wzcp')
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest).cache()
+    result.show(10)
+    result
+  }
 
 
 }
