@@ -61,7 +61,7 @@ object OcpcSampleToPbV2 {
          |  1.0 / jfb as jfb_factor,
          |  post_cvr,
          |  high_bid_factor,
-         |  low_bid_factor
+         |  low_bid_factor,
          |  cpagiven
          |FROM
          |  dl_cpc.ocpc_param_calibration_hourly_v2
