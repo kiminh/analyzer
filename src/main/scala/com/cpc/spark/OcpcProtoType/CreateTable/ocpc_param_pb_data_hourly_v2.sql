@@ -9,7 +9,8 @@ create table if not exists dl_cpc.ocpc_param_pb_data_hourly_v2(
     high_bid_factor         double,
     low_bid_factor          double,
     cpa_suggest             double,
-    smooth_factor           double
+    smooth_factor           double,
+    cpagiven                double
 )
 partitioned by (`date` string, `hour` string, version string)
 stored as parquet;

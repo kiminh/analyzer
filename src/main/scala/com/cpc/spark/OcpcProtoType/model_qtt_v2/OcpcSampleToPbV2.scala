@@ -91,7 +91,7 @@ object OcpcSampleToPbV2 {
 
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
-      .withColumn("smooth_factor", lit(0.5))
+      .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
       .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
@@ -101,6 +101,18 @@ object OcpcSampleToPbV2 {
 
     data
   }
+
+
+  def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
+    var factor = conversionGoal match {
+      case 1 => 0.2
+      case 2 => 0.5
+      case 3 => 0.5
+      case 4 => 0.2
+      case _ => 0.0
+    }
+    factor
+  })
 
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
