@@ -51,67 +51,67 @@ object MultiDimensionCalibOnQttCvr {
     val selectCondition2 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     val selectCondition3 = s"day between '$startDate' and '$endDate'"
 
-    // get union log
-    val clicksql = s"""
-                 |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                 |a.cvr_model_name as model, a.adslotid, a.ideaid,
-                 |case
-                 |  when is_ocpc = 1 then 'ocpc'
-                 |  when user_cvr_threshold = 200 then "cvr2"
-                 |  when user_cvr_threshold >0 then "cvr1"
-                 |  else "other"
-                 |  end as exp_cvr_type,
-                 |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
-                 |  from
-                 |  (select *
-                 |  from dl_cpc.cpc_basedata_union_events
-                 |  where $selectCondition2
-                 |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
-                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
-                 |  AND (charge_type IS NULL OR charge_type = 1)
-                 |  )a
-                 |  join dl_cpc.dw_unitid_detail b
-                 |    on a.unitid = b.unitid
-                 |    and a.day  = b.day
-                 |    and b.$selectCondition3
-                 |    and b.conversion_target[0] not in ('none','site_uncertain')
-       """.stripMargin
-    println(s"sql:\n$clicksql")
-    val clickData = session.sql(clicksql)
-    val cvrsql =s"""
-                 |select distinct a.searchid,
-                 |       a.conversion_target as unit_target,
-                 |       b.conversion_target[0] as real_target
-                 |from
-                 |   (select *
-                 |    from dl_cpc.dm_conversions_for_model
-                 |   where $selectCondition2
-                 |and size(conversion_target)>0) a
-                 |join dl_cpc.dw_unitid_detail b
-                 |    on a.unitid=b.unitid
-                 |    and b.$selectCondition3
-       """.stripMargin
-    val cvrData = session.sql(cvrsql)
-      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
-      .filter("iscvr = 1")
-      .select("searchid", "iscvr")
-    val log = clickData.join(cvrData,Seq("searchid"),"left")
-        .withColumn("isclick",col("iscvr"))
-    log.show(10)
-    log.write.mode("overwrite").saveAsTable("test.wy11")
-    LogToPb(log, session, calimodel)
-    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
-      sum("ectr").alias("ctrnum"),
-      sum("isclick").alias("clicknum"))
-      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
-      .first().getAs[Double]("k")
+//    // get union log
+//    val clicksql = s"""
+//                 |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
+//                 |a.cvr_model_name as model, a.adslotid, a.ideaid,
+//                 |case
+//                 |  when is_ocpc = 1 then 'ocpc'
+//                 |  when user_cvr_threshold = 200 then "cvr2"
+//                 |  when user_cvr_threshold >0 then "cvr1"
+//                 |  else "other"
+//                 |  end as exp_cvr_type,
+//                 |case
+//                 |  when user_req_ad_num = 0 then '0'
+//                 |  when user_req_ad_num = 1 then '1'
+//                 |  when user_req_ad_num = 2 then '2'
+//                 |  when user_req_ad_num in (3,4) then '4'
+//                 |  when user_req_ad_num in (5,6,7) then '7'
+//                 |  else '8' end as user_req_ad_num
+//                 |  from
+//                 |  (select *
+//                 |  from dl_cpc.cpc_basedata_union_events
+//                 |  where $selectCondition2
+//                 |  and $mediaSelection and isclick = 1
+//                 |  and cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
+//                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
+//                 |  AND (charge_type IS NULL OR charge_type = 1)
+//                 |  )a
+//                 |  join dl_cpc.dw_unitid_detail b
+//                 |    on a.unitid = b.unitid
+//                 |    and a.day  = b.day
+//                 |    and b.$selectCondition3
+//                 |    and b.conversion_target[0] not in ('none','site_uncertain')
+//       """.stripMargin
+//    println(s"sql:\n$clicksql")
+//    val clickData = session.sql(clicksql)
+//    val cvrsql =s"""
+//                 |select distinct a.searchid,
+//                 |       a.conversion_target as unit_target,
+//                 |       b.conversion_target[0] as real_target
+//                 |from
+//                 |   (select *
+//                 |    from dl_cpc.dm_conversions_for_model
+//                 |   where $selectCondition2
+//                 |and size(conversion_target)>0) a
+//                 |join dl_cpc.dw_unitid_detail b
+//                 |    on a.unitid=b.unitid
+//                 |    and b.$selectCondition3
+//       """.stripMargin
+//    val cvrData = session.sql(cvrsql)
+//      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
+//      .filter("iscvr = 1")
+//      .select("searchid", "iscvr")
+//    val log = clickData.join(cvrData,Seq("searchid"),"left")
+//        .withColumn("isclick",col("iscvr"))
+//    log.show(10)
+//    log.write.mode("overwrite").saveAsTable("test.wy11")
+//    LogToPb(log, session, calimodel)
+//    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
+//      sum("ectr").alias("ctrnum"),
+//      sum("isclick").alias("clicknum"))
+//      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
+//      .first().getAs[Double]("k")
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
       predictions = Seq(0.0,1.8)
