@@ -2,11 +2,12 @@ package com.cpc.spark.OcpcProtoType.model_v5
 
 import java.io.FileOutputStream
 
+import org.apache.spark.sql.DataFrame
+import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
-
+import org.apache.spark.sql.SparkSession
 import scala.collection.mutable.ListBuffer
+import org.apache.spark.sql.functions._
 
 
 object OcpcSampleToPbV2 {
