@@ -61,6 +61,7 @@ object DssmUserGen {
     val yesterday = args(0)
     val lastDate = args(1)
     val userFirstGen = args(2).toBoolean
+    val userVersion = args(3)
 
     val userInfo = getData(spark, yesterday)
 
@@ -71,7 +72,8 @@ object DssmUserGen {
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
 
-      val allUserInfo = spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + lastDate)
+      val allUserInfo = spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/all-user-info-${userVersion}/" + lastDate)
+
       allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
         .cogroup(keyedUser)
         .map {
@@ -110,17 +112,17 @@ object DssmUserGen {
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
-      .parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + yesterday)
+      .parquet(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/all-user-info-${userVersion}/" + yesterday)
 
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/user-info-v0/" + yesterday)
+      .save(CommonUtils.HDFS_PREFIX_PATH +s"/user/cpc/hzh/dssm/user-info-${userVersion}/" + yesterday)
 
-    val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-info-v0/tmp/"
-    val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-v0/${yesterday}/count"
+    val userCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-${userVersion}/tmp/"
+    val userCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/user-info-${userVersion}/${yesterday}/count"
     CommonUtils.writeCountToFile(spark, userCount, userCountPathTmpName, userCountPathName)
   }
 

@@ -36,9 +36,10 @@ object DssmAdGen {
       .enableHiveSupport()
       .getOrCreate()
 
-    val date = args(0)
+    val yesterday = args(0)
+    val adVersion = args(1)
 
-    val adInfo = getData(spark, date)
+    val adInfo = getData(spark, yesterday)
 
     val adCount=adInfo.count()
 
@@ -47,21 +48,21 @@ object DssmAdGen {
     adInfo.repartition(10)
       .write
       .mode("overwrite")
-      .parquet(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
+      .parquet(CommonUtils.HDFS_PREFIX_PATH +s"/user/cpc/hzh/dssm/ad-info-${adVersion}-debug/" + yesterday)
 
     adInfo.repartition(10)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(CommonUtils.HDFS_PREFIX_PATH +"/user/cpc/hzh/dssm/ad-info-v0/" + date)
+      .save(CommonUtils.HDFS_PREFIX_PATH +s"/user/cpc/hzh/dssm/ad-info-${adVersion}/" + yesterday)
 
-    val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0/tmp/"
-    val adCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-v0/${date}/count"
+    val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-${adVersion}/tmp/"
+    val adCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-${adVersion}/${yesterday}/count"
     CommonUtils.writeCountToFile(spark, adCount, adCountPathTmpName, adCountPathName)
   }
 
-  def getAdOneHotFeatures(spark: SparkSession, date: String): RDD[(String, (String, Array[Long]))] = {
+  def getAdOneHotFeatures(spark: SparkSession, yesterday: String): RDD[(String, (String, Array[Long]))] = {
     import spark.implicits._
     val sql =
       s"""
@@ -76,7 +77,7 @@ object DssmAdGen {
          |  max(adclass) as adclass,
          |  max(siteid) as site_id,
          |  max(ad_title) as ad_title
-         |from dl_cpc.cpc_basedata_union_events where `day` = '$date'
+         |from dl_cpc.cpc_basedata_union_events where `day` = '$yesterday'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and length(uid) > 1
@@ -112,11 +113,11 @@ object DssmAdGen {
     })
   }
 
-  def getAdMultiHotFeatures(spark: SparkSession, date: String): RDD[(String, Array[Array[Long]])] = {
+  def getAdMultiHotFeatures(spark: SparkSession, yesterday: String): RDD[(String, Array[Array[Long]])] = {
     val sql =
       s"""
          |select cast(ideaid as string) as ideaid, content from dl_cpc.ad_day_feature
-         |where dt = '$date' and (pt = 'merge')
+         |where dt = '$yesterday' and (pt = 'merge')
        """.stripMargin
     println(sql)
     val df = spark.sql(sql)
@@ -171,11 +172,11 @@ object DssmAdGen {
     result
   }
 
-  def getData(spark: SparkSession, date: String): DataFrame = {
+  def getData(spark: SparkSession, yesterday: String): DataFrame = {
     import spark.implicits._
-    val adOneHotFeatures = getAdOneHotFeatures(spark, date)
+    val adOneHotFeatures = getAdOneHotFeatures(spark, yesterday)
     println("ad onehot size: " + adOneHotFeatures.count())
-    val adMultiHotFeatures = getAdMultiHotFeatures(spark, date)
+    val adMultiHotFeatures = getAdMultiHotFeatures(spark, yesterday)
     println("ad multihot size: " + adMultiHotFeatures.count())
 
     val multiHotCounter = spark.sparkContext.longAccumulator("multiHotCounter")
