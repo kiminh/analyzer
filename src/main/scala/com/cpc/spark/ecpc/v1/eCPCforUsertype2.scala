@@ -305,7 +305,7 @@ object eCPCforUsertype2 {
          |AND
          |  price <= bid_discounted_by_ad_slot
          |AND
-         |  is_ocpc = 0
+         |  length(ocpc_log) = 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
