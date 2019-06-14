@@ -104,7 +104,6 @@ object DssmTrain {
       .option("recordType", "Example")
       .save(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-${modelVersion}/" + yesterday)
 
-
     val traincount=trainSample.count()
     val testcount=testSample.count()
 
