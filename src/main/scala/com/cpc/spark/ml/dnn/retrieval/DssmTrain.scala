@@ -18,12 +18,15 @@ object DssmTrain {
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    val date = args(0)
-    val userFeature = getUserFeature(spark, date)
+    val yesterday = args(0)
+    val modelVersion = args(1)
+    val adVersion = args(2)
+    val userVersion = args(3)
+    val userFeature = getUserFeature(spark, yesterday, userVersion)
     userFeature.createOrReplaceTempView("userfeature")
-    val adFeature = getAdFeature(spark, date)
+    val adFeature = getAdFeature(spark, yesterday, adVersion)
     adFeature.createOrReplaceTempView("adfeature")
-    val samples = getSample(spark, date)
+    val samples = getSample(spark, yesterday)
     samples.createOrReplaceTempView("samples")
 
     println("userFeature count : ",userFeature.count())
@@ -92,38 +95,38 @@ object DssmTrain {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/" + date)
+      .save(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/train-${modelVersion}/" + yesterday)
     println("test: ", testSample.count())
     testSample.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/test-v0/" + date)
+      .save(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-${modelVersion}/" + yesterday)
 
 
     val traincount=trainSample.count()
     val testcount=testSample.count()
 
 
-    val trainCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/train-v0/tmp/"
-    val trainCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/train-v0/${date}/count"
+    val trainCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/train-${modelVersion}/tmp/"
+    val trainCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/train-${modelVersion}/${yesterday}/count"
     CommonUtils.writeCountToFile(spark, traincount, trainCountPathTmpName, trainCountPathName)
 
-    val testCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/test-v0/tmp/"
-    val testCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-v0/${date}/count"
+    val testCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-${modelVersion}/tmp/"
+    val testCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/test-${modelVersion}/${yesterday}/count"
     CommonUtils.writeCountToFile(spark, testcount, testCountPathTmpName, testCountPathName)
 
   }
 
 
 
-  def getUserFeature(spark: SparkSession, date: String): DataFrame = {
-    spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/all-user-info/" + date)
+  def getUserFeature(spark: SparkSession, date: String, userVersion: String): DataFrame = {
+    spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/all-user-info-${userVersion}/" + date)
   }
 
-  def getAdFeature(spark: SparkSession, date: String): DataFrame = {
-    spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/ad-info-v0-debug/" + date)
+  def getAdFeature(spark: SparkSession, date: String, adVersion:String): DataFrame = {
+    spark.read.parquet(CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-${adVersion}-debug/" + date)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
