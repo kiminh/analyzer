@@ -16,7 +16,7 @@ object OcpcGetSiteformConversion {
     val url = conf.getString("adv_read_mysql.deploy.url")
     val user = conf.getString("adv_read_mysql.deploy.user")
     val passwd = conf.getString("adv_read_mysql.deploy.password")
-    val driver = conf.getString("adv_read_mysql.deploy.password")
+    val driver = conf.getString("adv_read_mysql.deploy.driver")
     val table = s"(select idea_id as ideaid, search_id as searchid, modified_time from adv.site_form_data where DATE(create_time)='$date' and EXTRACT(HOUR FROM create_time)='$hour' and is_show=0) as tmp"
     println(table)
 
