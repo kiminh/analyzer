@@ -53,7 +53,7 @@ object MultiDimensionCalibOnQttCvr {
     // get union log
     val clicksql = s"""
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                 |a.cvr_model_name as model, a.adslotid, a.ideaid,
+                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,
                  |case
                  |  when a.is_ocpc = 1 then 'ocpc'
                  |  when user_cvr_threshold = 200 then "cvr2"
