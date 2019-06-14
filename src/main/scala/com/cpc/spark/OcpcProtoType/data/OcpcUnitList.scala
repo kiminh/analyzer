@@ -1,5 +1,6 @@
 package com.cpc.spark.OcpcProtoType.data
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -17,16 +18,18 @@ object OcpcUnitList {
 
     // 链接adv数据库
     val unitList = getOcpcUnit(date, hour, spark)
-//    unitList.write.mode("overwrite").saveAsTable("test.ocpc_unit_list_hourly")
-    unitList
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_list_hourly")
+    unitList.write.mode("overwrite").saveAsTable("test.ocpc_unit_list_hourly")
+//    unitList
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_list_hourly")
   }
 
   def getOcpcUnit(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
     val table = "(select id, user_id, target_medias, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, DATE_FORMAT(last_ocpc_opentime, \"%Y-%m-%d\") as ocpc_last_open_date, DATE_FORMAT(last_ocpc_opentime,\"%H\") as ocpc_last_open_hour, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
