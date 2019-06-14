@@ -69,8 +69,8 @@ object OcpcUpdateBudget {
 
     result
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_unitid_consume20190612")
-//      .write.mode("overwrite").insertInto("dl_cpc.check_unitid_consume")
+//      .write.mode("overwrite").saveAsTable("test.check_unitid_consume20190612")
+      .write.mode("overwrite").insertInto("dl_cpc.check_unitid_consume")
 
 
   }
