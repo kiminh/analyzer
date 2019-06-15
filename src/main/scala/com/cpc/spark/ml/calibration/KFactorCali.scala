@@ -46,29 +46,29 @@ object KFactorCali {
     val timeRangeSql = Utils.getTimeRangeSql(startDate, startHour, endDate, endHour)
 
     // get union log
-//    val sql = s"""
-//                 |select count(*) as show,sum(isclick)/sum(raw_ctr) as k
-//                 | from dl_cpc.slim_union_log
-//                 | where $timeRangeSql
-//                 | and media_appsid in ('80000001', '80000002') and adslot_id = '1029077' and isshow = 1
-//                 | and ctr_model_name in ('$model','$calimodel') and adtype in (11,12)
-//                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-//                 | AND (charge_type IS NULL OR charge_type = 1)
-//       """.stripMargin
-
     val sql = s"""
-                 |select count(*) as show,sum(if(b.searchid is null,0,1))*1e6d/sum(exp_ctr) as k
-                 |from
-                 |(select searchid,isclick,exp_ctr
-                 |from dl_cpc.slim_union_log
-                 |  where dt > '2019-05-31' and dt <'2019-06-06' and adslotid = '1029077' and adtype = 11 and isshow > 0
-                 |  and ctr_model_name in ('$model','$calimodel')) a
-                 |left join
-                 |(select * from dl_cpc.cpc_basedata_trace_event
-                 |where day > '2019-05-31' and day <'2019-06-06'
-                 |and trace_op1 in ('REPORT_USER_STAYINWX_MEANTIME','CONVERSION_CLICK')) b
-                 |on (a.searchid = b.searchid)
+                 |select count(*) as show,sum(isclick)/sum(raw_ctr) as k
+                 | from dl_cpc.slim_union_log
+                 | where $timeRangeSql
+                 | and media_appsid in ('80000001', '80000002') and adslot_id = '1029077' and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel') and adtype = 15
+                 | and ideaid > 0 and adsrc = 1 AND userid > 0
+                 | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
+
+//    val sql = s"""
+//                 |select count(*) as show,sum(if(b.searchid is null,0,1))*1e6d/sum(exp_ctr) as k
+//                 |from
+//                 |(select searchid,isclick,exp_ctr
+//                 |from dl_cpc.slim_union_log
+//                 |  where dt > '2019-05-31' and dt <'2019-06-06' and adslotid = '1029077' and adtype = 11 and isshow > 0
+//                 |  and ctr_model_name in ('$model','$calimodel')) a
+//                 |left join
+//                 |(select * from dl_cpc.cpc_basedata_trace_event
+//                 |where day > '2019-05-31' and day <'2019-06-06'
+//                 |and trace_op1 in ('REPORT_USER_STAYINWX_MEANTIME','CONVERSION_CLICK')) b
+//                 |on (a.searchid = b.searchid)
+//       """.stripMargin
     println(s"sql:\n$sql")
     val k = session.sql(sql).first().getAs[Double]("k")
     val show = session.sql(sql).first().getAs[Long]("show")
