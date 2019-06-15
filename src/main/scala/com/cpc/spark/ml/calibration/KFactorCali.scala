@@ -47,7 +47,7 @@ object KFactorCali {
 
     // get union log
     val sql = s"""
-                 |select count(*) as show,sum(isclick)/sum(raw_ctr) as k
+                 |select count(*) as show,sum(isclick)/sum(raw_ctr)*1e6d as k
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and adslot_id = '1029077' and isshow = 1
