@@ -70,8 +70,12 @@ object KFactorCali {
 //                 |on (a.searchid = b.searchid)
 //       """.stripMargin
     println(s"sql:\n$sql")
-    val k = session.sql(sql).first().getAs[Double]("k")
+    var k = session.sql(sql).first().getAs[Double]("k")
     val show = session.sql(sql).first().getAs[Long]("show")
+
+    if( k < 0.15){
+      k = 0.15
+    }
 
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
