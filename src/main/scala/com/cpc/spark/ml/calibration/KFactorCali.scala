@@ -50,7 +50,7 @@ object KFactorCali {
                  |select count(*) as show,sum(isclick)/sum(raw_ctr)*1e6d as k
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and adslot_id = '1029077' and isshow = 1
+                 | and media_appsid in ('80000001', '80000002') and adslotid = '1029077' and isshow = 1
                  | and ctr_model_name in ('$model','$calimodel') and adtype = 15
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
