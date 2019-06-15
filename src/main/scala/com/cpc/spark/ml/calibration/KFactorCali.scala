@@ -73,18 +73,16 @@ object KFactorCali {
     val k = session.sql(sql).first().getAs[Double]("k")
     val show = session.sql(sql).first().getAs[Long]("show")
 
-    if (show>100000){
-      val irModel = IRModel(
-        boundaries = Seq(0.0,1.0),
-        predictions = Seq(0.0,k)
-      )
-      println(s"k is: $k")
-      val config = CalibrationConfig(
-        name = calimodel,
-        ir = Option(irModel)
-      )
-      val localPath = saveProtoToLocal(calimodel, config)
-      saveFlatTextFileForDebug(calimodel, config)
-    }
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,k)
+    )
+    println(s"k is: $k")
+    val config = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, config)
+    saveFlatTextFileForDebug(calimodel, config)
   }
 }

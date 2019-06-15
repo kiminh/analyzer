@@ -26,5 +26,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.debug.CalibrationCheckOnMidu\
+    --class com.cpc.spark.ml.calibration.CalibrationCheckOnMidu\
     /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/post-calibration-novel-ctr-dnn-rawid-v9-newcali-2019-06-14-02.mlm 2019-06-14 05 novel-ctr-dnn-rawid-v9
