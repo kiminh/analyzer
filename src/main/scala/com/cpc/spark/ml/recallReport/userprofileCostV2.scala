@@ -72,7 +72,7 @@ object userprofileCostV2 {
          |(select tag,count(distinct uid) as count from dl_cpc.cpc_userprofile_tag_daily where date='$yesterday' group by tag) t4
          |on t1.name=t4.tag
        """.stripMargin).repartition(5).createOrReplaceTempView("result_table")
-    
+
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.recall_report_userprofile_cost_v3 partition (day='$yesterday')
