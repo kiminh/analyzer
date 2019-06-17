@@ -55,7 +55,7 @@ object userprofileCostV2 {
 
     val tag_name =
       s"""
-         |SELECT value, name FROM adv.audience_dict group by value, name
+         |(SELECT value, name FROM adv.audience_dict group by value, name) temp1
        """.stripMargin
     spark.read.jdbc(jdbcUrl, tag_name, jdbcProp).createOrReplaceTempView("table_tag_name")
     spark.sql(
