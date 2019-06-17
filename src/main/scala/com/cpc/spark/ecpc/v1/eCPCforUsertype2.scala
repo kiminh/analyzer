@@ -29,7 +29,7 @@ object eCPCforUsertype2 {
     val media = args(3).toString
     val hourInt = args(4).toInt
     val highBidFactor = args(5).toDouble
-    val minCV = 20
+    val minCV = args(6).toInt
     val fileName = "adclass_ecpc_v1.pb"
 
     println("parameters:")
@@ -57,7 +57,7 @@ object eCPCforUsertype2 {
       .withColumn("low_bid_factor", lit(1.0))
 
 //    resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_elds_ecpc_data20190612")
 
     savePbPack(resultDF, fileName, version, date, hour, spark)
 
@@ -305,7 +305,7 @@ object eCPCforUsertype2 {
          |AND
          |  price <= bid_discounted_by_ad_slot
          |AND
-         |  is_ocpc = 0
+         |  length(ocpc_log) = 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark

@@ -78,6 +78,7 @@ object OcpcSmoothFactor{
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
+    val conversionGoal = conf.getString("cvr_type_map." + cvrType).toInt
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -115,6 +116,8 @@ object OcpcSmoothFactor{
          |  isclick = 1
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val clickData = spark

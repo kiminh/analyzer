@@ -67,7 +67,10 @@ message UserProfile {
 	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果，0: 未知 1: 小于18 2:18-22 3:23-40 4: >40
 	string recentIP = 23; // 最近常用的ip地址
 	string registeredIP = 24; // 注册时使用的ip地址
-    repeated int32 installedUserIDList = 25; // 通过应用商城最近安装过的广告主id列表
+	repeated int32 installedUserIDList = 25; // 7天内安装过app的广告主id列表
+	repeated int32 installedUserIDList15D = 26; // 15天内安装过app的广告主id列表
+	repeated int32 installedUserIDList30D = 27; // 15天内安装过app的广告主id列表
+	repeated int32 installedUserIDListAll = 28; // 所有安装过app的广告主id列表
 	QttProfile qttProfile = 101;
 }
 
@@ -121,8 +124,11 @@ message UserSignal {
 	map<string, Cvr> recall_cvr = 24;
 	map<string, double> allTagIDs = 25; // 人群包，key为人群包id，value目前不使用
 	int32 ageID = 26; // 广告定向中使用的年龄的编号
-    map<string, Cvr> recall_cvr_exp = 27;
-	repeated int32 installedUserIDList = 28; // 通过应用商城最近安装过的广告主id列表
+	map<string, Cvr> recall_cvr_exp = 27;
+	repeated int32 installedUserIDList = 28; // 7天内安装过app的广告主id列表
+	repeated int32 installedUserIDList15D = 31; // 15天内安装过app的广告主id列表
+	repeated int32 installedUserIDList30D = 32; // 30天内安装过app的广告主id列表
+	repeated int32 installedUserIDListAll = 33; // 所有安装过app的广告主id列表
 	string recentIP = 29; // 最近常用ip地址
 	string registeredIP = 30; // 注册时使用ip地址
 	QttProfile qttProfile = 101;
@@ -138,7 +144,10 @@ message UserProfileV2 {
 	string city = 6;
 	string userCreateTime = 7;
 	string lastDayInCPC = 8;
-	repeated int32 installedUserIDList = 9;
+	repeated int32 installedUserIDList = 9; // 7天内安装过app的广告主id列表
+	repeated int32 installedUserIDList15D = 15; // 15天内安装过app的广告主id列表
+	repeated int32 installedUserIDList30D = 16; // 30天内安装过app的广告主id列表
+	repeated int32 installedUserIDListAll = 17; // 所有安装过app的广告主id列表
 	string recentIP = 10;
 	string registeredIP = 11;
 	repeated InterestItem interests = 12; // 人群标签，已废弃，不再使用

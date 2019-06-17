@@ -58,6 +58,8 @@ object OcpcUpdateBudget {
          |  1 as is_open
          |FROM
          |  test.check_unitid_consume
+         |WHERE
+         |  userid not in (1565736, 1626187)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -67,7 +69,7 @@ object OcpcUpdateBudget {
 
     result
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.check_unitid_consume")
+//      .write.mode("overwrite").saveAsTable("test.check_unitid_consume20190612")
       .write.mode("overwrite").insertInto("dl_cpc.check_unitid_consume")
 
 
