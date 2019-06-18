@@ -1,12 +1,12 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
 //import com.cpc.spark.tools.testOperateMySQL
-//import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigFactory
 //import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyReport._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions.{col, lit}
+import org.apache.spark.sql.functions._
 
 
 object OcpcHourlyReportV3 {
@@ -41,7 +41,7 @@ object OcpcHourlyReportV3 {
     } else {
       isHidden = 1
     }
-    val baseData = getBaseData(media, date, hour, spark).filter(s"is_hidden = $isHidden")
+    val baseData = getBaseDataV2(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 分unitid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
@@ -112,6 +112,110 @@ object OcpcHourlyReportV3 {
   }
 
 
+  def getBaseDataV2(media: String, date: String, hour: String, spark: SparkSession) = {
+    /**
+      * 重新计算抽取全天截止当前时间的数据日志
+      */
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 抽取基础数据：所有跑ocpc的广告主
+    // todo
+    val sqlRequest =
+    s"""
+       |SELECT
+       |    searchid,
+       |    unitid,
+       |    userid,
+       |    isclick,
+       |    isshow,
+       |    price,
+       |    exp_cvr,
+       |    exp_ctr,
+       |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+       |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
+       |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+       |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+       |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+       |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+       |    cast(ocpc_log_dict['cvrCalFactor'] as double) as cali_value,
+       |    cast(ocpc_log_dict['pcvr'] as double) as cali_pcvr,
+       |    cast(ocpc_log_dict['postCvr'] as double) as cali_postcvr,
+       |    cast(ocpc_log_dict['smoothFactor'] as double) as smooth_factor,
+       |    cast(ocpc_log_dict['CpaSuggest'] as double) as cpa_suggest,
+       |    hour as hr
+       |FROM
+       |    dl_cpc.ocpc_filter_unionlog
+       |WHERE
+       |    `date`='$date' and `hour` <= '$hour'
+       |and is_ocpc=1
+       |and media_appsid in ('80000001', '80000002', '80002819')
+       |and round(adclass/1000) != 132101  --去掉互动导流
+       |and isshow = 1
+       |and ideaid > 0
+       |and adsrc = 1
+       |and adslot_type in (1,2,3)
+       |and searchid is not null
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal > 0")
+
+
+    // 关联转化表
+    val selectCondition = s"`date`='$date'"
+    // cvr1
+    val cvr1Data = spark
+      .table("dl_cpc.ocpc_label_cvr_hourly")
+      .where(selectCondition)
+      .filter(s"cvr_goal = 'cvr1'")
+      .select("searchid")
+      .withColumn("iscvr1", lit(1))
+      .distinct()
+
+    // cvr2
+    val cvr2Data = spark
+      .table("dl_cpc.ocpc_label_cvr_hourly")
+      .where(selectCondition)
+      .filter(s"cvr_goal = 'cvr2'")
+      .select("searchid")
+      .withColumn("iscvr2", lit(1))
+      .distinct()
+
+    // cvr3
+    val cvr3Data = spark
+      .table("dl_cpc.ocpc_label_cvr_hourly")
+      .where(selectCondition)
+      .filter(s"cvr_goal = 'cvr3'")
+      .select("searchid")
+      .withColumn("iscvr3", lit(1))
+      .distinct()
+
+    // cvr4
+    val cvr4Data = spark
+      .table("dl_cpc.ocpc_label_cvr_hourly")
+      .where(selectCondition)
+      .filter(s"cvr_goal = 'cvr4'")
+      .select("searchid")
+      .withColumn("iscvr4", lit(1))
+      .distinct()
+
+    // 数据关联
+    val resultDF = rawData
+      .join(cvr1Data, Seq("searchid"), "left_outer")
+      .join(cvr2Data, Seq("searchid"), "left_outexr")
+      .join(cvr3Data, Seq("searchid"), "left_outer")
+      .join(cvr4Data, Seq("searchid"), "left_outer")
+      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(when(col("conversion_goal") === 3, col("iscvr3")).otherwise(col("iscvr4")))))
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr4", "iscvr", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest")
+
+    resultDF.show(10)
+
+    resultDF
+
+  }
 
 
 }
