@@ -17,6 +17,8 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 
 
 object MultiDimensionCalibOnQttCvr {
+  val MAX_BIN_COUNT = 10
+  val MIN_BIN_SIZE = 10000
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)

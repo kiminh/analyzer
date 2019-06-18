@@ -48,7 +48,7 @@ object DaliyCheck {
                         |  and adsrc = 1
                         |  AND (charge_type IS NULL OR charge_type = 1)
                         |  )a
-                        |  left join dl_cpc.dw_unitid_detail b
+                        |  join dl_cpc.dw_unitid_detail b
                         |    on a.unitid = b.unitid
                         |    and b.day = '$date'
                         |    and b.conversion_target[0] not in ('none','site_uncertain')
