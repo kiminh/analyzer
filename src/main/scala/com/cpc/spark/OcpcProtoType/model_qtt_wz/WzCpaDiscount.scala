@@ -66,7 +66,7 @@ object WzCpaDiscount {
       val media = record.getAs[String]("media")
       val adslot_type = record.getAs[String]("adslot_type")
       val adtype = record.getAs[String]("adtype")
-      val key = media+"_wz&" + adslot_type + "&" + adtype
+      val key = media +"_wz&" + adslot_type + "&" + adtype
       val discount = record.getAs[String]("discount").toDouble
 
       println(s"key: $key,discount: $discount")
