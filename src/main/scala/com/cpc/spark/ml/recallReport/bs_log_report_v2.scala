@@ -132,6 +132,11 @@ object bs_log_report_v2 {
           val direct_uid = up.getSearchCond.getDirectUid.toString
           val material_styles_s = up.getSearchCond.getMaterialStylesSList.asScala.toList.map(_.getNumber.toString).mkString(",")
           val interactions_s = up.getSearchCond.getInteractionsSList.asScala.toList.map(_.getNumber.toString).mkString(",")
+          val ideas_filtered_by_qjp_antou_qtt = up.getIdeaStats.getIdeasFilteredByQjpAntouQttList.asScala.toList.mkString(",")
+          val ideas_filtered_by_unknown = up.getIdeaStats.getIdeasFilteredByUnknownList.asScala.toList.mkString(",")
+          val after_rank_ideas = up.getIdeaStats.getAfterRankIdeasList.asScala.toList.mkString(",")
+          val ideas_filtered_by_content = up.getIdeaStats.getIdeasFilteredByContentList.asScala.toList.mkString(",")
+
 
           if (exptags.contains("bsfilterdetail")) {
             BsLog1(
@@ -232,7 +237,11 @@ object bs_log_report_v2 {
               direct_uid = direct_uid,
               material_styles_s = material_styles_s,
               interactions_s = interactions_s,
-              acc_user_type = acc_user_type
+              acc_user_type = acc_user_type,
+              ideas_filtered_by_qjp_antou_qtt = ideas_filtered_by_qjp_antou_qtt,
+              ideas_filtered_by_unknown = ideas_filtered_by_unknown,
+              after_rank_ideas = after_rank_ideas,
+              ideas_filtered_by_content = ideas_filtered_by_content
             )
           }
           else null
@@ -260,7 +269,8 @@ object bs_log_report_v2 {
       "ideas_filtered_by_middle_page_ids", "involved_ideas_ids", "matched_ideas_ids", "rnd_ideas_ids",
       "channelid", "ad_slot_type", "acc_class", "black_class", "slot_width", "slot_height", "keyword",
       "white_material_level", "regionals", "os_type", "age", "gender",  "coin", "interests", "phone_level", "adnum",
-      "new_user", "network", "only_site", "direct_uid", "material_styles_s", "interactions_s", "acc_user_type"
+      "new_user", "network", "only_site", "direct_uid", "material_styles_s", "interactions_s", "acc_user_type",
+      "ideas_filtered_by_qjp_antou_qtt", "ideas_filtered_by_unknown", "after_rank_ideas", "ideas_filtered_by_content"
     )
       .withColumn("`dt`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
@@ -365,7 +375,11 @@ object bs_log_report_v2 {
                      var direct_uid: String = "",
                      var material_styles_s: String = "",
                      var interactions_s: String = "",
-                     var acc_user_type: String = ""
+                     var acc_user_type: String = "",
+                     var ideas_filtered_by_qjp_antou_qtt: String = "",
+                     var ideas_filtered_by_unknown: String = "",
+                     var after_rank_ideas: String = "",
+                     var ideas_filtered_by_content: String = ""
   )
 
 }
