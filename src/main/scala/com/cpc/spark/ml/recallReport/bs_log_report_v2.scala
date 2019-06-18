@@ -274,7 +274,7 @@ object bs_log_report_v2 {
     )
       .withColumn("`dt`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
-    pbData.repartition(2).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v3")
+    pbData.repartition(10).write.mode("overwrite").insertInto("dl_cpc.recall_filter_number_report_v3")
   }
 
   case class BsLog1(
