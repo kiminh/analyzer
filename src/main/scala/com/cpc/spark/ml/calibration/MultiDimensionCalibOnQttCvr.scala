@@ -5,7 +5,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.cpc.spark.OcpcProtoType.model_novel_v3.OcpcSuggestCPAV3.matchcvr
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.calibration.HourlyCalibration.{saveFlatTextFileForDebug, saveProtoToLocal, _}
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
 import com.typesafe.config.ConfigFactory
@@ -17,6 +16,9 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 
 
 object MultiDimensionCalibOnQttCvr {
+  val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
+  val destDir = "/home/work/mlcpp/calibration/"
+  val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
 
