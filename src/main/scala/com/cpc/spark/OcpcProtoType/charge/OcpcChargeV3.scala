@@ -28,12 +28,16 @@ object OcpcChargeV3 {
 
 
     val clickData = getClickData(date, media, dayCnt, spark)
-    val cvData = getCvData(date, dayCnt, spark)
+    val cv2Data = getCvData(date, 2, dayCnt, spark)
+    val cv3Data = getCvData(date, 3, dayCnt, spark)
     val cpcData = getCPCdata(date, media, dayCnt, spark)
 
     val data = clickData
-      .join(cvData, Seq("searchid"), "left_outer")
+      .join(cv2Data, Seq("searchid"), "left_outer")
+      .join(cv3Data, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("cvr2", "cvr3"))
       .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
+      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("cvr2"), col("cvr3")))
 
     val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
     payData.show(10)
@@ -61,6 +65,15 @@ object OcpcChargeV3 {
 //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
+
+  def udfSelectCv() = udf((conversionGoal: Int, iscvr2: Int, iscvr3: Int) => {
+    var iscvr = conversionGoal match {
+      case 2 => iscvr2
+      case 3 => iscvr3
+      case _ => 0
+    }
+    iscvr
+  })
 
   def getCPCdata(date: String, media: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
@@ -305,7 +318,7 @@ object OcpcChargeV3 {
 
   }
 
-  def getCvData(date: String, dayCnt: Int, spark: SparkSession) = {
+  def getCvData(date: String, conversionGoal: Int, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -315,6 +328,7 @@ object OcpcChargeV3 {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` >= '$date1'"
+    val cvrType = "cvr" + conversionGoal.toString
 
     val sqlRequest =
       s"""
@@ -326,10 +340,13 @@ object OcpcChargeV3 {
          |WHERE
          |  $selectCondition
          |AND
-         |  cvr_goal = 'cvr3'
+         |  cvr_goal = '$cvrType'
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .withColumn(cvrType, col("iscvr"))
+        .select("searchid", cvrType)
 
     data
   }
