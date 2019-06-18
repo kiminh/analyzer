@@ -50,8 +50,8 @@ object OcpcChargeV3 {
     resultDF1.show(10)
 
     resultDF1
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -61,8 +61,8 @@ object OcpcChargeV3 {
     resultDF2.show(10)
 
     resultDF2
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
