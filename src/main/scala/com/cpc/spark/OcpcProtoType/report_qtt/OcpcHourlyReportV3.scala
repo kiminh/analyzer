@@ -205,7 +205,7 @@ object OcpcHourlyReportV3 {
     // 数据关联
     val resultDF = rawData
       .join(cvr1Data, Seq("searchid"), "left_outer")
-      .join(cvr2Data, Seq("searchid"), "left_outexr")
+      .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .join(cvr4Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(when(col("conversion_goal") === 3, col("iscvr3")).otherwise(col("iscvr4")))))
