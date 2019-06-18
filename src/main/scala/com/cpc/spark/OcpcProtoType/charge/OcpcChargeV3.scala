@@ -153,6 +153,13 @@ object OcpcChargeV3 {
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |  end) as industry,
          |  isclick,
          |  price,
          |  date,
@@ -173,7 +180,8 @@ object OcpcChargeV3 {
     println(sqlRequest1)
     val rawData = spark
       .sql(sqlRequest1)
-      .filter(s"is_hidden = 0 and conversion_goal = 3")
+      .filter(s"is_hidden = 0")
+      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
 
     val costUnits = rawData
       .select("unitid")
