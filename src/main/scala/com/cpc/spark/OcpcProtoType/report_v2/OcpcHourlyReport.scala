@@ -82,7 +82,11 @@ object OcpcHourlyReport {
          |  is_hidden,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
-         |  sum(iscvr) as cvr_cnt
+         |  sum(iscvr) as cvr_cnt,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 100.0 / sum(isclick) as pre_cvr,
+         |  sum(iscvr) * 100.0 / sum(isclick) as post_cvr,
+         |  0 as q_factor,
+         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb
          |FROM
          |  raw_data
          |GROUP BY is_hidden
@@ -92,7 +96,7 @@ object OcpcHourlyReport {
 
     val resultDF = result1
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_real") * 1.0 / col("cpa_given")))
-      .select("is_hidden", "cpa_given", "cpa_real", "cpa_ratio")
+      .select("is_hidden", "cpa_given", "cpa_real", "cpa_ratio", "pre_cvr", "post_cvr", "q_factor", "acb")
 
     resultDF
   }
@@ -371,11 +375,7 @@ object OcpcHourlyReport {
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
          |  SUM(cost) as cost,
-         |  SUM(cost) * 1.0 / SUM(click) as acp,
-         |  sum(case when isclick=1 then exp_cvr else 0 end) * 100.0 / sum(isclick) as pre_cvr,
-         |  sum(iscvr) * 100.0 / sum(isclick) as post_cvr,
-         |  0 as q_factor,
-         |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb
+         |  SUM(cost) * 1.0 / SUM(click) as acp
          |FROM
          |  raw_data
          |GROUP BY is_hidden
