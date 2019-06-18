@@ -28,7 +28,7 @@ object OcpcHourlyAucReport {
     val versionUnit = version + "_unitid"
     val unitData = calculateAUCbyUnitid(rawData, date, hour, spark)
 
-    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226a")
 //    unitData
 //      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
@@ -37,7 +37,7 @@ object OcpcHourlyAucReport {
     val versionUserid = version + "_userid"
     val userData = calculateAUCbyUserid(rawData, date, hour, spark)
 
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226b")
 //    userData
 //      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
