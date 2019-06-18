@@ -296,7 +296,7 @@ object OcpcHourlyReport {
       .join(costData, Seq("is_hidden"), "left_outer")
       .select("is_hidden", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
       .join(aucData, Seq("is_hidden"), "left_outer")
-      .select("is_hidden", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .select("is_hidden", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "auc")
       .join(cpaData, Seq("is_hidden"), "left_outer")
       .select("is_hidden", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "cpa_given", "cpa_real", "cpa_ratio", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("date", lit(date))
