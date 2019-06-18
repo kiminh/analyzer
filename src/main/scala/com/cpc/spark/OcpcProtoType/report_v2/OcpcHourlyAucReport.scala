@@ -22,25 +22,11 @@ object OcpcHourlyAucReport {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
 
-//    var isHidden = 0
-//    if (version == "qtt_demo") {
-//      isHidden = 0
-//    } else {
-//      isHidden = 1
-//    }
-
     val rawData = getOcpcLog(media, conversionGoal, date, hour, spark)
 
     // 详情表数据
     val versionUnit = version + "_unitid"
     val unitData = calculateAUCbyUnitid(rawData, date, hour, spark)
-//    val unitData = unitData1
-//      .join(unitData2, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-//      .withColumn("identifier", col("unitid"))
-//      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(versionUnit))
 
     unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
 //    unitData
@@ -49,29 +35,14 @@ object OcpcHourlyAucReport {
 
     // 详情表数据
     val versionUserid = version + "_userid"
-//    val userData1 = calculateByUserid(rawData, date, hour, spark)
     val userData = calculateAUCbyUserid(rawData, date, hour, spark)
-//    val userData = userData1
-//      .join(userData2, Seq("userid", "conversion_goal"), "left_outer")
-//      .withColumn("identifier", col("userid"))
-//      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(versionUserid))
 
     userData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
 //    userData
 //      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
     // 汇总表数据
-//    val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
     val conversionData = calculateAUCbyConversionGoal(rawData, date, hour, spark)
-//    val conversionData = conversionData1
-//      .join(conversionData2, Seq("conversion_goal"), "left_outer")
-//      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
 
     conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
 //    conversionData
