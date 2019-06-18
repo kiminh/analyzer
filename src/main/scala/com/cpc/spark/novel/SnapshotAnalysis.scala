@@ -80,7 +80,7 @@ object SnapshotAnalysis {
         }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr")
          .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
 
-        data.show(10)
+        data.show(100)
       data.write.mode("overwrite").saveAsTable("test.wy00")
     }
 
