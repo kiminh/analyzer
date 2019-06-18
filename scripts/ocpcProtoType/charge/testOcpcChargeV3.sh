@@ -25,6 +25,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 
 
 #val date = args(0).toString
-##val version = args(1).toString
-##val media = args(2).toString
-##val dayCnt = args(3).toInt
+#val version = args(1).toString
+#val media = args(2).toString
+#val dayCnt = args(3).toInt
