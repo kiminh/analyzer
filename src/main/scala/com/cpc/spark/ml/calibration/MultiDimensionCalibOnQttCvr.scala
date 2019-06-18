@@ -89,7 +89,7 @@ object MultiDimensionCalibOnQttCvr {
                  |       b.conversion_target[0] as real_target
                  |from
                  |   (select *
-                 |    from dl_cpc.cpc_conversions
+                 |    from dl_cpc.cpc_conversion
                  |   where $selectCondition2
                  |and size(conversion_target)>0) a
                  |join dl_cpc.dw_unitid_detail b
