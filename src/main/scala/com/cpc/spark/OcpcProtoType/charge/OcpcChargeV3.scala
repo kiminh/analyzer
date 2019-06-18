@@ -174,8 +174,6 @@ object OcpcChargeV3 {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
