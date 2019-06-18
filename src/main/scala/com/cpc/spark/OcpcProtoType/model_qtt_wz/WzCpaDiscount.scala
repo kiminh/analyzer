@@ -47,7 +47,8 @@ object WzCpaDiscount {
       .load("hdfs://emr-cluster/user/cpc/wy/wz_cpa_discount.csv")
     df.show()
 
-    val resultDF = df.select($"_c1".alias("adtype"),$"_c3".alias("adslot_type"),$"_c4".alias("discount"))
+    val resultDF = df.select($"_c0".alias("media"),$"_c2".alias("adtype"),$"_c4".alias("adslot_type")
+      ,$"_c5".alias("discount"))
     savePbPack(resultDF)
   }
 
@@ -62,9 +63,10 @@ object WzCpaDiscount {
     var cnt = 0
 
     for (record <- dataset.collect()) {
+      val media = record.getAs[String]("media")
       val adslot_type = record.getAs[String]("adslot_type")
       val adtype = record.getAs[String]("adtype")
-      val key = "qtt_wz&" + adslot_type + "&" + adtype
+      val key = media+"_wz&" + adslot_type + "&" + adtype
       val discount = record.getAs[String]("discount").toDouble
 
       println(s"key: $key,discount: $discount")
