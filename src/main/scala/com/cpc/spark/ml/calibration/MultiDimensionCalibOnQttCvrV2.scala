@@ -215,6 +215,7 @@ object MultiDimensionCalibOnQttCvrV2 {
       val config = CalibrationConfig(key,ir)
       println("key is:%s".format(key))
       calimap += ((key,config))
+      config
     }}).toLocalIterator.toList
   return calimap
   }
