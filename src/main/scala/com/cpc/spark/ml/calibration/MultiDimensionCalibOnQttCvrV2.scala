@@ -128,15 +128,14 @@ object MultiDimensionCalibOnQttCvrV2 {
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
-      .filter("count3>10000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
-      .select("adclass","ideaid","group")
+      .select("adclass","ideaid","group","count3")
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
       .filter("count4>10000")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
+    val data3 = log.join(group3.filter("count3>10000"),Seq("adclass","ideaid"),"inner")
     val calimap3 = GroupToConfig(data3, session,model)
 
     val data4 = log.join(group4,Seq("adclass"),"inner")
