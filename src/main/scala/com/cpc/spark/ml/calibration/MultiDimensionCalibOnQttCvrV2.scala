@@ -207,7 +207,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     val result = data.select("adclass","ideaid","group")
       .rdd.map( x => {
       val adclass = x.getString(0)
-      val ideaid = x.getString(1)
+      val ideaid = x.getInt(1).toString
       val group = x.getString(2)
     if(ori_calimap.keySet.contains(adclass)){
       val key = adclass +"_"+ideaid
