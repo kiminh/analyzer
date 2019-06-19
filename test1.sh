@@ -20,7 +20,7 @@ jars=(
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 12g --driver-memory 4g \
-    --executor-cores 4 --num-executors 50  \
+    --executor-cores 8 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=5g'\
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
     --conf 'spark.sql.shuffle.partitions=2000'\
