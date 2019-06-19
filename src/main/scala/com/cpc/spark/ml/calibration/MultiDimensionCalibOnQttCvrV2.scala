@@ -1,19 +1,19 @@
 package com.cpc.spark.ml.calibration
 
+
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import com.cpc.spark.OcpcProtoType.model_novel_v3.OcpcSuggestCPAV3.matchcvr
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-
+import org.apache.spark.mllib.regression.IsotonicRegression
 
 object MultiDimensionCalibOnQttCvrV2 {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
@@ -139,29 +139,31 @@ object MultiDimensionCalibOnQttCvrV2 {
     val calimap3 = GroupToConfig(data3, session,model)
 
     val data4 = log.join(group4,Seq("adclass"),"inner")
-    val calimap4 = GroupToConfig(data4, session,model)
+    val calimap4 = GroupToConfig(data4,session,model)
 
-    val calimap = calimap3 ++ calimap4
+    val calimap5 = TransferConfig(group3.filter("count3<=10000"),calimap4.toMap,session)
+
+    val calimap = calimap3 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
   }
 
-  def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
+  def GroupToConfig(data:DataFrame, session: SparkSession, calimodelname: String, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","model","group")
+    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","cvr_model_name","group")
       .rdd.map( x => {
       var isClick = 0d
-      if (x.get(0) != null) {
-        isClick = x.getInt(0).toDouble
+      if (x.get(3) != null) {
+        isClick = x.getInt(3).toDouble
       }
-      val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(2)
-      val group = x.getString(3)
-      val key = group
+      val ectr = x.getLong(4).toDouble / 1e6d
+      val model = x.getString(5)
+      val group = x.getString(6)
+      val key = calimodelname + "_" + group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
@@ -200,62 +202,21 @@ object MultiDimensionCalibOnQttCvrV2 {
     return calimap
   }
 
-  def AllToConfig(data:DataFrame, keyset:DataFrame,session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                  maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
-    val irTrainer = new IsotonicRegression()
-    val sc = session.sparkContext
+  def TransferConfig(data:DataFrame, ori_calimap:Map[String,CalibrationConfig], session: SparkSession): scala.collection.mutable.Map[String,CalibrationConfig] = {
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    var boundaries = Seq[Double]()
-    var predictions = Seq[Double]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr")
+    val result = data.select("adclass","ideaid","group")
       .rdd.map( x => {
-      var isClick = 0d
-      if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
-      }
-      val ectr = x.getLong(4).toDouble / 1e6d
-      (calimodel, (ectr, isClick))
-    }).groupByKey()
-      .mapValues(
-        x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-      )
-      .toLocalIterator
-      .map {
-        x =>
-          val modelName: String = x._1
-          val bins = x._2._1
-          val samples = x._2._2
-          val size = bins._2
-          val positiveSize = bins._3
-          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-          println(s"bin size: ${bins._1.size}")
-          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
-          boundaries = irFullModel.boundaries
-          predictions = irFullModel.predictions
-          val irModel = IRModel(
-            boundaries = irFullModel.boundaries,
-            predictions = irFullModel.predictions
-          )
-          println(s"bin size: ${irFullModel.boundaries.length}")
-          println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-      }.toList
-    val irModel = IRModel(
-      boundaries,
-      predictions
-    )
-    println(irModel.toString)
-    val keymap = keyset.select("group").rdd.map( x => {
-      val group = x.getString(0)
-      val key = calimodel + "_" + group
-      val config = CalibrationConfig(
-        name = key,
-        ir = Option(irModel)
-      )
+      val adclass = x.getString(0)
+      val ideaid = x.getString(1)
+      val group = x.getString(2)
+    if(ori_calimap.keySet.contains(adclass)){
+      val key = adclass +"_"+ideaid
+      val ir = ori_calimap(adclass).ir
+      val config = CalibrationConfig(key,ir)
+      println("key is:%s".format(key))
       calimap += ((key,config))
-    }).toLocalIterator
-
-    return calimap
+    }}).toLocalIterator
+  return calimap
   }
 
   // input: (<ectr, click>)
@@ -307,13 +268,13 @@ object MultiDimensionCalibOnQttCvrV2 {
   }
 
   def saveProtoToLocal2(modelName: String, config: PostCalibrations): String = {
-    val filename = s"post-calibration-$modelName.mlm"
-    val localPath = localDir + filename
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    config.writeTo(new FileOutputStream(localPath))
-    return localPath
-  }
+      val filename = s"post-calibration-$modelName.mlm"
+      val localPath = localDir + filename
+      val outFile = new File(localPath)
+      outFile.getParentFile.mkdirs()
+      config.writeTo(new FileOutputStream(localPath))
+      return localPath
+    }
 
   def saveFlatTextFileForDebug2(modelName: String, config: PostCalibrations): Unit = {
     val filename = s"post-calibration-flat-$modelName.txt"
