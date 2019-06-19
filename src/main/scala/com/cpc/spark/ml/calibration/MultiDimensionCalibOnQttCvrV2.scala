@@ -202,7 +202,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     return calimap
   }
 
-  def TransferConfig(data:DataFrame, ori_calimap:Map[String,CalibrationConfig], session: SparkSession): scala.collection.mutable.Map[String,CalibrationConfig] = {
+  def TransferConfig(data:DataFrame, ori_calimap:Map[String,CalibrationConfig], session: SparkSession): Map[String,CalibrationConfig] = {
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
     val result = data.select("adclass","ideaid","group")
       .rdd.map( x => {
@@ -215,9 +215,10 @@ object MultiDimensionCalibOnQttCvrV2 {
       val config = CalibrationConfig(key,ir)
       println("key is:%s".format(key))
       calimap += ((key,config))
-      config
-    }}).toLocalIterator.toList
-  return calimap
+    }
+      calimap
+    }).collect().flatten.toMap[String,CalibrationConfig]
+    return result
   }
 
   // input: (<ectr, click>)
