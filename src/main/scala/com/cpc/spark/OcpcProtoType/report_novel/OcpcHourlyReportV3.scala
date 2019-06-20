@@ -45,9 +45,12 @@ object OcpcHourlyReportV3 {
     println("is_hidden=%d".format(isHidden))
     val baseData = getBaseData2(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
+    baseData.write.mode("overwrite").saveAsTable("test.wy00")
     // 分unitid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
+    rawDataUnit.write.mode("overwrite").saveAsTable("test.wy01")
     val dataUnit = getDataByUnit(rawDataUnit, version, date, hour, spark)
+    dataUnit.write.mode("overwrite").saveAsTable("test.wy02")
 
     // 分userid和conversion_goal统计数据
     val rawDataUser = preprocessDataByUser(baseData, date, hour, spark)
@@ -61,7 +64,7 @@ object OcpcHourlyReportV3 {
     val dataConversion = getDataByConversionV2(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-    saveDataToHDFS(dataUnit, dataUser, dataConversion, version, date, hour, spark)
+//    saveDataToHDFS(dataUnit, dataUser, dataConversion, version, date, hour, spark)
   }
 
   def saveDataToHDFS(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
