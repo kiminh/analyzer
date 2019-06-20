@@ -210,13 +210,14 @@ object MultiDimensionCalibOnQttCvrV2 {
       val adclass = x.getString(0)
       val ideaid = x.getInt(1).toString
       val group = x.getString(2)
-    while(ori_calimap.keySet.contains(adclass)){
+    if(ori_calimap.keySet.contains(adclass)){
       val key = group
       val ir = ori_calimap(adclass).ir
       val config = CalibrationConfig(key,ir)
       println("key is:%s".format(key))
       calimap += ((key,config))
     }
+      else println("error")
       calimap
     }).collect().flatten.toMap[String,CalibrationConfig]
     return result
