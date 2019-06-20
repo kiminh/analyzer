@@ -1,8 +1,5 @@
 package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt_hourly
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -28,19 +25,6 @@ object OcpcLightBulbV4{
       .appName(s"OcpcLightBulbV4: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -3)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-
 
     val sqlRequest =
       s"""
@@ -51,9 +35,9 @@ object OcpcLightBulbV4{
          |FROM
          |  dl_cpc.ocpc_light_control_hourly
          |WHERE
-         |  `date` = '$date1'
+         |  `date` = '$date'
          |AND
-         |  `hour` = '$hour1'
+         |  `hour` = '$hour'
          |AND
          |  version = '$version'
        """.stripMargin
@@ -71,8 +55,7 @@ object OcpcLightBulbV4{
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "cpa", "version")
       .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_light_control_prev_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_prev_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_prev_version")
 
 
   }
