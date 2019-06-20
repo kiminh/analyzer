@@ -53,7 +53,7 @@ object KFactorCali {
                  | and media_appsid in ('80000001', '80000002') and adslotid = '1029077' and isshow = 1
                  | and ctr_model_name in ('$model','$calimodel') and adtype = 15
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 | AND charge_type in (0,1)
        """.stripMargin
 
 //    val sql = s"""
