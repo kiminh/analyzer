@@ -1,5 +1,6 @@
 package com.cpc.spark.ocpc
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -14,10 +15,18 @@ object OcpcGetSiteformConversion {
 //    val user = "cpcrw"
 //    val passwd = "zZdlz9qUB51awT8b"
 //    val driver = "com.mysql.jdbc.Driver"
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
+
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver_mysql")
     val table = s"(select idea_id as ideaid, search_id as searchid, modified_time from adv.site_form_data where DATE(create_time)='$date' and EXTRACT(HOUR FROM create_time)='$hour' and is_show=0) as tmp"
     println(table)
 
