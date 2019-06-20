@@ -214,12 +214,14 @@ object MultiDimensionCalibOnQttCvrV2 {
       val key = group
       val ir = ori_calimap(adclass).ir
       val config = CalibrationConfig(key,ir)
-      println("key is:%s".format(key))
       calimap += ((key,config))
     }
-      else println("error")
       calimap
     }).collect().flatten.toMap[String,CalibrationConfig]
+    val resultkey = result.keySet
+    resultkey.foreach(x=>{
+      println("key is:%s".format(x))})
+
     return result
   }
 
