@@ -213,7 +213,8 @@ object OcpcUnionlog {
          |    dsp_cpm,
          |    new_user_days,
          |    ocpc_step,
-         |    previous_id
+         |    previous_id,
+         |    ocpc_status
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
