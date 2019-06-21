@@ -56,11 +56,6 @@ object OcpcCalculateCalibration {
     val data3 = OcpcSmoothFactorMain(date, hour, version, media, hourInt3, cvrType, spark).cache()
     data3.show(10)
 
-    // todo
-    data1.repartition(5).write.mode("overwrite").saveAsTable("test.check_ocpc_post_cvr_data1")
-    data2.repartition(5).write.mode("overwrite").saveAsTable("test.check_ocpc_post_cvr_data2")
-    data3.repartition(5).write.mode("overwrite").saveAsTable("test.check_ocpc_post_cvr_data3")
-
     val calibration1 = calculateCalibrationValue(data1, data2, minCV, spark)
     val calibrationNew = data3
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
