@@ -14,6 +14,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveProtoToLocal,saveFlatTextFileForDebug}
 
 object MultiDimensionCalibOnQttCvrV2 {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
@@ -107,23 +108,23 @@ object MultiDimensionCalibOnQttCvrV2 {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
-    LogToPb(log, session, calimodel)
-//    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
-//      sum("ectr").alias("ctrnum"),
-//      sum("isclick").alias("clicknum"))
-//      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
-//      .first().getAs[Double]("k")
-//    val irModel = IRModel(
-//      boundaries = Seq(0.0,1.0),
-//      predictions = Seq(0.0,k)
-//    )
-//    println(s"k is: $k")
-//    val caliconfig = CalibrationConfig(
-//      name = calimodel,
-//      ir = Option(irModel)
-//    )
-//    val localPath = saveProtoToLocal(calimodel, caliconfig)
-//    saveFlatTextFileForDebug(calimodel, caliconfig)
+//    LogToPb(log, session, calimodel)
+    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
+      sum("ectr").alias("ctrnum"),
+      sum("isclick").alias("clicknum"))
+      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
+      .first().getAs[Double]("k")
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,k)
+    )
+    println(s"k is: $k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
