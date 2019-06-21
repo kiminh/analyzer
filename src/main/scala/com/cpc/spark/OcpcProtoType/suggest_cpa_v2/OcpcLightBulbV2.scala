@@ -70,14 +70,14 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
 
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-
+//    resultDF
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+//
 //    resultDF
 //      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -109,13 +109,13 @@ object OcpcLightBulbV2{
       .withColumn("cpa3", col("cpa_suggest") * 0.01)
       .selectExpr("cast(identifier as bigint) unitid", "conversion_goal", "cpa3")
 
-    data
-        .withColumn("cpa", col("cpa3"))
-        .select("unitid", "conversion_goal", "cpa")
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
+//    data
+//        .withColumn("cpa", col("cpa3"))
+//        .select("unitid", "conversion_goal", "cpa")
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
     data
   }
 
