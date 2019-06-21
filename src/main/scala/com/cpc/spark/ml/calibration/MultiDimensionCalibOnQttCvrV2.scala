@@ -58,7 +58,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     // get union log
     val clicksql = s"""
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,
+                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid, cast(a.exp_cvr as bigint) as expcvr,
                  |case
                  |  when a.is_ocpc = 1 then 'ocpc'
                  |  when user_cvr_threshold = 200 then "cvr2"
@@ -108,9 +108,9 @@ object MultiDimensionCalibOnQttCvrV2 {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
-    LogToPb(log, session, calimodel)
+//    LogToPb(log, session, calimodel)
     val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
-      sum("ectr").alias("ctrnum"),
+      sum("expcvr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
       .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
       .first().getAs[Double]("k")
