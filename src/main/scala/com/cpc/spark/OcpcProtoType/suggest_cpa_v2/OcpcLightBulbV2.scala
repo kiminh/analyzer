@@ -77,7 +77,7 @@ object OcpcLightBulbV2{
       .select("unitid", "conversion_goal", "cpa", "date", "version")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-//
+
 //    resultDF
 //      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
