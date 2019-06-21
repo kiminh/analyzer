@@ -134,6 +134,7 @@ object UpdateInstallAppTest {
     println("app2"+app2.count())
     println("qtt app2: "+app2.where("array_contains(pkgs, 'com.jifen.qukan')").count())
     println("qtt app2: "+app2.where("array_contains(app_name, 'com.jifen.qukan-趣头条')").count())
+    println("qtt app2: "+app2.where("array_contains(app_name, 'com.jifen.qukan')").count())
 
 
   }
