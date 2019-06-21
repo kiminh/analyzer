@@ -27,4 +27,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV2 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-06-21 08 24 qtt qtt-cvr-dnn-rawid-v1-180-newcali
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-06-21 00 24 qtt qtt-cvr-dnn-rawid-v1-180-newcali
