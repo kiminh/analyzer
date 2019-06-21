@@ -48,6 +48,7 @@ object UpdateInstallAppTest {
     println(qukanApps.count())
     println(qukanApps.filter(_._2._3.length > 10).count())
     println(qukanApps.filter(_._2._4.contains("com.jifen.qukan")).count())
+    println(qukanApps.filter(_._2._4.contains("com.jifen.qukan-趣头条")).count())
 
     val stmt =
       """
@@ -101,12 +102,10 @@ object UpdateInstallAppTest {
           null
         }
     }.filter(_ != null)
-      .union(qukanApps)
       .reduceByKey{(x, y) =>
         ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct,
           (x._4 ++ y._4).distinct, (x._5 ++ y._5).distinct)
       }
-
 
     println("all_list-------------")
     val app= all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
@@ -116,7 +115,25 @@ object UpdateInstallAppTest {
     println("qtt app: "+app.where("array_contains(pkgs, 'com.jifen.qukan')").count())
     println("qtt app: "+app.where("array_contains(app_name, 'com.jifen.qukan-趣头条')").count())
 
+      //.union(qukanApps)
 
+
+
+
+
+   val app_list2=all_list.union(qukanApps)
+     .reduceByKey{(x, y) =>
+       ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct,
+         (x._4 ++ y._4).distinct, (x._5 ++ y._5).distinct)
+     }
+
+    println("app_list2-------------")
+    val app2= app_list2.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
+      .toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "app_name")
+
+    println("app2"+app2.count())
+    println("qtt app2: "+app2.where("array_contains(pkgs, 'com.jifen.qukan')").count())
+    println("qtt app2: "+app2.where("array_contains(app_name, 'com.jifen.qukan-趣头条')").count())
 
 
   }
