@@ -534,6 +534,8 @@ object InsertReportApkDownTarget {
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
 
+    lploadAllData.unpersist(true)
+
     insertDataFramelpload.show(10)
 
     insertDataFramelpload
@@ -545,6 +547,8 @@ object InsertReportApkDownTarget {
     var insertDataFrameallDatax = ctx.createDataFrame(getInsertAllData(allDatax, argDay, broadcastBrandMaps))
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
+
+    allDatax.unpersist(true)
 
     insertDataFrameallDatax.show(10)
 
@@ -558,6 +562,8 @@ object InsertReportApkDownTarget {
     var insertDataFrameMotivation = ctx.createDataFrame(getInsertAllData(motivationAllData, argDay, broadcastBrandMaps))
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
+
+    motivationAllData.unpersist(true)
 
     insertDataFrameMotivation.show(10)
 
@@ -621,8 +627,8 @@ object InsertReportApkDownTarget {
 
     val brandData = getTargetData(inputBrandData, "brand", argDay)
     //println("brandData count is", brandData.count())
-    insertAllData = insertAllData.union(brandData)
-
+    insertAllData = insertAllData.union(brandData).repartition(50)
+    println("insertAllData1 count is", insertAllData.count())
 
     val inputBrowserTypeData = allData
       //.repartition(50)
@@ -684,6 +690,7 @@ object InsertReportApkDownTarget {
     val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay)
     //println("adslotIdData count is", adslotIdData.count())
     insertAllData = insertAllData.union(adslotIdData)
+    println("insertAllData2 count is", insertAllData.count())
 
     val inputSexData = allData
       //.repartition(50)
@@ -729,6 +736,7 @@ object InsertReportApkDownTarget {
     //println("ageData count is", ageData.count())
 
     insertAllData = insertAllData.union(ageData)
+    println("insertAllData3 count is", insertAllData.count())
 
     val inputOsData = allData
       //.repartition(50)
@@ -751,7 +759,8 @@ object InsertReportApkDownTarget {
     val osData = getTargetData(inputOsData, "os", argDay)
     //println("osData count is", osData.count())
 
-    insertAllData = insertAllData.union(osData)
+    insertAllData = insertAllData.union(osData).repartition(50)
+
 
     val inputProvinceData = allData
       //.repartition(50)
@@ -774,6 +783,7 @@ object InsertReportApkDownTarget {
     val provinceData = getTargetData(inputProvinceData, "province", argDay)
     //println("provinceData count is", provinceData.count())
     insertAllData = insertAllData.union(provinceData)
+    println("insertAllData4 count is", insertAllData.count())
 
     val inputPhoneLevelData = allData
       //.repartition(50)
@@ -820,7 +830,7 @@ object InsertReportApkDownTarget {
 
     val hourData = getTargetData(inputHourData, "hour", argDay)
     //println("hourData count is", hourData.count())
-    insertAllData = insertAllData.union(hourData)
+    insertAllData = insertAllData.union(hourData).repartition(50)
 
 
     val inputNetworkData = allData
@@ -845,7 +855,7 @@ object InsertReportApkDownTarget {
     val networkData = getTargetData(inputNetworkData, "network_type", argDay).cache()
     //println("networkData count is", networkData.count())
     insertAllData = insertAllData.union(networkData)
-
+    println("insertAllData5 count is", insertAllData.count())
 
     val inputUserLevelData = allData
       //.repartition(50)
@@ -891,7 +901,8 @@ object InsertReportApkDownTarget {
 
     val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
     //println("qukanNewUserData count is", qukanNewUserData.count())
-    insertAllData = insertAllData.union(qukanNewUserData)
+    insertAllData = insertAllData.union(qukanNewUserData).repartition(50)
+
 
     val inputAdslotTypeData = allData
       //.repartition(50)
@@ -915,6 +926,7 @@ object InsertReportApkDownTarget {
     val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
     //println("adslotTypeData count is", adslotTypeData.count())
     insertAllData = insertAllData.union(adslotTypeData)
+    println("insertAllData6 count is", insertAllData.count())
 
     val inputQuAdslotTypeData = allData
       //.repartition(50)
@@ -979,6 +991,7 @@ object InsertReportApkDownTarget {
           (userid, planid, unitid, isshow, isclick, traceType, targetType, typeVal, start, finish, pkgadded, argDay, instHijack)
       }
       .repartition(50)
+
   }
 
   def clearReportApkDownTarget(date: String): Unit = {

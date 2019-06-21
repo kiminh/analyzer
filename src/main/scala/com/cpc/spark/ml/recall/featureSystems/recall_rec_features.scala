@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.recall.featureSystems
 
+import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -7,7 +8,7 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.SparkSession
-
+import sys.process._
 import scala.collection.mutable
 
 object recall_rec_features {
@@ -799,6 +800,14 @@ object recall_rec_features {
           )
       }.toDF("sample_idx", "uid", "label", "idx0", "idx1", "idx2", "id_arr")
     sample.repartition(150).write.mode("overwrite").format("tfrecords").option("recordType", "Example").save(s"hdfs://emr-cluster2/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour")
+    val writer = new PrintWriter(new File("count"))
+    writer.write(spark.sql(
+      s"""
+         |select uid from dl_cpc.recall_rec_feature where day='$curday' and hour='$hour'
+       """.stripMargin).count().toString)
+    writer.close()
+    s"hadoop fs -put -f count hdfs://emr-cluster2/user/cpc/sample/recall/dnn_recall_rec_feature/$curday/$hour/count" !
+
   }
   case class featuresResult(var uid: String="",
                              var did: String="",

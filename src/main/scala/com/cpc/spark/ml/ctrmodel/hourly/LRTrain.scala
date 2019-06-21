@@ -1147,7 +1147,7 @@ object LRTrain {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 11
+    i += 16
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)

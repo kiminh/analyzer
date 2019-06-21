@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "userprofile.proto";
+
+package com.qtt.aiclk.featurestore;
+
+message FeatureStore {
+    repeated userprofile.Feature features = 1;
+}

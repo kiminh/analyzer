@@ -92,5 +92,20 @@ object recall_prepare_new_feature {
            |select * from temp_result
        """.stripMargin)
     }
+    else if (featureName == "rec_slotid_10_12"){
+      spark.sql(
+        s"""
+           |select uid,null, null, null, slotid10,slotid11,slotid12 from (
+           |select uid, slotid10,slotid11,slotid12,row_number() over(partition by uid order by hour desc) as row_num
+           |from dl_cpc.recall_rec_feature where day='$date') where row_num=1
+         """.stripMargin).repartition(200).createOrReplaceTempView("temp_result")
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select * from temp_result
+       """.stripMargin)
+
+    }
+
   }
 }

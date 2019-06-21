@@ -26,7 +26,8 @@ enum MaterialType {
     MATERIAL_BANNER = 9; //横幅广告
     MATERIAL_MOTIVATE = 10; //激励广告
     MATERIAL_VERTICAL_VIDEO = 11; //竖屏视频广告
-    MATERIAL_NON_STANDARD  = 12; //非标支持碧桂园
+    MATERIAL_INSPIRE_VIDEO = 12; //激励视频广告
+    MATERIAL_INSPIRE_VIDEO_NEW = 15; //激励视频广告优化版
 }
 
 enum Interaction {
@@ -137,6 +138,10 @@ message IdeaStats {
     repeated int32 involved_ideas = 12; //单元映射到的广告
     repeated int32 matched_ideas = 13; //匹配的广告
     repeated int32 rnd_ideas = 14; //截断后的广告
+    repeated int32 ideas_filtered_by_qjp_antou_qtt = 15; //趣键盘暗投趣头条的规则过滤
+    repeated int32 ideas_filtered_by_unknown = 16; //未知创意过滤
+    repeated int32 after_rank_ideas = 17; //bs rank后的广告
+    repeated int32 ideas_filtered_by_content = 18; //由于相互间内容有雷同，被过滤的广告
 }
 message NoticeLogBody {
     required string searchid = 1;
@@ -161,4 +166,5 @@ message NoticeLogBody {
     optional int64 bid_avg_before_filter = 20;
     optional int64 bid_avg_after_filter = 21;
     optional int64 bid_avg_return_as = 22;
+    optional int64 content_filter_idea_num = 23; //deprecated
 };

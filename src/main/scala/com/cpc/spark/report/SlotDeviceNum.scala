@@ -5,9 +5,9 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 /** 设备基础数据表
   * 统计这6类的数量
   *   1. uid=""
-  *   2. uid.contains(".")
+  *   2. uid.contains(".") ip
   *   3. uid.contains("000000")
-  *   4. uid.length in (15, 16, 17)  imei
+  *   4. uid.length in (14, 15, 16, 17)  imei
   *   5. uid.length = 36  idfa
   *   6. 其他
   */
