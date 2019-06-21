@@ -87,7 +87,7 @@ object MultiDimensionCalibOnQttCvrV2 {
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
-    val clickData = session.sql(clicksql)
+    val clickData = session.sql(clicksql).filter("user_cvr_threshold in ('cvr1','cvr2')")
     val cvrsql =s"""
                  |select distinct a.searchid,
                  |       a.conversion_target as unit_target,
@@ -108,7 +108,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
-//    LogToPb(log, session, calimodel)
+    LogToPb(log, session, calimodel)
     val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
       sum("ectr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
