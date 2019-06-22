@@ -17,15 +17,15 @@ object OcpcUnionlog {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -220,6 +220,7 @@ object OcpcUnionlog {
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
          |and length(searchid) > 0
+         |limit 1
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
