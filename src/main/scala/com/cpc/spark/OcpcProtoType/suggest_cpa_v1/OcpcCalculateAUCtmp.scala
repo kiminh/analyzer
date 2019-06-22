@@ -45,6 +45,8 @@ object OcpcCalculateAUCtmp {
       .withColumn("unitid", udfSelectField(0)(col("identifier")))
       .withColumn("cvr_model_name", udfSelectField(1)(col("identifier")))
       .select("identifier", "unitid", "cvr_model_name", "auc", "industry")
+      .cache()
+    result.show(10)
 
     val conversionGoalInt = conversionGoal.toInt
     val resultDF = result
@@ -56,7 +58,7 @@ object OcpcCalculateAUCtmp {
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").saveAsTable(finalTableName)
   }
 
   def udfSelectField(index: Int) = udf((identifier: String) => {
