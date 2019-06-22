@@ -98,7 +98,7 @@ object OcpcSuggestCPAV3 {
          |select distinct a.searchid,
          |        a.conversion_target as real_target,
          |        b.conversion_target[0] as unit_target
-         |from dl_cpc.dm_conversions_for_model a
+         |from dl_cpc.cpc_conversion a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
          |    and a.day = b.day
