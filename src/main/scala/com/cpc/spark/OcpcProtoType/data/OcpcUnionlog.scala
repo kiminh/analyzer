@@ -220,7 +220,6 @@ object OcpcUnionlog {
          |and (isshow>0 or isclick>0)
          |and adslot_type != 7
          |and length(searchid) > 0
-         |limit 1
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
