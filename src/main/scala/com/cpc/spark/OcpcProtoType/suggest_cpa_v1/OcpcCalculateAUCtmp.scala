@@ -26,12 +26,12 @@ object OcpcCalculateAUCtmp {
 
     // 抽取数据
     val data = getData(media, conversionGoal, 24, version, date, hour, spark)
-//    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
-//    data
-//      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
-    val tableName = "dl_cpc.ocpc_auc_raw_data"
+    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
     data
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
+//    val tableName = "dl_cpc.ocpc_auc_raw_data"
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
     // 获取identifier与industry之间的关联表
     val unitidIndustry = getIndustry(tableName, conversionGoal, version, date, hour, spark)
@@ -42,6 +42,9 @@ object OcpcCalculateAUCtmp {
     val result = aucData
       .join(unitidIndustry, Seq("identifier"), "left_outer")
       .select("identifier", "auc", "industry")
+      .withColumn("unitid", udfSelectField(0)(col("identifier")))
+      .withColumn("cvr_model_name", udfSelectField(1)(col("identifier")))
+      .select("identifier", "unitid", "cvr_model_name", "auc", "industry")
 
     val conversionGoalInt = conversionGoal.toInt
     val resultDF = result
@@ -53,8 +56,14 @@ object OcpcCalculateAUCtmp {
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-      .write.mode("overwrite").saveAsTable(finalTableName)
+        .write.mode("overwrite").saveAsTable(finalTableName)
   }
+
+  def udfSelectField(index: Int) = udf((identifier: String) => {
+    val idList = identifier.split("|")
+    val item = idList(index)
+    item
+  })
 
   def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
@@ -128,7 +137,8 @@ object OcpcCalculateAUCtmp {
          |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
          |        when adclass in (110110100, 125100100) then "wzcp"
          |        else "others"
-         |    end) as industry
+         |    end) as industry,
+         |    cvr_model_name
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
          |and isclick = 1
@@ -163,6 +173,7 @@ object OcpcCalculateAUCtmp {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid"), "left_outer")
+      .withColumn("identifier", concat_ws("|", col("identifier"), col("cvr_model_name")))
       .select("searchid", "identifier", "score", "label", "industry")
       .na.fill(0, Seq("label"))
       .select("searchid", "identifier", "score", "label", "industry")
