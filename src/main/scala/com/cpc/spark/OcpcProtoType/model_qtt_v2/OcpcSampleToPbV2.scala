@@ -2,10 +2,12 @@ package com.cpc.spark.OcpcProtoType.model_qtt_v2
 
 import java.io.FileOutputStream
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+
 import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.functions._
 
@@ -32,10 +34,11 @@ object OcpcSampleToPbV2 {
     val hour = args(1).toString
     val version = args(2).toString
     val fileName = args(3).toString
+    val media = "qtt"
 
     //    val fileName = "ocpc_params_qtt.pb"
 
-    val data = getCalibrationDataV2(date, hour, version, spark)
+    val data = getCalibrationDataV2(date, hour, media, version, spark)
 
     data
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -43,13 +46,13 @@ object OcpcSampleToPbV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      //        .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
+      .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
 
     savePbPack(data, fileName, spark)
   }
 
-  def getCalibrationDataV2(date: String, hour: String, version: String, spark: SparkSession) = {
+  def getCalibrationDataV2(date: String, hour: String, media: String, version: String, spark: SparkSession) = {
     val sqlRequest1 =
       s"""
          |SELECT
@@ -64,7 +67,7 @@ object OcpcSampleToPbV2 {
          |  low_bid_factor,
          |  cpagiven
          |FROM
-         |  dl_cpc.ocpc_param_calibration_hourly_v2
+         |  dl_cpc.x
          |WHERE
          |  `date` = '$date'
          |AND
@@ -95,11 +98,35 @@ object OcpcSampleToPbV2 {
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
       .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
-      .cache()
 
-    data.show(10)
+    val result = resetSmoothFactor(data, media, spark).cache()
+
+    result.show(10)
+
+    result
+  }
+
+  def resetSmoothFactor(rawData: DataFrame, media: String, spark: SparkSession) = {
+    // 从配置文件平滑系数
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_tag.smooth_factor")
+    val rawData = spark.read.format("json").json(confPath)
+    val confData = rawData
+      .filter(s"media = '$media'")
+      .groupBy("exp_tag", "conversion_goal")
+      .agg(
+        min(col("smooth_factor")).alias("conf_factor")
+      )
+      .selectExpr("exp_tag", "conversion_goal", "conf_factor")
+
+    val data = rawData
+      .join(confData, Seq("exp_tag", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven", "conf_factor")
+      .withColumn("smooth_factor", when(col("conf_factor").isNotNull, col("conf_factor")).otherwise(col("smooth_factor")))
+      .na.fill(0.0, Seq("smooth_factor"))
 
     data
+
   }
 
   def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
