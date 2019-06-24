@@ -201,7 +201,7 @@ object OcpcLightBulbV2{
          |  ocpc_step = 2
        """.stripMargin
     println(sqlRequest2)
-    val rawData2 = spark.sql(sqlRequest2).select("unitid", "conversion_goal").distinct()
+    val rawData2 = spark.sql(sqlRequest2).filter(s"conversion_goal in (2, 3)").select("unitid", "conversion_goal").distinct()
     val rawData = rawData1
       .join(rawData2, Seq("unitid", "conversion_goal"), "outer")
       .select("unitid", "conversion_goal")
