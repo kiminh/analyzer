@@ -46,8 +46,8 @@ object OcpcSampleToPbV2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_param_pb_data_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
 
     savePbPack(data, fileName, spark)
   }
