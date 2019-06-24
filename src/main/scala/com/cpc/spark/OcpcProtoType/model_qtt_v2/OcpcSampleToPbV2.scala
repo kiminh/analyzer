@@ -119,6 +119,9 @@ object OcpcSampleToPbV2 {
       )
       .selectExpr("exp_tag", "conversion_goal", "conf_factor")
 
+    rawData.printSchema()
+    confData.printSchema()
+
     val data = rawData
       .join(confData, Seq("exp_tag", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven", "conf_factor")
