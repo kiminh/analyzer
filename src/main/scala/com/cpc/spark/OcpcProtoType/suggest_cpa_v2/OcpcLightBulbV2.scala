@@ -203,9 +203,9 @@ object OcpcLightBulbV2{
     println(sqlRequest2)
     val rawData2 = spark.sql(sqlRequest2).select("unitid", "conversion_goal").distinct()
     val rawData = rawData1
-//      .join(rawData2, Seq("unitid", "conversion_goal"), "outer")
-//      .select("unitid", "conversion_goal")
-//      .distinct()
+      .join(rawData2, Seq("unitid", "conversion_goal"), "outer")
+      .select("unitid", "conversion_goal")
+      .distinct()
 
     val sqlRequet3 =
       s"""
