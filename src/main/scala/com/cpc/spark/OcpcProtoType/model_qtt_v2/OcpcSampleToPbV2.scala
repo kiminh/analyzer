@@ -36,7 +36,7 @@ object OcpcSampleToPbV2 {
     val fileName = args(3).toString
     val media = "qtt"
 
-    //    val fileName = "ocpc_params_qtt.pb"
+//    val fileName = "ocpc_params_qtt.pb"
 
     val data = getCalibrationDataV2(date, hour, media, version, spark)
 
