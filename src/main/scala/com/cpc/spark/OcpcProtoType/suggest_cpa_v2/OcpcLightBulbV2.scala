@@ -31,9 +31,7 @@ object OcpcLightBulbV2{
       .enableHiveSupport().getOrCreate()
 
     // todo 修改表名
-//    val tableName = "dl_cpc.ocpc_light_control_version"
-    val tableName = "test.ocpc_qtt_light_control_v2"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
+    val tableName = "dl_cpc.ocpc_light_control_version"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -70,16 +68,13 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+//
 //    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
   }
 
   def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
@@ -109,13 +104,13 @@ object OcpcLightBulbV2{
       .withColumn("cpa3", col("cpa_suggest") * 0.01)
       .selectExpr("cast(identifier as bigint) unitid", "conversion_goal", "cpa3")
 
-    data
-        .withColumn("cpa", col("cpa3"))
-        .select("unitid", "conversion_goal", "cpa")
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
+//    data
+//        .withColumn("cpa", col("cpa3"))
+//        .select("unitid", "conversion_goal", "cpa")
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
     data
   }
 
@@ -163,14 +158,55 @@ object OcpcLightBulbV2{
          |    isclick = 1
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark
+    val rawData1 = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .filter(s"industry in ('elds', 'feedapp')")
       .select("unitid", "conversion_goal")
       .distinct()
 
-    val sqlRequets2 =
+    // 取近三小时数据
+    val hourConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val newToday = hourConverter.parse(newDate)
+    val newCalendar = Calendar.getInstance
+    newCalendar.setTime(newToday)
+    newCalendar.add(Calendar.HOUR, -3)
+    val newYesterday = newCalendar.getTime
+    val prevTime = hourConverter.format(newYesterday)
+    val prevTimeValue = prevTime.split(" ")
+    val newDate1 = prevTimeValue(0)
+    val newHour1 = prevTimeValue(1)
+    val newSelectCondition = getTimeRangeSql2(newDate1, newHour1, date, hour)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then 3
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then 2
+         |        else 0
+         |   end) as conversion_goal,
+         |FROM
+         |  dl_cpc.cpc_basedata_click_event
+         |WHERE
+         |  $newSelectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  isclick = 1
+         |AND
+         |  ocpc_step = 2
+       """.stripMargin
+    println(sqlRequest2)
+    val rawData2 = spark.sql(sqlRequest2).select("unitid", "conversion_goal").distinct()
+    val rawData = rawData1
+      .join(rawData2, Seq("unitid", "conversion_goal"), "outer")
+      .select("unitid", "conversion_goal")
+      .distinct()
+
+    val sqlRequet3 =
       s"""
          |SELECT
          |  cast(identifier as int) as unitid,
@@ -181,10 +217,10 @@ object OcpcLightBulbV2{
          |WHERE
          |  version = '$version'
        """.stripMargin
-    println(sqlRequets2)
-    val suggestDataRaw1 = spark.sql(sqlRequets2)
+    println(sqlRequet3)
+    val suggestDataRaw1 = spark.sql(sqlRequet3)
 
-    val sqlRequest3 =
+    val sqlRequest4 =
       s"""
          |SELECT
          |  unitid,
@@ -195,8 +231,8 @@ object OcpcLightBulbV2{
          |WHERE
          |  version = '$version'
        """.stripMargin
-    println(sqlRequest3)
-    val suggestDataRaw2 = spark.sql(sqlRequest3)
+    println(sqlRequest4)
+    val suggestDataRaw2 = spark.sql(sqlRequest4)
 
     val suggestDataRaw = suggestDataRaw1
       .join(suggestDataRaw2, Seq("unitid", "conversion_goal"), "outer")
