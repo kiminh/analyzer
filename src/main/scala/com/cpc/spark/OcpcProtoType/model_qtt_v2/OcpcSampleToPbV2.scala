@@ -119,8 +119,8 @@ object OcpcSampleToPbV2 {
       )
       .selectExpr("exp_tag", "conversion_goal", "conf_factor")
 
-    rawData.printSchema()
-    confData.printSchema()
+//    rawData.printSchema()
+//    confData.printSchema()
 
     val data = baseData
       .join(confData, Seq("exp_tag", "conversion_goal"), "left_outer")
