@@ -106,7 +106,7 @@ object OcpcSampleToPbV2 {
     result
   }
 
-  def resetSmoothFactor(rawData: DataFrame, media: String, spark: SparkSession) = {
+  def resetSmoothFactor(baseData: DataFrame, media: String, spark: SparkSession) = {
     // 从配置文件平滑系数
     val conf = ConfigFactory.load("ocpc")
     val confPath = conf.getString("exp_tag.smooth_factor")
@@ -122,7 +122,7 @@ object OcpcSampleToPbV2 {
     rawData.printSchema()
     confData.printSchema()
 
-    val data = rawData
+    val data = baseData
       .join(confData, Seq("exp_tag", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven", "conf_factor")
       .withColumn("smooth_factor", when(col("conf_factor").isNotNull, col("conf_factor")).otherwise(col("smooth_factor")))
