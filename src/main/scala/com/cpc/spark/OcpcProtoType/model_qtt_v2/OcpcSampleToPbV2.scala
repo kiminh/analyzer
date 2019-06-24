@@ -67,7 +67,7 @@ object OcpcSampleToPbV2 {
          |  low_bid_factor,
          |  cpagiven
          |FROM
-         |  dl_cpc.x
+         |  dl_cpc.ocpc_param_calibration_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
