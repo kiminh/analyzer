@@ -35,4 +35,13 @@ object OcpcTools {
     resultDF.show(10)
     resultDF
   }
+
+  def getTimeRangeSqlDay(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`day` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+    }
+    return s"((`day` = '$startDate' and hour > '$startHour') " +
+      s"or (`day` = '$endDate' and hour <= '$endHour') " +
+      s"or (`day` > '$startDate' and `day` < '$endDate'))"
+  }
 }

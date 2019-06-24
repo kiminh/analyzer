@@ -8,6 +8,7 @@ import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDay
 
 
 object OcpcLightBulbV2{
@@ -177,7 +178,7 @@ object OcpcLightBulbV2{
     val prevTimeValue = prevTime.split(" ")
     val newDate1 = prevTimeValue(0)
     val newHour1 = prevTimeValue(1)
-    val newSelectCondition = getTimeRangeSql2(newDate1, newHour1, date, hour)
+    val newSelectCondition = getTimeRangeSqlDay(newDate1, newHour1, date, hour)
 
     val sqlRequest2 =
       s"""
