@@ -187,7 +187,7 @@ object OcpcLightBulbV2{
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then 3
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then 2
          |        else 0
-         |   end) as conversion_goal,
+         |   end) as conversion_goal
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
