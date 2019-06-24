@@ -10,7 +10,7 @@ import org.apache.spark.sql.functions.array
   * @version created: 2019-06-18 17:07
   * @desc generate TFRecords. ov: zhj 181101
   */
-object DNNSampleHourlyV4 {
+object TFSampleHourly {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -92,7 +92,7 @@ object DNNSampleHourlyV4 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/fym/snapshot-tfrecords-test/")
+      .save(s"hdfs://emr-cluster/user/cpc/fym/snapshot-tfrecords-test/$date/$hour")
 
     sampleDataToGo.take(10).foreach(println)
     sampleDataToGo.unpersist()
