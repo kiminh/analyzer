@@ -6,6 +6,7 @@ queue=root.cpc.bigdata
 #day=`date +"%Y-%m-%d" -d "-2 hour"`
 #hour=`date +"%H" -d "-2 hour"`
 day=$1
+hour=$2
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -26,5 +27,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV2 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-06-21 00 24 qtt qtt-cvr-dnn-rawid-v1-180-newcali
+    --class com.cpc.spark.OcpcProtoType.report_novel.OcpcUnionReportV3 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day $hour
