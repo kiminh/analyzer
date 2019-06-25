@@ -31,9 +31,7 @@ object OcpcLightBulbV2{
       .enableHiveSupport().getOrCreate()
 
     // todo 修改表名
-//    val tableName = "dl_cpc.ocpc_light_control_version"
-    val tableName = "test.ocpc_qtt_light_control_v2"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
+    val tableName = "dl_cpc.ocpc_light_control_version"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -77,9 +75,6 @@ object OcpcLightBulbV2{
       .select("unitid", "conversion_goal", "cpa", "date", "version")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-
-//    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
