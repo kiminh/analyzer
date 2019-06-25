@@ -175,7 +175,7 @@ object OcpcChargeV4 {
     val rawData = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0 and conversion_goal = 3")
-      .select("searchid", "unitid", "timestamp")
+      .select("searchid", "unitid", "timestamp", "date", "hour")
       .distinct()
     rawData.createOrReplaceTempView("raw_data")
 
