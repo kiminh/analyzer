@@ -147,7 +147,7 @@ object OcpcLightBulbV2{
     val prevTimeValue = prevTime.split(" ")
     val newDate1 = prevTimeValue(0)
     val newHour1 = prevTimeValue(1)
-    val newSelectCondition = getTimeRangeSqlDay(newDate1, newHour1, date, hour)
+    val newSelectCondition = getTimeRangeSqlDay(date, hour, newDate1, newHour1)
 
     val sqlRequest2 =
       s"""
