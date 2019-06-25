@@ -11,19 +11,20 @@ object OcpcConversionSiteformTemp {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
-
+    val cvrType = args(2).toString
 
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
     getDataFromChitu(date, hour, spark)
-//    val result = getLabel(date, hour, spark)
-//    result
+    val result = getLabel(cvrType, date, hour, spark)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_label_cvr_hourly")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
 //    println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
   }
 
-  def getLabel(date: String, hour: String, spark: SparkSession) = {
+  def getLabel(cvrType: String, date: String, hour: String, spark: SparkSession) = {
     var selectCondition = s"`date`='$date' and hour = '$hour'"
 
     val sqlRequest1 =
@@ -74,15 +75,18 @@ object OcpcConversionSiteformTemp {
     println(sqlRequest3)
     val data3 = spark.sql(sqlRequest3)
 
+    val data4 = getDataFromChitu(date, hour, spark).select("searchid").distinct()
+
     val resultDF = data1
       .union(data2)
       .union(data3)
+      .union(data4)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("cvr_goal", lit("cvr3"))
+      .withColumn("cvr_goal", lit(cvrType))
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -117,5 +121,6 @@ object OcpcConversionSiteformTemp {
 
 
     resultDF.show(10)
+    resultDF
   }
 }
