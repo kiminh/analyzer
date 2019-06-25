@@ -99,7 +99,23 @@ object OcpcConversionSiteformTemp {
     val user = conf.getString("chitu.user")
     val passwd = conf.getString("chitu.password")
     val driver = conf.getString("chitu.driver")
-    val table = s"(select searchid from site_order where DATE(createtime)='$date' and EXTRACT(HOUR FROM createtime)='$hour') as tmp"
+    val table = s"(select searchid, createtime from site_order where DATE(createtime)='$date' and EXTRACT(HOUR FROM createtime)='$hour' and searchid is not null) as tmp"
     println(table)
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+
+    val resultDF = data
+        .select("searchid", "createtime")
+        .distinct()
+
+
+    resultDF.show(10)
   }
 }
