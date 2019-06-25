@@ -159,55 +159,14 @@ object OcpcLightBulbV2{
          |    isclick = 1
        """.stripMargin
     println(sqlRequest1)
-    val rawData1 = spark
+    val rawData = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .filter(s"industry in ('elds', 'feedapp')")
       .select("unitid", "conversion_goal")
       .distinct()
 
-    // 取近三小时数据
-    val hourConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val newToday = hourConverter.parse(newDate)
-    val newCalendar = Calendar.getInstance
-    newCalendar.setTime(newToday)
-    newCalendar.add(Calendar.HOUR, -3)
-    val newYesterday = newCalendar.getTime
-    val prevTime = hourConverter.format(newYesterday)
-    val prevTimeValue = prevTime.split(" ")
-    val newDate1 = prevTimeValue(0)
-    val newHour1 = prevTimeValue(1)
-    val newSelectCondition = getTimeRangeSqlDay(newDate1, newHour1, date, hour)
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  (case
-         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then 3
-         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then 2
-         |        else 0
-         |   end) as conversion_goal
-         |FROM
-         |  dl_cpc.cpc_basedata_click_event
-         |WHERE
-         |  $newSelectCondition
-         |AND
-         |  $mediaSelection
-         |AND
-         |  isclick = 1
-         |AND
-         |  ocpc_step = 2
-       """.stripMargin
-    println(sqlRequest2)
-    val rawData2 = spark.sql(sqlRequest2).filter(s"conversion_goal in (2, 3)").select("unitid", "conversion_goal").distinct()
-    val rawData = rawData1
-      .join(rawData2, Seq("unitid", "conversion_goal"), "outer")
-      .select("unitid", "conversion_goal")
-      .distinct()
-
-    val sqlRequet3 =
+    val sqlRequets2 =
       s"""
          |SELECT
          |  cast(identifier as int) as unitid,
@@ -218,10 +177,10 @@ object OcpcLightBulbV2{
          |WHERE
          |  version = '$version'
        """.stripMargin
-    println(sqlRequet3)
-    val suggestDataRaw1 = spark.sql(sqlRequet3)
+    println(sqlRequets2)
+    val suggestDataRaw1 = spark.sql(sqlRequets2)
 
-    val sqlRequest4 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -232,8 +191,8 @@ object OcpcLightBulbV2{
          |WHERE
          |  version = '$version'
        """.stripMargin
-    println(sqlRequest4)
-    val suggestDataRaw2 = spark.sql(sqlRequest4)
+    println(sqlRequest3)
+    val suggestDataRaw2 = spark.sql(sqlRequest3)
 
     val suggestDataRaw = suggestDataRaw1
       .join(suggestDataRaw2, Seq("unitid", "conversion_goal"), "outer")
