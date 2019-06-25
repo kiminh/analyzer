@@ -8,7 +8,6 @@ import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDay
 
 
 object OcpcLightBulbV2{
@@ -105,13 +104,13 @@ object OcpcLightBulbV2{
       .withColumn("cpa3", col("cpa_suggest") * 0.01)
       .selectExpr("cast(identifier as bigint) unitid", "conversion_goal", "cpa3")
 
-    data
-        .withColumn("cpa", col("cpa3"))
-        .select("unitid", "conversion_goal", "cpa")
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
+//    data
+//        .withColumn("cpa", col("cpa3"))
+//        .select("unitid", "conversion_goal", "cpa")
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
     data
   }
 
