@@ -141,7 +141,7 @@ object OcpcLightBulbV2{
     val newToday = hourConverter.parse(newDate)
     val newCalendar = Calendar.getInstance
     newCalendar.setTime(newToday)
-    newCalendar.add(Calendar.HOUR, -3)
+    newCalendar.add(Calendar.HOUR, +3)
     val newYesterday = newCalendar.getTime
     val prevTime = hourConverter.format(newYesterday)
     val prevTimeValue = prevTime.split(" ")
