@@ -19,8 +19,8 @@ object OcpcConversionSiteformTemp {
     getDataFromChitu(date, hour, spark)
     val result = getLabel(cvrType, date, hour, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_label_cvr_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_label_cvr_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
 //    println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
   }
 
