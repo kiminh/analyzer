@@ -185,7 +185,7 @@ object OcpcChargeV4 {
          |  searchid,
          |  unitid,
          |  timestamp,
-         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as unix_time,
+         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
          |  date,
          |  hour,
          |  row_number() over(partition by unitid order by timestamp desc) as seq
@@ -196,9 +196,9 @@ object OcpcChargeV4 {
     val costUnits = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .select("unitid", "date", "hour", "timestamp", "unix_time")
-      .withColumn("ocpc_charge_time", concat_ws(" ", col("date"), col("hour")))
-      .select("unitid", "ocpc_charge_time", "unix_time", "date", "hour")
+      .select("unitid", "date", "hour", "timestamp", "ocpc_charge_time")
+//      .withColumn("ocpc_charge_time", concat_ws(" ", col("date"), col("hour")))
+      .select("unitid", "ocpc_charge_time")
       .cache()
 
     costUnits.show(20)
