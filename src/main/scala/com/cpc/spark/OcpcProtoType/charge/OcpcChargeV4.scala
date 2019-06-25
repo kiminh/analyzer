@@ -2,7 +2,7 @@ package com.cpc.spark.OcpcProtoType.charge
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
+import org.apache.spark.sql.types.DateType
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -195,9 +195,13 @@ object OcpcChargeV4 {
     val costUnits = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .select("unitid", "date", "hour")
+      .select("unitid", "date", "hour", "timestamp")
       .withColumn("ocpc_charge_time", concat_ws(" ", col("date"), col("hour")))
-      .select("unitid", "ocpc_charge_time")
+      .withColumn("unix_time", col("timestamp").cast(DateType))
+      .select("unitid", "ocpc_charge_time", "unix_time", "date", "hour")
+      .cache()
+
+    costUnits.show(20)
 
 
     // 抽取赔付周期表中当天开始赔付的单元
