@@ -24,14 +24,15 @@ object monitorSiteform {
     var message = ""
 
     if (cnt3 != cnt4) {
-      message = message + " " + "v4 abnormal"
+      message = message + "v4 abnormal\n"
     }
     if (cnt3 != cnt5) {
-      message = message + " " + "v5 abnormal"
+      message = message + "v5 abnormal"
     }
     val sub = "siteform conversion monitor warning!"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
+    println(message)
     if (message != "") {
       sendMail(message, sub, receiver)
     }
