@@ -188,7 +188,7 @@ object OcpcChargeV4 {
          |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
          |  date,
          |  hour,
-         |  row_number() over(partition by unitid order by timestamp desc) as seq
+         |  row_number() over(partition by unitid order by timestamp) as seq
          |FROM
          |  raw_data
        """.stripMargin
