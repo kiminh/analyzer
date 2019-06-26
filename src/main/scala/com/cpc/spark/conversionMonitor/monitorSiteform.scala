@@ -1,6 +1,8 @@
 package com.cpc.spark.conversionMonitor
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import com.github.jurajburian.mailer.{Content, Mailer, Message, SessionFactory, SmtpAddress}
+import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -17,8 +19,21 @@ object monitorSiteform {
     val cnt3 = getDataV3(date, hour, spark)
     val cnt4 = getDataV3(date, hour, spark)
     val cnt5 = getDataV5(date, hour, spark)
+    var message = ""
 
-    println(s"$cnt3, $cnt4, $cnt5")
+    if (cnt3 != cnt4) {
+      message = message + " " + "v4 abnormal"
+    }
+    if (cnt3 != cnt5) {
+      message = message + " " + "v5 abnormal"
+    }
+    val sub = "siteform conversion monitor warning!"
+    var receiver = Seq[String]()
+    receiver:+="wangjun02@qutoutiao.net"
+    if (message != "") {
+      sendMail(message, sub, receiver)
+    }
+
 
   }
 
@@ -80,6 +95,25 @@ object monitorSiteform {
   }
 
 
+  def sendMail(txt: String, sub: String, to: Seq[String]): Boolean = {
+    //val conf = ConfigFactory.load()
+    val session = (SmtpAddress("smtp.exmail.qq.com", 25) :: SessionFactory())
+      .session(Some("cpc_notify@aiclk.com" -> "nXBYjc8XVB6hCPv5"))
+    val toAdd = to.map(new InternetAddress(_))
+    val msg = Message(
+      from = new InternetAddress("cpc_notify@aiclk.com"),
+      subject = sub,
+      content = Content().text(txt),
+      to = toAdd)
+    try {
+      Mailer(session).send(msg)
+      true
+    } catch {
+      case e: Exception =>
+        println(e.getMessage)
+        false
+    }
+  }
 
 
 }
