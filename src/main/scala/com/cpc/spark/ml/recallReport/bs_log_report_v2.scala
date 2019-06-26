@@ -136,6 +136,8 @@ object bs_log_report_v2 {
           val ideas_filtered_by_unknown = up.getIdeaStats.getIdeasFilteredByUnknownList.asScala.toList.mkString(",")
           val after_rank_ideas = up.getIdeaStats.getAfterRankIdeasList.asScala.toList.mkString(",")
           val ideas_filtered_by_content = up.getIdeaStats.getIdeasFilteredByContentList.asScala.toList.mkString(",")
+          val embedding_ctr_uniq_ideas = up.getIdeaStats.getEmbeddingCtrUniqIdeasList.asScala.toList.mkString(",")
+          val embedding_redis_hit = up.getEmbeddingRedisHit
 
 
           if (exptags.contains("bsfilterdetail")) {
@@ -241,7 +243,9 @@ object bs_log_report_v2 {
               ideas_filtered_by_qjp_antou_qtt = ideas_filtered_by_qjp_antou_qtt,
               ideas_filtered_by_unknown = ideas_filtered_by_unknown,
               after_rank_ideas = after_rank_ideas,
-              ideas_filtered_by_content = ideas_filtered_by_content
+              ideas_filtered_by_content = ideas_filtered_by_content,
+              embedding_ctr_uniq_ideas = embedding_ctr_uniq_ideas,
+              embedding_redis_hit = embedding_redis_hit
             )
           }
           else null
@@ -270,7 +274,8 @@ object bs_log_report_v2 {
       "channelid", "ad_slot_type", "acc_class", "black_class", "slot_width", "slot_height", "keyword",
       "white_material_level", "regionals", "os_type", "age", "gender",  "coin", "interests", "phone_level", "adnum",
       "new_user", "network", "only_site", "direct_uid", "material_styles_s", "interactions_s", "acc_user_type",
-      "ideas_filtered_by_qjp_antou_qtt", "ideas_filtered_by_unknown", "after_rank_ideas", "ideas_filtered_by_content"
+      "ideas_filtered_by_qjp_antou_qtt", "ideas_filtered_by_unknown", "after_rank_ideas", "ideas_filtered_by_content",
+      "embedding_ctr_uniq_ideas", "embedding_redis_hit"
     )
       .withColumn("`dt`",lit(s"$tardate"))
       .withColumn("`hour`",lit(s"$hour"))
@@ -379,7 +384,9 @@ object bs_log_report_v2 {
                      var ideas_filtered_by_qjp_antou_qtt: String = "",
                      var ideas_filtered_by_unknown: String = "",
                      var after_rank_ideas: String = "",
-                     var ideas_filtered_by_content: String = ""
+                     var ideas_filtered_by_content: String = "",
+                     var embedding_ctr_uniq_ideas: String = "",
+                     var embedding_redis_hit: String = ""
   )
 
 }
