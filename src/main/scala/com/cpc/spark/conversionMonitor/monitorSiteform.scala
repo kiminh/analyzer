@@ -16,11 +16,9 @@ object monitorSiteform {
     val date = args(0).toString
     val hour = args(1).toString
 
-//    val cnt3 = getDataV3(date, hour, spark)
-//    val cnt4 = getDataV3(date, hour, spark)
+    val cnt3 = getDataV3(date, hour, spark)
+    val cnt4 = getDataV3(date, hour, spark)
     val cnt5 = getDataV5(date, hour, spark)
-    val cnt3 = 1
-    val cnt4 = 1
 
     var message = ""
 
