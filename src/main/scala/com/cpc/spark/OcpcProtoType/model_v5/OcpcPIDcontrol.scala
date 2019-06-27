@@ -24,6 +24,7 @@ object OcpcPIDcontrol {
     val kp = args(7).toDouble
     val ki = args(8).toDouble
     val kd = args(9).toDouble
+    val expTag = args(10).toString
 
     println("parameters:")
     println(s"date=$date, hour=$hour, media=$media, version=$version, conversionGoal=$conversionGoal, sampleHour=$sampleHour, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd")
@@ -43,11 +44,12 @@ object OcpcPIDcontrol {
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("exp_tag", lit(expTag))
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly_v2")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly_v2")
   }
 
   def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
