@@ -14,8 +14,9 @@ object UidGroup {
   def main(args: Array[String]): Unit = {
 
     val a = "qwertyuiop"
-    val b = stringHash32(a, 79)
-    println(a,b)
+    val b = stringHash32(a,79)
+    val c = getUint32(b)
+    println(a,b,c)
 
 //      val date = args(0)
 //      val hour = args(1)
@@ -50,6 +51,8 @@ object UidGroup {
 //        .rdd.map(x => (x.getAs[String](0), x.getAs[Int](1)))
 
   }
+
+  def getUint32(l: Long): Long = l & 0x00000000ffffffff
 
   def hash= udf {
     x:String => stringHash32(x,79)
