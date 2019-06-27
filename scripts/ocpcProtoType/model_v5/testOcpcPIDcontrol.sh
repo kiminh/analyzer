@@ -21,6 +21,7 @@ kp=${8}
 ki=${9}
 kd=${10}
 exptag=${11}
+hourInt=${12}
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
@@ -30,7 +31,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.OcpcProtoType.model_v5.OcpcPIDcontrol \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar ${date} ${hour} ${version} ${media} ${conversionGoal} ${sampleHour} ${minCV} ${kp} ${ki} ${kd} ${exptag}
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar ${date} ${hour} ${version} ${media} ${conversionGoal} ${sampleHour} ${minCV} ${kp} ${ki} ${kd} ${exptag} ${hourInt}
 
 
 #val date = args(0).toString
@@ -44,3 +45,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 #val ki = args(8).toDouble
 #val kd = args(9).toDouble
 #val expTag = args(10).toString
+#val hourInt = args(11).toInt
