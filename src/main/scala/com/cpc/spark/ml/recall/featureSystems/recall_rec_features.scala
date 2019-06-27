@@ -550,8 +550,6 @@ object recall_rec_features {
 //        |       'hdfs://emr-cluster/warehouse/dl_cpc.db/recall_rec_feature/%s/%s'
 //                """.stripMargin.format(curday, hour, curday, hour)
 //    spark.sql(sql)
-    print("-------------------------------test2-------------------------------")
-    result.show(50)
     result.repartition(150).createOrReplaceTempView("feature_result")
     spark.sql(
       s"""
