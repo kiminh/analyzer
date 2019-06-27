@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ocpcCpaDiscount;
+message SingleItem {
+    string key = 1;
+    double discount = 2;
+}
+
+message OcpcCpaDiscountList {
+    repeated SingleItem records = 1;
+}

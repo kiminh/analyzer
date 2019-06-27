@@ -98,7 +98,7 @@ object OcpcSuggestCPAV3 {
          |select distinct a.searchid,
          |        a.conversion_target as real_target,
          |        b.conversion_target[0] as unit_target
-         |from dl_cpc.dm_conversions_for_model a
+         |from dl_cpc.cpc_conversion a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
          |    and a.day = b.day
@@ -162,7 +162,7 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
-      .withColumn("maxbid",col("qtt_cpa"))
+      .withColumn("maxbid",col("qtt_avgbid"))
       .withColumn("alpha", col("qtt_cpa") * 1.0 / col("qtt_avgbid"))
       .filter("qtt_cpa is not null")
     qttCpa.createOrReplaceTempView("qtt_cpa_table")

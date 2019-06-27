@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_cpa_novel
+package com.cpc.spark.OcpcProtoType.suggest_cpa_novel_hourly
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.OcpcProtoType.suggest_cpa_v1.OcpcSuggestCPA._
+import com.cpc.spark.OcpcProtoType.suggest_cpa_v2.OcpcSuggestCPA._
 
 object OcpcSuggestCPA {
   def main(args: Array[String]): Unit = {
@@ -30,9 +30,9 @@ object OcpcSuggestCPA {
     Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
-    val conversionGoal = args(2).toInt
-    val version = args(3).toString
-    val media = args(4).toString
+    val version = args(2).toString
+    val media = args(3).toString
+    val conversionGoal = args(4).toInt
     val hourInt = args(5).toInt
 
 
@@ -59,7 +59,7 @@ object OcpcSuggestCPA {
     val baseData = getBaseData(media, conversionGoal, hourInt, date, hour, spark)
 
     // ocpc部分：kvalue
-    val kvalue = getKvalue(version, conversionGoal, date, hour, spark)
+    val kvalue = getKvalue(media, hourInt, baseData, conversionGoal, date, hour, spark)
 
     // 模型部分
     val aucData = getAucData(version, conversionGoal, date, hour, spark)
@@ -95,15 +95,17 @@ object OcpcSuggestCPA {
       .join(aucData, Seq("unitid"), "left_outer")
       .join(ocpcFlag, Seq("unitid"), "left_outer")
       .join(prevData, Seq("unitid"), "left_outer")
-      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue", "auc", "is_ocpc", "pcoc1", "pcoc2")
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue_new","cal_bid_new", "auc", "is_ocpc", "pcoc1", "pcoc2")
       .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
-      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
+      .withColumn("cal_bid", col("cal_bid_new"))
+      .withColumn("kvalue",col("kvalue_new"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < 10, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(substring(col("adclass"),1,6) === "110110",1).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(substring(col("adclass"),1,6) isin ("110110","118106","110111"),1).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("adclass") === 130104101,1).otherwise(col("is_recommend")))
       .withColumn("zerobid_percent", lit(0.0))
       .withColumn("bottom_halfbid_percent", lit(0.0))
       .withColumn("top_halfbid_percent", lit(0.0))
