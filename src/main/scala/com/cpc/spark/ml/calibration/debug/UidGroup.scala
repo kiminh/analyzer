@@ -16,7 +16,7 @@ object UidGroup {
     val b = "qwertyuiop"
     var a = stringHash32(b,79)
     if(a<0){
-      a += scala.math.pow(2,32)
+      a += scala.math.pow(2,32).toInt
     }
     println(a,b)
 
