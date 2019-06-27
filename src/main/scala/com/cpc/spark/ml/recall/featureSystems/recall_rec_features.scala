@@ -62,7 +62,7 @@ object recall_rec_features {
             null
           } else {
             //Take only primitive features
-            for (index <- 0 until featuregroups.length-1){
+            for (index <- 0 until 1){
               val features = featuregroups(index).split(" ")
               features.foreach {
                 feature =>
