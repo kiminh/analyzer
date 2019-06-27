@@ -13,8 +13,12 @@ import com.cpc.spark.common.Murmur3Hash.stringHash32
 object UidGroup {
   def main(args: Array[String]): Unit = {
 
-    val a = "qwertyuiop"
-    val b = stringHash32(a,79)
+    val b = "qwertyuiop"
+    var a = stringHash32(b,79)
+    if(a<0){
+      a += 2^32
+    }
+    a
     println(a,b)
 
 //      val date = args(0)
