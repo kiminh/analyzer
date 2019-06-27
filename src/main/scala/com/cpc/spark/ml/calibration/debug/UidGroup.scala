@@ -13,41 +13,38 @@ import com.cpc.spark.common.Murmur3Hash.stringHash32
 object UidGroup {
   def main(args: Array[String]): Unit = {
 
-    val b = "qwertyuiop"
-    var a = stringHash32(b,79).toDouble
-    if(a<0){
-      a += scala.math.pow(2,32)
-    }
-    println(a,b)
+      val date = args(0)
 
-//      val date = args(0)
-//      val hour = args(1)
-//
-//          val spark = SparkSession.builder()
-//            .appName(s"midu_userprofile")
-//            .enableHiveSupport()
-//            .getOrCreate()
-//
-//      val sql =
-//          s"""
-//             |select
-//             |  distinct uid
-//             |from dl_cpc.cpc_novel_union_events
-//             | where day = '$date' and hour = '$hour'
-//           """.stripMargin
-//
-//        println(sql)
-//      val allusers = spark.sql(sql)
-//      println("alluser:%d".format(allusers.count()))
+          val spark = SparkSession.builder()
+            .appName(s"midu_userprofile")
+            .enableHiveSupport()
+            .getOrCreate()
+
+      val sql =
+          s"""
+             |select distinct uid, from_unixtime(unix_timestamp(day,'yyyy-mm-dd'),'yyyymmdd') as dt
+             |    from
+             |      dl_cpc.cpc_basedata_union_events
+             |    where
+             |      day = '$date'
+             |      and media_appsid in ('80000001', '80000002')
+           """.stripMargin
+    println(sql)
+      val data= spark.sql(sql)
+        .withColumn("hashuid",hash(concat(col("uid"),col("dt"))))
+        .withColumn("num",col("hashuid")%1000)
+        .withColumn("label",when(col("num")>990,lit(1)).otherwise(lit(0)))
+
+    data.write.mode("overwrite").saveAsTable("test.wy_uid_label")
 
 
   }
 
   def hash= udf {
     x:String => {
-      var a = stringHash32(x,79)
+      var a = stringHash32(x,79).toDouble
       if(a<0){
-        a += 2^32
+        a += scala.math.pow(2,32)
       }
        a
     }
