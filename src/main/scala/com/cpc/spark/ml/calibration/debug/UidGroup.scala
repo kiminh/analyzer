@@ -15,8 +15,7 @@ object UidGroup {
 
     val a = "qwertyuiop"
     val b = stringHash32(a,79)
-    val c = getUint32(b)
-    println(a,b,c)
+    println(a,b)
 
 //      val date = args(0)
 //      val hour = args(1)
@@ -52,9 +51,13 @@ object UidGroup {
 
   }
 
-  def getUint32(l: Long): Long = l & 0x00000000ffffffff
-
   def hash= udf {
-    x:String => stringHash32(x,79)
+    x:String => {
+      var a = stringHash32(x,79)
+      if(a<0){
+        a += 2^32
+      }
+       a
+    }
   }
 }
