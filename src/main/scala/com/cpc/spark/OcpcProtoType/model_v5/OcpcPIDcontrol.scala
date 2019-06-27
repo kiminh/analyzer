@@ -36,12 +36,12 @@ object OcpcPIDcontrol {
 
     val data = errorData
       .join(prevError, Seq("unitid"), "left_outer")
-      .select("unitid", "current_error", "prev_error", "last_error")
+      .select("unitid", "current_error", "prev_error", "last_error", "prev_cali")
 
     val result = calculatePID(data, kp, ki, kd, date, hour, spark)
 
     val resultDF = result
-      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment")
+      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -49,21 +49,33 @@ object OcpcPIDcontrol {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly_v2")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly_v2")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_cali_data_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_cali_data_hourly")
   }
 
   def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
     val result = baseData
       .na.fill(0, Seq("current_error", "prev_error", "last_error"))
-      .withColumn("increment", udfCalculatePID(kp, ki, kd)(col("current_error"), col("prev_error"), col("last_error")))
+      .withColumn("increment_value", udfCalculatePID(kp, ki, kd)(col("current_error"), col("prev_error"), col("last_error")))
       .withColumn("kp", lit(kp))
       .withColumn("ki", lit(ki))
       .withColumn("kd", lit(kd))
-      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment")
+      .withColumn("current_calivalue", udfUpdateCali()(col("increment_value"), col("prev_cali")))
+      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue")
 
     result
   }
+
+  def udfUpdateCali() = udf((increment: Double, prevCali: Double) => {
+    var currentCali = prevCali + increment
+    if (currentCali < 0.2) {
+      currentCali = 0.2
+    }
+    if (currentCali > 2.0) {
+      currentCali = 2.0
+    }
+    currentCali
+  })
 
   def udfCalculatePID(kp: Double, ki: Double, kd: Double) = udf((currentError: Double, prevError: Double, lastError: Double) => {
     var result = kp * (currentError - prevError) + ki * currentError + kd * (currentError - 2.0 * prevError + lastError)
@@ -90,9 +102,10 @@ object OcpcPIDcontrol {
          |SELECT
          |  unitid,
          |  current_error as error1,
-         |  prev_error as error2
+         |  prev_error as error2,
+         |  current_calivalue as prev_cali
          |FROM
-         |  dl_cpc.ocpc_pid_error_data_hourly
+         |  dl_cpc.ocpc_pid_cali_data_hourly
          |WHERE
          |  `date` = '$date1'
          |AND
