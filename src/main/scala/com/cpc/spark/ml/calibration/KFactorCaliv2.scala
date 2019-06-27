@@ -16,8 +16,8 @@ object KFactorCaliv2 {
 
     // parse and process input
 
-    val k = 1.8
-    val calimodel = "qtt-cvr-dnn-rawid_v1nohour"
+    val k = 0.75
+    val calimodel = "novel-cvr-dnn-rawid-v9"
     val irModel = IRModel(
       boundaries = Seq(0.0, 1.0),
       predictions = Seq(0.0, k)
