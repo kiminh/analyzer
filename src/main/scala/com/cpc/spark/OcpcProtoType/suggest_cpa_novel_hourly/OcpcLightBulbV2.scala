@@ -67,13 +67,13 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+//
+//    resultDF
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
   }
 
 
@@ -198,7 +198,7 @@ object OcpcLightBulbV2{
         val passwd = conf.getString("adv_read_mysql.new_deploy.password")
         val driver = conf.getString("adv_read_mysql.new_deploy.driver_mysql")
         val table = s"(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status " +
-          s"from adv.unit where ideas is not null and adslot_type in (1, 2) and (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204))) as tmp"
+          s"from adv.unit where ideas is not null and adslot_type in (1, 2) and (target_medias ='80001098,80001292,80001539,80002480,80001011,80004786,80004787' or media_class in (201,202,203,204))) as tmp"
 
         val data = spark.read.format("jdbc")
           .option("url", url)
