@@ -237,6 +237,7 @@ object OcpcDailyFunnelIndustry {
          |    is_ocpc,
          |    ocpc_log,
          |    industry,
+         |    media,
          |    is_api_callback,
          |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
          |          when industry = 'elds' then 3
