@@ -16,9 +16,8 @@ object UidGroup {
     val b = "qwertyuiop"
     var a = stringHash32(b,79)
     if(a<0){
-      a += 2^32
+      a += scala.math.pow(2,32)
     }
-    a
     println(a,b)
 
 //      val date = args(0)
