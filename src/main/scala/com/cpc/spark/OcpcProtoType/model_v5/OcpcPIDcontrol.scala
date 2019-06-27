@@ -46,8 +46,8 @@ object OcpcPIDcontrol {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pid_error_data_hourly")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_error_data_hourly")
   }
 
   def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
@@ -167,6 +167,7 @@ object OcpcPIDcontrol {
          |  isshow,
          |  isclick,
          |  price,
+         |  bid
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  conversion_goal,
