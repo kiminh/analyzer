@@ -33,6 +33,7 @@ object SnapshotAnalysis {
           val searchid = r.getAs[String]("searchid")
           val ideaid = r.getAs[Long]("ideaid")
           val adslotid = r.getAs[String]("adslotid")
+          val unitid = r.getAs[String]("unitid")
           val content = r.getAs[Array[Byte]]("decode_content")
           val contentvalue = new FeatureStore().mergeFrom(CodedInputStream.newInstance(content)).features
           var key = ""
