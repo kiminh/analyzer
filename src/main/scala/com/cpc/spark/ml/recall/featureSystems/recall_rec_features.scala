@@ -45,14 +45,6 @@ object recall_rec_features {
         val lineArray = r.split(" ", 5)
         (lineArray(2) + lineArray(3), r)
     }
-    print("-------------------------------read_rdd-------------------------------")
-    read_rdd.take(10)
-    print("-------------------------------exposed_result-------------------------------")
-    exposed_result.take(10)
-    print("-------------------------------feature_rdd-------------------------------")
-    feature_rdd.take(10)
-    print("-------------------------------test1-------------------------------")
-    exposed_result.leftOuterJoin(read_rdd).join(feature_rdd).take(10)
     val result = exposed_result.leftOuterJoin(read_rdd).join(feature_rdd).map{
       r =>
         val isclick = if(r._2._1._2.isDefined) {1} else 0
@@ -66,7 +58,7 @@ object recall_rec_features {
           null
         } else {
           val featuregroups = lineArray(9).split(";")
-          if (featuregroups.length != 2){
+          if (featuregroups.length > 2){
             null
           } else {
             //Take only primitive features
