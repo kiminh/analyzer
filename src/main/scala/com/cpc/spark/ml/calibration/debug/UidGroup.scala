@@ -37,7 +37,7 @@ object UidGroup {
 
     data.show(10)
 
-    data.write.mode("overwrite").saveAsTable("test.wy_uid_label")
+    data.write.mode("overwrite").insertInto("test.wy_uid_label")
 
 
   }
