@@ -64,12 +64,12 @@ object OcpcPIDerror {
   }
 
   def udfCalculatePID(kp: Double, ki: Double, kd: Double) = udf((currentError: Double, prevError: Double, lastError: Double) => {
-    var result = 0.0
-    if (currentError == 0 || prevError == 0 || lastError == 0) {
-      result = 0.0
-    } else {
-      result = kp * (currentError - prevError) + ki * currentError + kd * (currentError - 2.0 * prevError + lastError)
-    }
+    var result = kp * (currentError - prevError) + ki * currentError + kd * (currentError - 2.0 * prevError + lastError)
+//    if (currentError == 0 || prevError == 0 || lastError == 0) {
+//      result = 0.0
+//    } else {
+//      result = kp * (currentError - prevError) + ki * currentError + kd * (currentError - 2.0 * prevError + lastError)
+//    }
     result
   })
 
