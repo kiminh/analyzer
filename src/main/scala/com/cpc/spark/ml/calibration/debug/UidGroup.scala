@@ -33,7 +33,9 @@ object UidGroup {
       val data= spark.sql(sql)
         .withColumn("hashuid",hash(concat(col("uid"),col("dt"))))
         .withColumn("num",col("hashuid")%1000)
-        .withColumn("label",when(col("num")>990,lit(1)).otherwise(lit(0)))
+        .withColumn("label",when(col("num")>950,lit(1)).otherwise(lit(0)))
+
+    data.show(10)
 
     data.write.mode("overwrite").saveAsTable("test.wy_uid_label")
 
