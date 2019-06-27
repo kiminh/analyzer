@@ -24,11 +24,11 @@ object OcpcPIDcontrol {
     val kp = args(7).toDouble
     val ki = args(8).toDouble
     val kd = args(9).toDouble
+    val expTag = args(10).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, media=$media, version=$version, conversionGoal=$conversionGoal, sampleHour=$sampleHour, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd")
-    val expTag = args(10).toString
+    println(s"date=$date, hour=$hour, media=$media, version=$version, conversionGoal=$conversionGoal, sampleHour=$sampleHour, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd, exptag=$expTag")
 
     val baseData = getBaseData(media, sampleHour, conversionGoal, date, hour, spark)
     val errorData = calculateError(baseData, minCV, date, hour, spark)
