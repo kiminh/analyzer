@@ -41,7 +41,7 @@ object SnapshotAnalysis {
           var i = 0
           var raw_cvr = 0
           var postcali_cvr = 0
-          var expvalue = 0
+          var exp_cvr = 0
           var model = ""
           var adclass = ""
           while (i < contentvalue.size){
@@ -60,7 +60,7 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_expvalue")
             {
-              expvalue = contentvalue(i).intList.get(0)
+              exp_cvr = contentvalue(i).intList.get(0)
             }
             else if (name == "snapshot_user_req_ad_num")
             {
@@ -80,12 +80,12 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
-        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
-         .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
+          (searchid,postcali_cvr,key,md5,exp_cvr,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
+        }).toDF("searchid","postcali_cvr","key","md5","exp_cvr","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
+         .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.write.mode("overwrite").saveAsTable("test.wy00")
+      data.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {
