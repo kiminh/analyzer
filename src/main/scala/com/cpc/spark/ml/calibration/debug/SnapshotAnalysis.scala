@@ -14,16 +14,16 @@ import mlmodel.mlmodel.{Feature, FeatureStore}
 object SnapshotAnalysis {
     def main(args: Array[String]): Unit = {
       val date = args(0)
-      val hour = args(1)
+//      val hour = args(1)
       val spark = SparkSession.builder()
-          .appName(s"Snapshot Analysis date = $date and hour = $hour")
+          .appName(s"Snapshot Analysis date = $date")
           .enableHiveSupport()
           .getOrCreate()
       import spark.implicits._
 
         val sql =
             s"""
-               |select * from dl_cpc.cpc_snapshot where dt = '$date' and hour = '$hour' and pt = 'qtt-cvr'
+               |select * from dl_cpc.cpc_snapshot where dt = '$date' and pt = 'qtt-cvr'
              """.stripMargin
 
         println(sql)
@@ -31,6 +31,8 @@ object SnapshotAnalysis {
           .withColumn("decode_content",decode(col("content")))
           .rdd.map(r=>{
           val searchid = r.getAs[String]("searchid")
+          val dt = r.getAs[String]("dt")
+          val hour = r.getAs[String]("hour")
           val ideaid = r.getAs[Long]("ideaid")
           val adslotid = r.getAs[String]("adslotid")
           val content = r.getAs[Array[Byte]]("decode_content")
@@ -85,12 +87,12 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_cvr,unitid,key,md5,exp_cvr,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
-        }).toDF("searchid","postcali_cvr","unitid","key","md5","exp_cvr","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
+          (searchid,postcali_cvr,dt,hour,model)
+        }).toDF("searchid","postcali_cvr","dt","hour","model")
          .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
+      data.repartition(1000).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {
