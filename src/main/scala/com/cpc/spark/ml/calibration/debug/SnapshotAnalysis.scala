@@ -87,12 +87,12 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_cvr,dt,hour,model)
-        }).toDF("searchid","postcali_cvr","dt","hour","model")
+          (searchid,postcali_cvr,model,dt,hour)
+        }).toDF("searchid","postcali_cvr","model","dt","hour")
          .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.repartition(1000).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
+      data.repartition(100).write.mode("overwrite").insertInto("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {
