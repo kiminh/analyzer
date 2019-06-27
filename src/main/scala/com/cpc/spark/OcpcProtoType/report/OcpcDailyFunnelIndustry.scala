@@ -36,17 +36,17 @@ object OcpcDailyFunnelIndustry {
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily_v2")
 
-
-    val data2 = calculateCnt(rawData, date, hour, spark)
-    val result2 = data2
-      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
-      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
-      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
-
-    result2
-      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+//
+//    val data2 = calculateCnt(rawData, date, hour, spark)
+//    val result2 = data2
+//      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
+//      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
+//      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
+//
+//    result2
+//      .repartition(1)
+////      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
