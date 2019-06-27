@@ -14,9 +14,9 @@ object UidGroup {
   def main(args: Array[String]): Unit = {
 
     val b = "qwertyuiop"
-    var a = stringHash32(b,79)
+    var a = stringHash32(b,79).toDouble
     if(a<0){
-      a += scala.math.pow(2,32).toInt
+      a += scala.math.pow(2,32)
     }
     println(a,b)
 
@@ -39,18 +39,7 @@ object UidGroup {
 //        println(sql)
 //      val allusers = spark.sql(sql)
 //      println("alluser:%d".format(allusers.count()))
-//
-//      val dataDF=allusers
-//        .withColumn("hashuid",hash(col("uid")))
-//        .withColumn("label",col("hashuid")%500)
-//        .filter("label>399")
-//        .select("uid")
-//        .withColumn("flag", lit(1))
-//      println("alluser:%d".format(dataDF.count()))
-//      dataDF.show(20)
-//
-//      val dataRDD2 = allusers.join(dataDF,Seq("uid"),"left")
-//        .rdd.map(x => (x.getAs[String](0), x.getAs[Int](1)))
+
 
   }
 
