@@ -85,7 +85,7 @@ object SnapshotAnalysis {
          .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
+      data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {
