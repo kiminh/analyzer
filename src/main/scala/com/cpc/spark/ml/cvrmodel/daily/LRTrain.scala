@@ -202,10 +202,10 @@ object LRTrain {
 
     train(
       spark,
-      "ctrparser4",
-      "qtt-bs-cvrparser4-daily",
+      "cvrparser5",
+      "qtt-bs-cvrparser5-daily",
       allData,
-      "qtt-bs-cvrparser4-daily.lrm",
+      "qtt-bs-cvrparser5-daily.lrm",
       1e8
     )
 

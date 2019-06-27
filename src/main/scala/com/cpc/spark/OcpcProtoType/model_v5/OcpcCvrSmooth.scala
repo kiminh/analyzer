@@ -10,6 +10,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable.ListBuffer
 
+@deprecated
 object OcpcCvrSmooth {
   def main(args: Array[String]): Unit = {
     /*
