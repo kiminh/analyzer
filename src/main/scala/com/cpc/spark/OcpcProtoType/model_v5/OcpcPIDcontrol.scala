@@ -37,6 +37,8 @@ object OcpcPIDcontrol {
     val data = errorData
       .join(prevError, Seq("unitid"), "left_outer")
       .select("unitid", "current_error", "prev_error", "last_error", "prev_cali")
+      .na.fill(1.0, Seq("prev_cali"))
+      .na.fill(0.0, Seq("prev_error", "last_error"))
 
     val result = calculatePID(data, kp, ki, kd, date, hour, spark)
 
