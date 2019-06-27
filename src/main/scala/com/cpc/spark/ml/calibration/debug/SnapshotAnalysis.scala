@@ -81,12 +81,12 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_cvr,key,md5,exp_cvr,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
-        }).toDF("searchid","postcali_cvr","key","md5","exp_cvr","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
+          (searchid,postcali_cvr,unitid,key,md5,exp_cvr,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
+        }).toDF("searchid","postcali_cvr","unitid","key","md5","exp_cvr","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
          .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.snapshot_analysis")
+      data.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {
