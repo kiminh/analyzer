@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_funnel_data_industry_daily
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_funnel_data_industry_daily_v2
 (
     unitid                  int,
     planid                  int,
@@ -19,15 +19,12 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_funnel_data_industry_daily
     hidden_show             bigint,
     hidden_cv               bigint,
     hidden_cost             double,
-    budget                  double
+    budget                  double,
+    adslot_type             int,
+    site_type               string,
+    media                   string
 )
 PARTITIONED by (industry string, `date` string)
 STORED as PARQUET;
 
 
-
---alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (adslot_type int);
---alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (site_type string);
-
---adslot_type             int
---site_type               string
