@@ -21,14 +21,14 @@ object recall_rec_features {
     val cal1 = Calendar.getInstance()
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd H").parse(s"$curday" + s" " + s"$hour"))
     cal1.add(Calendar.HOUR, 1)
-    val dayOneHourAgo = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    val oneHourAgo = new SimpleDateFormat("H").format(cal1.getTime)
+    val dayOneHourLater = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    val oneHourLater = new SimpleDateFormat("H").format(cal1.getTime)
 
     import spark.implicits._
     val rawData = spark.sparkContext.textFile(s"hdfs://emr-cluster2ns2/user/rec/$curday/$hour/")
-    val expose_file = s"hdfs://emr-cluster/warehouse/algo_qukan.db/user_docid_exposed_byhour/{day=$dayOneHourAgo,day=$curday}/{hour=$oneHourAgo,hour=$hour}/*"
+    val expose_file = s"hdfs://emr-cluster/warehouse/algo_qukan.db/user_docid_exposed_byhour/{day=$dayOneHourLater,day=$curday}/{hour=$oneHourLater,hour=$hour}/*"
     val exposed_rdd = spark.sparkContext.textFile(expose_file)
-    val read_file = s"hdfs://emr-cluster2/gobblin/source/lechuan/qukan/qukan_log_v4/{$dayOneHourAgo,$curday}/{$oneHourAgo,$hour}/300/*"
+    val read_file = s"hdfs://emr-cluster2/gobblin/source/lechuan/qukan/qukan_log_v4/{$dayOneHourLater,$curday}/{$oneHourLater,$hour}/300/*"
     val read_rdd = spark.read.parquet(read_file).select($"cookie_id", $"field.content_id.string_type".alias("did")).rdd.map{
       r =>
         val uid = r.getAs[String]("cookie_id")
