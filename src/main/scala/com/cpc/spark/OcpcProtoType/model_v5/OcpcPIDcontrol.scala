@@ -34,16 +34,16 @@ object OcpcPIDcontrol {
     println(s"date=$date, hour=$hour, media=$media, version=$version, conversionGoal=$conversionGoal, sampleHour=$sampleHour, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd, exptag=$expTag")
 
     val baseData = getBaseData(media, sampleHour, conversionGoal, date, hour, spark)
-    val errorData = calculateError(baseData, minCV, date, hour, spark)
+    val errorData = calculateError(baseData, date, hour, spark)
     val prevError = getPrevData(sampleHour, conversionGoal, expTag, isHidden, version, date, hour, spark)
 
     val data = errorData
       .join(prevError, Seq("unitid"), "left_outer")
-      .select("unitid", "current_error", "prev_error", "last_error", "online_cali", "prev_cali")
+      .select("unitid", "current_error", "prev_error", "last_error", "online_cali", "prev_cali", "cv")
       .na.fill(1.0, Seq("prev_cali"))
       .na.fill(0.0, Seq("prev_error", "last_error"))
 
-    val pidData = calculatePID(data, kp, ki, kd, date, hour, spark)
+    val pidData = calculatePID(data, kp, ki, kd, minCV, date, hour, spark)
 
     val pidResult = pidData
       .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue")
@@ -110,26 +110,32 @@ object OcpcPIDcontrol {
     result
   })
 
-  def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, date: String, hour: String, spark: SparkSession) = {
+  def calculatePID(baseData: DataFrame, kp: Double, ki: Double, kd: Double, minCV: Int, date: String, hour: String, spark: SparkSession) = {
     val result = baseData
       .na.fill(0, Seq("current_error", "prev_error", "last_error"))
       .withColumn("increment_value", udfCalculatePID(kp, ki, kd)(col("current_error"), col("prev_error"), col("last_error")))
       .withColumn("kp", lit(kp))
       .withColumn("ki", lit(ki))
       .withColumn("kd", lit(kd))
-      .withColumn("current_calivalue", udfUpdateCali()(col("increment_value"), col("online_cali")))
-      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue")
+      .withColumn("current_calivalue", udfUpdateCali(minCV)(col("increment_value"), col("online_cali"), col("cv")))
+      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue", "cv")
+
+    // todo delete temparte table
+    result.repartition(10).write.mode("overwrite").saveAsTable("test.check_pid_data_correct20190628")
 
     result
   }
 
-  def udfUpdateCali() = udf((increment: Double, prevCali: Double) => {
+  def udfUpdateCali(minCV: Int) = udf((increment: Double, prevCali: Double, cv: Int) => {
     var currentCali = prevCali + increment
     if (currentCali < 0.2) {
       currentCali = 0.2
     }
     if (currentCali > 2.0) {
       currentCali = 2.0
+    }
+    if (cv < minCV) {
+      currentCali = prevCali
     }
     currentCali
   })
@@ -185,7 +191,7 @@ object OcpcPIDcontrol {
     data
   }
 
-  def calculateError(baseData: DataFrame, minCV: Int, date: String, hour: String, spark: SparkSession) = {
+  def calculateError(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest1 =
       s"""
