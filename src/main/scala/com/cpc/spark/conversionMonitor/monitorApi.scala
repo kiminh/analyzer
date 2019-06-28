@@ -21,7 +21,8 @@ object monitorApi {
 
     var message = ""
 
-    if (cnt3 != cnt4) {
+    val cntDiffPercent = (cnt3.toDouble - cnt4.toDouble) / cnt3.toDouble
+    if (cntDiffPercent < 0 || cntDiffPercent > 0.15) {
       message = message + "v4 abnormal\n"
     }
     if (cnt3 != cnt5) {
