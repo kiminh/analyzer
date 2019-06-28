@@ -87,7 +87,7 @@ object MultiDimensionCalibOnQttCvrV2 {
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
-    val clickData = session.sql(clicksql).filter("exp_cvr_type in ('cvr1','cvr2')")
+    val clickData = session.sql(clicksql).filter("exp_cvr_type = 'cvr1'")
     val cvrsql =s"""
                  |select distinct a.searchid,
                  |       a.conversion_target as unit_target,
@@ -117,7 +117,7 @@ object MultiDimensionCalibOnQttCvrV2 {
       .first().getAs[Double]("k")
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k)
+      predictions = Seq(0.0,k*1.05)
     )
     println(s"k is: $k")
     val caliconfig = CalibrationConfig(
