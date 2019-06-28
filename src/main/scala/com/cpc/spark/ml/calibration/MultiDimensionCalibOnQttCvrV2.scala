@@ -117,7 +117,7 @@ object MultiDimensionCalibOnQttCvrV2 {
       .first().getAs[Double]("k")
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k*1.05)
+      predictions = Seq(0.0,k*1.1)
     )
     println(s"k is: $k")
     val caliconfig = CalibrationConfig(
