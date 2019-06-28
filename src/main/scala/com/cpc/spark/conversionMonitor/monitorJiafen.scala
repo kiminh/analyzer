@@ -1,13 +1,11 @@
 package com.cpc.spark.conversionMonitor
 
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import com.github.jurajburian.mailer.{Content, Mailer, Message, SessionFactory, SmtpAddress}
+import com.github.jurajburian.mailer._
 import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.SparkSession
 
-object monitorSiteform {
+object monitorJiafen {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -49,8 +47,8 @@ object monitorSiteform {
          |from dl_cpc.ml_cvr_feature_v1
          |lateral view explode(cvr_list) b as a
          |where `date` = '$date' and `hour` = '$hour'
-         |and access_channel="site"
-         |and a in ('ctsite_form', 'site_form')
+         |and access_channel="sdk"
+         |and a = 'sdk_site_wz'
          |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)
@@ -72,7 +70,7 @@ object monitorSiteform {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target,'site_form')
+         |    array_contains(conversion_target,'sdk_site_wz')
          |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)
@@ -94,7 +92,7 @@ object monitorSiteform {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target,'site_form')
+         |    array_contains(conversion_target,'sdk_site_wz')
          |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)

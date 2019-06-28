@@ -43,10 +43,12 @@ object monitorApi {
     val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid
          |from dl_cpc.ml_cvr_feature_v2
          |where `date` = '$date'
          |and label = 1
+         |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest).count()
@@ -58,13 +60,15 @@ object monitorApi {
     val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid
          |from
          |    dl_cpc.dm_conversions_for_model
          |where
          |    day='$date'
          |and
          |    array_contains(conversion_target,'api')
+         |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest).count()
@@ -76,13 +80,15 @@ object monitorApi {
     val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid
          |from
          |    dl_cpc.cpc_conversion
          |where
          |    day='$date'
          |and
          |    array_contains(conversion_target,'api')
+         |group by searchid, ideaid
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest).count()
