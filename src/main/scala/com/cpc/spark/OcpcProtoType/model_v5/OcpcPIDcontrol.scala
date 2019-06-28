@@ -39,7 +39,7 @@ object OcpcPIDcontrol {
 
     val data = errorData
       .join(prevError, Seq("unitid"), "left_outer")
-      .select("unitid", "current_error", "prev_error", "last_error", "prev_cali")
+      .select("unitid", "current_error", "prev_error", "last_error", "online_cali", "prev_cali")
       .na.fill(1.0, Seq("prev_cali"))
       .na.fill(0.0, Seq("prev_error", "last_error"))
 
@@ -96,8 +96,8 @@ object OcpcPIDcontrol {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").saveAsTable("test.ocpc_param_calibration_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
     println("successfully save data into hive")
@@ -117,7 +117,7 @@ object OcpcPIDcontrol {
       .withColumn("kp", lit(kp))
       .withColumn("ki", lit(ki))
       .withColumn("kd", lit(kd))
-      .withColumn("current_calivalue", udfUpdateCali()(col("increment_value"), col("prev_cali")))
+      .withColumn("current_calivalue", udfUpdateCali()(col("increment_value"), col("online_cali")))
       .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue")
 
     result
@@ -193,6 +193,7 @@ object OcpcPIDcontrol {
          |  unitid,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpareal,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven,
+         |  sum(case when isclick=1 then cali_value else 0 end) * 1.0 / sum(isclick) as online_cali,
          |  sum(iscvr) as cv
          |FROM
          |  base_data
@@ -201,8 +202,7 @@ object OcpcPIDcontrol {
     val data = spark.sql(sqlRequest1)
 
     val currentError = data
-      .filter(s"cv >= $minCV")
-      .select("unitid", "cpareal", "cpagiven", "cv")
+      .select("unitid", "cpareal", "cpagiven", "cv", "online_cali")
       .withColumn("current_error", udfCalculateError()(col("cpagiven"), col("cpareal")))
 
     currentError
@@ -246,6 +246,7 @@ object OcpcPIDcontrol {
          |  price,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  cast(ocpc_log_dict['cvrCalFactor'] as double) as cali_value,
          |  conversion_goal,
          |  hour
          |FROM
