@@ -118,7 +118,7 @@ object OcpcPIDcontrol {
       .withColumn("ki", lit(ki))
       .withColumn("kd", lit(kd))
       .withColumn("current_calivalue", udfUpdateCali(minCV)(col("increment_value"), col("online_cali"), col("cv")))
-      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue", "cv")
+      .select("unitid", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue", "cv", "online_cali")
 
     // todo delete temparte table
     result.repartition(10).write.mode("overwrite").saveAsTable("test.check_pid_data_correct20190628")
