@@ -45,7 +45,7 @@ object monitorApi {
          |select
          |    distinct searchid
          |from dl_cpc.ml_cvr_feature_v2
-         |where `date` = '$date' and `hour` = '$hour'
+         |where `date` = '$date'
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest).count()
@@ -62,8 +62,6 @@ object monitorApi {
          |    dl_cpc.dm_conversions_for_model
          |where
          |    day='$date'
-         |and
-         |    `hour` = '$hour'
          |and
          |    array_contains(conversion_target,'api')
        """.stripMargin
@@ -82,8 +80,6 @@ object monitorApi {
          |    dl_cpc.cpc_conversion
          |where
          |    day='$date'
-         |and
-         |    `hour` = '$hour'
          |and
          |    array_contains(conversion_target,'api')
        """.stripMargin
