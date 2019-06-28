@@ -38,7 +38,7 @@ object UidGroup {
 
     data.show(10)
 
-    data.write.mode("overwrite").saveAsTable("dl_cpc.cvr_mlcpp_uid_label")
+    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.cvr_mlcpp_uid_label")
 
 
   }
