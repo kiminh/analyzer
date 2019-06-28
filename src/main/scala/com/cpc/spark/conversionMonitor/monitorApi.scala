@@ -17,6 +17,7 @@ object monitorApi {
     val cnt3 = getDataV3(date, hour, spark)
     val cnt4 = getDataV3(date, hour, spark)
     val cnt5 = getDataV5(date, hour, spark)
+    println(s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5")
 
     var message = ""
 
