@@ -33,7 +33,7 @@ object monitorSiteform {
     receiver:+="wangjun02@qutoutiao.net"
     println(message)
     if (message != "") {
-      message += s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
+      message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
       sendMail(message, sub, receiver)
     }
 
