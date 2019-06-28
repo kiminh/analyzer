@@ -26,7 +26,7 @@ object monitorAppInstall {
     if (cnt3 != cnt5) {
       message = message + "v5 abnormal\n"
     }
-    val sub = "siteform conversion monitor warning!"
+    val sub = "app install conversion monitor warning!"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
     println(message)
