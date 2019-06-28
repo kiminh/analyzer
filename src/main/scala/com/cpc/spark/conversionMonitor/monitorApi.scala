@@ -46,6 +46,7 @@ object monitorApi {
          |    distinct searchid
          |from dl_cpc.ml_cvr_feature_v2
          |where `date` = '$date'
+         |and label = 1
        """.stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest).count()
