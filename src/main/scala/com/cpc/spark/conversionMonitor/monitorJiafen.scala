@@ -17,6 +17,7 @@ object monitorJiafen {
     val cnt3 = getDataV3(date, hour, spark)
     val cnt4 = getDataV3(date, hour, spark)
     val cnt5 = getDataV5(date, hour, spark)
+    println(s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5")
 
     var message = ""
 
@@ -29,6 +30,11 @@ object monitorJiafen {
     val sub = "jiafen conversion monitor warning!"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
+    receiver:+="hanzhengding@qutoutiao.net"
+    receiver:+="zhanghongyang@qutoutiao.net"
+    receiver:+="wangyao@qutoutiao.net"
+    receiver:+="dongjinbao@qutoutiao.net"
+    receiver:+="chuquanquan@qutoutiao.net"
     println(message)
     if (message != "") {
       message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
