@@ -104,7 +104,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     val cvrData = session.sql(cvrsql)
       .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
       .filter("iscvr = 1")
-      .select("searchid", "iscvr")
+      .select("searchid", "iscvr","ideaid")
     val log = clickData.join(cvrData,Seq("searchid","ideaid"),"left")
         .withColumn("isclick",col("iscvr"))
     log.show(10)
