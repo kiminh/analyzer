@@ -142,8 +142,10 @@ val sqlRequest2 =
      | ) b
      | on a.unitid=b.unitid
      |left join
-     |  (select searchid,ideaid from dl_cpc.dm_conversion_detail
-     |  where dt='$date' and industry in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as c
+     | (select distinct aa.searchid, aa.ideaid from dl_cpc.cpc_conversion aa join dl_cpc.dw_unitid_detail bb
+     |   on aa.unitid=bb.unitid and bb.day = '$date' and bb.conversion_target[0] not in ('none','site_uncertain')
+     |   and array_contains(aa.conversion_target,bb.conversion_target[0])
+     |   where aa.day = '$date') as c
      |on
      |  a.searchid=c.searchid and a.ideaid=c.ideaid
     """.stripMargin
