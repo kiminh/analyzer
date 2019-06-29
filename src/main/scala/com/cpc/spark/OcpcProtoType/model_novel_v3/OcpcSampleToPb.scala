@@ -155,7 +155,7 @@ object OcpcSampleToPb {
 
     //从adv后台mysql获取人群包的url
     val table=s"(select id as unitid FROM adv.unit " +
-      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204))) as tmp"
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011,80004786,80004787' or media_class in (201,202,203,204))) as tmp"
     val resultDF =  spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
