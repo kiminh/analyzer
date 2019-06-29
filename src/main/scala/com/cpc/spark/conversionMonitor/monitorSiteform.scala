@@ -23,11 +23,12 @@ object monitorSiteform {
 
     var message = ""
 
-    if (cnt3 != cnt4) {
+    var cntDiff = cnt4 - cnt3
+    if (cntDiff < 0 || cntDiff > 5) {
       message = message + "v4 abnormal\n"
     }
 
-    val cntDiff = cnt5 - cnt3
+    cntDiff = cnt5 - cnt3
     if (cntDiff < 0 || cntDiff > 5) {
       message = message + "v5 abnormal\n"
     }
