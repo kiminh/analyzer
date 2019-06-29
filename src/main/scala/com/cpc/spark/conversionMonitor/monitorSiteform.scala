@@ -26,7 +26,9 @@ object monitorSiteform {
     if (cnt3 != cnt4) {
       message = message + "v4 abnormal\n"
     }
-    if (cnt3 != cnt5) {
+
+    val cntDiff = cnt5 - cnt3
+    if (cntDiff < 0 || cntDiff > 5) {
       message = message + "v5 abnormal\n"
     }
     val sub = "siteform conversion monitor warning!"
