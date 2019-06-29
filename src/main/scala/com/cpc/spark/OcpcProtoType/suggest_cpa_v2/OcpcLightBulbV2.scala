@@ -31,9 +31,7 @@ object OcpcLightBulbV2{
       .enableHiveSupport().getOrCreate()
 
     // todo 修改表名
-//    val tableName = "dl_cpc.ocpc_light_control_version"
-    val tableName = "test.ocpc_qtt_light_control_v2"
-//    val tableName = "test.ocpc_qtt_light_control_version20190415"
+    val tableName = "dl_cpc.ocpc_light_control_version"
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
@@ -77,9 +75,6 @@ object OcpcLightBulbV2{
       .select("unitid", "conversion_goal", "cpa", "date", "version")
 //      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
-
-//    resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
@@ -240,10 +235,17 @@ object OcpcLightBulbV2{
   }
 
   def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver_mysql")
     val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")

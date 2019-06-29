@@ -1,14 +1,9 @@
 package com.cpc.spark.OcpcProtoType.report_novel
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.tools._
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyGeneralData._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 
 object OcpcHourlyGeneralDataV3 {

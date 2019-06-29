@@ -2,7 +2,9 @@ package com.cpc.spark.OcpcProtoType.model_novel_v3
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
@@ -96,7 +98,7 @@ object OcpcSuggestCPAV3 {
          |select distinct a.searchid,
          |        a.conversion_target as real_target,
          |        b.conversion_target[0] as unit_target
-         |from dl_cpc.dm_conversions_for_model a
+         |from dl_cpc.cpc_conversion a
          |join dl_cpc.dw_unitid_detail b
          |    on a.unitid=b.unitid
          |    and a.day = b.day
@@ -160,7 +162,7 @@ object OcpcSuggestCPAV3 {
         sum(col("iscvr")).alias("cvrcnt"),
         avg(col("real_bid")).alias("qtt_avgbid"))
       .withColumn("qtt_cpa",col("cost")/col("cvrcnt"))
-      .withColumn("maxbid",col("qtt_cpa"))
+      .withColumn("maxbid",col("qtt_avgbid"))
       .withColumn("alpha", col("qtt_cpa") * 1.0 / col("qtt_avgbid"))
       .filter("qtt_cpa is not null")
     qttCpa.createOrReplaceTempView("qtt_cpa_table")
@@ -195,10 +197,17 @@ object OcpcSuggestCPAV3 {
   }
 
   def getOcpcFlag(spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver_mysql")
     val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status, is_ocpc from adv.unit where is_ocpc = 1 and ideas is not null and ocpc_bid > 0) as tmp"
 
     val data = spark.read.format("jdbc")

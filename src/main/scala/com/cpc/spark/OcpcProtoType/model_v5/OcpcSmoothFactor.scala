@@ -30,10 +30,10 @@ object OcpcSmoothFactor{
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType")
 
-    OcpcSmoothFactor(date, hour, version, media, hourInt, cvrType, spark)
+    OcpcSmoothFactorMain(date, hour, version, media, hourInt, cvrType, spark)
   }
 
-  def OcpcSmoothFactor(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession): Unit = {
+  def OcpcSmoothFactorMain(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
@@ -44,27 +44,10 @@ object OcpcSmoothFactor{
     // 计算结果
     val result = calculateSmooth(baseData, spark)
 
-    var conversionGoal = 1
-    if (cvrType == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrType == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
     val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(finalVersion))
-
-    resultDF.show()
-
-    resultDF
-          .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190605")
+      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .filter(s"cv > 0")
 
     resultDF
   }
@@ -79,12 +62,13 @@ object OcpcSmoothFactor{
         sum(col("iscvr")).alias("cv"),
         avg(col("exp_cvr")).alias("pre_cvr"),
         sum(col("price")).alias("total_price"),
-        sum(col("bid")).alias("total_bid")
+        sum(col("bid")).alias("total_bid"),
+        countDistinct(col("hour")).alias("hour_cnt")
       )
-      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid")
+      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     val result = data
-        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid")
+        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     result
   }
@@ -94,6 +78,7 @@ object OcpcSmoothFactor{
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
+    val conversionGoal = conf.getString("cvr_type_map." + cvrType).toInt
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -119,7 +104,8 @@ object OcpcSmoothFactor{
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  cast(exp_cvr as double) as exp_cvr,
-         |  ocpc_log
+         |  ocpc_log,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -128,6 +114,10 @@ object OcpcSmoothFactor{
          |  $mediaSelection
          |AND
          |  isclick = 1
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -153,7 +143,7 @@ object OcpcSmoothFactor{
     // 数据关联
     val resultDF = clickData
       .join(cvData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid")
+      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
 
     resultDF
   }

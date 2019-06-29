@@ -1,11 +1,12 @@
 package com.cpc.spark.ml.dnn.retrieval
 
-import com.redis.RedisClient
+import com.cpc.spark.ml.dnn.Utils.CommonUtils
 import mlmodel.mlmodel.RetrievalEmbedding
 import org.apache.spark.sql.SparkSession
+import redis.clients.jedis.{HostAndPort, JedisCluster}
 
 object UserEmbeddingToRedis {
-  val hdfsDir = "/user/cpc/hzh/dssm/user-output/"
+  val hdfsDir = CommonUtils.HDFS_PREFIX_PATH + "/user/cpc/hzh/dssm/user-output/"
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dssm-user-embedding-upload")
@@ -14,11 +15,10 @@ object UserEmbeddingToRedis {
 
     val date = args(0)
     val data = spark.read.parquet(hdfsDir + date)
-    data.rdd.repartition(10).foreachPartition(
+    println("start write to redis")
+    data.rdd.repartition(100).foreachPartition(
       iterator => {
-        val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-        redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
-        redis.select(1)
+        val jedis = new JedisCluster(new HostAndPort("192.168.86.36", 7107))
         iterator.foreach(x => {
           val uid = x.getAs[Array[Byte]](64).map(_.toChar).mkString
           val embedding = new Array[Double](64)
@@ -30,9 +30,9 @@ object UserEmbeddingToRedis {
             size = 64,
             embeddings = embedding
           )
-          redis.setex("dssm-r-" + uid, 3600 * 24 * 30, embPb)
+          jedis.setex(("dssm-u-" + uid).getBytes(), 3600 * 24 * 30, embPb.toByteArray)
         })
-        redis.disconnect
+        jedis.close()
       }
     )
   }
