@@ -9,16 +9,12 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object OcpcChargeTotalV2 {
-  /*
-  v2版本赔付规则：
-  1. 支持重复赔付，赔付周期为7天
-  2. 支持二类电商和api回传的feedapp赔付
-  3. 仅限于趣头条媒体上的oCPC广告
-   */
   def main(args: Array[String]): Unit = {
     /*
-    根据最近七天有投放oCPC广告的广告单元各自的消费时间段的消费数据统计是否超成本和赔付数据
-    允许重复赔付
+    v2版本赔付数据
+    1. 仅包括在趣头条投放的oCPC广告
+    2. api-app和二类电商广告
+    3. 允许重复赔付，赔付周期为7天
      */
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -34,12 +30,16 @@ object OcpcChargeTotalV2 {
 
 
     val clickData = getClickData(date, media, dayCnt, spark)
-    val cvData = getCvData(date, dayCnt, spark)
+    val cv2Data = getCvData(date, 2, dayCnt, spark)
+    val cv3Data = getCvData(date, 3, dayCnt, spark)
     val cpcData = getCPCdata(date, media, dayCnt, spark)
 
     val data = clickData
-      .join(cvData, Seq("searchid"), "left_outer")
+      .join(cv2Data, Seq("searchid"), "left_outer")
+      .join(cv3Data, Seq("searchid"), "left_outer")
+      .na.fill(0, Seq("cvr2", "cvr3"))
       .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
+      .withColumn("iscvr", udfSelectCv()(col("conversion_goal"), col("cvr2"), col("cvr3")))
 
     val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
     payData.show(10)
@@ -67,6 +67,15 @@ object OcpcChargeTotalV2 {
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
+
+  def udfSelectCv() = udf((conversionGoal: Int, iscvr2: Int, iscvr3: Int) => {
+    var iscvr = conversionGoal match {
+      case 2 => iscvr2
+      case 3 => iscvr3
+      case _ => 0
+    }
+    iscvr
+  })
 
   def getCPCdata(date: String, media: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
@@ -159,6 +168,13 @@ object OcpcChargeTotalV2 {
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |  end) as industry,
          |  isclick,
          |  price,
          |  date,
@@ -173,13 +189,12 @@ object OcpcChargeTotalV2 {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
       .sql(sqlRequest1)
-      .filter(s"is_hidden = 0 and conversion_goal = 3")
+      .filter(s"is_hidden = 0")
+      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
 
     val costUnits = rawData
       .select("unitid")
@@ -252,72 +267,6 @@ object OcpcChargeTotalV2 {
     result
   })
 
-//  def udfCalculateCnt() = udf((prevCnt: Int, flag: Int) => {
-//    var currentCnt = prevCnt
-//    if (flag == 0) {
-//      currentCnt += 1
-//    }
-//    currentCnt
-//  })
-
-//  def getPayCnt(date: String, version: String, spark: SparkSession) = {
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, -1)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-//    val selectCondition = s"`date` = '$date1'"
-//
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  pay_cnt as prev_cnt
-//         |FROM
-//         |  dl_cpc.ocpc_pay_cnt_daily
-//         |WHERE
-//         |  $selectCondition
-//         |AND
-//         |  version = '$version'
-//       """.stripMargin
-//    println(sqlRequest)
-//    val data = spark.sql(sqlRequest)
-//
-//    data
-//  }
-
-//  def getPrevData(date: String, dayCnt: Int, version: String, spark: SparkSession) = {
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, -dayCnt)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-//    val selectCondition = s"`date` >= '$date1'"
-//
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  1 as flag
-//         |FROM
-//         |  dl_cpc.ocpc_pay_data_daily
-//         |WHERE
-//         |  $selectCondition
-//         |AND
-//         |  version = '$version'
-//       """.stripMargin
-//    println(sqlRequest)
-//    val data = spark.sql(sqlRequest).distinct()
-//
-//    data
-//  }
-
   def calculatePay(baseData: DataFrame, cpcData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -371,7 +320,7 @@ object OcpcChargeTotalV2 {
 
   }
 
-  def getCvData(date: String, dayCnt: Int, spark: SparkSession) = {
+  def getCvData(date: String, conversionGoal: Int, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -381,6 +330,7 @@ object OcpcChargeTotalV2 {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` >= '$date1'"
+    val cvrType = "cvr" + conversionGoal.toString
 
     val sqlRequest =
       s"""
@@ -392,10 +342,13 @@ object OcpcChargeTotalV2 {
          |WHERE
          |  $selectCondition
          |AND
-         |  cvr_goal = 'cvr3'
+         |  cvr_goal = '$cvrType'
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .withColumn(cvrType, col("iscvr"))
+        .select("searchid", cvrType)
 
     data
   }
@@ -427,6 +380,13 @@ object OcpcChargeTotalV2 {
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  (case
+         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |        when adclass in (110110100, 125100100) then "wzcp"
+         |        else "others"
+         |    end) as industry,
          |  isclick,
          |  price,
          |  date,
@@ -441,13 +401,12 @@ object OcpcChargeTotalV2 {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  (cast(adclass as string) like "134%" or cast(adclass as string) like "107%")
        """.stripMargin
     println(sqlRequest)
     val result = spark
       .sql(sqlRequest)
-      .filter(s"is_hidden = 0 and conversion_goal = 3")
+      .filter(s"is_hidden = 0")
+      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
 
 
     result.printSchema()
