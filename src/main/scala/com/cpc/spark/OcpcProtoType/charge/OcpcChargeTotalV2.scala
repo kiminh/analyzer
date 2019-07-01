@@ -54,7 +54,7 @@ object OcpcChargeTotalV2 {
 
     resultDF1
 //      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -65,7 +65,7 @@ object OcpcChargeTotalV2 {
 
     resultDF2
 //      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
 
   }
 
@@ -244,7 +244,7 @@ object OcpcChargeTotalV2 {
          |  pay_date prev_pay_date,
          |  (case when pay_date = '$date1' then 1 else 0 end) as flag
          |FROM
-         |  dl_cpc.ocpc_pay_cnt_daily
+         |  test.ocpc_pay_cnt_daily
          |WHERE
          |  `date` = '$date3'
          |AND
