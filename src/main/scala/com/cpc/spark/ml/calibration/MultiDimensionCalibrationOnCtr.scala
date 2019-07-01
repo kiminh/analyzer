@@ -12,7 +12,7 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object MultiDimensionCalibOnMiduV3 {
+object MultiDimensionCalibrationOnCtr {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
