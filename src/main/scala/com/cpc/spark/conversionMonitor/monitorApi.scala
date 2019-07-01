@@ -52,7 +52,7 @@ object monitorApi {
          |    searchid,
          |    ideaid
          |from dl_cpc.ml_cvr_feature_v2
-         |where `date` = '$date'
+         |where `date` = '$date' and `hour` = '$hour'
          |and label = 1
          |group by searchid, ideaid
        """.stripMargin
@@ -71,7 +71,7 @@ object monitorApi {
          |from
          |    dl_cpc.dm_conversions_for_model
          |where
-         |    day='$date'
+         |    day='$date' and `hour` = '$hour'
          |and
          |    array_contains(conversion_target,'api')
          |group by searchid, ideaid
@@ -91,7 +91,7 @@ object monitorApi {
          |from
          |    dl_cpc.cpc_conversion
          |where
-         |    day='$date'
+         |    day='$date' and `hour` = '$hour'
          |and
          |    array_contains(conversion_target,'api')
          |group by searchid, ideaid
