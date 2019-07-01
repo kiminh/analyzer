@@ -25,8 +25,8 @@ object KFactorCali {
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="qtt-list-dnn-rawid-v4-video-cali"
+    val model = args(3)
+    val calimodel = args(4)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
