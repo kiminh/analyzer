@@ -143,9 +143,9 @@ object MultiDimensionCalibOnQttCvrV2 {
     val data4 = log.join(group4,Seq("adclass"),"inner")
     val calimap4 = GroupToConfig(data4,session,model)
 
-    val calimap5 = TransferConfig(group3.filter("count3<=10000"),calimap4.toMap,session)
+//    val calimap5 = TransferConfig(group3.filter("count3<=10000"),calimap4.toMap,session)
 
-    val calimap = calimap3 ++ calimap5
+    val calimap = calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
