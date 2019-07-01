@@ -45,15 +45,15 @@ object OcpcChargeTotalV2 {
     payData.show(10)
 
     val resultDF1 = payData
-      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag")
+      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag", "ocpc_charge_time")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -63,8 +63,8 @@ object OcpcChargeTotalV2 {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -195,9 +195,31 @@ object OcpcChargeTotalV2 {
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
+      .select("searchid", "unitid", "timestamp", "date", "hour")
+      .distinct()
 
-    val costUnits = rawData
-      .select("unitid")
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  timestamp,
+         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
+         |  date,
+         |  hour,
+         |  row_number() over(partition by unitid order by timestamp) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+
+    val costUnits = spark
+      .sql(sqlRequest2)
+      .filter(s"seq = 1")
+      .select("unitid", "date", "hour", "timestamp", "ocpc_charge_time")
+      .select("unitid", "ocpc_charge_time")
       .distinct()
 
     // 抽取赔付周期表中当天开始赔付的单元
@@ -213,7 +235,7 @@ object OcpcChargeTotalV2 {
     println(s"yesterday is '$date3'")
     println(s"tomorrow is '$date2'")
 
-    val sqlRequest2 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -227,15 +249,15 @@ object OcpcChargeTotalV2 {
          |AND
          |  version = '$version'
        """.stripMargin
-    println(sqlRequest2)
-    val payUnits = spark.sql(sqlRequest2)
+    println(sqlRequest3)
+    val payUnits = spark.sql(sqlRequest3)
 
     // 数据关联并更新pay_cnt与pay_date:
     // 如果pay_cnt为空，则初始化为0，pay_date初始化为本赔付周期开始日期
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
-      .select("unitid", "prev_pay_cnt", "prev_pay_date", "flag")
+      .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
       .na.fill(1, Seq("flag"))
@@ -245,7 +267,7 @@ object OcpcChargeTotalV2 {
     data.show(10)
 
     val result = data
-      .select("unitid", "pay_cnt", "pay_date", "flag")
+      .select("unitid", "ocpc_charge_time", "pay_cnt", "pay_date", "flag")
 
     result
 
