@@ -344,3 +344,25 @@ iscvr int
 )
 PARTITIONED by (dt STRING, hour STRING)
 STORED as PARQUET;
+
+
+create table if not exists dl_cpc.snapshot_analysis
+(
+searchid string,
+postcali_cvr int,
+model string
+)
+PARTITIONED by (dt STRING, hour STRING)
+STORED as PARQUET;
+
+create table if not exists dl_cpc.cvr_mlcpp_uid_label
+(
+uid string,
+hashuid double,
+num double,
+label int
+)
+PARTITIONED by (dt STRING)
+STORED as PARQUET;
+
+

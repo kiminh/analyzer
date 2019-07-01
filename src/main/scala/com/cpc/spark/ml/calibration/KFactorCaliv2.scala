@@ -16,12 +16,13 @@ object KFactorCaliv2 {
 
     // parse and process input
 
-    val k = 0.75
-    val calimodel = "novel-cvr-dnn-rawid-v9"
+    val k = args(0).toDouble
+    val calimodel = args(1)
     val irModel = IRModel(
       boundaries = Seq(0.0, 1.0),
       predictions = Seq(0.0, k)
     )
+    println(s"calimodel is: $calimodel")
     println(s"k is: $k")
     val config = CalibrationConfig(
       name = calimodel,
