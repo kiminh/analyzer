@@ -45,6 +45,7 @@ object OcpcChargeTotalV2 {
     payData.show(10)
 
     val resultDF1 = payData
+      .join(unitidList, Seq("unitid"), "left_outer")
       .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag", "ocpc_charge_time")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
