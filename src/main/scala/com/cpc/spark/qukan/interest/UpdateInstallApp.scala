@@ -250,21 +250,24 @@ object UpdateInstallApp {
     result.foreach(println)
 
 
-    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
-        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+//    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
+//        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+//
+//    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
+//        .take(50).foreach(println)
+//
+//
+//    all_list.take(10).foreach(println)
+//    println(all_list.count())
+//    println(all_list.filter(x => x._2._4.length > 5).count())
+//    println(all_list.filter(x => x._2._4.length > 10).count())
+//    println(all_list.filter(x => x._2._3.size > 0).count())
 
-    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
-        .take(50).foreach(println)
-
-
-    all_list.take(10).foreach(println)
-    println(all_list.count())
-    println(all_list.filter(x => x._2._4.length > 5).count())
-    println(all_list.filter(x => x._2._4.length > 10).count())
-    println(all_list.filter(x => x._2._3.size > 0).count())
     all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
       .toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "app_name")
-      .coalesce(100).write.mode(SaveMode.Overwrite)
+      .repartition(100)
+      .write
+      .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/userInstalledApp/%s".format(date))
 
     val sql =

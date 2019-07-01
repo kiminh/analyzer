@@ -29,24 +29,24 @@ object OcpcDailyFunnelIndustry {
     val data1 = calculateBase(rawData, date, hour, spark)
 
     val result1 = data1
-      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "industry", "date")
+      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "media", "industry", "date")
 
     result1
       .repartition(5)
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily_v2")
 
-
-    val data2 = calculateCnt(rawData, date, hour, spark)
-    val result2 = data2
-      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
-      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
-      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
-
-    result2
-      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+//
+//    val data2 = calculateCnt(rawData, date, hour, spark)
+//    val result2 = data2
+//      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
+//      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
+//      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
+//
+//    result2
+//      .repartition(1)
+////      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
@@ -95,6 +95,7 @@ object OcpcDailyFunnelIndustry {
          |    industry,
          |    adslot_type,
          |    site_type,
+         |    media,
          |    sum(isclick) as click,
          |    sum(isshow) as show,
          |    sum(iscvr) as cv,
@@ -113,7 +114,7 @@ object OcpcDailyFunnelIndustry {
          |    sum(case when cpc_type = 'hidden_ocpc' and isclick=1 then price else 0 end) * 0.01 as hidden_cost
          |FROM
          |    base_data
-         |GROUP BY unitid, planid, userid, industry, adslot_type, site_type
+         |GROUP BY unitid, planid, userid, industry, adslot_type, site_type, media
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
@@ -145,7 +146,7 @@ object OcpcDailyFunnelIndustry {
     // 数据关联
     val data = data1
         .join(data2, Seq("planid"), "left_outer")
-        .select("unitid", "planid", "userid", "industry", "adslot_type", "site_type", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget")
+        .select("unitid", "planid", "userid", "industry", "adslot_type", "site_type", "media", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget")
         .withColumn("date", lit(date1))
 
     data
@@ -195,12 +196,17 @@ object OcpcDailyFunnelIndustry {
          |        when adclass in (110110100, 125100100) then "wzcp"
          |        else "others"
          |    end) as industry,
+         |    (case
+         |        when media_appsid in ('80000001', '80000002') then 'qtt'
+         |        when media_appsid in ('80001098', '80001292') then 'novel'
+         |        else 'hottopic'
+         |    end) as media,
          |    is_api_callback
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectCondition
-         |and $mediaSelection
+         |and media_appsid in ('80000001', '80000002', '80001098','80001292', '80002819')
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0
@@ -231,6 +237,7 @@ object OcpcDailyFunnelIndustry {
          |    is_ocpc,
          |    ocpc_log,
          |    industry,
+         |    media,
          |    is_api_callback,
          |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
          |          when industry = 'elds' then 3
