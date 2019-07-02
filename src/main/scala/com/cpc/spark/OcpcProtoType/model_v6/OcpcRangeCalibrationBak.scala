@@ -198,6 +198,7 @@ object OcpcRangeCalibrationBak {
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .join(data3, Seq("unitid", "conversion_goal"), "inner")
       .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
+      .withColumn("low_bid_factor", udfCalculateLowBidFactor(lowBidFactor)(col("calc_total"), col("calc_high"), col("calc_low")))
 
     data.show(10)
 
@@ -220,6 +221,14 @@ object OcpcRangeCalibrationBak {
 
     dataFinal
   }
+
+  def udfCalculateLowBidFactor(lowBidFactor: Double) = udf((calcTotal: Double, calcHigh: Double, calcLow: Double) => {
+    var result = 1.0 * (calcTotal - calcHigh) / calcLow
+    if (result < lowBidFactor) {
+      result = lowBidFactor
+    }
+    result
+  })
 
 //  def calculateData2(baseData: DataFrame, highBidFactor: Double, lowBidFactor: Double, date: String, hour: String, spark: SparkSession) = {
 //    /*
