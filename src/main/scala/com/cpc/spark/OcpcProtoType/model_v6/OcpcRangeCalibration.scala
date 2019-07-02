@@ -90,12 +90,12 @@ object OcpcRangeCalibration {
     val baseData2 = baseData
       .join(data1, Seq("unitid", "conversion_goal"), "inner")
 
-    val data2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
-//    val data2 = dataRaw2.cache()
-//    data2.show(10)
+    val dataRaw2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
+    val data2 = dataRaw2.cache()
+    data2.show(10)
 
     val resultDF = data1
-      .join(data2, Seq("unitid", "conversion_goal"), "inner")
+      .join(data2, Seq("unitid"), "inner")
       .withColumn("high_bid_factor", lit(highBidFactor))
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
@@ -118,7 +118,6 @@ object OcpcRangeCalibration {
          |SELECT
          |  searchid,
          |  unitid,
-         |  conversion_goal,
          |  bid,
          |  price,
          |  exp_cvr,
@@ -131,125 +130,72 @@ object OcpcRangeCalibration {
        """.stripMargin
     println(sqlRequest)
     val rawData = spark
-        .sql(sqlRequest)
-        .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
+      .sql(sqlRequest)
+      .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("unitid", "conversion_goal", "calc_total")
-//      .cache()
-//    data1.show(10)
-    data1.createOrReplaceTempView("calibration_data1")
-//    data1
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702a")
+      .select("unitid", "calc_total")
 
     val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "high"
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-      .select("unitid", "conversion_goal", "calc_high")
-//      .cache()
-//    data2.show(10)
-    data2.createOrReplaceTempView("calibration_data2")
-//    data2
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702b")
+      .select("unitid", "calc_high")
 
     val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "low"
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid
        """.stripMargin
     println(sqlRequest3)
     val data3 = spark
       .sql(sqlRequest3)
       .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("unitid", "conversion_goal", "calc_low")
-//      .cache()
-//    data3.show(10)
-    data3.createOrReplaceTempView("calibration_data3")
-//    data3
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702c")
+      .select("unitid", "calc_low")
 
-    val sqlRequest4 =
-      s"""
-         |SELECT
-         |  a.unitid,
-         |  a.conversion_goal,
-         |  a.calc_total,
-         |  b.calc_high,
-         |  c.calc_low
-         |FROM
-         |  calibration_data1 as a
-         |INNER JOIN
-         |  calibration_data2 as b
-         |ON
-         |  a.unitid = b.unitid
-         |AND
-         |  a.conversion_goal = b.conversion_goal
-         |INNER JOIN
-         |  calibration_data3 as c
-         |ON
-         |  a.unitid = c.unitid
-         |AND
-         |  a.conversion_goal = c.conversion_goal
-       """.stripMargin
-    println(sqlRequest4)
-    val data = spark
-      .sql(sqlRequest4)
-      .cache()
-
-//    val data = data1
-//      .join(data2, Seq("unitid", "conversion_goal"), "inner")
-//      .join(data3, Seq("unitid", "conversion_goal"), "inner")
-//      .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
-//      .cache()
-    data.show(10)
-//
-//    data1.unpersist()
-//    data2.unpersist()
-//    data3.unpersist()
+    val data = data1
+      .join(data2, Seq("unitid"), "inner")
+      .join(data3, Seq("unitid"), "inner")
+      .select("unitid", "calc_total", "calc_high", "calc_low")
 
     data.createOrReplaceTempView("data")
     val sqlRequestFinal =
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal,
          |  calc_total,
          |  calc_high,
          |  calc_low,
@@ -259,16 +205,178 @@ object OcpcRangeCalibration {
        """.stripMargin
     println(sqlRequestFinal)
     val dataFinal = spark
-        .sql(sqlRequestFinal)
-        .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
-        .cache()
-
-    dataFinal.show(10)
-
-    data.unpersist()
+      .sql(sqlRequestFinal)
+      .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
 
     dataFinal
   }
+
+//  def calculateData2(baseData: DataFrame, highBidFactor: Double, lowBidFactor: Double, date: String, hour: String, spark: SparkSession) = {
+//    /*
+//    val expTag: Nothing = 1
+//    val unitid: Nothing = 2
+//    val ideaid: Nothing = 3
+//    val slotid: Nothing = 4
+//    val slottype: Nothing = 5
+//    val adtype: Nothing = 6
+//     */
+//    baseData.createOrReplaceTempView("base_data")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  unitid,
+//         |  conversion_goal,
+//         |  bid,
+//         |  price,
+//         |  exp_cvr,
+//         |  isclick,
+//         |  isshow,
+//         |  exp_cvr * 1.0 / pcoc as pcvr,
+//         |  post_cvr
+//         |FROM
+//         |  base_data
+//       """.stripMargin
+//    println(sqlRequest)
+//    val rawData = spark
+//        .sql(sqlRequest)
+//        .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
+//
+//    rawData.createOrReplaceTempView("raw_data")
+//    val sqlRequest1 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  conversion_goal,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |GROUP BY unitid, conversion_goal
+//       """.stripMargin
+//    println(sqlRequest1)
+//    val data1 = spark
+//      .sql(sqlRequest1)
+//      .withColumn("calc_total", col("pre_cvr") * col("click"))
+//      .select("unitid", "conversion_goal", "calc_total")
+////      .cache()
+////    data1.show(10)
+//    data1.createOrReplaceTempView("calibration_data1")
+////    data1
+////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702a")
+//
+//    val sqlRequest2 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  conversion_goal,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |WHERE
+//         |  pcvr_group = "high"
+//         |GROUP BY unitid, conversion_goal
+//       """.stripMargin
+//    println(sqlRequest2)
+//    val data2 = spark
+//      .sql(sqlRequest2)
+//      .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
+//      .select("unitid", "conversion_goal", "calc_high")
+////      .cache()
+////    data2.show(10)
+//    data2.createOrReplaceTempView("calibration_data2")
+////    data2
+////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702b")
+//
+//    val sqlRequest3 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  conversion_goal,
+//         |  sum(isclick) as click,
+//         |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
+//         |FROM
+//         |  raw_data
+//         |WHERE
+//         |  pcvr_group = "low"
+//         |GROUP BY unitid, conversion_goal
+//       """.stripMargin
+//    println(sqlRequest3)
+//    val data3 = spark
+//      .sql(sqlRequest3)
+//      .withColumn("calc_low", col("pre_cvr") * col("click"))
+//      .select("unitid", "conversion_goal", "calc_low")
+////      .cache()
+////    data3.show(10)
+//    data3.createOrReplaceTempView("calibration_data3")
+////    data3
+////      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702c")
+//
+//    val sqlRequest4 =
+//      s"""
+//         |SELECT
+//         |  a.unitid,
+//         |  a.conversion_goal,
+//         |  a.calc_total,
+//         |  b.calc_high,
+//         |  c.calc_low
+//         |FROM
+//         |  calibration_data1 as a
+//         |INNER JOIN
+//         |  calibration_data2 as b
+//         |ON
+//         |  a.unitid = b.unitid
+//         |AND
+//         |  a.conversion_goal = b.conversion_goal
+//         |INNER JOIN
+//         |  calibration_data3 as c
+//         |ON
+//         |  a.unitid = c.unitid
+//         |AND
+//         |  a.conversion_goal = c.conversion_goal
+//       """.stripMargin
+//    println(sqlRequest4)
+//    val data = spark
+//      .sql(sqlRequest4)
+//      .cache()
+//
+////    val data = data1
+////      .join(data2, Seq("unitid", "conversion_goal"), "inner")
+////      .join(data3, Seq("unitid", "conversion_goal"), "inner")
+////      .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
+////      .cache()
+//    data.show(10)
+////
+////    data1.unpersist()
+////    data2.unpersist()
+////    data3.unpersist()
+//
+//    data.createOrReplaceTempView("data")
+//    val sqlRequestFinal =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  conversion_goal,
+//         |  calc_total,
+//         |  calc_high,
+//         |  calc_low,
+//         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
+//         |FROM
+//         |  data
+//       """.stripMargin
+//    println(sqlRequestFinal)
+//    val dataFinal = spark
+//        .sql(sqlRequestFinal)
+//        .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
+//        .cache()
+//
+//    dataFinal.show(10)
+//
+//    data.unpersist()
+//
+//    dataFinal
+//  }
 
   def calculateData1(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
