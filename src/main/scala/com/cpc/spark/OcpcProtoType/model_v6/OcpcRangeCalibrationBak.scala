@@ -197,7 +197,7 @@ object OcpcRangeCalibrationBak {
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .join(data3, Seq("unitid", "conversion_goal"), "inner")
-      .select("unitid", "calc_total", "calc_high", "calc_low")
+      .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
 
     data.show(10)
 
