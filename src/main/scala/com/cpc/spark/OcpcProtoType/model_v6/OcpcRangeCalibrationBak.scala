@@ -154,7 +154,7 @@ object OcpcRangeCalibrationBak {
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("unitid", "calc_total")
+      .select("unitid", "conversion_goal", "calc_total")
 
     val sqlRequest2 =
       s"""
@@ -173,7 +173,7 @@ object OcpcRangeCalibrationBak {
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-      .select("unitid", "calc_high")
+      .select("unitid", "conversion_goal", "calc_high")
 
     val sqlRequest3 =
       s"""
@@ -192,11 +192,11 @@ object OcpcRangeCalibrationBak {
     val data3 = spark
       .sql(sqlRequest3)
       .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("unitid", "calc_low")
+      .select("unitid", "conversion_goal", "calc_low")
 
     val data = data1
-      .join(data2, Seq("unitid"), "inner")
-      .join(data3, Seq("unitid"), "inner")
+      .join(data2, Seq("unitid", "conversion_goal"), "inner")
+      .join(data3, Seq("unitid", "conversion_goal"), "inner")
       .select("unitid", "calc_total", "calc_high", "calc_low")
 
     data.createOrReplaceTempView("data")
