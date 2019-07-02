@@ -182,7 +182,7 @@ object OcpcRangeCalibration {
          |  raw_data
          |WHERE
          |  pcvr_group = "low"
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest3)
     val data3 = spark
