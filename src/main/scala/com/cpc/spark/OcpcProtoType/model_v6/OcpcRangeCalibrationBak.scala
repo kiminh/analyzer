@@ -199,6 +199,8 @@ object OcpcRangeCalibrationBak {
       .join(data3, Seq("unitid", "conversion_goal"), "inner")
       .select("unitid", "calc_total", "calc_high", "calc_low")
 
+    data.show(10)
+
     data.createOrReplaceTempView("data")
     val sqlRequestFinal =
       s"""
