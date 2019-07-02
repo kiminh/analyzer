@@ -179,7 +179,7 @@ object OcpcRangeCalibrationBak {
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
