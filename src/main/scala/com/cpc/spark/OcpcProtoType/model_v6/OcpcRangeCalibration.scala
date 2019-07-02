@@ -90,9 +90,9 @@ object OcpcRangeCalibration {
     val baseData2 = baseData
       .join(data1, Seq("unitid", "conversion_goal"), "inner")
 
-    val dataRaw2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
-    val data2 = dataRaw2.cache()
-    data2.show(10)
+    val data2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
+//    val data2 = dataRaw2.cache()
+//    data2.show(10)
 
     val resultDF = data1
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
@@ -212,6 +212,7 @@ object OcpcRangeCalibration {
     val dataFinal = spark
         .sql(sqlRequestFinal)
         .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
+        .cache()
 
     dataFinal.show(10)
 
