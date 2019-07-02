@@ -200,26 +200,26 @@ object OcpcRangeCalibrationBak {
       .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
       .withColumn("low_bid_factor", udfCalculateLowBidFactor(lowBidFactor)(col("calc_total"), col("calc_high"), col("calc_low")))
 
-    data.show(10)
+//    data.show(10)
 
-    data.createOrReplaceTempView("data")
-    val sqlRequestFinal =
-      s"""
-         |SELECT
-         |  unitid,
-         |  calc_total,
-         |  calc_high,
-         |  calc_low,
-         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
-         |FROM
-         |  data
-       """.stripMargin
-    println(sqlRequestFinal)
-    val dataFinal = spark
-      .sql(sqlRequestFinal)
-      .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
+//    data.createOrReplaceTempView("data")
+//    val sqlRequestFinal =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  calc_total,
+//         |  calc_high,
+//         |  calc_low,
+//         |  (calc_total - calc_high) * 1.0 / calc_low as low_bid_factor
+//         |FROM
+//         |  data
+//       """.stripMargin
+//    println(sqlRequestFinal)
+//    val dataFinal = spark
+//      .sql(sqlRequestFinal)
+//      .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
 
-    dataFinal
+    data
   }
 
   def udfCalculateLowBidFactor(lowBidFactor: Double) = udf((calcTotal: Double, calcHigh: Double, calcLow: Double) => {
