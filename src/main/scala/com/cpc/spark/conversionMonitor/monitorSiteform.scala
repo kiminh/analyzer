@@ -35,18 +35,16 @@ object monitorSiteform {
     val sub = "siteform conversion monitor warning!"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
-//    receiver:+="hanzhengding@qutoutiao.net"
-//    receiver:+="zhanghongyang@qutoutiao.net"
-//    receiver:+="wangyao@qutoutiao.net"
-//    receiver:+="dongjinbao@qutoutiao.net"
-//    receiver:+="chuquanquan@qutoutiao.net"
-//    println(message)
-//    if (message != "") {
-//      message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
-//      sendMail(message, sub, receiver)
-//    }
-    message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
-    sendMail(message, sub, receiver)
+    receiver:+="hanzhengding@qutoutiao.net"
+    receiver:+="zhanghongyang@qutoutiao.net"
+    receiver:+="wangyao@qutoutiao.net"
+    receiver:+="dongjinbao@qutoutiao.net"
+    receiver:+="chuquanquan@qutoutiao.net"
+    println(message)
+    if (message != "") {
+      message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
+      sendMail(message, sub, receiver)
+    }
 
 
   }
