@@ -118,14 +118,14 @@ object OcpcRangeCalibration {
          |SELECT
          |  searchid,
          |  unitid,
+         |  conversion_goal,
          |  bid,
          |  price,
          |  exp_cvr,
          |  isclick,
          |  isshow,
          |  exp_cvr * 1.0 / pcoc as pcvr,
-         |  post_cvr,
-         |  conversion_goal
+         |  post_cvr
          |FROM
          |  base_data
        """.stripMargin
@@ -133,7 +133,6 @@ object OcpcRangeCalibration {
     val rawData = spark
         .sql(sqlRequest)
         .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
-//    rawData.show(10)
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
@@ -154,6 +153,8 @@ object OcpcRangeCalibration {
       .select("unitid", "conversion_goal", "calc_total")
       .cache()
     data1.show(10)
+    data1
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702a")
 
     val sqlRequest2 =
       s"""
@@ -175,6 +176,8 @@ object OcpcRangeCalibration {
       .select("unitid", "conversion_goal", "calc_high")
       .cache()
     data2.show(10)
+    data2
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702b")
 
     val sqlRequest3 =
       s"""
@@ -196,6 +199,8 @@ object OcpcRangeCalibration {
       .select("unitid", "conversion_goal", "calc_low")
       .cache()
     data3.show(10)
+    data3
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_debug_range_calibration20190702c")
 
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
@@ -203,6 +208,10 @@ object OcpcRangeCalibration {
       .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
       .cache()
     data.show(10)
+
+    data1.unpersist()
+    data2.unpersist()
+    data3.unpersist()
 
     data.createOrReplaceTempView("data")
     val sqlRequestFinal =
@@ -225,11 +234,8 @@ object OcpcRangeCalibration {
 
     dataFinal.show(10)
 
-    data1.unpersist()
-    data2.unpersist()
-    data3.unpersist()
     data.unpersist()
-    
+
     dataFinal
   }
 
