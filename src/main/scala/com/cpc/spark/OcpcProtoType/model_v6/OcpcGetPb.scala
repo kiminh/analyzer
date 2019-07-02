@@ -33,12 +33,12 @@ object OcpcGetPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    val calibraionData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark).cache()
-    val factorData = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, 40, spark).cache()
+    val calibraionData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    val factorData = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, 40, spark)
 
-    println(s"print result:")
-    calibraionData.show(10)
-    factorData.show(10)
+//    println(s"print result:")
+//    calibraionData.show(10)
+//    factorData.show(10)
 
     val resultDF = calibraionData
       .join(factorData.select("identifier", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
