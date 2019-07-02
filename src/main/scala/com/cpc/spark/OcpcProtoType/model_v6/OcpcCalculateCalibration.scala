@@ -33,7 +33,7 @@ object OcpcCalculateCalibration {
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2")
+    println(s"date=$date, hour=$hour, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
     // 抽取媒体id
 
     val result = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
@@ -65,7 +65,7 @@ object OcpcCalculateCalibration {
 
     val calibration = calibrationNew
       .join(calibration1, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "pcoc_new", "jfb_new", "post_cvr_new", "pcoc3", "jfb3", "post_cvr3")
+      .select("identifier", "conversion_goal", "pcoc_new", "jfb_new", "post_cvr_new", "pcoc3", "jfb3", "post_cvr3")
       .withColumn("post_cvr", when(col("post_cvr3").isNotNull, col("post_cvr3")).otherwise(col("post_cvr_new")))
       .withColumn("pcoc", when(col("pcoc3").isNotNull, col("pcoc3")).otherwise(col("pcoc_new")))
       .withColumn("jfb", when(col("jfb3").isNotNull, col("jfb3")).otherwise(col("jfb_new")))
