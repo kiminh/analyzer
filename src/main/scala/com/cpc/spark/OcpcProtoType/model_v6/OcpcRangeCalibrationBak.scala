@@ -118,6 +118,7 @@ object OcpcRangeCalibrationBak {
          |SELECT
          |  searchid,
          |  unitid,
+         |  conversion_goal,
          |  bid,
          |  price,
          |  exp_cvr,
@@ -127,6 +128,10 @@ object OcpcRangeCalibrationBak {
          |  post_cvr
          |FROM
          |  base_data
+         |WHERE
+         |  conversion_goal > 0
+         |AND
+         |  conversion_goal is not null
        """.stripMargin
     println(sqlRequest)
     val rawData = spark
