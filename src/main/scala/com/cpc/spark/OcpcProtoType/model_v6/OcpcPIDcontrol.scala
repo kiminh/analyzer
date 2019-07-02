@@ -55,8 +55,8 @@ object OcpcPIDcontrol {
       .cache()
 
     pidResult
-      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pid_cali_data_hourly")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_cali_data_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pid_cali_data_hourly")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_cali_data_hourly")
 
     val cvrData = OcpcSmoothFactorMain(date, hour, version, media, hourInt, spark)
     val otherData = cvrData
@@ -94,8 +94,8 @@ object OcpcPIDcontrol {
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
 
