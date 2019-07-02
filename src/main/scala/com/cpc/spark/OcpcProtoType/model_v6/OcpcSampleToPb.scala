@@ -44,14 +44,13 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
 
     savePbPack(data, fileName, spark)
   }
 
   def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
-    // todo
     val sqlRequest1 =
       s"""
          |SELECT
@@ -66,7 +65,7 @@ object OcpcSampleToPb {
          |  low_bid_factor,
          |  cpagiven
          |FROM
-         |  test.ocpc_param_calibration_hourly_v2
+         |  dl_cpc.ocpc_param_calibration_hourly_v2
          |WHERE
          |  `date` = '$date'
          |AND
