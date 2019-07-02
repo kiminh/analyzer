@@ -3,11 +3,11 @@ package com.cpc.spark.OcpcProtoType.model_v6
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 
 
 object OcpcSmoothFactor{
@@ -91,7 +91,7 @@ object OcpcSmoothFactor{
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -144,10 +144,5 @@ object OcpcSmoothFactor{
 
     resultDF
   }
-
-  def udfConcatStringInt(str: String) = udf((intValue: Int) => {
-    val result = str + intValue.toString
-    result
-  })
 
 }

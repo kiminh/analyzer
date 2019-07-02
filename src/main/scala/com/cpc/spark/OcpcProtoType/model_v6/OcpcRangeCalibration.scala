@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 
 object OcpcRangeCalibration {
   def main(args: Array[String]): Unit = {
@@ -38,20 +39,20 @@ object OcpcRangeCalibration {
     val highBidFactor = args(4).toDouble
     val lowBidFactor = args(5).toDouble
     val hourInt = args(6).toInt
-    val conversionGoal = args(7).toInt
-    val minCV = args(8).toInt
+    val minCV = args(7).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV")
+    println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, minCV:$minCV")
 
     // 抽取基础数据
-    val resultDF = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
+    val result = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, minCV, spark)
 
-    resultDF.show(10)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_range_calibration20190702a")
 
   }
 
-  def OcpcRangeCalibrationMain(date: String, hour: String, version: String, media: String, highBidFactor: Double, lowBidFactor: Double, hourInt: Int, conversionGoal: Int, minCV: Int, spark:SparkSession) = {
+  def OcpcRangeCalibrationMain(date: String, hour: String, version: String, media: String, highBidFactor: Double, lowBidFactor: Double, hourInt: Int, minCV: Int, spark:SparkSession) = {
     /*
     val expTag: Nothing = 1
     val unitid: Nothing = 2
@@ -71,13 +72,12 @@ object OcpcRangeCalibration {
      */
 
     // 抽取基础数据
-    val cvrType = "cvr" + conversionGoal.toString
-    val baseDataClick = getBaseData(media, hourInt, conversionGoal, date, hour, spark)
-    val cvrData = getCvrData(cvrType, hourInt, date, hour, spark)
+    val baseDataClick = getBaseData(media, hourInt, date, hour, spark)
+    val cvrData = getCvrData(hourInt, date, hour, spark)
     val baseData = baseDataClick
-      .join(cvrData, Seq("searchid"), "left_outer")
+      .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
-      .select("searchid", "unitid", "bid", "price", "exp_cvr", "isclick", "isshow", "iscvr")
+      .select("searchid", "unitid", "bid", "price", "exp_cvr", "isclick", "isshow", "iscvr", "conversion_goal")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, date, hour, spark)
@@ -88,16 +88,16 @@ object OcpcRangeCalibration {
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
-      .join(data1, Seq("unitid"), "inner")
+      .join(data1, Seq("unitid", "conversion_goal"), "inner")
 
     val dataRaw2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
     val data2 = dataRaw2.cache()
     data2.show(10)
 
     val resultDF = data1
-      .join(data2, Seq("unitid"), "inner")
+      .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .withColumn("high_bid_factor", lit(highBidFactor))
-      .selectExpr("cast(unitid as string) identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
     resultDF
 
@@ -124,7 +124,8 @@ object OcpcRangeCalibration {
          |  isclick,
          |  isshow,
          |  exp_cvr * 1.0 / pcoc as pcvr,
-         |  post_cvr
+         |  post_cvr,
+         |  conversion_goal
          |FROM
          |  base_data
        """.stripMargin
@@ -138,40 +139,43 @@ object OcpcRangeCalibration {
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("unitid", "calc_total")
+      .select("unitid", "conversion_goal", "calc_total")
 
     val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "high"
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("calc_high", col("pre_cvr") * col("click") * highBidFactor)
-      .select("unitid", "calc_high")
+      .select("unitid", "conversion_goal", "calc_high")
 
     val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
@@ -184,18 +188,19 @@ object OcpcRangeCalibration {
     val data3 = spark
       .sql(sqlRequest3)
       .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("unitid", "calc_low")
+      .select("unitid", "conversion_goal", "calc_low")
 
     val data = data1
-      .join(data2, Seq("unitid"), "inner")
-      .join(data3, Seq("unitid"), "inner")
-      .select("unitid", "calc_total", "calc_high", "calc_low")
+      .join(data2, Seq("unitid", "conversion_goal"), "inner")
+      .join(data3, Seq("unitid", "conversion_goal"), "inner")
+      .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
 
     data.createOrReplaceTempView("data")
     val sqlRequestFinal =
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  calc_total,
          |  calc_high,
          |  calc_low,
@@ -218,6 +223,7 @@ object OcpcRangeCalibration {
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
@@ -226,19 +232,19 @@ object OcpcRangeCalibration {
          |  sum(iscvr) as cv
          |FROM
          |  base_data
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .withColumn("jfb", col("acp") * 1.0 / col("acb"))
-      .select("unitid", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .select("unitid", "conversion_goal", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
 
     data
   }
 
-  def getCvrData(cvrType: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCvrData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -256,13 +262,12 @@ object OcpcRangeCalibration {
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr
+         |  label as iscvr,
+         |  cvr_goal
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  `date` >= '$date1'
-         |AND
-         |  cvr_goal = '$cvrType'
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -270,7 +275,7 @@ object OcpcRangeCalibration {
     data
   }
 
-  def getBaseData(media: String, hourInt: Int, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     val expTag: Nothing = 1
     val unitid: Nothing = 2
@@ -311,7 +316,8 @@ object OcpcRangeCalibration {
          |  price,
          |  exp_cvr,
          |  isclick,
-         |  isshow
+         |  isshow,
+         |  conversion_goal
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -322,11 +328,11 @@ object OcpcRangeCalibration {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 1
-         |AND
-         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
 
     data
   }
