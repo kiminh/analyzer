@@ -46,7 +46,7 @@ object OcpcSmoothFactor{
 
     val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .select("identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
       .filter(s"cv > 0")
 
     resultDF
@@ -56,7 +56,7 @@ object OcpcSmoothFactor{
 
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
-      .groupBy("unitid")
+      .groupBy("unitid", "conversion_goal")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -65,10 +65,10 @@ object OcpcSmoothFactor{
         sum(col("bid")).alias("total_bid"),
         countDistinct(col("hour")).alias("hour_cnt")
       )
-      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .select("unitid", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     val result = data
-        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+        .selectExpr("cast(unitid as string) identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     result
   }
@@ -140,7 +140,7 @@ object OcpcSmoothFactor{
     // 数据关联
     val resultDF = clickData
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
-      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
+      .select("searchid", "unitid", "conversion_goal", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
 
     resultDF
   }
