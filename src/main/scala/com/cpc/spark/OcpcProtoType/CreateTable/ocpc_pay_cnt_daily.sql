@@ -5,3 +5,7 @@ create table if not exists dl_cpc.ocpc_pay_cnt_daily(
 )
 partitioned by (`date` string, version string)
 stored as parquet;
+
+
+--create table test.ocpc_pay_cnt_daily
+--like dl_cpc.ocpc_pay_cnt_daily;
