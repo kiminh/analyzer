@@ -143,11 +143,12 @@ object OcpcRangeCalibrationBak {
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -159,13 +160,14 @@ object OcpcRangeCalibrationBak {
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "high"
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
@@ -177,13 +179,14 @@ object OcpcRangeCalibrationBak {
       s"""
          |SELECT
          |  unitid,
+         |  conversion_goal
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "low"
-         |GROUP BY unitid
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest3)
     val data3 = spark
