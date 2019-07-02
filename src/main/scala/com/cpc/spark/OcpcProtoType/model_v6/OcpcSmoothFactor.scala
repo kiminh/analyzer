@@ -28,7 +28,9 @@ object OcpcSmoothFactor{
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt")
 
-    OcpcSmoothFactorMain(date, hour, version, media, hourInt, spark)
+    val result = OcpcSmoothFactorMain(date, hour, version, media, hourInt, spark)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190702a")
   }
 
   def OcpcSmoothFactorMain(date: String, hour: String, version: String, media: String, hourInt: Int, spark: SparkSession) = {
@@ -76,7 +78,6 @@ object OcpcSmoothFactor{
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
-    val conversionGoal = conf.getString("cvr_type_map." + cvrType).toInt
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")

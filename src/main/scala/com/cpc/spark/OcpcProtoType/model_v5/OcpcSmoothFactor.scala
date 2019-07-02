@@ -30,7 +30,9 @@ object OcpcSmoothFactor{
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType")
 
-    OcpcSmoothFactorMain(date, hour, version, media, hourInt, cvrType, spark)
+    val result = OcpcSmoothFactorMain(date, hour, version, media, hourInt, cvrType, spark)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190702b")
   }
 
   def OcpcSmoothFactorMain(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession) = {
