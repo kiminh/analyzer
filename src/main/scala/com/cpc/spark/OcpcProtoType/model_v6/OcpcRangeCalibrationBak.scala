@@ -199,7 +199,7 @@ object OcpcRangeCalibrationBak {
       .join(data3, Seq("unitid", "conversion_goal"), "inner")
       .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low")
       .withColumn("low_bid_factor", udfCalculateLowBidFactor(lowBidFactor)(col("calc_total"), col("calc_high"), col("calc_low")))
-      .cache()
+//      .cache()
 
     data.show(10)
 
