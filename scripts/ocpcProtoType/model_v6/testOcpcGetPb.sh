@@ -17,12 +17,11 @@ media=${4}
 highBidFactor=${5}
 lowBidFactor=${6}
 hourInt=${7}
-conversionGoal=${8}
-minCV=${9}
-expTag=${10}
-hourInt1=${11}
-hourInt2=${12}
-hourInt3=${13}
+minCV=${8}
+expTag=${9}
+hourInt1=${10}
+hourInt2=${11}
+hourInt3=${12}
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
@@ -32,7 +31,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.OcpcProtoType.model_v5.OcpcGetPbV2 \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar ${date} ${hour} ${version} ${media} ${highBidFactor} ${lowBidFactor} ${hourInt} ${conversionGoal} ${minCV} ${expTag} ${hourInt1} ${hourInt2} ${hourInt3}
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar ${date} ${hour} ${version} ${media} ${highBidFactor} ${lowBidFactor} ${hourInt} ${minCV} ${expTag} ${hourInt1} ${hourInt2} ${hourInt3}
 
 
 #val date = args(0).toString
@@ -42,14 +41,13 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 #val highBidFactor = args(4).toDouble
 #val lowBidFactor = args(5).toDouble
 #val hourInt = args(6).toInt
-#val conversionGoal = args(7).toInt
-#val minCV = args(8).toInt
-#val expTag = args(9).toString
+#val minCV = args(7).toInt
+#val expTag = args(8).toString
 #val isHidden = 0
 #
 #// 主校准回溯时间长度
-#val hourInt1 = args(10).toInt
+#val hourInt1 = args(9).toInt
 #// 备用校准回溯时间长度
-#val hourInt2 = args(11).toInt
+#val hourInt2 = args(10).toInt
 #// 兜底校准时长
-#val hourInt3 = args(12).toInt
+#val hourInt3 = args(11).toInt
