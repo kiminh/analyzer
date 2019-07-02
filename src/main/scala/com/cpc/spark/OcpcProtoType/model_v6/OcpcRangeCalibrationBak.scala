@@ -92,7 +92,7 @@ object OcpcRangeCalibrationBak {
 
     val dataRaw2 = calculateData2(baseData2, highBidFactor, lowBidFactor, date, hour, spark)
     val data2 = dataRaw2.cache()
-    data2.show(10)
+    data2.show()
 
     val resultDF = data1
       .join(data2, Seq("unitid"), "inner")
