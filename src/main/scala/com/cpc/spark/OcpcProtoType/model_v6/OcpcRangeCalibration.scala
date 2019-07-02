@@ -213,6 +213,8 @@ object OcpcRangeCalibration {
         .sql(sqlRequestFinal)
         .withColumn("low_bid_factor", when(col("low_bid_factor") <= lowBidFactor, lowBidFactor).otherwise(col("low_bid_factor")))
 
+    dataFinal.show(10)
+
     dataFinal
   }
 
