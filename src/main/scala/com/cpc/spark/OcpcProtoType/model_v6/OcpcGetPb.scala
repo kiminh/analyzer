@@ -41,7 +41,7 @@ object OcpcGetPb {
 //    factorData.show(10)
 
     val resultDF = calibraionData
-      .join(factorData.select("identifier", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
+      .join(factorData.select("identifier", "conversion_goal", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .withColumn("cpagiven", lit(1.0))
       .cache()
