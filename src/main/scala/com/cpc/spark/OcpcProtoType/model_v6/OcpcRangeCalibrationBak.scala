@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+//import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -95,7 +95,7 @@ object OcpcRangeCalibrationBak {
 //    data2.show()
 
     val resultDF = data1
-      .join(data2, Seq("unitid"), "inner")
+      .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .withColumn("high_bid_factor", lit(highBidFactor))
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
@@ -201,7 +201,7 @@ object OcpcRangeCalibrationBak {
       .withColumn("low_bid_factor", udfCalculateLowBidFactor(lowBidFactor)(col("calc_total"), col("calc_high"), col("calc_low")))
 //      .cache()
 
-    data.show(10)
+//    data.show(10)
 
 //    data.createOrReplaceTempView("data")
 //    val sqlRequestFinal =
@@ -483,7 +483,7 @@ object OcpcRangeCalibrationBak {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
