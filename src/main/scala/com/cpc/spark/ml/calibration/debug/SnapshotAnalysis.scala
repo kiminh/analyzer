@@ -16,7 +16,7 @@ object SnapshotAnalysis {
       val date = args(0)
       val hour = args(1)
       val spark = SparkSession.builder()
-          .appName(s"Snapshot Analysis date = $date and hour = $hour")
+          .appName(s"Snapshot Analysis date = $date and hour = '$hour'")
           .enableHiveSupport()
           .getOrCreate()
       import spark.implicits._
@@ -31,6 +31,8 @@ object SnapshotAnalysis {
           .withColumn("decode_content",decode(col("content")))
           .rdd.map(r=>{
           val searchid = r.getAs[String]("searchid")
+          val dt = r.getAs[String]("dt")
+          val hour = r.getAs[String]("hour")
           val ideaid = r.getAs[Long]("ideaid")
           val adslotid = r.getAs[String]("adslotid")
           val content = r.getAs[Array[Byte]]("decode_content")
@@ -41,9 +43,10 @@ object SnapshotAnalysis {
           var i = 0
           var raw_cvr = 0
           var postcali_cvr = 0
-          var expvalue = 0
+          var exp_cvr = 0
           var model = ""
           var adclass = ""
+          var unitid = ""
           while (i < contentvalue.size){
             val name = contentvalue(i).name
             if (name == "calibrations_key")
@@ -60,11 +63,15 @@ object SnapshotAnalysis {
             }
             else if (name == "snapshot_expvalue")
             {
-              expvalue = contentvalue(i).intList.get(0)
+              exp_cvr = contentvalue(i).intList.get(0)
             }
             else if (name == "snapshot_user_req_ad_num")
             {
               user_req_ad_num = contentvalue(i).strList.mkString("")
+            }
+            else if (name == "snapshot_unitid")
+            {
+              unitid = contentvalue(i).strList.mkString("")
             }
             else if (name == "model_name")
             {
@@ -80,12 +87,12 @@ object SnapshotAnalysis {
             }
             i += 1
           }
-          (searchid,postcali_cvr,key,md5,expvalue,user_req_ad_num,ideaid,adslotid,model,raw_cvr,adclass)
-        }).toDF("searchid","postcali_value","key","md5","expvalue","user_req_ad_num","ideaid","adslotid","model","raw_cvr","adclass")
-         .filter("model = 'qtt-cvr-dnn-rawid-v1-180-newcali'")
+          (searchid,postcali_cvr,model,dt,hour)
+        }).toDF("searchid","postcali_cvr","model","dt","hour")
+         .filter("model in ('qtt-cvr-dnn-rawid-v1-180','qtt-cvr-dnn-rawid-v1-180-newcali')")
 
         data.show(10)
-      data.write.mode("overwrite").saveAsTable("test.wy00")
+      data.repartition(100).write.mode("overwrite").insertInto("dl_cpc.snapshot_analysis")
     }
 
     def decode = udf {

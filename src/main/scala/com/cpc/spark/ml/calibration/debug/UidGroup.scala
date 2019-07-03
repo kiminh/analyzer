@@ -34,10 +34,11 @@ object UidGroup {
         .withColumn("hashuid",hash(concat(col("uid"),col("dt"))))
         .withColumn("num",col("hashuid")%1000)
         .withColumn("label",when(col("num")>950,lit(1)).otherwise(lit(0)))
+        .select("uid","hashuid","num","label","dt")
 
     data.show(10)
 
-    data.write.mode("overwrite").insertInto("test.wy_uid_label")
+    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.cvr_mlcpp_uid_label")
 
 
   }
