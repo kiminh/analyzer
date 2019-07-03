@@ -94,6 +94,7 @@ object OcpcSampleToPb {
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
       .withColumn("smooth_factor", udfSelectSmoothFactor()(col("conversion_goal")))
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .withColumn("cali_value", udfCheckCali(0.1, 5.0)(col("cali_value")))
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
       .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
 
@@ -103,6 +104,17 @@ object OcpcSampleToPb {
 
     result
   }
+
+  def udfCheckCali(minCali: Double, maxCali: Double) = udf((caliValue: Double) => {
+    var result = caliValue
+    if (result < minCali) {
+      result = minCali
+    }
+    if (result > maxCali) {
+      result = maxCali
+    }
+    result
+  })
 
   def resetSmoothFactor(baseData: DataFrame, spark: SparkSession) = {
     // 从配置文件平滑系数
