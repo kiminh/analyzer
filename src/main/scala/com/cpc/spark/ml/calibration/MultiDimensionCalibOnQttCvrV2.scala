@@ -147,7 +147,7 @@ object MultiDimensionCalibOnQttCvrV2 {
 
     val cali_untarget = UntargetCali(group_untarget,session,k)
 
-    val calimap = calimap3 ++ calimap5 ++ cali_untarget
+    val calimap =  cali_untarget ++ calimap3 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
