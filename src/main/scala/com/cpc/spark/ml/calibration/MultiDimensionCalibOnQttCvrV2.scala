@@ -75,7 +75,7 @@ object MultiDimensionCalibOnQttCvrV2 {
                  |  and ideaid > 0 and adsrc = 1 AND userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
                  |  ) a
-                 |  left join dl_cpc.dw_unitid_conversion_target b
+                 |  left join dl_cpc.dw_unitid_conversion_target_hourly b
                  |    on a.unitid = b.unitid
                  |    and b.day = '$endDate' and b.hour = '$endHour'
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
@@ -91,7 +91,7 @@ object MultiDimensionCalibOnQttCvrV2 {
                  |    from dl_cpc.cpc_conversion
                  |   where $selectCondition2
                  |and size(conversion_target)>0) a
-                 |join dl_cpc.dw_unitid_detail b
+                 |join dl_cpc.dw_unitid_conversion_target_hourly b
                  |    on a.unitid=b.unitid
                  |    and b.day = '$endDate' and b.hour = '$endHour'
        """.stripMargin
