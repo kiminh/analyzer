@@ -240,7 +240,7 @@ object MultiDimensionCalibOnQttCvrV2 {
       val key = group
       val irModel = IRModel(
         boundaries = Seq(0.0,1.0),
-        predictions = Seq(0.0,k)
+        predictions = Seq(0.0,1.0/FACTOR)
       )
       val config = CalibrationConfig(key,Option(irModel))
       calimap += ((key,config))
@@ -250,7 +250,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     val resultkey = result.keySet
     resultkey.foreach(x=>{
       println("untarget unit is:%s".format(x))})
-    println("untarget value is:%f".format(1.8/FACTOR/k))
+    println("untarget value is:%f".format(1.0/FACTOR))
 
     return result
   }
