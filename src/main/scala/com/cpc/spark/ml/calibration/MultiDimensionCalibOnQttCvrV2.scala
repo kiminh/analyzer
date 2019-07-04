@@ -22,7 +22,7 @@ object MultiDimensionCalibOnQttCvrV2 {
   val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
-  val FACTOR = 1.05
+  val FACTOR = 1.1
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -240,7 +240,7 @@ object MultiDimensionCalibOnQttCvrV2 {
       val key = group
       val irModel = IRModel(
         boundaries = Seq(0.0,1.0),
-        predictions = Seq(0.0,1.8/FACTOR/k)
+        predictions = Seq(0.0,k)
       )
       val config = CalibrationConfig(key,Option(irModel))
       calimap += ((key,config))
