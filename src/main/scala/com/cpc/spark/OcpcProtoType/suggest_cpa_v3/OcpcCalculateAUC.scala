@@ -30,7 +30,7 @@ object OcpcCalculateAUC {
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
     val tableName = "test.ocpc_auc_raw_data_v2"
     data
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+      .repartition(100).write.mode("overwrite").insertInto(tableName)
 
     // 计算auc
     val aucData = getAuc(tableName, version, date, hour, spark)
@@ -154,7 +154,7 @@ object OcpcCalculateAUC {
 
     // 关联数据
     val resultDF = scoreData
-      .join(cvrData, Seq("searchid"), "left_outer")
+      .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
       .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
       .na.fill(0, Seq("label"))
       .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
