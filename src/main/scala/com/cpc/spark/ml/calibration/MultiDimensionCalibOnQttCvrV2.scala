@@ -22,7 +22,7 @@ object MultiDimensionCalibOnQttCvrV2 {
   val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
-  val FACTOR = 1.2
+  val FACTOR = 1.05
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
