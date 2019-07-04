@@ -68,13 +68,13 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+//
+//    resultDF
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
   }
 
   def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
@@ -224,7 +224,6 @@ object OcpcLightBulbV2{
          |    `hour` = '$hour'
          |and is_recommend = 1
          |and version = '$version'
-         |and industry in ('elds', 'feedapp')
        """.stripMargin
 
     println(sqlRequest)

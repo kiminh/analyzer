@@ -67,13 +67,13 @@ object OcpcLightBulbV2{
     resultDF.show(10)
 
     resultDF
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
-
-    resultDF
-      .select("unitid", "conversion_goal", "cpa", "date", "version")
-//      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
+      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_light_control_hourly")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_hourly")
+//
+//    resultDF
+//      .select("unitid", "conversion_goal", "cpa", "date", "version")
+////      .repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_version20190415")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_version")
   }
 
 
@@ -101,9 +101,6 @@ object OcpcLightBulbV2{
                |    `hour` = '$hour'
                |and is_recommend = 1
                |and version = '$version'
-               |and (industry in ('feedapp','elds','wzcp') or cast(adclass as string) like '118106%'
-               |    or cast(adclass as string) like '110111%' or adclass = 130104101)
-               |and conversion_goal = 1
        """.stripMargin
 
         println(sqlRequest)
