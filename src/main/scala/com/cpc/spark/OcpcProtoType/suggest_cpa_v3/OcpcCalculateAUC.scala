@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.typesafe.config.ConfigFactory
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
 import org.apache.log4j.{Level, Logger}
@@ -24,6 +25,16 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
+    val resultDF = OcpcCalculateAUCmain(date, hour, version, hourInt, spark)
+
+    resultDF
+      .repartition(10)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
+  }
+
+  def OcpcCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+    // 抽取数据
     val data = getData(hourInt, version, date, hour, spark)
     val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
     data
@@ -36,49 +47,6 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-
-    resultDF
-      .repartition(10)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
-//      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
-  }
-
-  def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |select
-         |    identifier,
-         |    industry,
-         |    count(distinct searchid) as cnt
-         |from $tableName
-         |where
-         |    conversion_goal = $conversionGoal
-         |AND
-         |    version = '$version'
-         |group by identifier, industry
-       """.stripMargin
-    println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
-
-    rawData.createOrReplaceTempView("raw_data")
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |    t.identifier,
-         |    t.industry
-         |FROM
-         |    (SELECT
-         |        identifier,
-         |        industry,
-         |        cnt,
-         |        row_number() over(partition by identifier order by cnt desc) as seq
-         |    FROM
-         |        raw_data) as t
-         |WHERE
-         |    t.seq=1
-       """.stripMargin
-    println(sqlRequest2)
-    val resultDF = spark.sql(sqlRequest2)
 
     resultDF
   }
@@ -97,7 +65,10 @@ object OcpcCalculateAUC {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition1 = getTimeRangeSqlDate(date1, hour1, date, hour)
-    val mediaSelection = s"media_appsid in ('80000001', '80000002', '80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787', '80002819')"
+
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
     // 取数据: score数据
     val sqlRequest =
       s"""
