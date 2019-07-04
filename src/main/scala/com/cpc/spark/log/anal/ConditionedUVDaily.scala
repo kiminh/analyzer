@@ -58,7 +58,7 @@ object ConditionedUVDaily {
          |  , case
          |    when share_coin=0 then 1
          |    when (share_coin>0 and share_coin<=60) then 2
-         |    when (share_coin>60 and share_coin<=90) then 3
+         |    when (share_coin>60 and share_coin<=90)`then 3
          |    else 4
          |  end as share_coin_level
          |from dl_cpc.cpc_basedata_union_events
