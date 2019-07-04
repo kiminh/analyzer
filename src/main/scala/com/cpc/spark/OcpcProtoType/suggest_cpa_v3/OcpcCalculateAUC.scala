@@ -28,7 +28,7 @@ object OcpcCalculateAUC {
 //    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
-    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
+    val tableName = "test.ocpc_auc_raw_data_v2"
     data
       .repartition(10).write.mode("overwrite").insertInto(tableName)
 
