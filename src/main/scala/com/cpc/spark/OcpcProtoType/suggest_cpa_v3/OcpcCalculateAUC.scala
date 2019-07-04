@@ -181,7 +181,6 @@ object OcpcCalculateAUC {
     newData.show(10)
 
     val result = utils.getGauc(spark, newData, "id")
-    result.show(10)
     val resultRDD = result.rdd.map(row => {
       val id = row.getAs[String]("name")
       val identifierList = id.trim.split("-")
@@ -189,7 +188,7 @@ object OcpcCalculateAUC {
       val media = identifierList(1)
       val conversionGoal = identifierList(2).toInt
       val auc = row.getAs[Double]("auc")
-      (identifier, auc)
+      (identifier, media, conversionGoal, auc)
     })
     val resultDF = resultRDD.toDF("identifier", "media", "conversion_goal", "auc")
     resultDF
