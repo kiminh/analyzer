@@ -115,6 +115,8 @@ object OcpcSmoothFactor{
          |  isclick = 1
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark

@@ -320,6 +320,8 @@ object OcpcRangeCalibration {
          |  price <= bid_discounted_by_ad_slot
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
     val data = spark
