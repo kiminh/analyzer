@@ -177,6 +177,8 @@ object OcpcCalculateAUC {
       .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
 
+    newData.show(10)
+
     val result = utils.getGauc(spark, newData, "id")
     val resultRDD = result.rdd.map(row => {
       val id = row.getAs[String]("name")
