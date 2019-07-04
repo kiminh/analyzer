@@ -17,8 +17,8 @@ object OcpcCalculateAUC {
     Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(3).toString
-    val hourInt = args(5).toInt
+    val version = args(2).toString
+    val hourInt = args(3).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour")
@@ -40,7 +40,7 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    
+
     resultDF
       .repartition(10)
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
