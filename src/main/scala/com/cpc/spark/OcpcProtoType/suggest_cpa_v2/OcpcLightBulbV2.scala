@@ -104,13 +104,13 @@ object OcpcLightBulbV2{
       .withColumn("cpa3", col("cpa_suggest") * 0.01)
       .selectExpr("cast(identifier as bigint) unitid", "conversion_goal", "cpa3")
 
-    data
-        .withColumn("cpa", col("cpa3"))
-        .select("unitid", "conversion_goal", "cpa")
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("version", lit(version))
-        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
+//    data
+//        .withColumn("cpa", col("cpa3"))
+//        .select("unitid", "conversion_goal", "cpa")
+//        .withColumn("date", lit(date))
+//        .withColumn("hour", lit(hour))
+//        .withColumn("version", lit(version))
+//        .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list")
     data
   }
 
