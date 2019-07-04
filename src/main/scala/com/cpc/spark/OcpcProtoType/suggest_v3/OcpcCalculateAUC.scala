@@ -35,22 +35,16 @@ object OcpcCalculateAUC {
 
     // 计算auc
     val aucData = getAuc(tableName, version, date, hour, spark)
-
-    val result = aucData
-      .join(unitidIndustry, Seq("identifier"), "left_outer")
-      .select("identifier", "auc", "industry")
-
-    val conversionGoalInt = conversionGoal.toInt
-    val resultDF = result
-      .withColumn("conversion_goal", lit(conversionGoalInt))
+    val resultDF = aucData
+      .select("identifier", "media", "conversion_goal", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-
-    val finalTableName = "test.ocpc_unitid_auc_hourly_" + conversionGoal
+    
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly")
-//        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
   }
 
   def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -186,13 +180,17 @@ object OcpcCalculateAUC {
       .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
 
-    val result = utils.getGauc(spark, newData, "identifier")
+    val result = utils.getGauc(spark, newData, "id")
     val resultRDD = result.rdd.map(row => {
-      val identifier = row.getAs[String]("name")
+      val id = row.getAs[String]("name")
+      val identifierList = id.trim.split("-")
+      val identifier = identifierList(0)
+      val media = identifierList(1)
+      val conversionGoal = identifierList(2).toInt
       val auc = row.getAs[Double]("auc")
       (identifier, auc)
     })
-    val resultDF = resultRDD.toDF("identifier", "auc")
+    val resultDF = resultRDD.toDF("identifier", "media", "conversion_goal", "auc")
     resultDF
   }
 
