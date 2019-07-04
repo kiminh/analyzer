@@ -65,7 +65,6 @@ object ConditionedUVDaily {
          |where
          |  day='%s'
          |  and media_appsid in %s
-         |  and isshow = 1
          |  and ideaid > 0
        """
       .format(
@@ -78,11 +77,11 @@ object ConditionedUVDaily {
              """.stripMargin
           case "midu" =>
             s"""
-               |("80001098", "80001292")
+               |('80004786','80004787','80001098','80001292','80001539','80002480','80001011')
              """.stripMargin
           case "miRead" =>
             s"""
-               |("80001098", "80001292")
+               |('80004786','80004787','80001098','80001292','80001539','80002480','80001011')
              """.stripMargin // bottom-up compatibility.
           case _ =>
             s"""
@@ -106,7 +105,7 @@ object ConditionedUVDaily {
       "-- total uv: %s --".format(uv)
     )
 
-    redis.set("touched_uv_total", uv)
+    /*redis.set("touched_uv_total", uv)
 
     // calculate conditioned uv for each column.
     conditions
@@ -120,7 +119,7 @@ object ConditionedUVDaily {
           redis
         )
       }
-    )
+    )*/
   }
 
   def calculateConditionalUVByPercent(
