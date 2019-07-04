@@ -25,10 +25,7 @@ object OcpcCalculateAUC {
 
     // 抽取数据
     val data = getData(hourInt, version, date, hour, spark)
-//    val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
-//    data
-//      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
-    val tableName = "test.ocpc_auc_raw_data_v2"
+    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
     data
       .repartition(100).write.mode("overwrite").insertInto(tableName)
 
@@ -42,8 +39,8 @@ object OcpcCalculateAUC {
 
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
-      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
   }
 
   def getIndustry(tableName: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {

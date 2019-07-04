@@ -11,3 +11,5 @@ CREATE TABLE IF NOT EXISTS test.ocpc_auc_raw_data_v2
 PARTITIONED by (version string)
 STORED as PARQUET;
 
+create table dl_cpc.ocpc_auc_raw_data_v2
+like test.ocpc_auc_raw_data_v2;

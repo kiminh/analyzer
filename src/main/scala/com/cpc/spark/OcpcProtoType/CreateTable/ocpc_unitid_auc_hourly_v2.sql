@@ -7,3 +7,6 @@ create table if not exists test.ocpc_unitid_auc_hourly_v2
 )
 partitioned by (`date` string, `hour` string, version string)
 stored as parquet;
+
+create table dl_cpc.ocpc_unitid_auc_hourly_v2
+like test.ocpc_unitid_auc_hourly_v2;
