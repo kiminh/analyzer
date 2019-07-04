@@ -105,7 +105,7 @@ object ConditionedUVDaily {
       "-- total uv: %s --".format(uv)
     )
 
-    /*redis.set("touched_uv_total", uv)
+    redis.set("touched_uv_total", uv)
 
     // calculate conditioned uv for each column.
     conditions
@@ -119,7 +119,7 @@ object ConditionedUVDaily {
           redis
         )
       }
-    )*/
+    )
   }
 
   def calculateConditionalUVByPercent(
