@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.suggest_v3
+package com.cpc.spark.OcpcProtoType.suggest_cpa_v3
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -6,7 +6,6 @@ import java.util.Calendar
 import com.cpc.spark.OcpcProtoType.OcpcTools._
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
