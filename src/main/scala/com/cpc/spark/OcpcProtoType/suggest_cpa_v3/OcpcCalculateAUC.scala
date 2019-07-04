@@ -172,10 +172,8 @@ object OcpcCalculateAUC {
     import spark.implicits._
 
     val newData = data
-      .selectExpr("identifier", "media", "conversion_goal", "cast(score as int) score", "label")
+      .select("identifier", "media", "conversion_goal", "score", "label")
       .withColumn("id", concat_ws("-", col("identifier"), col("media"), col("conversion_goal")))
-      .withColumn("score", col("exp_cvr") * 1000000)
-      .withColumn("label", col("iscvr"))
       .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
 
