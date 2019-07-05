@@ -47,13 +47,16 @@ object OcpcSuggestCPA {
     val baseLog = getBaseLog(hourInt, date, hour, spark)
 
     // 统计数据
-    val baseData = calculateLog(baseLog, date, hour, spark)
+    val baseData = calculateLog(baseLog, date, hour, spark).cache()
+    baseData.show(10)
 
     // ocpc校准部分
-    val kvalue = getKvalue(baseLog, baseData, date, hour, spark)
+    val kvalue = getKvalue(baseLog, baseData, date, hour, spark).cache()
+    kvalue.show(10)
 
     // 模型部分
-    val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark)
+    val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).cache()
+    aucData.show(10)
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, spark)
@@ -66,7 +69,7 @@ object OcpcSuggestCPA {
     resultDF
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_recommend_units_hourly20190704")
 //      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
 
