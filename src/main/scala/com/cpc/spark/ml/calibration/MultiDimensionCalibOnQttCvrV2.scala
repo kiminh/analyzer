@@ -105,7 +105,6 @@ object MultiDimensionCalibOnQttCvrV2 {
     val k = log.filter("exp_cvr_type='cvr1'")
       .filter("cvr_target = 1")
       .filter("model = 'qtt-cvr-dnn-rawid-v1-180'")
-      .withColumn()
       .groupBy().agg(
       sum("expcvr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
