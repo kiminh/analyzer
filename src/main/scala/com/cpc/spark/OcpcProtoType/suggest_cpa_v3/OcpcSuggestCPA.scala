@@ -67,8 +67,7 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_recommend_units_hourly20190704")
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
   }
@@ -101,6 +100,9 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend")
+      .cache()
+
+    resultDF.show(10)
 
     resultDF
 
@@ -278,8 +280,6 @@ object OcpcSuggestCPA {
     // 数据关联
     val data = ctrData
       .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
-
-    data.show(10)
     data
   }
 

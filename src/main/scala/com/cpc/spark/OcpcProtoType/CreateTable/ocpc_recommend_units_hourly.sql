@@ -26,5 +26,5 @@ CREATE TABLE IF NOT EXISTS test.ocpc_recommend_units_hourly
 PARTITIONED by (`date` string, `hour` string, version string)
 STORED as PARQUET;
 
-
---"unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend"
+create table dl_cpc.ocpc_recommend_units_hourly
+like test.ocpc_recommend_units_hourly;
