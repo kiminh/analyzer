@@ -107,7 +107,7 @@ object ConditionedUVDaily {
 
     val keyToGo = "%stouched_uv_total".format(if (appType == "qtt") "" else "miRead_")
     println(keyToGo)
-    redis.set(keyToGo, uv)
+    redis.set(keyToGo, "%s".format(uv))
 
     // calculate conditioned uv for each column.
     conditions
@@ -219,7 +219,7 @@ object ConditionedUVDaily {
 
     val keyToGo = "touched_uv_percent_%s_%d"
       .format(
-        // if (appType == "qtt") "" else "miRead_",
+        if (appType == "qtt") "" else "miRead_",
         condition,
         key
       ) // to-fly.
