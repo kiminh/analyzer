@@ -53,15 +53,15 @@ object OcpcSuggestCpaRecord {
 
     resultDF.show(10)
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190704")
-//    resultDF
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
-//    resultDF
-//      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190704")
+    resultDF
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+    resultDF
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
