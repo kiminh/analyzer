@@ -1,6 +1,6 @@
 create table if not exists test.ocpc_unitid_auc_hourly_v2
 (
-    identifier              string,
+    unitid                  int,
     media                   string,
     conversion_goal         int,
     auc                     double
