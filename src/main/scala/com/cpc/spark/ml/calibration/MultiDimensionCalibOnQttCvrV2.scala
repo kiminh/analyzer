@@ -22,7 +22,7 @@ object MultiDimensionCalibOnQttCvrV2 {
   val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
-  val FACTOR = 1.1
+  val FACTOR = 1.0
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -104,7 +104,9 @@ object MultiDimensionCalibOnQttCvrV2 {
     log.show(10)
     val k = log.filter("exp_cvr_type='cvr1'")
       .filter("cvr_target = 1")
-      .filter("model = 'qtt-cvr-dnn-rawid-v1-180'").groupBy().agg(
+      .filter("model = 'qtt-cvr-dnn-rawid-v1-180'")
+      .withColumn()
+      .groupBy().agg(
       sum("expcvr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
       .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
