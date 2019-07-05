@@ -47,15 +47,15 @@ object OcpcSuggestCPA {
     val baseLog = getBaseLog(hourInt, date, hour, spark)
 
     // 统计数据
-    val baseData = calculateLog(baseLog, date, hour, spark).cache()
+    val baseData = calculateLog(baseLog, date, hour, spark).repartition(10).cache()
     baseData.show(10)
 
     // ocpc校准部分
-    val kvalue = getKvalue(baseLog, baseData, date, hour, spark).cache()
+    val kvalue = getKvalue(baseLog, baseData, date, hour, spark).repartition(10).cache()
     kvalue.show(10)
 
     // 模型部分
-    val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).cache()
+    val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).repartition(10).cache()
     aucData.show(10)
 
     // 数据组装
