@@ -75,9 +75,9 @@ object OcpcSuggestCPA {
     assemlby the data together
      */
     val rawData = baseData
-      .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype"), "left_outer")
-      .join(aucData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc")
+      .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
+      .join(aucData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
@@ -115,6 +115,7 @@ object OcpcSuggestCPA {
          |  adclass,
          |  industry,
          |  usertype,
+         |  adslot_type,
          |  1.0 / pcoc as cali_value,
          |  1.0 / jfb as jfb_factor,
          |  post_cvr,
@@ -126,7 +127,7 @@ object OcpcSuggestCPA {
     val cvrData = spark.sql(sqlRequest)
 
     val data = baseData
-      .join(cvrData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype"), "inner")
+      .join(cvrData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "inner")
       .withColumn("cali_pcvr", col("exp_cvr") * 0.5 * col("cali_value") + col("post_cvr") * 0.5)
       .select("searchid", "unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "cali_pcvr", "jfb_factor", "cpa")
       .withColumn("cal_bid", col("cali_pcvr") * col("cpa") * col("jfb_factor"))
@@ -134,7 +135,7 @@ object OcpcSuggestCPA {
       .agg(
         avg(col("cal_bid")).alias("cal_bid")
       )
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "cal_bid")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "cal_bid")
 
     data
   }
@@ -152,6 +153,7 @@ object OcpcSuggestCPA {
          |  adclass,
          |  industry,
          |  usertype,
+         |  adslot_type,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
          |  sum(iscvr) as cvrcnt,
@@ -165,7 +167,7 @@ object OcpcSuggestCPA {
          |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, userid, conversion_goal, media, adclass, industry, usertype
+         |GROUP BY unitid, userid, conversion_goal, media, adclass, industry, usertype, adslot_type
        """.stripMargin
     println(sqlRequest1)
     val data = spark
@@ -174,7 +176,7 @@ object OcpcSuggestCPA {
 
     // 数据关联
     val resultDF = data
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc")
 
     resultDF
   }
@@ -229,7 +231,8 @@ object OcpcSuggestCPA {
          |    usertype,
          |    exp_cvr,
          |    exp_ctr,
-         |    conversion_goal
+         |    conversion_goal,
+         |    adslot_type
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
