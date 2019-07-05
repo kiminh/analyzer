@@ -53,7 +53,7 @@ object OcpcSuggestCpaRecord {
 
     resultDF.show(10)
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190301")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190704")
 //    resultDF
 //      .repartition(10)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
