@@ -29,8 +29,8 @@ object OcpcCalculateAUC {
 
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
-      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
   }
 
   def OcpcCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
