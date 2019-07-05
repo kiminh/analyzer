@@ -69,7 +69,7 @@ object OcpcSuggestCPA {
     resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+    println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, spark: SparkSession) = {
