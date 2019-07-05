@@ -129,9 +129,9 @@ object OcpcSuggestCPA {
     val data = baseData
       .join(cvrData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "inner")
       .withColumn("cali_pcvr", col("exp_cvr") * 0.5 * col("cali_value") + col("post_cvr") * 0.5)
-      .select("searchid", "unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "cali_pcvr", "jfb_factor", "cpa")
+      .select("searchid", "unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "cali_pcvr", "jfb_factor", "cpa")
       .withColumn("cal_bid", col("cali_pcvr") * col("cpa") * col("jfb_factor"))
-      .groupBy("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype")
+      .groupBy("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type")
       .agg(
         avg(col("cal_bid")).alias("cal_bid")
       )
