@@ -217,7 +217,7 @@ object ConditionedUVDaily {
       )
     ) // black-box after flight.
 
-    val keyToGo = "touched_uv_percent_%s_%d"
+    val keyToGo = "%stouched_uv_percent_%s_%d"
       .format(
         if (appType == "qtt") "" else "miRead_",
         condition,
