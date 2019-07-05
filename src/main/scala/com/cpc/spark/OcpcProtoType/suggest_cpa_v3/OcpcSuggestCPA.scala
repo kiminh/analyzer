@@ -76,7 +76,7 @@ object OcpcSuggestCPA {
      */
     val rawData = baseData
       .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
-      .join(aucData, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
+      .join(aucData, Seq("unitid", "conversion_goal", "media"), "left_outer")
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc")
 
     rawData.createOrReplaceTempView("raw_data")
