@@ -102,8 +102,6 @@ object OcpcGetPbV2 {
          |FROM
          |  test.ocpc_auto_budget_hourly
          |WHERE
-         |  $selectCondition
-         |AND
          |  industry in ('wzcp')
        """.stripMargin
     println(sqlRequest)
