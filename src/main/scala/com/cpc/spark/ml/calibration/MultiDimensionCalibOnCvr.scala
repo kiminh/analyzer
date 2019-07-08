@@ -16,7 +16,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
 import com.cpc.spark.ml.calibration.HourlyCalibration.{saveProtoToLocal,saveFlatTextFileForDebug}
 
-object MultiDimensionCalibOnMiduCvr {
+object MultiDimensionCalibOnCvr {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000

@@ -33,6 +33,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     val hourRange = args(2).toInt
     val media = args(3)
     val calimodel = args(4)
+    val model = args(5)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -71,7 +72,7 @@ object MultiDimensionCalibOnQttCvrV2 {
                  |  from dl_cpc.cpc_basedata_union_events
                  |  where $selectCondition2
                  |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
+                 |  and cvr_model_name in ('$calimodel','$model')
                  |  and ideaid > 0 and adsrc = 1 AND userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
                  |  ) a
@@ -104,7 +105,7 @@ object MultiDimensionCalibOnQttCvrV2 {
     log.show(10)
     val k = log.filter("exp_cvr_type='cvr1'")
       .filter("cvr_target = 1")
-      .filter("model = 'qtt-cvr-dnn-rawid-v1-180'")
+      .filter(s"model = '$model'")
       .groupBy().agg(
       sum("expcvr").alias("ctrnum"),
       sum("isclick").alias("clicknum"))
