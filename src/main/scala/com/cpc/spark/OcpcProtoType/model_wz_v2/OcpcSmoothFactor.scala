@@ -113,6 +113,8 @@ object OcpcSmoothFactor{
          |AND
          |  isclick = 1
          |AND
+         |  is_ocpc = 1
+         |AND
          |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
