@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS test.ocpc_recommend_units_hourly
     adclass                 int,
     industry                string,
     usertype                int,
+    adslot_type             int,
     show                    bigint,
     click                   bigint,
     cvrcnt                  bigint,
