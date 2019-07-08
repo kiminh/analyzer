@@ -17,16 +17,19 @@ object monitorSiteform {
     val hour = args(1).toString
 
     val cnt3 = getDataV3(date, hour, spark)
-    val cnt4 = getDataV3(date, hour, spark)
+    val cnt4 = getDataV4(date, hour, spark)
     val cnt5 = getDataV5(date, hour, spark)
     println(s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5")
 
     var message = ""
 
-    if (cnt3 != cnt4) {
+    var cntDiff = cnt4 - cnt3
+    if (cntDiff < 0 || cntDiff > 5) {
       message = message + "v4 abnormal\n"
     }
-    if (cnt3 != cnt5) {
+
+    cntDiff = cnt5 - cnt3
+    if (cntDiff < 0 || cntDiff > 5) {
       message = message + "v5 abnormal\n"
     }
     val sub = "siteform conversion monitor warning!"

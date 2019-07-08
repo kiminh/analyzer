@@ -1,14 +1,13 @@
-package com.cpc.spark.OcpcProtoType.model_v5
+package com.cpc.spark.OcpcProtoType.model_v6
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.udfs.Udfs_wj._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 
 
 object OcpcSmoothFactor{
@@ -26,29 +25,28 @@ object OcpcSmoothFactor{
     val version = args(2).toString
     val media = args(3).toString
     val hourInt = args(4).toInt
-    val cvrType = args(5).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt, cvrType:$cvrType")
+    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt")
 
-    val result = OcpcSmoothFactorMain(date, hour, version, media, hourInt, cvrType, spark)
+    val result = OcpcSmoothFactorMain(date, hour, version, media, hourInt, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190702b")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190702a")
   }
 
-  def OcpcSmoothFactorMain(date: String, hour: String, version: String, media: String, hourInt: Int, cvrType: String, spark: SparkSession) = {
+  def OcpcSmoothFactorMain(date: String, hour: String, version: String, media: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseData(media, cvrType, hourInt, date, hour, spark)
+    val baseData = getBaseData(media, hourInt, date, hour, spark)
 
     // 计算结果
     val result = calculateSmooth(baseData, spark)
 
     val finalVersion = version + hourInt.toString
     val resultDF = result
-      .select("identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .select("identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
       .filter(s"cv > 0")
 
     resultDF
@@ -58,7 +56,7 @@ object OcpcSmoothFactor{
 
   def calculateSmooth(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
-      .groupBy("unitid")
+      .groupBy("unitid", "conversion_goal")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -67,20 +65,19 @@ object OcpcSmoothFactor{
         sum(col("bid")).alias("total_bid"),
         countDistinct(col("hour")).alias("hour_cnt")
       )
-      .select("unitid", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .select("unitid", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     val result = data
-        .selectExpr("cast(unitid as string) identifier", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+        .selectExpr("cast(unitid as string) identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
 
     result
   }
 
-  def getBaseData(media: String, cvrType: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
-    val conversionGoal = conf.getString("cvr_type_map." + cvrType).toInt
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -94,7 +91,7 @@ object OcpcSmoothFactor{
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -106,7 +103,7 @@ object OcpcSmoothFactor{
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  cast(exp_cvr as double) as exp_cvr,
-         |  ocpc_log,
+         |  conversion_goal,
          |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -118,25 +115,23 @@ object OcpcSmoothFactor{
          |  isclick = 1
          |AND
          |  is_ocpc = 1
-         |AND
-         |  conversion_goal = $conversionGoal
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
 
     // 抽取cv数据
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr
+         |  label as iscvr,
+         |  cvr_goal
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  `date` >= '$date1'
-         |AND
-         |  cvr_goal = '$cvrType'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
@@ -144,11 +139,10 @@ object OcpcSmoothFactor{
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .select("searchid", "unitid", "conversion_goal", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
 
     resultDF
   }
-
 
 }
