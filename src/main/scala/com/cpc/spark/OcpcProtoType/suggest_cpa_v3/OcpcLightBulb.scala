@@ -49,20 +49,20 @@ object OcpcLightBulb{
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    val result = getUpdateTable(currentLight, date, hour, version, spark)
+    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
 
     // 存储到redis
     val resultDF = result
       .withColumn("unit_id", col("unitid"))
-      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price", "media")
+      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly_v2")
 
 
     // 清除redis里面的数据
@@ -169,43 +169,89 @@ object OcpcLightBulb{
 //    })
   }
 
-  def getUpdateTable(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
+//  def getUpdateTable(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
+//    val sqlRequest1 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  userid,
+//         |  adclass,
+//         |  media,
+//         |  cpa
+//         |FROM
+//         |  dl_cpc.ocpc_unit_light_control_prev_version
+//         |WHERE
+//         |  version = '$version'
+//       """.stripMargin
+//    println(sqlRequest1)
+//    val data1 = spark
+//      .sql(sqlRequest1)
+//      .groupBy("unitid", "userid", "adclass", "media")
+//      .agg(
+//        min(col("cpa")).alias("prev_cpa")
+//      )
+//      .select("unitid", "userid", "adclass", "media", "prev_cpa")
+//      .cache()
+//
+//    data1.show(10)
+//
+//    val data2 = currentLight
+//      .groupBy("unitid", "userid", "adclass", "media")
+//      .agg(min(col("cpa")).alias("current_cpa"))
+//      .select("unitid", "userid", "adclass", "media", "current_cpa")
+//      .cache()
+//    data2.show(10)
+//
+//    // 数据关联
+//    val data = data2
+//      .join(data1, Seq("unitid", "userid", "adclass", "media"), "outer")
+//      .select("unitid", "userid", "adclass", "media", "current_cpa", "prev_cpa")
+//      .na.fill(-1, Seq("current_cpa", "prev_cpa"))
+//      .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
+//      .cache()
+//
+//    data
+//
+//  }
+
+  def getUpdateTableV2(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
+    /*
+    对于ocpc_status=2的ocpc单元，如果本次的推荐cpa清单中没有，则使灯泡灭掉
+     */
+    val ocpcUnit = getConversionGoal(date, hour, spark)
+    ocpcUnit.createOrReplaceTempView("ocpc_unit")
     val sqlRequest1 =
       s"""
          |SELECT
          |  unitid,
          |  userid,
-         |  adclass,
-         |  media,
-         |  cpa
+         |  cpagiven as prev_cpa
          |FROM
-         |  dl_cpc.ocpc_unit_light_control_prev_version
+         |  ocpc_unit
          |WHERE
-         |  version = '$version'
+         |  is_ocpc = 1
+         |AND
+         |  ocpc_status = 2
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
-      .groupBy("unitid", "userid", "adclass", "media")
-      .agg(
-        min(col("cpa")).alias("prev_cpa")
-      )
-      .select("unitid", "userid", "adclass", "media", "prev_cpa")
+      .select("unitid", "userid", "prev_cpa")
       .cache()
 
     data1.show(10)
 
     val data2 = currentLight
-      .groupBy("unitid", "userid", "adclass", "media")
+      .groupBy("unitid", "userid")
       .agg(min(col("cpa")).alias("current_cpa"))
-      .select("unitid", "userid", "adclass", "media", "current_cpa")
+      .select("unitid", "userid", "current_cpa")
       .cache()
     data2.show(10)
 
     // 数据关联
     val data = data2
-      .join(data1, Seq("unitid", "userid", "adclass", "media"), "outer")
-      .select("unitid", "userid", "adclass", "media", "current_cpa", "prev_cpa")
+      .join(data1, Seq("unitid", "userid"), "outer")
+      .select("unitid", "userid", "current_cpa", "prev_cpa")
       .na.fill(-1, Seq("current_cpa", "prev_cpa"))
       .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
       .cache()
