@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS test.ocpc_unit_light_control_hourly
     userid                  int,
     adclass                 int,
     media                   string,
-    conversion_goal         int,
     cpa                     double
 )
 PARTITIONED by (`date` string, `hour` string, version string)
