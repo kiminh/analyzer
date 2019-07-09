@@ -31,8 +31,8 @@ object MultiDimensionCalibOnMidu {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val softMode = args(3).toInt
-    val model = "novel-ctr-dnn-rawid-v7-cali"
-    val calimodelname ="novel-ctr-dnn-rawid-v7-postcali"
+    val model = "novel-ctr-dnn-rawid-v9"
+    val calimodel ="novel-ctr-dnn-rawid-v9-postcali"
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -54,16 +54,16 @@ object MultiDimensionCalibOnMidu {
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, show_timestamp, ctr_model_name, adslot_id,cast(ideaid as string) ideaid,
+                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
                  |case when user_req_ad_num = 1 then '1'
                  |  when user_req_ad_num = 2 then '2'
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 | from dl_cpc.cpc_novel_union_events
+                 | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80001098', '80001292') and isshow = 1
-                 | and ctr_model_name in ('novel-ctr-dnn-rawid-v7-cali','novel-ctr-dnn-rawid-v7-postcali')
+                 | and media_appsid in ('80001098', '80001292') and adslot_type = 1 and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
@@ -88,9 +88,9 @@ object MultiDimensionCalibOnMidu {
     val data3 = log.join(group3,Seq("ideaid"),"inner")
 
     //create cali pb
-    val calimap1 = GroupToConfig(data1, session,calimodelname)
-    val calimap2 = GroupToConfig(data2, session,calimodelname)
-    val calimap3 = GroupToConfig(data3, session,calimodelname)
+    val calimap1 = GroupToConfig(data1, session,calimodel)
+    val calimap2 = GroupToConfig(data2, session,calimodel)
+    val calimap3 = GroupToConfig(data3, session,calimodel)
     val calimap = calimap1 ++ calimap2 ++ calimap3
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal(model, califile)

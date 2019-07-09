@@ -1,10 +1,13 @@
 package com.cpc.spark.OcpcProtoType.report_novel
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+//import com.cpc.spark.tools.testOperateMySQL
+//import com.typesafe.config.ConfigFactory
+//import org.apache.spark.sql.functions._
 import com.cpc.spark.OcpcProtoType.report.OcpcHourlyReport._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{col, lit, when}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
 object OcpcHourlyReportV3 {
@@ -39,6 +42,7 @@ object OcpcHourlyReportV3 {
     } else {
       isHidden = 1
     }
+    println("is_hidden=%d".format(isHidden))
     val baseData = getBaseData2(media, date, hour, spark).filter(s"is_hidden = $isHidden")
 
     // 分unitid和conversion_goal统计数据
@@ -57,11 +61,7 @@ object OcpcHourlyReportV3 {
     val dataConversion = getDataByConversionV2(rawDataConversion, version, costDataConversion, cpaDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-//    saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
     saveDataToHDFS(dataUnit, dataUser, dataConversion, version, date, hour, spark)
-//    // 存储数据到mysql
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
-
   }
 
   def saveDataToHDFS(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -73,7 +73,6 @@ object OcpcHourlyReportV3 {
       .withColumn("identifier", col("unitid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(versionUnit))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
 
     val versionUser = version + "_userid"
@@ -81,7 +80,6 @@ object OcpcHourlyReportV3 {
       .withColumn("identifier", col("userid"))
       .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(versionUser))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v4_20190413_user")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v4")
 
 
@@ -132,7 +130,7 @@ object OcpcHourlyReportV3 {
        |    exp_ctr,
        |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
        |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
-       |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+       |    cast(ocpc_log_dict['jfbCalFactor'] as double) as kvalue,
        |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
        |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
        |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
@@ -140,14 +138,14 @@ object OcpcHourlyReportV3 {
        |    cast(ocpc_log_dict['pcvr'] as double) as cali_pcvr,
        |    cast(ocpc_log_dict['postCvr'] as double) as cali_postcvr,
        |    cast(ocpc_log_dict['smoothFactor'] as double) as smooth_factor,
-       |    cast(ocpc_log_dict['CpaSuggest'] as double) as cpa_suggest,
+       |    cast(ocpc_log_dict['cpasuggest'] as double) as cpa_suggest,
        |    hour as hr
        |FROM
        |    dl_cpc.ocpc_filter_unionlog
        |WHERE
        |    `date`='$date' and `hour` <= '$hour'
        |and is_ocpc=1
-       |and $mediaSelection
+       |and media_appsid in ('80001098','80001292')
        |and round(adclass/1000) != 132101  --去掉互动导流
        |and isshow = 1
        |and ideaid > 0
@@ -205,7 +203,8 @@ object OcpcHourlyReportV3 {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .join(cvr4Data, Seq("searchid"), "left_outer")
-      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
+      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2"))
+        .otherwise(when(col("conversion_goal") === 3, col("iscvr3")).otherwise(col("iscvr4")))))
       .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_ctr", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr", "is_hidden", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest")
 
     resultDF.show(10)
@@ -213,8 +212,6 @@ object OcpcHourlyReportV3 {
     resultDF
 
   }
-
-
 
 
 }

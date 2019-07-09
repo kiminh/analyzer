@@ -1,11 +1,12 @@
 #!/bin/bash
 
-cur=/data/cpc/anal
+cur=/home/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 #day=`date +"%Y-%m-%d" -d "-2 hour"`
 #hour=`date +"%H" -d "-2 hour"`
 day=$1
+hour=$2
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -19,12 +20,12 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 12g --driver-memory 4g \
+    --executor-memory 20g --driver-memory 8g \
     --executor-cores 4 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=5g'\
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
     --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnMiduCvr\
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-05-27 12 12 1
+    --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV2 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-07-03 16 2 qtt qtt-cvr-dnn-rawid-v1-180-newcali

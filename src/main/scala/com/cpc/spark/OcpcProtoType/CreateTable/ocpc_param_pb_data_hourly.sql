@@ -10,5 +10,8 @@ create table if not exists dl_cpc.ocpc_param_pb_data_hourly(
     cpa_suggest             double,
     smooth_factor           double
 )
-partitioned by (`date` string, `hour` string, version string)
+partitioned by (`date` string, `hour` string, media string, version string)
 stored as parquet;
+
+create table test.ocpc_param_pb_data_hourly
+like dl_cpc.ocpc_param_pb_data_hourly;

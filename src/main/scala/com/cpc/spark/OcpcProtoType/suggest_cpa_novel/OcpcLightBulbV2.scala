@@ -41,7 +41,7 @@ object OcpcLightBulbV2{
     val cpcData = getRecommendationAdV2(version, date, hour, spark)
     val ocpcData = getOcpcRecordV2(media, version, date, hour, spark)
     val confData = getConfCPA(media, date, hour, spark)
-    val cvUnit = getCPAgiven(date, hour, spark)
+    val cvUnit = getCPAgiven2(date, hour, spark)
 
 
     val data = cpcData
@@ -65,14 +65,6 @@ object OcpcLightBulbV2{
 
     resultDF
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_daily")
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ##########################")
 
     resultDF
       .repartition(5).write.mode("overwrite").insertInto(tableName)
@@ -158,7 +150,7 @@ object OcpcLightBulbV2{
          |AND
          |    $mediaSelection
          |AND
-         |    ocpc_status = 1
+         |    is_ocpc = 1
          |AND
          |    isclick = 1
        """.stripMargin
@@ -193,5 +185,52 @@ object OcpcLightBulbV2{
 
     resultDF
   }
+
+  def getCPAgiven2(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = s"(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status " +
+      s"from adv.unit where ideas is not null and adslot_type in (1, 2) and (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204))) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "conversion_goal")
+
+
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    cast(conversion_goal as int) as conversion_goal
+         |FROM
+         |    base_table
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val resultDF = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal > 0")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+
+
+  }
+
 
 }

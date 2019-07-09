@@ -3,6 +3,7 @@ package com.cpc.spark.OcpcProtoType.model_novel_v3
 import java.io.FileOutputStream
 import java.util.Properties
 
+import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -145,16 +146,23 @@ object OcpcSampleToPb {
 
   def targetmidu(spark: SparkSession) = {
     //    连接adv_test
-    val jdbcProp = new Properties()
-    val jdbcUrl = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com"
-    jdbcProp.put("user", "adv_live_read")
-    jdbcProp.put("password", "seJzIPUc7xU")
-    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver_mysql")
 
     //从adv后台mysql获取人群包的url
     val table=s"(select id as unitid FROM adv.unit " +
-      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011' or media_class in (201,202,203,204)) and status=0) as tmp"
-    val resultDF = spark.read.jdbc(jdbcUrl, table, jdbcProp)
+      s"WHERE (target_medias ='80001098,80001292,80001539,80002480,80001011,80004786,80004787' or media_class in (201,202,203,204))) as tmp"
+    val resultDF =  spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
       .withColumn("target",lit(1))
       .selectExpr("cast(unitid as int) identifier","target")
 

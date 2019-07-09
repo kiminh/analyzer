@@ -1,6 +1,6 @@
 package com.cpc.spark.OcpcProtoType.report_novel
 
-import com.cpc.spark.tools.{testOperateMySQL, OperateMySQL}
+import com.cpc.spark.tools.OperateMySQL
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -14,11 +14,10 @@ object OcpcUnionReportV3 {
     // get the unit data
     val dataUnitRaw = unionDetailReport("_unitid", date, hour, spark)
     val dataUnit = addSuggestCPA(dataUnitRaw, "_unitid", date, hour, spark)
-//    dataUnit.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422a")
+
     // get the user data
     val dataUserRaw = unionDetailReport("_userid", date, hour, spark)
     val dataUser = addSuggestCPA(dataUserRaw, "_userid", date, hour, spark)
-//    dataUser.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190422b")
 
     println("------union detail report success---------")
     val dataConversion = unionSummaryReport(date, hour, spark)
@@ -29,7 +28,7 @@ object OcpcUnionReportV3 {
 
   def addSuggestCPA(rawData: DataFrame, versionPostfix: String, date: String, hour: String, spark: SparkSession) = {
     val version1 = "novel_v2" + versionPostfix
-//    val version2 = "qtt_hidden" + versionPostfix
+    val version2 = "novel_v3" + versionPostfix
     val sqlRequest =
       s"""
          |SELECT
@@ -52,7 +51,7 @@ object OcpcUnionReportV3 {
          |AND
          |  `hour` = '$hour'
          |AND
-         |  version in ('$version1')
+         |  version in ('$version1', '$version2')
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -67,7 +66,7 @@ object OcpcUnionReportV3 {
 
   def unionDetailReport(versionPostfix: String, date: String, hour: String, spark: SparkSession): DataFrame ={
     val version1 = "novel_v2" + versionPostfix
-//    val version2 = "novel_v1" + versionPostfix
+    val version2 = "novel_v3" + versionPostfix
     val sql =
       s"""
          |select
@@ -107,6 +106,46 @@ object OcpcUnionReportV3 {
          |    hour = '$hour'
          |and
          |    version = '$version1'
+         |
+         |union
+         |
+         |select
+         |    identifier,
+         |    userid as user_id,
+         |    conversion_goal,
+         |    step2_click_percent,
+         |    is_step2,
+         |    cpa_given,
+         |    cpa_real,
+         |    cpa_ratio,
+         |    is_cpa_ok,
+         |    impression,
+         |    click,
+         |    conversion,
+         |    ctr,
+         |    click_cvr,
+         |    show_cvr,
+         |    cost,
+         |    acp,
+         |    avg_k,
+         |    recent_k,
+         |    pre_cvr,
+         |    post_cvr,
+         |    q_factor,
+         |    acb,
+         |    auc,
+         |    round(cost*10.0/impression,3) as cpm,
+         |    hour,
+         |    version,
+         |    1 as is_hidden
+         |from
+         |    dl_cpc.ocpc_detail_report_hourly_v4
+         |where
+         |    `date` = '$date'
+         |and
+         |    hour = '$hour'
+         |and
+         |    version = '$version2'
        """.stripMargin
     println(sql)
     val dataDF = spark.sql(sql)
@@ -151,12 +190,48 @@ object OcpcUnionReportV3 {
         |    hour = '$hour'
         |and
         |    version = 'novel_v2'
+        |
+        |union
+        |
+        |select
+        |    conversion_goal,
+        |    total_adnum,
+        |    step2_adnum,
+        |    low_cpa_adnum,
+        |    high_cpa_adnum,
+        |    step2_cost,
+        |    step2_cpa_high_cost,
+        |    impression,
+        |    click,
+        |    conversion,
+        |    ctr,
+        |    click_cvr,
+        |    cost,
+        |    acp,
+        |    pre_cvr,
+        |    post_cvr,
+        |    q_factor,
+        |    acb,
+        |    auc,
+        |    hour,
+        |    version,
+        |    1 as is_hidden,
+        |    cpa_given,
+        |    cpa_real,
+        |    cpa_ratio
+        |from
+        |    dl_cpc.ocpc_summary_report_hourly_v4
+        |where
+        |    `date` = '$date'
+        |and
+        |    hour = '$hour'
+        |and
+        |    version = 'novel_v3'
       """.stripMargin
     val dataDF = spark.sql(sql)
     dataDF
 
   }
-
 
   def saveDataToMysql(dataUnit: DataFrame, dataUser: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val hourInt = hour.toInt
@@ -167,7 +242,7 @@ object OcpcUnionReportV3 {
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpm", "cali_value", "cali_pcvr", "cali_postcvr", "smooth_factor", "cpa_suggest", "hourly_expcvr", "hourly_calivalue", "hourly_calipcvr", "hourly_calipostcvr"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
-    val reportTableUnit = "report2.report_ocpc_data_detail_novel_v2"
+    val reportTableUnit = "report2.report_ocpc_data_detail_v2_novel"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
     OperateMySQL.update(delSQLunit) //先删除历史数据
@@ -192,7 +267,7 @@ object OcpcUnionReportV3 {
       .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "cpa_given", "cpa_real", "cpa_ratio"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
-    val reportTableConversion = "report2.report_ocpc_data_summary_novel_v2"
+    val reportTableConversion = "report2.report_ocpc_data_summary_v2_novel"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
     OperateMySQL.update(delSQLconversion) //先删除历史数据

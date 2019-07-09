@@ -71,7 +71,7 @@ object OcpcSuggestCPA {
     val prevData = getPrevSuggestData(version, conversionGoal, date, hour, spark)
 
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, conversionGoal, spark)
+    val result = assemblyData2(baseData, kvalue, aucData, ocpcFlag, prevData, conversionGoal, spark)
 
     val resultDF = result
       .withColumn("cv_goal", lit(conversionGoal))
@@ -84,5 +84,34 @@ object OcpcSuggestCPA {
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly_v2")
+  }
+
+  def assemblyData2(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, conversionGoal: Int, spark: SparkSession) = {
+    /*
+    assemlby the data together
+     */
+    val result = baseData
+      .join(kvalue, Seq("unitid"), "left_outer")
+      .join(aucData, Seq("unitid"), "left_outer")
+      .join(ocpcFlag, Seq("unitid"), "left_outer")
+      .join(prevData, Seq("unitid"), "left_outer")
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue", "auc", "is_ocpc", "pcoc1", "pcoc2")
+      .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
+      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
+      .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
+      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < 10, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(substring(col("adclass"),1,6) === "110110",1).otherwise(col("is_recommend")))
+      .withColumn("zerobid_percent", lit(0.0))
+      .withColumn("bottom_halfbid_percent", lit(0.0))
+      .withColumn("top_halfbid_percent", lit(0.0))
+      .withColumn("largebid_percent", lit(0.0))
+      .withColumn("original_conversion", lit(conversionGoal))
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+
+    result
   }
 }
