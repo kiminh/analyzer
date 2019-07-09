@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.redis.RedisClient
+import org.apache.spark.sql.DataFrame
 //import com.cpc.spark.ocpc.OcpcUtils._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
@@ -29,12 +31,201 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulbV2: $date, $hour, $version")
       .enableHiveSupport().getOrCreate()
 
-    // todo 修改表名
-    val tableName = "dl_cpc.ocpc_light_control_version"
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
+    println(s"date=$date, hour=$hour, version=$version")
+
+    // 获取当前灯泡数据
+    val currentLight = getCurrentLight(version, date, hour, spark)
+
+    currentLight
+      .repartition(5)
+      //      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+
+    currentLight
+      .repartition(5)
+      .select("unitid", "userid", "adclass", "media", "cpa", "version")
+      //      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+
+    // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
+    val result = getUpdateTable(currentLight, date, hour, version, spark)
+
+    // 存储到redis
+    val resultDF = result
+      .withColumn("unit_id", col("unitid"))
+      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
+  }
+
+  def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    将对应key的值设成空的json字符串
+     */
+    val data = spark
+      .table("dl_cpc.ocpc_light_api_control_hourly")
+      .where(s"version = '$version' and `date` = '$date' and `hour` = '$hour' and ocpc_light = 0")
+      .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
+      .repartition(2)
+    //    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
+    data.show(10)
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    // 测试
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      println(s"key:$key")
+    }
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          redis.del(key)
+//        }
+//      }
+//      redis.disconnect
+//    })
+  }
+
+  def saveDataToRedis(version: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_light_api_control_hourly")
+      .where(s"version = '$version' and `date` = '$date' and `hour` = '$hour' and ocpc_light = 1")
+      .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
+      .repartition(2)
+
+    data.show(10)
+    data.printSchema()
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    // 测试
+    for (record <- data.collect()) {
+      val identifier = record.getAs[Int]("unitid").toString
+      val valueDouble = record.getAs[Double]("cpa")
+      var key = "new_algorithm_unit_ocpc_" + identifier
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
+        }
+        println(s"key:$key, value:$valueString")
+      }
+    }
+
+//    data.foreachPartition(iterator => {
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
+//      iterator.foreach{
+//        record => {
+//          val identifier = record.getAs[Int]("unitid").toString
+//          val valueDouble = record.getAs[Double]("cpa")
+//          var key = "new_algorithm_unit_ocpc_" + identifier
+//          if (valueDouble >= 0) {
+//            var valueString = valueDouble.toString
+//            if (valueString == "0.0") {
+//              valueString = "0"
+//            }
+//            println(s"key:$key, value:$valueString")
+//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+//          }
+//        }
+//      }
+//      redis.disconnect
+//    })
+  }
+
+  def getUpdateTable(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  userid,
+         |  adclass,
+         |  media,
+         |  cpa
+         |FROM
+         |  test.ocpc_unit_light_control_prev_version
+         |WHERE
+         |  version = '$version'
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .groupBy("unitid", "userid", "adclass", "media")
+      .agg(
+        min(col("cpa")).alias("prev_cpa")
+      )
+      .select("unitid", "userid", "adclass", "media", "prev_cpa")
+      .cache()
+
+    data1.show(10)
+
+    val data2 = currentLight
+      .groupBy("unitid", "userid", "adclass", "media")
+      .agg(min(col("cpa")).alias("current_cpa"))
+      .select("unitid", "userid", "adclass", "media", "current_cpa")
+      .cache()
+    data2.show(10)
+
+    // 数据关联
+    val data = data2
+      .join(data1, Seq("unitid", "userid", "adclass", "media"), "outer")
+      .select("unitid", "userid", "adclass", "media", "current_cpa", "prev_cpa")
+      .na.fill(-1, Seq("current_cpa", "prev_cpa"))
+      .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
+      .cache()
+
+    data
+
+  }
+
+  def udfSetLightSwitch() = udf((currentCPA: Double, prevCPA: Double) => {
+    var result = 1
+    if (currentCPA >= 0) {
+      result = 1
+    } else {
+      result = 0
+    }
+    result
+  })
+
+  def getCurrentLight(version: String, date: String, hour: String, spark: SparkSession) = {
     // 抽取数据
     val cpcData = getRecommendationAd(version, date, hour, spark)
     val ocpcData = getOcpcRecord(version, date, hour, spark)
@@ -42,12 +233,12 @@ object OcpcLightBulb{
 
 
     val result = cpcData
-        .join(ocpcData, Seq("unitid", "userid", "adclass", "media"), "outer")
-        .join(confData, Seq("unitid", "media"), "outer")
-        .select("unitid", "userid", "adclass", "media", "cpa1", "cpa2", "cpa3")
-        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3"))
-        .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
-        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
+      .join(ocpcData, Seq("unitid", "userid", "adclass", "media"), "outer")
+      .join(confData, Seq("unitid", "media"), "outer")
+      .select("unitid", "userid", "adclass", "media", "cpa1", "cpa2", "cpa3")
+      .na.fill(-1, Seq("cpa1", "cpa2", "cpa3"))
+      .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2"), col("cpa3")))
+      .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "cpa"))
 
     result.show(10)
     val resultDF = result
@@ -55,17 +246,9 @@ object OcpcLightBulb{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .cache()
 
     resultDF
-      .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
-
-    resultDF
-      .repartition(5)
-      .select("unitid", "userid", "adclass", "media", "cpa", "version")
-      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
   }
 
   def udfSelectCPA() = udf((cpa1: Double, cpa2: Double, cpa3: Double) => {
