@@ -53,7 +53,7 @@ object OcpcSuggestCpaRecord {
 
     resultDF.show(10)
 
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190704")
+
     resultDF
       .repartition(10)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
@@ -96,13 +96,10 @@ object OcpcSuggestCpaRecord {
       .join(ocpcFlag, Seq("unitid", "userid", "adclass", "media", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest", "click", "flag")
 
-
-    joinData.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_record20190709a")
     val result = joinData
       .filter(s"flag is null")
       .filter("cpa_suggest is not null")
 
-    result.show(10)
     result
   }
 
