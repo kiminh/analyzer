@@ -55,9 +55,9 @@ object KFactorCaliv3 {
 
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k)
+      predictions = Seq(0.0,k*3)
     )
-    println(s"k is: $k")
+    println(s"k is: $k*3")
     val config = CalibrationConfig(
       name = calimodel,
       ir = Option(irModel)
