@@ -54,8 +54,10 @@ object OcpcUpdatePrevLight{
 
     data
       .withColumn("cpa", col("current_cpa"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "userid", "adclass", "media", "cpa", "version")
+      .select("unitid", "userid", "adclass", "media", "cpa", "date", "hour", "version")
       .repartition(10)
       .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_prev_version")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_prev_version")
