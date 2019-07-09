@@ -54,15 +54,15 @@ object OcpcLightBulb{
     // 存储到redis
     val resultDF = result
       .withColumn("unit_id", col("unitid"))
-      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
+      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price", "media")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly_v2")
 
 
     // 清除redis里面的数据
