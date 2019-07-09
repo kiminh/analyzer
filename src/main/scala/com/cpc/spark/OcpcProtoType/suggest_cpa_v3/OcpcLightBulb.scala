@@ -179,7 +179,7 @@ object OcpcLightBulb{
          |  media,
          |  cpa
          |FROM
-         |  test.ocpc_unit_light_control_prev_version
+         |  dl_cpc.ocpc_unit_light_control_prev_version
          |WHERE
          |  version = '$version'
        """.stripMargin
