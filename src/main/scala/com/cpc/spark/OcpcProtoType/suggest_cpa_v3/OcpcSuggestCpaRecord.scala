@@ -31,14 +31,12 @@ object OcpcSuggestCpaRecord {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
-    suggestCPA.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_record20190709a")
 
     // 读取最近72小时是否有ocpc广告记录，并加上flag
     val ocpcFlag = getOcpcFlag(date, hour, spark)
 
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
-    newData.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_record20190709b")
 
     // 读取前一小时的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
@@ -97,11 +95,15 @@ object OcpcSuggestCpaRecord {
     val joinData = suggestCPA
       .join(ocpcFlag, Seq("unitid", "userid", "adclass", "media", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest", "click", "flag")
+
+
+    joinData.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_record20190709a")
+    val result = joinData
       .filter(s"flag is null")
       .filter("cpa_suggest is not null")
 
-    joinData.show(10)
-    joinData
+    result.show(10)
+    result
   }
 
   def getOcpcFlag(date: String, hour: String, spark: SparkSession) = {
