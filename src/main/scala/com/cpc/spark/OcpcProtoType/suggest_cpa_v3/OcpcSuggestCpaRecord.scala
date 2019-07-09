@@ -56,12 +56,12 @@ object OcpcSuggestCpaRecord {
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190704")
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
@@ -72,6 +72,8 @@ object OcpcSuggestCpaRecord {
       s"""
          |SELECT
          |  unitid,
+         |  userid,
+         |  adclass,
          |  media,
          |  conversion_goal,
          |  cpa_suggest
@@ -91,8 +93,8 @@ object OcpcSuggestCpaRecord {
 
   def getCleanData(suggestCPA: DataFrame, ocpcFlag: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val joinData = suggestCPA
-      .join(ocpcFlag, Seq("unitid", "media", "conversion_goal"), "left_outer")
-      .select("unitid", "media", "conversion_goal", "cpa_suggest", "click", "flag")
+      .join(ocpcFlag, Seq("unitid", "userid", "adclass", "media", "conversion_goal"), "left_outer")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest", "click", "flag")
       .filter(s"flag is null")
       .filter("cpa_suggest is not null")
 
@@ -122,6 +124,7 @@ object OcpcSuggestCpaRecord {
          |    searchid,
          |    unitid,
          |    userid,
+         |    adclass,
          |    isclick,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
@@ -146,12 +149,12 @@ object OcpcSuggestCpaRecord {
     val resultDF = spark
       .sql(sqlRequest)
       .filter(s"is_hidden is null or is_hidden = 0")
-      .groupBy("unitid", "media", "conversion_goal")
+      .groupBy("unitid", "userid", "adclass", "media", "conversion_goal")
       .agg(
         sum(col("isclick")).alias("click")
       )
       .withColumn("flag", lit(1))
-      .select("unitid", "media", "conversion_goal", "click", "flag")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "click", "flag")
       .filter(s"click>0")
     resultDF
   }
@@ -161,6 +164,8 @@ object OcpcSuggestCpaRecord {
       s"""
          |SELECT
          |  unitid,
+         |  userid,
+         |  adclass,
          |  media,
          |  cpa as cpa_suggest,
          |  conversion_goal
@@ -178,11 +183,11 @@ object OcpcSuggestCpaRecord {
     println(sqlRequest1)
     val data = spark
       .sql(sqlRequest1)
-      .groupBy("unitid", "media", "conversion_goal")
+      .groupBy("unitid", "userid", "adclass", "media", "conversion_goal")
       .agg(
         avg("cpa_suggest").alias("cpa_suggest")
       )
-      .select("unitid", "media", "conversion_goal", "cpa_suggest")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest")
 
 
 
@@ -202,22 +207,22 @@ object OcpcSuggestCpaRecord {
      */
     val newData = newDataRaw
       .withColumn("new_cpa", col("cpa_suggest"))
-      .select("unitid", "media", "conversion_goal", "new_cpa")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "new_cpa")
 
     val prevData = prevDataRaw
       .withColumn("prev_cpa", col("cpa_suggest"))
-      .select("unitid", "media", "conversion_goal", "prev_cpa")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "prev_cpa")
 
 
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
     val result = newData
-      .join(prevData, Seq("unitid", "media", "conversion_goal"), "outer")
-      .select("unitid", "media", "conversion_goal", "new_cpa", "prev_cpa")
+      .join(prevData, Seq("unitid", "userid", "adclass", "media", "conversion_goal"), "outer")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "new_cpa", "prev_cpa")
       .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
 
 
-    val resultDF = result.select("unitid", "media", "conversion_goal", "cpa_suggest")
+    val resultDF = result.select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest")
     resultDF
 
   }
