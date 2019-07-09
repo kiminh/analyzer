@@ -61,17 +61,17 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(version, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(version, date, hour, spark)
-//    println(s"############## saving redis database ################")
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(version, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -83,7 +83,6 @@ object OcpcLightBulb{
       .where(s"version = '$version' and `date` = '$date' and `hour` = '$hour' and ocpc_light = 0")
       .selectExpr("cast(unit_id as int) unitid", "cast(round(ocpc_suggest_price, 2) as double) as cpa")
       .repartition(2)
-    //    val data = spark.table("test.ocpc_qtt_light_control_v2").repartition(2)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
@@ -285,7 +284,7 @@ object OcpcLightBulb{
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_qtt_manual_list_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list_version")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list_version")
     data
   }
@@ -408,7 +407,7 @@ object OcpcLightBulb{
          |  media,
          |  cpa * 1.0 / 100 as cpa_manual
          |FROM
-         |  test.ocpc_light_qtt_manual_list_version
+         |  dl_cpc.ocpc_light_qtt_manual_list_version
          |WHERE
          |  version = '$version'
        """.stripMargin
