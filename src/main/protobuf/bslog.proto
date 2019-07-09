@@ -143,6 +143,8 @@ message IdeaStats {
     repeated int32 after_rank_ideas = 17; //bs rank后的广告
     repeated int32 ideas_filtered_by_content = 18; //由于相互间内容有雷同，被过滤的广告
     repeated string embedding_ctr_uniq_ideas = 19; // 使用embedding计算得到ctr值的id列表，格氏为ideaId_unitId
+    repeated int32 ideas_filtered_by_fill_freq_control = 20; //被填充去重过滤的创意id
+    repeated int32 ideas_filtered_by_show_freq_control = 21; //被展现去重过滤掉的创意id
 }
 message NoticeLogBody {
     required string searchid = 1;
