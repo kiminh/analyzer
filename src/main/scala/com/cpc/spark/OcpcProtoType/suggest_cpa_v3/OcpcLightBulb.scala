@@ -58,11 +58,13 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
-//
-//    resultDF
-//      .select("unitid", "userid", "adclass", "media", "cpa", "version")
+//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+
+    resultDF
+      .repartition(5)
+      .select("unitid", "userid", "adclass", "media", "cpa", "version")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
 //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
   }
 
