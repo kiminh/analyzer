@@ -45,7 +45,7 @@ object OcpcSuggestCpaRecord {
     val result = updateCPAsuggest(newData, prevData, spark)
 
     val resultDF = result
-      .select("unitid", "media", "conversion_goal", "cpa_suggest")
+      .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
