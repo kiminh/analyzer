@@ -56,12 +56,12 @@ object OcpcSuggestCpaRecord {
 
     resultDF
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
@@ -221,8 +221,6 @@ object OcpcSuggestCpaRecord {
       .select("unitid", "userid", "adclass", "media", "conversion_goal", "new_cpa", "prev_cpa")
       .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
-
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_light_data20190710")
 
 
     val resultDF = result.select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest")

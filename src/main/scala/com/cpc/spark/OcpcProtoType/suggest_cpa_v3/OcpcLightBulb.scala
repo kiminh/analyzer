@@ -39,39 +39,39 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-      //      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+            .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
-      //      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+            .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
-    // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
-
-    // 存储到redis
-    val resultDF = result
-      .withColumn("unit_id", col("unitid"))
-      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-
-    resultDF
-      .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
-
-
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
+//    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
+//
+//    // 存储到redis
+//    val resultDF = result
+//      .withColumn("unit_id", col("unitid"))
+//      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+//      .repartition(5)
+////      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//
+//
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -168,51 +168,6 @@ object OcpcLightBulb{
 //      redis.disconnect
 //    })
   }
-
-//  def getUpdateTable(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
-//    val sqlRequest1 =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  userid,
-//         |  adclass,
-//         |  media,
-//         |  cpa
-//         |FROM
-//         |  dl_cpc.ocpc_unit_light_control_prev_version
-//         |WHERE
-//         |  version = '$version'
-//       """.stripMargin
-//    println(sqlRequest1)
-//    val data1 = spark
-//      .sql(sqlRequest1)
-//      .groupBy("unitid", "userid", "adclass", "media")
-//      .agg(
-//        min(col("cpa")).alias("prev_cpa")
-//      )
-//      .select("unitid", "userid", "adclass", "media", "prev_cpa")
-//      .cache()
-//
-//    data1.show(10)
-//
-//    val data2 = currentLight
-//      .groupBy("unitid", "userid", "adclass", "media")
-//      .agg(min(col("cpa")).alias("current_cpa"))
-//      .select("unitid", "userid", "adclass", "media", "current_cpa")
-//      .cache()
-//    data2.show(10)
-//
-//    // 数据关联
-//    val data = data2
-//      .join(data1, Seq("unitid", "userid", "adclass", "media"), "outer")
-//      .select("unitid", "userid", "adclass", "media", "current_cpa", "prev_cpa")
-//      .na.fill(-1, Seq("current_cpa", "prev_cpa"))
-//      .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
-//      .cache()
-//
-//    data
-//
-//  }
 
   def getUpdateTableV2(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
     /*
@@ -331,7 +286,7 @@ object OcpcLightBulb{
       .withColumn("version", lit(version))
       .repartition(5)
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_qtt_manual_list_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_qtt_manual_list_version")
     data
   }
 
@@ -472,6 +427,9 @@ object OcpcLightBulb{
       .select("unitid", "userid", "adclass", "media", "cpa_suggest", "cpa_manual")
       .withColumn("cpa2", when(col("cpa_manual").isNotNull, col("cpa_manual")).otherwise(col("cpa_suggest")))
       .na.fill(0, Seq("cpa2"))
+
+    result
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_light_bulb20190710a")
 
     result.show(10)
     val resultDF = result.select("unitid", "userid", "adclass", "media", "cpa2")
