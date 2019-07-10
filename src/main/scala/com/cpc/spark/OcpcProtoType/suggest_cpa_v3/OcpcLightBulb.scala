@@ -47,7 +47,7 @@ object OcpcLightBulb{
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
             .repartition(5).write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
 //      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
-
+//
 //    // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
 //    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
 //
@@ -425,9 +425,6 @@ object OcpcLightBulb{
       .select("unitid", "userid", "adclass", "media", "cpa_suggest", "cpa_manual")
       .withColumn("cpa2", when(col("cpa_manual").isNotNull, col("cpa_manual")).otherwise(col("cpa_suggest")))
       .na.fill(0, Seq("cpa2"))
-
-    result
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_light_bulb20190710a")
 
     result.show(10)
     val resultDF = result.select("unitid", "userid", "adclass", "media", "cpa2")
