@@ -25,4 +25,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.hottopic.KDDBaseData \
-    randjar $date $hour
+    $randjar $date $hour
