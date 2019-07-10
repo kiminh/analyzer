@@ -76,7 +76,7 @@ object OcpcSuggestCpaRecord {
          |  conversion_goal,
          |  cpa_suggest
          |FROM
-         |  dl_cpc.ocpc_history_suggest_cpa_version
+         |  test.ocpc_history_suggest_cpa_version
          |WHERE
          |  $selectCondition
        """.stripMargin
