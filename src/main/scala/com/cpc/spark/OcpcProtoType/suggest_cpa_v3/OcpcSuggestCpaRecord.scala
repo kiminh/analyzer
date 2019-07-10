@@ -178,11 +178,11 @@ object OcpcSuggestCpaRecord {
     println(sqlRequest1)
     val data = spark
       .sql(sqlRequest1)
-      .groupBy("unitid", "userid", "adclass", "media", "conversion_goal")
+      .groupBy("unitid", "media", "conversion_goal")
       .agg(
         avg("cpa_suggest").alias("cpa_suggest")
       )
-      .select("unitid", "userid", "adclass", "media", "conversion_goal", "cpa_suggest")
+      .select("unitid", "media", "conversion_goal", "cpa_suggest")
 
 
 
