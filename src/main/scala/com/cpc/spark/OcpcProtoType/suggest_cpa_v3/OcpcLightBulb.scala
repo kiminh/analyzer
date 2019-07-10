@@ -389,8 +389,6 @@ object OcpcLightBulb{
       s"""
          |SELECT
          |  unitid,
-         |  userid,
-         |  adclass,
          |  media,
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
@@ -421,7 +419,7 @@ object OcpcLightBulb{
 //      .na.fill(0, Seq("cpa2"))
 
     val result = rawData
-      .join(suggestDataRaw1, Seq("unitid", "userid", "adclass", "media"), "left_outer")
+      .join(suggestDataRaw1, Seq("unitid", "media"), "left_outer")
       .select("unitid", "userid", "adclass", "media", "cpa_suggest")
       .join(suggestDataRaw2, Seq("unitid", "media"), "left_outer")
       .select("unitid", "userid", "adclass", "media", "cpa_suggest", "cpa_manual")

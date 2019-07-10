@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS test.ocpc_history_suggest_cpa_hourly
 (
     unitid                  int,
-    userid                  int,
-    adclass                 int,
     media                   string,
     conversion_goal         int,
     cpa_suggest             double
