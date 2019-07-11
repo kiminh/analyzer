@@ -21,6 +21,7 @@ spark-submit --master yarn --queue ${queue} \
     --name "cpc-adlist-tf-decode" \
     --driver-memory 24g --executor-memory 8g \
     --num-executors 30 --executor-cores 8 \
+    --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
