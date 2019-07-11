@@ -162,7 +162,7 @@ object OcpcLightBulbBackup{
          |  unitid as unit_id,
          |  ocpc_light
          |FROM
-         |  test.ocpc_adv_light_status_hourly
+         |  dl_cpc.ocpc_adv_light_status_hourly
          |WHERE
          |  date = '$date'
          |AND
