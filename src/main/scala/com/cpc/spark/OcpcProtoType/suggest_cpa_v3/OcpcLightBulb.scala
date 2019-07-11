@@ -372,7 +372,7 @@ object OcpcLightBulb{
          |  media,
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
-         |  dl_cpc.ocpc_history_suggest_cpa_version
+         |  test.ocpc_history_suggest_cpa_version
          |WHERE
          |  version = '$version'
        """.stripMargin
