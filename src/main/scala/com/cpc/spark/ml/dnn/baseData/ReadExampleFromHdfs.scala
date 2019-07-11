@@ -110,7 +110,7 @@ object ReadExampleFromHdfs {
     //val new_path = "hdfs://emr-cluster/user/cpc/fhb/adlist-v4/2019-06-11"
     //importedDf1.repartition(100).saveAs
 
-    path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
+    val path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
     if (exists_hdfs_path(path)) {
       delete_hdfs_path(path)
     }
