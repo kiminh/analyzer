@@ -62,17 +62,17 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(version, date, hour, spark)
-
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(version, date, hour, spark)
+//
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -196,6 +196,13 @@ object OcpcLightBulb{
       .cache()
 
     data1.show(10)
+    data1
+      .withColumn("ocpc_light", lit(1))
+      .select("unitid", "ocpc_light")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_adv_light_status_hourly")
 
     val data2 = currentLight
       .groupBy("unitid", "userid")
