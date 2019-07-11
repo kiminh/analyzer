@@ -1,9 +1,11 @@
 package com.cpc.spark.ml.dnn.baseData
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.log4j.{Level, Logger}
 
 object ReadExampleFromHdfs {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     val path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/"
