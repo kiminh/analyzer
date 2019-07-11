@@ -19,7 +19,7 @@ object ReadExampleFromHdfs {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/"
+    var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
 
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
