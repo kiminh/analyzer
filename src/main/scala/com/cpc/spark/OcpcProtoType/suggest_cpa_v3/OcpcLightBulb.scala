@@ -188,8 +188,6 @@ object OcpcLightBulb{
          |  is_ocpc = 1
          |AND
          |  ocpc_status in (2, 4)
-         |AND
-         |  userid != 1630465
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
