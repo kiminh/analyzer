@@ -19,6 +19,7 @@ object SaveExample2Hdfs {
       System.exit(1)
     }
     val Array(str, path, numPartitions) = args
+
     Utils.saveExample2Hdfs(str, path, numPartitions.toInt)
   }
 }

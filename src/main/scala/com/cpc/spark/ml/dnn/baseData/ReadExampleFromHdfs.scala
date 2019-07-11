@@ -1,18 +1,13 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.log4j.{Level, Logger}
-import scala.collection.JavaConversions._;
-import scala.collection.JavaConverters._;
-import collection.JavaConversions._
 import org.apache.log4j.{ Level, Logger }
-import org.apache.spark.SparkConf
-
 import org.apache.spark.sql.SparkSession
 
 import org.apache.spark.sql.{ DataFrame, Row }
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.hive.HiveContext
 
 object ReadExampleFromHdfs {
 
@@ -47,32 +42,69 @@ object ReadExampleFromHdfs {
   }
 
   def main(args: Array[String]): Unit = {
+
+    if (args.length != 3) {
+      System.err.println(
+        """
+          |you have to input 3 parameters !!!
+        """.stripMargin)
+      System.exit(1)
+    }
+    val Array(src, des, numPartitions) = args
+
+    println(src)
+    println(des)
+    println(numPartitions)
+
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
+    //var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
 
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
-    val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
-    println("show")
-    importedDf0.show(10)
-    println("printSchema")
-    importedDf0.printSchema()
-    println("columns")
-    importedDf0.columns
-    println("dense_show")
-    importedDf0.describe("dense").show
+    val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(src)
+    //println("show")
+    //importedDf0.show(10)
+    //println("printSchema")
+    //importedDf0.printSchema()
+    //println("columns")
+    //importedDf0.columns
+    //println("dense_show")
+    //importedDf0.describe("dense").show
 
     importedDf0.createOrReplaceTempView("sql_table_name")
-
     val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name limit 10000")
-    //DataFrame转换成RDD
-    path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
-    if (exists_hdfs_path(path)) {
-      delete_hdfs_path(path)
+
+    //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-decode"
+    if (exists_hdfs_path(des)) {
+      delete_hdfs_path(des)
     }
-    tf_decode_res.rdd.saveAsTextFile(path)
+    tf_decode_res.rdd.map(
+      rs => {
+        val line = rs.split(",")
+        val output: Array[String] = new Array[String](30)
+        output(0) = line(0)
+        if (line(1)(0) = 1) {
+          output(1) = "1.0"
+        } else {
+          output(1) = "0.0"
+        }
+
+        //val output = new ArrayBuffer[String]
+        for (idx <- 0 until 28) {
+          output(idx + 2) = line(2)(idx)
+        }
+        output.mkString("\t")
+      }
+    ).repartition(numPartitions).saveAsTextFile(des)
+
+    ////DataFrame转换成RDD
+    //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
+    //if (exists_hdfs_path(path)) {
+    //  delete_hdfs_path(path)
+    //}
+    //tf_decode_res.rdd.saveAsTextFile(path)
 
 
     //val new_path = "hdfs://emr-cluster/user/cpc/fhb/adlist-v4/2019-06-11"

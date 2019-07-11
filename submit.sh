@@ -16,6 +16,8 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get $jarLib $randjar
 
 hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
+src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
+des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info/2019-06-11/"
 
 spark-submit --master yarn --queue ${queue} \
     --name "cpc-adlist-tf-decode" \
@@ -26,4 +28,4 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.ReadExampleFromHdfs \
-    $randjar ${hdfsPath}
+    ${randjar} ${src} ${des} 1
