@@ -15,6 +15,28 @@ import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
 
 object ReadExampleFromHdfs {
+
+  def delete_hdfs_path(path: String): Unit = {
+    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+    val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
+
+    if (hdfs.exists(hdfs_path)) {
+      hdfs.delete(hdfs_path, true)
+    }
+  }
+
+  def exists_hdfs_path(path: String): Boolean = {
+    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+    val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
+
+    if (hdfs.exists(hdfs_path)) {
+      true
+    }
+    else {
+      false
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -30,6 +52,9 @@ object ReadExampleFromHdfs {
     //importedDf1.repartition(100).saveAs
 
     path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
+    if (exists_hdfs_path(path)) {
+      delete_hdfs_path(path)
+    }
 
     val testRows: Array[Row] = Array(
       new GenericRow(Array[Any](11, 1, 23L, 10.0F, 14.0, List(1.0, 2.0), "r1")),
