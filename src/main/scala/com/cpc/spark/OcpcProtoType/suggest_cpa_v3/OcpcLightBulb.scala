@@ -196,8 +196,9 @@ object OcpcLightBulb{
       .cache()
 
     data1.show(10)
-    data1
-      .withColumn("ocpc_light", lit(1))
+    ocpcUnit
+      .filter(s"is_ocpc = 1")
+      .withColumn("ocpc_light", when(col("ocpc_status") === 2 || col("ocpc_status") === 4, 1).otherwise(0))
       .select("unitid", "ocpc_light")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
