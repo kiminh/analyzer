@@ -98,7 +98,9 @@ object OcpcSuggestReport {
          |    pcoc,
          |    jfb,
          |    media,
-         |    cal_bid * 1.0 / acb as bid_ratio
+         |    cal_bid * 1.0 / acb as bid_ratio,
+         |    (case when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
+         |        else 60 end) as cv_threshold
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
@@ -118,14 +120,14 @@ object OcpcSuggestReport {
 
     val resultDF = rawData
       .withColumn("adslot_type", udfAdslotTypeMap()(col("adslot_type")))
-      .withColumn("no_suggest_reason", udfNoSuggestReason()(col("cv"), col("auc"), col("media"), col("bid_ratio"), col("industry")))
-      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_reason", "media")
+      .withColumn("no_suggest_reason", udfNoSuggestReason()(col("cv"), col("auc"), col("cv_threshold"), col("bid_ratio")))
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_reason", "media", "cv_threshold")
 
     resultDF
 
   }
 
-  def udfNoSuggestReason() = udf((cv: Int, auc: Double, media: String, bid_ratio: Double, industry: String) => {
+  def udfNoSuggestReason() = udf((cv: Int, auc: Double, cv_threshold: Int, bid_ratio: Double) => {
     /*
 //    if auc == "NULL" or auc == "":
 //        reason = "auc is NULL"
@@ -149,12 +151,8 @@ object OcpcSuggestReport {
       result = "auc < 0.65"
     } else if (cv == null) {
       result = "cv is null"
-    } else if (cv < 10 && (media == "qtt" || media == "novel") && (industry == "feedap" || industry == "elds")) {
-      result = "cv < 10"
-    } else if (cv < 60 && (media == "qtt" || media == "novel") && industry != "feedap" && industry != "elds") {
-      result = "cv < 60"
-    } else if (cv < 60) {
-      result = "cv < 60"
+    } else if (cv < cv_threshold) {
+      result = "cv not enough"
     } else if (bid_ratio < 0.7 || bid_ratio > 1.3) {
       result = "cal_bid not ok"
     } else {
