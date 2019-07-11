@@ -71,6 +71,8 @@ object OcpcTools {
         min(col("cpa_suggest")).alias("cpa_suggest")
       )
       .selectExpr("unitid", "media", "cpa_suggest")
+
+    data.show()
     data
   }
 }
