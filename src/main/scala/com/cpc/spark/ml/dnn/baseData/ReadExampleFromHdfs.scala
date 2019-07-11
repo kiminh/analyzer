@@ -86,7 +86,7 @@ object ReadExampleFromHdfs {
         output(0) = rs.getString(0)
 
         val label = rs.getSeq(1)
-        if (label(1)(0) = 1) {
+        if (label(0) = 1) {
           output(1) = "1.0"
         } else {
           output(1) = "0.0"
