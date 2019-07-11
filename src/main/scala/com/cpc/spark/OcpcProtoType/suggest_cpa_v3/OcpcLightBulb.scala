@@ -218,6 +218,7 @@ object OcpcLightBulb{
       .select("unitid", "userid", "current_cpa", "prev_cpa")
       .na.fill(-1, Seq("current_cpa", "prev_cpa"))
       .withColumn("ocpc_light", udfSetLightSwitch()(col("current_cpa"), col("prev_cpa")))
+      .filter(s"userid != 1630465")
       .cache()
 
     data
