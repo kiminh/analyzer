@@ -251,7 +251,7 @@ object KDDBaseData {
 
         val baseData = spark.sql(sql)
 
-        baseData.repartition(100)
+        baseData.repartition(1)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_kdd_basedata_union_events")
