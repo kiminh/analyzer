@@ -19,8 +19,8 @@ hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
 
 spark-submit --master yarn --queue ${queue} \
     --name "cpc-adlist-tf-decode" \
-    --driver-memory 24g --executor-memory 8g \
-    --num-executors 30 --executor-cores 8 \
+    --driver-memory 10g --executor-memory 8g \
+    --num-executors 10 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
