@@ -243,7 +243,6 @@ object KDDBaseData {
                |    ,inspire_video_type1
                |    ,day
                |    ,hour
-               |    ,minute
                |from dl_cpc.cpc_basedata_union_events
                |where day = '$day' and hour = '$hour'
                |and media_appsid in ('80002819')
