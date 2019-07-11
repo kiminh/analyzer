@@ -52,9 +52,9 @@ object ReadExampleFromHdfs {
     importedDf0.describe("dense").show
 
     importedDf0.createOrReplaceTempView("sql_table_name")
-    var tf_decode_res = spark.sql("SELECT dense FROM employee")
+    var tf_decode_res = spark.sql("SELECT dense FROM sql_table_name")
     //DataFrame转换成RDD
-    path = "fenghuabin/2019-06-11-bak-decode"
+    path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
     tf_decode_res.rdd.saveAsTextFile(path)
 
 
