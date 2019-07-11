@@ -62,8 +62,8 @@ object MultiDimensionCalibrationOnCtrVideo {
                  |  else '8' end as user_req_ad_num
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and $selectCondition and isshow = 1
-                 | and ctr_model_name in ('$model','$calimodel')
+                 | and media_appsid in ('80000001','80000002') and adtype = 15 and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel','qtt-list-dnn-rawid-v4-video-cali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
