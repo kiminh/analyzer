@@ -198,7 +198,7 @@ object OcpcLightBulbBackup{
     val data = data1
       .join(data2, Seq("unit_id"), "left_outer")
       .na.fill(0, Seq("cpa"))
-      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
+      .selectExpr("unit_id", "ocpc_light", "cast(round(cpa, 2) as double) as ocpc_suggest_price")
       .cache()
 
     data
