@@ -30,7 +30,7 @@ libraryDependencies ++= Seq(
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion,
   "com.google.code.gson" % "gson" % "2.8.1",
-  "com.alibaba" % "fastjson" % "1.2.39",
+  "com.alibaba" % "fastjson" % "1.2.51",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
   "net.debasishg" %% "redisclient" % "3.9",
   "org.apache.commons" % "commons-math3" % "3.5",
