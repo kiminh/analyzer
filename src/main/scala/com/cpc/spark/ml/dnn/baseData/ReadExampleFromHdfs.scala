@@ -66,7 +66,7 @@ object ReadExampleFromHdfs {
 
     importedDf0.createOrReplaceTempView("sql_table_name")
 
-    val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name")
+    val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name limit 10000")
     //DataFrame转换成RDD
     path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
     if (exists_hdfs_path(path)) {
