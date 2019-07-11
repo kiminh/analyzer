@@ -17,17 +17,26 @@ import org.apache.spark.sql.types._
 object ReadExampleFromHdfs {
 
   def delete_hdfs_path(path: String): Unit = {
-    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
-    val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
 
+    val conf = new org.apache.hadoop.conf.Configuration()
+    val p = new org.apache.hadoop.fs.Path(path)
+    val hdfs = p.getFileSystem(conf)
+    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+
+    //val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+    //val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
     if (hdfs.exists(hdfs_path)) {
       hdfs.delete(hdfs_path, true)
     }
   }
 
   def exists_hdfs_path(path: String): Boolean = {
+
+    val conf = new org.apache.hadoop.conf.Configuration()
+    val p = new org.apache.hadoop.fs.Path(path)
+    val hdfs = p.getFileSystem(conf)
     val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
-    val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
+    //val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
 
     if (hdfs.exists(hdfs_path)) {
       true
