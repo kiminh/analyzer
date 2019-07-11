@@ -18,7 +18,7 @@ hadoop fs -get $jarLib $randjar
 hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
 
 spark-submit --master yarn --queue ${queue} \
-    --name "cpc-dssm-user-upload" \
+    --name "cpc-adlist-tf-decode" \
     --driver-memory 24g --executor-memory 8g \
     --num-executors 30 --executor-cores 8 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
