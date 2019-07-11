@@ -100,10 +100,8 @@ object OcpcGetPbV2 {
          |  cast(unitid as string) identifier,
          |  cpa as cpagiven
          |FROM
-         |  dl_cpc.ocpc_auto_budget_hourly
+         |  test.ocpc_auto_budget_hourly
          |WHERE
-         |  $selectCondition
-         |AND
          |  industry in ('wzcp')
        """.stripMargin
     println(sqlRequest)
