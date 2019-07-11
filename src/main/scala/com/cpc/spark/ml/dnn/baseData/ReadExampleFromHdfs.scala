@@ -60,6 +60,7 @@ object ReadExampleFromHdfs {
     //DataFrame转换成RDD
     path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
     if (exists_hdfs_path(path)) {
+      println("now delete path1")
       delete_hdfs_path(path)
     }
     tf_decode_res.rdd.saveAsTextFile(path)
