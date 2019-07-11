@@ -32,28 +32,18 @@ object OcpcSuggestCpaRecord {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
-    suggestCPA
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_record20190711a")
 
     // 读取最近72小时是否有ocpc广告记录，并加上flag
     val ocpcFlag = getOcpcFlag(date, hour, spark)
-    ocpcFlag
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_record20190711b")
 
     // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
     val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
-    newData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_record20190711c")
 
     // 读取前一小时的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
-    prevData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_record20190711c")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
     val result = updateCPAsuggest(newData, prevData, spark)
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_record20190711d")
 
     val resultDF = result
       .select("unitid", "media", "conversion_goal", "cpa_suggest")
@@ -67,12 +57,12 @@ object OcpcSuggestCpaRecord {
 
     resultDF
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
@@ -206,9 +196,6 @@ object OcpcSuggestCpaRecord {
         .select("unitid", "media", "conversion_goal", "cpa1", "cpa2", "is_recommend")
         .withColumn("is_recommend", when(col("cpa2").isNotNull, 1).otherwise(col("is_recommend")))
         .withColumn("cpa_suggest", when(col("cpa2").isNotNull, col("cpa2")).otherwise(col("cpa1")))
-
-    data
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_suggestcpa_units20190711")
 
     val resultDF = data
         .filter(s"is_recommend = 1")

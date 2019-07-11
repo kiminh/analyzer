@@ -66,13 +66,13 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(version, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(version, date, hour, spark)
-//    println(s"############## saving redis database ################")
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(version, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -372,7 +372,7 @@ object OcpcLightBulb{
          |  media,
          |  cpa_suggest * 1.0 / 100 as cpa_suggest
          |FROM
-         |  test.ocpc_history_suggest_cpa_version
+         |  dl_cpc.ocpc_history_suggest_cpa_version
          |WHERE
          |  version = '$version'
        """.stripMargin
@@ -423,10 +423,6 @@ object OcpcLightBulb{
         .select("unitid", "userid", "adclass", "media", "cpa1", "cpa3", "is_recommend")
         .withColumn("is_recommend", when(col("cpa3").isNotNull, 1).otherwise(col("is_recommend")))
         .withColumn("cpa1", when(col("cpa3").isNotNull, col("cpa3")).otherwise(col("cpa1")))
-
-    result
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_recommend_units20190711")
-
 
     val resultDF = result
       .filter(s"is_recommend = 1")
