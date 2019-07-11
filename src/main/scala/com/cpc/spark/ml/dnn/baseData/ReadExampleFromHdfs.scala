@@ -7,7 +7,6 @@ import org.apache.spark.sql.{ DataFrame, Row }
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.hive.HiveContext
 
 object ReadExampleFromHdfs {
 
