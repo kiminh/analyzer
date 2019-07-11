@@ -58,4 +58,19 @@ object OcpcTools {
     val result = str + intValue.toString
     result
   })
+
+  def getConfCPA(version: String, date: String, hour: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val suggestCpaPath = conf.getString("ocpc_all.light_control.suggest_path_v2")
+    val rawData = spark.read.format("json").json(suggestCpaPath)
+    val data = rawData
+      .filter(s"version = '$version'")
+      .groupBy("unitid", "media")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest")
+      )
+      .selectExpr("unitid", "media", "cpa_suggest")
+    data
+  }
 }
