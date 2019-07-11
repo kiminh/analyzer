@@ -59,10 +59,12 @@ object ReadExampleFromHdfs {
     val tf_decode_res = spark.sql("SELECT dense FROM sql_table_name")
     //DataFrame转换成RDD
     path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
+    println("now delete path0")
     if (exists_hdfs_path(path)) {
       println("now delete path1")
       delete_hdfs_path(path)
     }
+    println("now delete path2")
     tf_decode_res.rdd.saveAsTextFile(path)
 
 
