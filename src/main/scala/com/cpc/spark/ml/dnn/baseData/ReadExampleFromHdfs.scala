@@ -19,17 +19,17 @@ object ReadExampleFromHdfs {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    //val path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/"
+    var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/"
 
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
-    //val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
-    //importedDf1.show(10)
+    val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
+    importedDf0.show(10)
 
     //val new_path = "hdfs://emr-cluster/user/cpc/fhb/adlist-v4/2019-06-11"
     //importedDf1.repartition(100).saveAs
 
-    var path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
+    path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
 
     val testRows: Array[Row] = Array(
       new GenericRow(Array[Any](11, 1, 23L, 10.0F, 14.0, List(1.0, 2.0), "r1")),
