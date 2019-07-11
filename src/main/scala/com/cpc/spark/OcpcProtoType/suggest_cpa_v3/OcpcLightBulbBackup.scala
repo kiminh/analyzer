@@ -44,8 +44,8 @@ object OcpcLightBulbBackup{
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
 
@@ -197,7 +197,8 @@ object OcpcLightBulbBackup{
     // 数据关联
     val data = data1
       .join(data2, Seq("unit_id"), "left_outer")
-      .na.fill(0, Seq("cpa"))
+      .na.fill(0.0, Seq("cpa"))
+      .withColumn("cpa", when(col("ocpc_light") === 0, -1.0).otherwise(col("cpa")))
       .selectExpr("unit_id", "ocpc_light", "cast(round(cpa, 2) as double) as ocpc_suggest_price")
       .cache()
 
