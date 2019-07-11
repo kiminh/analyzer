@@ -100,6 +100,7 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("adclass") === 110110100, 1).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("adclass") === 125100100, 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend")
       .cache()
 
