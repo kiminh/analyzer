@@ -46,13 +46,17 @@ object ReadExampleFromHdfs {
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
     val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
+    println("show")
     importedDf0.show(10)
+    println("printSchema")
     importedDf0.printSchema()
+    println("columns")
     importedDf0.columns
+    println("dense_show")
     importedDf0.describe("dense").show
 
     importedDf0.createOrReplaceTempView("sql_table_name")
-    var tf_decode_res = spark.sql("SELECT dense FROM sql_table_name")
+    val tf_decode_res = spark.sql("SELECT dense FROM sql_table_name")
     //DataFrame转换成RDD
     path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
     tf_decode_res.rdd.saveAsTextFile(path)
