@@ -86,7 +86,7 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  *,
-         |  (case when industry in ('elds', 'feedapp') and media = 'qtt' then 10
+         |  (case when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
          |        else 60 end) as cv_threshold
          |FROM
          |  raw_data

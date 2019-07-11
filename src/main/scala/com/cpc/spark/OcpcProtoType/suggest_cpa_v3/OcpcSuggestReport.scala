@@ -30,20 +30,15 @@ object OcpcSuggestReport {
       .appName(s"ocpc suggest report: $date, $hour, $version, $media")
       .enableHiveSupport().getOrCreate()
 
-    val filterCondition = s"((industry = 'elds' and conversion_goal = 3) or (industry = 'feedapp' and conversion_goal in (1, 2)))"
-
-    // 抽取每个unitid的adslot_type
-    val unitAdslotType = getUnitAdslotType(media, date, hour, spark)
-
     // 整理准入名单
-    val permitUnit = getPermitUnit(unitAdslotType, filterCondition, version, date, hour, spark)
-//    permitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_permit_unit")
+    val permitUnit = getPermitUnit(version, date, hour, spark)
+    permitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_permit_unit")
 
     // 整理不准入名单
-    val unpermitUnit = getUnpermitUnit(unitAdslotType, filterCondition, version, date, hour, spark)
-//    unpermitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_unpermit_unit")
+    val unpermitUnit = getUnpermitUnit(version, date, hour, spark)
+    unpermitUnit.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_unpermit_unit")
 
-    saveDataToMysql(permitUnit, unpermitUnit, date, hour, spark)
+//    saveDataToMysql(permitUnit, unpermitUnit, date, hour, spark)
   }
 
   def saveDataToMysql(permitUnit: DataFrame, unpermitUnit: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -75,8 +70,10 @@ object OcpcSuggestReport {
     testOperateMySQL.insert(dataUnitMysql2, reportTableUnit2) //插入数据
   }
 
-  def getUnpermitUnit(adslotTypes: DataFrame, filterCondition: String, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getUnpermitUnit(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
+    "unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "impression", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "pcoc", "jfb", "no_suggest_reason", "media"
+
     title = ",".join(["unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", \
                       "show", "click", "cv", "charge(yuan)", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", \
                       "no_suggest_cpa_reason", "owner"])
@@ -89,7 +86,8 @@ object OcpcSuggestReport {
          |    adclass,
          |    industry,
          |    original_conversion as cv_goal,
-         |    show,
+         |    adslot_type,
+         |    show as impression,
          |    click,
          |    cvrcnt as cv,
          |    cost as charge,
@@ -97,11 +95,10 @@ object OcpcSuggestReport {
          |    acb,
          |    cal_bid,
          |    cpa,
-         |    pcvr,
-         |    kvalue,
+         |    pre_cvr as pcvr,
          |    pcoc,
          |    jfb,
-         |    ocpc_flag,
+         |    media,
          |    cal_bid * 1.0 / acb as bid_ratio
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
@@ -115,51 +112,50 @@ object OcpcSuggestReport {
          |  is_recommend = 0
          |AND
          |  auc > 0
-         |AND
-         |  $filterCondition
        """.stripMargin
     println(sqlRequest)
 
     val rawData = spark.sql(sqlRequest).na.fill(0.0, Seq("bid_ratio"))
 
     val resultDF = rawData
-      .join(adslotTypes, Seq("unitid"), "left_outer")
       .withColumn("adslot_type", udfAdslotTypeMap()(col("adslot_type")))
-      .withColumn("no_suggest_reason", udfNoSuggestReason()(col("cv"), col("auc"), col("ocpc_flag"), col("bid_ratio")))
-      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_reason")
+      .withColumn("no_suggest_reason", udfNoSuggestReason()(col("cv"), col("auc"), col("media"), col("bid_ratio"), col("industry")))
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "auc", "acb", "cal_bid", "cpa", "pcvr", "kvalue", "pcoc", "jfb", "no_suggest_reason", "media")
 
     resultDF
 
   }
 
-  def udfNoSuggestReason() = udf((cv: Int, auc: Double, ocpc_flag: Int, bid_ratio: Double) => {
+  def udfNoSuggestReason() = udf((cv: Int, auc: Double, media: String, bid_ratio: Double, industry: String) => {
     /*
-    if ocpc_flag == "1":
-        reason = "ocpc already open"
-    elif auc == "NULL" or auc == "":
-        reason = "auc is NULL"
-        owner = "xieyufei"
-    elif float(auc) < 0.65:
-        reason = "auc < 0.65"
-        owner = "xieyufei"
-    elif cv == "NULL" or cv == "":
-        reason = "cv is NULL"
-    elif float(cv) < 40:
-        reason = "cv < 40"
-    elif bid_ratio < 0.7 or bid_ratio > 1.3:
-        reason = "cal_bid no_ok"
+//    if auc == "NULL" or auc == "":
+//        reason = "auc is NULL"
+//    elif float(auc) < 0.65:
+//        reason = "auc < 0.65"
+//    elif cv == "NULL" or cv == "":
+//        reason = "cv is NULL"
+//    elif float(cv) < 10 and media == "qtt" and industry in set(["feedapp", "elds"]):
+//        reason = "cv < 10"
+//    elif float(cv) < 60 and media == "qtt" and industry not in set(["feedapp", "elds"]):
+//        reason = "cv < 60"
+//    elif float(cv) < 60 and media != "qtt":
+//        reason = "cv < 60"
+//    elif bid_ratio < 0.7 or bid_ratio > 1.3:
+//        reason = "cal_bid no_ok"
      */
     var result = ""
-    if (ocpc_flag == 1) {
-      result = "ocpc already open"
-    } else if (auc == null) {
+    if (auc == null) {
       result = "auc is null"
     } else if (auc < 0.65) {
       result = "auc < 0.65"
     } else if (cv == null) {
       result = "cv is null"
-    } else if (cv < 40) {
-      result = "cv < 40"
+    } else if (cv < 10 && (media == "qtt" || media == "novel") && (industry == "feedap" || industry == "elds")) {
+      result = "cv < 10"
+    } else if (cv < 60 && (media == "qtt" || media == "novel") && industry != "feedap" && industry != "elds") {
+      result = "cv < 60"
+    } else if (cv < 60) {
+      result = "cv < 60"
     } else if (bid_ratio < 0.7 || bid_ratio > 1.3) {
       result = "cal_bid not ok"
     } else {
@@ -169,47 +165,9 @@ object OcpcSuggestReport {
     result
   })
 
-
-  def getUnitAdslotType(media: String, date: String, hour: String, spark: SparkSession) = {
-    // 媒体选择
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
-    // 时间区间选择
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val endDay = date + " " + hour
-    val endDayTime = dateConverter.parse(endDay)
-    val calendar = Calendar.getInstance
-    calendar.setTime(endDayTime)
-    calendar.add(Calendar.HOUR, -72)
-    val startDateTime = calendar.getTime
-    val startDateStr = dateConverter.format(startDateTime)
-    val date1 = startDateStr.split(" ")(0)
-    val hour1 = startDateStr.split(" ")(1)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  adslot_type
-         |FROM
-         |  dl_cpc.ocpc_ctr_data_hourly
-         |WHERE
-         |  `date` between '$date1' and '$date'
-         |AND
-         |  $mediaSelection
-         |GROUP BY unitid, adslot_type
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
-
-    resultDF
-  }
-
-  def getPermitUnit(adslotTypes: DataFrame, filterCondition: String, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getPermitUnit(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    "unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent"
+    "unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "impression", "click", "cv", "charge", "cpm", "suggest_cpa", "is_ocpc", "usertype", "date", "hour", "media"
 
     slottype_dic = {"1": "list_page", "2": "details_page", "3": "interaction", \
                     "4": "open_screen", "5": "banner", "6": "video", "7": "incentive"}
@@ -224,17 +182,19 @@ object OcpcSuggestReport {
          |    userid,
          |    adclass,
          |    industry,
-         |	   original_conversion as cv_goal,
-         |	   show,
+         |	  conversion_goal as cv_goal,
+         |    adslot_type,
+         |	  show as impression,
          |    click,
          |    cvrcnt as cv,
          |    cost as charge,
-         |	   cost / 100.0 / (show / 1000.0) as cpm,
+         |	  cost / 100.0 / (show / 1000.0) as cpm,
          |    cpa as suggest_cpa,
-         |    ocpc_flag as is_ocpc,
-         |    usertype
+         |    1 as is_ocpc,
+         |    usertype,
+         |    media
          |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |  dl_cpc.ocpc_recommend_units_hourly
          |WHERE
          |  `date` = '$date'
          |AND
@@ -243,19 +203,14 @@ object OcpcSuggestReport {
          |  version = '$version'
          |AND
          |  is_recommend = 1
-         |AND
-         |  $filterCondition
-         |AND
-         |  ocpc_flag = 0
        """.stripMargin
     println(sqlRequest)
 
     val rawData = spark.sql(sqlRequest)
 
     val resultDF = rawData
-      .join(adslotTypes, Seq("unitid"), "left_outer")
       .withColumn("adslot_type", udfAdslotTypeMap()(col("adslot_type")))
-      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "show", "click", "cv", "charge", "cpm", "suggest_cpa", "is_ocpc", "usertype")
+      .select("unitid", "userid", "adclass", "industry", "cv_goal", "adslot_type", "impression", "click", "cv", "charge", "cpm", "suggest_cpa", "is_ocpc", "usertype", "media")
 
     resultDF
   }
