@@ -29,7 +29,7 @@ object ReadExampleFromHdfs {
     //val new_path = "hdfs://emr-cluster/user/cpc/fhb/adlist-v4/2019-06-11"
     //importedDf1.repartition(100).saveAs
 
-    var path = "hdfs://emr-cluster/user/cpc/fhb/adlist_tf_decode_test"
+    var path = "hdfs://emr-cluster/user/cpc/fhb/adlist_tf_decode_another"
 
     val testRows: Array[Row] = Array(
       new GenericRow(Array[Any](11, 1, 23L, 10.0F, 14.0, List(1.0, 2.0), "r1")),
