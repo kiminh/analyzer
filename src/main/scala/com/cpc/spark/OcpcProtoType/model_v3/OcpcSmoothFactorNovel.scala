@@ -181,7 +181,7 @@ object OcpcSmoothFactorNovel{
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date1'
+         |  $selectCondition
          |AND
          |  cvr_goal = '$cvrType'
        """.stripMargin

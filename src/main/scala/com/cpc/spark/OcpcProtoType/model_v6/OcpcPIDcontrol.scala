@@ -259,6 +259,8 @@ object OcpcPIDcontrol {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark

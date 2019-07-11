@@ -115,6 +115,8 @@ object OcpcSmoothFactor{
          |  isclick = 1
          |AND
          |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -131,7 +133,7 @@ object OcpcSmoothFactor{
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date1'
+         |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
