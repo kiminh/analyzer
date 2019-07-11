@@ -53,8 +53,8 @@ object OcpcSmoothFactor{
     resultDF.show()
 
     resultDF
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
-      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_jfb_hourly")
+//      .repartition(5).write.mode("overwrite").saveAsTable("test.check_cvr_smooth_data20190329")
   }
 
 
@@ -134,7 +134,7 @@ object OcpcSmoothFactor{
          |  unitid,
          |  isshow,
          |  isclick,
-         |  bid_discounted_by_ad_slot as original_bid,
+         |  bid as original_bid,
          |  price,
          |  exp_cvr,
          |  ocpc_log
@@ -165,7 +165,7 @@ object OcpcSmoothFactor{
          |    isshow,
          |    ocpc_log,
          |    ocpc_log_dict,
-         |    original_bid as bid
+         |    (case when length(ocpc_log)>0 then cast(cast(ocpc_log_dict['dynamicbid'] as double) + 0.5 as int) else original_bid end) as bid
          |from base_table
        """.stripMargin
     println(sqlRequestBase)
