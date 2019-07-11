@@ -84,8 +84,8 @@ object ReadExampleFromHdfs {
         val output: Array[String] = new Array[String](30)
         output(0) = rs.getString(0)
 
-        val label = rs(1)
-        if (label(0) = 1) {
+        val label:Array[String] = rs(1)
+        if (label(0) = "1") {
           output(1) = "1.0"
         } else {
           output(1) = "0.0"
