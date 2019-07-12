@@ -88,7 +88,7 @@ object ReadExampleFromHdfs {
     }
     tf_decode_res.rdd.map(
       rs => {
-        val output: Array[String] = new Array[String](30)
+        val output: Array[String] = new Array[String](31)
         output(0) = rs.getLong(0).toString
         val label = rs.getSeq[Long](1)
         if (label.head == 1) {
@@ -102,6 +102,19 @@ object ReadExampleFromHdfs {
         for (idx <- 0 until 28) {
           output(idx + 2) = dense(idx).toString
         }
+
+        val idx0 = rs.getSeq[Long](3)
+        val idx1 = rs.getSeq[Long](4)
+        val idx2 = rs.getSeq[Long](5)
+        val idx_arr = rs.getSeq[Long](6)
+
+        if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
+            output(30) = "invalid"
+        } else {
+            output(30) = "correct"
+        }
+
+
         output.mkString("\t")
       }
     ).repartition(numPartitions.toInt).saveAsTextFile(des)
