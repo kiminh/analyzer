@@ -66,6 +66,7 @@ object ReadExampleFromHdfs {
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    val sc = new SparkContext()
 
     //var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
 
@@ -138,6 +139,35 @@ object ReadExampleFromHdfs {
           output.mkString("\t")
         }
       ).repartition(numPartitions.toInt).saveAsTextFile(map_path)
+    }
+
+    val instancesData = des_dir + "/" + des_date + "-instances"
+    //统计每个ID特征的每个取值出现的次数
+    if (!exists_hdfs_path(instancesData) && exists_hdfs_path(map_path)) {
+      var data = sc.parallelize(Array[(String, Int)]())
+      data = data.union(
+        sc.textFile(map_path).map(
+          rs => {
+            val line = rs.split("\t")
+            val output: Array[String] = new Array[String](line.length - 2)
+            for (idx <- 2 until line.length) {
+              output(idx) = line(idx)
+            }
+            output.mkString("\t")
+          }
+        ).flatMap(
+          rs => {
+            val line = rs.split("\t")
+            for (elem <- line)
+              yield (elem, 1)
+          }
+        ).reduceByKey(_ + _)
+      )
+
+      data.reduceByKey(_ + _).sortByKey().map {
+        case (key, value) =>
+          key + "\t" + value.toString
+      }.repartition(1).saveAsTextFile(instancesData)
     }
 
 
