@@ -82,8 +82,8 @@ object ReadExampleFromHdfs {
     //importedDf0.describe("dense").show
 
     val decode_path = des_dir + "/" + des_date
-    if (exists_hdfs_path(decode_path)) {
-      delete_hdfs_path(decode_path)
+    if (!exists_hdfs_path(decode_path)) {
+      //delete_hdfs_path(decode_path)
       importedDf0.rdd.repartition(numPartitions.toInt).saveAsTextFile(decode_path)
     }
 
@@ -95,49 +95,49 @@ object ReadExampleFromHdfs {
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-decode"
 
     val map_path = des_dir + "/" + des_date + "-" + des_map_prefix
-    if (exists_hdfs_path(map_path)) {
-      delete_hdfs_path(decode_path)
+    if (!exists_hdfs_path(map_path)) {
+      //delete_hdfs_path(decode_path)
+      tf_decode_res.rdd.map(
+        rs => {
+          //output(0) = rs.getLong(0).toString
+          val sample_idx = rs.getLong(0).toString
+          val label_arr = rs.getSeq[Long](1)
+          val dense = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val idx1 = rs.getSeq[Long](4)
+          val idx2 = rs.getSeq[Long](5)
+          val idx_arr = rs.getSeq[Long](6)
+
+          val output: Array[String] = new Array[String](1 + 1 + dense.length + idx_arr.length)
+
+          var label = "0.0"
+          if (label_arr.head == 1) {
+            label = "1.0"
+          } else {
+            label = "0.0"
+          }
+          output(0) = sample_idx
+          output(1) = label
+
+          //val output = new ArrayBuffer[String]
+          for (idx <- 0 until dense.length) {
+            output(idx + 2) = dense(idx).toString
+          }
+
+          for (idx <- 0 until idx_arr.length) {
+            output(idx + 2 + dense.length) = idx_arr(idx).toString
+          }
+
+          //if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
+          //  output(30) = "invalid"
+          //} else {
+          //  output(30) = "correct"
+          //}
+          output.mkString("\t")
+        }
+      ).repartition(numPartitions.toInt).saveAsTextFile(map_path)
     }
 
-    tf_decode_res.rdd.map(
-      rs => {
-        //output(0) = rs.getLong(0).toString
-        val sample_idx = rs.getLong(0).toString
-        val label_arr = rs.getSeq[Long](1)
-        val dense = rs.getSeq[Long](2)
-        val idx0 = rs.getSeq[Long](3)
-        val idx1 = rs.getSeq[Long](4)
-        val idx2 = rs.getSeq[Long](5)
-        val idx_arr = rs.getSeq[Long](6)
-
-        val output: Array[String] = new Array[String](1 + 1 + dense.length + idx_arr.length)
-
-        var label = "0.0"
-        if (label_arr.head == 1) {
-          label = "1.0"
-        } else {
-          label = "0.0"
-        }
-        output(0) = sample_idx
-        output(1) = label
-
-        //val output = new ArrayBuffer[String]
-        for (idx <- 0 until dense.length) {
-          output(idx + 2) = dense(idx).toString
-        }
-
-        for (idx <- 0 until idx_arr.length) {
-          output(idx + 2 + dense.length) = idx_arr(idx).toString
-        }
-
-        //if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
-        //  output(30) = "invalid"
-        //} else {
-        //  output(30) = "correct"
-        //}
-        output.mkString("\t")
-      }
-    ).repartition(numPartitions.toInt).saveAsTextFile(map_path)
 
     ////DataFrame转换成RDD
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
