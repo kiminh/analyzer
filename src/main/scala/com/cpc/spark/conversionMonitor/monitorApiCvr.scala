@@ -41,6 +41,11 @@ object monitorApiCvr {
     // 计算两天平均日耗
     // 计算两天的cvr差别
     val warningData = getWarns(currentData, prevData, chargeThreshold, cvrDiffThreshold, spark)
+    warningData
+      .withColumn("date", lit(date))
+      .withColumn("conversion_goal", lit(2))
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.conversion_monitor_warning_users_daily")
 
 
   }
@@ -77,7 +82,7 @@ object monitorApiCvr {
       .withColumn("prev_cv", col("cv1"))
       .withColumn("current_click", col("click0"))
       .withColumn("prev_click", col("click1"))
-      .select("userid", "media", "current_charge", "prev_charge", "current_cv", "prev_cv", "current_click", "prev_click")
+      .select("userid", "media", "current_click", "prev_click", "current_cv", "prev_cv", "current_charge", "prev_charge")
       .cache()
 
     result.show(10)
