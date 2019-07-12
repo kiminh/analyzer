@@ -115,8 +115,8 @@ object ReadExampleFromHdfs {
       importedDf0.rdd.saveAsTextFile(decode_path)
     }
 
-    val acc = new LongAccumulator
-    spark.sparkContext.register(acc)
+    //val acc = new LongAccumulator
+    //spark.sparkContext.register(acc)
 
     val sampled_rdd = importedDf0.rdd.filter(
       rs => {
@@ -156,13 +156,6 @@ object ReadExampleFromHdfs {
       sampled_rdd.saveAsTextFile(sampled_path)
     }
 
-    sc.textFile(sampled_path).map(
-      rs => {
-        acc.add(1L)
-        rs
-      }
-    )
-
     val schema = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("idx1", ArrayType(LongType, containsNull = true)),
@@ -180,10 +173,20 @@ object ReadExampleFromHdfs {
       df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_sampled_path)
     }
 
+    //Read TFRecords into DataFrame.
+    //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
+    val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_sampled_path)
+    val acc = importedDf1.count()
+    importedDf1.show(3)
+
+    //Read TFRecords into DataFrame using custom schema
+    val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_sampled_path)
+    importedDf2.show(3)
+
     //保存count文件
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
-    println(s"total num is : ${acc.sum}")
+    println(s"total num is : ${acc}")
     writeNum2File(fileName, acc.sum)
 
     s"hadoop fs -put $fileName $tf_sampled_path/count" !
@@ -199,14 +202,6 @@ object ReadExampleFromHdfs {
       println(s"the number in count file : ${cnt.stripLineEnd}")
     }
 
-    //Read TFRecords into DataFrame.
-    //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
-    val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_sampled_path)
-    importedDf1.show(3)
-
-    //Read TFRecords into DataFrame using custom schema
-    val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_sampled_path)
-    importedDf2.show(3)
 
 
 
