@@ -66,7 +66,7 @@ object monitorApiCvr {
       .join(prev, Seq("userid", "media"), "inner")
       .select("userid", "media", "click0", "cv0", "charge0", "click1", "cv1", "charge1")
       .withColumn("charge", col("charge1") + col("charge0"))
-      .withColumn("cvr0", col("cv0") * 0.0 / col("click0"))
+      .withColumn("cvr0", col("cv0") * 1.0 / col("click0"))
       .withColumn("cvr1", col("cv1") * 1.0 / col("click1"))
       .withColumn("cvr_diff", abs(col("cvr0") - col("cvr1")) * 1.0 / col("cvr1"))
       .withColumn("is_warn", udfCheckIsWarn(minCharge, minCvrDiff)(col("charge"), col("cvr_diff")))
