@@ -151,7 +151,7 @@ object ReadExampleFromHdfs {
             val line = rs.split("\t")
             val output: Array[String] = new Array[String](line.length - 2)
             for (idx <- 2 until line.length) {
-              output(idx) = line(idx)
+              output(idx - 2) = line(idx)
             }
             output.mkString("\t")
           }
