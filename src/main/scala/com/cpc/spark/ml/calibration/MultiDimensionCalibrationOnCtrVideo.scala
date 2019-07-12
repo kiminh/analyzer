@@ -19,6 +19,9 @@ object MultiDimensionCalibrationOnCtrVideo {
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
+  val all_k = 3.0
+  val new_k = 3.3
+  val less_k = 1.6
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -30,7 +33,6 @@ object MultiDimensionCalibrationOnCtrVideo {
     val selectCondition = args(3)
     val model = args(4)
     val calimodel = args(5)
-    val k = 2.0
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -52,14 +54,7 @@ object MultiDimensionCalibrationOnCtrVideo {
     // get union log
     val sql = s"""
                  |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
-                 |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid,
-                 |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001','80000002') and adtype = 15 and isshow = 1
@@ -73,9 +68,9 @@ object MultiDimensionCalibrationOnCtrVideo {
     LogToPb(log, session, calimodel)
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k)
+      predictions = Seq(0.0,all_k)
     )
-    println(s"k is:$k")
+    println(s"k is:$all_k")
     val caliconfig = CalibrationConfig(
       name = calimodel,
       ir = Option(irModel)
@@ -85,40 +80,57 @@ object MultiDimensionCalibrationOnCtrVideo {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
-//    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
-//      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
-//      .filter("count1>100000")
-//      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
-//    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-//      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
-//      .filter("count2>100000")
-//      .select("adclass","ideaid","user_req_ad_num","group")
-//    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
-//      .filter("count3>100000")
-//      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
-//      .select("adclass","ideaid","group")
-//    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
-//      .filter("count4>100000")
-//      .withColumn("group",col("adclass"))
-//      .select("adclass","group")
-//
-//    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
-//    val calimap1 = GroupToConfig(data1, session,model)
-//
-//    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
-//    val calimap2 = GroupToConfig(data2, session,model)
-//
-//    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
-//    val calimap3 = GroupToConfig(data3, session,model)
-//
-//    val data4 = log.join(group4,Seq("adclass"),"inner")
-//    val calimap4 = GroupToConfig(data4, session,model)
+    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
+      .select("adclass","ideaid","group","count3")
+      .filter("count3>5000")
 
-    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
-    val calimap =  calimap5
+    val data3 = log.join(group3.filter("count3>10000"),Seq("adclass","ideaid"),"inner")
+    val calimap3 = GroupToConfig(data3, session,model)
+
+    val cali_untarget = UntargetCali(group3.filter("count3<10000"),session,less_k)
+
+
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,new_k)
+    )
+    val calimap5 = Map[String,CalibrationConfig]("0",
+      CalibrationConfig(
+      name = "0",
+      ir = Option(irModel)
+    ))
+
+    val calimap =  calimap3 ++ cali_untarget ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
+  }
+
+  def UntargetCali(data:DataFrame, session: SparkSession,k:Double): Map[String,CalibrationConfig] = {
+    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
+    data.show(5)
+    val result = data.select("adclass","ideaid","group")
+      .rdd.map( x => {
+      val adclass = x.getString(0)
+      val ideaid = x.getInt(1).toString
+      val group = x.getString(2)
+      val key = group
+      val irModel = IRModel(
+        boundaries = Seq(0.0,1.0),
+        predictions = Seq(0.0,k)
+      )
+      val config = CalibrationConfig(key,Option(irModel))
+      calimap += ((key,config))
+
+      calimap
+    }).collect().flatten.toMap[String,CalibrationConfig]
+    val resultkey = result.keySet
+    resultkey.foreach(x=>{
+      println("less unit is:%s".format(x))})
+    println("less cali value is:%f".format(k))
+
+    return result
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
