@@ -140,7 +140,7 @@ object ReadExampleFromHdfs {
         val idx1 = rs.getSeq[Long](1)
         val idx_arr = rs.getSeq[Long](2)
         val idx0 = rs.getSeq[Long](3)
-        val sample_idx = rs.getLong(4).toString
+        val sample_idx = rs.getLong(4)
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
 
