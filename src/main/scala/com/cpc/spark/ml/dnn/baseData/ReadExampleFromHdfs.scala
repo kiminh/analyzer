@@ -95,8 +95,10 @@ object ReadExampleFromHdfs {
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-decode"
 
     val map_path = des_dir + "/" + des_date + "-" + des_map_prefix
+    if (exists_hdfs_path(map_path)) {
+      delete_hdfs_path(decode_path)
+    }
     if (!exists_hdfs_path(map_path)) {
-      //delete_hdfs_path(decode_path)
       tf_decode_res.rdd.map(
         rs => {
           //output(0) = rs.getLong(0).toString
