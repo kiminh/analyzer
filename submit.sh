@@ -2,7 +2,8 @@
 
 set -e
 
-cur_time=$1
+cur_date="2019-06-11-bak"
+cur_date=$1
 modelVersion=$2
 today=`date -d "${cur_time} 1 hours ago" +%Y-%m-%d`
 hour=`date -d "${cur_time} 1 hours ago" +%H`
@@ -17,9 +18,9 @@ hadoop fs -get $jarLib $randjar
 
 hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
 #src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/part-*"
-src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak"
+src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/"$cur_date
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"
-des_date="2019-06-11-bak"
+des_date=$cur_date
 des_map="emb-map"
 partitions=1000
 
