@@ -187,7 +187,7 @@ object ReadExampleFromHdfs {
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc}")
-    writeNum2File(fileName, acc.sum)
+    writeNum2File(fileName, acc)
 
     s"hadoop fs -put $fileName $tf_sampled_path/count" !
 
