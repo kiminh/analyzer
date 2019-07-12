@@ -85,7 +85,7 @@ object MultiDimensionCalibOnQttCvr {
                  |  )a
                  |  join dl_cpc.dw_unitid_detail b
                  |    on a.unitid = b.unitid
-                 |    and b.day = '$endDate'
+                 |    and b.day = '$endDate' and b.hour = '$endHour'
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
@@ -96,12 +96,12 @@ object MultiDimensionCalibOnQttCvr {
                  |       b.conversion_target[0] as real_target
                  |from
                  |   (select *
-                 |    from dl_cpc.dm_conversion_detail
+                 |    from dl_cpc.cpc_conversion
                  |   where $selectCondition2
                  |and size(conversion_target)>0) a
-                 |join dl_cpc.dw_unitid_detail b
+                 |join dl_cpc.dw_unitid_conversion_target_hourly b
                  |    on a.unitid=b.unitid
-                 |    and b.day = '$endDate'
+                 |    and b.day = '$endDate' and b.hour = '$endHour'
        """.stripMargin
     val cvrData = session.sql(cvrsql)
       .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
