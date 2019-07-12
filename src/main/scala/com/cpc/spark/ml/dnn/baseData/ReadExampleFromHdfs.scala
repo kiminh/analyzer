@@ -3,7 +3,7 @@ package com.cpc.spark.ml.dnn.baseData
 import org.apache.log4j.{ Level, Logger }
 import org.apache.spark.sql.SparkSession
 
-import org.apache.spark.sql.{ DataFrame, Row }
+import org.apache.spark.sql.{DataFrame, Row, Column}
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
 import org.apache.spark.SparkContext
@@ -40,6 +40,11 @@ object ReadExampleFromHdfs {
     }
   }
 
+  def getColAtIndex(id:Int): Column = {
+    col(s"column1")(id).as(s"column1_${id+1}")
+  }
+
+
   def main(args: Array[String]): Unit = {
 
     if (args.length != 3) {
@@ -65,8 +70,8 @@ object ReadExampleFromHdfs {
     val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(src)
     //println("show")
     //importedDf0.show(10)
-    //println("printSchema")
-    //importedDf0.printSchema()
+    println("printSchema")
+    importedDf0.printSchema()
     //println("columns")
     //importedDf0.columns
     //println("dense_show")
@@ -83,17 +88,17 @@ object ReadExampleFromHdfs {
       rs => {
         val output: Array[String] = new Array[String](30)
         output(0) = rs.getString(0)
-
-        val label:Array[String] = rs(1)
+        val label = rs.getSeq[String](1)
         if (label(0) = "1") {
           output(1) = "1.0"
         } else {
           output(1) = "0.0"
         }
 
+        val dense = rs.getSeq[String](2)
         //val output = new ArrayBuffer[String]
         for (idx <- 0 until 28) {
-          output(idx + 2) = rs(2)(idx)
+          output(idx + 2) = dense(idx)
         }
         output.mkString("\t")
       }
