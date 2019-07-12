@@ -14,3 +14,6 @@ create table if not exists dl_cpc.ocpc_param_pb_data_hourly_v2(
 )
 partitioned by (`date` string, `hour` string, version string)
 stored as parquet;
+
+create table test.ocpc_param_pb_data_hourly_v2
+like dl_cpc.ocpc_param_pb_data_hourly_v2;

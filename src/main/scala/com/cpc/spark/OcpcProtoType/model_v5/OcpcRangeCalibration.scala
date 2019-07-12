@@ -45,9 +45,10 @@ object OcpcRangeCalibration {
     println(s"date=$date, hour=$hour, media:$media, version:$version, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, conversionGoal:$conversionGoal, minCV:$minCV")
 
     // 抽取基础数据
-    val resultDF = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
+    val result = OcpcRangeCalibrationMain(date, hour, version, media, highBidFactor, lowBidFactor, hourInt, conversionGoal, minCV, spark)
 
-    resultDF.show(10)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_range_calibration20190702b")
 
   }
 

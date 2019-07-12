@@ -65,7 +65,6 @@ object ConditionedUVDaily {
          |where
          |  day='%s'
          |  and media_appsid in %s
-         |  and isshow = 1
          |  and ideaid > 0
        """
       .format(
@@ -78,11 +77,11 @@ object ConditionedUVDaily {
              """.stripMargin
           case "midu" =>
             s"""
-               |("80001098", "80001292")
+               |('80004786','80004787','80001098','80001292','80001539','80002480','80001011')
              """.stripMargin
           case "miRead" =>
             s"""
-               |("80001098", "80001292")
+               |('80004786','80004787','80001098','80001292','80001539','80002480','80001011')
              """.stripMargin // bottom-up compatibility.
           case _ =>
             s"""
@@ -106,7 +105,9 @@ object ConditionedUVDaily {
       "-- total uv: %s --".format(uv)
     )
 
-    redis.set("touched_uv_total", uv)
+    val keyToGo = "%stouched_uv_total".format(if (appType == "qtt") "" else "miRead_")
+    println(keyToGo)
+    redis.set(keyToGo, "%s".format(uv))
 
     // calculate conditioned uv for each column.
     conditions
@@ -216,13 +217,14 @@ object ConditionedUVDaily {
       )
     ) // black-box after flight.
 
-    val keyToGo = "touched_uv_percent_%s_%d"
+    val keyToGo = "%stouched_uv_percent_%s_%d"
       .format(
-        // if (appType == "qtt") "" else "miRead_",
+        if (appType == "qtt") "" else "miRead_",
         condition,
         key
       ) // to-fly.
 
+    println(keyToGo)
     redis.set(keyToGo, "%.8f".format(value)) // fly.
   }
 }

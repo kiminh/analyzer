@@ -37,8 +37,9 @@ object OcpcCalculateCalibration {
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, hourInt1=$hourInt1, hourInt2=$hourInt2")
     // 抽取媒体id
 
-    val resultDF = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
-    resultDF.show(10)
+    val result = OcpcCalculateCalibrationMain(date, hour, conversionGoal, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration20190702b")
 
   }
 

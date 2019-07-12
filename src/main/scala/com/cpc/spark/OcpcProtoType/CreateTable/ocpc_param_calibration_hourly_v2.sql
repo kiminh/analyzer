@@ -9,3 +9,6 @@ create table if not exists dl_cpc.ocpc_param_calibration_hourly_v2(
 )
 partitioned by (is_hidden int, exp_tag String, conversion_goal int, `date` string, `hour` string, version string)
 stored as parquet;
+
+create table test.ocpc_param_calibration_hourly_v2
+like dl_cpc.ocpc_param_calibration_hourly_v2;
