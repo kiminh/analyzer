@@ -66,9 +66,9 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
-    // 清除redis里面的数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(version, date, hour, spark)
+//    // 清除redis里面的数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(version, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
@@ -162,7 +162,7 @@ object OcpcLightBulb{
 //              valueString = "0"
 //            }
 //            println(s"key:$key, value:$valueString")
-//            redis.setex(key, 7 * 24 * 60 * 60, valueString)
+//            redis.setex(key, 1 * 24 * 60 * 60, valueString)
 //          }
 //        }
 //      }
