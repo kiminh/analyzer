@@ -10,6 +10,21 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.SparkContext
 import scala.util.Random
 import org.apache.spark.util.LongAccumulator
+import java.io.{File, PrintWriter}
+
+import com.redis.RedisClient
+import com.typesafe.config.ConfigFactory
+import org.apache.commons.codec.binary.Base64
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.hadoop.io.{BytesWritable, NullWritable}
+import org.tensorflow.hadoop.io.TFRecordFileOutputFormat
+
+import sys.process._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.util.LongAccumulator
+import redis.clients.jedis.{HostAndPort, Jedis, JedisCluster}
+
+import scala.util.Random
 
 /**
   * 解析tfrecord到hdfs
@@ -48,6 +63,12 @@ object ReadExampleFromHdfs {
     } else {
       false
     }
+  }
+
+  def writeNum2File(file: String, num: Long): Unit = {
+    val writer = new PrintWriter(new File(file))
+    writer.write(num.toString)
+    writer.close()
   }
 
   //def getColAtIndex(id:Int): Column = {
@@ -151,6 +172,25 @@ object ReadExampleFromHdfs {
       //Save DataFrame as TFRecords
       val df_tf: DataFrame = spark.createDataFrame(sampled_rdd, schema)
       df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_sampled_path)
+    }
+
+    //保存count文件
+    val fileName = "count_" + Random.nextInt(100000)
+    println("count file name : " + fileName)
+    println(s"total num is : ${acc.sum}")
+    writeNum2File(fileName, acc.sum)
+
+    s"hadoop fs -put $fileName $tf_sampled_path/count" !
+
+    s"hadoop fs -put $fileName $sampled_path/count" !
+
+    val cnt = s"cat $fileName" !!
+
+    if (cnt.stripLineEnd == "") {
+      println("ERROR : there is no number in count file")
+      System.exit(1)
+    } else {
+      println(s"the number in count file : ${cnt.stripLineEnd}")
     }
 
     //Read TFRecords into DataFrame.
