@@ -134,40 +134,40 @@ object OcpcLightBulb{
     println(s"host: $host")
     println(s"port: $port")
 
-    // 测试
-    for (record <- data.collect()) {
-      val identifier = record.getAs[Int]("unitid").toString
-      val valueDouble = record.getAs[Double]("cpa")
-      var key = "new_algorithm_unit_ocpc_" + identifier
-      if (valueDouble >= 0) {
-        var valueString = valueDouble.toString
-        if (valueString == "0.0") {
-          valueString = "0"
-        }
-        println(s"key:$key, value:$valueString")
-      }
-    }
-
-//    data.foreachPartition(iterator => {
-//      val redis = new RedisClient(host, port)
-//      redis.auth(auth)
-//      iterator.foreach{
-//        record => {
-//          val identifier = record.getAs[Int]("unitid").toString
-//          val valueDouble = record.getAs[Double]("cpa")
-//          var key = "new_algorithm_unit_ocpc_" + identifier
-//          if (valueDouble >= 0) {
-//            var valueString = valueDouble.toString
-//            if (valueString == "0.0") {
-//              valueString = "0"
-//            }
-//            println(s"key:$key, value:$valueString")
-//            redis.setex(key, 1 * 24 * 60 * 60, valueString)
-//          }
+//    // 测试
+//    for (record <- data.collect()) {
+//      val identifier = record.getAs[Int]("unitid").toString
+//      val valueDouble = record.getAs[Double]("cpa")
+//      var key = "new_algorithm_unit_ocpc_" + identifier
+//      if (valueDouble >= 0) {
+//        var valueString = valueDouble.toString
+//        if (valueString == "0.0") {
+//          valueString = "0"
 //        }
+//        println(s"key:$key, value:$valueString")
 //      }
-//      redis.disconnect
-//    })
+//    }
+
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          val valueDouble = record.getAs[Double]("cpa")
+          var key = "new_algorithm_unit_ocpc_" + identifier
+          if (valueDouble >= 0) {
+            var valueString = valueDouble.toString
+            if (valueString == "0.0") {
+              valueString = "0"
+            }
+            println(s"key:$key, value:$valueString")
+            redis.setex(key, 1 * 24 * 60 * 60, valueString)
+          }
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def getUpdateTableV2(currentLight: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
