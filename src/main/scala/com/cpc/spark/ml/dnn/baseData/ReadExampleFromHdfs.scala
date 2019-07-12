@@ -156,6 +156,9 @@ object ReadExampleFromHdfs {
       sampled_rdd.saveAsTextFile(sampled_path)
     }
 
+    val acc_rdd = sampled_rdd.count
+    println(s"acc_rdd num is : ${acc_rdd}")
+
     val schema = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("idx1", ArrayType(LongType, containsNull = true)),
@@ -171,16 +174,22 @@ object ReadExampleFromHdfs {
       //Save DataFrame as TFRecords
       val df_tf: DataFrame = spark.createDataFrame(sampled_rdd, schema)
       df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_sampled_path)
+      val acc0 = df_tf.count()
+      println(s"acc0 num is : ${acc0}")
     }
+
 
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
     val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_sampled_path)
-    val acc = importedDf1.count()
+    val acc1 = importedDf1.count()
+    println(s"acc1 num is : ${acc1}")
     importedDf1.show(3)
 
     //Read TFRecords into DataFrame using custom schema
     val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_sampled_path)
+    val acc2 = importedDf2.count()
+    println(s"acc2 num is : ${acc2}")
     importedDf2.show(3)
 
     //保存count文件
