@@ -85,7 +85,8 @@ object ReadExampleFromHdfs {
     val decode_path = des_dir + "/" + des_date
     if (!exists_hdfs_path(decode_path)) {
       //delete_hdfs_path(decode_path)
-      importedDf0.rdd.repartition(numPartitions.toInt).saveAsTextFile(decode_path)
+      //importedDf0.rdd.repartition(numPartitions.toInt).saveAsTextFile(decode_path)
+      importedDf0.rdd.saveAsTextFile(decode_path)
     }
 
     importedDf0.createOrReplaceTempView("sql_table_name")
@@ -138,7 +139,8 @@ object ReadExampleFromHdfs {
           //}
           output.mkString("\t")
         }
-      ).repartition(numPartitions.toInt).saveAsTextFile(map_path)
+      ).saveAsTextFile(map_path)
+      //).repartition(numPartitions.toInt).saveAsTextFile(map_path)
     }
 
     val instancesData = des_dir + "/" + des_date + "-instances"
