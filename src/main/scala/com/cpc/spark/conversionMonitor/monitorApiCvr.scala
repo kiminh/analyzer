@@ -8,8 +8,8 @@ import com.github.jurajburian.mailer._
 import com.typesafe.config.ConfigFactory
 import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, lit}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 
 object monitorApiCvr {
   def main(args: Array[String]): Unit = {
@@ -18,52 +18,136 @@ object monitorApiCvr {
 
     // 计算日期周期
     val date = args(0).toString
+    val chargeThreshold = args(1).toDouble
+    val cvrDiffThreshold = args(2).toDouble
 
-//    val cnt3 = getDataV3(date, hour, spark)
-//    val cnt4 = getDataV4(date, hour, spark)
-//    val cnt5 = getDataV5(date, hour, spark)
-//    println(s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5")
-//
-//    var message = ""
-//
-//    val cntDiffPercent = (cnt3.toDouble - cnt4.toDouble) / cnt3.toDouble
-//    if (cntDiffPercent < 0 || cntDiffPercent > 0.15) {
-//      message = message + "v4 abnormal\n"
-//    }
-//    if (cnt3 != cnt5) {
-//      message = message + "v5 abnormal\n"
-//    }
-//    val sub = "api conversion monitor warning!"
-//    var receiver = Seq[String]()
-//    receiver:+="wangjun02@qutoutiao.net"
-////    receiver:+="hanzhengding@qutoutiao.net"
-////    receiver:+="zhanghongyang@qutoutiao.net"
-////    receiver:+="wangyao@qutoutiao.net"
-////    receiver:+="dongjinbao@qutoutiao.net"
-////    receiver:+="chuquanquan@qutoutiao.net"
-//    println(message)
-//    if (message != "") {
-//      message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
-//      sendMail(message, sub, receiver)
-//    }
+    // 抽取基础表
+    val baseData = getData(date, spark)
+
+    // 统计相关指标
+    // charge, click, cv
+    val currentData = calculateData(baseData, spark)
+    currentData
+      .withColumn("date", lit(date))
+      .withColumn("conversion_goal", lit(2))
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.cvr_monitor_daily")
+
+    // 统计抽取前一天的数据
+    // charge, click, cv
+    val prevData = getPrevData(date, spark)
+
+
+    // 计算两天平均日耗
+    // 计算两天的cvr差别
+    val warningData = getWarns(currentData, prevData, chargeThreshold, cvrDiffThreshold, spark)
 
 
   }
 
-  def getData(hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getWarns(currentData: DataFrame, prevData: DataFrame, minCharge: Double, minCvrDiff: Double, spark: SparkSession) = {
+    val current = currentData
+      .withColumn("click0", col("click"))
+      .withColumn("cv0", col("cv"))
+      .withColumn("charge0", col("charge"))
+      .select("userid", "media", "click0", "cv0", "charge0")
+    val prev = prevData
+      .withColumn("click1", col("click"))
+      .withColumn("cv1", col("cv"))
+      .withColumn("charge1", col("charge"))
+      .select("userid", "media", "click1", "cv1", "charge1")
+
+    val data = current
+      .join(prev, Seq("userid", "media"), "inner")
+      .select("userid", "media", "click", "cv", "charge", "click0", "cv0", "charge0", "click1", "cv1", "charge1")
+      .withColumn("charge", col("charge1") + col("charge0"))
+      .withColumn("cvr0", col("cv0") * 0.0 / col("click0"))
+      .withColumn("cvr1", col("cv1") * 1.0 / col("click1"))
+      .withColumn("cvr_diff", abs(col("cvr0") - col("cvr1")) * 1.0 / col("cvr1"))
+      .withColumn("is_warn", udfCheckIsWarn(minCharge, minCvrDiff)(col("charge"), col("cvr_diff")))
+
+    data
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_conversion_monitor20190712a")
+
+    val result = data
+      .filter(s"is_warn = 1")
+      .withColumn("current_charge", col("charge0"))
+      .withColumn("prev_charge", col("charge1"))
+      .withColumn("current_cv", col("cv0"))
+      .withColumn("prev_cv", col("cv1"))
+      .withColumn("current_click", col("click0"))
+      .withColumn("prev_click", col("click1"))
+      .select("userid", "media", "current_charge", "prev_charge", "current_cv", "prev_cv", "current_click", "prev_click")
+      .cache()
+
+    result.show(10)
+    result
+  }
+
+
+  def udfCheckIsWarn(minCharge: Double, minCvrDiff: Double) = udf((charge: Double, cvrDiff: Double) => {
+    var result = 0
+    if (charge >= minCharge && cvrDiff >= minCvrDiff) {
+      result = 1
+    }
+    result
+  })
+
+  def getPrevData(date: String, spark: SparkSession) = {
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition1 = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  media,
+         |  click,
+         |  cv,
+         |  charge
+         |FROM
+         |  test.cvr_monitor_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  conversion_goal = 2
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
+    data
+  }
+
+  def calculateData(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  media,
+         |  sum(isclick) as click,
+         |  sum(label) as cv,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as charge
+         |FROM
+         |  base_data
+         |GROUP BY userid, media
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
+    data
+  }
+
+  def getData(date: String, spark: SparkSession) = {
+    // 取历史数据
+    val selectCondition = s"`date` = '$date'"
 
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -73,60 +157,47 @@ object monitorApiCvr {
       s"""
          |select
          |    searchid,
-         |    cast(unitid as string) identifier,
-         |    cast(exp_cvr * 1000000 as bigint) as score,
-         |    conversion_goal,
+         |    userid,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
          |        when media_appsid in ('80002819') then 'hottopic'
          |        else 'novel'
          |    end) as media,
-         |    (case
-         |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
-         |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
-         |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
-         |        when adclass in (110110100, 125100100) then "wzcp"
-         |        else "others"
-         |    end) as industry
+         |    isclick,
+         |    price
          |from dl_cpc.ocpc_base_unionlog
-         |where $selectCondition1
+         |where $selectCondition
          |and isclick = 1
          |and $mediaSelection
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
-         |and is_ocpc = 1
-         |and conversion_goal > 0
+         |and is_api_callback = 1
        """.stripMargin
     println(sqlRequest)
-    val scoreData = spark
-      .sql(sqlRequest)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+    val clickData = spark.sql(sqlRequest)
 
-    // 取历史区间: cvr数据
-    val selectCondition2 = s"`date`>='$date1'"
-    // 抽取数据
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
-         |  label,
-         |  cvr_goal
+         |  label
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  $selectCondition
+         |AND
+         |  cvr_goal = 'cvr2'
        """.stripMargin
     println(sqlRequest2)
-    val cvrData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2)
 
 
     // 关联数据
-    val resultDF = scoreData
-      .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
-      .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
+    val resultDF = clickData
+      .join(cvData, Seq("searchid"), "left_outer")
+      .select("searchid", "userid", "media", "isclick", "price", "label")
       .na.fill(0, Seq("label"))
-      .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
-      .withColumn("version", lit(version))
+      .select("searchid", "userid", "media", "isclick", "price", "label")
 
     resultDF
   }
