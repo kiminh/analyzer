@@ -9,6 +9,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.SparkContext
 import scala.util.Random
+import org.apache.spark.util.LongAccumulator
 
 /**
   * 解析tfrecord到hdfs
@@ -93,6 +94,9 @@ object ReadExampleFromHdfs {
       importedDf0.rdd.saveAsTextFile(decode_path)
     }
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
     val sampled_rdd = importedDf0.rdd.filter(
       rs => {
         val idx2 = rs.getSeq[Long](0)
@@ -102,25 +106,30 @@ object ReadExampleFromHdfs {
         val sample_idx = rs.getLong(4).toString
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
+        var filter = false
         if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
-          true
-        } else {
-          false
+          filter = true
         }
+        filter
+      }
+    ).map(
+      rs => {
+        acc.add(1L)
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4).toString
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        var label = 0.0f
+        if (label_arr.head == 1L) {
+          label = 1.0f
+        }
+        Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
       }
     )
-    //.map(
-    //  rs => {
-    //    val idx2 = rs.getSeq[Long](0)
-    //    val idx1 = rs.getSeq[Long](1)
-    //    val idx_arr = rs.getSeq[Long](2)
-    //    val idx0 = rs.getSeq[Long](3)
-    //    val sample_idx = rs.getLong(4).toString
-    //    val label_arr = rs.getSeq[Long](5)
-    //    val dense = rs.getSeq[Long](6)
-    //    Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, dense)
-    //  }
-    //)
 
     val sampled_path = des_dir + "/" + des_date + "-sampled"
     if (!exists_hdfs_path(sampled_path)) {
@@ -134,6 +143,7 @@ object ReadExampleFromHdfs {
       StructField("idx0", ArrayType(LongType, containsNull = true)),
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("label_single", FloatType, nullable = true),
       StructField("dense", ArrayType(LongType, containsNull = true))))
 
     val tf_sampled_path = des_dir + "/" + des_date + "-sampled-tf"
