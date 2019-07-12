@@ -49,13 +49,13 @@ object MultiDimensionCalibrationOnCtrVideo {
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
-    val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
+    val timeRangeSql = Utils.getTimeRangeSql_2(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
                  |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
-                 |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid
-                 | from dl_cpc.slim_union_log
+                 |ctr_model_name as model, cast(ideaid as string) ideaid
+                 | from dl_cpc.cpc_basedata_union_events
                  | where $timeRangeSql
                  | and media_appsid in ('80000001','80000002') and adtype = 15 and isshow = 1
                  | and ctr_model_name in ('$model','$calimodel','qtt-list-dnn-rawid-v4-video-cali')
