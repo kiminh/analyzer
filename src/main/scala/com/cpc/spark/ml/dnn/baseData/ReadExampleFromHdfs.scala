@@ -129,13 +129,13 @@ object ReadExampleFromHdfs {
         val dense = rs.getSeq[Long](6)
         var filter = false
         if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
+          acc.add(1L)
           filter = true
         }
         filter
       }
     ).map(
       rs => {
-        acc.add(1L)
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
         val idx_arr = rs.getSeq[Long](2)
