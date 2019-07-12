@@ -91,16 +91,12 @@ object MultiDimensionCalibrationOnCtrVideo {
     val cali_untarget = UntargetCali(group3.filter("count3<10000"),session,less_k)
 
 
-    val allcali = "0"
     val irModel = IRModel(
       boundaries = Seq(0.0,1.0),
       predictions = Seq(0.0,new_k)
     )
-    val config = CalibrationConfig(
-      name = allcali,
-      ir = Option(irModel)
-    )
-    val calimap5 = Map[String,CalibrationConfig](allcali,config)
+    val config = CalibrationConfig("0", Option(irModel))
+    val calimap5 = Map[String,CalibrationConfig](("0",config))
 
     val calimap =  calimap3 ++ cali_untarget ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
