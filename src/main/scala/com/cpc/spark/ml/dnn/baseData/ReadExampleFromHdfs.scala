@@ -93,30 +93,39 @@ object ReadExampleFromHdfs {
       importedDf0.rdd.saveAsTextFile(decode_path)
     }
 
+    val sampled_rdd = importedDf0.rdd.filter(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4).toString
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+        if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
+          true
+        } else {
+          false
+        }
+      }
+    )
+    //.map(
+    //  rs => {
+    //    val idx2 = rs.getSeq[Long](0)
+    //    val idx1 = rs.getSeq[Long](1)
+    //    val idx_arr = rs.getSeq[Long](2)
+    //    val idx0 = rs.getSeq[Long](3)
+    //    val sample_idx = rs.getLong(4).toString
+    //    val label_arr = rs.getSeq[Long](5)
+    //    val dense = rs.getSeq[Long](6)
+    //    Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, dense)
+    //  }
+    //)
+
     val sampled_path = des_dir + "/" + des_date + "-sampled"
     if (!exists_hdfs_path(sampled_path)) {
-      importedDf0.rdd.filter(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4).toString
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-          if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
-            true
-          } else {
-            false
-          }
-        }
-      ).saveAsTextFile(sampled_path)
+      sampled_rdd.saveAsTextFile(sampled_path)
     }
-
-    //val path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
-    //if (exists_hdfs_path(path)) {
-    //  delete_hdfs_path(path)
-    //}
 
     val schema = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
@@ -129,9 +138,8 @@ object ReadExampleFromHdfs {
 
     val tf_sampled_path = des_dir + "/" + des_date + "-sampled-tf"
     if (!exists_hdfs_path(tf_sampled_path) && exists_hdfs_path(sampled_path)) {
-      val importedSampledDF: DataFrame = spark.read.load(sampled_path)
       //Save DataFrame as TFRecords
-      val df_tf: DataFrame = spark.createDataFrame(importedSampledDF.rdd, schema)
+      val df_tf: DataFrame = spark.createDataFrame(sampled_rdd, schema)
       df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_sampled_path)
     }
 
