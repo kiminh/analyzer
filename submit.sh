@@ -17,9 +17,9 @@ hadoop fs -get $jarLib $randjar
 
 hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
 #src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/part-*"
-src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-10/part-r*"
+src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"
-des_date="2019-06-10"
+des_date="2019-06-11-bak"
 des_map="emb-map"
 partitions=1000
 

@@ -6,7 +6,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.{DataFrame, Row, Column}
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.StructField
 import org.apache.spark.SparkContext
+import scala.util.Random
 
 /**
   * 解析tfrecord到hdfs
@@ -68,7 +70,21 @@ object ReadExampleFromHdfs {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
+    val negativeSampleRatio = 0.225
+
     //var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
+
+    sc.textFile(src).map(
+      rs => {
+        val line = rs.split("\t")
+        val tfline = spark.read.format("tfrecords").option("recordType", "Example").
+        val output: Array[String] = new Array[String](line.length - 2)
+        for (idx <- 2 until line.length) {
+          output(idx - 2) = line(idx)
+        }
+        output.mkString("\t")
+      }
+    )
 
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
@@ -89,8 +105,76 @@ object ReadExampleFromHdfs {
       importedDf0.rdd.saveAsTextFile(decode_path)
     }
 
+    val sampled_path = des_dir + "/" + des_date + "-sampled"
+    if (!exists_hdfs_path(sampled_path)) {
+      importedDf0.rdd.filter(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4).toString
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+          if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
+            true
+          } else {
+            false
+          }
+        }
+      ).saveAsTextFile(sampled_path)
+    }
+
     importedDf0.createOrReplaceTempView("sql_table_name")
     val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name")
+
+    //val path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
+    //if (exists_hdfs_path(path)) {
+    //  delete_hdfs_path(path)
+    //}
+
+    //val testRows: Array[Row] = Array(
+    //  new GenericRow(Array[Any](11, 1, 23L, 10.0F, 14.0, List(1.0, 2.0), "r1")),
+    //  new GenericRow(Array[Any](21, 2, 24L, 12.0F, 15.0, List(2.0, 2.0), "r2")))
+
+    //val schema_test = StructType(List(
+    //  StructField("id", IntegerType),
+    //  StructField("IntegerCol", IntegerType),
+    //  StructField("LongCol", LongType),
+    //  StructField("FloatCol", FloatType),
+    //  StructField("DoubleCol", DoubleType),
+    //  StructField("VectorCol", ArrayType(DoubleType, true)),
+    //  StructField("StringCol", StringType)))
+
+    //val schema = StructType(List(
+    //  StructField("idx2", ArrayType(LongType, containsNull = true)),
+    //  StructField("idx1", ArrayType(LongType, containsNull = true)),
+    //  StructField("id_arr", ArrayType(LongType, containsNull = true)),
+    //  StructField("idx0", ArrayType(LongType, containsNull = true)),
+    //  StructField("sample_idx", LongType, nullable = true),
+    //  StructField("label", ArrayType(LongType, containsNull = true)),
+    //  StructField("dense", ArrayType(LongType, containsNull = true))))
+
+    //val rdd_test = spark.sparkContext.parallelize(testRows)
+    //val rdd = sc.textFile(decode_path)
+
+    ////Save DataFrame as TFRecords
+    //val df_test: DataFrame = spark.createDataFrame(tf_decode_res.rdd, schema)
+    //df_test.write.format("tfrecords").option("recordType", "Example").save(path)
+
+    ////Read TFRecords into DataFrame.
+    ////The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
+    //val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
+    //importedDf1.show()
+
+    ////Read TFRecords into DataFrame using custom schema
+    //val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(path)
+    //importedDf2.show()
+
+
+
+
+
 
     //tf_decode_res("label")(0)
 
@@ -183,38 +267,5 @@ object ReadExampleFromHdfs {
 
     //val new_path = "hdfs://emr-cluster/user/cpc/fhb/adlist-v4/2019-06-11"
     //importedDf1.repartition(100).saveAs
-
-    val path = "hdfs://emr-cluster/user/cpc/fenghuabin/adlist_tf_decode"
-    if (exists_hdfs_path(path)) {
-      delete_hdfs_path(path)
-    }
-
-    val testRows: Array[Row] = Array(
-      new GenericRow(Array[Any](11, 1, 23L, 10.0F, 14.0, List(1.0, 2.0), "r1")),
-      new GenericRow(Array[Any](21, 2, 24L, 12.0F, 15.0, List(2.0, 2.0), "r2")))
-
-    val schema = StructType(List(
-      StructField("id", IntegerType),
-      StructField("IntegerCol", IntegerType),
-      StructField("LongCol", LongType),
-      StructField("FloatCol", FloatType),
-      StructField("DoubleCol", DoubleType),
-      StructField("VectorCol", ArrayType(DoubleType, true)),
-      StructField("StringCol", StringType)))
-
-    val rdd = spark.sparkContext.parallelize(testRows)
-
-    //Save DataFrame as TFRecords
-    val df: DataFrame = spark.createDataFrame(rdd, schema)
-    df.write.format("tfrecords").option("recordType", "Example").save(path)
-
-    //Read TFRecords into DataFrame.
-    //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
-    val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(path)
-    importedDf1.show()
-
-    //Read TFRecords into DataFrame using custom schema
-    val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(path)
-    importedDf2.show()
   }
 }
