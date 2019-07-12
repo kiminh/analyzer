@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveProtoToLocal,saveFlatTextFileForDebug}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
 
@@ -30,7 +31,9 @@ object MultiDimensionCalibOnQttCvr {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val media = args(3)
-    val calimodel = args(4)
+    val model = args(4)
+    val calimodel = args(5)
+    val k = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -76,13 +79,13 @@ object MultiDimensionCalibOnQttCvr {
                  |  from dl_cpc.cpc_basedata_union_events
                  |  where $selectCondition2
                  |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name in ('$calimodel','qtt-cvr-dnn-rawid-v1-180')
+                 |  and cvr_model_name in ('$calimodel','$model')
                  |  and ideaid > 0 and adsrc = 1 AND userid > 0
                  |  AND (charge_type IS NULL OR charge_type = 1)
                  |  )a
                  |  join dl_cpc.dw_unitid_detail b
                  |    on a.unitid = b.unitid
-                 |    and b.day = '$startDate'
+                 |    and b.day = '$endDate'
                  |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
@@ -93,12 +96,12 @@ object MultiDimensionCalibOnQttCvr {
                  |       b.conversion_target[0] as real_target
                  |from
                  |   (select *
-                 |    from dl_cpc.cpc_conversion
+                 |    from dl_cpc.dm_conversion_detail
                  |   where $selectCondition2
                  |and size(conversion_target)>0) a
                  |join dl_cpc.dw_unitid_detail b
                  |    on a.unitid=b.unitid
-                 |    and b.day = '$startDate'
+                 |    and b.day = '$endDate'
        """.stripMargin
     val cvrData = session.sql(cvrsql)
       .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
@@ -108,22 +111,17 @@ object MultiDimensionCalibOnQttCvr {
         .withColumn("isclick",col("iscvr"))
     log.show(10)
     LogToPb(log, session, calimodel)
-//    val k = log.filter("exp_cvr_type='cvr1'").groupBy().agg(
-//      sum("ectr").alias("ctrnum"),
-//      sum("isclick").alias("clicknum"))
-//      .withColumn("k",col("ctrnum")/col("clicknum")/1e6d)
-//      .first().getAs[Double]("k")
-//    val irModel = IRModel(
-//      boundaries = Seq(0.0,1.0),
-//      predictions = Seq(0.0,k)
-//    )
-//    println(s"k is: $k")
-//    val caliconfig = CalibrationConfig(
-//      name = calimodel,
-//      ir = Option(irModel)
-//    )
-//    val localPath = saveProtoToLocal(calimodel, caliconfig)
-//    saveFlatTextFileForDebug(calimodel, caliconfig)
+    val irModel = IRModel(
+      boundaries = Seq(0.0,1.0),
+      predictions = Seq(0.0,k.toDouble)
+    )
+    println(s"k is: $k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
@@ -156,7 +154,7 @@ object MultiDimensionCalibOnQttCvr {
     val data4 = log.join(group4,Seq("adclass"),"inner")
     val calimap4 = GroupToConfig(data4, session,model)
 
-//    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
