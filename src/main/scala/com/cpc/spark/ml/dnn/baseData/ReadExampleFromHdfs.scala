@@ -40,9 +40,9 @@ object ReadExampleFromHdfs {
     }
   }
 
-  def getColAtIndex(id:Int): Column = {
-    col(s"column1")(id).as(s"column1_${id+1}")
-  }
+  //def getColAtIndex(id:Int): Column = {
+  //  col(s"column1")(id).as(s"column1_${id+1}")
+  //}
 
 
   def main(args: Array[String]): Unit = {
@@ -79,6 +79,8 @@ object ReadExampleFromHdfs {
 
     importedDf0.createOrReplaceTempView("sql_table_name")
     val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name limit 10000")
+
+    //tf_decode_res("label")(0)
 
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-decode"
     if (exists_hdfs_path(des)) {
