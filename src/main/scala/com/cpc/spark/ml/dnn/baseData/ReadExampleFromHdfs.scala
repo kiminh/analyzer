@@ -74,18 +74,6 @@ object ReadExampleFromHdfs {
 
     //var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
 
-    sc.textFile(src).map(
-      rs => {
-        val line = rs.split("\t")
-        val tfline = spark.read.format("tfrecords").option("recordType", "Example").
-        val output: Array[String] = new Array[String](line.length - 2)
-        for (idx <- 2 until line.length) {
-          output(idx - 2) = line(idx)
-        }
-        output.mkString("\t")
-      }
-    )
-
     //Read TFRecords into DataFrame.
     //The DataFrame schema is inferred from the TFRecords if no custom schema is provided.
     val importedDf0: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(src)
