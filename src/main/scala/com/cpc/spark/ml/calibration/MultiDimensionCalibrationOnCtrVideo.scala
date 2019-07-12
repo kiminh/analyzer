@@ -19,9 +19,9 @@ object MultiDimensionCalibrationOnCtrVideo {
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
-  val all_k = 3.0
-  val new_k = 3.3
-  val less_k = 1.6
+  val all_k = 3.3
+  val new_k = 3.0
+  val less_k = 1.5
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
