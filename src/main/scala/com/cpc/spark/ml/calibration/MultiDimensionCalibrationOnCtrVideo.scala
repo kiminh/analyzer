@@ -95,11 +95,11 @@ object MultiDimensionCalibrationOnCtrVideo {
       boundaries = Seq(0.0,1.0),
       predictions = Seq(0.0,new_k)
     )
-    val calimap5 = Map[String,CalibrationConfig]("0",
-      CalibrationConfig(
+    val config = CalibrationConfig(
       name = "0",
       ir = Option(irModel)
-    ))
+    )
+    val calimap5 = Map[String,CalibrationConfig]("0",config)
 
     val calimap =  calimap3 ++ cali_untarget ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
