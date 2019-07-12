@@ -8,6 +8,14 @@ import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types._
 import org.apache.spark.SparkContext
 
+/**
+  * 解析tfrecord到hdfs
+  * created time : 2019/07/10 10:38
+  * @author fenghuabin
+  * @version 1.0
+  *
+  */
+
 object ReadExampleFromHdfs {
 
   def delete_hdfs_path(path: String): Unit = {
@@ -34,8 +42,7 @@ object ReadExampleFromHdfs {
 
     if (hdfs.exists(hdfs_path)) {
       true
-    }
-    else {
+    } else {
       false
     }
   }
@@ -46,19 +53,16 @@ object ReadExampleFromHdfs {
 
 
   def main(args: Array[String]): Unit = {
-
-    if (args.length != 3) {
+    if (args.length != 5) {
       System.err.println(
         """
           |you have to input 3 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
-    val Array(src, des, numPartitions) = args
+    val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
 
-    println(src)
-    println(des)
-    println(numPartitions)
+    println(args)
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -77,15 +81,24 @@ object ReadExampleFromHdfs {
     //println("dense_show")
     //importedDf0.describe("dense").show
 
+    val decode_path = des_dir + "/" + des_date
+    if (exists_hdfs_path(decode_path)) {
+      delete_hdfs_path(decode_path)
+      importedDf0.rdd.repartition(numPartitions.toInt).saveAsTextFile(decode_path)
+    }
+
     importedDf0.createOrReplaceTempView("sql_table_name")
-    val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name limit 10000")
+    val tf_decode_res = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM sql_table_name")
 
     //tf_decode_res("label")(0)
 
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-decode"
-    if (exists_hdfs_path(des)) {
-      delete_hdfs_path(des)
+
+    val map_path = des_dir + "/" + des_date + "/" + des_map_prefix
+    if (exists_hdfs_path(map_path)) {
+      delete_hdfs_path(decode_path)
     }
+
     tf_decode_res.rdd.map(
       rs => {
         val output: Array[String] = new Array[String](31)
@@ -107,17 +120,18 @@ object ReadExampleFromHdfs {
         val idx1 = rs.getSeq[Long](4)
         val idx2 = rs.getSeq[Long](5)
         val idx_arr = rs.getSeq[Long](6)
-
-        if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
-            output(30) = "invalid"
-        } else {
-            output(30) = "correct"
+        //if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
+        //  output(30) = "invalid"
+        //} else {
+        //  output(30) = "correct"
+        //}
+        val output_muti: Array[String] = new Array[String](idx_arr.length)
+        for (idx <- 0 until idx_arr.length) {
+          output_muti(idx) = idx_arr(idx).toString
         }
-
-
-        output.mkString("\t")
+        (output ++ output_muti).mkString("\t")
       }
-    ).repartition(numPartitions.toInt).saveAsTextFile(des)
+    ).repartition(numPartitions.toInt).saveAsTextFile(map_path)
 
     ////DataFrame转换成RDD
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
