@@ -66,7 +66,7 @@ object ReadExampleFromHdfs {
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    val sc = spark.sparkContext()
+    val sc = spark.sparkContext
 
     //var path = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11-bak/"
 
