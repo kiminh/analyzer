@@ -113,7 +113,7 @@ object monitorApiCvr {
          |  cv,
          |  charge
          |FROM
-         |  test.cvr_monitor_hourly
+         |  test.cvr_monitor_daily
          |WHERE
          |  $selectCondition
          |AND
