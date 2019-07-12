@@ -129,7 +129,6 @@ object ReadExampleFromHdfs {
         val dense = rs.getSeq[Long](6)
         var filter = false
         if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
-          acc.add(1L)
           filter = true
         }
         filter
@@ -156,6 +155,13 @@ object ReadExampleFromHdfs {
     if (!exists_hdfs_path(sampled_path)) {
       sampled_rdd.saveAsTextFile(sampled_path)
     }
+
+    sc.textFile(sampled_path).map(
+      rs => {
+        acc.add(1L)
+        rs
+      }
+    )
 
     val schema = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
