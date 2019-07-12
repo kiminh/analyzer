@@ -104,7 +104,7 @@ object ReadExampleFromHdfs {
         }
         output.mkString("\t")
       }
-    ).repartition(Int(numPartitions)).saveAsTextFile(des)
+    ).repartition(numPartitions.toInt).saveAsTextFile(des)
 
     ////DataFrame转换成RDD
     //path = "hdfs://emr-cluster/user/cpc/fenghuabin/2019-06-11-bak-decode"
