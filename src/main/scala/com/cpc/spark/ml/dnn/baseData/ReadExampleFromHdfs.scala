@@ -89,18 +89,18 @@ object ReadExampleFromHdfs {
     tf_decode_res.rdd.map(
       rs => {
         val output: Array[String] = new Array[String](30)
-        output(0) = rs.getString(0)
-        val label = rs.getSeq[String](1)
-        if (label(0) == "1") {
+        output(0) = rs.getLong(0).toString
+        val label = rs.getSeq[Long](1)
+        if (label.head == 1) {
           output(1) = "1.0"
         } else {
           output(1) = "0.0"
         }
 
-        val dense = rs.getSeq[String](2)
+        val dense = rs.getSeq[Long](2)
         //val output = new ArrayBuffer[String]
         for (idx <- 0 until 28) {
-          output(idx + 2) = dense(idx)
+          output(idx + 2) = dense(idx).toString
         }
         output.mkString("\t")
       }
