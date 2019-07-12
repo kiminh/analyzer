@@ -244,7 +244,7 @@ object OcpcLightBulb{
     val result = cpcData
       .join(ocpcData, Seq("unitid", "userid", "adclass", "media"), "outer")
       .select("unitid", "userid", "adclass", "media", "cpa1", "cpa2")
-      .na.fill(0.0, Seq("cpa1", "cpa2"))
+      .na.fill(-1.0, Seq("cpa1", "cpa2"))
       .withColumn("cpa", udfSelectCPA()(col("cpa1"), col("cpa2")))
       .na.fill(0.0, Seq("cpa1", "cpa2", "cpa"))
 
