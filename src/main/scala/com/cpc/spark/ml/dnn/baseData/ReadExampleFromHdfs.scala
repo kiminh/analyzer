@@ -185,13 +185,17 @@ object ReadExampleFromHdfs {
     val importedDf1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_sampled_path)
     val acc1 = importedDf1.count()
     println(s"acc1 num is : ${acc1}")
-    importedDf1.show(3)
+    println("printSchema importedDf1")
+    importedDf1.printSchema()
+    importedDf1.show(1)
 
     //Read TFRecords into DataFrame using custom schema
     val importedDf2: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_sampled_path)
     val acc2 = importedDf2.count()
     println(s"acc2 num is : ${acc2}")
-    importedDf2.show(3)
+    println("printSchema importedDf2")
+    importedDf2.printSchema()
+    importedDf2.show(1)
 
     //保存count文件
     val fileName = "count_" + Random.nextInt(100000)
