@@ -85,6 +85,9 @@ object CollectTrainUniqSparseID {
     }
     val src_instances_files = output.mkString(",")
     //统计每个ID特征的每个取值出现的次数
+    if (exists_hdfs_path(des_instances_file)) {
+      delete_hdfs_path(des_instances_file)
+    }
     if (!exists_hdfs_path(des_instances_file)) {
       var data = sc.parallelize(Array[(String, Int)]())
       data = data.union(
