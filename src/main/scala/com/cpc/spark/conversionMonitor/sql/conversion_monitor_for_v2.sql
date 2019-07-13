@@ -1,5 +1,6 @@
 create table if not exists test.conversion_monitor_for_v2(
     label_type      int,
+    adclass         int,
     cv_today        int,
     cv_yesterday    int,
     is_warn         int

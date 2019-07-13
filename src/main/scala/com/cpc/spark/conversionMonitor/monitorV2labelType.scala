@@ -37,16 +37,16 @@ object monitorV2labelType {
 
     val todayData = todayRaw
       .withColumn("cv_today", col("cv"))
-      .select("label_type", "cv_today")
+      .select("label_type", "adclass", "cv_today")
 
     val yesterdayData = yesterdayRaw
       .withColumn("cv_yesterday", col("cv"))
-      .select("label_type", "cv_yesterday")
+      .select("label_type", "adclass", "cv_yesterday")
 
     val data = todayData
-      .join(yesterdayData, Seq("label_type"), "outer")
+      .join(yesterdayData, Seq("label_type", "adclass"), "outer")
       .na.fill(0, Seq("cv_today", "cv_yesterday"))
-      .select("label_type", "cv_today", "cv_yesterday")
+      .select("label_type", "adclass", "cv_today", "cv_yesterday")
       .withColumn("is_warn", udfIsWarn(minCvDiff)(col("cv_today"), col("cv_yesterday")))
       .cache()
 
@@ -55,7 +55,7 @@ object monitorV2labelType {
     val result = data.filter(s"is_warn = 1")
 
     result
-      .select("label_type", "cv_today", "cv_yesterday", "is_warn")
+      .select("label_type", "adclass", "cv_today", "cv_yesterday", "is_warn")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
@@ -78,6 +78,7 @@ object monitorV2labelType {
     val sqlRequest =
       s"""
          |SELECT
+         |  adclass,
          |  label_type,
          |  count(distinct searchid) as cv
          |FROM
@@ -88,7 +89,7 @@ object monitorV2labelType {
          |  label2 = 1
          |AND
          |  label_type in (1, 2, 3, 4, 5, 6)
-         |GROUP BY label_type
+         |GROUP BY adclass, label_type
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
