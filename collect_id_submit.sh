@@ -17,7 +17,7 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
 src_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"
-src_date="2019-05-31;2019-06-01;2019-06-02;2019-06-03;2019-06-04;2019-06-05;2019-06-06;2019-06-07;2019-06-08;2019-06-09;2019-06-10"
+src_date="2019-05-31;2019-06-01;2019-06-02;2019-06-03;2019-06-04;2019-06-05;2019-06-06;2019-06-07;2019-06-08;2019-06-09;2019-06-10;2019-06-11"
 instances_file="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info/sampled-v1-instances"
 partitions=1000
 
