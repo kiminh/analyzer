@@ -53,9 +53,7 @@ object monitorV2labelType {
 
     data.show(10)
 
-    val result = data.filter(s"is_warn = 1")
-
-    result
+    data
       .select("label_type", "adclass", "cv_today", "cv_yesterday", "is_warn")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
