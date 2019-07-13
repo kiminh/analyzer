@@ -31,7 +31,7 @@ object monitorApiCvr {
       .withColumn("date", lit(date))
       .withColumn("conversion_goal", lit(2))
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.cvr_monitor_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.cvr_monitor_daily")
 
     // 统计抽取前一天的数据
     // charge, click, cv
@@ -45,7 +45,7 @@ object monitorApiCvr {
       .withColumn("date", lit(date))
       .withColumn("conversion_goal", lit(2))
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.conversion_monitor_warning_users_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.conversion_monitor_warning_users_daily")
 
 
   }
@@ -71,8 +71,6 @@ object monitorApiCvr {
       .withColumn("cvr_diff", abs(col("cvr0") - col("cvr1")) * 1.0 / col("cvr1"))
       .withColumn("is_warn", udfCheckIsWarn(minCharge, minCvrDiff)(col("charge"), col("cvr_diff")))
 
-    data
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_conversion_monitor20190712a")
 
     val result = data
       .filter(s"is_warn = 1")
@@ -118,7 +116,7 @@ object monitorApiCvr {
          |  cv,
          |  charge
          |FROM
-         |  test.cvr_monitor_daily
+         |  dl_cpc.cvr_monitor_daily
          |WHERE
          |  $selectCondition
          |AND
