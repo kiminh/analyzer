@@ -22,7 +22,7 @@ instances_file="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info/sampled-v1
 partitions=1000
 
 spark-submit --master yarn --queue ${queue} \
-    --name "cpc-adlist-tf-decode" \
+    --name "cpc-adlist-collect-ids" \
     --driver-memory 8g --executor-memory 8g \
     --num-executors 20 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
