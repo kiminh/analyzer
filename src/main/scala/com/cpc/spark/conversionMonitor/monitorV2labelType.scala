@@ -1,11 +1,15 @@
 package com.cpc.spark.conversionMonitor
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.github.jurajburian.mailer._
 import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
-object monitorApi {
+object monitorV2labelType {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -13,93 +17,81 @@ object monitorApi {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val minCvDiff = args(2).toDouble
 
-    val cnt3 = getDataV3(date, hour, spark)
-    val cnt4 = getDataV4(date, hour, spark)
-    val cnt5 = getDataV5(date, hour, spark)
-    println(s"v3 = $cnt3, v4 = $cnt4, v5 = $cnt5")
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
 
-    var message = ""
+    val todayRaw = getData(date, hour, spark)
+    val yesterdayRaw = getData(date1, hour1, spark)
 
-    val cntDiffPercent = (cnt3.toDouble - cnt4.toDouble) / cnt3.toDouble
-    if (cntDiffPercent < 0 || cntDiffPercent > 0.15) {
-      message = message + "v4 abnormal\n"
-    }
-    if (cnt3 != cnt5) {
-      message = message + "v5 abnormal\n"
-    }
-    val sub = "api conversion monitor warning!"
-    var receiver = Seq[String]()
-    receiver:+="wangjun02@qutoutiao.net"
-    receiver:+="hanzhengding@qutoutiao.net"
-    receiver:+="zhanghongyang@qutoutiao.net"
-    receiver:+="wangyao@qutoutiao.net"
-    receiver:+="dongjinbao@qutoutiao.net"
-    receiver:+="chuquanquan@qutoutiao.net"
-    println(message)
-    if (message != "") {
-      message += s"date=$date, hour=$hour: v3 = $cnt3, v4 = $cnt4, v5 = $cnt5"
-      sendMail(message, sub, receiver)
-    }
+    val todayData = todayRaw
+      .withColumn("cv_today", col("cv"))
+      .select("label_type", "cv_today")
 
+    val yesterdayData = yesterdayRaw
+      .withColumn("cv_yesterday", col("cv"))
+      .select("label_type", "cv_yesterday")
+
+    val data = todayData
+      .join(yesterdayData, Seq("label_type"), "outer")
+      .na.fill(0, Seq("cv_today", "cv_yesterday"))
+      .select("label_type", "cv_today", "cv_yesterday")
+      .withColumn("is_warn", udfIsWarn(minCvDiff)(col("cv_today"), col("cv_yesterday")))
+      .cache()
+
+    data.show(10)
+
+    val result = data.filter(s"is_warn = 1")
+
+    result
+      .select("label_type", "cv_today", "cv_yesterday", "is_warn")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(1)
+      .write.mode("ovewrite").insertInto("test.conversion_monitor_for_v2")
 
   }
 
-  def getDataV3(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    ideaid
-         |from dl_cpc.ml_cvr_feature_v2
-         |where `date` = '$date' and `hour` = '$hour'
-         |and label = 1
-         |group by searchid, ideaid
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest).count()
+
+  def udfIsWarn(minCvDiff: Double) = udf((cvToday: Int, cvYesterday: Int) => {
+    var result = 0
+    val cvDiff = Math.abs((cvToday.toDouble - cvYesterday.toDouble) / cvYesterday.toDouble)
+    if (cvDiff > minCvDiff) {
+      result = 1
+    }
 
     result
-  }
+  })
 
-  def getDataV4(date: String, hour: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
-         |select
-         |    searchid,
-         |    ideaid
-         |from
-         |    dl_cpc.dm_conversions_for_model
-         |where
-         |    day='$date' and `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target,'api')
-         |group by searchid, ideaid
+         |SELECT
+         |  label_type,
+         |  count(distinct searchid) as cv
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  label2 = 1
+         |AND
+         |  label_type in (1, 2, 3, 4, 5, 6)
        """.stripMargin
     println(sqlRequest)
-    val result = spark.sql(sqlRequest).count()
-
-    result
-  }
-
-  def getDataV5(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    ideaid
-         |from
-         |    dl_cpc.cpc_conversion
-         |where
-         |    day='$date' and `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target,'api')
-         |group by searchid, ideaid
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest).count()
-
-    result
+    val data = spark.sql(sqlRequest)
+    data
   }
 
 
