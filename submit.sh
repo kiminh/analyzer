@@ -14,7 +14,7 @@ queue=root.cpc.bigdata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
-hadoop fs -get $jarLib $randjar
+hadoop fs -get ${jarLib} ${randjar}
 
 #src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/part-*"
 src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/"${cur_date}"/part*"
@@ -33,3 +33,6 @@ spark-submit --master yarn --queue ${queue} \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.ReadExampleFromHdfs \
     ${randjar} ${src} ${des_dir} ${des_date} ${des_map} ${partitions}
+
+chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"${des_date}"*"
+hadoop fs -chmod -R 0777 ${chmod_des}
