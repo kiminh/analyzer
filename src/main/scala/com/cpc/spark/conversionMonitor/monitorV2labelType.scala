@@ -92,6 +92,8 @@ object monitorV2labelType {
          |  label2 = 1
          |AND
          |  label_type in (1, 2, 3, 4, 5, 6)
+         |AND
+         |  media_appsid in ('80000001', '80000002')
          |GROUP BY label_type, sdk_type, media_appsid
        """.stripMargin
     println(sqlRequest)
