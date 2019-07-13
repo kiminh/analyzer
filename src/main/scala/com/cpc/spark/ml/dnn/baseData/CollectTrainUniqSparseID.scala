@@ -80,7 +80,7 @@ object CollectTrainUniqSparseID {
     for (idx <- 0 until src_date_list.length) {
       val curr_file = src_dir + "/" + src_date_list(idx) + "-instances"
       if (exists_hdfs_path(curr_file)) {
-        output(idx) = curr_file
+        output += curr_file
       }
     }
     val src_instances_files = output.mkString(",")
