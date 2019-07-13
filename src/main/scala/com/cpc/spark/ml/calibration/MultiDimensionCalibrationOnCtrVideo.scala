@@ -19,7 +19,7 @@ object MultiDimensionCalibrationOnCtrVideo {
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
-  val all_k = 3.3
+  val all_k = 1.2
   val new_k = 3.0
   val less_k = 1.5
 
@@ -81,24 +81,21 @@ object MultiDimensionCalibrationOnCtrVideo {
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
+      .filter("count3>10000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
-      .select("adclass","ideaid","group","count3")
-      .filter("count3>5000")
+      .select("adclass","ideaid","group")
+    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
+      .filter("count4>10000")
+      .withColumn("group",col("adclass"))
+      .select("adclass","group")
 
-    val data3 = log.join(group3.filter("count3>10000"),Seq("adclass","ideaid"),"inner")
+    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
     val calimap3 = GroupToConfig(data3, session,model)
 
-    val cali_untarget = UntargetCali(group3.filter("count3<10000"),session,less_k)
+    val data4 = log.join(group4,Seq("adclass"),"inner")
+    val calimap4 = GroupToConfig(data4, session,model)
 
-
-    val irModel = IRModel(
-      boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,new_k)
-    )
-    val config = CalibrationConfig("0", Option(irModel))
-    val calimap5 = Map[String,CalibrationConfig](("0",config))
-
-    val calimap =  calimap3 ++ cali_untarget ++ calimap5
+    val calimap = calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
