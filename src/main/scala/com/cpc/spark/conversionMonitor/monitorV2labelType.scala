@@ -88,6 +88,7 @@ object monitorV2labelType {
          |  label2 = 1
          |AND
          |  label_type in (1, 2, 3, 4, 5, 6)
+         |GROUP BY label_type
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
