@@ -3,16 +3,11 @@ package com.cpc.spark.OcpcProtoType.report
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import scala.collection.mutable
-
-object OcpcDailyFunnelIndustry {
+object OcpcDailyFunnelIndustryV2 {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
