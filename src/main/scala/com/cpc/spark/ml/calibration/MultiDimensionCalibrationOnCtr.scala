@@ -88,7 +88,7 @@ object MultiDimensionCalibrationOnCtr {
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
-      .filter("count4>100000")
+      .filter("count4>10000")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
@@ -104,8 +104,7 @@ object MultiDimensionCalibrationOnCtr {
     val data4 = log.join(group4,Seq("adclass"),"inner")
     val calimap4 = GroupToConfig(data4, session,model)
 
-    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
