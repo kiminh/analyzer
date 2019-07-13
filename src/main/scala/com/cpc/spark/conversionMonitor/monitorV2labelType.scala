@@ -18,6 +18,7 @@ object monitorV2labelType {
     val date = args(0).toString
     val hour = args(1).toString
     val minCvDiff = args(2).toDouble
+    val minCv = args(3).toInt
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -47,7 +48,7 @@ object monitorV2labelType {
       .join(yesterdayData, Seq("label_type", "adclass"), "outer")
       .na.fill(0, Seq("cv_today", "cv_yesterday"))
       .select("label_type", "adclass", "cv_today", "cv_yesterday")
-      .withColumn("is_warn", udfIsWarn(minCvDiff)(col("cv_today"), col("cv_yesterday")))
+      .withColumn("is_warn", udfIsWarn(minCv, minCvDiff)(col("cv_today"), col("cv_yesterday")))
       .cache()
 
     data.show(10)
@@ -64,10 +65,11 @@ object monitorV2labelType {
   }
 
 
-  def udfIsWarn(minCvDiff: Double) = udf((cvToday: Int, cvYesterday: Int) => {
+  def udfIsWarn(minCv: Int, minCvDiff: Double) = udf((cvToday: Int, cvYesterday: Int) => {
     var result = 0
     val cvDiff = Math.abs((cvToday.toDouble - cvYesterday.toDouble) / cvYesterday.toDouble)
-    if (cvDiff > minCvDiff) {
+    val cvSum = cvToday + cvYesterday
+    if (cvDiff > minCvDiff && cvSum > minCv) {
       result = 1
     }
 
