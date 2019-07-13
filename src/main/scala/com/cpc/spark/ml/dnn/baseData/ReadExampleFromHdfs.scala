@@ -80,7 +80,7 @@ object ReadExampleFromHdfs {
     if (args.length != 5) {
       System.err.println(
         """
-          |you have to input 3 parameters !!!
+          |you have to input 5 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
@@ -118,7 +118,23 @@ object ReadExampleFromHdfs {
     //val acc = new LongAccumulator
     //spark.sparkContext.register(acc)
 
-    val sampled_rdd = importedDf0.rdd.filter(
+    val sampled_rdd = importedDf0.rdd.map(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4)
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+
+          var label = 0.0f
+          if (label_arr.head == 1L) {
+            label = 1.0f
+          }
+          Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
+        }
+      ).filter(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -132,22 +148,6 @@ object ReadExampleFromHdfs {
           filter = true
         }
         filter
-      }
-    ).map(
-      rs => {
-        val idx2 = rs.getSeq[Long](0)
-        val idx1 = rs.getSeq[Long](1)
-        val idx_arr = rs.getSeq[Long](2)
-        val idx0 = rs.getSeq[Long](3)
-        val sample_idx = rs.getLong(4)
-        val label_arr = rs.getSeq[Long](5)
-        val dense = rs.getSeq[Long](6)
-
-        var label = 0.0f
-        if (label_arr.head == 1L) {
-          label = 1.0f
-        }
-        Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
       }
     )
 
