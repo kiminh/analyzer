@@ -100,7 +100,7 @@ object CollectTrainUniqSparseID {
           }
         ).reduceByKey(_ + _)
       )
-      data.reduceByKey(_ + _).repartition(1).sortBy(_._2).map {
+      data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.saveAsTextFile(des_instances_file)
