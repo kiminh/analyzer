@@ -24,7 +24,7 @@ partitions=1000
 spark-submit --master yarn --queue ${queue} \
     --name "cpc-adlist-tf-decode" \
     --driver-memory 8g --executor-memory 8g \
-    --num-executors 50 --executor-cores 4 \
+    --num-executors 10 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
