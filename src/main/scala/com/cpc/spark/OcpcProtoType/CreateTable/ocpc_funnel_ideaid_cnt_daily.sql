@@ -9,3 +9,6 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_funnel_ideaid_cnt_daily
 )
 PARTITIONED by (`date` string)
 STORED as PARQUET;
+
+
+alter table test.ocpc_funnel_ideaid_cnt_daily add columns (media string);

@@ -28,6 +28,7 @@ STORED as PARQUET;
 
 --alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (adslot_type int);
 --alter table dl_cpc.ocpc_funnel_data_industry_daily add columns (site_type string);
+alter table test.ocpc_funnel_data_industry_daily add columns (media string);
 
 --adslot_type             int
 --site_type               string

@@ -6,6 +6,9 @@ import java.util.Calendar
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.udfs.Udfs_wj._
+
 
 object OcpcDailyFunnelIndustryV2 {
   def main(args: Array[String]): Unit = {
@@ -28,20 +31,20 @@ object OcpcDailyFunnelIndustryV2 {
 
     result1
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_funnel_data_industry_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
 
 
     val data2 = calculateCnt(rawData, date, hour, spark)
     val result2 = data2
       .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
-      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
+      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "media", "date")
 
     result2
       .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_funnel_ideaid_cnt_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
@@ -63,12 +66,13 @@ object OcpcDailyFunnelIndustryV2 {
       s"""
          |SELECT
          |    industry,
+         |    media,
          |    count(distinct ideaid) as ideaid_cnt,
          |    count(distinct unitid) as unitid_cnt,
          |    count(distinct userid) as userid_cnt
          |FROM
          |    base_data
-         |GROUP BY industry
+         |GROUP BY industry, media
        """.stripMargin
     println(sqlRequest)
     val data = spark
@@ -113,7 +117,6 @@ object OcpcDailyFunnelIndustryV2 {
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
-//    data1.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190528")
 
     // 预算数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -172,18 +175,13 @@ object OcpcDailyFunnelIndustryV2 {
          |    planid,
          |    userid,
          |    adslot_type,
-         |    (case when siteid is not null and siteid > 0 then "siteform"
-         |          else "no-siteform" end) as site_type,
          |    isclick,
          |    isshow,
-         |    (case when ocpc_log = "" then "cpc"
-         |        when ocpc_log != "" and ocpc_log like "%IsHiddenOcpc:0%" then "ocpc"
-         |        when ocpc_log != "" and ocpc_log like "%IsHiddenOcpc:1%" then "hidden_ocpc"
-         |        else "other" end) as cpc_type,
-         |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'cpagiven:(.*?),', 1) else 0 end) as cpagiven,
-         |    price,
-         |    is_ocpc,
          |    ocpc_log,
+         |    ocpc_step,
+         |    price,
+         |    (case when siteid is not null and siteid > 0 then "siteform"
+         |          else "no-siteform" end) as site_type,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -196,7 +194,7 @@ object OcpcDailyFunnelIndustryV2 {
          |        when media_appsid = '80002819' then 'hottopic'
          |        else 'novel'
          |    end) as media,
-         |    is_api_callback
+         |    conversion_goal
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -211,8 +209,9 @@ object OcpcDailyFunnelIndustryV2 {
        """.stripMargin
     println(sqlRequest)
     val ctrBaseData = spark
-      .sql(sqlRequest)
-//    ctrBaseData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429base")
+        .sql(sqlRequest)
+        .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     ctrBaseData.createOrReplaceTempView("base_ctr")
     val sqlRequestCtr =
@@ -223,67 +222,48 @@ object OcpcDailyFunnelIndustryV2 {
          |    unitid,
          |    planid,
          |    userid,
+         |    adslot_type,
+         |    site_type,
          |    isclick,
          |    isshow,
-         |    cpc_type,
-         |    cpagiven,
+         |    ocpc_step,
+         |    (case
+         |      when ocpc_step <= 1 then 0
+         |      else cast(ocpc_log_dict['cpagiven'] as double)
+         |    end) as cpagiven,
+         |    (case
+         |      when ocpc_step = 2 and cast(ocpc_log_dict['IsHiddenOcpc'] as int)=0 then 'ocpc'
+         |      ocpc_step < 2 then 'cpc'
+         |      else 'hidden_ocpc'
+         |    end) as cpc_type,
          |    price,
-         |    is_ocpc,
-         |    ocpc_log,
          |    industry,
          |    media,
-         |    is_api_callback,
-         |    (case when is_api_callback = 1 and industry = 'feedapp' then 2
-         |          when industry = 'elds' then 3
-         |          else 0 end) as conversion_goal,
-         |    adslot_type,
-         |    site_type
+         |    conversion_goal,
+         |    cvr_goal
          |FROM
          |  base_ctr
        """.stripMargin
-    val ctrData = spark
-      .sql(sqlRequestCtr)
-      .filter(s"conversion_goal in (2, 3)")
+    val ctrData = spark.sql(sqlRequestCtr)
 
-//    ctrData.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429")
-
-    // cvr2Data
+    // cvrData
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
-         |  1 as iscvr2
+         |  1 as iscvr,
+         |  cvr_goal
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  cvr_goal = 'cvr2'
        """.stripMargin
     println(sqlRequest2)
-    val cvr2Data = spark.sql(sqlRequest2).distinct()
-
-    // cvr3Data
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  1 as iscvr3
-         |FROM
-         |  dl_cpc.ocpc_label_cvr_hourly
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  cvr_goal = 'cvr3'
-       """.stripMargin
-    println(sqlRequest3)
-    val cvr3Data = spark.sql(sqlRequest3).distinct()
+    val cvrData = spark.sql(sqlRequest2).distinct()
 
     // 数据关联
     val resultDF = ctrData
-      .join(cvr2Data, Seq("searchid"), "left_outer")
-      .join(cvr3Data, Seq("searchid"), "left_outer")
-      .withColumn("iscvr", when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3")))
+      .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
 //    resultDF.repartition(50).write.mode("overwrite").saveAsTable("test.check_data_ocpc20190429new")
