@@ -59,7 +59,7 @@ object monitorV2labelType {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-      .write.mode("ovewrite").insertInto("test.conversion_monitor_for_v2")
+      .write.mode("overwrite").insertInto("test.conversion_monitor_for_v2")
 
   }
 
