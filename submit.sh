@@ -4,9 +4,9 @@ set -e
 
 cur_date="2019-06-11-bak"
 cur_date=$1
-modelVersion=$2
-today=`date -d "${cur_time} 1 hours ago" +%Y-%m-%d`
-hour=`date -d "${cur_time} 1 hours ago" +%H`
+#modelVersion=$2
+#today=`date -d "${cur_time} 1 hours ago" +%Y-%m-%d`
+#hour=`date -d "${cur_time} 1 hours ago" +%H`
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 
@@ -16,11 +16,10 @@ jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get $jarLib $randjar
 
-hdfsPath="/user/cpc/hzh/dssm/ad-output-hour-${modelVersion}/${today}/${hour}"
 #src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/part-*"
-src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/"$cur_date
+src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/"${cur_date}"/part*"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"
-des_date=$cur_date
+des_date=${cur_date}
 des_map="emb-map"
 partitions=1000
 
