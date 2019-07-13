@@ -68,7 +68,7 @@ object monitorApiCvr {
       .withColumn("charge", col("charge1") + col("charge0"))
       .withColumn("cvr0", col("cv0") * 1.0 / col("click0"))
       .withColumn("cvr1", col("cv1") * 1.0 / col("click1"))
-      .withColumn("cvr_diff", abs(col("cvr0") - col("cvr1")) * 1.0 / col("cvr1"))
+      .withColumn("cvr_diff", (col("cvr1") - col("cvr0")) * 1.0 / col("cvr1"))
       .withColumn("is_warn", udfCheckIsWarn(minCharge, minCvrDiff)(col("charge"), col("cvr_diff")))
 
 
