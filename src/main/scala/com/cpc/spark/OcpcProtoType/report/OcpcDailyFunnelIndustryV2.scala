@@ -25,7 +25,7 @@ object OcpcDailyFunnelIndustryV2 {
     val data1 = calculateBase(rawData, date, spark)
 
     val result1 = data1
-      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "media", "industry", "date")
+      .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "media", "is_ocpc", "industry", "date")
 
     result1
       .repartition(5)
@@ -139,10 +139,26 @@ object OcpcDailyFunnelIndustryV2 {
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
+
+    // 是否oCPC单元
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  unit_id as unitid,
+         |  is_ocpc
+         |FROM
+         |  qttdw.dim_unit_ds
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest3)
+    val data3 = spark.sql(sqlRequest3)
+
     // 数据关联
     val data = data1
         .join(data2, Seq("planid"), "left_outer")
-        .select("unitid", "planid", "userid", "industry", "adslot_type", "site_type", "media", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget")
+        .join(data3, Seq("unitid"), "left_outer")
+        .select("unitid", "planid", "userid", "industry", "adslot_type", "site_type", "media", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "is_ocpc")
         .withColumn("date", lit(date1))
 
     data
@@ -203,7 +219,6 @@ object OcpcDailyFunnelIndustryV2 {
          |and ideaid > 0
          |and adsrc = 1
          |and searchid is not null
-         |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val ctrBaseData = spark
