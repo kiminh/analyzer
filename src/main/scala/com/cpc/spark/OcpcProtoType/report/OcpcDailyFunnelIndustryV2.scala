@@ -209,7 +209,8 @@ object OcpcDailyFunnelIndustryV2 {
          |        else 'novel'
          |    end) as media,
          |    conversion_goal,
-         |    is_api_callback
+         |    is_api_callback,
+         |    is_ocpc
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
