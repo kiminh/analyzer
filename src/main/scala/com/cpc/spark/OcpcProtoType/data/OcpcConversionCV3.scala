@@ -34,7 +34,6 @@ object OcpcConversionCV3 {
          |where $selectCondition
          |and access_channel="site"
          |and a in ('ctsite_form')
-         |and (adclass like '134%' or adclass like '107%')
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
