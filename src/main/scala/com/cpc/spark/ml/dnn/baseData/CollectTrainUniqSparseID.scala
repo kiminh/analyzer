@@ -89,13 +89,13 @@ object CollectTrainUniqSparseID {
       delete_hdfs_path(des_instances_file)
     }
     if (!exists_hdfs_path(des_instances_file)) {
-      var data = sc.parallelize(Array[(String, Int)]())
+      var data = sc.parallelize(Array[(String, Long)]())
       data = data.union(
         sc.textFile(src_instances_files).map(
           rs => {
             val line = rs.split("\t")
             val key = line(0)
-            val cnt = line(1).toInt
+            val cnt = line(1).toLong
             (key, cnt)
           }
         ).reduceByKey(_ + _)
