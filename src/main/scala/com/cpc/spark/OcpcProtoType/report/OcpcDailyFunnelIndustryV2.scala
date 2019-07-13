@@ -231,7 +231,7 @@ object OcpcDailyFunnelIndustryV2 {
          |    end) as cpagiven,
          |    (case
          |      when ocpc_step = 2 and cast(ocpc_log_dict['IsHiddenOcpc'] as int)=0 then 'ocpc'
-         |      ocpc_step < 2 then 'cpc'
+         |      when ocpc_step < 2 then 'cpc'
          |      else 'hidden_ocpc'
          |    end) as cpc_type,
          |    price,
