@@ -14,7 +14,7 @@ while [ ${h} -le $3 ]; do
 
     echo $date
     echo $hour
-    sh testOcpcConversion.sh $date $hour 2
+    sh testOcpcConversionCV3.sh $date $hour cvr3
 #    sh $1 $2 $hour
 
     let h=h+1
