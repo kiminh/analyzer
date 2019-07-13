@@ -208,7 +208,8 @@ object OcpcDailyFunnelIndustryV2 {
          |        when media_appsid = '80002819' then 'hottopic'
          |        else 'novel'
          |    end) as media,
-         |    conversion_goal
+         |    conversion_goal,
+         |    is_api_callback
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -223,6 +224,7 @@ object OcpcDailyFunnelIndustryV2 {
     println(sqlRequest)
     val ctrBaseData = spark
         .sql(sqlRequest)
+        .withColumn("conversion_goal", udfSelectCvGoal()(col("is_ocpc"), col("conversion_goal"), col("industry"), col("is_api_callback")))
         .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
@@ -284,6 +286,28 @@ object OcpcDailyFunnelIndustryV2 {
     resultDF
 
   }
+
+  def udfSelectCvGoal() = udf((isOcpc: Int, conversionGoal: Int, industry: String, isApiCallback: Int) => {
+    var result = 0
+    if (isOcpc == 1) {
+      result = conversionGoal
+    } else {
+      if (industry == "elds") {
+        result = 3
+      } else if (industry == "feedapp") {
+        if (isApiCallback == 1) {
+          result = 2
+        } else {
+          result = 1
+        }
+      } else if (industry == "wzcp") {
+        result = 4
+      } else {
+        result = 0
+      }
+    }
+    result
+  })
 
 
 
