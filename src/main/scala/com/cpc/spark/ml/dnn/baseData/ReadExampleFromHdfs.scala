@@ -142,7 +142,8 @@ object ReadExampleFromHdfs {
         val idx0 = rs.getSeq[Long](3)
         val sample_idx = rs.getLong(4).toString
         val label_arr = rs.getSeq[Long](5)
-        val dense = rs.getSeq[Long](6)
+        val label = rs.getSeq[Long](6)
+        val dense = rs.getSeq[Long](7)
         var filter = false
         if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
           filter = true
