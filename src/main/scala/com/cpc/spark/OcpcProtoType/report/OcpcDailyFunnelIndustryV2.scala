@@ -14,17 +14,15 @@ object OcpcDailyFunnelIndustryV2 {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
-    val hour = args(1).toString
-    val media = args(2).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, media=$media")
+    println(s"date=$date")
 
     // spark app name
-    val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName(s"OcpcDailyFunnelIndustryV2: $date").enableHiveSupport().getOrCreate()
 
-    val rawData = getOcpcLog(media, date, hour, spark)
+    val rawData = getOcpcLog(date, spark)
 
-    val data1 = calculateBase(rawData, date, hour, spark)
+    val data1 = calculateBase(rawData, date, spark)
 
     val result1 = data1
       .select("unitid", "planid", "userid", "click", "show", "cv", "cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "hidden_cpagiven", "hidden_cpareal", "hidden_click", "hidden_show", "hidden_cv", "hidden_cost", "budget", "adslot_type", "site_type", "media", "industry", "date")
@@ -35,7 +33,7 @@ object OcpcDailyFunnelIndustryV2 {
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily")
 
 
-    val data2 = calculateCnt(rawData, date, hour, spark)
+    val data2 = calculateCnt(rawData, date, spark)
     val result2 = data2
       .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
@@ -49,7 +47,7 @@ object OcpcDailyFunnelIndustryV2 {
 
   }
 
-  def calculateCnt(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateCnt(baseData: DataFrame, date: String, spark: SparkSession) = {
     // 计算日期
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -82,7 +80,7 @@ object OcpcDailyFunnelIndustryV2 {
     data
   }
 
-  def calculateBase(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateBase(baseData: DataFrame, date: String, spark: SparkSession) = {
     // 汇总数据
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest1 =
@@ -150,7 +148,7 @@ object OcpcDailyFunnelIndustryV2 {
     data
   }
 
-  def getOcpcLog(media: String, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcLog(date: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
