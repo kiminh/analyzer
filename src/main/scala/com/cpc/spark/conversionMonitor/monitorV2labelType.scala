@@ -86,6 +86,8 @@ object monitorV2labelType {
          |WHERE
          |  `date` = '$date'
          |AND
+         |  `hour` = '$hour'
+         |AND
          |  label2 = 1
          |AND
          |  label_type in (1, 2, 3, 4, 5, 6)
