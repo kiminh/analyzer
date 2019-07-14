@@ -232,13 +232,11 @@ object MakeTrainExamples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("idx1", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true)),
-      StructField("id_arr_mapped", ArrayType(LongType, containsNull = true)),
       StructField("idx0", ArrayType(LongType, containsNull = true)),
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
       StructField("label_single", FloatType, nullable = true),
-      StructField("dense", ArrayType(LongType, containsNull = true)),
-      StructField("dense_mapped", ArrayType(LongType, containsNull = true))))
+      StructField("dense", ArrayType(LongType, containsNull = true))))
 
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -280,7 +278,7 @@ object MakeTrainExamples {
             if (label_arr.head == 1L) {
               label = 1.0f
             }
-            Row(idx2, idx1, idx_arr, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense, dense_mapped_seq)
+            Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
           }
         )
 
@@ -310,14 +308,12 @@ object MakeTrainExamples {
             val idx2 = rs.getSeq[Long](0)
             val idx1 = rs.getSeq[Long](1)
             val idx_arr = rs.getSeq[Long](2)
-            val idx_arr_mapped = rs.getSeq[Long](3)
-            val idx0 = rs.getSeq[Long](5)
-            val sample_idx = rs.getLong(5)
-            val label_arr = rs.getSeq[Long](6)
-            val label = rs.getFloat(7)
-            val dense = rs.getSeq[Long](8)
-            val dense_mapped = rs.getSeq[Long](9)
-            Row(idx2, idx1, idx_arr, idx_arr_mapped, idx0, sample_idx, label_arr, label, dense, dense_mapped)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val label = rs.getFloat(6)
+            val dense = rs.getSeq[Long](7)
+            Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
           }
         ).filter(
           rs => {
