@@ -257,9 +257,10 @@ object MakeTrainExamples {
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
       println("curr_file_src:" + curr_file_src)
       if (exists_hdfs_path(curr_file_src) && (!exists_hdfs_path(tf_sampled_path))) {
-        println("now load data frame:" + tf_sampled_path)
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_sampled_path)
-        println("DF file count:" + importedDf.count().toString + " of file:" + tf_sampled_path)
+        val load_file = curr_file_src + "/part*"
+        println("now load data frame:" + load_file)
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(load_file)
+        println("DF file count:" + importedDf.count().toString + " of file:" + load_file)
         importedDf.printSchema()
         if (importedDf.count() > 0) {
           val sampled_rdd = importedDf.rdd.filter(
