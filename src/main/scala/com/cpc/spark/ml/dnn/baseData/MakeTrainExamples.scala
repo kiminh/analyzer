@@ -77,15 +77,6 @@ object MakeTrainExamples {
     val sc = spark.sparkContext
 
     val src_date_list = src_date_str.split(";")
-    val src_file_list = scala.collection.mutable.ArrayBuffer[String]()
-    for (idx <- 0 until src_date_list.length) {
-      val curr_file = src_dir + "/" + src_date_list(idx) + "-instances"
-      if (!exists_hdfs_path(curr_file)) {
-        println("not exist src file:", curr_file)
-      }
-      src_file_list += curr_file
-    }
-
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
       val instances_path = des_dir + "/instances-" + src_date
@@ -95,8 +86,7 @@ object MakeTrainExamples {
         importedDf.cache()
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
         if (importedDf.count() < 10000) {
-          importedDf.unpersist()
-          println("un-persist df file:" + curr_file_src)
+          println("invalid df count, df file:" + curr_file_src)
         } else {
           val map_path = des_dir + "/instances-" + src_date + "-collect"
           if (!exists_hdfs_path(map_path)) {
@@ -161,6 +151,7 @@ object MakeTrainExamples {
               key + "\t" + value.toString
           }.repartition(1).saveAsTextFile(instances_path)
         }
+        importedDf.unpersist()
       }
     }
 
