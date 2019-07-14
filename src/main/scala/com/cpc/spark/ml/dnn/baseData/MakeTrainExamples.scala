@@ -269,45 +269,48 @@ object MakeTrainExamples {
             val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(break_file)
             println("DF file count:" + importedDf.count().toString + " of file:" + break_file)
 
-            val mapped_rdd = importedDf.rdd.map(
-              rs => {
-                val idx2 = rs.getSeq[Long](0)
-                val idx1 = rs.getSeq[Long](1)
-                val idx_arr = rs.getSeq[Long](2)
-                val idx0 = rs.getSeq[Long](3)
-                val sample_idx = rs.getLong(4)
-                val label_arr = rs.getSeq[Long](5)
-                val dense = rs.getSeq[Long](6)
+            if (importedDf.count() > 0) {
+              val mapped_rdd = importedDf.rdd.map(
+                rs => {
+                  val idx2 = rs.getSeq[Long](0)
+                  val idx1 = rs.getSeq[Long](1)
+                  val idx_arr = rs.getSeq[Long](2)
+                  val idx0 = rs.getSeq[Long](3)
+                  val sample_idx = rs.getLong(4)
+                  val label_arr = rs.getSeq[Long](5)
+                  val dense = rs.getSeq[Long](6)
 
-                val dense_mapped: Array[Long] = new Array[Long](dense.length)
-                for (idx <- dense.indices) {
-                  dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+                  val dense_mapped: Array[Long] = new Array[Long](dense.length)
+                  for (idx <- dense.indices) {
+                    dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+                  }
+                  val dense_mapped_seq: Seq[Long] = dense_mapped
+
+                  val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
+                  for (idx <- idx_arr.indices) {
+                    idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
+                  }
+                  val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
+
+                  var label = 0.0f
+                  if (label_arr.head == 1L) {
+                    label = 1.0f
+                  }
+                  Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
                 }
-                val dense_mapped_seq: Seq[Long] = dense_mapped
+              )
+              val mapped_rdd_count = mapped_rdd.count
+              println(s"mapped_rdd_count is : $mapped_rdd_count")
 
-                val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
-                for (idx <- idx_arr.indices) {
-                  idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
-                }
-                val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
+              //Save DataFrame as TFRecords
+              val df_tf: DataFrame = spark.createDataFrame(mapped_rdd, schema)
+              df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path)
+              //保存count文件
+              val mapped_tf_df_count = df_tf.count()
+              println(s"mapped_tf_df_count is : $mapped_tf_df_count")
+              total_count += df_tf.count()
+            }
 
-                var label = 0.0f
-                if (label_arr.head == 1L) {
-                  label = 1.0f
-                }
-                Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
-              }
-            )
-            val mapped_rdd_count = mapped_rdd.count
-            println(s"mapped_rdd_count is : $mapped_rdd_count")
-
-            //Save DataFrame as TFRecords
-            val df_tf: DataFrame = spark.createDataFrame(mapped_rdd, schema)
-            df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path)
-            //保存count文件
-            val mapped_tf_df_count = df_tf.count()
-            println(s"mapped_tf_df_count is : $mapped_tf_df_count")
-            total_count += df_tf.count()
           }
 
         }
