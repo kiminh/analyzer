@@ -251,17 +251,21 @@ object MakeTrainExamples {
       StructField("label_single", FloatType, nullable = true),
       StructField("dense", ArrayType(LongType, containsNull = true))))
 
+    /************do sampling************************/
+    println("do sampling")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val curr_file_src = src_dir + "/" + src_date
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
       println("curr_file_src:" + curr_file_src)
+      println("tf_sampled_path:" + tf_sampled_path)
       if (exists_hdfs_path(curr_file_src) && (!exists_hdfs_path(tf_sampled_path))) {
-        val load_file = curr_file_src + "/part*"
-        println("now load data frame:" + load_file)
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(load_file)
-        println("DF file count:" + importedDf.count().toString + " of file:" + load_file)
+        val curr_file_src_collect = curr_file_src + "/part*"
+        println("now load data frame:" + curr_file_src_collect)
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
+        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
         importedDf.printSchema()
+        importedDf.show(1)
         if (importedDf.count() > 0) {
           val sampled_rdd = importedDf.rdd.filter(
             rs => {
@@ -288,7 +292,13 @@ object MakeTrainExamples {
           s"hadoop fs -put $fileName $tf_sampled_path/count" !
         }
       }
+    }
 
+    /************do mapping************************/
+    println("do mapping")
+    for (src_date <- src_date_list) {
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
       val tf_mapped_path = des_dir + "/" + src_date + "-tf-sampled-mapped"
       if (!exists_hdfs_path(tf_mapped_path) && exists_hdfs_path(tf_sampled_path)) {
         //Read TFRecords into DataFrame using custom schema
@@ -343,5 +353,6 @@ object MakeTrainExamples {
         s"hadoop fs -put $fileName $tf_mapped_path/count" !
       }
     }
+
   }
 }
