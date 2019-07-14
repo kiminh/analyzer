@@ -258,7 +258,7 @@ object MakeTrainExamples {
         break_list(8) = "/part-r-008*"
         break_list(9) = "/part-r-009*"
 
-        var total_count = 0
+        var total_count = 0L
         for (idx <- break_list.indices) {
           val tf_mapped_path = des_dir + "/" + src_date + "-tf-mapped/part-" + idx.toString
           println("tf_mapped_path:" + tf_mapped_path)
