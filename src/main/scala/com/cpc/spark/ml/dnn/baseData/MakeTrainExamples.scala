@@ -224,6 +224,12 @@ object MakeTrainExamples {
     println(s"status = $status")
     println(s"stdout = $stdout")
     println(s"stderr = $stderr")
+
+    val filelist = s"$stdout".split("\n")
+    for (file <- filelist) {
+      println(file)
+    }
+
     return
 
 
