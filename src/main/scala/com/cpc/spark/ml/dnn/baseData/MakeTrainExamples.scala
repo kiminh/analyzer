@@ -360,8 +360,8 @@ object MakeTrainExamples {
             }
         )
 
-        val mapped_sampled_rdd_count = mapped_sampled_rdd.count
-        println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
+        //val mapped_sampled_rdd_count = mapped_sampled_rdd.count
+        //println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
 
         //Save DataFrame as TFRecords
         val mapped_sampled_df: DataFrame = spark.createDataFrame(mapped_sampled_rdd, schema)
