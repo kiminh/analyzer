@@ -3,6 +3,7 @@ package com.cpc.spark.ml.dnn.baseData
 import java.io.{File, PrintWriter}
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{StructField, _}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -74,8 +75,12 @@ object MakeTrainExamples {
     println(args)
 
     Logger.getRootLogger.setLevel(Level.WARN)
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+
+    val sparkConf = new SparkConf()
+    sparkConf.set("spark.driver.maxResultSize", "5g")
+    val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
+
 
     val src_date_list = src_date_str.split(";")
     println("collect map instances for id feature")
@@ -208,7 +213,6 @@ object MakeTrainExamples {
 
 
     /************************load map********************************/
-    spark.conf.set("spark.driver.maxResultSize", "5g")
     println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
