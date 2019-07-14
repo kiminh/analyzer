@@ -293,7 +293,7 @@ object MakeTrainExamples {
       if (!exists_hdfs_path(tf_mapped_path) && exists_hdfs_path(tf_sampled_path)) {
         //Read TFRecords into DataFrame using custom schema
         val tf_sampled_path_collect = tf_sampled_path + "/part*"
-        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_sampled_path_collect)
+        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
         println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
         importedDf1.printSchema()
         importedDf1.show(1)
