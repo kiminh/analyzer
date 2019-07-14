@@ -86,6 +86,20 @@ object MakeTrainExamples {
     val sc = spark.sparkContext
 
 
+
+
+    val curr_file_src = des_dir + "/2019-06-10-tf-sampled-mapped/part-0"
+    val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
+    importedDf.printSchema()
+    importedDf.show(3)
+
+    return
+
+
+
+
+
+
     val src_date_list = src_date_str.split(";")
     println("collect map instances for id feature")
     /************collect map instances for id feature************************/
