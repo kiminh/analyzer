@@ -246,7 +246,7 @@ object MakeTrainExamples {
       var curr_file_src = src_dir + "/" + src_date
       println("curr_file_src:" + curr_file_src)
       if (exists_hdfs_path(curr_file_src)) {
-        val break_list:Array[String] = new Array[String](11)
+        val break_list:Array[String] = new Array[String](10)
         break_list(0) = "/part-r-000*"
         break_list(1) = "/part-r-001*"
         break_list(2) = "/part-r-002*"
@@ -257,7 +257,6 @@ object MakeTrainExamples {
         break_list(7) = "/part-r-007*"
         break_list(8) = "/part-r-008*"
         break_list(9) = "/part-r-009*"
-        break_list(10) = "/part-r-01*"
 
         var total_count = 0
         for (idx <- break_list.indices) {
