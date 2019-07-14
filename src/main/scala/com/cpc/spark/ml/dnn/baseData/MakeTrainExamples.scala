@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.{File, PrintWriter}
+import java.io.{BufferedReader, File, InputStreamReader, PrintWriter}
 import java.net.URI
 
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -217,7 +217,7 @@ object MakeTrainExamples {
 
     val url = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-10"
 
-    val files = s"hadoop fs -ls $url" !
+    val files = s"hadoop fs -ls $url" !!
     for (file <- files) {
       println(file)
     }
