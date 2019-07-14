@@ -206,6 +206,7 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
+    /************************load map********************************/
     println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
