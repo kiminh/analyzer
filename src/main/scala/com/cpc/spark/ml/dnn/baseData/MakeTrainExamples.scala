@@ -206,6 +206,7 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
+
     /************************load map********************************/
     println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
@@ -216,9 +217,11 @@ object MakeTrainExamples {
         (field, key)
       }
     }.collectAsMap()
-
     println("sparseMap.size=" + sparseMap.size)
 
+
+    /************do id map and sampling************************/
+    println("do id map and sampling")
     val negativeSampleRatio = 0.19
     val schema = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
@@ -232,8 +235,6 @@ object MakeTrainExamples {
       StructField("dense", ArrayType(LongType, containsNull = true)),
       StructField("dense_mapped", ArrayType(LongType, containsNull = true))))
 
-    println("do id map and sampling")
-    /************do id map and sampling************************/
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
