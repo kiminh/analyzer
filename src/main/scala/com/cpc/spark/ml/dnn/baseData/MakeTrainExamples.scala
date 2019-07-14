@@ -84,7 +84,7 @@ object MakeTrainExamples {
       if (!exists_hdfs_path(instances_path)) {
         val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
-        importedDf.cache()
+        //importedDf.cache()
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
         if (importedDf.count() < 10000) {
           println("invalid df count, df file:" + curr_file_src)
@@ -155,7 +155,6 @@ object MakeTrainExamples {
               key + "\t" + value.toString
           }.repartition(1).saveAsTextFile(instances_path)
         }
-        importedDf.unpersist()
       }
     }
 
@@ -205,6 +204,57 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
-    val negativeSampleRatio = 0.19
+    //val sparseMap = sc.textFile(instances_all_map).map{
+    //  rs => {
+    //    val line = rs.split("\t")
+    //    val field = line(0).toLong
+    //    val key = line(1).toLong - 1L
+    //    (field, key)
+    //  }
+    //}.collectAsMap()
+
+    ///************collect map instances for id feature************************/
+    //for (src_date <- src_date_list) {
+    //  val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
+    //  val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
+    //  importedDf.cache()
+    //  println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
+
+    //  val sampled_rdd = importedDf.rdd.map(
+    //    rs => {
+    //      val idx2 = rs.getSeq[Long](0)
+    //      val idx1 = rs.getSeq[Long](1)
+    //      val idx_arr = rs.getSeq[Long](2)
+    //      val idx0 = rs.getSeq[Long](3)
+    //      val sample_idx = rs.getLong(4)
+    //      val label_arr = rs.getSeq[Long](5)
+    //      val dense = rs.getSeq[Long](6)
+
+    //      var label = 0.0f
+    //      if (label_arr.head == 1L) {
+    //        label = 1.0f
+    //      }
+    //      Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
+    //    }
+    //  ).filter(
+    //    rs => {
+    //      val idx2 = rs.getSeq[Long](0)
+    //      val idx1 = rs.getSeq[Long](1)
+    //      val idx_arr = rs.getSeq[Long](2)
+    //      val idx0 = rs.getSeq[Long](3)
+    //      val sample_idx = rs.getLong(4).toString
+    //      val label_arr = rs.getSeq[Long](5)
+    //      val label = rs.getFloat(6)
+    //      val dense = rs.getSeq[Long](7)
+    //      var filter = false
+    //      if (label_arr.head == 1L || Random.nextFloat() < math.abs(negativeSampleRatio)) {
+    //        filter = true
+    //      }
+    //      filter
+    //    }
+    //  )
+    //}
+
+    //val negativeSampleRatio = 0.19
   }
 }
