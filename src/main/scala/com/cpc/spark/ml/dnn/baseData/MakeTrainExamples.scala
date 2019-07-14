@@ -78,6 +78,7 @@ object MakeTrainExamples {
     val sc = spark.sparkContext
 
     val src_date_list = src_date_str.split(";")
+    println("collect map instances for id feature")
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
       val instances_path = des_dir + "/instances-" + src_date
@@ -158,6 +159,7 @@ object MakeTrainExamples {
       }
     }
 
+    println("make total instances")
     /************************make total instances********************************/
     val output = scala.collection.mutable.ArrayBuffer[String]()
     for (src_date <- src_date_list) {
@@ -204,6 +206,7 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
+    println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
         val line = rs.split("\t")
@@ -228,7 +231,8 @@ object MakeTrainExamples {
       StructField("dense", ArrayType(LongType, containsNull = true)),
       StructField("dense_mapped", ArrayType(LongType, containsNull = true))))
 
-    /************collect map instances for id feature************************/
+    println("do id map and sampling")
+    /************do id map and sampling************************/
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
