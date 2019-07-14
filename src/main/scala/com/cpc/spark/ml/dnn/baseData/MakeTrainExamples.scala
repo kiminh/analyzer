@@ -193,8 +193,7 @@ object MakeTrainExamples {
     val acc = new LongAccumulator
     spark.sparkContext.register(acc)
 
-    val instances_all_map = des_dir + "/" + instances_file
-
+    val instances_all_map = des_dir + "/" + instances_file + "-mapped"
     if (!exists_hdfs_path(instances_all_map)) {
       sc.textFile(instances_all).map{
         rs => {
