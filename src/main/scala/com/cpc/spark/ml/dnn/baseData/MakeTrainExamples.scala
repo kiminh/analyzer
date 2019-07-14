@@ -216,11 +216,14 @@ object MakeTrainExamples {
     }
 
     val url = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-10"
+    val cmd = "hadoop fs -ls $url"
 
-    val files = s"hadoop fs -ls $url" !!
-    for (file <- files) {
-      println(file)
-    }
+    val stdout = new StringBuilder()
+    val stderr = new StringBuilder()
+    val status = cmd ! ProcessLogger(stdout append _, stderr append _)
+    println(s"status = $status")
+    println(s"stdout = $stdout")
+    println(s"stderr = $stderr")
     return
 
 
