@@ -331,7 +331,7 @@ object MakeTrainExamples {
             s"hadoop fs -rm -r $tf_mapped_path_part" !
             val tf_sampled_path_collect = tf_sampled_path + src_tail_collect(idx)
             val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
-            println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
+            //println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
             importedDf1.printSchema()
             importedDf1.show(3)
 
@@ -366,8 +366,8 @@ object MakeTrainExamples {
               }
             )
 
-            val mapped_sampled_rdd_count = mapped_sampled_rdd.count
-            println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
+            //val mapped_sampled_rdd_count = mapped_sampled_rdd.count
+            //println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
 
             //Save DataFrame as TFRecords
             val mapped_sampled_df: DataFrame = spark.createDataFrame(mapped_sampled_rdd, schema)
