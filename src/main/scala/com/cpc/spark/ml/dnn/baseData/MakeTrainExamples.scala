@@ -246,6 +246,8 @@ object MakeTrainExamples {
       val tf_mapped_path = des_dir + "/" + src_date + "-tf-mapped"
       println("curr_file_src:" + curr_file_src)
       println("tf_mapped_path:" + tf_mapped_path)
+      println("exists_hdfs_path(tf_mapped_path):", exists_hdfs_path(tf_mapped_path))
+      println("exists_hdfs_path(curr_file_src):", exists_hdfs_path(curr_file_src))
       if (!exists_hdfs_path(tf_mapped_path) && exists_hdfs_path(curr_file_src)) {
         println("now load data frame:" + curr_file_src)
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
@@ -296,7 +298,7 @@ object MakeTrainExamples {
       }
 
       val tf_sampled_mapped_path = des_dir + "/" + src_date + "-tf-mapped-sampled"
-      if (!exists_hdfs_path(tf_sampled_mapped_path)) {
+      if (!exists_hdfs_path(tf_sampled_mapped_path) && exists_hdfs_path(tf_mapped_path)) {
         //Read TFRecords into DataFrame using custom schema
         val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema).load(tf_mapped_path)
         println("DF file count:" + importedDf1.count().toString + " of file:" + tf_mapped_path)
