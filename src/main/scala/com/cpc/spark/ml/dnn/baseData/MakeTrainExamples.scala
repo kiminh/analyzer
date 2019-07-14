@@ -309,6 +309,23 @@ object MakeTrainExamples {
         importedDf1.show(1)
 
         val mapped_sampled_rdd = importedDf1.rdd.map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              val dense_mapped: Array[Long] = new Array[Long](dense.length)
+              for (idx <- dense.indices) {
+                dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+              }
+              val dense_mapped_seq: Seq[Long] = dense_mapped
+              Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, dense_mapped_seq)
+            }
+        ).map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
             val idx1 = rs.getSeq[Long](1)
@@ -318,24 +335,29 @@ object MakeTrainExamples {
             val label_arr = rs.getSeq[Long](5)
             val dense = rs.getSeq[Long](6)
 
-            val dense_mapped: Array[Long] = new Array[Long](dense.length)
-            for (idx <- dense.indices) {
-              dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
-            }
-            val dense_mapped_seq: Seq[Long] = dense_mapped
-
             val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
             for (idx <- idx_arr.indices) {
               idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
             }
             val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
-
-            var label = 0.0f
-            if (label_arr.head == 1L) {
-              label = 1.0f
-            }
-            Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
+            Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, dense)
           }
+        ).map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              var label = 0.0f
+              if (label_arr.head == 1L) {
+                label = 1.0f
+              }
+              Row(idx2, idx1, idx_arr, idx0, sample_idx, label_arr, label, dense)
+            }
         )
 
         val mapped_sampled_rdd_count = mapped_sampled_rdd.count
