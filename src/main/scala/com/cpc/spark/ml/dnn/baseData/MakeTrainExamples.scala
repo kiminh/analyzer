@@ -8,6 +8,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.sys.process._
 import scala.util.Random
+import org.apache.spark.util.LongAccumulator
 
 /**
   * 解析tfrecord到hdfs
@@ -90,8 +91,11 @@ object MakeTrainExamples {
         } else {
           val map_path = des_dir + "/instances-" + src_date + "-collect"
           if (!exists_hdfs_path(map_path)) {
-            importedDf.createOrReplaceTempView("sql_table_view_name_" + src_date)
-            val tf_decode_df_rows = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM " + "sql_table_view_name_" + src_date)
+            val date_token = src_date.split("-")
+            val viewName = "sql_table_view_name_" + date_token.mkString("_")
+            println("viewName:" + viewName)
+            importedDf.createOrReplaceTempView(viewName)
+            val tf_decode_df_rows = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM " + viewName)
             tf_decode_df_rows.rdd.map(
               rs => {
                 val sample_idx = rs.getLong(0).toString
@@ -183,6 +187,22 @@ object MakeTrainExamples {
         case (key, value) =>
           key + "\t" + value.toString
       }.saveAsTextFile(instances_all)
+    }
+
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
+    val instances_all_map = des_dir + "/" + instances_file
+
+    if (!exists_hdfs_path(instances_all_map)) {
+      sc.textFile(instances_all).map{
+        rs => {
+          acc.add(1L)
+          val line = rs.split("\t")
+          val key = line(0)
+          key + "\t" + acc.sum.toString
+        }
+      }.saveAsTextFile(instances_all_map)
     }
 
     val negativeSampleRatio = 0.19
