@@ -11,6 +11,7 @@ cur_date=$1
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 
 queue=root.cpc.bigdata
+queue=root.cpc.basedata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
