@@ -215,24 +215,6 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
-    val url = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-10"
-    val cmd = s"hadoop fs -ls $url"
-
-    val stdout = new StringBuilder()
-    val stderr = new StringBuilder()
-    val status = cmd ! ProcessLogger(stdout append _, stderr append _)
-    println(s"status = $status")
-    println(s"stdout = $stdout")
-    println(s"stderr = $stderr")
-
-    val filelist = s"$stdout".split("\n")
-    for (file <- filelist) {
-      println(file)
-    }
-
-    return
-
-
     /************************load map********************************/
     println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
@@ -262,65 +244,80 @@ object MakeTrainExamples {
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       var curr_file_src = src_dir + "/" + src_date
-      val tf_mapped_path = des_dir + "/" + src_date + "-tf-mapped"
       println("curr_file_src:" + curr_file_src)
-      println("tf_mapped_path:" + tf_mapped_path)
-      println("exists_hdfs_path(tf_mapped_path):", exists_hdfs_path(tf_mapped_path))
-      println("exists_hdfs_path(curr_file_src):", exists_hdfs_path(curr_file_src))
-      if (!exists_hdfs_path(tf_mapped_path) && exists_hdfs_path(curr_file_src)) {
+      if (exists_hdfs_path(curr_file_src)) {
+        val break_list:Array[String] = new Array[String](11)
+        break_list(0) = "/part-r-000*"
+        break_list(1) = "/part-r-001*"
+        break_list(2) = "/part-r-002*"
+        break_list(3) = "/part-r-003*"
+        break_list(4) = "/part-r-004*"
+        break_list(5) = "/part-r-005*"
+        break_list(6) = "/part-r-006*"
+        break_list(7) = "/part-r-007*"
+        break_list(8) = "/part-r-008*"
+        break_list(9) = "/part-r-009*"
+        break_list(10) = "/part-r-01*"
 
-        for (idx <- 0 until 1500) {
-          curr_file_src +=  "/part-r-*"
-          println("now load data frame:" + curr_file_src)
-          val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
-          println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
+        var total_count = 0
+        for (idx <- break_list.indices) {
+          val tf_mapped_path = des_dir + "/" + src_date + "-tf-mapped/part-" + idx.toString
+          println("tf_mapped_path:" + tf_mapped_path)
+          if (!exists_hdfs_path(tf_mapped_path)) {
+            val break_file = curr_file_src + break_list(idx)
+            println("now load data frame:" + break_file)
+            val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(break_file)
+            println("DF file count:" + importedDf.count().toString + " of file:" + break_file)
 
-          val mapped_rdd = importedDf.rdd.map(
-            rs => {
-              val idx2 = rs.getSeq[Long](0)
-              val idx1 = rs.getSeq[Long](1)
-              val idx_arr = rs.getSeq[Long](2)
-              val idx0 = rs.getSeq[Long](3)
-              val sample_idx = rs.getLong(4)
-              val label_arr = rs.getSeq[Long](5)
-              val dense = rs.getSeq[Long](6)
+            val mapped_rdd = importedDf.rdd.map(
+              rs => {
+                val idx2 = rs.getSeq[Long](0)
+                val idx1 = rs.getSeq[Long](1)
+                val idx_arr = rs.getSeq[Long](2)
+                val idx0 = rs.getSeq[Long](3)
+                val sample_idx = rs.getLong(4)
+                val label_arr = rs.getSeq[Long](5)
+                val dense = rs.getSeq[Long](6)
 
-              val dense_mapped: Array[Long] = new Array[Long](dense.length)
-              for (idx <- dense.indices) {
-                dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+                val dense_mapped: Array[Long] = new Array[Long](dense.length)
+                for (idx <- dense.indices) {
+                  dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+                }
+                val dense_mapped_seq: Seq[Long] = dense_mapped
+
+                val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
+                for (idx <- idx_arr.indices) {
+                  idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
+                }
+                val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
+
+                var label = 0.0f
+                if (label_arr.head == 1L) {
+                  label = 1.0f
+                }
+                Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
               }
-              val dense_mapped_seq: Seq[Long] = dense_mapped
+            )
+            val mapped_rdd_count = mapped_rdd.count
+            println(s"mapped_rdd_count is : $mapped_rdd_count")
 
-              val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
-              for (idx <- idx_arr.indices) {
-                idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
-              }
-              val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
+            //Save DataFrame as TFRecords
+            val df_tf: DataFrame = spark.createDataFrame(mapped_rdd, schema)
+            df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path)
+            //保存count文件
+            val mapped_tf_df_count = df_tf.count()
+            println(s"mapped_tf_df_count is : $mapped_tf_df_count")
+            total_count += df_tf.count()
+          }
 
-              var label = 0.0f
-              if (label_arr.head == 1L) {
-                label = 1.0f
-              }
-              Row(idx2, idx1, idx_arr_mapped_seq, idx0, sample_idx, label_arr, label, dense_mapped_seq)
-            }
-          )
-
-          val mapped_rdd_count = mapped_rdd.count
-          println(s"mapped_rdd_count is : $mapped_rdd_count")
-          //Save DataFrame as TFRecords
-          val df_tf: DataFrame = spark.createDataFrame(mapped_rdd, schema)
-          df_tf.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path)
-
-          //保存count文件
-          val mapped_tf_df_count = df_tf.count()
-          println(s"mapped_tf_df_count is : $mapped_tf_df_count")
-          val fileName = "count_" + Random.nextInt(100000)
-          writeNum2File(fileName, mapped_tf_df_count)
-          s"hadoop fs -put $fileName $tf_mapped_path/count" !
         }
 
+        val fileName = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName, total_count)
+        s"hadoop fs -put $fileName $curr_file_src/count" !
       }
 
+      val tf_mapped_path = curr_file_src + "/part*"
       val tf_sampled_mapped_path = des_dir + "/" + src_date + "-tf-mapped-sampled"
       if (!exists_hdfs_path(tf_sampled_mapped_path) && exists_hdfs_path(tf_mapped_path)) {
         //Read TFRecords into DataFrame using custom schema
