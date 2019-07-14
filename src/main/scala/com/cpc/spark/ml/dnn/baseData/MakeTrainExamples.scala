@@ -23,6 +23,8 @@ import org.apache.spark.util.LongAccumulator
 
 object MakeTrainExamples {
 
+
+
   def delete_hdfs_path(path: String): Unit = {
 
     val conf = new org.apache.hadoop.conf.Configuration()
@@ -214,13 +216,11 @@ object MakeTrainExamples {
     }
 
     val url = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-10"
-    val listStatus = org.apache.hadoop.fs.FileSystem.get(new URI(url), sc.hadoopConfiguration)
-      .globStatus(new org.apache.hadoop.fs.Path(url))
 
-    for (urlStatus <- listStatus) {
-      println("urlStatus get Path:" + urlStatus.getPath)
+    val files = s"hadoop fs -ls $url" !
+    for (file <- files) {
+      println(file)
     }
-
     return
 
 
