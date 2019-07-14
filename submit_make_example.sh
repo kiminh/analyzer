@@ -7,6 +7,9 @@ cur_date=$1
 #modelVersion=$2
 #today=`date -d "${cur_time} 1 hours ago" +%Y-%m-%d`
 #hour=`date -d "${cur_time} 1 hours ago" +%H`
+filelist=`cat filelist`
+echo $filelist
+exit
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 
@@ -28,6 +31,7 @@ src_date="2019-05-26;2019-05-27;2019-05-28;2019-05-29;2019-05-30;2019-05-31;2019
 src_date="2019-06-10;2019-06-09;2019-06-08;2019-06-07;2019-06-11"
 src_date="2019-06-10;2019-06-09;2019-06-08;2019-06-07;2019-06-11;2019-06-06;2019-06-05;2019-06-04;2019-06-03;2019-06-02;2019-06-01;2019-05-31;2019-05-30;2019-05-29;2019-05-28;2019-05-27;2019-05-26"
 src_date="2019-06-07;2019-06-08;2019-06-09;2019-06-10;2019-06-11;2019-06-06;2019-06-05;2019-06-04;2019-06-03;2019-06-02;2019-06-01;2019-05-31;2019-05-30;2019-05-29;2019-05-28;2019-05-27;2019-05-26"
+filelist=`cat filelist`
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-base"
 instances_file="instances-all"
 partitions=1000
