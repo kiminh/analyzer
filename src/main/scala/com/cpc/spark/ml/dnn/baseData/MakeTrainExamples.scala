@@ -200,8 +200,10 @@ object MakeTrainExamples {
           acc.add(1L)
           val line = rs.split("\t")
           val key = line(0)
-          key + "\t" + acc.sum.toString
+          (key, acc.sum)
         }
+      }.repartition(1).sortBy(_._2).map{
+        case (key, vaule) => key + "\t" + vaule.toString
       }.saveAsTextFile(instances_all_map)
     }
 
