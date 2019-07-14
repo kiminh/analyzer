@@ -24,6 +24,7 @@ partitions=1000
 
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 src_date="2019-05-26;2019-05-27;2019-05-28;2019-05-29;2019-05-30;2019-05-31;2019-06-01;2019-06-02;2019-06-03;2019-06-04;2019-06-05;2019-06-06;2019-06-07;2019-06-08;2019-06-09;2019-06-10;2019-06-11"
+src_date="2019-06-10;2019-06-11"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-base"
 instances_file="instances-all"
 partitions=1000
