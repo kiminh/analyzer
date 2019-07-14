@@ -190,7 +190,6 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all)
     }
 
-
     val instances_all_map = des_dir + "/" + instances_file + "-mapped"
     if (!exists_hdfs_path(instances_all_map)) {
       val acc = new LongAccumulator
