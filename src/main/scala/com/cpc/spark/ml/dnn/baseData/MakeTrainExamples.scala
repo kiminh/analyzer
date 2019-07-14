@@ -208,6 +208,7 @@ object MakeTrainExamples {
 
 
     /************************load map********************************/
+    spark.conf.set("spark.driver.maxResultSize", "5g")
     println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
