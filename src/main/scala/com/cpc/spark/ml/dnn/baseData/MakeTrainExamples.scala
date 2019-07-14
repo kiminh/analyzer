@@ -190,17 +190,17 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all)
     }
 
-    val acc = new LongAccumulator
-    spark.sparkContext.register(acc)
 
     val instances_all_map = des_dir + "/" + instances_file + "-mapped"
     if (!exists_hdfs_path(instances_all_map)) {
-      sc.textFile(instances_all).map{
+      val acc = new LongAccumulator
+      spark.sparkContext.register(acc)
+      sc.textFile(instances_all).coalesce(1, false).map{
         rs => {
           acc.add(1L)
           val line = rs.split("\t")
           val key = line(0)
-          (key, acc.sum)
+          (key, acc.count)
         }
       }.repartition(1).sortBy(_._2).map{
         case (key, vaule) => key + "\t" + vaule.toString
