@@ -244,7 +244,10 @@ object MakeTrainExamples {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
       val tf_mapped_path = des_dir + "/" + src_date + "-tf-mapped"
+      println("curr_file_src:" + curr_file_src)
+      println("tf_mapped_path:" + tf_mapped_path)
       if (!exists_hdfs_path(tf_mapped_path) && exists_hdfs_path(curr_file_src)) {
+        println("now load data frame:" + curr_file_src)
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
 
