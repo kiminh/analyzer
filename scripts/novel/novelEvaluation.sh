@@ -16,7 +16,7 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
-indin=/home/cpc/liuyulin/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar
+indin=/home/cpc/dongjinbao/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
