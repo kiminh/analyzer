@@ -97,6 +97,7 @@ object OcpcGetPbV2 {
     val conf = ConfigFactory.load("ocpc")
     val confPath = conf.getString("exp_tag.weishi")
     val rawData = spark.read.format("json").json(confPath)
+    rawData.show(10)
     val confData = rawData
       .filter(s"exp_tag = '$expTag'")
       .select("userid")
