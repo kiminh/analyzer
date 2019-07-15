@@ -225,20 +225,6 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
-    /************************load map********************************/
-    println("load sparseMap")
-    val sparseMap = sc.textFile(instances_all_map).map{
-      rs => {
-        val line = rs.split("\t")
-        val field = line(0).toLong
-        val key = line(1).toLong - 1L
-        (field, key)
-      }
-    }.collectAsMap()
-    println("sparseMap.size=" + sparseMap.size)
-
-
-
     /************do id map and sampling************************/
     val negativeSampleRatio = 0.19
     println("do id map and sampling")
@@ -303,6 +289,66 @@ object MakeTrainExamples {
         }
       }
     }
+
+
+
+    /************get plain sampled examples************************/
+    println("do make plain sampled examples")
+    for (src_date <- src_date_list) {
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
+      val tf_plain_path = des_dir + "/" + src_date + "-tf-sampled-plain"
+      if (!exists_hdfs_path(tf_plain_path) && exists_hdfs_path(tf_sampled_path)) {
+        s"hadoop fs -rm -r $tf_plain_path" !
+        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path)
+        println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path)
+        importedDf1.printSchema()
+        importedDf1.show(3)
+        importedDf1.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            var label = "0.0"
+            if (label_arr.head == 1L) {
+              label = "1.0"
+            }
+
+            val output = scala.collection.mutable.ArrayBuffer[String]()
+            output += sample_idx.toString
+            output += label
+            output += label_arr.mkString(";")
+            output += dense.mkString(";")
+            output += idx0.mkString(";")
+            output += idx1.mkString(";")
+            output += idx2.mkString(";")
+            output += idx_arr.mkString(";")
+
+            output.mkString("\t")
+          }
+        ).repartition(10).saveAsTextFile(tf_plain_path)
+      }
+    }
+
+    return
+
+
+    /************************load map********************************/
+    println("load sparseMap")
+    val sparseMap = sc.textFile(instances_all_map).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = line(1).toLong - 1L
+        (field, key)
+      }
+    }.collectAsMap()
+    println("sparseMap.size=" + sparseMap.size)
 
     /************do mapping************************/
     println("do mapping")
