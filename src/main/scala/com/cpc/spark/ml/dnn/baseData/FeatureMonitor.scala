@@ -1,0 +1,204 @@
+package com.cpc.spark.ml.dnn.baseData
+
+import java.io.{BufferedReader, File, InputStreamReader, PrintWriter}
+import java.net.URI
+
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.types.{StructField, _}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+
+import scala.sys.process._
+import scala.util.Random
+import org.apache.spark.util.LongAccumulator
+
+/**
+  * 解析tfrecord到hdfs
+  * created time : 2019/07/13 16:38
+  * @author fenghuabin
+  * @version 1.0
+  *
+  */
+
+object FeatureMonitor{
+
+
+  def delete_hdfs_path(path: String): Unit = {
+
+    val conf = new org.apache.hadoop.conf.Configuration()
+    val p = new org.apache.hadoop.fs.Path(path)
+    val hdfs = p.getFileSystem(conf)
+    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+
+    //val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+    //val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
+    if (hdfs.exists(hdfs_path)) {
+      hdfs.delete(hdfs_path, true)
+    }
+  }
+
+  def exists_hdfs_path(path: String): Boolean = {
+
+    val conf = new org.apache.hadoop.conf.Configuration()
+    val p = new org.apache.hadoop.fs.Path(path)
+    val hdfs = p.getFileSystem(conf)
+    val hdfs_path = new org.apache.hadoop.fs.Path(path.toString)
+    //val hdfs = org.apache.hadoop.fs.FileSystem.get(new org.apache.hadoop.conf.Configuration())
+
+    if (hdfs.exists(hdfs_path)) {
+      true
+    } else {
+      false
+    }
+  }
+
+  def writeNum2File(file: String, num: Long): Unit = {
+    val writer = new PrintWriter(new File(file))
+    writer.write(num.toString)
+    writer.close()
+  }
+
+  //def getColAtIndex(id:Int): Column = {
+  //  col(s"column1")(id).as(s"column1_${id+1}")
+  //}
+
+
+  def main(args: Array[String]): Unit = {
+    if (args.length != 8) {
+      System.err.println(
+        """
+          |you have to input 8 parameters !!!
+        """.stripMargin)
+      System.exit(1)
+    }
+    //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
+    val Array(one_hot_feature_names, src_dir, sta_date, cur_date, des_dir, numPartitions, count_one_hot, count_muti_hot) = args
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+    val sparkConf = new SparkConf()
+    sparkConf.set("spark.driver.maxResultSize", "5g")
+    val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
+    val sc = spark.sparkContext
+
+    val name_list_one_hot = one_hot_feature_names.split(",")
+    if (count_one_hot.toInt != name_list_one_hot.length) {
+      println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
+      System.exit(1)
+    }
+
+    val src_date_list = sta_date.split(";")
+    println("collect sparse feature instances")
+    /************collect map instances for id feature************************/
+    for (src_date <- src_date_list) {
+      val instances_path = des_dir + "/" + src_date + "-instances"
+      if (!exists_hdfs_path(instances_path)) {
+        val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
+        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
+        if (importedDf.count() < 10000) {
+          println("invalid df count, df file:" + curr_file_src)
+        } else {
+          val date_token = src_date.split("-")
+          val viewName = "sql_table_view_name_" + date_token.mkString("_")
+          println("viewName:" + viewName)
+          importedDf.createOrReplaceTempView(viewName)
+          val tf_decode_df_rows = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM " + viewName)
+          tf_decode_df_rows.rdd.map(
+            rs => {
+              val sample_idx = rs.getLong(0).toString
+              val label_arr = rs.getSeq[Long](1)
+              val dense = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val idx1 = rs.getSeq[Long](4)
+              val idx2 = rs.getSeq[Long](5)
+              val idx_arr = rs.getSeq[Long](6)
+
+              val output_one_hot: Array[String] = new Array[String](dense.length)
+              val output_multi_hot: Array[String] = new Array[String](idx_arr.length)
+
+              var label = "1"
+              if (label_arr.head == 1) {
+                label = "1"
+              } else {
+                label = "0"
+              }
+
+              for (idx <- dense.indices) {
+                output_one_hot(idx) = dense(idx).toString
+              }
+
+              for (idx <- idx_arr.indices) {
+                output_multi_hot(idx) = idx_arr(idx).toString
+              }
+
+              label + "\t" + output_one_hot.mkString(";") + "\t" + output_multi_hot.mkString(";")
+            }
+          ).saveAsTextFile(instances_path)
+
+          var data = sc.parallelize(Array[(String, Long)]())
+          data = data.union(
+            sc.textFile(instances_path).map(
+              rs => {
+                val line_list = rs.split("\t")
+                val label = line_list(0)
+                val one_hot_list = line_list(1).split(";")
+                val muti_hot_list = line_list(2).split(";")
+
+                val output: Array[String] = new Array[String](one_hot_list.length + muti_hot_list.length)
+
+                for (idx <- one_hot_list.indices) {
+                  output(idx) = idx.toString + ":" + one_hot_list(idx)
+                }
+
+                for (idx <- muti_hot_list.indices) {
+                  output(idx + one_hot_list.length) = "666:" + muti_hot_list(idx)
+                }
+                output.mkString("\t")
+              }
+            ).flatMap(
+              rs => {
+                val line = rs.split("\t")
+                for (elem <- line)
+                  yield (elem, 1L)
+              }
+            ).reduceByKey(_ + _)
+          )
+
+          val instance_rdd = data.reduceByKey(_ + _)
+
+          //save one hot feature instances
+          for (idx <- 0 until count_one_hot.toInt) {
+            val instance_path_by_feature = instances_path + "/" + name_list_one_hot(idx)
+            val broadcast_idx = sc.broadcast(idx)
+            instance_rdd.filter(
+                rs => {
+                  val feature_idx = rs._1.split(":")(0).toInt
+                  var flag = false
+                  if(feature_idx == broadcast_idx.value) { flag = true }
+                  flag
+                }
+            ).map {
+              case (key, value) =>
+                (key.split(":")(1), value)
+            }.repartition(1).sortBy(_._2 * -1).saveAsTextFile(instance_path_by_feature)
+          }
+
+          //save multi hot feature instances
+          val instance_path_by_feature = instances_path + "/multi_hot_features"
+          instance_rdd.filter(
+            rs => {
+              val feature_idx = rs._1.split(":")(0)
+              var flag = false
+              if(feature_idx == "666") { flag = true }
+              flag
+            }
+          ).map {
+            case (key, value) =>
+              (key.split(":")(1), value)
+          }.repartition(1).sortBy(_._2 * -1).saveAsTextFile(instance_path_by_feature)
+        }
+      }
+    }
+  }
+}
