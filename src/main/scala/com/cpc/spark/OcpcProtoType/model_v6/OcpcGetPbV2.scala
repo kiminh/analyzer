@@ -109,7 +109,6 @@ object OcpcGetPbV2 {
       .distinct()
     flagData.show(10)
 
-//      "identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal"
     val data2 = dataRaw2
       .join(flagData, Seq("identifier"), "inner")
       .filter(s"conversion_goal = 2")
@@ -120,8 +119,6 @@ object OcpcGetPbV2 {
       .withColumn("low_bid_factor_bak", col("low_bid_factor"))
       .withColumn("flag", lit(1))
       .select("identifier", "pcoc_bak", "jfb_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal")
-    dataRaw2.show(10)
-    data2.show(10)
 
     val data1 = dataRaw1
       .withColumn("pcoc_orig", col("pcoc"))
@@ -130,8 +127,6 @@ object OcpcGetPbV2 {
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
       .select("identifier", "pcoc_orig", "jfb_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "cpagiven", "conversion_goal")
-    dataRaw1.show(10)
-    data1.show(10)
 
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
@@ -142,11 +137,9 @@ object OcpcGetPbV2 {
       .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
       .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
 
-    data.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190715a")
-    dataRaw2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190715b")
-
     val result = data
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal")
+      .cache()
 
     result
 
