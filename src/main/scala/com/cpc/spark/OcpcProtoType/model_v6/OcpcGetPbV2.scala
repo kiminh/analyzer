@@ -107,6 +107,7 @@ object OcpcGetPbV2 {
       .join(confData, Seq("userid"), "inner")
       .select("identifier")
       .distinct()
+    flagData.show(10)
 
 //      "identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal"
     val data2 = dataRaw2
@@ -119,6 +120,7 @@ object OcpcGetPbV2 {
       .withColumn("low_bid_factor_bak", col("low_bid_factor"))
       .withColumn("flag", lit(1))
       .select("identifier", "pcoc_bak", "jfb_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal")
+    data2.show(10)
 
     val data1 = dataRaw1
       .withColumn("pcoc_orig", col("pcoc"))
@@ -127,6 +129,7 @@ object OcpcGetPbV2 {
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
       .select("identifier", "pcoc_orig", "jfb_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "cpagiven", "conversion_goal")
+    data1.show(10)
 
     val data = data1
       .join(data2, Seq("identifier", "conversion_goal"), "left_outer")
