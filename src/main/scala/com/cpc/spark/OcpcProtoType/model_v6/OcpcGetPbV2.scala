@@ -18,8 +18,8 @@ object OcpcGetPbV2 {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val originalDate = args(0).toString
-    val originalHour = args(1).toString
+    val date = args(0).toString
+    val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
     val highBidFactor = args(4).toDouble
@@ -37,18 +37,18 @@ object OcpcGetPbV2 {
     val hourInt3 = args(11).toInt
 
 
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = originalDate + " " + originalHour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -6)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date = tmpDateValue(0)
-    val hour = tmpDateValue(1)
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+//    val newDate = originalDate + " " + originalHour
+//    val today = dateConverter.parse(newDate)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.HOUR, -6)
+//    val yesterday = calendar.getTime
+//    val tmpDate = dateConverter.format(yesterday)
+//    val tmpDateValue = tmpDate.split(" ")
+//    val date = tmpDateValue(0)
+//    val hour = tmpDateValue(1)
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, hourInt:$hourInt, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
@@ -72,8 +72,8 @@ object OcpcGetPbV2 {
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal")
       .withColumn("is_hidden", lit(isHidden))
       .withColumn("exp_tag", lit(expTag))
-      .withColumn("date", lit(originalDate))
-      .withColumn("hour", lit(originalHour))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(5)
