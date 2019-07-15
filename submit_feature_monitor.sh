@@ -35,14 +35,14 @@ muti_hot_cnt=15
 
 
 spark-submit --master yarn --queue ${queue} \
-    --name "adlist-tf-make-example" \
+    --name "feature_monitor" \
     --driver-memory 16g --executor-memory 16g \
     --num-executors 500 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
+    --class com.cpc.spark.ml.dnn.baseData.FeatureMonitor \
     ${randjar} ${one_hot_feature_list} ${src_dir} ${sta_date} ${cur_date} ${des_dir} ${partitions} ${one_hot_cnt} ${muti_hot_cnt}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"${des_date}"*"
