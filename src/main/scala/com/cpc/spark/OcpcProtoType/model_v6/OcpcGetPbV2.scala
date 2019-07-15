@@ -142,8 +142,8 @@ object OcpcGetPbV2 {
       .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
       .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190715a")
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190715a")
+    dataRaw2.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190715b")
 
     val result = data
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal")
