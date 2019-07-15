@@ -136,7 +136,7 @@ object MultiDimensionCalibrationOnQttCtrV2 {
       .map {
         x =>
           val modelName: String = x._1
-          val bins = x._2._1
+          val bins = x._2
           val size = bins._2
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
