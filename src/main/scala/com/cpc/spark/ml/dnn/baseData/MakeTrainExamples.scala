@@ -335,6 +335,17 @@ object MakeTrainExamples {
       }
     }
 
+    /************get plain sampled examples************************/
+    println("do make small plain sampled examples")
+    for (src_date <- src_date_list) {
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      val tf_plain_path = des_dir + "/" + src_date + "-tf-sampled-plain"
+      val tf_plain_path_small = des_dir + "/" + src_date + "-tf-sampled-plain-small"
+      if (!exists_hdfs_path(tf_plain_path_small) && exists_hdfs_path(tf_plain_path)) {
+        sc.textFile(tf_plain_path).repartition(400).saveAsTextFile(tf_plain_path_small)
+      }
+    }
+
     return
 
 
