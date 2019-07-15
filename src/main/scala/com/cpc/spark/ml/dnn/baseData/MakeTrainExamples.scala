@@ -299,9 +299,9 @@ object MakeTrainExamples {
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
       val tf_plain_path = des_dir + "/" + src_date + "-tf-sampled-plain"
       if (!exists_hdfs_path(tf_plain_path) && exists_hdfs_path(tf_sampled_path)) {
-        s"hadoop fs -rm -r $tf_plain_path" !
-        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path)
-        println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path)
+        val tf_sampled_path_collect = tf_sampled_path + "/part*"
+        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
+        println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
         importedDf1.printSchema()
         importedDf1.show(3)
         importedDf1.rdd.map(
