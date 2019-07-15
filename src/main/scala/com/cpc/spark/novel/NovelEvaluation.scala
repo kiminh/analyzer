@@ -50,7 +50,7 @@ object NovelEvaluation {
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_cpm,
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/count(distinct case when adsrc = 1 then uid else null end), 6) as cpc_arpu,
                |    '$date' as `date`
-               |  from dl_cpc.novel_union_events
+               |  from dl_cpc.cpc_novel_union_events
                |  where day = '$date'
                |) a join
                |(
@@ -133,7 +133,7 @@ object NovelEvaluation {
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_cpm,
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/count(distinct case when adsrc = 1 then uid else null end), 6) as cpc_arpu,
                |    '$date' as `date`
-               |  from dl_cpc.novel_union_events
+               |  from dl_cpc.cpc_novel_union_events
                |  where day = '$date'
                |  group by case when adslotid in ("7515276", "7765361") then "插入页"
                |        when adslotid in ("7479769", "7199174") then "章节尾"
