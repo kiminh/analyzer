@@ -105,7 +105,7 @@ object OcpcGetPbV2 {
 
     val flagData = useridUnitid
       .join(confData, Seq("userid"), "inner")
-      .select("identifier")
+      .select("identifier", "userid")
       .distinct()
     flagData.show(10)
 
