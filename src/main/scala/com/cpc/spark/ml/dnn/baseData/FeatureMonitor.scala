@@ -91,9 +91,12 @@ object FeatureMonitor{
     println("collect sparse feature instances")
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
-      val instances_path = des_dir + "/" + src_date + "-instances"
-      if (!exists_hdfs_path(instances_path)) {
+      val instances_path_success = des_dir + "/" + src_date + "-instances/_SUCCESS"
+      val curr_file_src_single = src_dir + "/" + src_date + "/part-r-00000"
+      if (exists_hdfs_path(curr_file_src_single) && !exists_hdfs_path(instances_path_success)) {
+        val instances_path = des_dir + "/" + src_date + "-instances"
         val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
+        s"hadoop fs -rm -r $instances_path" !
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
         if (importedDf.count() < 10000) {
@@ -135,7 +138,14 @@ object FeatureMonitor{
               label + "\t" + output_one_hot.mkString(";") + "\t" + output_multi_hot.mkString(";")
             }
           ).saveAsTextFile(instances_path)
+        }
+      }
+    }
 
+    for (src_date <- src_date_list) {
+      val instances_path = des_dir + "/" + src_date + "-instances"
+      val instances_path_success = des_dir + "/" + src_date + "-instances/_SUCCESS"
+      if (exists_hdfs_path(instances_path_success)) {
           var data = sc.parallelize(Array[(String, Long)]())
           data = data.union(
             sc.textFile(instances_path).map(
@@ -169,7 +179,7 @@ object FeatureMonitor{
 
           //save one hot feature instances
           for (idx <- 0 until count_one_hot.toInt) {
-            val instance_path_by_feature = instances_path + "/" + name_list_one_hot(idx)
+            val instance_path_by_feature = instances_path + "-by-name/" + name_list_one_hot(idx)
             val broadcast_idx = sc.broadcast(idx)
             instance_rdd.filter(
                 rs => {
@@ -185,7 +195,7 @@ object FeatureMonitor{
           }
 
           //save multi hot feature instances
-          val instance_path_by_feature = instances_path + "/multi_hot_features"
+          val instance_path_by_feature = instances_path + "-by-name/multi_hot_features"
           instance_rdd.filter(
             rs => {
               val feature_idx = rs._1.split(":")(0)
@@ -198,7 +208,6 @@ object FeatureMonitor{
               (key.split(":")(1), value)
           }.repartition(1).sortBy(_._2 * -1).saveAsTextFile(instance_path_by_feature)
         }
-      }
     }
   }
 }
