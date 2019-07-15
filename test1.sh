@@ -1,4 +1,6 @@
 #!/bin/bash
+git pull
+sbt assembly
 
 cur=/home/cpc/anal
 SPARK_HOME=/usr/lib/spark-current

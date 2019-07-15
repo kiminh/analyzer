@@ -29,6 +29,7 @@ object MultiDimensionCalibrationOnQttCtr {
     val media = args(3)
     val calimodel = args(4)
     val model = args(5)
+    val adslot_type = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -63,7 +64,7 @@ object MultiDimensionCalibrationOnQttCtr {
                  |  else '8' end as user_req_ad_num
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and $mediaSelection and isshow = 1 and adslot_type = 1
+                 | and $mediaSelection and isshow = 1 and adslot_type = $adslot_type
                  | and ctr_model_name in ('$model','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
