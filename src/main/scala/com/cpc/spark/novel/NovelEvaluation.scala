@@ -64,10 +64,8 @@ object NovelEvaluation {
                |) b
                |on a.`date` = b.`date`
              """.stripMargin
-
-        val novelEval = spark.sql(sql).cache()
-
         print(sql)
+        val novelEval = spark.sql(sql).cache()
 
         novelEval
           .repartition(1)
@@ -117,9 +115,9 @@ object NovelEvaluation {
                |from
                |(
                |  select
-               |    case when adslotid in ("7515276", "7765361") then "插入页"
-               |        when adslotid in ("7479769", "7199174") then "章节尾"
-               |        when adslotid in ("7251427") then "互动"
+               |    case when adslot_id in ("7515276", "7765361") then "插入页"
+               |        when adslot_id in ("7479769", "7199174") then "章节尾"
+               |        when adslot_id in ("7251427") then "互动"
                |        else "其他" end as tag, --类别
                |    sum(isshow) as cpc_dsp_show_num, --CPC和DSP总展示数
                |    sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end) as cpc_show_num, --cpc展示数
@@ -135,9 +133,9 @@ object NovelEvaluation {
                |    '$date' as `date`
                |  from dl_cpc.cpc_novel_union_events
                |  where day = '$date'
-               |  group by case when adslotid in ("7515276", "7765361") then "插入页"
-               |        when adslotid in ("7479769", "7199174") then "章节尾"
-               |        when adslotid in ("7251427") then "互动"
+               |  group by case when adslot_id in ("7515276", "7765361") then "插入页"
+               |        when adslot_id in ("7479769", "7199174") then "章节尾"
+               |        when adslot_id in ("7251427") then "互动"
                |        else "其他" end
                |) a left outer join
                |(
