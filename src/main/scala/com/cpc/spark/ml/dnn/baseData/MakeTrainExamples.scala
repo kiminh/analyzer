@@ -370,16 +370,16 @@ object MakeTrainExamples {
       if (exists_hdfs_path(tf_sampled_path)) {
 
         val src_tail_collect :Array[String] = new Array[String](10)
-        src_tail_collect(0) = "/part-r-00000"
-        src_tail_collect(1) = "/part-r-00001"
-        src_tail_collect(2) = "/part-r-00002"
-        src_tail_collect(3) = "/part-r-00003"
-        src_tail_collect(4) = "/part-r-00004"
-        src_tail_collect(5) = "/part-r-00005"
-        src_tail_collect(6) = "/part-r-00006"
-        src_tail_collect(7) = "/part-r-00007"
-        src_tail_collect(8) = "/part-r-00008"
-        src_tail_collect(9) = "/part-r-00009"
+        src_tail_collect(0) = "/part-00000"
+        src_tail_collect(1) = "/part-00001"
+        src_tail_collect(2) = "/part-00002"
+        src_tail_collect(3) = "/part-00003"
+        src_tail_collect(4) = "/part-00004"
+        src_tail_collect(5) = "/part-00005"
+        src_tail_collect(6) = "/part-00006"
+        src_tail_collect(7) = "/part-00007"
+        src_tail_collect(8) = "/part-00008"
+        src_tail_collect(9) = "/part-00009"
 
         for (idx <- src_tail_collect.indices) {
           val tf_mapped_path_part = tf_mapped_path + "/part-" + idx.toString
