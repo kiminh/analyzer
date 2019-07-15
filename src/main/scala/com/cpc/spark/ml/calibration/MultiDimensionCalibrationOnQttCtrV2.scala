@@ -130,7 +130,7 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     }).groupByKey()
       .mapValues(
         x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 10000))
+          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
       )
       .toLocalIterator
       .map {
@@ -160,9 +160,8 @@ object MultiDimensionCalibrationOnQttCtrV2 {
             calimap += ((modelName,config))
             config
           }
-          calimap
       }.toList
-    return result
+    return calimap
   }
 
   // input: (<ectr, click>)
