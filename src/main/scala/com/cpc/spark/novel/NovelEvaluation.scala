@@ -67,9 +67,7 @@ object NovelEvaluation {
 
         val novelEval = spark.sql(sql).cache()
 
-        novelEval.show(10)
-
-
+        print(sql)
 
         novelEval
           .repartition(1)
