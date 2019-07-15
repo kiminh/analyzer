@@ -50,8 +50,8 @@ object NovelEvaluation {
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_cpm,
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/count(distinct case when adsrc = 1 then uid else null end), 6) as cpc_arpu,
                |    '$date' as `date`
-               |  from dl_cpc.cpc_novel_union_log
-               |  where `date` = '$date'
+               |  from dl_cpc.novel_union_events
+               |  where day = '$date'
                |) a join
                |(
                |  select day as `date`,
@@ -134,9 +134,9 @@ object NovelEvaluation {
                |    sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end) / 100.0 as cpc_total_price, --CPC消费
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_cpm,
                |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/count(distinct case when adsrc = 1 then uid else null end), 6) as cpc_arpu,
-               |    '%s' as `date`
-               |  from dl_cpc.cpc_novel_union_log
-               |  where `date` = '%s'
+               |    '$date' as `date`
+               |  from dl_cpc.novel_union_events
+               |  where day = '$date'
                |  group by case when adslotid in ("7515276", "7765361") then "插入页"
                |        when adslotid in ("7479769", "7199174") then "章节尾"
                |        when adslotid in ("7251427") then "互动"
@@ -151,7 +151,7 @@ object NovelEvaluation {
                |    sum(if(eventid in ('160'), 1, 0)) as show_num,
                |    sum(if(eventid in ('159'), 1, 0)) as click_num
                |  from bdm_book.xcx_web_log_cmd_byday
-               |  where day = '%s' and cmd in ('26002', '26003', '25003', '25101') and eventid in ('160', '159')
+               |  where day = '$date' and cmd in ('26002', '26003', '25003', '25101') and eventid in ('160', '159')
                |  group by day,
                |    case
                |      when get_json_object(position, ' $.id') like "%7515276%"
@@ -163,7 +163,7 @@ object NovelEvaluation {
                |    end
                |) b
                |on a.`date` = b.`date` and a.tag = b.tag
-             """.stripMargin.format(date,date,date)
+             """.stripMargin
         println(novelEvalDetailSql)
         val novelEvalDetail = spark.sql(novelEvalDetailSql).cache()
 
