@@ -130,7 +130,7 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     }).groupByKey()
       .mapValues(
         x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 10000))
       )
       .toLocalIterator
       .map {
