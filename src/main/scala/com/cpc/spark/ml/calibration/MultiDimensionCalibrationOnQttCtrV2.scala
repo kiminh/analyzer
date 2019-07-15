@@ -112,7 +112,7 @@ object MultiDimensionCalibrationOnQttCtrV2 {
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
-                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): Map[String,CalibrationConfig] = {
+                    maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
@@ -130,8 +130,9 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     }).groupByKey()
       .mapValues(
         x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 10000))
       )
+      .toLocalIterator
       .map {
         x =>
           val modelName: String = x._1
@@ -157,9 +158,10 @@ object MultiDimensionCalibrationOnQttCtrV2 {
               ir = Option(irModel)
             )
             calimap += ((modelName,config))
+            config
           }
           calimap
-      }.collect().flatten.toMap
+      }.toList
     return result
   }
 
