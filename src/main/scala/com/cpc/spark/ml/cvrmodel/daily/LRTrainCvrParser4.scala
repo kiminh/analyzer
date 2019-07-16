@@ -3,7 +3,6 @@ package com.cpc.spark.ml.cvrmodel.daily
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.ctrmodel.hourly.LRTrain.dict
 import org.apache.spark.sql.SaveMode
 
 import scala.collection.immutable
@@ -18,14 +17,13 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, WrappedArray}
-import scala.util.Random
+import scala.collection.mutable.WrappedArray
 
 /**
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190520).
   */
-object LRTrain {
+object LRTrainCvrParser4 {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -202,10 +200,10 @@ object LRTrain {
 
     train(
       spark,
-      "cvrparser5",
-      "qtt-bs-cvrparser5-daily",
+      "cvrparser4",
+      "qtt-bs-cvrparser4-daily",
       allData,
-      "qtt-bs-cvrparser5-daily.lrm",
+      "qtt-bs-cvrparser4-daily.lrm",
       1e8
     )
 
