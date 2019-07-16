@@ -48,7 +48,11 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     println(s"startHour=$startHour")
 
     // build spark session
-    val session = Utils.buildSparkSession("hourlyCalibration")
+    val spark = SparkSession.builder()
+      .appName("[trident] extract as event")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .enableHiveSupport()
+      .getOrCreate()
     val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
 
     // get union log
@@ -70,9 +74,9 @@ object MultiDimensionCalibrationOnQttCtrV2 {
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql)
+    val log = spark.sql(sql)
     log.show(10)
-    LogToPb(log, session, calimodel)
+    LogToPb(log, spark, calimodel)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
