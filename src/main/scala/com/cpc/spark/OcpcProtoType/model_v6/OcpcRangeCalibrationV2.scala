@@ -42,11 +42,6 @@ object OcpcRangeCalibrationV2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, media:$media, version:$version, hourInt:$hourInt, minCV:$minCV, expTag:$expTag")
 
-    // 从配置文件读取数据
-    val conf = ConfigFactory.load("ocpc")
-    val url = conf.getString("adv_read_mysql.deploy.url")
-    println(url)
-
     // 抽取基础数据
     val result = OcpcRangeCalibrationMain(date, hour, version, media, hourInt, minCV, expTag, spark)
 
