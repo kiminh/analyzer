@@ -371,7 +371,7 @@ object MakeTrainExamples {
 
             Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
           }
-        )
+        ).repartition(300)
 
         val trans_rdd_count = trans_rdd.count
         println(s"trans_rdd_count is : $trans_rdd_count")
