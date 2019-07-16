@@ -75,4 +75,19 @@ object OcpcTools {
     data.show()
     data
   }
+
+//  def getInputParam(version: String, spark: SparkSession) = {
+//    // 抽取实验文件
+//    val conf = ConfigFactory.load("ocpc")
+//    val conf_key = "ocpc_all.exp_conf"
+//    val expConf = conf.getString(conf_key)
+//
+//    // 抽取实验
+//    val reader = new InputStreamReader(file)
+//    val config = try {
+//      ConfigFactory.parseReader(reader)
+//    } finally {
+//      reader.close()
+//    }
+//  }
 }
