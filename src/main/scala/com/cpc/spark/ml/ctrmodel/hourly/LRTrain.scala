@@ -286,8 +286,8 @@ object LRTrain {
     val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
 
     // backup on hdfs.
-    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
-    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel-qizhi/lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel-qizhi/irmodeldata/%s".format(date))
 
     // backup on local machine.
     model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
