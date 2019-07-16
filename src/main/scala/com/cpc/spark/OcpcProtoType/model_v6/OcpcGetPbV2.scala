@@ -77,8 +77,8 @@ object OcpcGetPbV2 {
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
     println("successfully save data into hive")
@@ -136,10 +136,12 @@ object OcpcGetPbV2 {
       .withColumn("post_cvr", udfSelectValue()(col("flag"), col("post_cvr_orig"), col("post_cvr_bak")))
       .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
       .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
+      .cache()
+
+    data.show(10)
 
     val result = data
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal")
-      .cache()
 
     result
 
