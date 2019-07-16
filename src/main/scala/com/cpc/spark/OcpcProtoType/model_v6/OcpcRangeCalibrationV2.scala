@@ -92,7 +92,7 @@ object OcpcRangeCalibrationV2 {
   def getBidFactor(version: String, expTag: String, spark: SparkSession) = {
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_conf")
+    val confPath = conf.getString("exp_config.bid_factor")
     val rawData = spark.read.format("json").json(confPath)
     val data = rawData
       .filter(s"version = '$version' and exp_tag = '$expTag'")
