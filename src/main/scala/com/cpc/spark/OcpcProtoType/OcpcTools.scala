@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType
 
-import java.io.FileOutputStream
+import java.io.{FileInputStream, FileOutputStream, InputStreamReader, ObjectInputStream}
+import java.nio.file.FileSystem
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem}
 
 object OcpcTools {
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
@@ -76,18 +78,10 @@ object OcpcTools {
     data
   }
 
-  def getInputParam(version: String, spark: SparkSession) = {
-    // 抽取实验文件
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "ocpc_all.exp_conf"
-    val expConf = conf.getString(conf_key)
-
-    // 抽取实验
-    val reader = new InputStreamReader(file)
-    val config = try {
-      ConfigFactory.parseReader(reader)
-    } finally {
-      reader.close()
-    }
+  def getExpConf(version: String, expTag: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val tag = "ocpc_exp." + version + "." + expTag
+    val conf = ConfigFactory.load(tag)
+    conf
   }
 }
