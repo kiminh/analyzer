@@ -54,7 +54,7 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     // get union log
     val sql = s"""
                  |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
-                 |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid,
+                 |adslotid, cast(ideaid as string) ideaid,
                  |case
                  |  when user_req_ad_num = 0 then '0'
                  |  when user_req_ad_num = 1 then '1'
@@ -94,16 +94,16 @@ object MultiDimensionCalibrationOnQttCtrV2 {
       .select("adclass","group")
 
     val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
-    val calimap1 = GroupToConfig(data1, session,model)
+    val calimap1 = GroupToConfig(data1, session)
 
     val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
-    val calimap2 = GroupToConfig(data2, session,model)
+    val calimap2 = GroupToConfig(data2, session)
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
-    val calimap3 = GroupToConfig(data3, session,model)
+    val calimap3 = GroupToConfig(data3, session)
 
     val data4 = log.join(group4,Seq("adclass"),"inner")
-    val calimap4 = GroupToConfig(data4, session,model)
+    val calimap4 = GroupToConfig(data4, session)
 
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
@@ -111,20 +111,19 @@ object MultiDimensionCalibrationOnQttCtrV2 {
     saveFlatTextFileForDebug2(model, califile)
   }
 
-  def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
+  def GroupToConfig(data:DataFrame, session: SparkSession, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","model","group")
+    val result = data.select("isclick","ectr","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(2)
-      val group = x.getString(3)
+      val group = x.getString(2)
       val key = group
       (key, (ectr, isClick))
     }).groupByKey()
