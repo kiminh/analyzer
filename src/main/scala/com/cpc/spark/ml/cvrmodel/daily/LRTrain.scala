@@ -77,6 +77,8 @@ object LRTrain {
     val date = args(1)
     val parser = args(2)
 
+
+
     val spark: SparkSession = model
       .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
 
@@ -200,12 +202,22 @@ object LRTrain {
 
     val allData = spark.sqlContext.read.parquet(dfPath)
 
+    var name=""
+    var destfile=""
+    if (parser == "ctrparser4"){
+      name="qtt-bs-cvrparser4-daily"
+      destfile="qtt-bs-cvrparser4-daily.lrm"
+    }else if(parser == "cvrparser5"){
+      name="qtt-bs-cvrparser5-daily"
+      destfile="qtt-bs-cvrparser5-daily.lrm"
+    }
+
     train(
       spark,
-      "cvrparser5",
-      "qtt-bs-cvrparser5-daily",
+      parser,
+      name,
       allData,
-      "qtt-bs-cvrparser5-daily.lrm",
+      destfile,
       1e8
     )
 
