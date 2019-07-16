@@ -204,7 +204,7 @@ object LRTrain {
 
     var name=""
     var destfile=""
-    if (parser == "cvrparser4"){
+    if (parser == "ctrparser4"){
       name="qtt-bs-cvrparser4-daily"
       destfile="qtt-bs-cvrparser4-daily.lrm"
     }else if(parser == "cvrparser5"){
@@ -405,8 +405,8 @@ object LRTrain {
     println(s"check dict_str:${dictStr.size}")
 
 
-    model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel-qizhi/lrmodeldata_7/${name}_$date")
-    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel-qizhi/irmodeldata_7/${name}_$date")
+    model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
+    model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
     model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
