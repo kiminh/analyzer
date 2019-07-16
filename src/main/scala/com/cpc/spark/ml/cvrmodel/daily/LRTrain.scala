@@ -3,7 +3,7 @@ package com.cpc.spark.ml.cvrmodel.daily
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.ctrmodel.hourly.LRTrain.dict
+import com.cpc.spark.common.Utils
 import org.apache.spark.sql.SaveMode
 
 import scala.collection.immutable
@@ -220,6 +220,21 @@ object LRTrain {
       destfile,
       1e8
     )
+
+    Utils
+      .sendMail(
+        trainLog.mkString("\n"),
+        s"[cpc-bs-q] ${name} 训练复盘",
+        Seq(
+          "fanyiming@qutoutiao.net",
+          "xiongyao@qutoutiao.net",
+          "duanguangdong@qutoutiao.net",
+          "xulu@qutoutiao.net",
+          "wangyao@qutoutiao.net",
+          "qizhi@qutoutiao.net",
+          "huazhenhao@qutoutiao.net"
+        )
+      )
 
     allData.unpersist()
 
