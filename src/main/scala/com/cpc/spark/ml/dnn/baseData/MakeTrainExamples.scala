@@ -97,7 +97,7 @@ object MakeTrainExamples {
 
 
     val src_date_list = src_date_str.split(";")
-    println("collect map instances for id feature")
+    println("Collect map instances for id feature")
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
       val instances_path = des_dir + "/instances-" + src_date
@@ -107,13 +107,13 @@ object MakeTrainExamples {
         //importedDf.cache()
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
         if (importedDf.count() < 10000) {
-          println("invalid df count, df file:" + curr_file_src)
+          println("Invalid df count, df file:" + curr_file_src)
         } else {
           val map_path = des_dir + "/instances-" + src_date + "-collect"
           if (!exists_hdfs_path(map_path)) {
             val date_token = src_date.split("-")
             val viewName = "sql_table_view_name_" + date_token.mkString("_")
-            println("viewName:" + viewName)
+            println("ViewName:" + viewName)
             importedDf.createOrReplaceTempView(viewName)
             val tf_decode_df_rows = spark.sql("SELECT sample_idx, label, dense, idx0, idx1, idx2, id_arr FROM " + viewName)
             tf_decode_df_rows.rdd.map(
@@ -178,7 +178,7 @@ object MakeTrainExamples {
       }
     }
 
-    println("make total instances")
+    println("Make total instances")
     /************************make total instances********************************/
     val output = scala.collection.mutable.ArrayBuffer[String]()
     for (src_date <- src_date_list) {
@@ -227,7 +227,7 @@ object MakeTrainExamples {
 
     /************do id map and sampling************************/
     val negativeSampleRatio = 0.19
-    println("do id map and sampling")
+    println("Do id map and sampling")
     val schema_old = StructType(List(
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("idx1", ArrayType(LongType, containsNull = true)),
@@ -237,18 +237,19 @@ object MakeTrainExamples {
       StructField("label", ArrayType(LongType, containsNull = true)),
       StructField("dense", ArrayType(LongType, containsNull = true))))
 
-    val schema = StructType(List(
-      StructField("idx2", ArrayType(LongType, containsNull = true)),
-      StructField("idx1", ArrayType(LongType, containsNull = true)),
-      StructField("id_arr", ArrayType(LongType, containsNull = true)),
-      StructField("idx0", ArrayType(LongType, containsNull = true)),
+    val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
-      StructField("label", ArrayType(LongType, containsNull = true)),
       StructField("label_single", FloatType, nullable = true),
-      StructField("dense", ArrayType(LongType, containsNull = true))))
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
 
     /************do sampling************************/
-    println("do sampling")
+    println("Do sampling")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val curr_file_src = src_dir + "/" + src_date
@@ -289,16 +290,17 @@ object MakeTrainExamples {
         }
       }
     }
+    println("Done.......")
 
 
 
     /************get plain sampled examples************************/
-    println("do make plain sampled examples")
+    println("Do make plain sampled examples")
     for (src_date <- src_date_list) {
-      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
       val tf_plain_path = des_dir + "/" + src_date + "-tf-sampled-plain"
       if (!exists_hdfs_path(tf_plain_path) && exists_hdfs_path(tf_sampled_path)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         val tf_sampled_path_collect = tf_sampled_path + "/part*"
         val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
         println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
@@ -334,23 +336,66 @@ object MakeTrainExamples {
         ).repartition(10).saveAsTextFile(tf_plain_path)
       }
     }
+    println("Done.......")
 
     /************get plain sampled examples************************/
-    println("do make small plain sampled examples")
+    println("Do make small plain sampled examples")
     for (src_date <- src_date_list) {
-      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_plain_path = des_dir + "/" + src_date + "-tf-sampled-plain"
       val tf_plain_path_small = des_dir + "/" + src_date + "-tf-sampled-plain-small"
       if (!exists_hdfs_path(tf_plain_path_small) && exists_hdfs_path(tf_plain_path)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         sc.textFile(tf_plain_path).repartition(400).saveAsTextFile(tf_plain_path_small)
       }
     }
+    println("Done.......")
 
-    return
+    ///************do plain tf trans************************/
+    println("Trans plain mapped to tf")
+    for (src_date <- src_date_list) {
+      val tf_plain_mapped_path = des_dir + "/" + src_date + "-tf-sampled-plain-mapped"
+      val tf_trans_path = des_dir + "/" + src_date + "-tf-sampled-plain-mapped-trans"
+      if (!exists_hdfs_path(tf_trans_path) && exists_hdfs_path(tf_plain_mapped_path)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        val trans_rdd = sc.textFile(tf_plain_mapped_path).map(
+          rs => {
+            val rs_list = rs.split("\t")
+            val sample_idx = rs_list(0).toLong
+            val label = rs_list(1).toFloat
+            val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+            val dense = rs_list(3).split(";").map(_.toLong).toSeq
+            val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+            val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+            val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+            val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+
+            Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+          }
+        ).repartition(300)
+
+        val trans_rdd_count = trans_rdd.count
+        println(s"trans_rdd_count is : $trans_rdd_count")
+
+        //Save DataFrame as TFRecords
+        val trans_df: DataFrame = spark.createDataFrame(trans_rdd, schema_new)
+        trans_df.write.format("tfrecords").option("recordType", "Example").save(tf_trans_path)
+        trans_df.printSchema()
+        trans_df.show(3)
+
+        val trans_df_count = trans_df.count()
+        println(s"trans_df_count is : $trans_df_count")
+
+        //保存count文件
+        val fileName = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName, trans_df_count)
+        s"hadoop fs -put $fileName $tf_trans_path/count" !
+      }
+    }
+    println("Done.......")
 
 
     /************************load map********************************/
-    println("load sparseMap")
+    /**println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
         val line = rs.split("\t")
@@ -360,90 +405,168 @@ object MakeTrainExamples {
       }
     }.collectAsMap()
     println("sparseMap.size=" + sparseMap.size)
+    val sparse_size = sparseMap.size.toLong
+    val sparse_size_bc = sc.broadcast(sparse_size)
+    **/
 
     /************do mapping************************/
-    println("do mapping")
+    /**
+    println("do plain mapping")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-      val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
-      val tf_mapped_path = des_dir + "/" + src_date + "-tf-sampled-mapped"
+      val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled-plain"
+      val tf_mapped_path = des_dir + "/" + src_date + "-tf-sampled-plain-mapped-scala"
       if (exists_hdfs_path(tf_sampled_path)) {
-        //Read TFRecords into DataFrame using custom schema
 
         val src_tail_collect :Array[String] = new Array[String](10)
-        src_tail_collect(0) = "/part-r-000*"
-        src_tail_collect(1) = "/part-r-001*"
-        src_tail_collect(2) = "/part-r-002*"
-        src_tail_collect(3) = "/part-r-003*"
-        src_tail_collect(4) = "/part-r-004*"
-        src_tail_collect(5) = "/part-r-005*"
-        src_tail_collect(6) = "/part-r-006*"
-        src_tail_collect(7) = "/part-r-007*"
-        src_tail_collect(8) = "/part-r-008*"
-        src_tail_collect(9) = "/part-r-009*"
+        src_tail_collect(0) = "/part-00000"
+        src_tail_collect(1) = "/part-00001"
+        src_tail_collect(2) = "/part-00002"
+        src_tail_collect(3) = "/part-00003"
+        src_tail_collect(4) = "/part-00004"
+        src_tail_collect(5) = "/part-00005"
+        src_tail_collect(6) = "/part-00006"
+        src_tail_collect(7) = "/part-00007"
+        src_tail_collect(8) = "/part-00008"
+        src_tail_collect(9) = "/part-00009"
 
         for (idx <- src_tail_collect.indices) {
           val tf_mapped_path_part = tf_mapped_path + "/part-" + idx.toString
-          if (!exists_hdfs_path(tf_mapped_path_part) || !exists_hdfs_path(tf_mapped_path_part + "/count")) {
-            s"hadoop fs -rm -r $tf_mapped_path_part" !
+          if (!exists_hdfs_path(tf_mapped_path_part)) {
             val tf_sampled_path_collect = tf_sampled_path + src_tail_collect(idx)
-            val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
-            println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
-            importedDf1.printSchema()
-            importedDf1.show(3)
 
-            val mapped_sampled_rdd = importedDf1.rdd.map(
+            sc.textFile(tf_sampled_path_collect).map(
               rs => {
-                val idx2 = rs.getSeq[Long](0)
-                val idx1 = rs.getSeq[Long](1)
-                val idx_arr = rs.getSeq[Long](2)
-                val idx0 = rs.getSeq[Long](3)
-                val sample_idx = rs.getLong(4)
-                val label_arr = rs.getSeq[Long](5)
-                val dense = rs.getSeq[Long](6)
+                //output += sample_idx.toString
+                //output += label
+                //output += label_arr.mkString(";")
+                //output += dense.mkString(";")
+                //output += idx0.mkString(";")
+                //output += idx1.mkString(";")
+                //output += idx2.mkString(";")
+                //output += idx_arr.mkString(";")
+                //output.mkString("\t")
 
-                var label = 0.0f
-                if (label_arr.head == 1L) {
-                  label = 1.0f
+                val line_list = rs.split("\t")
+                val dense_list = line_list(3).split(";")
+                val idx_arr_list = line_list(7).split(";")
+
+                for (idx <- dense_list.indices) {
+                  dense_list(idx) = sparseMap.getOrElse(dense_list(idx).toLong, sparse_size_bc.value).toString
                 }
 
-                val dense_mapped: Array[Long] = new Array[Long](dense.length)
-                for (idx <- dense.indices) {
-                  dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+                for (idx <- idx_arr_list.indices) {
+                  idx_arr_list(idx) = sparseMap.getOrElse(idx_arr_list(idx).toLong, sparse_size_bc.value).toString
                 }
-                val dense_mapped_seq: Seq[Long] = dense_mapped
 
-                val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
-                for (idx <- idx_arr.indices) {
-                  idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
-                }
-                val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
-
-                Row(idx2, idx1, idx_arr_mapped, idx0, sample_idx, label_arr, label, dense_mapped_seq)
+                line_list(3) = dense_list.mkString(";")
+                line_list(7) = idx_arr_list.mkString(";")
+                line_list.mkString("\t")
               }
-            )
+            ).saveAsTextFile(tf_mapped_path_part)
 
-            //val mapped_sampled_rdd_count = mapped_sampled_rdd.count
-            //println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
-
-            //Save DataFrame as TFRecords
-            val mapped_sampled_df: DataFrame = spark.createDataFrame(mapped_sampled_rdd, schema)
-            mapped_sampled_df.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path_part)
-            mapped_sampled_df.printSchema()
-            mapped_sampled_df.show(3)
-
-            val mapped_sampled_df_count = mapped_sampled_df.count()
-            println(s"mapped_sampled_df_count is : $mapped_sampled_df_count")
-
-            //保存count文件
-            val fileName = "count_" + Random.nextInt(100000)
-            writeNum2File(fileName, mapped_sampled_df_count)
-            s"hadoop fs -put $fileName $tf_mapped_path_part/count" !
           }
         }
-
       }
-    }
+    }**/
+
+
+
+    ///************************load map********************************/
+    //println("load sparseMap")
+    //val sparseMap = sc.textFile(instances_all_map).map{
+    //  rs => {
+    //    val line = rs.split("\t")
+    //    val field = line(0).toLong
+    //    val key = line(1).toLong - 1L
+    //    (field, key)
+    //  }
+    //}.collectAsMap()
+    //println("sparseMap.size=" + sparseMap.size)
+
+    ///************do mapping************************/
+    //println("do mapping")
+    //for (src_date <- src_date_list) {
+    //  println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    //  val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled"
+    //  val tf_mapped_path = des_dir + "/" + src_date + "-tf-sampled-mapped"
+    //  if (exists_hdfs_path(tf_sampled_path)) {
+    //    //Read TFRecords into DataFrame using custom schema
+
+    //    val src_tail_collect :Array[String] = new Array[String](10)
+    //    src_tail_collect(0) = "/part-r-000*"
+    //    src_tail_collect(1) = "/part-r-001*"
+    //    src_tail_collect(2) = "/part-r-002*"
+    //    src_tail_collect(3) = "/part-r-003*"
+    //    src_tail_collect(4) = "/part-r-004*"
+    //    src_tail_collect(5) = "/part-r-005*"
+    //    src_tail_collect(6) = "/part-r-006*"
+    //    src_tail_collect(7) = "/part-r-007*"
+    //    src_tail_collect(8) = "/part-r-008*"
+    //    src_tail_collect(9) = "/part-r-009*"
+
+    //    for (idx <- src_tail_collect.indices) {
+    //      val tf_mapped_path_part = tf_mapped_path + "/part-" + idx.toString
+    //      if (!exists_hdfs_path(tf_mapped_path_part) || !exists_hdfs_path(tf_mapped_path_part + "/count")) {
+    //        s"hadoop fs -rm -r $tf_mapped_path_part" !
+    //        val tf_sampled_path_collect = tf_sampled_path + src_tail_collect(idx)
+    //        val importedDf1: DataFrame = spark.read.format("tfrecords").schema(schema_old).load(tf_sampled_path_collect)
+    //        println("DF file count:" + importedDf1.count().toString + " of file:" + tf_sampled_path_collect)
+    //        importedDf1.printSchema()
+    //        importedDf1.show(3)
+
+    //        val mapped_sampled_rdd = importedDf1.rdd.map(
+    //          rs => {
+    //            val idx2 = rs.getSeq[Long](0)
+    //            val idx1 = rs.getSeq[Long](1)
+    //            val idx_arr = rs.getSeq[Long](2)
+    //            val idx0 = rs.getSeq[Long](3)
+    //            val sample_idx = rs.getLong(4)
+    //            val label_arr = rs.getSeq[Long](5)
+    //            val dense = rs.getSeq[Long](6)
+
+    //            var label = 0.0f
+    //            if (label_arr.head == 1L) {
+    //              label = 1.0f
+    //            }
+
+    //            val dense_mapped: Array[Long] = new Array[Long](dense.length)
+    //            for (idx <- dense.indices) {
+    //              dense_mapped(idx) = sparseMap.getOrElse(dense(idx), 0L)
+    //            }
+    //            val dense_mapped_seq: Seq[Long] = dense_mapped
+
+    //            val idx_arr_mapped: Array[Long] = new Array[Long](idx_arr.length)
+    //            for (idx <- idx_arr.indices) {
+    //              idx_arr_mapped(idx) = sparseMap.getOrElse(idx_arr(idx), 0L)
+    //            }
+    //            val idx_arr_mapped_seq: Seq[Long] = idx_arr_mapped
+
+    //            Row(sample_idx, label, label_arr, dense_mapped_seq, idx0, idx1, idx2, idx_arr_mapped_seq)
+    //          }
+    //        )
+
+    //        //val mapped_sampled_rdd_count = mapped_sampled_rdd.count
+    //        //println(s"mapped_sampled_rdd_count is : $mapped_sampled_rdd_count")
+
+    //        //Save DataFrame as TFRecords
+    //        val mapped_sampled_df: DataFrame = spark.createDataFrame(mapped_sampled_rdd, schema_new)
+    //        mapped_sampled_df.write.format("tfrecords").option("recordType", "Example").save(tf_mapped_path_part)
+    //        mapped_sampled_df.printSchema()
+    //        mapped_sampled_df.show(3)
+
+    //        val mapped_sampled_df_count = mapped_sampled_df.count()
+    //        println(s"mapped_sampled_df_count is : $mapped_sampled_df_count")
+
+    //        //保存count文件
+    //        val fileName = "count_" + Random.nextInt(100000)
+    //        writeNum2File(fileName, mapped_sampled_df_count)
+    //        s"hadoop fs -put $fileName $tf_mapped_path_part/count" !
+    //      }
+    //    }
+
+    //  }
+    //}
 
   }
 }
