@@ -3,7 +3,7 @@ package com.cpc.spark.OcpcProtoType.model_v6
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.OcpcProtoType.model_v6.OcpcCalculateCalibration.OcpcCalculateCalibrationMain
+import com.cpc.spark.OcpcProtoType.model_v6.OcpcCalculateCalibrationV2.OcpcCalculateCalibrationMain
 import com.cpc.spark.OcpcProtoType.model_v6.OcpcRangeCalibration.OcpcRangeCalibrationMain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession

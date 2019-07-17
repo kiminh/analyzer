@@ -3,14 +3,14 @@ package com.cpc.spark.OcpcProtoType.model_v6
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.OcpcProtoType.OcpcTools._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.OcpcProtoType.OcpcTools._
 
 
-object OcpcSmoothFactor{
+object OcpcSmoothFactorV2{
   def main(args: Array[String]): Unit = {
     /*
     动态计算alpha平滑系数
@@ -133,7 +133,7 @@ object OcpcSmoothFactor{
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition
+         |  date >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
