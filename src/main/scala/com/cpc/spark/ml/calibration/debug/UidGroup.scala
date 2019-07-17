@@ -35,7 +35,7 @@ object UidGroup {
         .withColumn("hashuid",hash(label)(concat(col("uid"),col("dt"))))
         .withColumn("num",col("hashuid")%1000)
         .withColumn("label",lit(label))
-        .select("uid","hashuid","num","label","dt")
+        .select("uid","hashuid","num","dt","label")
 
     data.show(10)
 
