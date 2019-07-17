@@ -19,17 +19,17 @@ object OcpcGetPbV3 {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
-    val hourInt = args(6).toInt
-    val minCV = args(7).toInt
-    val expTag = args(8).toString
+    val hourInt = args(4).toInt
+    val minCV = args(5).toInt
+    val expTag = args(6).toString
     val isHidden = 0
 
     // 主校准回溯时间长度
-    val hourInt1 = args(9).toInt
+    val hourInt1 = args(7).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(10).toInt
+    val hourInt2 = args(8).toInt
     // 兜底校准时长
-    val hourInt3 = args(11).toInt
+    val hourInt3 = args(9).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
@@ -58,8 +58,8 @@ object OcpcGetPbV3 {
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
     println("successfully save data into hive")
