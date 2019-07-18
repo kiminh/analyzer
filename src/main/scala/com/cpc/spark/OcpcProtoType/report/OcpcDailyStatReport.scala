@@ -18,7 +18,7 @@ object OcpcDailyStatReport {
     println(s"date=$date")
 
     // spark app name
-    val spark = SparkSession.builder().appName(s"OcpcDailyFunnelIndustryV2: $date").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName(s"OcpcDailyStatReport: $date").enableHiveSupport().getOrCreate()
 
 
     // 预算数据
