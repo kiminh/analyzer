@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.dnn.retrieval
 
-import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
+import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToHive.{hdfsDir => userHDFSDir}
 import com.cpc.spark.ml.dnn.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics

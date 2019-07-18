@@ -51,9 +51,15 @@ object bscvr_report {
          (select cast(unitid as bigint) as unitid
          from dl_cpc.cpc_recall_bsExp_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
          left join
-         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
-          and isreport=1 group by searchid,ideaid) tc
+         (select distinct aa.searchid, aa.ideaid, 1 as label from dl_cpc.cpc_conversion aa join dl_cpc.dw_unitid_detail bb
+          on aa.unitid=bb.unitid and bb.day = '$tardate' and bb.conversion_target[0] not in ('none','site_uncertain')
+          and array_contains(aa.conversion_target,bb.conversion_target[0])
+          where aa.day = '$tardate') tc
          on (ta.searchid = tc.searchid and ta.ideaid=tc.ideaid)
+         join
+         (select distinct unitid from dl_cpc.dw_unitid_detail where day='$tardate' and conversion_target[0] is not null
+         and conversion_target[0] not in ('none','site_uncertain')) td
+         on ta.unitid=td.unitid
          group by ta.exp
 """.stripMargin).repartition(1).createOrReplaceTempView("unitid_total")
 
@@ -87,9 +93,15 @@ object bscvr_report {
 |         (select cast(unitid as bigint) as unitid
 |         from dl_cpc.cpc_recall_bsExp_unitid where date='$thedate' group by unitid) tb on (ta.unitid=tb.unitid)
 |         left join
-|         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
-|          and isreport=1 group by searchid,ideaid) tc
+|         (select distinct aa.searchid, aa.ideaid, 1 as label from dl_cpc.cpc_conversion aa join dl_cpc.dw_unitid_detail bb
+|          on aa.unitid=bb.unitid and bb.day = '$tardate' and bb.conversion_target[0] not in ('none','site_uncertain')
+|          and array_contains(aa.conversion_target,bb.conversion_target[0])
+|          where aa.day = '$tardate') tc
 |         on (ta.searchid = tc.searchid and ta.ideaid=tc.ideaid)
+|         join
+|          (select distinct unitid from dl_cpc.dw_unitid_detail where day='$tardate' and conversion_target[0] is not null
+|           and conversion_target[0] not in ('none','site_uncertain')) td
+|         on ta.unitid=td.unitid
 |         group by ta.exp,ta.adslot_type,ta.unitid,industry order by adslot_type,ta.unitid,industry,cpm
 """.stripMargin).repartition(10).createOrReplaceTempView("unitid_detail")
 
@@ -122,9 +134,15 @@ object bscvr_report {
 |         and uid not like '%000000%'
 |         and (charge_type = 1 or charge_type is null)) ta
 |         left join
-|         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
-|         and isreport=1 group by searchid,ideaid) tc
+|         (select distinct aa.searchid, aa.ideaid, 1 as label from dl_cpc.cpc_conversion aa join dl_cpc.dw_unitid_detail bb
+|          on aa.unitid=bb.unitid and bb.day = '$tardate' and bb.conversion_target[0] not in ('none','site_uncertain')
+|          and array_contains(aa.conversion_target,bb.conversion_target[0])
+|          where aa.day = '$tardate') tc
 |         on (ta.searchid = tc.searchid and ta.ideaid=tc.ideaid)
+|         join
+|          (select distinct unitid from dl_cpc.dw_unitid_detail where day='$tardate' and conversion_target[0] is not null
+|           and conversion_target[0] not in ('none','site_uncertain')) td
+|         on ta.unitid=td.unitid
 |         group by ta.exp order by cpm
 """.stripMargin).repartition(1).createOrReplaceTempView("unitid_all")
 
