@@ -43,8 +43,8 @@ object OcpcDailyStatReportAdtype15 {
 
     result
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_daily_stat_report")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_stat_report")
+//      .write.mode("overwrite").insertInto("test.ocpc_daily_stat_report")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_stat_report")
 
 
   }
