@@ -37,13 +37,14 @@ object OcpcDailyStatReportAdtype15 {
     val data1 = calculateBase(rawData, date1, spark)
 
     val result = data1
-      .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget", "date")
+      .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_pay", "budget", "date")
+      .withColumn("version", lit("adtype15"))
 
 
     result
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_daily_stat_report")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_stat_report")
+      .write.mode("overwrite").insertInto("test.ocpc_daily_stat_report")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_stat_report")
 
 
   }
@@ -99,7 +100,10 @@ object OcpcDailyStatReportAdtype15 {
          |GROUP BY unitid, planid, userid, adclass, industry, adslot_type, conversion_goal, media
        """.stripMargin
     println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .na.fill(0, Seq("ocpc_cv"))
+      .withColumn("ocpc_pay", udfCalculatePay()(col("ocpc_cv"), col("ocpc_cost"), col("ocpc_cpagiven")))
 
 
     // 预算数据
@@ -123,11 +127,20 @@ object OcpcDailyStatReportAdtype15 {
     val data = data1
         .join(data2, Seq("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media"), "left_outer")
         .join(data3, Seq("planid"), "left_outer")
-        .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget")
+        .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "ocpc_pay", "budget")
         .withColumn("date", lit(date))
 
     data
   }
+
+
+  def udfCalculatePay() = udf((cv: Int, cost: Double, cpagiven: Double) => {
+    var pay = cost - 1.2 * cv * cpagiven
+    if (pay < 0) {
+      pay = 0
+    }
+    pay
+  })
 
   def getOcpcLog(date: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
@@ -177,6 +190,7 @@ object OcpcDailyStatReportAdtype15 {
          |and adsrc = 1
          |and searchid is not null
          |and is_ocpc = 1
+         |and adtype = 15
        """.stripMargin
     println(sqlRequest)
     val ctrBaseData = spark
