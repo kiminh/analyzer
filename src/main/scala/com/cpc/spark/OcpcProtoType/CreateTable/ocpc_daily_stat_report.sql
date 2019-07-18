@@ -20,9 +20,10 @@ CREATE TABLE IF NOT EXISTS test.ocpc_daily_stat_report
     ocpc_cost               double,
     ocpc_cpagiven           double,
     ocpc_cpareal            double,
+    ocpc_pay                double,
     budget                  double
 )
-PARTITIONED by (`date` string)
+PARTITIONED by (`date` string, version string)
 STORED as PARQUET;
 
 
