@@ -197,7 +197,7 @@ object UpdateInstallApp {
           var n1 = 0
           var n2 = 0
           var matchedKey = 0
-          val redisV2 = new JedisCluster(new HostAndPort("192.168.80.152", 7003))
+          val redisV2 = new JedisCluster(new HostAndPort("192.168.86.36", 7103))
           val sec = new Date().getTime / 1000
           p.foreach {
             x =>
