@@ -395,22 +395,20 @@ object MakeTrainExamples {
 
 
     /************************load map********************************/
-    /**println("load sparseMap")
+    println("load sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
         val line = rs.split("\t")
         val field = line(0).toLong
-        val key = line(1).toLong - 1L
+        val key = (line(1).toLong - 1L).toString
         (field, key)
       }
     }.collectAsMap()
     println("sparseMap.size=" + sparseMap.size)
     val sparse_size = sparseMap.size.toLong
     val sparse_size_bc = sc.broadcast(sparse_size)
-    **/
 
     /************do mapping************************/
-    /**
     println("do plain mapping")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -446,18 +444,11 @@ object MakeTrainExamples {
                 //output += idx2.mkString(";")
                 //output += idx_arr.mkString(";")
                 //output.mkString("\t")
+                //val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
 
                 val line_list = rs.split("\t")
-                val dense_list = line_list(3).split(";")
-                val idx_arr_list = line_list(7).split(";")
-
-                for (idx <- dense_list.indices) {
-                  dense_list(idx) = sparseMap.getOrElse(dense_list(idx).toLong, sparse_size_bc.value).toString
-                }
-
-                for (idx <- idx_arr_list.indices) {
-                  idx_arr_list(idx) = sparseMap.getOrElse(idx_arr_list(idx).toLong, sparse_size_bc.value).toString
-                }
+                val dense_list = line_list(3).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
+                val idx_arr_list = line_list(7).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
 
                 line_list(3) = dense_list.mkString(";")
                 line_list(7) = idx_arr_list.mkString(";")
@@ -468,7 +459,7 @@ object MakeTrainExamples {
           }
         }
       }
-    }**/
+    }
 
 
 
