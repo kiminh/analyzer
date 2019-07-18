@@ -58,9 +58,15 @@ object userprofileCostV2 {
          |(SELECT value, name FROM adv.audience_dict group by value, name) temp1
        """.stripMargin
     spark.read.jdbc(jdbcUrl, tag_name, jdbcProp).createOrReplaceTempView("table_tag_name")
+
+    val adv =
+      s"""
+         |(select look_like_id, type from adv.look_like group by look_like_id, type) temp_lookalike
+       """.stripMargin
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("table_lookalike")
     spark.sql(
       s"""
-         |select t1.*,t2.name as tagname, COALESCE(t3.count, t4.count) as count from
+         |select t1.*,t2.name as tagname, COALESCE(t3.count, t4.count) as count, t5.type from
          |(select * from union_table) t1
          |left join
          |(select * from table_tag_name) t2
@@ -71,6 +77,9 @@ object userprofileCostV2 {
          |left join
          |(select tag,count(distinct uid) as count from dl_cpc.cpc_userprofile_tag_daily where date='$yesterday' group by tag) t4
          |on t1.name=t4.tag
+         |left join
+         |(select look_like_id, type from table_lookalike) t5
+         |on t1.name=t5.look_like_id
        """.stripMargin).repartition(5).createOrReplaceTempView("result_table")
 
     spark.sql(
