@@ -20,12 +20,24 @@ object OcpcDailyStatReport {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcDailyFunnelIndustryV2: $date").enableHiveSupport().getOrCreate()
 
-    val rawData = getOcpcLog(date, spark)
 
-    val data1 = calculateBase(rawData, date, spark)
+    // 预算数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`dt` = '$date1'"
+
+
+    val rawData = getOcpcLog(date1, spark)
+
+    val data1 = calculateBase(rawData, date1, spark)
 
     val result = data1
-      .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget", "date")
+      .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget", "date")
 
 
     result
@@ -49,6 +61,7 @@ object OcpcDailyStatReport {
          |    adclass,
          |    industry,
          |    adslot_type,
+         |    conversion_goal,
          |    media,
          |    sum(isclick) as click,
          |    sum(isshow) as show,
@@ -57,7 +70,7 @@ object OcpcDailyStatReport {
          |    sum(case when isclick=1 then price else 0 end) * 0.01 / sum(iscvr) as cpa
          |FROM
          |    base_data
-         |GROUP BY unitid, planid, userid, adclass, industry, adslot_type, media
+         |GROUP BY unitid, planid, userid, adclass, industry, adslot_type, conversion_goal, media
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
@@ -71,6 +84,7 @@ object OcpcDailyStatReport {
          |    adclass,
          |    industry,
          |    adslot_type,
+         |    conversion_goal,
          |    media,
          |    sum(isclick) as ocpc_click,
          |    sum(isshow) as ocpc_show,
@@ -82,21 +96,14 @@ object OcpcDailyStatReport {
          |    base_data
          |WHERE
          |    ocpc_step = 2
-         |GROUP BY unitid, planid, userid, adclass, industry, adslot_type, media
+         |GROUP BY unitid, planid, userid, adclass, industry, adslot_type, conversion_goal, media
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
 
     // 预算数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`dt` = '$date1'"
+    val selectCondition = s"`dt` = '$date'"
 
     val sqlRequest3 =
       s"""
@@ -114,10 +121,10 @@ object OcpcDailyStatReport {
     // 数据关联
 //    unitid, planid, userid, adclass, industry, adslot_type, media
     val data = data1
-        .join(data2, Seq("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "media"), "left_outer")
+        .join(data2, Seq("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media"), "left_outer")
         .join(data3, Seq("planid"), "left_outer")
-        .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget")
-        .withColumn("date", lit(date1))
+        .select("unitid", "planid", "userid", "adclass", "industry", "adslot_type", "conversion_goal", "media", "click", "show", "cv", "cost", "cpa", "ocpc_click", "ocpc_show", "ocpc_cv", "ocpc_cost", "ocpc_cpagiven", "ocpc_cpareal", "budget")
+        .withColumn("date", lit(date))
 
     data
   }
@@ -128,14 +135,7 @@ object OcpcDailyStatReport {
     val mediaSelection = conf.getString(conf_key)
 
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1'"
+    val selectCondition = s"`date` = '$date'"
 
     // ctrData
     val sqlRequest =

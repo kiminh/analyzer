@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS test.ocpc_daily_stat_report
     adclass                 int,
     industry                string,
     adslot_type             int,
+    conversion_goal         int,
     media                   string,
     click                   bigint,
     show                    bigint,
