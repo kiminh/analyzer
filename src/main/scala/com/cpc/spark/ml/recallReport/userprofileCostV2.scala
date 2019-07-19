@@ -66,7 +66,7 @@ object userprofileCostV2 {
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("table_lookalike")
     spark.sql(
       s"""
-         |select t1.*,t2.name as tagname, COALESCE(t3.count, t4.count) as count, t5.type from
+         |select t1.*,t2.name as tagname, COALESCE(t3.count, t4.count) as count, cast(t5.type as string) from
          |(select * from union_table) t1
          |left join
          |(select * from table_tag_name) t2
