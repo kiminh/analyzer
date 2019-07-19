@@ -29,7 +29,7 @@ object recall_prepare_training_samples_1dtrain {
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-
+    print("begin------------")
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     getSample(spark, model_version, featureName,"test", twoday, oneday).repartition(1000)
