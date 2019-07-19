@@ -86,8 +86,11 @@ object OcpcSuggestCPA {
       s"""
          |SELECT
          |  *,
-         |  (case when industry in ('elds', 'feedapp') and media = 'qtt' then 10
-         |        else 60 end) as cv_threshold
+         |  (case
+         |    when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
+         |    when media in ('hottopic') then 20
+         |    else 60
+         |  end) as cv_threshold
          |FROM
          |  raw_data
        """.stripMargin
@@ -96,9 +99,11 @@ object OcpcSuggestCPA {
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("adclass") === 110110100, 1).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("adclass") === 125100100, 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend")
       .cache()
 

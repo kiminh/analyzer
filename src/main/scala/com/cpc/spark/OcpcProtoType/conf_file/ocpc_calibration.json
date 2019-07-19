@@ -1,0 +1,4 @@
+{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 1, "min_cv": 40, "hour_int1": 24, }
+{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.6, "low_bid_factor": 1.0}
+{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 3, "high_bid_factor": 1.0, "low_bid_factor": 1.0}
+{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 4, "high_bid_factor": 1.0, "low_bid_factor": 1.0}

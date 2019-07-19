@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ocpcBsParmas;
+message SingleItem {
+    string   key = 1;
+    double   cvrCalFactor = 2;
+    double   jfbFactor = 3;
+    double   smoothFactor = 4;
+    double   postCvr = 5;
+    double   postCtr = 6;
+}
+
+message OcpcBsParmasList {
+    repeated SingleItem records = 1;
+}
+
