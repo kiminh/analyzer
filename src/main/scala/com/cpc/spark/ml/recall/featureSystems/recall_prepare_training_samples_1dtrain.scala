@@ -38,7 +38,7 @@ object recall_prepare_training_samples_1dtrain {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$oneday")
-
+    print("one day ready")
     cal1.add(Calendar.DATE, -1)
     val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     getSample(spark, model_version, featureName, "train", threeday, twoday).repartition(1000)
@@ -47,7 +47,7 @@ object recall_prepare_training_samples_1dtrain {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$twoday")
-
+  print("data ready")
 
 
   }
