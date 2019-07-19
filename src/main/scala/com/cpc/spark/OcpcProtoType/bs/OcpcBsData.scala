@@ -72,11 +72,7 @@ object OcpcBsData {
          |  adtype,
          |  isshow,
          |  isclick,
-         |  bid_discounted_by_ad_slot as bid,
-         |  price,
          |  cast(exp_cvr as double) as exp_cvr,
-         |  conversion_goal,
-         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
