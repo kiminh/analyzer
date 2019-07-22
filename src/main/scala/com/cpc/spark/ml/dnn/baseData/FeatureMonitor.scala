@@ -78,10 +78,10 @@ object FeatureMonitor{
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 9) {
+    if (args.length != 8) {
       System.err.println(
         """
-          |you have to input 9 parameters !!!
+          |you have to input 8 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
