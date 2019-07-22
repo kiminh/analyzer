@@ -86,7 +86,7 @@ object FeatureMonitor{
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names, src_dir, sta_date, cur_date, begin_date, des_dir, numPartitions, count_one_hot, count_muti_hot) = args
+    val Array(one_hot_feature_names, src_dir, cur_date, begin_date, des_dir, numPartitions, count_one_hot, count_muti_hot) = args
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val sparkConf = new SparkConf()
@@ -100,7 +100,8 @@ object FeatureMonitor{
       System.exit(1)
     }
 
-    val src_date_list = sta_date.split(";")
+    //val src_date_list = sta_date.split(";")
+    val src_date_list = GetDataRange(begin_date, cur_date)
     println("collect sparse feature instances")
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
@@ -243,17 +244,10 @@ object FeatureMonitor{
         data = data.union(
           sc.textFile(instances_list.mkString(",")).map(
             rs => {
-              val line_list = rs.substring(1, rs.length - 2).split(",")
-
-              if (line_list.length == 2) {
-                val feature_value = line_list(0)
-                val feature_count = line_list(1)
-                (feature_value, feature_count.toLong)
-              } else {
-                (rs, -1L)
-              }
-
-
+              val line_list = rs.substring(1, rs.length - 1).split(",")
+              val feature_value = line_list(0)
+              val feature_count = line_list(1)
+              (feature_value, feature_count.toLong)
             }
           ).reduceByKey(_ + _)
         )
