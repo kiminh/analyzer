@@ -58,8 +58,15 @@ object OcpcSuggestCPA {
     val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).repartition(10).cache()
     aucData.show(10)
 
+    // 获取ocpc_status
+    val ocpcStatusRaw = getConversionGoal(date, hour, spark)
+    val ocpcStatus = ocpcStatusRaw
+      .select("unitid", "userid", "ocpc_status")
+      .distinct()
+
+
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, spark)
+    val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -67,19 +74,20 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
-  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, spark: SparkSession) = {
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcStatus: DataFrame, spark: SparkSession) = {
     /*
     assemlby the data together
      */
     val rawData = baseData
       .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
       .join(aucData, Seq("unitid", "conversion_goal", "media"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc")
+      .join(ocpcStatus, Seq("unitid", "userid"), "left_outer")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "ocpc_status")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
@@ -104,7 +112,7 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("adclass") === 110110100, 1).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("adclass") === 125100100, 1).otherwise(col("is_recommend")))
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .cache()
 
     resultDF.show(10)
