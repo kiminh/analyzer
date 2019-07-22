@@ -38,13 +38,6 @@ object OcpcBsData {
 
     savePbPack(result, fileName, spark)
 
-//
-//    val finalVersion = version + hourInt.toString
-//    val resultDF = result
-//      .select("identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
-//      .filter(s"cv > 0")
-//
-//    resultDF
   }
 
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
