@@ -139,7 +139,10 @@ object OcpcBsData {
     data1.show(10)
     data2.show(10)
 
-    val data = data1.union(data2)
+    val data = data1
+      .union(data2)
+      .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr")
+
 
     data
 
