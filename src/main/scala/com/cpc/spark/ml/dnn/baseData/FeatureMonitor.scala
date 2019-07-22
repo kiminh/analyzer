@@ -86,7 +86,7 @@ object FeatureMonitor{
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names, src_dir, sta_date, cur_date, des_dir, numPartitions, count_one_hot, count_muti_hot) = args
+    val Array(one_hot_feature_names, src_dir, sta_date, cur_date, begin_date, des_dir, numPartitions, count_one_hot, count_muti_hot) = args
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val sparkConf = new SparkConf()
@@ -224,8 +224,8 @@ object FeatureMonitor{
     }
 
 
-    //
-
+    val dateArray = GetDataRange(cur_date, begin_date)
+    println(dateArray)
 
   }
 }
