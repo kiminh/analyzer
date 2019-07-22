@@ -250,7 +250,7 @@ object FeatureMonitor{
                 val feature_count = line_list(1)
                 (feature_value, feature_count.toLong)
               } else {
-                (rs, -1)
+                (rs, -1L)
               }
 
 
