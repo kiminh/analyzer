@@ -36,6 +36,14 @@ object OcpcBsData {
     val data = calculateData(baseData, expTag, spark)
     val result = data.filter(s"cv >= $minCV")
 
+    result
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("exp_tag", lit(expTag))
+        .withColumn("version", lit(version))
+        .repartition(5)
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+
     savePbPack(result, fileName, spark)
 
   }
