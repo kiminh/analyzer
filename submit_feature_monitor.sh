@@ -26,8 +26,8 @@ partitions=1000
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-sta_date="2019-07-14;2019-07-13;2019-07-12;2019-07-11;2019-07-10;2019-07-09;2019-07-08;2019-07-07"
-cur_date="2019-07-14"
+sta_date="2019-07-21;2019-07-20;2019-07-19;2019-07-18;2019-07-17;2019-07-16;2019-07-15;2019-07-14;2019-07-13;2019-07-12;2019-07-11;2019-07-10;2019-07-09;2019-07-08"
+cur_date="2019-07-21"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 partitions=1000
 one_hot_cnt=28
