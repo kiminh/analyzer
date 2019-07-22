@@ -32,3 +32,4 @@ like test.ocpc_recommend_units_hourly;
 
 
 alter table test.ocpc_recommend_units_hourly add columns (ocpc_status int)
+alter table dl_cpc.ocpc_recommend_units_hourly add columns (ocpc_status int)
