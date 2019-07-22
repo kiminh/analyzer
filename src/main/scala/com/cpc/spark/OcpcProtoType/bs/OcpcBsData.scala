@@ -30,6 +30,8 @@ object OcpcBsData {
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
+    baseData
+        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_data20190722a")
     baseData.show(10)
 
     // 计算结果
@@ -216,7 +218,7 @@ object OcpcBsData {
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("adtype", udfMapAdtype()(col("adtype")))
+      .withColumn("adtype_new", udfMapAdtype()(col("adtype")))
 
     // 抽取cv数据
     val sqlRequest2 =
