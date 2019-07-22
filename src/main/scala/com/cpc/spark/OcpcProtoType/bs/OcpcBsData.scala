@@ -42,8 +42,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -110,17 +110,19 @@ object OcpcBsData {
       s"""
          |SELECT
          |  unitid,
+         |  media,
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
          |  sum(isclick) * 1.0 / sum(isshow) as ctr
          |FROM
          |  base_data
-         |GROUP BY unitid
+         |GROUP BY unitid, media
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
       .select("key", "cv", "cvr", "ctr")
       .cache()
@@ -128,6 +130,7 @@ object OcpcBsData {
     val sqlRequest2 =
       s"""
          |SELECT
+         |  media,
          |  adslot_type,
          |  adtype,
          |  conversion_goal,
@@ -136,12 +139,13 @@ object OcpcBsData {
          |  sum(isclick) * 1.0 / sum(isshow) as ctr
          |FROM
          |  base_data
-         |GROUP BY adslot_type, adtype, conversion_goal
+         |GROUP BY media, adslot_type, adtype, conversion_goal
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
       .select("key", "cv", "cvr", "ctr")
       .cache()
@@ -191,9 +195,9 @@ object OcpcBsData {
          |  isshow,
          |  isclick,
          |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819') then 'hottopic'
-         |      else 'novel'
+         |      when media_appsid in ('80000001', '80000002') then 'Qtt'
+         |      when media_appsid in ('80002819') then 'HT66'
+         |      else 'Midu'
          |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr
