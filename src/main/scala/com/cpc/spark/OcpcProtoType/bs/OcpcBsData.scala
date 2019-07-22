@@ -216,6 +216,7 @@ object OcpcBsData {
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("adtype", udfMapAdtype()(col("adtype")))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -240,5 +241,38 @@ object OcpcBsData {
 
     resultDF
   }
+
+  def udfMapAdtype() = udf((adType: Int) => {
+    /*
+    adtype 文本 1 1 6
+    adtype 大图 2 2 2
+    adtype 图文 3 5 1
+    adtype 组图 4 8 3
+    adtype 互动 5 9 7
+    adtype 开屏 6 10 8
+    adtype 横幅 7 11 9
+    adtype 横版视频 8 4 4
+    adtype 激励 9 12 10
+    adtype 竖版视频 10 13 11
+    adtype 激励视频 11    12
+    adtype 激励竖版视频 15    112
+     */
+    var result = adType match {
+      case 1 => 6
+      case 2 => 2
+      case 3 => 1
+      case 4 => 3
+      case 5 => 7
+      case 6 => 8
+      case 7 => 9
+      case 8 => 4
+      case 9 => 10
+      case 10 => 11
+      case 11 => 12
+      case 15 => 112
+      case _ => 0
+    }
+    result
+  })
 
 }
