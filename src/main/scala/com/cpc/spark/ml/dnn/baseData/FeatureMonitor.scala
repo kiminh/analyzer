@@ -13,6 +13,12 @@ import scala.sys.process._
 import scala.util.Random
 import org.apache.spark.util.LongAccumulator
 
+import java.text.SimpleDateFormat
+
+import org.apache.commons.lang3.time.DateUtils
+
+import scala.collection.mutable.ArrayBuffer
+
 /**
   * 解析tfrecord到hdfs
   * created time : 2019/07/13 16:38
@@ -59,10 +65,17 @@ object FeatureMonitor{
     writer.close()
   }
 
-  //def getColAtIndex(id:Int): Column = {
-  //  col(s"column1")(id).as(s"column1_${id+1}")
-  //}
-
+  def GetDataRange(beginStr: String, endStr: String, format : String = "yyyy-MM-dd"): ArrayBuffer[String] = {
+    val ranges = ArrayBuffer[String]()
+    val sdf = new SimpleDateFormat(format)
+    var dateBegin = sdf.parse(beginStr)
+    val dateEnd = sdf.parse(endStr)
+    while (dateBegin.compareTo(dateEnd) <= 0) {
+      ranges += sdf.format(dateBegin)
+      dateBegin = DateUtils.addDays(dateBegin, 1)
+    }
+    ranges
+  }
 
   def main(args: Array[String]): Unit = {
     if (args.length != 8) {
@@ -209,5 +222,10 @@ object FeatureMonitor{
           }.repartition(1).sortBy(_._2 * -1).saveAsTextFile(instance_path_by_feature)
         }
     }
+
+
+    //
+
+
   }
 }
