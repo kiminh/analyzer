@@ -39,15 +39,15 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-//            .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
     val result = getUpdateTableV2(currentLight, date, hour, version, spark)
@@ -62,17 +62,17 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 
 //    // 清除redis里面的数据
 //    println(s"############## cleaning redis database ##########################")
 //    cleanRedis(version, date, hour, spark)
 
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
