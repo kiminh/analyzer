@@ -121,6 +121,7 @@ object LRTrain {
         )
       )
 
+
     rawDataFromTrident.unpersist()
     userAppIdx.unpersist()
   }
