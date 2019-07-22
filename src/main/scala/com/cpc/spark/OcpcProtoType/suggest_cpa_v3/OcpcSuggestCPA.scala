@@ -74,8 +74,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
