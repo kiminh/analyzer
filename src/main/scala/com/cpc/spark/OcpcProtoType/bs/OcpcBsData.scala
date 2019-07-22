@@ -193,7 +193,7 @@ object OcpcBsData {
          |  unitid,
          |  conversion_goal,
          |  adslot_type,
-         |  adtype,
+         |  adtype as original_adtype,
          |  isshow,
          |  isclick,
          |  (case
@@ -218,7 +218,7 @@ object OcpcBsData {
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("adtype_new", udfMapAdtype()(col("adtype")))
+      .withColumn("adtype", udfMapAdtype()(col("original_adtype")))
 
     // 抽取cv数据
     val sqlRequest2 =
