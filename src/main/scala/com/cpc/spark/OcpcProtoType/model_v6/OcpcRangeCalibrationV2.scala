@@ -100,6 +100,8 @@ object OcpcRangeCalibrationV2 {
       .select("conversion_goal", "high_bid_factor", "low_bid_factor")
       .distinct()
 
+    data.show(10)
+
     data
 
   }

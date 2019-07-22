@@ -34,10 +34,10 @@ object OcpcGetPbV3 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    val calibraionData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    val calibrationData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
     val factorData = OcpcRangeCalibrationMain(date, hour, version, media, hourInt, 40, expTag, spark)
 
-    val result1 = calibraionData
+    val result1 = calibrationData
       .join(factorData.select("identifier", "conversion_goal", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .withColumn("cpagiven", lit(1.0))
@@ -58,8 +58,8 @@ object OcpcGetPbV3 {
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
     println("successfully save data into hive")
