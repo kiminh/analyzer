@@ -12,24 +12,19 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object OcpcBsData {
   def main(args: Array[String]): Unit = {
-    /*
-    动态计算alpha平滑系数
-    1. 基于原始pcoc，计算预测cvr的量纲系数
-    2. 二分搜索查找到合适的平滑系数
-     */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val media = args(3).toString
-    val hourInt = args(4).toInt
+    val hourInt = args(3).toInt
     println("parameters:")
-    println(s"date=$date, hour=$hour, media:$media, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
 
-    val baseData = getBaseData(media, hourInt, date, hour, spark)
+    val baseData = getBaseData(hourInt, date, hour, spark)
+    baseData.show(10)
 
 //    // 计算结果
 //    val result = calculateSmooth(baseData, spark)
@@ -42,10 +37,10 @@ object OcpcBsData {
 //    resultDF
   }
 
-  def getBaseData(media: String, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias." + media + ".media_selection"
+    val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
 
     // 取历史数据
@@ -72,7 +67,13 @@ object OcpcBsData {
          |  adtype,
          |  isshow,
          |  isclick,
+         |  (case
+         |      when media_appsid in ('80000001', '80000002') then 'qtt'
+         |      when media_appsid in ('80002819') then 'hottopic'
+         |      else 'novel'
+         |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
+         |  cast(exp_ctr as double) as exp_ctr
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -80,11 +81,9 @@ object OcpcBsData {
          |AND
          |  $mediaSelection
          |AND
-         |  isclick = 1
+         |  isshow = 1
          |AND
          |  is_ocpc = 1
-         |AND
-         |  conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -110,7 +109,7 @@ object OcpcBsData {
     // 数据关联
     val resultDF = clickData
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
-      .select("searchid", "unitid", "conversion_goal", "isclick", "exp_cvr", "iscvr", "price", "bid", "hour")
+      .na.fill(0, Seq("iscvr"))
 
     resultDF
   }
