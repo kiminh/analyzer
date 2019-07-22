@@ -244,14 +244,23 @@ object FeatureMonitor{
           sc.textFile(instances_list.mkString(",")).map(
             rs => {
               val line_list = rs.substring(1, rs.length - 2).split(",")
-              val feature_value = line_list(0)
-              val feature_count = line_list(1)
-              (feature_value, feature_count.toLong)
+
+              if (line_list.length == 2) {
+                val feature_value = line_list(0)
+                val feature_count = line_list(1)
+                (feature_value, feature_count.toLong)
+              } else {
+                (rs, -1)
+              }
+
+
             }
           ).reduceByKey(_ + _)
         )
 
-        data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).saveAsTextFile(cur_feature_instances)
+        data.reduceByKey(_ + _).repartition(1)
+          .sortBy(_._2 * -1).map({case(key,value) => key + "\t" + value})
+          .saveAsTextFile(cur_feature_instances)
       }
     }
 
