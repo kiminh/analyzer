@@ -14,7 +14,7 @@ import scala.util.Random
 import org.apache.spark.util.LongAccumulator
 
 /**
-  * 解析tfrecord到hdfs
+  * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
   * created time : 2019/07/13 10:38
   * @author fenghuabin
   * @version 1.0

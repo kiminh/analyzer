@@ -224,9 +224,36 @@ object FeatureMonitor{
         }
     }
 
-
     val dateArray = GetDataRange(begin_date, cur_date)
     println(dateArray)
+    val monitor_path = des_dir + "/" + cur_date + "-monitor"
+    for (idx <- 0 until count_one_hot.toInt) {
+      val feature_name = name_list_one_hot(idx)
+      val cur_feature_instances = monitor_path + "/instances/" + feature_name
+      if (!exists_hdfs_path(cur_feature_instances)) {
+        val instances_list = ArrayBuffer[String]()
+        for (past_date <- dateArray) {
+          val instances_path = des_dir + "/" + past_date + "-instances"
+          val instance_path_by_feature = instances_path + "-by-name/" + feature_name
+          instances_list += instance_path_by_feature
+
+        }
+        println("now collect instances set:" + instances_list.mkString(","))
+        var data = sc.parallelize(Array[(String, Long)]())
+        data = data.union(
+          sc.textFile(instances_list.mkString(",")).map(
+            rs => {
+              val line_list = rs.substring(1, rs.length - 2).split(",")
+              val feature_value = line_list(0)
+              val feature_count = line_list(1)
+              (feature_value, feature_count.toLong)
+            }
+          ).reduceByKey(_ + _)
+        )
+
+        data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).saveAsTextFile(cur_feature_instances)
+      }
+    }
 
   }
 }
