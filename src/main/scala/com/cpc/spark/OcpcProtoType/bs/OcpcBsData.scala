@@ -18,7 +18,9 @@ object OcpcBsData {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val hourInt = args(3).toInt
+    val expTag = args(3).toString
+    val hourInt = args(4).toInt
+    val minCV = args(5).toInt
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
@@ -26,8 +28,8 @@ object OcpcBsData {
     val baseData = getBaseData(hourInt, date, hour, spark)
     baseData.show(10)
 
-//    // 计算结果
-//    val result = calculateSmooth(baseData, spark)
+    // 计算结果
+    val result = calculateData(baseData, expTag, spark)
 //
 //    val finalVersion = version + hourInt.toString
 //    val resultDF = result
@@ -35,6 +37,59 @@ object OcpcBsData {
 //      .filter(s"cv > 0")
 //
 //    resultDF
+  }
+
+  def calculateData(baseData: DataFrame, expTag: String, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  sum(case when isclick=1 then iscvr else 0 end) as cv,
+         |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr
+         |FROM
+         |  base_data
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .withColumn("exp_tag", lit(expTag))
+      .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
+      .select("key", "cv", "cvr", "ctr")
+      .cache()
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  adslot_type,
+         |  adtype,
+         |  conversion_goal,
+         |  sum(case when isclick=1 then iscvr else 0 end) as cv,
+         |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr
+         |FROM
+         |  base_data
+         |GROUP BY adslot_type, adtype, conversion_goal
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .withColumn("exp_tag", lit(expTag))
+      .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
+      .select("key", "cv", "cvr", "ctr")
+      .cache()
+
+    data1.show(10)
+    data2.show(10)
+
+    val data = data1.union(data2)
+
+    data
+
+
+
   }
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
