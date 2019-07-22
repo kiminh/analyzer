@@ -2,12 +2,15 @@ package com.cpc.spark.OcpcProtoType.bs
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import scala.collection.mutable.ListBuffer
+import java.io.FileOutputStream
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import ocpcBsParmas.ocpcBsParmas.{SingleItem, OcpcBsParmasList}
 
 
 object OcpcBsData {
@@ -21,15 +24,20 @@ object OcpcBsData {
     val expTag = args(3).toString
     val hourInt = args(4).toInt
     val minCV = args(5).toInt
+    val fileName = args(6).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, hourInt:$hourInt, version:$version, expTag:$expTag, minCV:$minCV, fileName:$fileName")
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
     baseData.show(10)
 
     // 计算结果
-    val result = calculateData(baseData, expTag, spark)
+    val data = calculateData(baseData, expTag, spark)
+    val result = data.filter(s"cv >= $minCV")
+
+    savePbPack(result, fileName, spark)
+
 //
 //    val finalVersion = version + hourInt.toString
 //    val resultDF = result
@@ -38,6 +46,60 @@ object OcpcBsData {
 //
 //    resultDF
   }
+
+  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
+    /*
+    proto:
+    message singleitem {
+      string   key = 1;
+      double   cvrcalfactor = 2;
+      double   jfbfactor = 3;
+      double   smoothfactor = 4;
+      double   postcvr = 5;
+      double   postctr = 6;
+    }
+
+    dataframe:
+    ("key", "cv", "cvr", "ctr")
+     */
+
+    var list = new ListBuffer[SingleItem]
+    var cnt = 0
+
+    for (record <- data.collect()) {
+      val key = record.getAs[String]("key")
+      val postcvr = record.getAs[Double]("cvr")
+      val postctr = record.getAs[Double]("ctr")
+
+      if (cnt % 100 == 0) {
+        println(s"key:$key, postcvr:$postcvr, postctr:$postctr")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        key = key,
+        cvrCalFactor = 1.0,
+        jfbFactor = 1.0,
+        smoothFactor = 0.0,
+        postCvr = postcvr,
+        postCtr = postctr
+      )
+      list += currentItem
+
+    }
+    val result = list.toArray[SingleItem]
+    val adRecordList = OcpcBsParmasList(
+      records = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(fileName))
+
+    println("complete save data into protobuffer")
+
+  }
+
 
   def calculateData(baseData: DataFrame, expTag: String, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
