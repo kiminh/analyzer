@@ -158,7 +158,7 @@ object FeatureMonitor{
     for (src_date <- src_date_list) {
       val instances_path = des_dir + "/" + src_date + "-instances"
       val instances_path_success = des_dir + "/" + src_date + "-instances/_SUCCESS"
-      val instance_path_res = instances_path + "-by-name*"
+      val instance_path_res = instances_path + "-by-name"
       if (exists_hdfs_path(instances_path_success) && !exists_hdfs_path(instance_path_res)) {
           var data = sc.parallelize(Array[(String, Long)]())
           data = data.union(
