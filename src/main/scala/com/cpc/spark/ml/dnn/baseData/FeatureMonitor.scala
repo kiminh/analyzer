@@ -225,7 +225,7 @@ object FeatureMonitor{
     }
 
 
-    val dateArray = GetDataRange(cur_date, begin_date)
+    val dateArray = GetDataRange(begin_date, cur_date)
     println(dateArray)
 
   }
