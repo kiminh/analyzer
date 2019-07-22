@@ -78,7 +78,7 @@ object userprofileCostV2 {
          |(select tag,count(distinct uid) as count from dl_cpc.cpc_userprofile_tag_daily where date='$yesterday' group by tag) t4
          |on t1.name=t4.tag
          |left join
-         |(select look_like_id, cast(type as string) as type1 from table_lookalike) t5
+         |(select look_like_id, if(type=1, 'lookalike', 'precision') as type1 from table_lookalike) t5
          |on t1.name=t5.look_like_id
        """.stripMargin).repartition(5).createOrReplaceTempView("result_table")
 
