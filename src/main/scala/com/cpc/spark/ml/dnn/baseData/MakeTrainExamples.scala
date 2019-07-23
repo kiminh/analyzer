@@ -12,6 +12,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.sys.process._
 import scala.util.Random
 import org.apache.spark.util.LongAccumulator
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
@@ -157,11 +158,11 @@ object MakeTrainExamples {
           sc.textFile(map_path).map(
             rs => {
               val line = rs.split("\t")
-              val output: Array[String] = new Array[String](line.length - 3)
+              val output = ArrayBuffer[String]()
               val uid_idx = 27
               for (idx <- 2 until line.length) {
                 if (idx != uid_idx) {
-                  output(idx - 2) = line(idx)
+                  output += line(idx)
                 }
               }
               output.mkString("\t")
