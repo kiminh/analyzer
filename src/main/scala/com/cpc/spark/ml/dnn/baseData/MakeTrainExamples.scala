@@ -596,7 +596,7 @@ object MakeTrainExamples {
 
 
     /************do mapping************************/
-    println("do plain mapping")
+    /*println("do plain mapping")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled-plain"
@@ -646,7 +646,7 @@ object MakeTrainExamples {
           }
         }
       }
-    }
+    }*/
 
 
 
