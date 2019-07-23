@@ -151,7 +151,6 @@ object MakeTrainExamples {
     for (src_date <- src_date_list) {
       val map_path = des_dir + "/instances-" + src_date + "-collect"
       val instances_path = des_dir + "/instances-" + src_date
-      delete_hdfs_path(instances_path)
       if (!exists_hdfs_path(instances_path)) {
         var data = sc.parallelize(Array[(String, Long)]())
         data = data.union(
@@ -257,7 +256,6 @@ object MakeTrainExamples {
     val src_instances_files = output.mkString(",")
     //统计所有ID特征的每个取值出现的次数
     val instances_all = des_dir + "/" + instances_file
-    delete_hdfs_path(instances_all)
     if (!exists_hdfs_path(instances_all)) {
       var data = sc.parallelize(Array[(String, Long)]())
       data = data.union(
@@ -277,7 +275,6 @@ object MakeTrainExamples {
     }
 
     val instances_all_map = des_dir + "/" + instances_file + "-mapped"
-    delete_hdfs_path(instances_all_map)
     if (!exists_hdfs_path(instances_all_map)) {
       val acc = new LongAccumulator
       spark.sparkContext.register(acc)
