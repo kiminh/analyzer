@@ -341,7 +341,7 @@ object FeatureMonitor{
       println(monitor_variety)
       val monitor_res_path = des_dir + "/" + cur_date + "-monitor/alerts"
       delete_hdfs_path(monitor_res_path)
-      val data = sc.parallelize(monitor_frequency.mkString(";") + "\t" + monitor_variety.mkString(";"))
+      var data = sc.parallelize(monitor_frequency ++ monitor_variety)
       data.repartition(1).saveAsTextFile(monitor_res_path)
     }
   }
