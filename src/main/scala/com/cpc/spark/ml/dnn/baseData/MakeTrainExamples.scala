@@ -290,34 +290,6 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
-    /************************load map********************************/
-    println("load other sparseMap")
-    val sparseMap = sc.textFile(instances_all_map).map{
-      rs => {
-        val line = rs.split("\t")
-        val field = line(0).toLong
-        val key = (line(1).toLong - 1L).toString
-        (field, key)
-      }
-    }.collectAsMap()
-    println("sparseMap.size=" + sparseMap.size)
-    val sparse_size = sparseMap.size.toLong
-    val sparse_size_bc = sc.broadcast(sparse_size)
-
-    /************************load map********************************/
-    println("load uid sparseMap")
-    val sparseMapUid = sc.textFile(instances_all_map_uid).map{
-      rs => {
-        val line = rs.split("\t")
-        val field = line(0).toLong
-        val key = (line(1).toLong - 1L).toString
-        (field, key)
-      }
-    }.collectAsMap()
-    println("sparseMapUid.size=" + sparseMapUid.size)
-    val sparse_size_uid = sparseMapUid.size.toLong
-    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
-
 
     /************do mapping************************/
     println("Do mapping")
@@ -369,6 +341,34 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
+
+    /************************load map********************************/
+    println("load other sparseMap")
+    val sparseMap = sc.textFile(instances_all_map).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = (line(1).toLong - 1L).toString
+        (field, key)
+      }
+    }.collectAsMap()
+    println("sparseMap.size=" + sparseMap.size)
+    val sparse_size = sparseMap.size.toLong
+    val sparse_size_bc = sc.broadcast(sparse_size)
+
+    /************************load map********************************/
+    println("load uid sparseMap")
+    val sparseMapUid = sc.textFile(instances_all_map_uid).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = (line(1).toLong - 1L).toString
+        (field, key)
+      }
+    }.collectAsMap()
+    println("sparseMapUid.size=" + sparseMapUid.size)
+    val sparse_size_uid = sparseMapUid.size.toLong
+    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
 
     return
     /************do mapping************************/
