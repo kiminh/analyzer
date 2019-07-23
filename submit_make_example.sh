@@ -16,12 +16,6 @@ jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
-#src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/2019-06-11/part-*"
-src="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/"${cur_date}"/part*"
-des_date=${cur_date}
-des_map="emb-map"
-partitions=1000
-
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 src_date="2019-07-01;2019-07-02;2019-07-03;2019-07-04;2019-07-05;2019-07-06;2019-07-07;2019-07-08;2019-07-09;2019-07-10;2019-07-11;2019-07-12;2019-07-13;2019-07-14;2019-07-15;2019-07-16"
 src_date="2019-07-16;2019-07-15;2019-07-14;2019-07-13;2019-07-12;2019-07-11;2019-07-10;2019-07-09;2019-07-08;2019-07-07;2019-07-06;2019-07-05;2019-07-04;2019-07-03;2019-07-02;2019-07-01"
