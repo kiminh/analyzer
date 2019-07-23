@@ -260,6 +260,7 @@ object FeatureMonitor{
     }
 
     //统计过去15天(包含最新的过去一天)每个one hot特征的不同取值个数
+    var count_monitor = ArrayBuffer[String]()
     val one_hot_count:Array[Long] = new Array[Long](count_one_hot.toInt)
     for (idx <- 0 until count_one_hot.toInt) {
       val feature_name = name_list_one_hot(idx)
@@ -280,15 +281,21 @@ object FeatureMonitor{
       println("avg count:" + avg_count.toString)
       println("count list:")
       println(instances_count_list)
+      val cur_count = instances_count_list(instances_count_list.length - 1)
+      if (cur_count >= (avg_count.toDouble * 1.02).toLong) {
+        count_monitor += "value count("  + cur_count.toString + ") of feature " + feature_name + " exceeds 120% of average count(" + avg_count.toString + ") of past 15 days"
+      } else if (cur_count >= (avg_count.toDouble * 1.02).toLong) {
+        count_monitor += "value count("  + cur_count.toString + ") of feature " + feature_name + " less than 80% of average count(" + avg_count.toString + ") of past 15 days"
+      }
     }
 
     //截取上一步统计得到的每个one hot特征的过去15天内的最频繁取值的前x%
     for (idx <- 0 until count_one_hot.toInt) {
       val monitor_path = des_dir + "/" + cur_date + "-monitor"
       val feature_name = name_list_one_hot(idx)
-      val cur_feature_instances = monitor_path + "/instances/" + feature_name
-      if (exists_hdfs_path(cur_feature_instances + "/_SUCCESS")) {
-        val instances_list = sc.textFile(cur_feature_instances).map(
+      val cur_feature_instances_total = monitor_path + "/instances/" + feature_name
+      if (exists_hdfs_path(cur_feature_instances_total + "/_SUCCESS")) {
+        val instances_list_total = sc.textFile(cur_feature_instances_total).map(
           rs => {
             val feature_value = rs.split("\t")(0)
             feature_value
@@ -297,12 +304,35 @@ object FeatureMonitor{
 
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("feature:" + feature_name)
-        println(instances_list(0))
-        println(instances_list(1))
-        println(instances_list(2))
-        println(instances_list(3))
-        println(instances_list(4))
+        println("total:")
+        if (instances_list_total.length > 5) {
+          println(instances_list_total(0))
+          println(instances_list_total(1))
+          println(instances_list_total(2))
+          println(instances_list_total(3))
+          println(instances_list_total(4))
+        } else {
+          println(instances_list_total)
+        }
 
+        val instances_path = des_dir + "/" + cur_date + "-instances"
+        val instance_path_by_feature = instances_path + "-by-name/" + feature_name
+        val instances_list_cur = sc.textFile(instance_path_by_feature).map(
+          rs => {
+            val feature_value = rs.split("\t")(0)
+            feature_value
+          }
+        ).collect()
+        println("cur:")
+        if (instances_list_cur.length > 5) {
+          println(instances_list_cur(0))
+          println(instances_list_cur(1))
+          println(instances_list_cur(2))
+          println(instances_list_cur(3))
+          println(instances_list_cur(4))
+        } else {
+          println(instances_list_cur)
+        }
       }
     }
 
