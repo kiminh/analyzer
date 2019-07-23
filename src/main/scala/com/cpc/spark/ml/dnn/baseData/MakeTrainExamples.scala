@@ -294,7 +294,6 @@ object MakeTrainExamples {
     }
 
     /************************load map********************************/
-    /**
     println("load other sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
@@ -320,7 +319,7 @@ object MakeTrainExamples {
     }.collectAsMap()
     println("sparseMapUid.size=" + sparseMapUid.size)
     val sparse_size_uid = sparseMapUid.size.toLong
-    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)**/
+    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
 
 
     /************do mapping************************/
