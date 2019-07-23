@@ -389,8 +389,6 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
-
-
     return
     /************do mapping************************/
     /**println("do plain mapping")
