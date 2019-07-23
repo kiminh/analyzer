@@ -55,6 +55,7 @@ object OcpcSmoothfactor {
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
       .filter(s"cv >= min_cv")
+      .withColumn("version", lit(version))
 
     resultDF
   }
@@ -75,16 +76,16 @@ object OcpcSmoothfactor {
     result
   })
 
-  def udfMediaName() = udf((media: String) => {
-    var result = media match {
-      case "qtt" => "Qtt"
-      case "hottopic" => "HT66"
-      case "novel" => "Midu"
-      case _ => "others"
-    }
-    result
-  })
-
+//  def udfMediaName() = udf((media: String) => {
+//    var result = media match {
+//      case "qtt" => "Qtt"
+//      case "hottopic" => "HT66"
+//      case "novel" => "Midu"
+//      case _ => "others"
+//    }
+//    result
+//  })
+//
 
   def getExpConf(version: String, spark: SparkSession) ={
     // 从配置文件读取数据

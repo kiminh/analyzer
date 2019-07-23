@@ -115,11 +115,7 @@ object OcpcTools {
          |  price,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819') then 'hottopic'
-         |      else 'novel'
-         |  end) as media,
+         |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -142,6 +138,7 @@ object OcpcTools {
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -166,4 +163,25 @@ object OcpcTools {
 
     resultDF
   }
+
+  def udfMediaName() = udf((media: String) => {
+    var result = media match {
+      case "qtt" => "Qtt"
+      case "hottopic" => "HT66"
+      case "novel" => "Midu"
+      case _ => "others"
+    }
+    result
+  })
+
+  def udfDetermineMedia() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case _ => "novel"
+    }
+    result
+  })
+
 }
