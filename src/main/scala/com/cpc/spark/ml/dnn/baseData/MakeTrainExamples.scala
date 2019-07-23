@@ -294,11 +294,12 @@ object MakeTrainExamples {
     /************do mapping************************/
     println("Do mapping")
     for (src_date <- src_date_list) {
-      val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
+      val curr_file_src = src_dir + "/" + src_date
       if (exists_hdfs_path(curr_file_src)) {
+        val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
-        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src)
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
+        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
         importedDf.printSchema()
         importedDf.show(3)
         /*importedDf.rdd.map(
