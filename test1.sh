@@ -26,7 +26,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --executor-cores 4 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=5g'\
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
-    --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.calibration.debug.UidGroupV2 \
