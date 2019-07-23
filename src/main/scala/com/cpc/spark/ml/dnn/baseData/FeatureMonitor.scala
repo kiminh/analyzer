@@ -259,6 +259,53 @@ object FeatureMonitor{
       }
     }
 
+    //截取上一步统计得到的每个one hot特征的过去15天内的最频繁取值的前x%
+    var monitor_frequency = ArrayBuffer[String]()
+    for (idx <- 0 until count_one_hot.toInt) {
+      val monitor_path = des_dir + "/" + cur_date + "-monitor"
+      val feature_name = name_list_one_hot(idx)
+      val cur_feature_instances_total = monitor_path + "/instances/" + feature_name
+      if (feature_name != "uid" && exists_hdfs_path(cur_feature_instances_total + "/_SUCCESS")) {
+        val instances_list_total = sc.textFile(cur_feature_instances_total).map(
+          rs => {
+            val feature_value = rs.split("\t")(0)
+            feature_value
+          }
+        ).collect()
+
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("feature:" + feature_name)
+        println("total list size:" + instances_list_total.length.toString)
+
+        val instances_path = des_dir + "/" + cur_date + "-instances"
+        val instance_path_by_feature = instances_path + "-by-name/" + feature_name
+        val instances_list_cur = sc.textFile(instance_path_by_feature).map(
+          rs => {
+            val feature_value = rs.substring(1, rs.length - 1).split(",")(0)
+            (feature_value, 1)
+          }
+        ).collectAsMap()
+        println("cur map size:" + instances_list_cur.toArray.length)
+
+        var exit_count = 0
+        val most_frequent_count = (instances_list_total.length * 0.8).toInt + 1
+        println("total_count:" + instances_list_total.length.toString)
+        println("most_frequent_count:" + most_frequent_count.toString)
+        for (jdx <- 0 until most_frequent_count) {
+          if (instances_list_cur.contains(instances_list_total(jdx))) {
+            exit_count += 1
+          }
+        }
+
+        val percent = exit_count * 100.0 / most_frequent_count
+        println("exit_count:" + exit_count.toString)
+        println("percent:" + percent.toString)
+        if (percent <= 0.8) {
+          monitor_frequency += "[Invalid Frequency]feature " + feature_name + ":current day's instances count less than 80% of 80% of past 15 days' most frequent instances"
+        }
+      }
+    }
+
     //统计过去15天(包含最新的过去一天)每个one hot特征的不同取值个数
     var monitor_variety = ArrayBuffer[String]()
     val one_hot_count:Array[Long] = new Array[Long](count_one_hot.toInt)
@@ -288,74 +335,6 @@ object FeatureMonitor{
         monitor_variety += "[Invalid Variety]value count("  + cur_count.toString + ") of feature " + feature_name + " less than 80% of average count(" + avg_count.toString + ") of past 15 days"
       }
     }
-
-    //截取上一步统计得到的每个one hot特征的过去15天内的最频繁取值的前x%
-    var monitor_frequency = ArrayBuffer[String]()
-    for (idx <- 0 until count_one_hot.toInt) {
-      val monitor_path = des_dir + "/" + cur_date + "-monitor"
-      val feature_name = name_list_one_hot(idx)
-      val cur_feature_instances_total = monitor_path + "/instances/" + feature_name
-      if (feature_name != "uid" && exists_hdfs_path(cur_feature_instances_total + "/_SUCCESS")) {
-        val instances_list_total = sc.textFile(cur_feature_instances_total).map(
-          rs => {
-            val feature_value = rs.split("\t")(0)
-            feature_value
-          }
-        ).collect()
-
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("feature:" + feature_name)
-        //println("total:")
-        //if (instances_list_total.length > 5) {
-        //  println(instances_list_total(0))
-        //  println(instances_list_total(1))
-        //  println(instances_list_total(2))
-        //  println(instances_list_total(3))
-        //  println(instances_list_total(4))
-        //} else {
-        //  println(instances_list_total)
-        //}
-
-        val instances_path = des_dir + "/" + cur_date + "-instances"
-        val instance_path_by_feature = instances_path + "-by-name/" + feature_name
-        val instances_list_cur = sc.textFile(instance_path_by_feature).map(
-          rs => {
-            val feature_value = rs.split("\t")(0)
-            (feature_value, 1)
-          }
-        ).collectAsMap()
-        //println("cur:")
-        //if (instances_list_cur.length > 5) {
-        //  println(instances_list_cur(0))
-        //  println(instances_list_cur(1))
-        //  println(instances_list_cur(2))
-        //  println(instances_list_cur(3))
-        //  println(instances_list_cur(4))
-        //} else {
-        //  println(instances_list_cur)
-        //}
-
-        var exit_count = 0
-        val most_frequent_count = (instances_list_total.length * 0.8).toInt + 1
-        println("total_count:" + instances_list_total.length.toString)
-        println("most_frequent_count:" + most_frequent_count.toString)
-        for (jdx <- 0 until most_frequent_count) {
-          if (instances_list_cur.contains(instances_list_total(jdx))) {
-            exit_count += 1
-          }
-        }
-
-        val percent = exit_count * 100.0 / most_frequent_count
-        println("exit_count:" + exit_count.toString)
-        println("percent:" + percent.toString)
-        if (percent <= 0.8) {
-          monitor_frequency += "[Invalid Frequency]feature " + feature_name + ":current day's instances count less than 80% of 80% of past 15 days' most frequent instances"
-        }
-      }
-    }
-
-
-
 
 
   }
