@@ -67,12 +67,22 @@ object OcpcPIDcontrol {
       .cache()
     otherData.show(10)
 
+//    identifier,
+//    conversion_goal,
+//    is_hidden,
+//    exp_tag,
+//    1.0 / pcoc as cali_value,
+//    1.0 / jfb as jfb_factor,
+//    post_cvr,
+//    high_bid_factor,
+//    low_bid_factor,
+//    cpagiven
+
     val result = otherData
       .join(pidResult, Seq("unitid", "conversion_goal"), "left_outer")
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "post_cvr", "current_calivalue")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "jfb", "post_cvr", "current_calivalue")
       .na.fill(1.0, Seq("current_calivalue"))
-      .withColumn("jfb", udfGetCountDown()(col("current_calivalue")))
-      .withColumn("pcoc", lit(1.0))
+      .withColumn("pcoc", udfGetCountDown()(col("current_calivalue")))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
       .withColumn("cpagiven", lit(1.0))
