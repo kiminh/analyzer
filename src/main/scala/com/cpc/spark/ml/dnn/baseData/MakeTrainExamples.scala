@@ -318,7 +318,7 @@ object MakeTrainExamples {
     val sparse_size_uid = sparseMapUid.size.toLong
     val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
 
-    val sparse_size_total = sparse_size + sparse_size_total
+    val sparse_size_total = sparse_size + sparse_size_uid
     val sparse_size_total_bc = sc.broadcast(sparse_size_total)
 
 
