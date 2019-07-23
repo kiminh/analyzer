@@ -290,61 +290,8 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
-
-    /************do mapping************************/
-    println("Do mapping")
-    for (src_date <- src_date_list) {
-      val curr_file_src = src_dir + "/" + src_date
-      if (exists_hdfs_path(curr_file_src)) {
-        val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
-        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
-        importedDf.printSchema()
-        importedDf.show(3)
-        /*importedDf.rdd.map(
-          rs => {
-            val idx2 = rs.getSeq[Long](0)
-            val idx1 = rs.getSeq[Long](1)
-            val idx_arr = rs.getSeq[Long](2)
-            val idx0 = rs.getSeq[Long](3)
-            val sample_idx = rs.getLong(4)
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
-
-            var label = "0.0"
-            if (label_arr.head == 1L) {
-              label = "1.0"
-            }
-
-            val output = scala.collection.mutable.ArrayBuffer[String]()
-            output += sample_idx.toString
-            output += label
-            output += label_arr.mkString(";")
-            output += dense.mkString(";")
-            output += idx0.mkString(";")
-            output += idx1.mkString(";")
-            output += idx2.mkString(";")
-            output += idx_arr.mkString(";")
-
-              val line_list = rs.split("\t")
-              val dense_list = line_list(3).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
-              val idx_arr_list = line_list(7).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
-
-              line_list(3) = dense_list.mkString(";")
-              line_list(7) = idx_arr_list.mkString(";")
-              line_list.mkString("\t")
-
-            output.mkString("\t")
-          }
-        ).repartition(10).saveAsTextFile(tf_plain_path)*/
-      }
-    }
-    println("Done.......")
-
-
     /************************load map********************************/
-    /*println("load other sparseMap")
+    println("load other sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
       rs => {
         val line = rs.split("\t")
@@ -369,7 +316,63 @@ object MakeTrainExamples {
     }.collectAsMap()
     println("sparseMapUid.size=" + sparseMapUid.size)
     val sparse_size_uid = sparseMapUid.size.toLong
-    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)*/
+    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
+
+    val sparse_size_total = sparse_size + sparse_size_total
+    val sparse_size_total_bc = sc.broadcast(sparse_size_total)
+
+
+    /************do mapping************************/
+    println("Do mapping")
+    for (src_date <- src_date_list) {
+      val curr_file_src = src_dir + "/" + src_date
+      val tf_plain_mapped_path = des_dir + "/" + src_date + "-text-mapped"
+      if (!exists_hdfs_path(tf_plain_mapped_path) && exists_hdfs_path(curr_file_src)) {
+        val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
+        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
+        importedDf.printSchema()
+        importedDf.show(3)
+        importedDf.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            var label = "0.0"
+            if (label_arr.head == 1L) {
+              label = "1.0"
+            }
+
+            val idx_arr_list = idx_arr.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
+            val dense_list = dense.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
+            val uid_value = dense_list(25)
+            val mapped_uid_value = sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+            val dense_list_update = dense_list.updated(25, mapped_uid_value)
+
+            val output = scala.collection.mutable.ArrayBuffer[String]()
+            output += sample_idx.toString
+            output += label
+            output += label_arr.map(_.toString).mkString(";")
+            output += dense_list_update.mkString(";")
+            output += idx0.map(_.toString).mkString(";")
+            output += idx1.map(_.toString).mkString(";")
+            output += idx2.map(_.toString).mkString(";")
+            output += idx_arr_list.mkString(";")
+
+            output.mkString("\t")
+          }
+        ).saveAsTextFile(tf_plain_mapped_path)
+      }
+    }
+    println("Done.......")
+
+
 
     return
     /************do mapping************************/
