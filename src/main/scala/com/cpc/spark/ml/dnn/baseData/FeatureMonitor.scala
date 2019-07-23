@@ -225,10 +225,11 @@ object FeatureMonitor{
         }
     }
 
+    //统计过去15天(包含最新的过去一天)每个one hot特征的取值，按照频率排序
     val dateArray = GetDataRange(begin_date, cur_date)
     println(dateArray)
-    val monitor_path = des_dir + "/" + cur_date + "-monitor"
     for (idx <- 0 until count_one_hot.toInt) {
+      val monitor_path = des_dir + "/" + cur_date + "-monitor"
       val feature_name = name_list_one_hot(idx)
       val cur_feature_instances = monitor_path + "/instances/" + feature_name
       if (!exists_hdfs_path(cur_feature_instances)) {
@@ -257,6 +258,57 @@ object FeatureMonitor{
           .saveAsTextFile(cur_feature_instances)
       }
     }
+
+    //统计过去15天(包含最新的过去一天)每个one hot特征的不同取值个数
+    val one_hot_count:Array[Long] = new Array[Long](count_one_hot.toInt)
+    for (idx <- 0 until count_one_hot.toInt) {
+      val feature_name = name_list_one_hot(idx)
+      var acc_count = 0L
+      val instances_count_list = ArrayBuffer[Long]()
+      for (past_date <- dateArray) {
+        val instances_path = des_dir + "/" + past_date + "-instances"
+        val instance_path_by_feature = instances_path + "-by-name/" + feature_name
+        val count = sc.textFile(instance_path_by_feature).count
+        instances_count_list += count
+        acc_count += count
+      }
+      val avg_count = acc_count / dateArray.length
+      one_hot_count(idx) = avg_count
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      println("feature:" + feature_name)
+      println("total count:" + acc_count.toString)
+      println("avg count:" + avg_count.toString)
+      println("count list:")
+      println(instances_count_list)
+    }
+
+    //截取上一步统计得到的每个one hot特征的过去15天内的最频繁取值的前x%
+    for (idx <- 0 until count_one_hot.toInt) {
+      val monitor_path = des_dir + "/" + cur_date + "-monitor"
+      val feature_name = name_list_one_hot(idx)
+      val cur_feature_instances = monitor_path + "/instances/" + feature_name
+      if (exists_hdfs_path(cur_feature_instances + "/_SUCCESS")) {
+        val instances_list = sc.textFile(cur_feature_instances).map(
+          rs => {
+            val feature_value = rs.split("\t")(0)
+            feature_value
+          }
+        ).collect()
+
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("feature:" + feature_name)
+        println(instances_list(0))
+        println(instances_list(1))
+        println(instances_list(2))
+        println(instances_list(3))
+        println(instances_list(4))
+
+      }
+    }
+
+
+
+
 
   }
 }
