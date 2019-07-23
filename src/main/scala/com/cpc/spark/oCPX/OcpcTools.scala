@@ -164,6 +164,83 @@ object OcpcTools {
     resultDF
   }
 
+  def getRealtimeData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  isshow,
+         |  isclick,
+         |  exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |  media_appsid,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |      when adclass in (110110100, 125100100) then "wzcp"
+         |      else "others"
+         |  end) as industry,
+         |  conversion_goal,
+         |  hour
+         |FROM
+         |  dl_cpc.cpc_basedata_click_event
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  ocpc_step > 0
+       """.stripMargin
+    println(sqlRequest)
+    val clickData = spark
+      .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr,
+         |  cvr_goal
+         |FROM
+         |  dl_cpc.cpc_basedata_trace_event
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2)
+
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
+  }
+
   def udfMediaName() = udf((media: String) => {
     var result = media match {
       case "qtt" => "Qtt"
@@ -180,6 +257,28 @@ object OcpcTools {
       case "80000002" => "qtt"
       case "80002819" => "hottopic"
       case _ => "novel"
+    }
+    result
+  })
+
+  def udfDetermineConversionGoal() = udf((traceType: String, traceOp1: String, traceOp2: String) => {
+    /*
+    conversion_goal = 1: trace_op1="REPORT_DOWNLOAD_PKGADDED" and trace_type=apkdown
+    conversion_goal = 2: trace_type="active_third"
+    conversion_goal = 3: trace_type="active15" or trace_type="ctsite_active15"
+    conversion_goal = 4: trace_op1="REPORT_USER_STAYINWX"
+     */
+    var result = 0
+    if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED" && traceType == "trace_type=apkdown") {
+      result = 1
+    } else if (traceType == "active_third") {
+      result = 2
+    } else if (traceType == "active15" || traceType == "ctsite_active15") {
+      result = 3
+    } else if (traceOp1 == "REPORT_USER_STAYINWX") {
+      result = 4
+    } else {
+      result = 0
     }
     result
   })
