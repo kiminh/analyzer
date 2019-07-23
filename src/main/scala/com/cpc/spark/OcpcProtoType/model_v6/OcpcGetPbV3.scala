@@ -34,10 +34,10 @@ object OcpcGetPbV3 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, media:$media, hourInt:$hourInt, minCV:$minCV, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    val calibraionData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
+    val calibrationData = OcpcCalculateCalibrationMain(date, hour, version, media, minCV, hourInt1, hourInt2, hourInt3, spark)
     val factorData = OcpcRangeCalibrationMain(date, hour, version, media, hourInt, 40, expTag, spark)
 
-    val result1 = calibraionData
+    val result1 = calibrationData
       .join(factorData.select("identifier", "conversion_goal", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .withColumn("cpagiven", lit(1.0))

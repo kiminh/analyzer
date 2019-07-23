@@ -39,7 +39,7 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-//            .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
