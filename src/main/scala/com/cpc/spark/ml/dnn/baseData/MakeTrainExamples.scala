@@ -358,6 +358,14 @@ object MakeTrainExamples {
             output += idx2.mkString(";")
             output += idx_arr.mkString(";")
 
+              val line_list = rs.split("\t")
+              val dense_list = line_list(3).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
+              val idx_arr_list = line_list(7).split(";").map(x => sparseMap.getOrElse(x.toLong, sparse_size_bc.value.toString)).toSeq
+
+              line_list(3) = dense_list.mkString(";")
+              line_list(7) = idx_arr_list.mkString(";")
+              line_list.mkString("\t")
+
             output.mkString("\t")
           }
         ).repartition(10).saveAsTextFile(tf_plain_path)*/
@@ -368,7 +376,7 @@ object MakeTrainExamples {
 
     return
     /************do mapping************************/
-    println("do plain mapping")
+    /**println("do plain mapping")
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_sampled_path = des_dir + "/" + src_date + "-tf-sampled-plain"
@@ -418,9 +426,8 @@ object MakeTrainExamples {
           }
         }
       }
-    }
+    }**/
 
-    return
     /************do id map and sampling************************/
     val negativeSampleRatio = 0.19
     println("Do id map and sampling")
