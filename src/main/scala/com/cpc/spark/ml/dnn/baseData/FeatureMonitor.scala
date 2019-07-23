@@ -329,17 +329,20 @@ object FeatureMonitor{
       println("count list:")
       println(instances_count_list)
       val cur_count = instances_count_list(instances_count_list.length - 1)
-      if (cur_count >= (avg_count.toDouble * 1.02).toLong) {
+      if (cur_count > (avg_count.toDouble * 1.02).toLong) {
         monitor_variety += "[Invalid Variety]value count("  + cur_count.toString + ") of feature " + feature_name + " exceeds 120% of average count(" + avg_count.toString + ") of past 15 days"
-      } else if (cur_count >= (avg_count.toDouble * 1.02).toLong) {
+      } else if (cur_count < (avg_count.toDouble * 0.8).toLong) {
         monitor_variety += "[Invalid Variety]value count("  + cur_count.toString + ") of feature " + feature_name + " less than 80% of average count(" + avg_count.toString + ") of past 15 days"
       }
     }
 
     if (monitor_frequency.nonEmpty || monitor_variety.nonEmpty) {
-      val data = sc.parallelize(monitor_frequency.mkString(";") + "\t" + monitor_variety.mkString(";"))
+      println(monitor_frequency)
+      println(monitor_variety)
       val monitor_res_path = des_dir + "/" + cur_date + "-monitor/alerts"
-      data.saveAsTextFile(monitor_res_path)
+      delete_hdfs_path(monitor_res_path)
+      val data = sc.parallelize(monitor_frequency.mkString(";") + "\t" + monitor_variety.mkString(";"))
+      data.repartition(1).saveAsTextFile(monitor_res_path)
     }
   }
 }
