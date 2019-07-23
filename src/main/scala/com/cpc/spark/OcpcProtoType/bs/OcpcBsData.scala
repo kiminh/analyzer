@@ -30,9 +30,6 @@ object OcpcBsData {
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
-    baseData
-        .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_data20190722a")
-    baseData.show(10)
 
     // 计算结果
     val data = calculateData(baseData, expTag, spark)
@@ -44,8 +41,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
