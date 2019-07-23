@@ -336,6 +336,10 @@ object FeatureMonitor{
       }
     }
 
-
+    if (monitor_frequency.nonEmpty || monitor_variety.nonEmpty) {
+      val data = sc.parallelize(monitor_frequency.mkString(";") + "\t" + monitor_variety.mkString(";"))
+      val monitor_res_path = des_dir + "/" + cur_date + "-monitor/alerts"
+      data.saveAsTextFile(monitor_res_path)
+    }
   }
 }
