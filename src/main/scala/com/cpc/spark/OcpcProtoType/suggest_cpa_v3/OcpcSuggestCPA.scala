@@ -96,7 +96,7 @@ object OcpcSuggestCPA {
          |  *,
          |  (case
          |    when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
-         |    when media = 'hottopic' and conversion_goal = 2 and industry = 'feedapp' then 20
+         |    when media = 'hottopic' and conversion_goal = 1 and industry = 'feedapp' then 20
          |    else 60
          |  end) as cv_threshold
          |FROM
