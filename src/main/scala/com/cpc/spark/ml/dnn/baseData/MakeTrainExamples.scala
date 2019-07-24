@@ -268,26 +268,26 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+              yield (line_list(idx).toLong, (sid, idx - 1))
           }
-        ).reduceByKey(_ ++ _)
+        )
 
         //RDD[(Long, (Array[(String, Int)], String))]
         val value_rdd_join = value_rdd.join(sparseMapOthers)
 
-        val value_rdd_join_reduced = value_rdd_join.flatMap(
-          rs => {
-            val pairs_array:Array[(String, Int)] = rs._2._1
-            val mapped_id = rs._2._2
-            for (pair <- pairs_array)
-              yield (pair._1, Array((pair._2, mapped_id)))
-          }
-        ).reduceByKey(_ ++ _)
+        //val value_rdd_join_reduced = value_rdd_join.flatMap(
+        //  rs => {
+        //    val pairs_array:Array[(String, Int)] = rs._2._1
+        //    val mapped_id = rs._2._2
+        //    for (pair <- pairs_array)
+        //      yield (pair._1, Array((pair._2, mapped_id)))
+        //  }
+        //).reduceByKey(_ ++ _)
 
-        //val value_rdd_join_reduced = value_rdd_join.map({
-        //  case(_, ((sid, idx), mapped_id)) =>
-        //    (sid, Array((idx, mapped_id)))
-        //}).reduceByKey(_ ++ _)
+        val value_rdd_join_reduced = value_rdd_join.map({
+          case(_, ((sid, idx), mapped_id)) =>
+            (sid, Array((idx, mapped_id)))
+        }).reduceByKey(_ ++ _)
 
 
         //println("value_rdd_count:" + value_rdd.count)
