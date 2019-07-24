@@ -1,7 +1,10 @@
 package com.cpc.spark.OcpcProtoType.model_v6
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
+import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDate
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -38,16 +41,24 @@ object OcpcSampleToPb {
 
     val data = getCalibrationData(date, hour, version, spark)
 
-    data
+    val adtype15List = getAdtype15(date, hour, 48, version, spark)
+    val resultDF = data
+      .join(adtype15List, Seq("identififer", "conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(1.0, Seq("ratio"))
+      .withColumn("jfb_factor_old", col("jfb_factor"))
+      .withColumn("jfb_factor", when(col("adtype") === 15, col("jfb_factor_old") /  col("ratio")).otherwise(col("jfb_factor_old")))
+    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_adtype15_data20190724a")
+
+    resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
 
-    savePbPack(data, fileName, spark)
+    savePbPack(resultDF, fileName, spark)
   }
 
   def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
@@ -227,6 +238,81 @@ object OcpcSampleToPb {
     adRecordList.writeTo(new FileOutputStream(fileName))
 
     println("complete save data into protobuffer")
+
+  }
+
+  def getAdtype15(date: String, hour: String, hourInt: Int, version: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  conversion_goal,
+         |  adtype
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  isclick = 1
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
+         |AND
+         |  adtype = 15
+       """.stripMargin
+    println(sqlRequest)
+    val data1 = spark
+      .sql(sqlRequest)
+      .distinct()
+
+    val data2 = getAdtype15Factor(version, spark)
+
+    val data = data1
+      .join(data2, Seq("conversion_goal", "exp_tag"), "inner")
+      .select("identifier", "conversion_goal", "exp_tag", "ratio")
+      .cache()
+
+
+    data.show(10)
+    data
+
+  }
+
+  def getAdtype15Factor(version: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_tag.adtype15")
+    val rawData = spark.read.format("json").json(confPath)
+    val data = rawData
+      .filter(s"version = '$version'")
+      .select("exp_tag", "conversion_goal", "ratio")
+      .distinct()
+
+    data.show(10)
+
+    data
 
   }
 
