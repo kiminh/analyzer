@@ -30,7 +30,7 @@ object OcpcCvrFactorBase {
 
     val result = OcpcCvrFactorBaseMain(date, hour, version, expTag, hourInt, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190702a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
   }
 
   def OcpcCvrFactorBaseMain(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark: SparkSession) = {
@@ -44,33 +44,54 @@ object OcpcCvrFactorBase {
     // 计算结果
     val result = calculatePCOC(baseData, spark)
 
-    val finalVersion = version + hourInt.toString
+    // 实验标签
+    // min_cv:配置文件中如果为负数或空缺，则用默认值40，其他情况使用设定值
+    val minCV = getExpConf(version, spark)
+
     val resultDF = result
-      .select("identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
-      .filter(s"cv > 0")
+      .select("unitid", "conversion_goal", "media", "cv", "pcoc")
+      .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
+      .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(40, Seq("min_cv"))
+      .filter(s"cv >= min_cv")
+      .withColumn("version", lit(version))
 
     resultDF
+  }
+
+  def getExpConf(version: String, spark: SparkSession) ={
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_config.cvr_factor")
+    val rawData = spark.read.format("json").json(confPath)
+    val data = rawData
+      .filter(s"version = '$version'")
+      .select("exp_tag", "conversion_goal", "min_cv")
+      .distinct()
+
+    data.show(10)
+
+    data
   }
 
 
 
   def calculatePCOC(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
-      .groupBy("unitid", "conversion_goal")
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("price")).alias("total_price"),
-        sum(col("bid")).alias("total_bid"),
-        countDistinct(col("hour")).alias("hour_cnt")
+        avg(col("exp_cvr")).alias("pre_cvr")
       )
-      .select("unitid", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc")
 
-    val result = data
-        .selectExpr("cast(unitid as string) identifier", "conversion_goal", "click", "cv", "pre_cvr", "total_price", "total_bid", "hour_cnt")
-
-    result
+    data
   }
 
 }
