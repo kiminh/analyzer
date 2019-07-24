@@ -45,7 +45,7 @@ object OcpcGetPbV3 {
 
     val result2 = OcpcGetPbWeishiMain(date, hour, version, media, expTag, hourInt, minCV, hourInt1, hourInt2, hourInt3, spark)
 
-    val resultDF = selectWeishiCali(expTag, result1, result2, date, hour, spark)
+    val resultDF = selectWeishiCali(expTag, result1, result2, date, hour, spark).cache()
 
 
     resultDF.show(10)
@@ -57,7 +57,7 @@ object OcpcGetPbV3 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
-      .repartition(5)
+      .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
