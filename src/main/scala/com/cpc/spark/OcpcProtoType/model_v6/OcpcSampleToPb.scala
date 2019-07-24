@@ -43,7 +43,7 @@ object OcpcSampleToPb {
 
     val adtype15List = getAdtype15(date, hour, 48, version, spark)
     val resultDF = data
-      .join(adtype15List, Seq("identififer", "conversion_goal", "exp_tag"), "left_outer")
+      .join(adtype15List, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .na.fill(1.0, Seq("ratio"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", when(col("adtype") === 15, col("jfb_factor_old") /  col("ratio")).otherwise(col("jfb_factor_old")))
