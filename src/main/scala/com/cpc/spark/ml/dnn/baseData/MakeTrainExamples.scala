@@ -364,11 +364,11 @@ object MakeTrainExamples {
         val key = (line(1).toLong - 1L).toString
         (field, key)
       }
-    }
-    println("sparseMap.size=" + sparseMap.count)
-    val sparse_size = sparseMap.count
-    //val sparse_size_bc = sc.broadcast(sparse_size)
-    //val sparseMapBC = sc.broadcast(sparseMap)
+    }.collectAsMap()
+    println("sparseMap.size=" + sparseMap.size)
+    val sparse_size = sparseMap.size.toLong
+    val sparse_size_bc = sc.broadcast(sparse_size)
+    val sparseMapBC = sc.broadcast(sparseMap)
 
     /************************load map********************************/
     println("load uid sparseMap")
