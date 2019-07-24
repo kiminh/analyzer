@@ -202,24 +202,24 @@ object MakeTrainExamples {
     println("sparseMap.size=" + sparseMap.count)
 
     /************check sid************************/
-    println("Check Sample Index")
-    for (src_date <- src_date_list) {
-      val tf_text = des_dir + "/" + src_date + "-text"
-      if (exists_hdfs_path(tf_text)) {
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("date:" + src_date)
-        val rdd = sc.textFile(tf_text).map(
-          f = rs => {
-            val line_list = rs.split("\t")
-            (line_list(0), 1)
-          }
-        )
-        println("text lines:" + rdd.count.toString)
-        val reduce_lines = rdd.reduceByKey(_ + _).count
-        println("reduced lines:" + reduce_lines)
-      }
-    }
-    println("Done.......")
+    //println("Check Sample Index")
+    //for (src_date <- src_date_list) {
+    //  val tf_text = des_dir + "/" + src_date + "-text"
+    //  if (exists_hdfs_path(tf_text)) {
+    //    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    //    println("date:" + src_date)
+    //    val rdd = sc.textFile(tf_text).map(
+    //      f = rs => {
+    //        val line_list = rs.split("\t")
+    //        (line_list(0), 1)
+    //      }
+    //    )
+    //    println("text lines:" + rdd.count.toString)
+    //    val reduce_lines = rdd.reduceByKey(_ + _).count
+    //    println("reduced lines:" + reduce_lines)
+    //  }
+    //}
+    //println("Done.......")
 
     println("Do Mapping Complete Features")
     for (src_date <- src_date_list) {
