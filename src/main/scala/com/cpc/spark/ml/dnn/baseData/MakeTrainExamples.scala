@@ -453,7 +453,6 @@ object MakeTrainExamples {
             line_list.mkString("\t")
           }
         ).saveAsTextFile(tf_plain_mapped_path)
-
       }
     }
     println("Done.......")
