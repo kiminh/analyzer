@@ -134,7 +134,7 @@ object MakeTrainExamples {
     println("Done.......")
 
     /************Collect instances for sparse features************************/
-    println("Collect instances and map continuous index for sparse features' value")
+    println("Collect sparse features' values and map to continuous index")
     val tf_text_file_collect = ArrayBuffer[String]()
     for (src_date <- src_date_list) {
       val tf_text = des_dir + "/" + src_date + "-text"
