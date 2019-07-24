@@ -290,7 +290,7 @@ object OcpcSampleToPb {
     val data2 = getAdtype15Factor(version, spark)
 
     val data = data1
-      .join(data2, Seq("conversion_goal", "exp_tag"), "inner")
+      .join(data2, Seq("conversion_goal"), "inner")
       .select("identifier", "conversion_goal", "exp_tag", "ratio")
       .cache()
 
