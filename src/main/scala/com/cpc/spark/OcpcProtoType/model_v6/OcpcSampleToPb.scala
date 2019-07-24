@@ -47,7 +47,6 @@ object OcpcSampleToPb {
       .na.fill(1.0, Seq("ratio"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") /  col("ratio"))
-    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_adtype15_data20190724a")
 
     resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -55,8 +54,8 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_v2")
 
     savePbPack(resultDF, fileName, spark)
   }
