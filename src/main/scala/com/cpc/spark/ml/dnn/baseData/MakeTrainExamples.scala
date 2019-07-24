@@ -364,11 +364,11 @@ object MakeTrainExamples {
         val key = (line(1).toLong - 1L).toString
         (field, key)
       }
-    }.collectAsMap()
-    println("sparseMap.size=" + sparseMap.size)
-    val sparse_size = sparseMap.size.toLong
-    val sparse_size_bc = sc.broadcast(sparse_size)
-    val sparseMapBC = sc.broadcast(sparseMap)
+    }
+    println("sparseMap.size=" + sparseMap.count)
+    val sparse_size = sparseMap.count
+    //val sparse_size_bc = sc.broadcast(sparse_size)
+    //val sparseMapBC = sc.broadcast(sparseMap)
 
     /************************load map********************************/
     println("load uid sparseMap")
@@ -379,11 +379,11 @@ object MakeTrainExamples {
         val key = (line(1).toLong - 1L).toString
         (field, key)
       }
-    }.collectAsMap()
-    println("sparseMapUid.size=" + sparseMapUid.size)
-    val sparse_size_uid = sparseMapUid.size.toLong
-    val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
-    val sparseMapUidBC = sc.broadcast(sparseMapUid)
+    }
+    println("sparseMapUid.size=" + sparseMapUid.count)
+    val sparse_size_uid = sparseMapUid.count
+    //val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
+    //val sparseMapUidBC = sc.broadcast(sparseMapUid)
 
     val sparse_size_total = sparse_size + sparse_size_uid
     val sparse_size_total_bc = sc.broadcast(sparse_size_total)
@@ -397,24 +397,30 @@ object MakeTrainExamples {
       if (!exists_hdfs_path(tf_plain_mapped_path_uid) && exists_hdfs_path(tf_text)) {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("make " + tf_plain_mapped_path_uid)
-        sc.textFile(tf_text).map(
+        val uid_rdd = sc.textFile(tf_text).map(
           rs => {
             output.mkString("\t")
             val line_list = rs.split("\t")
             val dense = line_list(3).split(";")
+
             val uid_idx = 25
+            val uid_value = dense(uid_idx).toLong
+
             val dense_other = scala.collection.mutable.ArrayBuffer[String]()
             for (idx <- dense.indices) {
               if (idx != uid_idx) {
                 dense_other += dense(idx)
               }
             }
-            val uid_value = dense(uid_idx).toLong
-            val mapped_uid_value = sparse_size_bc.value + sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
             line_list(3) = dense_other.mkString(";")
-            mapped_uid_value + "\t" + line_list.mkString("\t")
+
+            (uid_value, line_list.mkString("\t"))
           }
-        ).saveAsTextFile(tf_plain_mapped_path_uid)
+        )
+        val uid_rdd_join = uid_rdd.join(sparseMapUid)
+        println("uid_rdd_count:" + uid_rdd.count)
+        println("uid_rdd_join_count:" + uid_rdd_join.count)
+        uid_rdd_join.map({case (key, value) => key + "\t" + value._2 + "\t" + value._1}).saveAsTextFile(tf_plain_mapped_path_uid)
       }
     }
     println("Done.......")
