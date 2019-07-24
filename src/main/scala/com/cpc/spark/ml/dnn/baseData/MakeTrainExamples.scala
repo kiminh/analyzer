@@ -257,7 +257,7 @@ object MakeTrainExamples {
             (sid, Array((idx, mapped_id)))
         }).reduceByKey(_ ++ _)
         println("value_rdd_count:" + value_rdd.count)
-        println("value_rdd_join_count:" + value_rdd_join.count)
+        //println("value_rdd_join_count:" + value_rdd_join.count)
         println("value_rdd_join_reduced_count:" + value_rdd_join_reduced.count)
 
         val value_rdd_join_reduced_compact = value_rdd_join_reduced.map({
