@@ -46,7 +46,7 @@ object OcpcSampleToPb {
       .join(adtype15List, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .na.fill(1.0, Seq("ratio"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
-      .withColumn("jfb_factor", when(col("adtype") === 15, col("jfb_factor_old") /  col("ratio")).otherwise(col("jfb_factor_old")))
+      .withColumn("jfb_factor", col("jfb_factor_old") /  col("ratio"))
     resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_adtype15_data20190724a")
 
     resultDF
@@ -291,7 +291,7 @@ object OcpcSampleToPb {
 
     val data = data1
       .join(data2, Seq("conversion_goal"), "inner")
-      .select("identifier", "conversion_goal", "exp_tag", "ratio")
+      .select("identifier", "conversion_goal", "exp_tag", "adtype", "ratio")
       .cache()
 
 
