@@ -329,6 +329,7 @@ object MakeTrainExamples {
     for (src_date <- src_date_list) {
       val curr_file_src = src_dir + "/" + src_date
       val tf_plain_mapped_path_uid = des_dir + "/" + src_date + "-text-mapped-uid"
+      val tf_plain_mapped_path = des_dir + "/" + src_date + "-text-mapped"
       if (!exists_hdfs_path(tf_plain_mapped_path_uid) && exists_hdfs_path(curr_file_src)) {
         val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -338,6 +339,42 @@ object MakeTrainExamples {
         importedDf.show(3)
 
         importedDf.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            var label = "0.0"
+            if (label_arr.head == 1L) {
+              label = "1.0"
+            }
+
+            val idx_arr_list = idx_arr.map(x => sparseMapBC.value.getOrElse(x, sparse_size_total_bc.value.toString))
+            val dense_list = dense.map(x => sparseMapBC.value.getOrElse(x, sparse_size_total_bc.value.toString))
+            //val uid_value = dense_list(25)
+            //val mapped_uid_value = sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+            //val dense_list_update = dense_list.updated(25, mapped_uid_value)
+
+            val output = scala.collection.mutable.ArrayBuffer[String]()
+            output += sample_idx.toString
+            output += label
+            output += label_arr.map(_.toString).mkString(";")
+            //output += dense_list_update.mkString(";")
+            output += dense_list.mkString(";")
+            output += idx0.map(_.toString).mkString(";")
+            output += idx1.map(_.toString).mkString(";")
+            output += idx2.map(_.toString).mkString(";")
+            output += idx_arr_list.mkString(";")
+
+            output.mkString("\t")
+          }
+        ).saveAsTextFile(tf_plain_mapped_path)
+
+        /*importedDf.rdd.map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
             val idx1 = rs.getSeq[Long](1)
@@ -368,7 +405,7 @@ object MakeTrainExamples {
 
             output.mkString("\t")
           }
-        ).saveAsTextFile(tf_plain_mapped_path_uid)
+        ).saveAsTextFile(tf_plain_mapped_path_uid)*/
 
         //importedDf.rdd.map(
         //  rs => {
