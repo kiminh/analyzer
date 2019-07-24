@@ -193,8 +193,9 @@ object MakeTrainExamples {
 
 
     /************************load map********************************/
-    println("Load SparseMap")
-    val sparseMap = sc.textFile(instances_all_map).map{
+    println("Load Uid SparseMap")
+    val instances_all_map_uid = des_dir + "/" + instances_file + "-mapped-uid"
+    val sparseMapUid = sc.textFile(instances_all_map_uid).map{
       rs => {
         val line = rs.split("\t")
         val field = line(0).toLong
@@ -202,7 +203,20 @@ object MakeTrainExamples {
         (field, key)
       }
     }
-    println("sparseMap.size=" + sparseMap.count)
+    println("sparseMapUid.size=" + sparseMapUid.count)
+
+    println("Load Others SparseMap")
+    val instances_all_map_others = des_dir + "/" + instances_file + "-mapped-others"
+    val sparseMapOthers = sc.textFile(instances_all_map_others).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = (line(1).toLong - 1L).toString
+        (field, key)
+      }
+    }
+    println("sparseMapOthers.size=" + sparseMapOthers.count)
+    val sparse_map_others_count = sparseMapOthers.count
 
     /************check sid************************/
     //println("Check Sample Index")
@@ -226,118 +240,108 @@ object MakeTrainExamples {
 
     println("Do Mapping Complete Features")
     for (src_date <- src_date_list) {
-      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
+      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others"
       val tf_text = des_dir + "/" + src_date + "-text"
-      if (!exists_hdfs_path(tf_text_mapped) && exists_hdfs_path(tf_text)) {
+      if (!exists_hdfs_path(tf_text_mapped_others) && exists_hdfs_path(tf_text)) {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("make " + tf_text_mapped)
-        var data = sc.parallelize(Array[String]())
-
-        val tf_text_collect = ArrayBuffer[String]()
-        for (idx <- 0 until 10) {
-          val collect_list = ArrayBuffer[String]()
-          for (jdx <- 0 until 100) {
-            val part = "part-%05d".format(jdx + idx * 100)
-            collect_list += tf_text + "/" + part
+        println("make " + tf_text_mapped_others)
+        val value_rdd = sc.textFile(tf_text).map(
+          rs => {
+            val line_list = rs.split("\t")
+            val sid = line_list(0)
+            val dense = line_list(3).split(";")
+            val idx_arr = line_list(7).split(";")
+            val keys_other = scala.collection.mutable.ArrayBuffer[String]()
+            keys_other += sid
+            for (idx <- dense.indices) {
+              if (idx != 25) {
+                keys_other += dense(idx)
+              }
+            }
+            for (idx <- idx_arr.indices) {
+                keys_other += idx_arr(idx)
+            }
+            keys_other.mkString("\t")
           }
-          tf_text_collect += collect_list.mkString(",")
-        }
+        ).flatMap(
+          rs => {
+            val line_list = rs.split("\t")
+            val sid = line_list(0)
+            for (idx <- 1 until line_list.length)
+              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+          }
+        ).reduceByKey(_ ++ _)
 
-        for (files <- tf_text_collect) {
-          println("******************************************")
-          println("trans part:" + files)
-          val value_rdd = sc.textFile(files).map(
-            rs => {
-              val line_list = rs.split("\t")
-              val sid = line_list(0)
-              val dense = line_list(3).split(";")
-              val idx_arr = line_list(7).split(";")
+        //RDD[(Long, (Array[(String, Int)], String))]
+        val value_rdd_join = value_rdd.join(sparseMapOthers)
 
-              sid + "\t" + dense.mkString("\t") + "\t" + idx_arr.mkString("\t")
+        val value_rdd_join_reduced = value_rdd_join.flatMap(
+          rs => {
+            val pairs_array = rs._2._1
+            val mapped_id = rs._2._2
+            for ((sid, idx) <- pairs_array)
+              yield (sid, Array[(Int, String)](idx, mapped_id))
+          }
+        ).reduceByKey(_ ++ _)
+
+        //val value_rdd_join_reduced = value_rdd_join.map({
+        //  case(_, ((sid, idx), mapped_id)) =>
+        //    (sid, Array((idx, mapped_id)))
+        //}).reduceByKey(_ ++ _)
+
+
+        //println("value_rdd_count:" + value_rdd.count)
+        //println("value_rdd_join_count:" + value_rdd_join.count)
+        //println("value_rdd_join_reduced_count:" + value_rdd_join_reduced.count)
+
+        val value_rdd_join_reduced_compact = value_rdd_join_reduced.map({
+          case(sid, mapped_pair_array) =>
+            val total_len = mapped_pair_array.length
+            val len_one_hot = 27
+            val mapped_list:Array[String] = new Array[String](total_len)
+            for ((jdx, mapped_id) <- mapped_pair_array) {
+              mapped_list(jdx) = mapped_id
             }
-          ).flatMap(
-            rs => {
-              val line_list = rs.split("\t")
-              val sid = line_list(0)
-              for (idx <- 1 until line_list.length)
-                yield (line_list(idx).toLong, Array(sid + ";" + (idx - 1).toString))
+            val list_one_hot:Array[String] = new Array[String](len_one_hot)
+            val list_multi_hot:Array[String] = new Array[String](total_len - len_one_hot)
+            for (idx <- 0 until len_one_hot) {
+              list_one_hot(idx) = mapped_list(idx)
             }
-          ).reduceByKey(_ ++ _)
-
-          //RDD[(Long, (Array[String], String))]
-          val value_rdd_join = value_rdd.join(sparseMap)
-          val value_rdd_join_reduced = value_rdd_join.flatMap(
-            rs => {
-              val array_str = rs._2._1
-              val mapped_id = rs._2._2
-              for (elem <- array_str)
-                yield (elem.split(";")(0), Array((elem.split(";")(1), mapped_id)))
+            for (idx <- 0 until (total_len - len_one_hot)) {
+              list_multi_hot(idx) = mapped_list(idx + len_one_hot)
             }
-          ).reduceByKey(_ ++ _)
+            (sid.toString, list_one_hot.mkString(";") + "\t" + list_multi_hot.mkString(";"))
+        })
 
-          //val value_rdd_join_reduced = value_rdd_join.map({
-          //  case(_, ((sid, idx), mapped_id)) =>
-          //    (sid, Array((idx, mapped_id)))
-          //}).reduceByKey(_ ++ _)
+        println("value_rdd_join_reduced_compact_count:" + value_rdd_join_reduced_compact.count)
 
+        val info_rdd = sc.textFile(tf_text).map(
+          rs => {
+            val line_list = rs.split("\t")
+            val sid = line_list(0)
+            val label = line_list(1)
+            val label_arr = line_list(2)
+            val idx0 = line_list(4)
+            val idx1 = line_list(5)
+            val idx2 = line_list(6)
+            val dense = line_list(3).split(";")
+            val info = Array(dense(25), label, label_arr, idx0, idx1, idx2)
+            (sid, info.mkString("\t"))
+          }
+        )
+        println("info_rdd_count:" + info_rdd.count)
 
-          //println("value_rdd_count:" + value_rdd.count)
-          //println("value_rdd_join_count:" + value_rdd_join.count)
-          //println("value_rdd_join_reduced_count:" + value_rdd_join_reduced.count)
-
-          val value_rdd_join_reduced_compact = value_rdd_join_reduced.map({
-            case(sid, mapped_pair_array) =>
-              val total_len = mapped_pair_array.length
-              val len_one_hot = 28
-              val mapped_list:Array[String] = new Array[String](total_len)
-              for ((idx, mapped_id) <- mapped_pair_array) {
-                mapped_list(idx.toInt) = mapped_id
-              }
-              val list_one_hot:Array[String] = new Array[String](len_one_hot)
-              val list_multi_hot:Array[String] = new Array[String](total_len - len_one_hot)
-              for (idx <- 0 until len_one_hot) {
-                list_one_hot(idx) = mapped_list(idx)
-              }
-              for (idx <- 0 until (total_len - len_one_hot)) {
-                list_multi_hot(idx) = mapped_list(idx + len_one_hot)
-              }
-              (sid, list_one_hot.mkString(";") + "\t" + list_multi_hot.mkString(";"))
-          })
-
-          println("value_rdd_join_reduced_compact_count:" + value_rdd_join_reduced_compact.count)
-
-          val info_rdd = sc.textFile(files).map(
-            rs => {
-              val line_list = rs.split("\t")
-              val sid = line_list(0)
-              val label = line_list(1)
-              val label_arr = line_list(2)
-              val idx0 = line_list(4)
-              val idx1 = line_list(5)
-              val idx2 = line_list(6)
-              val info = Array(label, label_arr, idx0, idx1, idx2)
-              (sid, info.mkString("\t"))
-            }
-          )
-          println("info_rdd_count:" + info_rdd.count)
-
-          val ult_rdd = info_rdd.join(value_rdd_join_reduced_compact)
-          println("ult_rdd_count:" + ult_rdd.count)
-
-          data = data.union(
-            ult_rdd.map({
-              case(sid, (info, mapped_values)) =>
-                //sid + info = Array(label, label_arr, idx0, idx1, idx2) + mapped_values
-                sid + "\t" + info + "\t" + mapped_values
-            })
-          )
-          println("current data length:" + data.count)
-        }
-        data.repartition(1000).saveAsTextFile(tf_text_mapped)
+        val ult_rdd = info_rdd.join(value_rdd_join_reduced_compact)
+        println("ult_rdd_count:" + ult_rdd.count)
+        ult_rdd.map({
+          case(sid, (info, mapped_values)) =>
+            //sid + info = Array(label, label_arr, idx0, idx1, idx2) + mapped_values
+            sid + "\t" + info + "\t" + mapped_values
+        }).repartition(1000).saveAsTextFile(tf_text_mapped_others)
       }
-
     }
     println("Done.......")
+    return
 
 
     /************do id map and sampling************************/
