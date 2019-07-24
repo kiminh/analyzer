@@ -156,7 +156,7 @@ object MakeTrainExamples {
               output += dense(idx)
             }
             for (idx <- idx_arr.indices) {
-              output += dense(idx)
+              output += idx_arr(idx)
             }
             output.mkString("\t")
           }
