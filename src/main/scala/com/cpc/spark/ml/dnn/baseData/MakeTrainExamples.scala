@@ -144,31 +144,27 @@ object MakeTrainExamples {
     }
     val instances_all = des_dir + "/" + instances_file
     if (!exists_hdfs_path(instances_all)) {
-      var data = sc.parallelize(Array[(String, Long)]())
-      data = data.union(
-        sc.textFile(tf_text_file_collect.mkString(",")).map(
-          rs => {
-            val line_list = rs.split("\t")
-            val dense = line_list(3).split(";")
-            val idx_arr = line_list(7).split(";")
-            val output = ArrayBuffer[String]()
-            for (idx <- dense.indices) {
-              output += dense(idx)
-            }
-            for (idx <- idx_arr.indices) {
-              output += idx_arr(idx)
-            }
-            output.mkString("\t")
+      sc.textFile(tf_text_file_collect.mkString(",")).map(
+        rs => {
+          val line_list = rs.split("\t")
+          val dense = line_list(3).split(";")
+          val idx_arr = line_list(7).split(";")
+          val output = ArrayBuffer[String]()
+          for (idx <- dense.indices) {
+            output += dense(idx)
           }
-        ).flatMap(
-          rs => {
-            val line = rs.split("\t")
-            for (elem <- line)
-              yield (elem, 1L)
+          for (idx <- idx_arr.indices) {
+            output += idx_arr(idx)
           }
-        ).reduceByKey(_ + _)
-      ).reduceByKey(_ + _)
-      data.repartition(1).sortBy(_._2 * -1).map {
+          output.mkString("\t")
+        }
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
+        }
+      ).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.saveAsTextFile(instances_all)
