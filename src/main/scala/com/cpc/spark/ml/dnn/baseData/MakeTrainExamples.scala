@@ -252,7 +252,7 @@ object MakeTrainExamples {
               val line_list = rs.split("\t")
               val sid = line_list(0)
               for (idx <- 1 until line_list.length)
-                yield (line_list(idx).toLong, Array(sid + ";" + idx.toString))
+                yield (line_list(idx).toLong, Array(sid + ";" + (idx - 1).toString))
             }
           ).reduceByKey(_ ++ _)
 
