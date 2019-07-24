@@ -419,16 +419,6 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
-
-    //output += mapped_uid_value
-    //output += sample_idx.toString
-    //output += label
-    //output += label_arr.map(_.toString).mkString(";")
-    //output += dense.map(_.toString).mkString(";")
-    //output += idx0.map(_.toString).mkString(";")
-    //output += idx1.map(_.toString).mkString(";")
-    //output += idx2.map(_.toString).mkString(";")
-    //output += idx_arr.map(_.toString).mkString(";")
     println("Do mapping other features")
     for (src_date <- src_date_list) {
       val tf_plain_mapped_path = des_dir + "/" + src_date + "-text-mapped"
