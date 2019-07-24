@@ -420,7 +420,7 @@ object MakeTrainExamples {
         val uid_rdd_join = uid_rdd.join(sparseMapUid)
         println("uid_rdd_count:" + uid_rdd.count)
         println("uid_rdd_join_count:" + uid_rdd_join.count)
-        uid_rdd_join.map({case (key, value) => key + "\t" + value._2 + "\t" + value._1}).saveAsTextFile(tf_plain_mapped_path_uid)
+        uid_rdd_join.map({case (key, value) => key + "\t" + value._2 + "\t" + value._1}).repartition(1000).saveAsTextFile(tf_plain_mapped_path_uid)
       }
     }
     println("Done.......")
