@@ -334,6 +334,7 @@ object MakeTrainExamples {
         println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
         importedDf.printSchema()
         importedDf.show(3)
+
         importedDf.rdd.map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
@@ -349,43 +350,75 @@ object MakeTrainExamples {
               label = "1.0"
             }
 
-            val idx_arr_list = idx_arr.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
-            val dense_list = dense.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
-            //val uid_value = dense_list(25)
-            //val mapped_uid_value = sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
-            //val dense_list_update = dense_list.updated(25, mapped_uid_value)
+            val uid_value = dense(25)
+            val mapped_uid_value = sparse_size_bc.value + sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+            val dense_update = dense.updated(25, mapped_uid_value)
 
             val output = scala.collection.mutable.ArrayBuffer[String]()
             output += sample_idx.toString
             output += label
             output += label_arr.map(_.toString).mkString(";")
-            //output += dense_list_update.mkString(";")
-            output += dense_list.mkString(";")
+            output += dense_update.map(_.toString).mkString(";")
             output += idx0.map(_.toString).mkString(";")
             output += idx1.map(_.toString).mkString(";")
             output += idx2.map(_.toString).mkString(";")
-            output += idx_arr_list.mkString(";")
+            output += idx_arr.map(_.toString).mkString(";")
 
             output.mkString("\t")
           }
         ).saveAsTextFile(tf_plain_mapped_path)
-      }
 
-      val tf_plain_mapped_path_cp = des_dir + "/" + src_date + "-text-mapped-complete"
-      if (!exists_hdfs_path(tf_plain_mapped_path_cp) && exists_hdfs_path(tf_plain_mapped_path)) {
-        sc.textFile(tf_plain_mapped_path).map(
-          rs => {
+        //importedDf.rdd.map(
+        //  rs => {
+        //    val idx2 = rs.getSeq[Long](0)
+        //    val idx1 = rs.getSeq[Long](1)
+        //    val idx_arr = rs.getSeq[Long](2)
+        //    val idx0 = rs.getSeq[Long](3)
+        //    val sample_idx = rs.getLong(4)
+        //    val label_arr = rs.getSeq[Long](5)
+        //    val dense = rs.getSeq[Long](6)
 
-            val line_list = rs.split("\t")
-            val dense = line_list(3).split(";")
-            val uid_value = dense(25).toLong
-            val mapped_uid_value = sparse_size_bc.value + sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
-            dense(25) = mapped_uid_value
-            line_list(3) = dense.mkString(";")
-            line_list.mkString("\t")
-          }
-        ).saveAsTextFile(tf_plain_mapped_path_cp)
-      }
+        //    var label = "0.0"
+        //    if (label_arr.head == 1L) {
+        //      label = "1.0"
+        //    }
+
+        //    val idx_arr_list = idx_arr.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
+        //    val dense_list = dense.map(x => sparseMap.getOrElse(x, sparse_size_total_bc.value.toString))
+        //    //val uid_value = dense_list(25)
+        //    //val mapped_uid_value = sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+        //    //val dense_list_update = dense_list.updated(25, mapped_uid_value)
+
+        //    val output = scala.collection.mutable.ArrayBuffer[String]()
+        //    output += sample_idx.toString
+        //    output += label
+        //    output += label_arr.map(_.toString).mkString(";")
+        //    //output += dense_list_update.mkString(";")
+        //    output += dense_list.mkString(";")
+        //    output += idx0.map(_.toString).mkString(";")
+        //    output += idx1.map(_.toString).mkString(";")
+        //    output += idx2.map(_.toString).mkString(";")
+        //    output += idx_arr_list.mkString(";")
+
+        //    output.mkString("\t")
+        //  }
+        //).saveAsTextFile(tf_plain_mapped_path)
+
+        //val tf_plain_mapped_path_cp = des_dir + "/" + src_date + "-text-mapped-complete"
+        //if (!exists_hdfs_path(tf_plain_mapped_path_cp) && exists_hdfs_path(tf_plain_mapped_path)) {
+        //  sc.textFile(tf_plain_mapped_path).map(
+        //    rs => {
+
+        //      val line_list = rs.split("\t")
+        //      val dense = line_list(3).split(";")
+        //      val uid_value = dense(25).toLong
+        //      val mapped_uid_value = sparse_size_bc.value + sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+        //      dense(25) = mapped_uid_value
+        //      line_list(3) = dense.mkString(";")
+        //      line_list.mkString("\t")
+        //    }
+        //  ).saveAsTextFile(tf_plain_mapped_path_cp)
+        //}
     }
     println("Done.......")
 
