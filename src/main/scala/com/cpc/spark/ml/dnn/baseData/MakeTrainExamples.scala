@@ -233,12 +233,20 @@ object MakeTrainExamples {
         println("make " + tf_text_mapped)
         var data = sc.parallelize(Array[String]())
 
-        for (idx <- 0 until 1000) {
-          val part = "part-%05d".format(idx)
-          val tf_text_part = tf_text + "/" + part
+        val tf_text_collect = ArrayBuffer[String]()
+        for (idx <- 0 until 10) {
+          val collect_list = ArrayBuffer[String]()
+          for (jdx <- 0 until 100) {
+            val part = "part-%05d".format(jdx + idx * 100)
+            collect_list += tf_text + "/" + part
+          }
+          tf_text_collect += collect_list.mkString(",")
+        }
+
+        for (files <- tf_text_collect) {
           println("******************************************")
-          println("trans part:" + tf_text_part)
-          val value_rdd = sc.textFile(tf_text_part).map(
+          println("trans part:" + files)
+          val value_rdd = sc.textFile(files).map(
             rs => {
               val line_list = rs.split("\t")
               val sid = line_list(0)
@@ -298,7 +306,7 @@ object MakeTrainExamples {
 
           println("value_rdd_join_reduced_compact_count:" + value_rdd_join_reduced_compact.count)
 
-          val info_rdd = sc.textFile(tf_text_part).map(
+          val info_rdd = sc.textFile(files).map(
             rs => {
               val line_list = rs.split("\t")
               val sid = line_list(0)
