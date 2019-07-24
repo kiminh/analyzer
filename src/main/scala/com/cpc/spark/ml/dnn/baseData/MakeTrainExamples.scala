@@ -303,6 +303,7 @@ object MakeTrainExamples {
     println("sparseMap.size=" + sparseMap.size)
     val sparse_size = sparseMap.size.toLong
     val sparse_size_bc = sc.broadcast(sparse_size)
+    val sparseMapBC = sc.broadcast(sparseMap)
 
     /************************load map********************************/
     println("load uid sparseMap")
@@ -317,6 +318,7 @@ object MakeTrainExamples {
     println("sparseMapUid.size=" + sparseMapUid.size)
     val sparse_size_uid = sparseMapUid.size.toLong
     val sparse_size_uid_bc = sc.broadcast(sparse_size_uid)
+    val sparseMapUidBC = sc.broadcast(sparseMapUid)
 
     val sparse_size_total = sparse_size + sparse_size_uid
     val sparse_size_total_bc = sc.broadcast(sparse_size_total)
@@ -351,7 +353,7 @@ object MakeTrainExamples {
             }
 
             val uid_value = dense(25)
-            val mapped_uid_value = sparse_size_bc.value + sparseMapUid.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
+            val mapped_uid_value = sparse_size_bc.value + sparseMapUidBC.value.getOrElse(uid_value.toLong, sparse_size_total_bc.value.toString)
             val dense_update = dense.updated(25, mapped_uid_value)
 
             val output = scala.collection.mutable.ArrayBuffer[String]()
