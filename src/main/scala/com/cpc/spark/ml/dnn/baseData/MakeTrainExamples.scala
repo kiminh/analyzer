@@ -290,6 +290,51 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_map)
     }
 
+    /************make text examples************************/
+    println("Make text examples")
+    for (src_date <- src_date_list) {
+      val curr_file_src = src_dir + "/" + src_date
+      val tf_text = des_dir + "/" + src_date + "-text"
+      if (!exists_hdfs_path(tf_text) && exists_hdfs_path(curr_file_src)) {
+        val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
+        println("DF file count:" + importedDf.count().toString + " of file:" + curr_file_src_collect)
+        importedDf.printSchema()
+        importedDf.show(3)
+
+        importedDf.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            var label = "0.0"
+            if (label_arr.head == 1L) {
+              label = "1.0"
+            }
+
+            val output = scala.collection.mutable.ArrayBuffer[String]()
+            output += sample_idx.toString
+            output += label
+            output += label_arr.map(_.toString).mkString(";")
+            output += dense.map(_.toString).mkString(";")
+            output += idx0.map(_.toString).mkString(";")
+            output += idx1.map(_.toString).mkString(";")
+            output += idx2.map(_.toString).mkString(";")
+            output += idx_arr.map(_.toString).mkString(";")
+
+            output.mkString("\t")
+          }
+        ).saveAsTextFile(tf_text)
+      }
+    }
+    println("Done.......")
+
     /************************load map********************************/
     println("load other sparseMap")
     val sparseMap = sc.textFile(instances_all_map).map{
