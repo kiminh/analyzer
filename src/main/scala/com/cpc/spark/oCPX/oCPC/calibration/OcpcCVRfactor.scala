@@ -90,7 +90,7 @@ object OcpcCVRfactor {
     // 备用校准模型
     val data2 = dataRaw2
       .withColumn("pcoc2", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc1")
+      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc2")
 
     // 数据表关联
     val data = data2
