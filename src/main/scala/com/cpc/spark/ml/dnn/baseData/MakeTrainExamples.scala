@@ -101,7 +101,7 @@ object MakeTrainExamples {
     println("Decode instances for id feature from TF")
     /************Decode instances for id feature from TF************************/
     for (src_date <- src_date_list) {
-      val map_path = des_dir + "/instances-" + src_date + "-collect"
+      val map_path = des_dir + "/instances/instances-" + src_date + "-collect"
       if (!exists_hdfs_path(map_path)) {
         val curr_file_src = src_dir + "/" + src_date + "/part-r-*"
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src)
@@ -149,8 +149,8 @@ object MakeTrainExamples {
     println("Collect instances for uid and other features")
     /************Decode instances for id feature from TF************************/
     for (src_date <- src_date_list) {
-      val map_path = des_dir + "/instances-" + src_date + "-collect"
-      val instances_path = des_dir + "/instances-" + src_date
+      val map_path = des_dir + "/instances/instances-" + src_date + "-collect"
+      val instances_path = des_dir + "/instances/instances-" + src_date
       if (!exists_hdfs_path(instances_path)) {
         var data = sc.parallelize(Array[(String, Long)]())
         data = data.union(
@@ -180,7 +180,7 @@ object MakeTrainExamples {
         }.repartition(1).saveAsTextFile(instances_path)
       }
 
-      val instances_path_uid = des_dir + "/instances-" + src_date + "-uid"
+      val instances_path_uid = des_dir + "/instances/instances-" + src_date + "-uid"
       if (!exists_hdfs_path(instances_path_uid)) {
         var data = sc.parallelize(Array[(String, Long)]())
         data = data.union(
@@ -204,8 +204,8 @@ object MakeTrainExamples {
     val output_uid = scala.collection.mutable.ArrayBuffer[String]()
     val output = scala.collection.mutable.ArrayBuffer[String]()
     for (src_date <- src_date_list) {
-      val instances_path = des_dir + "/instances-" + src_date
-      val instances_path_uid = des_dir + "/instances-" + src_date + "-uid"
+      val instances_path = des_dir + "/instances/instances-" + src_date
+      val instances_path_uid = des_dir + "/instances/instances-" + src_date + "-uid"
       if (exists_hdfs_path(instances_path)) {
         output += instances_path
       }
@@ -216,7 +216,7 @@ object MakeTrainExamples {
 
     val src_instances_files_uid = output_uid.mkString(",")
     //统计uid特征的每个取值出现的次数
-    val instances_all_uid = des_dir + "/" + instances_file + "-uid"
+    val instances_all_uid = des_dir + "/instances/" + instances_file + "-uid"
     if (!exists_hdfs_path(instances_all_uid)) {
       var data = sc.parallelize(Array[(String, Long)]())
       data = data.union(
@@ -235,7 +235,7 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all_uid)
     }
 
-    val instances_all_map_uid = des_dir + "/" + instances_file + "-uid-mapped"
+    val instances_all_map_uid = des_dir + "/instances/" + instances_file + "-uid-mapped"
     if (!exists_hdfs_path(instances_all_map_uid)) {
       val acc = new LongAccumulator
       spark.sparkContext.register(acc)
@@ -255,7 +255,7 @@ object MakeTrainExamples {
     /************************make total instances for other featuires********************************/
     val src_instances_files = output.mkString(",")
     //统计所有ID特征的每个取值出现的次数
-    val instances_all = des_dir + "/" + instances_file
+    val instances_all = des_dir + "/instances/" + instances_file
     if (!exists_hdfs_path(instances_all)) {
       var data = sc.parallelize(Array[(String, Long)]())
       data = data.union(
@@ -274,7 +274,7 @@ object MakeTrainExamples {
       }.saveAsTextFile(instances_all)
     }
 
-    val instances_all_map = des_dir + "/" + instances_file + "-mapped"
+    val instances_all_map = des_dir + "/instances/" + instances_file + "-mapped"
     if (!exists_hdfs_path(instances_all_map)) {
       val acc = new LongAccumulator
       spark.sparkContext.register(acc)
@@ -331,6 +331,26 @@ object MakeTrainExamples {
             output.mkString("\t")
           }
         ).saveAsTextFile(tf_text)
+      }
+    }
+    println("Done.......")
+
+    /************check sid************************/
+    println("Check sample index")
+    for (src_date <- src_date_list) {
+      val tf_text = des_dir + "/" + src_date + "-text"
+      if (exists_hdfs_path(tf_text)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("date:" + src_date)
+        val rdd = sc.textFile(tf_text).map(
+          f = rs => {
+            val line_list = rs.split("\t")
+            (line_list(0), 1)
+          }
+        )
+        println("text lines:" + rdd.count.toString)
+        val reduce_lines = rdd.reduceByKey(_ + _).count
+        println("reduced lines:" + reduce_lines)
       }
     }
     println("Done.......")
