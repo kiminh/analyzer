@@ -45,7 +45,7 @@ object OcpcGetPbV3 {
 
     val result2 = OcpcGetPbWeishiMain(date, hour, version, media, expTag, hourInt, minCV, hourInt1, hourInt2, hourInt3, spark)
 
-    val resultDF = selectWeishiCali(expTag, result1, result2, date, hour, spark).cache()
+    val resultDF = selectWeishiCali(expTag, result1, result2, date, hour, spark)
 
 
     resultDF.show(10)
