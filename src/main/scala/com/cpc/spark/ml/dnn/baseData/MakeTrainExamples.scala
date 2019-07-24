@@ -277,10 +277,10 @@ object MakeTrainExamples {
 
         val value_rdd_join_reduced = value_rdd_join.flatMap(
           rs => {
-            val pairs_array = rs._2._1
+            val pairs_array:Array[(String, Int)] = rs._2._1
             val mapped_id = rs._2._2
-            for ((sid, idx) <- pairs_array)
-              yield (sid, Array((idx.toInt, mapped_id)))
+            for (pair <- pairs_array)
+              yield (pair._1, Array((pair._2, mapped_id)))
           }
         ).reduceByKey(_ ++ _)
 
