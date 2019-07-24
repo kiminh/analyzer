@@ -280,7 +280,7 @@ object MakeTrainExamples {
             val pairs_array = rs._2._1
             val mapped_id = rs._2._2
             for ((sid, idx) <- pairs_array)
-              yield (sid, Array[(Int, String)](idx, mapped_id))
+              yield (sid, Array((idx.toInt, mapped_id)))
           }
         ).reduceByKey(_ ++ _)
 
