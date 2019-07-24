@@ -17,7 +17,7 @@ object OcpcConversionCV3 {
     println(s"date=$date, hour=$hour, cvrPt=$cvrPt")
     val result = getLabel(cvrPt, date, hour, spark)
     result
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_label_cvr_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
     println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
   }
@@ -34,7 +34,6 @@ object OcpcConversionCV3 {
          |where $selectCondition
          |and access_channel="site"
          |and a in ('ctsite_form')
-         |and (adclass like '134%' or adclass like '107%')
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)

@@ -85,7 +85,7 @@ object prepare_bsCvr_dnnPredictSample_exp {
     spark.sql(
       s"""
          |select distinct unitid from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
-         |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297')
+         |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297', '477')
          |or (cast(tag as int) between 365 and 384)
        """.stripMargin
     ).createOrReplaceTempView("precision_unit")

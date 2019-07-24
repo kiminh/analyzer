@@ -112,11 +112,15 @@ object LRTrain {
         "[cpc-bs-q] qtt-bs-ctrparser4-daily 训练复盘",
         Seq(
           "fanyiming@qutoutiao.net",
-          "dongwei@qutoutiao.net",
-          "tankaide@qutoutiao.net",
-          "wangshixin@qutoutiao.net"
+          "xiongyao@qutoutiao.net",
+          "duanguangdong@qutoutiao.net",
+          "xulu@qutoutiao.net",
+          "wangyao@qutoutiao.net",
+          "qizhi@qutoutiao.net",
+          "huazhenhao@qutoutiao.net"
         )
       )
+
 
     rawDataFromTrident.unpersist()
     userAppIdx.unpersist()

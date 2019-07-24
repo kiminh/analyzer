@@ -23,11 +23,11 @@ object userprofileCost {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
     val unit=
       s"""
-         |(select id, tag_orient from (SELECT id,
+         |(select id, tag_orient,medias from (SELECT id,
          |if(audience_orient>0 and audience_orient_filter>0, CONCAT(audience_orient,",",audience_orient_filter),
          |if(audience_orient>0,audience_orient,
-         |if(audience_orient_filter>0, audience_orient_filter, ''))) as tag_orient FROM adv.`unit`) t
-         |where tag_orient>0 group by id, tag_orient) temp
+         |if(audience_orient_filter>0, audience_orient_filter, null))) as tag_orient, CONCAT(media_class,target_medias) as medias FROM adv.`unit`) t
+         |group by id, tag_orient, medias) temp
       """.stripMargin
     spark.read.jdbc(jdbcUrl, unit, jdbcProp).createOrReplaceTempView("table_unit")
     val cost =
@@ -38,24 +38,24 @@ object userprofileCost {
 
     spark.sql(
       s"""
-         |select if(tb.id is null, 'withouttag', 'withtag') as name,sum(cost) as totalcost
-         |from table_cost ta left join table_unit tb on ta.unit_id=tb.id group by if(tb.id is null, 'withouttag', 'withtag')
+         |select if(tb.tag_orient is not null, 'withtag', 'withouttag') as name,tb.medias, sum(cost) as totalcost
+         |from table_cost ta left join table_unit tb on ta.unit_id=tb.id group by if(tb.tag_orient is not null, 'withtag', 'withouttag'), tb.medias
        """.stripMargin).createOrReplaceTempView("totalcost")
     spark.sql(
       s"""
-         |select tag as name,sum(cost) as totalcost from table_cost ta join (select id, tag from table_unit lateral view
-         |explode(split(tag_orient,',')) tag_orient as tag group by id, tag) tb on ta.unit_id=tb.id group by tag
+         |select tag as name,medias, sum(cost) as totalcost from table_cost ta join (select id, tag, medias from table_unit lateral view
+         |explode(split(tag_orient,',')) tag_orient as tag where tag_orient is not null group by id, tag, medias) tb on ta.unit_id=tb.id group by medias, tag
        """.stripMargin).createOrReplaceTempView("tagcost")
     spark.sql(
       s"""
          |select * from totalcost
          |union
          |select * from tagcost
-       """.stripMargin).createOrReplaceTempView("union_table")
+       """.stripMargin).repartition(10).createOrReplaceTempView("union_table")
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.recall_report_userprofile_cost partition (day='$yesterday')
+         |insert overwrite table dl_cpc.recall_report_userprofile_cost_v2 partition (day='$yesterday')
          |select * from union_table
        """.stripMargin)
 

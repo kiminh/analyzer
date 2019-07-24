@@ -3,7 +3,7 @@ package com.cpc.spark.ml.cvrmodel.daily
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.ctrmodel.hourly.LRTrain.dict
+import com.cpc.spark.common.Utils
 import org.apache.spark.sql.SaveMode
 
 import scala.collection.immutable
@@ -76,6 +76,8 @@ object LRTrain {
     //    val cvrPathSep = getPathSeq(args(1).toInt)
     val date = args(1)
     val parser = args(2)
+
+
 
     val spark: SparkSession = model
       .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
@@ -200,14 +202,39 @@ object LRTrain {
 
     val allData = spark.sqlContext.read.parquet(dfPath)
 
+    var name=""
+    var destfile=""
+    if (parser == "ctrparser4"){
+      name="qtt-bs-cvrparser4-daily"
+      destfile="qtt-bs-cvrparser4-daily.lrm"
+    }else if(parser == "cvrparser5"){
+      name="qtt-bs-cvrparser5-daily"
+      destfile="qtt-bs-cvrparser5-daily.lrm"
+    }
+
     train(
       spark,
-      "cvrparser5",
-      "qtt-bs-cvrparser5-daily",
+      parser,
+      name,
       allData,
-      "qtt-bs-cvrparser5-daily.lrm",
+      destfile,
       1e8
     )
+
+    Utils
+      .sendMail(
+        trainLog.mkString("\n"),
+        s"[cpc-bs-q] ${name} 训练复盘",
+        Seq(
+          "fanyiming@qutoutiao.net",
+          "xiongyao@qutoutiao.net",
+          "duanguangdong@qutoutiao.net",
+          "xulu@qutoutiao.net",
+          "wangyao@qutoutiao.net",
+          "qizhi@qutoutiao.net",
+          "huazhenhao@qutoutiao.net"
+        )
+      )
 
     allData.unpersist()
 

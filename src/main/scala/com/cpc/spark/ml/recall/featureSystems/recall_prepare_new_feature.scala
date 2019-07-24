@@ -104,7 +104,43 @@ object recall_prepare_new_feature {
            |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
            |select * from temp_result
        """.stripMargin)
-
+    }
+    else if (featureName == "rec_slotid_13_15"){
+      spark.sql(
+        s"""
+           |select uid,null, null, null, slotid13,slotid14,slotid15 from (
+           |select uid, slotid13,slotid14,slotid15,row_number() over(partition by uid order by hour desc) as row_num
+           |from dl_cpc.recall_rec_feature where day='$date') where row_num=1
+         """.stripMargin).repartition(200).createOrReplaceTempView("temp_result")
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select * from temp_result
+       """.stripMargin)
+    } else if (featureName == "rec_slotid_16_18"){
+      spark.sql(
+        s"""
+           |select uid,null, null, null, slotid16,slotid17,slotid18 from (
+           |select uid, slotid16,slotid17,slotid18,row_number() over(partition by uid order by hour desc) as row_num
+           |from dl_cpc.recall_rec_feature where day='$date') where row_num=1
+         """.stripMargin).repartition(200).createOrReplaceTempView("temp_result")
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select * from temp_result
+       """.stripMargin)
+    } else if (featureName == "rec_slotid_19_21"){
+      spark.sql(
+        s"""
+           |select uid,null, null, null, slotid19,slotid20,slotid21 from (
+           |select uid, slotid19,slotid20,slotid21,row_number() over(partition by uid order by hour desc) as row_num
+           |from dl_cpc.recall_rec_feature where day='$date') where row_num=1
+         """.stripMargin).repartition(200).createOrReplaceTempView("temp_result")
+      spark.sql(
+        s"""
+           |insert overwrite table dl_cpc.recall_test_feature partition(dt='$date', feature_name='$featureName')
+           |select * from temp_result
+       """.stripMargin)
     }
 
   }

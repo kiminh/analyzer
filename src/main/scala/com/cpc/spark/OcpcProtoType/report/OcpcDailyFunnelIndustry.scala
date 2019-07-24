@@ -36,17 +36,17 @@ object OcpcDailyFunnelIndustry {
 //      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_data_industry_daily")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_data_industry_daily_v2")
 
-//
-//    val data2 = calculateCnt(rawData, date, hour, spark)
-//    val result2 = data2
-//      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
-//      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
-//      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
-//
-//    result2
-//      .repartition(1)
-////      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
+
+    val data2 = calculateCnt(rawData, date, hour, spark)
+    val result2 = data2
+      .withColumn("ideaid_over_unitid", col("ideaid_cnt") * 1.0 / col("unitid_cnt"))
+      .withColumn("ideaid_over_userid", col("ideaid_cnt") * 1.0 / col("userid_cnt"))
+      .select("industry", "ideaid_cnt", "unitid_cnt", "userid_cnt", "ideaid_over_unitid", "ideaid_over_userid", "date")
+
+    result2
+      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_funnel_ideaid_cnt_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_funnel_ideaid_cnt_daily")
 
 
   }
@@ -154,7 +154,7 @@ object OcpcDailyFunnelIndustry {
 
   def getOcpcLog(media: String, date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias." + media + ".media_selection"
+    val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
 
     // 取历史数据
@@ -198,22 +198,21 @@ object OcpcDailyFunnelIndustry {
          |    end) as industry,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80001098', '80001292') then 'novel'
-         |        else 'hottopic'
+         |        when media_appsid = '80002819' then 'hottopic'
+         |        else 'novel'
          |    end) as media,
          |    is_api_callback
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $selectCondition
-         |and media_appsid in ('80000001', '80000002', '80001098','80001292', '80002819')
+         |and $mediaSelection
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0
          |and adsrc = 1
-         |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and (charge_type = 1 or charge_type is null)
+         |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val ctrBaseData = spark
