@@ -37,7 +37,7 @@ object OcpcCVRfactor {
 
     val result = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_calibration20190702a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
   }
 
@@ -56,18 +56,13 @@ object OcpcCVRfactor {
 
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("pcoc_new", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .withColumn("jfb_new", col("total_price") * 1.0 / col("total_bid"))
-      .withColumn("post_cvr_new", col("post_cvr"))
-      .select("identifier", "conversion_goal", "pcoc_new", "jfb_new", "post_cvr_new")
+      .withColumn("pcoc_new", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc_new")
 
     val calibration = calibrationNew
-      .join(calibration1, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "pcoc_new", "jfb_new", "post_cvr_new", "pcoc3", "jfb3", "post_cvr3")
-      .withColumn("post_cvr", when(col("post_cvr3").isNotNull, col("post_cvr3")).otherwise(col("post_cvr_new")))
+      .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag", "version"), "left_outer")
+      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc_new", "pcoc3")
       .withColumn("pcoc", when(col("pcoc3").isNotNull, col("pcoc3")).otherwise(col("pcoc_new")))
-      .withColumn("jfb", when(col("jfb3").isNotNull, col("jfb3")).otherwise(col("jfb_new")))
       .cache()
 
     calibration.show(10)
@@ -76,7 +71,7 @@ object OcpcCVRfactor {
     data3.unpersist()
 
     val resultDF = calibration
-      .select("identifier", "conversion_goal", "pcoc", "jfb", "post_cvr")
+      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc")
 
     resultDF
 
