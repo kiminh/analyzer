@@ -326,8 +326,8 @@ object MakeTrainExamples {
     println("Do mapping other features")
     for (src_date <- src_date_list) {
       val curr_file_src = src_dir + "/" + src_date
-      val tf_plain_mapped_path = des_dir + "/" + src_date + "-text-mapped"
-      if (!exists_hdfs_path(tf_plain_mapped_path) && exists_hdfs_path(curr_file_src)) {
+      val tf_plain_mapped_path_uid = des_dir + "/" + src_date + "-text-mapped-uid"
+      if (!exists_hdfs_path(tf_plain_mapped_path_uid) && exists_hdfs_path(curr_file_src)) {
         val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
@@ -366,7 +366,7 @@ object MakeTrainExamples {
 
             output.mkString("\t")
           }
-        ).saveAsTextFile(tf_plain_mapped_path)
+        ).saveAsTextFile(tf_plain_mapped_path_uid)
 
         //importedDf.rdd.map(
         //  rs => {
@@ -419,6 +419,7 @@ object MakeTrainExamples {
         //    }
         //  ).saveAsTextFile(tf_plain_mapped_path_cp)
         //}
+      }
     }
     println("Done.......")
 
