@@ -49,9 +49,6 @@ object OcpcSampleToPb {
       .withColumn("jfb_factor", col("jfb_factor_old") *  col("ratio"))
 
     resultDF
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_adtype15_data20190724b")
-
-    resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
