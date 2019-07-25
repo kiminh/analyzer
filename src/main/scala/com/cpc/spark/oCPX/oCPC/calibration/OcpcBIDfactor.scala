@@ -213,7 +213,7 @@ object OcpcBIDfactor {
          |  a.media,
          |  a.calc_total,
          |  b.calc_high,
-         |  c.calc_low
+         |  c.calc_low,
          |  a.high_bid_factor,
          |  a.low_bid_factor
          |FROM
