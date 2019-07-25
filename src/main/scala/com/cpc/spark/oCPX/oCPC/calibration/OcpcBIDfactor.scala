@@ -298,6 +298,8 @@ object OcpcBIDfactor {
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .na.fill(40, Seq("min_cv"))
 
+    data.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_rawdata20190725")
+
     data
   }
 
