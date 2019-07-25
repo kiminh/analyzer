@@ -291,94 +291,94 @@ object MakeTrainExamples {
 
 
 
-    println("Do Mapping Complete Features")
-    for (src_date <- src_date_list) {
-      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others"
-      val tf_text_mapped_one_hot = des_dir + "/" + src_date + "-text-mapped-one-hot"
-      val tf_text_mapped_multi_hot = des_dir + "/" + src_date + "-text-mapped-multi-hot"
-      val tf_text = des_dir + "/" + src_date + "-text"
-      if (!exists_hdfs_path(tf_text_mapped_multi_hot + "/_SUCCESS") && !exists_hdfs_path(tf_text_mapped_one_hot + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
-        delete_hdfs_path(tf_text_mapped_one_hot)
-        delete_hdfs_path(tf_text_mapped_multi_hot)
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("make " + tf_text_mapped_others)
+    //println("Do Mapping Complete Features")
+    //for (src_date <- src_date_list) {
+    //  val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others"
+    //  val tf_text_mapped_one_hot = des_dir + "/" + src_date + "-text-mapped-one-hot"
+    //  val tf_text_mapped_multi_hot = des_dir + "/" + src_date + "-text-mapped-multi-hot"
+    //  val tf_text = des_dir + "/" + src_date + "-text"
+    //  if (!exists_hdfs_path(tf_text_mapped_multi_hot + "/_SUCCESS") && !exists_hdfs_path(tf_text_mapped_one_hot + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
+    //    delete_hdfs_path(tf_text_mapped_one_hot)
+    //    delete_hdfs_path(tf_text_mapped_multi_hot)
+    //    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    //    println("make " + tf_text_mapped_others)
 
-        sc.textFile(tf_text).map(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            val dense = line_list(3).split(";")
-            val keys_other = scala.collection.mutable.ArrayBuffer[String]()
-            keys_other += sid
-            for (idx <- dense.indices) {
-              if (idx != 25) {
-                keys_other += dense(idx)
-              }
-            }
-            keys_other.mkString("\t")
-          }
-        ).flatMap(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
-          })
-        .reduceByKey(_ ++ _)
-        .join(sparseMapOthers)
-        .flatMap(
-            rs => {
-              val pairs_array: Array[(String, Int)] = rs._2._1
-              val mapped_id = rs._2._2
-              for (pair <- pairs_array)
-                yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
-          })
-        .reduceByKey(_ ++ _)
-        .map({
-          case(sid, mapped_pair_array) =>
-            val total_len = mapped_pair_array.length
-            val mapped_list:Array[String] = new Array[String](total_len)
-            for ((idx, mapped_id) <- mapped_pair_array) {
-              mapped_list(idx) = mapped_id
-            }
-            sid + "\t" + mapped_list.mkString(";")
-        }).repartition(1000).saveAsTextFile(tf_text_mapped_one_hot)
+    //    sc.textFile(tf_text).map(
+    //      rs => {
+    //        val line_list = rs.split("\t")
+    //        val sid = line_list(0)
+    //        val dense = line_list(3).split(";")
+    //        val keys_other = scala.collection.mutable.ArrayBuffer[String]()
+    //        keys_other += sid
+    //        for (idx <- dense.indices) {
+    //          if (idx != 25) {
+    //            keys_other += dense(idx)
+    //          }
+    //        }
+    //        keys_other.mkString("\t")
+    //      }
+    //    ).flatMap(
+    //      rs => {
+    //        val line_list = rs.split("\t")
+    //        val sid = line_list(0)
+    //        for (idx <- 1 until line_list.length)
+    //          yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+    //      })
+    //    .reduceByKey(_ ++ _)
+    //    .join(sparseMapOthers)
+    //    .flatMap(
+    //        rs => {
+    //          val pairs_array: Array[(String, Int)] = rs._2._1
+    //          val mapped_id = rs._2._2
+    //          for (pair <- pairs_array)
+    //            yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+    //      })
+    //    .reduceByKey(_ ++ _)
+    //    .map({
+    //      case(sid, mapped_pair_array) =>
+    //        val total_len = mapped_pair_array.length
+    //        val mapped_list:Array[String] = new Array[String](total_len)
+    //        for ((idx, mapped_id) <- mapped_pair_array) {
+    //          mapped_list(idx) = mapped_id
+    //        }
+    //        sid + "\t" + mapped_list.mkString(";")
+    //    }).repartition(1000).saveAsTextFile(tf_text_mapped_one_hot)
 
-        sc.textFile(tf_text).map(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            val idx_arr = line_list(7).split(";")
-            val keys_other = scala.collection.mutable.ArrayBuffer[String]()
-            keys_other += sid
-            for (idx <- idx_arr.indices) {
-              keys_other += idx_arr(idx)
-            }
-            keys_other.mkString("\t")
-          }
-        ).flatMap(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
-          }
-        ).reduceByKey(_ ++ _).join(sparseMapOthers).flatMap(
-            rs => {
-              val pairs_array:Array[(String, Int)] = rs._2._1
-              val mapped_id = rs._2._2
-              for (pair <- pairs_array)
-                yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
-            }).reduceByKey(_ ++ _)
-        .map({
-          case(sid, mapped_pair_array) =>
-            val total_len = mapped_pair_array.length
-            val mapped_list:Array[String] = new Array[String](total_len)
-            for ((idx, mapped_id) <- mapped_pair_array) {
-              mapped_list(idx) = mapped_id
-            }
-            sid + "\t" + mapped_list.mkString(";")
-        }).repartition(1000).saveAsTextFile(tf_text_mapped_multi_hot)
+    //    sc.textFile(tf_text).map(
+    //      rs => {
+    //        val line_list = rs.split("\t")
+    //        val sid = line_list(0)
+    //        val idx_arr = line_list(7).split(";")
+    //        val keys_other = scala.collection.mutable.ArrayBuffer[String]()
+    //        keys_other += sid
+    //        for (idx <- idx_arr.indices) {
+    //          keys_other += idx_arr(idx)
+    //        }
+    //        keys_other.mkString("\t")
+    //      }
+    //    ).flatMap(
+    //      rs => {
+    //        val line_list = rs.split("\t")
+    //        val sid = line_list(0)
+    //        for (idx <- 1 until line_list.length)
+    //          yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+    //      }
+    //    ).reduceByKey(_ ++ _).join(sparseMapOthers).flatMap(
+    //        rs => {
+    //          val pairs_array:Array[(String, Int)] = rs._2._1
+    //          val mapped_id = rs._2._2
+    //          for (pair <- pairs_array)
+    //            yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+    //        }).reduceByKey(_ ++ _)
+    //    .map({
+    //      case(sid, mapped_pair_array) =>
+    //        val total_len = mapped_pair_array.length
+    //        val mapped_list:Array[String] = new Array[String](total_len)
+    //        for ((idx, mapped_id) <- mapped_pair_array) {
+    //          mapped_list(idx) = mapped_id
+    //        }
+    //        sid + "\t" + mapped_list.mkString(";")
+    //    }).repartition(1000).saveAsTextFile(tf_text_mapped_multi_hot)
 
 
         //val sparse_value_rdd = sc.textFile(tf_text).map(
