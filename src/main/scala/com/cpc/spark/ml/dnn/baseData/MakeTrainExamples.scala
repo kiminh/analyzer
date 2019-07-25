@@ -287,7 +287,7 @@ object MakeTrainExamples {
           rs => {
             val sid = rs._2._1._1
             val mapped_others = rs._2._1._2
-            val mapped_uid = rs._2._2 + sparseMapOthers.size
+            val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
             sid + "\t" + mapped_uid + ";" + mapped_others
           }
         ).saveAsTextFile(tf_text_mapped_cp)
@@ -348,15 +348,15 @@ object MakeTrainExamples {
             ult_list.mkString("\t")
           }
         )
-
-        //保存count文件
         val ult_rdd_count = ult_rdd.count
         println(s"ult_rdd_count : $ult_rdd_count")
+        ult_rdd.repartition(1000).saveAsTextFile(tf_text_mapped)
+
+        //保存count文件
         val fileName = "count_" + Random.nextInt(100000)
         writeNum2File(fileName, ult_rdd_count)
         s"hadoop fs -put $fileName $tf_text_mapped/count" !
 
-        ult_rdd.repartition(1000).saveAsTextFile(tf_text_mapped)
       }
 
     }
