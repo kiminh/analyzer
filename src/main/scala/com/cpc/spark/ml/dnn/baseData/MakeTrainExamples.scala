@@ -238,6 +238,92 @@ object MakeTrainExamples {
     //}
     //println("Done.......")
 
+
+    println("Do Mapping Other Features")
+    for (src_date <- src_date_list) {
+      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others"
+      val tf_text = des_dir + "/" + src_date + "-text"
+      if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
+        delete_hdfs_path(tf_text_mapped_others)
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("make " + tf_text_mapped_others)
+        var data = sc.parallelize(Array[String]())
+        for (idx <- 0 until 1000) {
+          val part = "part-%05d".format(idx)
+          val tf_text_part = tf_text + "/" + part
+          println("******************************************")
+          println("trans part:" + tf_text_part)
+          val mapped_value_rdd = sc.textFile(tf_text_part).map(
+            rs => {
+              val line_list = rs.split("\t")
+              val sid = line_list(0)
+              val dense = line_list(3).split(";")
+              val idx_arr = line_list(7).split(";")
+
+              val value_list = ArrayBuffer[String]()
+              value_list += sid
+              for (idx <- dense.indices) {
+                if (idx != 25) {
+                  value_list += dense(idx)
+                }
+              }
+              value_list.++=(idx_arr)
+              value_list.mkString("\t")
+            }
+          ).flatMap(
+            rs => {
+              val line_list = rs.split("\t")
+              val sid = line_list(0)
+              for (idx <- 1 until line_list.length)
+                yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+            }
+          )
+          .reduceByKey(_ ++ _)
+          .join(sparseMapOthers)
+          .flatMap(
+            rs => {
+              val pairs_array: Array[(String, Int)] = rs._2._1
+              val mapped_id = rs._2._2
+              for (pair <- pairs_array)
+                yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+            }
+          )
+          .reduceByKey(_ ++ _)
+          .map({
+            case(sid, mapped_pair_array) =>
+              val total_len = mapped_pair_array.length
+              val len_one_hot = 27
+              val mapped_list:Array[String] = new Array[String](total_len)
+              for ((idx, mapped_id) <- mapped_pair_array) {
+                mapped_list(idx.toInt) = mapped_id
+              }
+              val list_one_hot:Array[String] = new Array[String](len_one_hot)
+              val list_multi_hot:Array[String] = new Array[String](total_len - len_one_hot)
+              for (idx <- 0 until len_one_hot) {
+                list_one_hot(idx) = mapped_list(idx)
+              }
+              for (idx <- 0 until (total_len - len_one_hot)) {
+                list_multi_hot(idx) = mapped_list(idx + len_one_hot)
+              }
+              sid + "\t" + list_one_hot.mkString(";") + "\t" + list_multi_hot.mkString(";")
+          })
+          println("mapped_value_rdd_count:" + mapped_value_rdd.count)
+          data = data.union(mapped_value_rdd)
+          println("current data length:" + data.count)
+        }
+        data.repartition(1000).saveAsTextFile(tf_text_mapped_others)
+      }
+
+    }
+    println("Done.......")
+
+
+    return
+
+
+
+
+
     println("Do Mapping Complete Features")
     for (src_date <- src_date_list) {
       val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others"
