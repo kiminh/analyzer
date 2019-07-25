@@ -71,6 +71,7 @@ object OcpcBIDfactor {
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
+      .withColumn("media", udfMediaName()(col("media")))
       .join(data1, Seq("unitid", "conversion_goal", "media"), "inner")
 
     val data2 = calculateData2(baseData2, date, hour, spark)
