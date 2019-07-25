@@ -232,7 +232,7 @@ object MakeTrainExamples {
 
     /************************load map********************************/
     println("Load Uid SparseMap")
-    val instances_all_map_uid = des_dir + "/" + instances_file + "-mapped-uid"
+    val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
     val sparseMapUid = sc.textFile(instances_all_map_uid).map{
       rs => {
         val line = rs.split("\t")
@@ -244,7 +244,7 @@ object MakeTrainExamples {
     println("sparseMapUid.size=" + sparseMapUid.count)
 
     println("Load Others SparseMap")
-    val instances_all_map_others = des_dir + "/" + instances_file + "-mapped-others"
+    val instances_all_map_others = des_dir + "/" + instances_file + "-non-uid-indexed"
     val sparseMapOthers = sc.textFile(instances_all_map_others).map{
       rs => {
         val line = rs.split("\t")
