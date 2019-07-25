@@ -361,7 +361,6 @@ object MakeTrainExamples {
 
     }
     println("Done.......")
-    return
 
     /************down sampling************************/
     println("Down Sampling")
@@ -395,10 +394,10 @@ object MakeTrainExamples {
               val sample_idx = rs_list(0).toLong
               val label = rs_list(1).toFloat
               val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
-              val idx0 = rs_list(3).split(";").map(_.toLong).toSeq
-              val idx1 = rs_list(4).split(";").map(_.toLong).toSeq
-              val idx2 = rs_list(5).split(";").map(_.toLong).toSeq
-              val dense = rs_list(6).split(";").map(_.toLong).toSeq
+              val dense = rs_list(3).split(";").map(_.toLong).toSeq
+              val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+              val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+              val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
               val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
               Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
         })
