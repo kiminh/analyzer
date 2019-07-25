@@ -237,7 +237,6 @@ object TopCtrIdeaV2 {
           .sortWith(_.ctr_score > _.ctr_score).take(size)
       }
 
-
       println("adslot_type=" + i + "已取出 " + topIdeaRDD2.length + " 条")
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
@@ -247,13 +246,12 @@ object TopCtrIdeaV2 {
       println("###### res: " + topIdeaData(0))
     }
 
-    /*
     val conf = ConfigFactory.load()
-    val mariadbUrl = conf.getString("mariadb.url")
+    val mariadbUrl = conf.getString("mariadb.adv_report.url")
     val mariadbProp = new Properties()
-    mariadbProp.put("user", conf.getString("mariadb.user"))
-    mariadbProp.put("password", conf.getString("mariadb.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.driver"))
+    mariadbProp.put("user", conf.getString("mariadb.adv_report.user"))
+    mariadbProp.put("password", conf.getString("mariadb.adv_report.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.adv_report.driver"))
 
     //truncate table
     try {
@@ -265,7 +263,7 @@ object TopCtrIdeaV2 {
       val stmt = conn.createStatement()
       val sql =
         """
-          |TRUNCATE TABLE report.%s
+          |TRUNCATE TABLE adv_report.%s
         """.stripMargin.format(table)
       stmt.executeUpdate(sql);
       stmt.close()
@@ -279,9 +277,8 @@ object TopCtrIdeaV2 {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report." + table, mariadbProp)
-    */
+
     /* 插入手动推荐的素材 --陈超 */
-    /*
     try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
@@ -299,10 +296,7 @@ object TopCtrIdeaV2 {
     } catch {
       case e: Exception => println("insert table failed : " + e);
     }
-    */
-
     println("###### num: " + topIdeaData.length)
-
   }
 
   def getUserBelong(): Map[Int, Int] = {
