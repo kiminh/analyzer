@@ -244,7 +244,9 @@ object MakeTrainExamples {
       val tf_text_mapped_one_hot = des_dir + "/" + src_date + "-text-mapped-one-hot"
       val tf_text_mapped_multi_hot = des_dir + "/" + src_date + "-text-mapped-multi-hot"
       val tf_text = des_dir + "/" + src_date + "-text"
-      if (!exists_hdfs_path(tf_text_mapped_others) && exists_hdfs_path(tf_text)) {
+      if (!exists_hdfs_path(tf_text_mapped_multi_hot + "/_SUCCESS") && !exists_hdfs_path(tf_text_mapped_one_hot + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
+        delete_hdfs_path(tf_text_mapped_one_hot)
+        delete_hdfs_path(tf_text_mapped_multi_hot)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("make " + tf_text_mapped_others)
 
