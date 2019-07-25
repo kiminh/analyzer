@@ -267,26 +267,26 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, (sid, idx - 1))
+              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
           }
-        )
+        ).reduceByKey(_ ++ _)
 
         //RDD[(Long, (Array[(String, Int)], String))]
         val dense_value_rdd_join = dense_value_rdd.join(sparseMapOthers)
 
-        //val value_rdd_join_reduced = value_rdd_join.flatMap(
-        //  rs => {
-        //    val pairs_array:Array[(String, Int)] = rs._2._1
-        //    val mapped_id = rs._2._2
-        //    for (pair <- pairs_array)
-        //      yield (pair._1, Array((pair._2, mapped_id)))
-        //  }
-        //).reduceByKey(_ ++ _)
+        val dense_value_rdd_join_reduced = dense_value_rdd_join.flatMap(
+          rs => {
+            val pairs_array:Array[(String, Int)] = rs._2._1
+            val mapped_id = rs._2._2
+            for (pair <- pairs_array)
+              yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+          }
+        ).reduceByKey(_ ++ _)
 
-        val dense_value_rdd_join_reduced = dense_value_rdd_join.map({
-          case(_, ((sid, idx), mapped_id)) =>
-            (sid, Array((idx, mapped_id)))
-        }).reduceByKey(_ ++ _)
+        //val dense_value_rdd_join_reduced = dense_value_rdd_join.map({
+        //  case(_, ((sid, idx), mapped_id)) =>
+        //    (sid, Array((idx, mapped_id)))
+        //}).reduceByKey(_ ++ _)
 
         //println("value_rdd_count:" + value_rdd.count)
         //println("value_rdd_join_count:" + value_rdd_join.count)
@@ -295,12 +295,11 @@ object MakeTrainExamples {
         val dense_value_rdd_join_reduced_compact = dense_value_rdd_join_reduced.map({
           case(sid, mapped_pair_array) =>
             val total_len = mapped_pair_array.length
-            val len_one_hot = 27
             val mapped_list:Array[String] = new Array[String](total_len)
-            for ((jdx, mapped_id) <- mapped_pair_array) {
-              mapped_list(jdx) = mapped_id
+            for ((idx, mapped_id) <- mapped_pair_array) {
+              mapped_list(idx) = mapped_id
             }
-            (sid.toString, mapped_list.mkString(";"))
+            (sid, mapped_list.mkString(";"))
         })
 
         println("dense_value_rdd_join_reduced_compact_count:" + dense_value_rdd_join_reduced_compact.count)
@@ -314,7 +313,6 @@ object MakeTrainExamples {
           rs => {
             val line_list = rs.split("\t")
             val sid = line_list(0)
-            val dense = line_list(3).split(";")
             val idx_arr = line_list(7).split(";")
             val keys_other = scala.collection.mutable.ArrayBuffer[String]()
             keys_other += sid
@@ -328,24 +326,33 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, (sid, idx - 1))
+              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
           }
-        )
+        ).reduceByKey(_ ++ _)
 
         //RDD[(Long, (Array[(String, Int)], String))]
         val sparse_value_rdd_join = sparse_value_rdd.join(sparseMapOthers)
 
-        val sparse_value_rdd_join_reduced = sparse_value_rdd_join.map({
-          case(_, ((sid, idx), mapped_id)) =>
-            (sid, Array((idx, mapped_id)))
-        }).reduceByKey(_ ++ _)
+        val sparse_value_rdd_join_reduced = sparse_value_rdd_join.flatMap(
+          rs => {
+            val pairs_array:Array[(String, Int)] = rs._2._1
+            val mapped_id = rs._2._2
+            for (pair <- pairs_array)
+              yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+          }
+        ).reduceByKey(_ ++ _)
+
+        //val sparse_value_rdd_join_reduced = sparse_value_rdd_join.map({
+        //  case(_, ((sid, idx), mapped_id)) =>
+        //    (sid, Array((idx, mapped_id)))
+        //}).reduceByKey(_ ++ _)
 
         val sparse_value_rdd_join_reduced_compact = sparse_value_rdd_join_reduced.map({
           case(sid, mapped_pair_array) =>
             val total_len = mapped_pair_array.length
             val mapped_list:Array[String] = new Array[String](total_len)
-            for ((jdx, mapped_id) <- mapped_pair_array) {
-              mapped_list(jdx) = mapped_id
+            for ((idx, mapped_id) <- mapped_pair_array) {
+              mapped_list(idx) = mapped_id
             }
             (sid.toString, mapped_list.mkString(";"))
         })
