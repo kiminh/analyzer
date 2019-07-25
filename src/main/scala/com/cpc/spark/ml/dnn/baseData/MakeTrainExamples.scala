@@ -133,11 +133,11 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
-    /************Collect instances for sparse features************************/
-    println("Collect sparse features' values and map to continuous index")
-
-    val instances_all = des_dir + "/" + instances_file
-    if (!exists_hdfs_path(instances_all)) {
+    /************Collect instances for non uid features************************/
+    println("Collect Other Feature(exclude uid) Values and Map to Continuous Index")
+    val instances_all_non_uid = des_dir + "/" + instances_file + "-non-uid"
+    val instances_all_non_uid_indexed = des_dir + "/" + instances_file + "-non-uid-indexed"
+    if (!exists_hdfs_path(instances_all_non_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
       for (src_date <- src_date_list) {
         val tf_text = des_dir + "/" + src_date + "-text"
@@ -150,7 +150,9 @@ object MakeTrainExamples {
                 val idx_arr = line_list(7).split(";")
                 val output = ArrayBuffer[String]()
                 for (idx <- dense.indices) {
-                  output += dense(idx)
+                  if (idx != 25) {
+                    output += dense(idx)
+                  }
                 }
                 for (idx <- idx_arr.indices) {
                   output += idx_arr(idx)
@@ -167,18 +169,14 @@ object MakeTrainExamples {
           ).reduceByKey(_ + _)
         }
       }
-
       data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
-      }.saveAsTextFile(instances_all)
-    }
+      }.saveAsTextFile(instances_all_non_uid)
 
-    val instances_all_map = des_dir + "/" + instances_file + "-mapped"
-    if (!exists_hdfs_path(instances_all_map) && exists_hdfs_path(instances_all)) {
       val acc = new LongAccumulator
       spark.sparkContext.register(acc)
-      sc.textFile(instances_all).coalesce(1, false).map{
+      sc.textFile(instances_all_non_uid).coalesce(1, false).map{
         rs => {
           acc.add(1L)
           val line = rs.split("\t")
@@ -187,7 +185,47 @@ object MakeTrainExamples {
         }
       }.repartition(1).sortBy(_._2).map{
         case (key, value) => key + "\t" + value.toString
-      }.saveAsTextFile(instances_all_map)
+      }.saveAsTextFile(instances_all_non_uid_indexed)
+    }
+    println("Done.......")
+
+    /************Collect instances for non uid features************************/
+    println("Collect Uid Feature's Values and Map to Continuous Index")
+    val instances_all_for_uid = des_dir + "/" + instances_file + "-for-uid"
+    val instances_all_for_uid_indexed = des_dir + "/" + instances_file + "-for-uid-indexed"
+    if (!exists_hdfs_path(instances_all_for_uid_indexed)) {
+      var data = sc.parallelize(Array[(String, Long)]())
+      for (src_date <- src_date_list) {
+        val tf_text = des_dir + "/" + src_date + "-text"
+        if (exists_hdfs_path(tf_text)) {
+          data = data.union(
+            sc.textFile(tf_text).map(
+              rs => {
+                val line_list = rs.split("\t")
+                val dense = line_list(3).split(";")
+                (dense(25), 1L)
+              }
+            ).reduceByKey(_ + _)
+          ).reduceByKey(_ + _)
+        }
+      }
+      data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
+        case (key, value) =>
+          key + "\t" + value.toString
+      }.saveAsTextFile(instances_all_for_uid)
+
+      val acc = new LongAccumulator
+      spark.sparkContext.register(acc)
+      sc.textFile(instances_all_for_uid).coalesce(1, false).map{
+        rs => {
+          acc.add(1L)
+          val line = rs.split("\t")
+          val key = line(0)
+          (key, acc.count)
+        }
+      }.repartition(1).sortBy(_._2).map{
+        case (key, value) => key + "\t" + value.toString
+      }.saveAsTextFile(instances_all_for_uid_indexed)
     }
     println("Done.......")
 
