@@ -58,6 +58,7 @@ object OcpcBIDfactor {
 
     // 抽取基础数据
     val baseData = getBaseData(hourInt, date, hour, spark)
+    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_basedata20190725")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
