@@ -248,8 +248,9 @@ object MakeTrainExamples {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("make " + tf_text_mapped_others)
         var data = sc.parallelize(Array[String]())
-        for (idx <- 0 until 1000) {
-          val part = "part-%05d".format(idx)
+        for (idx <- 0 until 10) {
+          //val part = "part-%05d".format(idx)
+          val part = "part-00" + idx.toString + "*"
           val tf_text_part = tf_text + "/" + part
           println("******************************************")
           println("trans part:" + tf_text_part)
