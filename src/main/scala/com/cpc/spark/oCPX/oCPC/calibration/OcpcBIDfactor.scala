@@ -58,7 +58,6 @@ object OcpcBIDfactor {
 
     // 抽取基础数据
     val baseData = getBaseData(hourInt, date, hour, spark)
-//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_basedata20190725")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
@@ -140,7 +139,6 @@ object OcpcBIDfactor {
       .sql(sqlRequest)
       .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
 
-//    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_range_rawdata")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
@@ -205,45 +203,9 @@ object OcpcBIDfactor {
       .withColumn("calc_low", col("pre_cvr") * col("click"))
       .select("unitid", "conversion_goal", "media", "calc_low")
 
-//    data1.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data1")
-//    data2.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data2")
-//    data3.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data3")
-
-//    val sqlRequestFinal =
-//      s"""
-//         |SELECT
-//         |  a.unitid,
-//         |  a.conversion_goal,
-//         |  a.media,
-//         |  a.calc_total,
-//         |  b.calc_high,
-//         |  c.calc_low,
-//         |  a.high_bid_factor,
-//         |  a.low_bid_factor
-//         |FROM
-//         |  check_ocpc_range_data1 as a
-//         |INNER JOIN
-//         |  check_ocpc_range_data2 as b
-//         |ON
-//         |  a.unitid = b.unitid
-//         |AND
-//         |  a.conversion_goal = b.conversion_goal
-//         |AND
-//         |  a.media = b.media
-//         |INNER JOIN
-//         |  check_ocpc_range_data3 as c
-//         |ON
-//         |  a.unitid = c.unitid
-//         |AND
-//         |  a.conversion_goal = c.conversion_goal
-//         |AND
-//         |  a.media = b.media
-//       """.stripMargin
-//    println(sqlRequestFinal)
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
       .join(data3, Seq("unitid", "conversion_goal", "media"), "inner")
-//    val data = spark.sql(sqlRequestFinal)
       .select("unitid", "conversion_goal", "media", "calc_total", "calc_high", "calc_low", "high_bid_factor", "low_bid_factor")
       .withColumn("low_bid_factor", udfCalculateLowBidFactor()(col("calc_total"), col("calc_high"), col("calc_low"), col("low_bid_factor")))
 
@@ -300,7 +262,6 @@ object OcpcBIDfactor {
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .na.fill(40, Seq("min_cv"))
 
-//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_rawdata20190725")
 
     data
   }
