@@ -241,7 +241,7 @@ object MakeTrainExamples {
 
     println("Do Mapping Other Features")
     for (src_date <- src_date_list) {
-      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-middle"
+      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-non-uid"
       val tf_text = des_dir + "/" + src_date + "-text"
       if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
         delete_hdfs_path(tf_text_mapped_others)
