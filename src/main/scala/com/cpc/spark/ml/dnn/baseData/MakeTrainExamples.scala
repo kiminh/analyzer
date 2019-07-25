@@ -458,10 +458,10 @@ object MakeTrainExamples {
         //    //sid + info = Array(label, label_arr, idx0, idx1, idx2) + mapped_values
         //    sid + "\t" + info + "\t" + mapped_values
         //}).repartition(1000).saveAsTextFile(tf_text_mapped_others)
-      }
-    }
-    println("Done.......")
-    return
+    //  }
+    //}
+    //println("Done.......")
+    //return
 
 
     /************do id map and sampling************************/
