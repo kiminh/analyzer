@@ -248,7 +248,7 @@ object MakeTrainExamples {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("make " + tf_text_mapped_others)
 
-        val dense_value_rdd = sc.textFile(tf_text).map(
+        sc.textFile(tf_text).map(
           rs => {
             val line_list = rs.split("\t")
             val sid = line_list(0)
@@ -267,45 +267,23 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+              yield (line_list(idx).toLong, (sid, idx - 1))
           }
-        ).reduceByKey(_ ++ _)
-
-        //RDD[(Long, (Array[(String, Int)], String))]
-        val dense_value_rdd_join = dense_value_rdd.join(sparseMapOthers)
-
-        val dense_value_rdd_join_reduced = dense_value_rdd_join.flatMap(
+        ).join(sparseMapOthers).map({
           rs => {
-            val pairs_array:Array[(String, Int)] = rs._2._1
-            val mapped_id = rs._2._2
-            for (pair <- pairs_array)
-              yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+            val sid = rs._2._1._1
+            val idx = rs._2._1._2
+            val mapped_value = rs._2._2
+            (sid, Array[(Int, String)]((idx, mapped_value)))
           }
-        ).reduceByKey(_ ++ _)
-
-        //val dense_value_rdd_join_reduced = dense_value_rdd_join.map({
-        //  case(_, ((sid, idx), mapped_id)) =>
-        //    (sid, Array((idx, mapped_id)))
-        //}).reduceByKey(_ ++ _)
-
-        //println("value_rdd_count:" + value_rdd.count)
-        //println("value_rdd_join_count:" + value_rdd_join.count)
-        //println("value_rdd_join_reduced_count:" + value_rdd_join_reduced.count)
-
-        val dense_value_rdd_join_reduced_compact = dense_value_rdd_join_reduced.map({
+        }).reduceByKey(_ ++ _).map({
           case(sid, mapped_pair_array) =>
             val total_len = mapped_pair_array.length
             val mapped_list:Array[String] = new Array[String](total_len)
             for ((idx, mapped_id) <- mapped_pair_array) {
               mapped_list(idx) = mapped_id
             }
-            (sid, mapped_list.mkString(";"))
-        })
-
-        println("dense_value_rdd_join_reduced_compact_count:" + dense_value_rdd_join_reduced_compact.count)
-        dense_value_rdd_join_reduced_compact.map({
-          case(sid, mapped_list_str) =>
-            sid + "\t" + mapped_list_str
+            sid + "\t" + mapped_list.mkString(";")
         }).repartition(1000).saveAsTextFile(tf_text_mapped_one_hot)
 
 
