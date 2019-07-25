@@ -246,7 +246,7 @@ object MakeTrainExamples {
       if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
         delete_hdfs_path(tf_text_mapped_others)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("trans part:" + tf_text)
+        println("trans non uid features of part:" + tf_text)
         println("make " + tf_text_mapped_others)
         sc.textFile(tf_text).map(
           rs => {
@@ -272,7 +272,7 @@ object MakeTrainExamples {
       val tf_text_mapped_cp = des_dir + "/" + src_date + "-text-mapped-cp"
       if (!exists_hdfs_path(tf_text_mapped_cp) && exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS")) {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("trans part:" + tf_text_mapped_others)
+        println("trans uid feature of part:" + tf_text_mapped_others)
         println("make " + tf_text_mapped_cp)
         sc.textFile(tf_text_mapped_others).map(
           rs => {
