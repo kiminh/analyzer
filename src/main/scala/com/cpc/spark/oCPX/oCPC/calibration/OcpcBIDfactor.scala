@@ -138,6 +138,8 @@ object OcpcBIDfactor {
       .sql(sqlRequest)
       .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
 
+    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_range_rawdata")
+
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
       s"""
