@@ -240,11 +240,13 @@ object OcpcBIDfactor {
     println(sqlRequest)
     val data1 = spark
       .sql(sqlRequest)
-      .select("unitid", "conversion_goal", "media", "post_cvr", "pre_cvr", "click", "cv")
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+      .select("unitid", "conversion_goal", "media", "post_cvr", "pre_cvr", "click", "cv", "pcoc", "jfb")
       .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
-      .select("unitid", "conversion_goal", "media", "exp_tag", "post_cvr", "pre_cvr", "click", "cv")
+      .select("unitid", "conversion_goal", "media", "exp_tag", "post_cvr", "pre_cvr", "click", "cv", "pcoc", "jfb")
 
     // 抽取highbidfactor与lowbidfactor, min_cv
     // 获取相关参数
