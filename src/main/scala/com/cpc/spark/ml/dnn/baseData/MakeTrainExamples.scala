@@ -193,17 +193,17 @@ object MakeTrainExamples {
 
 
     /************************load map********************************/
-    //println("Load Uid SparseMap")
-    //val instances_all_map_uid = des_dir + "/" + instances_file + "-mapped-uid"
-    //val sparseMapUid = sc.textFile(instances_all_map_uid).map{
-    //  rs => {
-    //    val line = rs.split("\t")
-    //    val field = line(0).toLong
-    //    val key = (line(1).toLong - 1L).toString
-    //    (field, key)
-    //  }
-    //}
-    //println("sparseMapUid.size=" + sparseMapUid.count)
+    println("Load Uid SparseMap")
+    val instances_all_map_uid = des_dir + "/" + instances_file + "-mapped-uid"
+    val sparseMapUid = sc.textFile(instances_all_map_uid).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = (line(1).toLong - 1L).toString
+        (field, key)
+      }
+    }
+    println("sparseMapUid.size=" + sparseMapUid.count)
 
     println("Load Others SparseMap")
     val instances_all_map_others = des_dir + "/" + instances_file + "-mapped-others"
@@ -268,10 +268,31 @@ object MakeTrainExamples {
             sid + "\t" + uid_value + "\t" + mapped.mkString(";")
           }).repartition(1000).saveAsTextFile(tf_text_mapped_others)
       }
+
+      val tf_text_mapped_cp = des_dir + "/" + src_date + "-text-mapped-cp"
+      if (!exists_hdfs_path(tf_text_mapped_cp) && exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS")) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("trans part:" + tf_text_mapped_others)
+        println("make " + tf_text_mapped_cp)
+        sc.textFile(tf_text_mapped_others).map(
+          rs => {
+            val line_list = rs.split("\t")
+            val sid = line_list(0)
+            val uid_value = line_list(1)
+            val mapped_others = line_list(2)
+            (uid_value.toLong, (sid, mapped_others))
+          }
+        ).join(sparseMapUid).map(
+          rs => {
+            val sid = rs._2._1._1
+            val mapped_others = rs._2._1._2
+            val mapped_uid = rs._2._2
+            sid + "\t" + mapped_uid + ";" + mapped_others
+          }
+        ).repartition(1000).saveAsTextFile(tf_text_mapped_cp)
+      }
     }
     println("Done.......")
-
-
     return
 
 
