@@ -407,7 +407,7 @@ object MakeTrainExamples {
         println(s"text_rdd_count is : $text_rdd_count")
 
         val text_df: DataFrame = spark.createDataFrame(text_rdd, schema_new)
-        text_df.write.format("tfrecords").option("recordType", "Example").save(tf_text_mapped_tf)
+        text_df.repartition(500).write.format("tfrecords").option("recordType", "Example").save(tf_text_mapped_tf)
 
         //保存count文件
         //val text_df_count = text_df.count()
@@ -432,7 +432,7 @@ object MakeTrainExamples {
 
         //Save DataFrame as TFRecords
         val sampled_df: DataFrame = spark.createDataFrame(sampled_rdd, schema_new)
-        sampled_df.write.format("tfrecords").option("recordType", "Example").save(tf_text_mapped_sampled_tf)
+        sampled_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(tf_text_mapped_sampled_tf)
 
         //保存count文件
         val sampled_df_count = sampled_df.count()
