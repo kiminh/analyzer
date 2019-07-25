@@ -269,16 +269,19 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, (sid, idx - 1))
-          }
-        ).join(sparseMapOthers).map({
-          rs => {
-            val sid = rs._2._1._1
-            val idx = rs._2._1._2
-            val mapped_value = rs._2._2
-            (sid, Array[(Int, String)]((idx, mapped_value)))
-          }
-        }).reduceByKey(_ ++ _).map({
+              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
+          })
+        .reduceByKey(_ ++ _)
+        .join(sparseMapOthers)
+        .flatMap(
+            rs => {
+              val pairs_array: Array[(String, Int)] = rs._2._1
+              val mapped_id = rs._2._2
+              for (pair <- pairs_array)
+                yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+          })
+        .reduceByKey(_ ++ _)
+        .map({
           case(sid, mapped_pair_array) =>
             val total_len = mapped_pair_array.length
             val mapped_list:Array[String] = new Array[String](total_len)
@@ -287,7 +290,6 @@ object MakeTrainExamples {
             }
             sid + "\t" + mapped_list.mkString(";")
         }).repartition(1000).saveAsTextFile(tf_text_mapped_one_hot)
-
 
         sc.textFile(tf_text).map(
           rs => {
@@ -306,16 +308,16 @@ object MakeTrainExamples {
             val line_list = rs.split("\t")
             val sid = line_list(0)
             for (idx <- 1 until line_list.length)
-              yield (line_list(idx).toLong, (sid, idx - 1))
+              yield (line_list(idx).toLong, Array[(String, Int)]((sid, idx - 1)))
           }
-        ).join(sparseMapOthers).map({
-          rs => {
-            val sid = rs._2._1._1
-            val idx = rs._2._1._2
-            val mapped_value = rs._2._2
-            (sid, Array[(Int, String)]((idx, mapped_value)))
-          }
-        }).reduceByKey(_ ++ _).map({
+        ).reduceByKey(_ ++ _).join(sparseMapOthers).flatMap(
+            rs => {
+              val pairs_array:Array[(String, Int)] = rs._2._1
+              val mapped_id = rs._2._2
+              for (pair <- pairs_array)
+                yield (pair._1, Array[(Int, String)]((pair._2, mapped_id)))
+            }).reduceByKey(_ ++ _)
+        .map({
           case(sid, mapped_pair_array) =>
             val total_len = mapped_pair_array.length
             val mapped_list:Array[String] = new Array[String](total_len)
