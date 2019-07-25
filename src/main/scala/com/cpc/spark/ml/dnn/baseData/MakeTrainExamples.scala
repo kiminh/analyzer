@@ -241,7 +241,7 @@ object MakeTrainExamples {
 
     println("Do Mapping Other Features")
     for (src_date <- src_date_list) {
-      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-non-uid"
+      val tf_text_mapped_others = des_dir + "/mapping-info/" + src_date + "-text-mapped-non-uid"
       val tf_text = des_dir + "/" + src_date + "-text"
       if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
         delete_hdfs_path(tf_text_mapped_others)
@@ -269,7 +269,7 @@ object MakeTrainExamples {
           }).saveAsTextFile(tf_text_mapped_others)
       }
 
-      val tf_text_mapped_cp = des_dir + "/" + src_date + "-text-mapped-cp"
+      val tf_text_mapped_cp = des_dir + "/mapping-info/" + src_date + "-text-mapped-cp"
       if (!exists_hdfs_path(tf_text_mapped_cp + "/_SUCCESS") && exists_hdfs_path(tf_text_mapped_others)) {
         delete_hdfs_path(tf_text_mapped_cp)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -358,7 +358,6 @@ object MakeTrainExamples {
         s"hadoop fs -put $fileName $tf_text_mapped/count" !
 
       }
-
     }
     println("Done.......")
 
@@ -380,11 +379,13 @@ object MakeTrainExamples {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       val tf_text_mapped_tf = des_dir + "/" + src_date + "-text-mapped-tf"
-      val tf_text_mapped_sampled_tf = des_dir + "/" + src_date + "-text-mapped-sampled-tf"
+      val tf_text_mapped_sampled = des_dir + "/" + src_date + "-text-mapped-sampled"
+      val tf_text_mapped_sampled_tf = des_dir + "/" + src_date + "-text-mapped-tf-sampled"
       println("tf_text_mapped:" + tf_text_mapped)
       println("tf_text_mapped_sampled_tf:" + tf_text_mapped_sampled_tf)
       if (exists_hdfs_path(tf_text_mapped) && (!exists_hdfs_path(tf_text_mapped_sampled_tf))) {
         delete_hdfs_path(tf_text_mapped_tf)
+        delete_hdfs_path(tf_text_mapped_sampled)
         delete_hdfs_path(tf_text_mapped_sampled_tf)
         val tf_text_mapped_collect = tf_text_mapped + "/part*"
         println("now load data frame:" + tf_text_mapped_collect)
@@ -409,17 +410,17 @@ object MakeTrainExamples {
         text_df.write.format("tfrecords").option("recordType", "Example").save(tf_text_mapped_tf)
 
         //保存count文件
-        val text_df_count = text_df.count()
-        println(s"text_df_count is : $text_df_count")
+        //val text_df_count = text_df.count()
+        //println(s"text_df_count is : $text_df_count")
         var fileName = "count_" + Random.nextInt(100000)
-        writeNum2File(fileName, text_df_count)
+        writeNum2File(fileName, text_rdd_count)
         s"hadoop fs -put $fileName $tf_text_mapped_tf/count" !
 
         val sampled_rdd = text_rdd.filter(
           rs => {
             val label = rs.getFloat(1)
             var filter = false
-            if (label == 1.0 || Random.nextFloat() < math.abs(negativeSampleRatio)) {
+            if (label > 0.0 || Random.nextFloat() < math.abs(negativeSampleRatio)) {
               filter = true
             }
             filter
