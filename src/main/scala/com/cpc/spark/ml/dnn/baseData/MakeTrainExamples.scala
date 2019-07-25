@@ -1,9 +1,7 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.{BufferedReader, File, InputStreamReader, PrintWriter}
-import java.net.URI
+import java.io.{File, PrintWriter}
 
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{StructField, _}
