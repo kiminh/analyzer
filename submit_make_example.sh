@@ -25,7 +25,7 @@ partitions=1000
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-tf-make-example" \
-    --driver-memory 16g --executor-memory 40g \
+    --driver-memory 16g --executor-memory 60g \
     --num-executors 500 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
