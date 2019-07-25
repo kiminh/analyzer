@@ -241,46 +241,33 @@ object MakeTrainExamples {
 
     println("Do Mapping Other Features")
     for (src_date <- src_date_list) {
-      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-others-direct"
+      val tf_text_mapped_others = des_dir + "/" + src_date + "-text-mapped-middle"
       val tf_text = des_dir + "/" + src_date + "-text"
       if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
         delete_hdfs_path(tf_text_mapped_others)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("trans part:" + tf_text)
         println("make " + tf_text_mapped_others)
-        var data = sc.parallelize(Array[String]())
-        for (idx <- 0 until 10) {
-          //val part = "part-%05d".format(idx)
-          val part = "part-00" + idx.toString + "*"
-          val tf_text_part = tf_text + "/" + part
-          println("******************************************")
-          println("trans part:" + tf_text_part)
-          val mapped_value_rdd = sc.textFile(tf_text_part).map(
-            rs => {
-              val line_list = rs.split("\t")
-              val sid = line_list(0)
-              val dense = line_list(3).split(";")
-              val idx_arr = line_list(7).split(";")
+        sc.textFile(tf_text).map(
+          rs => {
+            val line_list = rs.split("\t")
+            val sid = line_list(0)
+            val dense = line_list(3).split(";")
+            val idx_arr = line_list(7).split(";")
 
-              val value_list = ArrayBuffer[String]()
-              value_list += sid
-              for (idx <- dense.indices) {
-                if (idx != 25) {
-                  value_list += dense(idx)
-                }
+            val uid_value = dense(25)
+            val value_list = ArrayBuffer[String]()
+            for (idx <- dense.indices) {
+              if (idx != 25) {
+                value_list += dense(idx)
               }
-              value_list.++=(idx_arr)
-
-              val mapped = value_list.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
-              sid + "\t" + mapped.mkString(";")
             }
-          )
-          //println("mapped_value_rdd_count:" + mapped_value_rdd.count)
-          data = data.union(mapped_value_rdd)
-          //println("current data length:" + data.count)
-        }
-        data.repartition(1000).saveAsTextFile(tf_text_mapped_others)
-      }
+            value_list.++=(idx_arr)
 
+            val mapped = value_list.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
+            sid + "\t" + uid_value + "\t" + mapped.mkString(";")
+          }).repartition(1000).saveAsTextFile(tf_text_mapped_others)
+      }
     }
     println("Done.......")
 
