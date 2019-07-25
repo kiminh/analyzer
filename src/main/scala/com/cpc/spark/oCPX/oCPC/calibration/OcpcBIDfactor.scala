@@ -44,7 +44,7 @@ object OcpcBIDfactor {
     val result = OcpcBIDfactorMain(date, hour, version, expTag, hourInt, spark)
 
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_range_calibration20190702a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_bid_factor20190723a")
 
   }
 
@@ -62,6 +62,7 @@ object OcpcBIDfactor {
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
     val data1 = dataRaw1
+        .filter(s"cv >= min_cv")
         .cache()
     data1.show(10)
 
@@ -69,14 +70,15 @@ object OcpcBIDfactor {
 
     // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
     val baseData2 = baseData
-      .join(data1, Seq("unitid", "conversion_goal"), "inner")
+      .join(data1, Seq("unitid", "conversion_goal", "media"), "inner")
 
     val data2 = calculateData2(baseData2, date, hour, spark)
 
     val resultDF = data1
-      .select("unitid", "conversion_goal", "post_cvr", "pcoc", "jfb")
-      .join(data2, Seq("unitid", "conversion_goal"), "inner")
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .select("unitid", "conversion_goal", "media", "exp_tag")
+      .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
+      .selectExpr("unitid", "conversion_goal", "exp_tag", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .withColumn("version", lit(version))
 
     resultDF
 
@@ -114,6 +116,7 @@ object OcpcBIDfactor {
          |  searchid,
          |  unitid,
          |  conversion_goal,
+         |  media,
          |  bid,
          |  price,
          |  exp_cvr,
@@ -141,25 +144,27 @@ object OcpcBIDfactor {
          |SELECT
          |  unitid,
          |  conversion_goal,
+         |  media,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  avg(high_bid_factor) as high_bid_factor,
          |  avg(low_bid_factor) as low_bid_factor
          |FROM
          |  raw_data
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid, conversion_goal, media
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("calc_total", col("pre_cvr") * col("click"))
-      .select("unitid", "conversion_goal", "calc_total", "high_bid_factor", "low_bid_factor")
+      .select("unitid", "conversion_goal", "media", "calc_total", "high_bid_factor", "low_bid_factor")
 
     val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
          |  conversion_goal,
+         |  media,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  avg(high_bid_factor) as high_bid_factor,
@@ -168,37 +173,38 @@ object OcpcBIDfactor {
          |  raw_data
          |WHERE
          |  pcvr_group = "high"
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid, conversion_goal, media
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("calc_high", col("pre_cvr") * col("click") * col("high_bid_factor"))
-      .select("unitid", "conversion_goal", "calc_high")
+      .select("unitid", "conversion_goal", "media", "calc_high")
 
     val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
          |  conversion_goal,
+         |  media,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr
          |FROM
          |  raw_data
          |WHERE
          |  pcvr_group = "low"
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unitid, conversion_goal, media
        """.stripMargin
     println(sqlRequest3)
     val data3 = spark
       .sql(sqlRequest3)
       .withColumn("calc_low", col("pre_cvr") * col("click"))
-      .select("unitid", "conversion_goal", "calc_low")
+      .select("unitid", "conversion_goal", "media", "calc_low")
 
     val data = data1
-      .join(data2, Seq("unitid", "conversion_goal"), "inner")
-      .join(data3, Seq("unitid", "conversion_goal"), "inner")
-      .select("unitid", "conversion_goal", "calc_total", "calc_high", "calc_low", "high_bid_factor", "low_bid_factor")
+      .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
+      .join(data3, Seq("unitid", "conversion_goal", "media"), "inner")
+      .select("unitid", "conversion_goal", "media", "calc_total", "calc_high", "calc_low", "high_bid_factor", "low_bid_factor")
       .withColumn("low_bid_factor", udfCalculateLowBidFactor()(col("calc_total"), col("calc_high"), col("calc_low"), col("low_bid_factor")))
 
     data
@@ -234,13 +240,11 @@ object OcpcBIDfactor {
     println(sqlRequest)
     val data1 = spark
       .sql(sqlRequest)
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
-      .select("unitid", "conversion_goal", "media", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .select("unitid", "conversion_goal", "media", "post_cvr", "pre_cvr", "click", "cv")
       .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
-      .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "pre_cvr", "acp", "acb", "pcoc", "jfb", "click", "cv")
+      .select("unitid", "conversion_goal", "media", "exp_tag", "post_cvr", "pre_cvr", "click", "cv")
 
     // 抽取highbidfactor与lowbidfactor, min_cv
     // 获取相关参数
