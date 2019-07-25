@@ -201,6 +201,9 @@ object OcpcBIDfactor {
       .withColumn("calc_low", col("pre_cvr") * col("click"))
       .select("unitid", "conversion_goal", "media", "calc_low")
 
+    data1.printSchema()
+    data2.printSchema()
+    data3.printSchema()
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
       .join(data3, Seq("unitid", "conversion_goal", "media"), "inner")
