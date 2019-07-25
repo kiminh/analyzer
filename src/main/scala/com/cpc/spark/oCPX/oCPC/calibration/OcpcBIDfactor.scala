@@ -58,7 +58,7 @@ object OcpcBIDfactor {
 
     // 抽取基础数据
     val baseData = getBaseData(hourInt, date, hour, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_basedata20190725")
+//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_basedata20190725")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
@@ -79,7 +79,7 @@ object OcpcBIDfactor {
     val resultDF = data1
       .select("unitid", "conversion_goal", "media", "exp_tag")
       .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
-      .selectExpr("unitid", "conversion_goal", "exp_tag", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .selectExpr("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
       .withColumn("version", lit(version))
 
     resultDF
@@ -140,7 +140,7 @@ object OcpcBIDfactor {
       .sql(sqlRequest)
       .withColumn("pcvr_group", when(col("pcvr") >= col("post_cvr"), "high").otherwise("low"))
 
-    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_range_rawdata")
+//    rawData.write.mode("overwrite").saveAsTable("test.check_ocpc_range_rawdata")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
@@ -205,9 +205,9 @@ object OcpcBIDfactor {
       .withColumn("calc_low", col("pre_cvr") * col("click"))
       .select("unitid", "conversion_goal", "media", "calc_low")
 
-    data1.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data1")
-    data2.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data2")
-    data3.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data3")
+//    data1.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data1")
+//    data2.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data2")
+//    data3.write.mode("overwrite").saveAsTable("test.check_ocpc_range_data3")
 
 //    val sqlRequestFinal =
 //      s"""
@@ -300,7 +300,7 @@ object OcpcBIDfactor {
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .na.fill(40, Seq("min_cv"))
 
-    data.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_rawdata20190725")
+//    data.write.mode("overwrite").saveAsTable("test.check_ocpc_bid_factor_rawdata20190725")
 
     data
   }
