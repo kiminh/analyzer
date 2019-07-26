@@ -398,6 +398,18 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label_single", FloatType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+
     println("Do Mapping Test Examples' features")
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     val test_file_src = src_dir + "/" + test_data_src
@@ -475,31 +487,42 @@ object MakeTrainExamples {
       println(s"mapped_rdd_count : $mapped_rdd_count")
       mapped_rdd.repartition(60).saveAsTextFile(test_file_text_mapped)
     }
+    val test_file_text_mapped_tf = des_dir + "/" + test_data_des + "-text-mapped-tf"
+    if (!exists_hdfs_path(test_file_text_mapped_tf) && exists_hdfs_path(test_file_text_mapped)) {
+      val test_text_rdd = sc.textFile(test_file_text_mapped).map({
+        rs =>
+          val rs_list = rs.split("\t")
+          val sample_idx = rs_list(0).toLong
+          val label = rs_list(1).toFloat
+          val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+          val dense = rs_list(3).split(";").map(_.toLong).toSeq
+          val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+          val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+          val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+          val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+          Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+      val test_text_rdd_count = test_text_rdd.count
+      println(s"test_text_rdd_count is : $test_text_rdd_count")
+
+      val test_text_df: DataFrame = spark.createDataFrame(test_text_rdd, schema_new)
+      test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tf)
+    }
 
 
     /************down sampling************************/
     println("Down Sampling")
     val negativeSampleRatio = 0.19
-    val schema_new = StructType(List(
-      StructField("sample_idx", LongType, nullable = true),
-      StructField("label_single", FloatType, nullable = true),
-      StructField("label", ArrayType(LongType, containsNull = true)),
-      StructField("dense", ArrayType(LongType, containsNull = true)),
-      StructField("idx0", ArrayType(LongType, containsNull = true)),
-      StructField("idx1", ArrayType(LongType, containsNull = true)),
-      StructField("idx2", ArrayType(LongType, containsNull = true)),
-      StructField("id_arr", ArrayType(LongType, containsNull = true))
-    ))
-
     for (src_date <- src_date_list) {
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       val tf_text_mapped_tf = des_dir + "/" + src_date + "-text-mapped-tf"
       val tf_text_mapped_sampled = des_dir + "/" + src_date + "-text-mapped-sampled"
       val tf_text_mapped_sampled_tf = des_dir + "/" + src_date + "-text-mapped-tf-sampled"
-      println("tf_text_mapped:" + tf_text_mapped)
-      println("tf_text_mapped_sampled_tf:" + tf_text_mapped_sampled_tf)
       if (exists_hdfs_path(tf_text_mapped) && (!exists_hdfs_path(tf_text_mapped_sampled_tf))) {
+        println("tf_text_mapped:" + tf_text_mapped)
+        println("tf_text_mapped_sampled_tf:" + tf_text_mapped_sampled_tf)
         delete_hdfs_path(tf_text_mapped_tf)
         delete_hdfs_path(tf_text_mapped_sampled)
         delete_hdfs_path(tf_text_mapped_sampled_tf)
