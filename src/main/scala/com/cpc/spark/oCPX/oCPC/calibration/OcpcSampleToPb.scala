@@ -92,7 +92,7 @@ object OcpcSampleToPb {
          |SELECT
          |  unitid,
          |  conversion_goal,
-         |  avg(cpa) as cpa_suggest
+         |  avg(cpa_suggest) as cpa_suggest
          |FROM
          |  dl_cpc.ocpc_history_suggest_cpa_version
          |WHERE
