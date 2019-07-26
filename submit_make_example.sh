@@ -36,5 +36,6 @@ spark-submit --master yarn --queue ${queue} \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
     ${randjar} ${src_dir} ${src_date} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${partitions}
 
-#chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"${des_date}"*"
-#hadoop fs -chmod -R 0777 ${chmod_des}
+chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-exp/"${test_data_des}"*"
+hadoop fs -chmod -R 0777 ${chmod_des}
+
