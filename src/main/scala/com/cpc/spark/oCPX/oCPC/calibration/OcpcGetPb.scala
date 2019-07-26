@@ -24,11 +24,11 @@ object OcpcGetPb {
     val isHidden = 0
 
     // 主校准回溯时间长度
-    val hourInt1 = args(6).toInt
+    val hourInt1 = args(7).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(7).toInt
+    val hourInt2 = args(8).toInt
     // 兜底校准时长
-    val hourInt3 = args(8).toInt
+    val hourInt3 = args(9).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
