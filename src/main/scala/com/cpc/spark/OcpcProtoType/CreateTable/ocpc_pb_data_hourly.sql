@@ -13,5 +13,8 @@ create table if not exists test.ocpc_pb_data_hourly(
 partitioned by (`date` string, `hour` string, exp_tag string, is_hidden int, version string)
 stored as parquet;
 
-create table dl_cpc.ocpc_param_pb_data_hourly_v2
-like test.ocpc_param_pb_data_hourly_v2;
+create table dl_cpc.ocpc_pb_data_hourly
+like test.ocpc_pb_data_hourly;
+
+
+alter table test.ocpc_pb_data_hourly add columns (cpagiven double)

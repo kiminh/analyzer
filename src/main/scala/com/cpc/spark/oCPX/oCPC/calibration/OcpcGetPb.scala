@@ -55,11 +55,12 @@ object OcpcGetPb {
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
     val resultDF = data
+      .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(isHidden))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "date", "hour", "exp_tag", "is_hidden", "version")
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
     resultDF
       .repartition(5)
