@@ -403,7 +403,7 @@ object MakeTrainExamples {
     for (src_date <- src_date_list) {
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       val tf_text_mapped_check = des_dir + "/check-" + src_date
-      if (exists_hdfs_path(tf_text_mapped)) {
+      if (!exists_hdfs_path(tf_text_mapped_check) && exists_hdfs_path(tf_text_mapped)) {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("check mapped date:" + src_date)
         val rdd = sc.textFile(tf_text_mapped + "/part*").map(
