@@ -453,7 +453,7 @@ object MakeTrainExamples {
           val idx_arr = line_list(7).split(";")
 
           val uid_value = dense(25)
-          val value_list_one_hot = dense.slice(0, 25) ++ dense.slice(25, 28)
+          val value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 28)
 
           val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
           val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
