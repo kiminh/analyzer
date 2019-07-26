@@ -109,6 +109,7 @@ object TopCtrIdeaV2 {
             media_id = x.media_id,
             show = x.show + y.show,
             click = x.click + y.click ))
+        .map(x => x._2)
       .toLocalIterator
       .toSeq
 
@@ -129,7 +130,7 @@ object TopCtrIdeaV2 {
     val topIdeaRDD = adinfo
       .map {
         x => //Adinfo
-          val ad = titles.getOrElse(x._2.idea_id, null) //根据ideaid获得  (title,image,type,video_id,user_id,category)
+          val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得  (title,image,type,video_id,user_id,category)
           if (ad != null) {
             var mtype = ad._3 //type
 
@@ -147,18 +148,18 @@ object TopCtrIdeaV2 {
             var topIdea = TopIdea(
               id = id,
               user_id = ad._5,
-              idea_id = x._2.idea_id,
+              idea_id = x.idea_id,
               agent_id = ub.getOrElse(ad._5, 0),
               adclass = ad._6,
               adclass_1 = adclass,
-              adslot_type = x._2.adslot_type,
-              media_id = x._2.media_id,
+              adslot_type = x.adslot_type,
+              media_id = x.media_id,
               title = ad._1, //title
               mtype = mtype, //type
               from = "cpc_adv",
-              show = x._2.show,
-              click = x._2.click,
-              ctr_score = x._2.click / x._2.show * 1000000
+              show = x.show,
+              click = x.click,
+              ctr_score = x.click / x.show * 1000000
             )
 
             if (mtype == 4) { //视频
