@@ -240,6 +240,7 @@ object MakeTrainExamples {
       }
     }
     println("sparseMapUid.size=" + sparseMapUid.count)
+    val sparse_map_uid_count = sparseMapUid.count
 
     println("Load Others SparseMap")
     val instances_all_map_others = des_dir + "/" + instances_file + "-non-uid-indexed"
@@ -275,7 +276,7 @@ object MakeTrainExamples {
     //println("Done.......")
 
 
-    println("Do Mapping Other Features")
+    println("Do Mapping Features")
     for (src_date <- src_date_list) {
       val tf_text_mapped_others = des_dir + "/mapping-info/" + src_date + "-text-mapped-non-uid"
       val tf_text = des_dir + "/" + src_date + "-text"
@@ -397,6 +398,58 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
+    /************check mapped************************/
+    println("Check Mapped Correctness")
+    var err_code = 0
+    for (src_date <- src_date_list) {
+      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
+      if (exists_hdfs_path(tf_text_mapped)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("check mapped date:" + src_date)
+        val rdd = sc.textFile(tf_text_mapped).map(
+          rs => {
+            val ult_list = rs.split("\t")
+            val sid = ult_list(0)
+            val label = ult_list(1)
+            val label_arr = ult_list(2)
+            val dense = ult_list(3).split(";")
+            val idx0 = ult_list(4).split(";")
+            val idx1 = ult_list(5).split(";")
+            val idx2 = ult_list(6).split(";")
+            val idx_arr = ult_list(7).split(";")
+            val mapped_uid = dense(0).toLong
+
+            if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
+              err_code = 1
+            }
+
+            if (mapped_uid < sparse_map_others_count) {
+              err_code = 2
+            }
+
+            if (mapped_uid > sparse_map_uid_count + sparse_map_others_count - 1) {
+              err_code = 3
+            }
+
+            for (idx <- 1 until dense.length) {
+              if (dense(idx).toLong < 0 || (dense(idx).toLong > sparse_map_others_count - 1)) {
+                err_code = 4
+              }
+            }
+
+            for (idx <- 0 until idx_arr.length) {
+              if (idx_arr(idx).toLong < 0 || (idx_arr(idx).toLong > sparse_map_others_count - 1)) {
+                err_code = 5
+              }
+            }
+          }
+        )
+        println("err_code:" + err_code)
+      }
+    }
+    println("Done.......")
+
+
     /************down sampling************************/
     println("Down Sampling")
     val negativeSampleRatio = 0.19
@@ -479,5 +532,6 @@ object MakeTrainExamples {
       }
     }
     println("Done.......")
+
   }
 }
