@@ -65,15 +65,15 @@ object MakeTrainExamples {
 
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 5) {
+    if (args.length != 7) {
       System.err.println(
         """
-          |you have to input 5 parameters !!!
+          |you have to input 6 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, src_date_str, des_dir, instances_file, numPartitions) = args
+    val Array(src_dir, src_date_str, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
 
     println(args)
 
@@ -398,57 +398,83 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
-    /************check mapped************************/
-    println("Check Mapped Correctness")
-    for (src_date <- src_date_list) {
-      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
-      val tf_text_mapped_check = des_dir + "/check-" + src_date
-      if (!exists_hdfs_path(tf_text_mapped_check) && exists_hdfs_path(tf_text_mapped)) {
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("check mapped date:" + src_date)
-        val rdd = sc.textFile(tf_text_mapped + "/part*").map(
-          rs => {
-            val ult_list = rs.split("\t")
-            val sid = ult_list(0)
-            val label = ult_list(1)
-            val label_arr = ult_list(2)
-            val dense = ult_list(3).split(";")
-            val idx0 = ult_list(4).split(";")
-            val idx1 = ult_list(5).split(";")
-            val idx2 = ult_list(6).split(";")
-            val idx_arr = ult_list(7).split(";")
-            val mapped_uid = dense(0).toLong
-            var err_code = 0
-
-            if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
-              err_code = 1
-            }
-
-            if (mapped_uid < sparse_map_others_count) {
-              err_code = 2
-            }
-
-            if (mapped_uid > sparse_map_uid_count + sparse_map_others_count - 1) {
-              err_code = 3
-            }
-
-            for (idx <- 1 until dense.length) {
-              if (dense(idx).toLong < 0 || (dense(idx).toLong > sparse_map_others_count - 1)) {
-                err_code = 4
-              }
-            }
-
-            for (idx <- 0 until idx_arr.length) {
-              if (idx_arr(idx).toLong < 0 || (idx_arr(idx).toLong > sparse_map_others_count - 1)) {
-                err_code = 5
-              }
-            }
-            err_code
+    println("Do Mapping Test Examples' features")
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    val test_file_src = src_dir + "/" + test_data_src
+    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
+    if (!exists_hdfs_path(test_file_text_mapped)) {
+      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
+      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
+      val mapped_rdd = importedDf.rdd.map(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4)
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+          var label = "0.0"
+          if (label_arr.head == 1L) {
+            label = "1.0"
           }
-        ).repartition(1).saveAsTextFile(tf_text_mapped_check)
-      }
+          val output = scala.collection.mutable.ArrayBuffer[String]()
+          output += sample_idx.toString
+          output += label
+          output += label_arr.map(_.toString).mkString(";")
+          output += dense.map(_.toString).mkString(";")
+          output += idx0.map(_.toString).mkString(";")
+          output += idx1.map(_.toString).mkString(";")
+          output += idx2.map(_.toString).mkString(";")
+          output += idx_arr.map(_.toString).mkString(";")
+          output
+        }
+      ).map(
+        line_list => {
+          val sid = line_list(0)
+          val label = line_list(1)
+          val label_arr = line_list(2)
+          val dense = line_list(3).split(";")
+          val idx0 = line_list(4)
+          val idx1 = line_list(5)
+          val idx2 = line_list(6)
+          val idx_arr = line_list(7).split(";")
+
+          val uid_value = dense(25)
+          val value_list_one_hot = dense.slice(0, 25) ++ dense.slice(25, 28)
+
+          val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
+          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
+
+          (uid_value.toLong, (sid, mapped_one_hot.mkString(";"), mapped_multi_hot.mkString(";"), label, label_arr, idx0, idx1, idx2))
+        }).join(sparseMapUid).map(
+        rs => {
+          val sid = rs._2._1._1
+          val mapped_one_hot = rs._2._1._2
+          val mapped_mul_hot = rs._2._1._3
+          val label = rs._2._1._4
+          val label_arr = rs._2._1._5
+          val idx0 = rs._2._1._6
+          val idx1 = rs._2._1._7
+          val idx2 = rs._2._1._8
+          val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
+
+          val ult_list:Array[String] = new Array[String](8)
+          ult_list(0) = sid
+          ult_list(1) = label
+          ult_list(2) = label_arr
+          ult_list(3) = mapped_uid + ";" + mapped_one_hot
+          ult_list(4) = idx0
+          ult_list(5) = idx1
+          ult_list(6) = idx2
+          ult_list(7) = mapped_mul_hot
+          ult_list.mkString("\t")
+        }
+      )
+      val mapped_rdd_count = mapped_rdd.count
+      println(s"mapped_rdd_count : $mapped_rdd_count")
+      mapped_rdd.repartition(60).saveAsTextFile(test_file_text_mapped)
     }
-    println("Done.......")
 
 
     /************down sampling************************/
@@ -533,6 +559,58 @@ object MakeTrainExamples {
       }
     }
     println("Done.......")
+
+    /************check mapped************************/
+    /**println("Check Mapped Correctness")
+    for (src_date <- src_date_list) {
+      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
+      val tf_text_mapped_check = des_dir + "/check-" + src_date
+      if (!exists_hdfs_path(tf_text_mapped_check) && exists_hdfs_path(tf_text_mapped)) {
+        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        println("check mapped date:" + src_date)
+        val rdd = sc.textFile(tf_text_mapped + "/part*").map(
+          rs => {
+            val ult_list = rs.split("\t")
+            val sid = ult_list(0)
+            val label = ult_list(1)
+            val label_arr = ult_list(2)
+            val dense = ult_list(3).split(";")
+            val idx0 = ult_list(4).split(";")
+            val idx1 = ult_list(5).split(";")
+            val idx2 = ult_list(6).split(";")
+            val idx_arr = ult_list(7).split(";")
+            val mapped_uid = dense(0).toLong
+            var err_code = 0
+
+            if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
+              err_code = 1
+            }
+
+            if (mapped_uid < sparse_map_others_count) {
+              err_code = 2
+            }
+
+            if (mapped_uid > sparse_map_uid_count + sparse_map_others_count - 1) {
+              err_code = 3
+            }
+
+            for (idx <- 1 until dense.length) {
+              if (dense(idx).toLong < 0 || (dense(idx).toLong > sparse_map_others_count - 1)) {
+                err_code = 4
+              }
+            }
+
+            for (idx <- 0 until idx_arr.length) {
+              if (idx_arr(idx).toLong < 0 || (idx_arr(idx).toLong > sparse_map_others_count - 1)) {
+                err_code = 5
+              }
+            }
+            err_code
+          }
+        ).repartition(1).saveAsTextFile(tf_text_mapped_check)
+      }
+    }
+    println("Done.......")**/
 
   }
 }

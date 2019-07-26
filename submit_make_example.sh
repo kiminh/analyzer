@@ -20,6 +20,8 @@ src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 src_date="2019-07-01;2019-07-02;2019-07-03;2019-07-04;2019-07-05;2019-07-06;2019-07-07;2019-07-08;2019-07-09;2019-07-10;2019-07-11;2019-07-12;2019-07-13;2019-07-14;2019-07-15;2019-07-16"
 src_date="2019-07-16;2019-07-15;2019-07-14;2019-07-13;2019-07-12;2019-07-11;2019-07-10;2019-07-09;2019-07-08;2019-07-07;2019-07-06;2019-07-05;2019-07-04;2019-07-03;2019-07-02;2019-07-01"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-exp"
+test_data_src="2019-07-16/part-r-000*"
+test_data_des="2019-07-16-part-test"
 instances_file="instances-all"
 partitions=1000
 
@@ -32,7 +34,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
-    ${randjar} ${src_dir} ${src_date} ${des_dir} ${instances_file} ${partitions}
+    ${randjar} ${src_dir} ${src_date} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${partitions}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"${des_date}"*"
 #hadoop fs -chmod -R 0777 ${chmod_des}
