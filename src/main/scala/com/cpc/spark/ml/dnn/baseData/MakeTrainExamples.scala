@@ -509,6 +509,7 @@ object MakeTrainExamples {
       val test_text_df: DataFrame = spark.createDataFrame(test_text_rdd, schema_new)
       test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tf)
     }
+    println("Done.......")
 
 
     /************down sampling************************/
