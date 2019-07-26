@@ -3,8 +3,9 @@ package com.cpc.spark.oCPX.oCPC.calibration
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactor._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 
@@ -19,6 +20,7 @@ object OcpcGetPb {
     val expTag = args(3).toString
     val jfbHourInt = args(4).toInt
     val smoothHourInt = args(5).toInt
+    val bidFactorHourInt = args(6).toInt
     val isHidden = 0
 
     // 主校准回溯时间长度
@@ -31,35 +33,56 @@ object OcpcGetPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    val jfbData = OcpcJFBfactorMain(date, hour, version, expTag, jfbHourInt, spark)
-    val smoothData = OcpcSmoothFactorMain(date, hour, version, expTag, smoothHourInt, spark)
-    val pcocData = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, jfbHourInt, spark)
+    val jfbData = jfbDataRaw
+      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
 
-//    println(s"print result:")
-//    calibraionData.show(10)
-//    factorData.show(10)
+    val smoothDataRaw = OcpcSmoothFactorMain(date, hour, version, expTag, smoothHourInt, spark)
+    val smoothData = smoothDataRaw
+      .withColumn("post_cvr", col("cvr"))
+      .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
 
-//    val resultDF = calibraionData
-//      .join(factorData.select("identifier", "conversion_goal", "high_bid_factor", "low_bid_factor"), Seq("identifier", "conversion_goal"), "left_outer")
-//      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
-//      .withColumn("cpagiven", lit(1.0))
-//      .cache()
-//
-//    resultDF.show(10)
-//    resultDF
-//      .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal")
-//      .withColumn("is_hidden", lit(isHidden))
-//      .withColumn("exp_tag", lit(expTag))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
-//      .repartition(5)
-////      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
-//
-//
-//    println("successfully save data into hive")
+    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val pcocData = pcocDataRaw
+      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
+
+    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorData = bidFactorDataRaw
+      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
+
+    val resultDF = data
+      .withColumn("is_hidden", lit(isHidden))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "date", "hour", "exp_tag", "is_hidden", "version")
+
+    resultDF
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+
+  }
+
+  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
+    // 组装数据
+    val data = jfbData
+      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
+      .join(smoothData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
+      .join(bidFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
+      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+      .cache()
+
+    data.show(10)
+    data
+
+
+
 
   }
 
