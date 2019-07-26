@@ -401,7 +401,7 @@ object MakeTrainExamples {
     /************check mapped************************/
     println("Check Mapped Correctness")
     for (src_date <- src_date_list) {
-      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
+      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped/part*"
       if (exists_hdfs_path(tf_text_mapped)) {
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("check mapped date:" + src_date)
