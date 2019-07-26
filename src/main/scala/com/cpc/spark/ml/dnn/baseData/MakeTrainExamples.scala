@@ -400,7 +400,6 @@ object MakeTrainExamples {
 
     /************check mapped************************/
     println("Check Mapped Correctness")
-    var err_code = 0
     for (src_date <- src_date_list) {
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       if (exists_hdfs_path(tf_text_mapped)) {
@@ -418,6 +417,7 @@ object MakeTrainExamples {
             val idx2 = ult_list(6).split(";")
             val idx_arr = ult_list(7).split(";")
             val mapped_uid = dense(0).toLong
+            var err_code = 0
 
             if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
               err_code = 1
@@ -442,9 +442,9 @@ object MakeTrainExamples {
                 err_code = 5
               }
             }
+            err_code
           }
-        )
-        println("err_code:" + err_code)
+        ).repartition(1).saveAsTextFile(tf_text_mapped + "-check")
       }
     }
     println("Done.......")
