@@ -46,9 +46,8 @@ object OcpcSmoothfactor {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "click", "cv", "cvr")
-      .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(10, Seq("min_cv"))
       .na.fill(0.5, Seq("smooth_factor"))

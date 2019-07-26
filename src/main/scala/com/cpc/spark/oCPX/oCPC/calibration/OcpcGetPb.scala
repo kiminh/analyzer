@@ -64,7 +64,9 @@ object OcpcGetPb {
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
+
 
   }
 

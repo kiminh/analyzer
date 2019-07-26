@@ -50,9 +50,8 @@ object OcpcCvrFactorBase {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "cv", "pcoc")
-      .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
       .filter(s"cv >= min_cv")

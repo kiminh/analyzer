@@ -44,9 +44,8 @@ object OcpcJFBfactor {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "click", "total_price", "total_bid")
-      .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .withColumn("version", lit(version))
 
