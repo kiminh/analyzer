@@ -87,6 +87,7 @@ object TopCTRIdeaV3 {
 
 		println("总共取得的条数:" + adInfo.count())
 
+		/*
 		val conf = ConfigFactory.load()
 		val dsn = conf.getString("mariadb.adv.url")
 		val props = new Properties()
@@ -115,7 +116,7 @@ object TopCTRIdeaV3 {
 			.select("belong")
 
 		println("与idea表join后的条数:" + adIdeaDF.count())
-
+		*/
 
 	}
 
