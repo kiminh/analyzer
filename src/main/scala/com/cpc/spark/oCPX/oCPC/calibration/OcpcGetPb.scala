@@ -119,7 +119,7 @@ object OcpcGetPb {
       .withColumn("post_cvr_orig", col("post_cvr"))
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
-      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "cpagiven", "conversion_goal", "exp_tag", "smooth_factor")
+      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "smooth_factor")
 
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
@@ -134,7 +134,7 @@ object OcpcGetPb {
     data.show(10)
 
     val result = data
-      .select("unitid", "cvr_factor", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "conversion_goal", "exp_tag", "smooth_factor")
+      .select("unitid", "cvr_factor", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "conversion_goal", "exp_tag", "smooth_factor")
 
     result
 
