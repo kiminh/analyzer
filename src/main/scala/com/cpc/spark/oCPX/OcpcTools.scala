@@ -292,7 +292,7 @@ object OcpcTools {
     var result = result1 match {
       case "oCPColdflowMidu" => "oCPColdflowNovel"
       case "delayHT66" => "delayhottopic"
-      case _ => _
+      case x => x
     }
     result
   })
