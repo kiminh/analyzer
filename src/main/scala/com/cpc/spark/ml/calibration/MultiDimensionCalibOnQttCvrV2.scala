@@ -114,8 +114,8 @@ object MultiDimensionCalibOnQttCvrV2 {
     println(s"k is: %f".format(k*FACTOR))
     LogToPb(log, session, calimodel,k)
     val irModel = IRModel(
-      boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k*FACTOR)
+      boundaries = Seq(1.0),
+      predictions = Seq(k*FACTOR)
     )
     val caliconfig = CalibrationConfig(
       name = calimodel,
