@@ -106,8 +106,8 @@ object MultiDimensionCalibOnQttCvr {
     log.show(10)
     LogToPb(log, session, calimodel)
     val irModel = IRModel(
-      boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k.toDouble)
+      boundaries = Seq(1.0),
+      predictions = Seq(k.toDouble)
     )
     println(s"k is: $k")
     val caliconfig = CalibrationConfig(
