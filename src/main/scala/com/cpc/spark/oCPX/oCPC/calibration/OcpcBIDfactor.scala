@@ -95,6 +95,7 @@ object OcpcBIDfactor {
       .select("exp_tag", "conversion_goal", "high_bid_factor", "low_bid_factor", "min_cv")
       .distinct()
 
+    println("bid factor config:")
     data.show(10)
 
     data

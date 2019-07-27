@@ -96,6 +96,7 @@ object OcpcSmoothfactor {
       .select("exp_tag", "conversion_goal", "min_cv", "smooth_factor")
       .distinct()
 
+    println("smooth factor: config")
     data.show(10)
 
     data

@@ -70,6 +70,7 @@ object OcpcCvrFactorBase {
       .select("exp_tag", "conversion_goal", "min_cv")
       .distinct()
 
+    println("cvr factor config:")
     data.show(10)
 
     data
