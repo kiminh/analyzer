@@ -54,8 +54,11 @@ object OcpcSmoothfactor {
       .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
-      .filter(s"cv >= min_cv")
+//      .filter(s"cv >= min_cv")
       .withColumn("version", lit(version))
+
+
+    
 
     resultDF
   }

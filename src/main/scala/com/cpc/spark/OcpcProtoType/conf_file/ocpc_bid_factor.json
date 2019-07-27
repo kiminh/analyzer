@@ -1,4 +1,4 @@
-{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.6, "low_bid_factor": 1.0}
+{"version": "ocpctest", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0}
 {"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 1, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
@@ -8,8 +8,7 @@
 {"version": "ocpctest", "exp_tag": "shorttimeQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "shorttimeQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "delayhottopic", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0}
-{"version": "ocpcv1", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.6, "low_bid_factor": 1.0}
-{"version": "ocpcv1", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.6, "low_bid_factor": 1.0}
+{"version": "ocpcv1", "exp_tag": "oCPColdflowHottopic", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0}
 {"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 1, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
@@ -18,7 +17,7 @@
 {"version": "ocpcv1", "exp_tag": "shorttimeQtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "shorttimeQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "shorttimeQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
-{"version": "ocpcv1", "exp_tag": "delayhottopic", "conversion_goal": 2, "high_bid_factor": 1.6, "low_bid_factor": 1.0}
+{"version": "ocpcv1", "exp_tag": "delayhottopic", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0}
 {"version": "ocpcv1", "exp_tag": "adtype15Qtt", "conversion_goal": 1, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "adtype15Qtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpcv1", "exp_tag": "adtype15Qtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
@@ -27,3 +26,4 @@
 {"version": "ocpctest", "exp_tag": "adtype15Qtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "adtype15Qtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
 {"version": "ocpctest", "exp_tag": "adtype15Qtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9}
+{"version": "ocpcv1", "exp_tag": "delayhottopic1", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 1.0}
