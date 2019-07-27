@@ -1,6 +1,7 @@
 import json
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
+import time
 
 
 alerts  = [
@@ -34,6 +35,15 @@ alerts_json = {
 
 json = json.dumps(alerts_json)
 print(json)
+localtime = time.localtime(time.time())
+print localtime
+
+time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+date = time_str.split(" ")
+time = time_str.split(" ")
+print date
+print time
+
 
 producer = KafkaProducer(bootstrap_servers=['172.25.20.106:9092'])
 future = producer.send('test', value= b'' + json)
