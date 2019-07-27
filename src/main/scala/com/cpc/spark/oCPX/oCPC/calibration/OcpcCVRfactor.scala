@@ -84,11 +84,13 @@ object OcpcCVRfactor {
 
     // 主校准模型
     val data1 = dataRaw1
+      .filter(s"cv >= min_cv")
       .withColumn("pcoc1", col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc1")
 
     // 备用校准模型
     val data2 = dataRaw2
+      .filter(s"cv >= min_cv")
       .withColumn("pcoc2", col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc2")
 

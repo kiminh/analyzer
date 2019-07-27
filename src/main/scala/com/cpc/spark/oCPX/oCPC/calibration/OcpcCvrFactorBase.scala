@@ -54,7 +54,7 @@ object OcpcCvrFactorBase {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv >= min_cv")
+//      .filter(s"cv >= min_cv")
       .withColumn("version", lit(version))
 
     resultDF

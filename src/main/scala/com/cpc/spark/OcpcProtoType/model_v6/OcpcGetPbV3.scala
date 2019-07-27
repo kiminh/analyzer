@@ -58,8 +58,8 @@ object OcpcGetPbV3 {
       .withColumn("version", lit(version))
       .select("identifier", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cpagiven", "is_hidden", "exp_tag", "conversion_goal", "date", "hour", "version")
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_calibration_hourly_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_calibration_hourly_v2")
 
 
     println("successfully save data into hive")
