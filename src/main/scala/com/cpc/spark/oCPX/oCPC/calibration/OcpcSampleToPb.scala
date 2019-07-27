@@ -71,6 +71,7 @@ object OcpcSampleToPb {
          |  cvr_factor as cali_value,
          |  jfb_factor,
          |  post_cvr,
+         |  smooth_factor,
          |  high_bid_factor,
          |  low_bid_factor,
          |  cpagiven
