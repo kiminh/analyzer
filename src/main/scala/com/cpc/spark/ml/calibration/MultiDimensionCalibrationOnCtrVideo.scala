@@ -67,8 +67,8 @@ object MultiDimensionCalibrationOnCtrVideo {
     log.show(10)
     LogToPb(log, session, calimodel)
     val irModel = IRModel(
-      boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,all_k)
+      boundaries = Seq(1.0),
+      predictions = Seq(all_k)
     )
     println(s"k is:$all_k")
     val caliconfig = CalibrationConfig(
