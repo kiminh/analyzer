@@ -90,20 +90,19 @@ object OcpcGetPb {
     val conf = ConfigFactory.load("ocpc")
     val confPath = conf.getString("exp_tag.weishi")
     val rawData = spark.read.format("json").json(confPath)
-    rawData.show(10)
     val confData = rawData
-      .filter(s"exp_tag = '$expTag'")
-      .select("userid")
+      .select("userid", "exp_tag")
       .distinct()
+    confData.show(10)
 
     val flagData = useridUnitid
       .join(confData, Seq("userid"), "inner")
-      .select("unitid", "userid")
+      .select("unitid", "userid", "exp_tag")
       .distinct()
     flagData.show(10)
 
     val data2 = dataRaw2
-      .join(flagData, Seq("unitid"), "inner")
+      .join(flagData, Seq("unitid", "exp_tag"), "inner")
       .filter(s"conversion_goal = 2")
       .withColumn("cvr_factor_bak", col("cvr_factor"))
       .withColumn("jfb_factor_bak", col("jfb_factor"))
