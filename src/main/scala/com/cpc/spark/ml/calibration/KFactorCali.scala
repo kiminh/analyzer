@@ -78,8 +78,8 @@ object KFactorCali {
     }
 
     val irModel = IRModel(
-      boundaries = Seq(0.0,1.0),
-      predictions = Seq(0.0,k)
+      boundaries = Seq(1.0),
+      predictions = Seq(k)
     )
     println(s"k is: $k")
     val config = CalibrationConfig(
