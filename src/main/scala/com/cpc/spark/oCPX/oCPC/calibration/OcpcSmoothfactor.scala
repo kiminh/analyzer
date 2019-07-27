@@ -57,9 +57,6 @@ object OcpcSmoothfactor {
 //      .filter(s"cv >= min_cv")
       .withColumn("version", lit(version))
 
-
-    
-
     resultDF
   }
 
