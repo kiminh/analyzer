@@ -120,11 +120,11 @@ object TopCtrIdeaV2 {
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
-    val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
+    // val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
     println("总条数： " + adinfo.size)
     println("title length: " + titles.size)
-    println("imgs length: " + imgs.size)
+    // println("imgs length: " + imgs.size)
 
     var id = 0
     val topIdeaRDD = adinfo
@@ -134,15 +134,21 @@ object TopCtrIdeaV2 {
           if (ad != null) {
             var mtype = ad._3 //type
 
-            var img: Seq[(String, Int)] = Seq()
-            if (mtype != 6) {
-              img = ad._2.split(",").map(_.toInt).toSeq
-                .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
-            }
-            val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
+            // var img: Seq[(String, Int)] = Seq()
+            // if (mtype != 6) {
+            //   img = ad._2.split(",").map(_.toInt).toSeq
+            //     .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            // }
+            // val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
 
             val adclass = (ad._6 / 1000000) * 1000000 + 100100
+            var image_ids = ""
+            if (mtype == 4) {
+              image_ids = ad._4.toString()
+            } else {
+              image_ids = ad._2
+            }
 
             id += 1
             var topIdea = TopIdea(
@@ -155,6 +161,7 @@ object TopCtrIdeaV2 {
               adslot_type = x.adslot_type,
               media_id = x.media_id,
               title = ad._1, //title
+              image_ids = image_ids,
               mtype = mtype, //type
               from = "cpc_adv",
               show = x.show,
@@ -162,11 +169,11 @@ object TopCtrIdeaV2 {
               ctr_score = x.click / x.show * 1000000
             )
 
-            if (mtype == 4) { //视频
-              topIdea = topIdea.copy(images = video._1)
-            } else { //除视频以外其它
-              topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
-            }
+            // if (mtype == 4) { //视频
+            //   topIdea = topIdea.copy(image_ids = video._1)
+            // } else { //除视频以外其它
+            //   topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
+            // }
 
             topIdea
 
@@ -391,7 +398,7 @@ object TopCtrIdeaV2 {
                               media_id: Int = 0,
                               title: String = "",
                               mtype: Int = 0,
-                              images: String = "",
+                              image_ids: String = "",
                               ctr_score: Int = 0,
                               from: String = "",
                               click: Int = 0,
