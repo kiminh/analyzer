@@ -41,7 +41,7 @@ object CalibrationCheckOnMiduCtr {
 
     // get union log
     val sql = s"""
-                 |select exp_ctr as ectr,searchid, raw_ctr, substring(adclass,1,6) as adclass,
+                 |select isclick,exp_ctr as ectr,searchid, raw_ctr, substring(adclass,1,6) as adclass,
                  |adslotid as adslot_id, ideaid,
                  |case
                  |  when user_req_ad_num = 0 then '0'
