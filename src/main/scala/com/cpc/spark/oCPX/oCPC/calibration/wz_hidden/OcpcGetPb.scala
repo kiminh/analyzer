@@ -4,6 +4,8 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -55,7 +57,6 @@ object OcpcGetPb {
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
     val resultDF = data
-      .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(isHidden))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -78,16 +79,38 @@ object OcpcGetPb {
       .join(bidFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
-      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
-      .cache()
 
-    data.show(10)
-    data
+    // 从预算控制表收集暗投单元
+    val unitidList = getCPAgiven(spark)
 
+    // 数据关联
+    val resultDF = data
+        .join(unitidList, Seq("unitid"), "inner")
+        .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven")
+        .cache()
 
-
-
+    resultDF.show(10)
+    resultDF
   }
+
+  def getCPAgiven(spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  avg(cpa) as cpagiven
+         |FROM
+         |  test.ocpc_auto_budget_hourly
+         |WHERE
+         |  industry in ('wzcp')
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest).cache()
+    result.show(10)
+    result
+  }
+
 
 
 
