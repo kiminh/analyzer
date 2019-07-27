@@ -97,8 +97,8 @@ object OcpcSampleToPb {
          |  dl_cpc.ocpc_history_suggest_cpa_version
          |WHERE
          |  version = 'ocpcv1'
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
-    
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2).cache()
     data2.show(10)
