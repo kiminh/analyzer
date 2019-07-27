@@ -98,6 +98,7 @@ object OcpcSampleToPb {
          |WHERE
          |  version = 'ocpcv1'
        """.stripMargin
+    
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2).cache()
     data2.show(10)
