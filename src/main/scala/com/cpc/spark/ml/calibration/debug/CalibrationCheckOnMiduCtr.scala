@@ -74,7 +74,7 @@ object CalibrationCheckOnMiduCtr {
     println("calibration data:%d".format(data.count()))
     val result = data.rdd.map( x => {
       val ectr = x.getLong(1).toDouble / 1e6d
-      val onlineCtr = x.getInt(2).toDouble / 1e6d
+      val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(ectr, irModel.ir.get)
