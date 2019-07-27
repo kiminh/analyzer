@@ -93,13 +93,11 @@ object OcpcGetPb {
     val confData = rawData
       .select("userid", "exp_tag")
       .distinct()
-    confData.show(10)
 
     val flagData = useridUnitid
       .join(confData, Seq("userid"), "inner")
       .select("unitid", "userid", "exp_tag")
       .distinct()
-    flagData.show(10)
 
     val data2 = dataRaw2
       .join(flagData, Seq("unitid", "exp_tag"), "inner")
@@ -112,6 +110,9 @@ object OcpcGetPb {
       .withColumn("flag", lit(1))
       .select("unitid", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag")
 
+    println("weishi data")
+    data2.show(10)
+
     val data1 = dataRaw1
       .withColumn("cvr_factor_orig", col("cvr_factor"))
       .withColumn("jfb_factor_orig", col("jfb_factor"))
@@ -119,6 +120,8 @@ object OcpcGetPb {
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
       .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "smooth_factor")
+    println("complete data")
+    data1.show(10)
 
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
