@@ -277,6 +277,7 @@ object OcpcSampleToPb {
       .select("exp_tag", "conversion_goal", "ratio")
       .distinct()
 
+    println("adtype15 config:")
     data.show(10)
 
     data
