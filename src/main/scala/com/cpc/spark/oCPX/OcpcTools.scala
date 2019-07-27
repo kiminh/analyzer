@@ -284,9 +284,15 @@ object OcpcTools {
   })
 
   def udfSetExpTag(expTag: String) = udf((media: String) => {
-    var result = expTag match {
+    var result1 = expTag match {
       case "base" => media
       case _ => expTag + media
+    }
+
+    var result = result1 match {
+      case "oCPColdflowMidu" => "oCPColdflowNovel"
+      case "delayHT66" => "delayhottopic"
+      case _ => _
     }
     result
   })
