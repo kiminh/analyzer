@@ -72,7 +72,7 @@ object OcpcGetPb {
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
     resultDF
-      .repartition(5)
+      .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
