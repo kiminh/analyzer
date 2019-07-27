@@ -57,7 +57,7 @@ object OcpcSampleToPb {
 //      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
 
-    savePbPack(resultDF, fileName, spark)
+//    savePbPack(resultDF, fileName, spark)
   }
 
   def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
