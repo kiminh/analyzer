@@ -120,11 +120,11 @@ object TopCtrIdeaV2 {
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
-    // val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
+    val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
     println("总条数： " + adinfo.size)
     println("title length: " + titles.size)
-    // println("imgs length: " + imgs.size)
+    println("imgs length: " + imgs.size)
 
     var id = 0
     val topIdeaRDD = adinfo
@@ -134,13 +134,12 @@ object TopCtrIdeaV2 {
           if (ad != null) {
             var mtype = ad._3 //type
 
-            // var img: Seq[(String, Int)] = Seq()
-            // if (mtype != 6) {
-            //   img = ad._2.split(",").map(_.toInt).toSeq
-            //     .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
-            // }
-            // val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
-
+            var img: Seq[(String, Int)] = Seq()
+            if (mtype != 6) {
+              img = ad._2.split(",").map(_.toInt).toSeq
+                 .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            }
+            val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
             val adclass = (ad._6 / 1000000) * 1000000 + 100100
             var image_ids = ""
@@ -161,7 +160,6 @@ object TopCtrIdeaV2 {
               adslot_type = x.adslot_type,
               media_id = x.media_id,
               title = ad._1, //title
-              image_ids = image_ids,
               mtype = mtype, //type
               from = "cpc_adv",
               show = x.show,
@@ -169,11 +167,11 @@ object TopCtrIdeaV2 {
               ctr_score = x.click / x.show * 1000000
             )
 
-            // if (mtype == 4) { //视频
-            //   topIdea = topIdea.copy(image_ids = video._1)
-            // } else { //除视频以外其它
-            //   topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
-            // }
+            if (mtype == 4) { //视频
+              topIdea = topIdea.copy(images = video._1)
+            } else { //除视频以外其它
+              topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
+            }
 
             topIdea
 
@@ -320,7 +318,7 @@ object TopCtrIdeaV2 {
 
   def getIdeaTitle(): Map[Int, (String, String, Int, Int, Int, Int)] = {
     //荐素材类型: 1为小图，2为长图，3组图，4为视频，6为文本 7互动 8开屏 9 横幅
-    var sql = "select id, title, image, type, video_id, user_id, category from idea where type in (1,2,3,4,6,7,8,9)"  // 去掉了action_type=1的过滤
+    var sql = "select id, title, image, type, video_id, user_id, category from idea where type in (1,2,3,4,6,7,8,9) limit 100000"  // 去掉了action_type=1的过滤
     val ideas = mutable.Map[Int, (String, String, Int, Int, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
@@ -335,7 +333,7 @@ object TopCtrIdeaV2 {
   }
 
   def getIdaeImg(): Map[Int, (String, Int)] = {
-    val sql = "select id,`type`,remote_url from resource"
+    val sql = "select id,`type`,remote_url from resource limit 100000"
     val images = mutable.Map[Int, (String, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
@@ -398,7 +396,7 @@ object TopCtrIdeaV2 {
                               media_id: Int = 0,
                               title: String = "",
                               mtype: Int = 0,
-                              image_ids: String = "",
+                              images: String = "",
                               ctr_score: Int = 0,
                               from: String = "",
                               click: Int = 0,
