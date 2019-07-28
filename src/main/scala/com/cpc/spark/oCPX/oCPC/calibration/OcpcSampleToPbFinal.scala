@@ -39,12 +39,12 @@ object OcpcSampleToPbFinal {
     println(s"date=$date, hour=$hour, fileName:$fileName")
 
     val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
-    val version1 = "ocpcv1"
+    val version1 = "ocpctest"
     val data1 = getData(date, hour, tableName1, version1, spark)
     data1.printSchema()
 
     val tableName2 = "dl_cpc.ocpc_param_pb_data_hourly"
-    val version2 = "ocpcv1"
+    val version2 = "ocpctest"
     val data2 = getData(date, hour, tableName2, version2, spark)
     data2.printSchema()
 
@@ -56,6 +56,14 @@ object OcpcSampleToPbFinal {
 
 
     val resultDF = result1.union(result2)
+    resultDF
+      .repartition(5)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("pbfile"))
+      .repartition(5)
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
