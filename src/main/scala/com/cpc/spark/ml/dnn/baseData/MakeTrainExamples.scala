@@ -11,6 +11,8 @@ import scala.sys.process._
 import scala.util.Random
 import org.apache.spark.util.LongAccumulator
 import scala.collection.mutable.ArrayBuffer
+import java.text.SimpleDateFormat
+import org.apache.commons.lang3.time.DateUtils
 
 /**
   * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
@@ -59,13 +61,20 @@ object MakeTrainExamples {
     writer.close()
   }
 
-  //def getColAtIndex(id:Int): Column = {
-  //  col(s"column1")(id).as(s"column1_${id+1}")
-  //}
-
+  def GetDataRange(beginStr: String, endStr: String, format : String = "yyyy-MM-dd"): ArrayBuffer[String] = {
+    val ranges = ArrayBuffer[String]()
+    val sdf = new SimpleDateFormat(format)
+    var dateBegin = sdf.parse(beginStr)
+    val dateEnd = sdf.parse(endStr)
+    while (dateBegin.compareTo(dateEnd) <= 0) {
+      ranges += sdf.format(dateBegin)
+      dateBegin = DateUtils.addDays(dateBegin, 1)
+    }
+    ranges
+  }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 7) {
+    if (args.length != 8) {
       System.err.println(
         """
           |you have to input 6 parameters !!!
@@ -73,7 +82,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, src_date_str, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
+    val Array(src_dir, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
 
     println(args)
 
@@ -84,7 +93,8 @@ object MakeTrainExamples {
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
-    val src_date_list = src_date_str.split(";")
+    //val src_date_list = src_date_str.split(";")
+    val src_date_list = GetDataRange(date_begin, date_end)
 
     /************make text examples************************/
     println("Make text examples")
