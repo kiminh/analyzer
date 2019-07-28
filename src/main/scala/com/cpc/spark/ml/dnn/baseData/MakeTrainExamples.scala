@@ -95,6 +95,7 @@ object MakeTrainExamples {
 
     //val src_date_list = src_date_str.split(";")
     val src_date_list = GetDataRange(date_begin, date_end)
+    println("src_date_list:" + src_date_list.mkString(";"))
 
     /************make text examples************************/
     println("Make text examples")
