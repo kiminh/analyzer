@@ -50,7 +50,7 @@ object OcpcSmoothfactor {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
-      .na.fill(10, Seq("min_cv"))
+      .na.fill(0, Seq("min_cv"))
       .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
