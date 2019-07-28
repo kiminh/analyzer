@@ -92,7 +92,7 @@ object OcpcSmoothfactor {
   def getExpConf(version: String, spark: SparkSession) ={
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_config.jfb_factor")
+    val confPath = conf.getString("exp_config.smooth_factor")
     val rawData = spark.read.format("json").json(confPath)
     val data = rawData
       .filter(s"version = '$version'")
