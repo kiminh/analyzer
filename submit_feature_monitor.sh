@@ -33,7 +33,18 @@ do
     sample_count=$((line))
 done
 
+
 echo ${sample_count}
+
+if [[ "${sample_count}" -gt 20000000 ]]; then
+    echo "normall example count"
+fi
+
+if [[ "${sample_count}" -lt 10000000 ]]; then
+    echo "invalid example count"
+fi
+
+
 exit
 
 
