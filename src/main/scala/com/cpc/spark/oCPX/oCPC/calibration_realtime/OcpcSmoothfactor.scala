@@ -32,7 +32,7 @@ object OcpcSmoothfactor {
   }
 
   def OcpcSmoothFactorMain(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark: SparkSession) = {
-    val baseData = getBaseData(hourInt, date, hour, spark)
+    val baseData = getRealtimeData(hourInt, date, hour, spark)
 
     // 计算结果
     val result = calculateCVR(baseData, spark)
