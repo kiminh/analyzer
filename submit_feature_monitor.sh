@@ -70,11 +70,11 @@ des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 alert=${local_dir}/alerts
 empty=${local_dir}/empty
 
-if [[ ! -f "$alert" ]]; then
+if [[ ! -d "$alert" ]]; then
     alert_path=${des_dir}/${cur_date}-monitor/alerts
     hadoop fs -get ${alert_path} ${local_dir}
 fi
-if [[ ! -f "$empty" ]]; then
+if [[ ! -d "$empty" ]]; then
     empty_path=${des_dir}/${cur_date}-monitor/empty
     hadoop fs -get ${empty_path} ${local_dir}
 fi
@@ -90,6 +90,7 @@ if [[ -d "$alert" ]]; then
     do
         alert_info=${line}
         echo ${alert_info}
+        exit 0
         python kafka_writer.py "${alert_info}"
     done
     touch ${sent_ok}
