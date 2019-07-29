@@ -27,13 +27,13 @@ if [[ ! -f "$count" ]]; then
     exit -1
 fi
 
+sample_count=10
 for line in $(cat ${count})
 do
-    echo "File:${line}"
+    echo sample_count=${line}
 done
 
-cat ${count} | awk '{print $0}'
-
+echo $sample_count
 exit
 
 
