@@ -10,6 +10,7 @@ src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
 echo $cur_date
 local_dir=./feature_monitor/${cur_date}
+rm -rf $local_dir
 mkdir local_dir
 hadoop fs -get $src_dir/${cur_date}/_SUCCESS $local_dir/_SUCCESS
 hadoop fs -get $src_dir/${cur_date}/count $local_dir/count
