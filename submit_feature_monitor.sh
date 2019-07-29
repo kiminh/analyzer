@@ -37,6 +37,7 @@ do
     echo "File:${line}"
 done < ${count}
 
+cat data.dat | awk '{print $0}'
 
 exit
 
