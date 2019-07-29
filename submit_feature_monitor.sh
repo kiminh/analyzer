@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-
+#set -e
 
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
