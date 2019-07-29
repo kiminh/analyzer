@@ -30,10 +30,10 @@ fi
 sample_count=10
 for line in $(cat ${count})
 do
-    echo sample_count=${line}
+    sample_count=${line}
 done
 
-echo $sample_count
+echo ${sample_count}
 exit
 
 
