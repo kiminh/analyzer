@@ -36,7 +36,7 @@ object OcpcCvrFactorBaseDelay {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseData = getRealtimeDataDelay(hourInt, date, hour, spark)
 
     // 计算结果
     val result = calculatePCOC(baseData, spark)

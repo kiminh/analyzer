@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorDelay._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactorDelay._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
 import java.text.SimpleDateFormat

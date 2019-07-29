@@ -2,9 +2,9 @@ package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcGetPbDelay._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcGetPbDelay._
 import com.cpc.spark.oCPX.OcpcTools._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}

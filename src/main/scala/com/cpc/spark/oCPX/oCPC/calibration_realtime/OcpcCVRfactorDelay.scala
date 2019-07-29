@@ -1,6 +1,9 @@
 package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCvrFactorBaseDelay._
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCvrFactorBaseDelay._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -40,11 +43,19 @@ object OcpcCVRfactorDelay {
 
   }
 
-  def OcpcCVRfactorDelayMain(date: String, hour: String, version: String, expTag: String, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
-//    // 抽取媒体id
-//    val conf = ConfigFactory.load("ocpc")
-//    val conf_key = "medias.total.media_selection"
-//    val mediaSelection = conf.getString(conf_key)
+  def OcpcCVRfactorDelayMain(originalDate: String, originalHour: String, version: String, expTag: String, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
+    // real-time
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = originalDate + " " + originalHour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, 2)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date = tmpDateValue(0)
+    val hour = tmpDateValue(1)
 
     val data1 = OcpcCvrFactorBaseDelayMain(date, hour, version, expTag, hourInt1, spark).cache()
     data1.show(10)
