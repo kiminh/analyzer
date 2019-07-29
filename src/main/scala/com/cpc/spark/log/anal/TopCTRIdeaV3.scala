@@ -311,11 +311,6 @@ object TopCTRIdeaV3 {
 		advReportProps.put("password", advReportConf.getString("mariadb.adv_report.password"))
 		advReportProps.put("driver", advReportConf.getString("mariadb.adv_report.driver"))
 
-		println("db dsn: " + advReportDsn)
-		println("db driver: " + advReportProps.getProperty("driver"))
-		println("db user: " + advReportProps.getProperty("user"))
-		println("db password: " + advReportProps.getProperty("password"))
-
 		// truncate table
 		try {
 			Class.forName(props.getProperty("driver"))
