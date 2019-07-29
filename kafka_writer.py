@@ -25,7 +25,7 @@ alerts_dict = {
             }
         }
     ],
-    "topic":"test"
+    "topic":"alarm_error"
 }
 
 #producer = KafkaProducer(bootstrap_servers=['172.25.20.106:9092'])
