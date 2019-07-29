@@ -334,6 +334,10 @@ object OcpcTools {
          |  adslot_type != 7
          |AND
          |  exp_cvr is not null
+         |AND
+         |  media_appsid is not null
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
