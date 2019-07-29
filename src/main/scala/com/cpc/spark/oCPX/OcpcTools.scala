@@ -358,94 +358,10 @@ object OcpcTools {
       .select("searchid", "conversion_goal")
       .withColumn("iscvr", lit(1))
       .distinct()
-    val cvData3 = cvDataRaw.filter(s"conversion_goal = 2").distinct()
-    val cvData = cvDataRaw
-      .union(cvData3)
-      .select("searchid", "conversion_goal", "iscvr")
+    val cvData3 = cvDataRaw
+      .filter(s"conversion_goal = 2")
+      .withColumn("conversion_goal", lit(3))
       .distinct()
-
-
-
-    // 数据关联
-    val resultDF = clickData
-      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
-      .na.fill(0, Seq("iscvr"))
-
-    resultDF
-  }
-
-  def getRealtimeDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDay(date1, hour1, date, hour)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  searchid,
-         |  unitid,
-         |  1 as isclick,
-         |  exp_cvr * 1.0 / 1000000 as exp_cvr,
-         |  media_appsid,
-         |  (case
-         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
-         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
-         |      when adclass in (110110100, 125100100) then "wzcp"
-         |      else "others"
-         |  end) as industry,
-         |  conversion_goal,
-         |  hour
-         |FROM
-         |  dl_cpc.cpc_basedata_click_event
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  $mediaSelection
-         |AND
-         |  ocpc_step > 0
-       """.stripMargin
-    println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-
-    // 抽取cv数据
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  trace_type,
-         |  trace_op1,
-         |  trace_op2
-         |FROM
-         |  dl_cpc.cpc_basedata_trace_event
-         |WHERE
-         |  day >= '$date1'
-       """.stripMargin
-    println(sqlRequest2)
-    val cvDataRaw = spark
-      .sql(sqlRequest2)
-      .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
-      .select("searchid", "conversion_goal")
-      .withColumn("iscvr", lit(1))
-      .distinct()
-    val cvData3 = cvDataRaw.filter(s"conversion_goal = 2").distinct()
     val cvData = cvDataRaw
       .union(cvData3)
       .select("searchid", "conversion_goal", "iscvr")
