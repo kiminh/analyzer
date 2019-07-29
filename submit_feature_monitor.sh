@@ -15,6 +15,7 @@ local_dir=./feature_monitor/${cur_date}
 
 spark_in_run=${local_dir}/spark_running
 if [[ -f "$spark_in_run" ]]; then
+    echo "Spark In Processing, existing......."
     exit 0
 fi
 
