@@ -41,7 +41,8 @@ object OcpcTools {
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
         avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click")
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv")
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
     data2
