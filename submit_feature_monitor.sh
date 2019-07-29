@@ -12,8 +12,22 @@ echo $cur_date
 local_dir=./feature_monitor/${cur_date}
 rm -rf ${local_dir}
 mkdir ${local_dir}
-hadoop fs -get $src_dir/${cur_date}/_SUCCESS $local_dir/_SUCCESS
-hadoop fs -get $src_dir/${cur_date}/count $local_dir/count
+
+success=${local_dir}/_SUCCESS
+count=${local_dir}/count
+hadoop fs -get $src_dir/${cur_date}/_SUCCESS ${success}
+hadoop fs -get $src_dir/${cur_date}/count ${count}
+
+if [[ ! -f "$success" ]]; then
+    echo "no success file"
+    exit -1
+fi
+if [[ ! -f "$count" ]]; then
+    echo "no count file"
+    exit -1
+fi
+
+
 exit
 
 
