@@ -115,6 +115,7 @@ object TopCTRIdeaV3 {
     		.filter("type in (1,2,3,4,6,7,8,9)")
     		.toDF()
 
+		/*
 		val calendar = Calendar.getInstance()
 		calendar.add(Calendar.DATE, -dayBefore)
 		val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
@@ -122,6 +123,7 @@ object TopCTRIdeaV3 {
     		.select("idea_id", "create_time")
     		.filter(s"""(cash_cost + coupon_cost) > 0 and create_time > '$date'""")
     		.toDF()
+		*/
 
 		val userDF = spark.read.jdbc(dsn, "user", props)
     		.select("id", "belong")
@@ -129,11 +131,11 @@ object TopCTRIdeaV3 {
 
 		val resourceDF = spark.read.jdbc(dsn, "resource", props)
     		.select("id", "remote_url")
-    		.toDF("resource_id", "resource_url")
+    		.toDF()
 
 		val unionXidea = unionDF.join(ideaDF, ideaDF("id") === unionDF("idea_id"))
-			.select("id", "adslot_type", "idea_id", "media_id", "show", "click", "title", "image", "type", "video_id", "user_id", "category")
-			.toDF("uid", "adslot_type", "idea_id", "media_id", "show", "click", "title", "image", "type", "video_id", "user_id", "category")
+			.select("adslot_type", "idea_id", "media_id", "show", "click", "title", "image", "type", "video_id", "user_id", "category")
+			.toDF("adslot_type", "idea_id", "media_id", "show", "click", "title", "image", "type", "video_id", "user_id", "category")
 
 		println("union与idea表join后的条数:" + unionXidea.count())
 
@@ -149,15 +151,15 @@ object TopCTRIdeaV3 {
 
 		explodeDF.show()
 
-		val explodeXresource = explodeDF.join(resourceDF, resourceDF("resource_id") === explodeDF("image"), "left")
-    		.select("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "resource_url", "type", "video_id", "category")
+		val explodeXresource = explodeDF.join(resourceDF, resourceDF("id") === explodeDF("image"), "left")
+    		.select("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "remote_url", "type", "video_id", "category")
     		.toDF("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "image_url", "type", "video_id", "category")
 
 		explodeXresource.show()
 
 
-		val unionXideaXuserXresource = explodeXresource.join(resourceDF, resourceDF("resource_id") === explodeXresource("video_id"), "left")
-    		.select("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "image_url", "type", "resource_url", "category")
+		val unionXideaXuserXresource = explodeXresource.join(resourceDF, resourceDF("id") === explodeXresource("video_id"), "left")
+    		.select("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "image_url", "type", "remote_url", "category")
 			.toDF("user_id", "adslot_type", "idea_id", "media_id", "belong", "show", "click", "title", "image_url", "mtype", "video_url", "category")
 
 		unionXideaXuserXresource.show()
@@ -206,6 +208,7 @@ object TopCTRIdeaV3 {
 				idea_id = x.user_id,
 				media_id = x.media_id,
 				adslot_type = x.adslot_type,
+				mtype = x.mtype,
 				title = x.title,
 				adclass = x.adclass,
 				adclass_1 = x.adclass_1,
