@@ -72,24 +72,23 @@ empty=${local_dir}/empty
 
 if [[ ! -f "$alert" ]]; then
     alert_path=${des_dir}/${cur_date}-monitor/alerts
-    hadoop fs -get ${alert_path} ${alert}
+    hadoop fs -get ${alert_path} ${local_dir}
 fi
 if [[ ! -f "$empty" ]]; then
     empty_path=${des_dir}/${cur_date}-monitor/empty
-    hadoop fs -get ${empty_path} ${empty}
+    hadoop fs -get ${empty_path} ${local_dir}
 fi
 
-if [[ -f "$empty" ]]; then
+if [[ -d "$empty" ]]; then
     alert="[No Alerts Found]"
     echo ${alert}
     exit 0
 fi
 
-if [[ -f "$alert" ]]; then
+if [[ -d "$alert" ]]; then
     for line in $(cat ${alert}/part-00000)
     do
         alert_info=$((line))
-        echo ${alert_info}
         python kafka_writer.py ${alert_info}
     done
     touch ${sent_ok}
