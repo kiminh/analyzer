@@ -35,11 +35,11 @@ time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 date = time_str.split(" ")[0]
 time = time_str.split(" ")[1]
 time_str_latest = date + "T" + time + "+08:00"
-alerts_dict["message"][0]["time"] = time_str_latest
+alerts_dict["messages"][0]["time"] = time_str_latest
 
 with open(alert_info_file, "r") as fr:
     for line in fr:
-        alerts_dict["message"][0]["values"]["info"] = line.strip()
+        alerts_dict["messages"][0]["values"]["info"] = line.strip()
         alerts_json = json.dumps(alerts_dict)
         print(alerts_json)
         #future = producer.send('test', value= b'' + alerts_json)
@@ -55,7 +55,7 @@ with open(alert_info_file, "r") as fr:
 #print(result)
 
 #for alert in alerts:
-#    alerts_dict["message"][0]["values"]["info"] = alert
+#    alerts_dict["messages"][0]["values"]["info"] = alert
 #    alerts_json = json.dumps(alerts_dict)
 #    print(alerts_json)
 #    future = producer.send('test', value= b'' + alerts_json)
