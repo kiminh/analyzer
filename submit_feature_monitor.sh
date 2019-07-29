@@ -27,6 +27,11 @@ if [[ ! -f "$count" ]]; then
     exit -1
 fi
 
+cat ${count} | while read line
+do
+    echo "File:${line}"
+done
+
 
 exit
 
