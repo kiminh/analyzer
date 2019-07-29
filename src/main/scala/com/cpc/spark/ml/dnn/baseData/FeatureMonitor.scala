@@ -1,26 +1,17 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.{BufferedReader, File, InputStreamReader, PrintWriter}
-import java.net.URI
+import java.io.{File, PrintWriter}
 
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.types.{StructField, _}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import scala.sys.process._
-import scala.util.Random
-import org.apache.spark.util.LongAccumulator
-
 import java.text.SimpleDateFormat
-
 import org.apache.commons.lang3.time.DateUtils
-
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * 解析tfrecord到hdfs
+  * 解析tfrecord到hdfs并监控特征变化
   * created time : 2019/07/13 16:38
   * @author fenghuabin
   * @version 1.0
@@ -28,7 +19,6 @@ import scala.collection.mutable.ArrayBuffer
   */
 
 object FeatureMonitor{
-
 
   def delete_hdfs_path(path: String): Unit = {
 

@@ -15,7 +15,7 @@ alerts  = [
 "[Invalid Variety]value count(79) of feature adclass exceeds 120% of average count(72) of past 15 days"
 ]
 
-alerts_json = {
+alerts_dict = {
     "message":[
         {
             "name":"model-offlinefeature",
@@ -32,23 +32,22 @@ alerts_json = {
     "topic":"test"
 }
 
-
-json = json.dumps(alerts_json)
-print(json)
-localtime = time.localtime(time.time())
-print localtime
-
-time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-date = time_str.split(" ")
-time = time_str.split(" ")
-print date
-print time
-
-
 producer = KafkaProducer(bootstrap_servers=['172.25.20.106:9092'])
-future = producer.send('test', value= b'' + json)
-result = future.get(timeout=20)
-print(result)
+time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+date = time_str.split(" ")[0]
+time = time_str.split(" ")[1]
+time_str_latest = date + "T" + time + "+08:00"
+alerts_dict["message"][0]["time"] = time_str_latest
+
+for alert in alerts:
+    alerts_dict["message"][0]["values"]["info"] = alert
+    alerts_json = json.dumps(alerts_dict)
+    print(alerts_json)
+    future = producer.send('test', value= b'' + alerts_json)
+    result = future.get(timeout=20)
+    print(result)
+
+
 
 #for alert in alerts:
 #    future = producer.send('test', value= b'' + alert)
