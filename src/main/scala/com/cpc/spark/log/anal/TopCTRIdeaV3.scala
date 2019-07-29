@@ -205,7 +205,7 @@ object TopCTRIdeaV3 {
     		.reduceByKey((x, y) => TopIdea(
 				user_id = x.user_id,
 				agent_id = x.agent_id,
-				idea_id = x.user_id,
+				idea_id = x.idea_id,
 				media_id = x.media_id,
 				adslot_type = x.adslot_type,
 				mtype = x.mtype,
