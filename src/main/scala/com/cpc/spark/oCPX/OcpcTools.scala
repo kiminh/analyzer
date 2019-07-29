@@ -374,7 +374,7 @@ object OcpcTools {
     resultDF
   }
 
-  def getRealtimeData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getRealtimeDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
