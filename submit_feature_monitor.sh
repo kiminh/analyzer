@@ -19,11 +19,13 @@ hadoop fs -get ${src_dir}/${cur_date}/_SUCCESS ${success}
 hadoop fs -get ${src_dir}/${cur_date}/count ${count}
 
 if [[ ! -f "$success" ]]; then
-    echo "no success file"
+    alert="[Valid Source Example File Not Found]no _SUCCESS file detected:"${src_dir}/${cur_date}
+    echo ${alert}
     exit -1
 fi
 if [[ ! -f "$count" ]]; then
-    echo "no count file"
+    alert="[Valid Source Example File Not Found]no count file detected:"${src_dir}/${cur_date}
+    echo ${alert}
     exit -1
 fi
 
@@ -32,18 +34,14 @@ for line in $(cat ${count})
 do
     sample_count=$((line))
 done
-
-
 echo ${sample_count}
-
-if [[ "${sample_count}" -gt 20000000 ]]; then
-    echo "normall example count"
-fi
 
 if [[ "${sample_count}" -lt 10000000 ]]; then
     echo "invalid example count"
+    alert="[Valid Source Example File Not Found]too less sample_count in count file:"${sample_count}
+    echo ${alert}
+    exit -1
 fi
-
 
 exit
 
