@@ -82,7 +82,7 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 9) {
+    if (args.length != 10) {
       System.err.println(
         """
           |you have to input 6 parameters !!!
@@ -90,7 +90,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
+    val Array(src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -476,11 +476,20 @@ object MakeTrainExamples {
           if (label_arr.head == 1L) {
             label = "1.0"
           }
+
+          var dense_str: Seq[String] = null
+          if (with_week == "True") {
+            dense_str = dense.map(_.toString) ++ Seq[String](test_data_week)
+          } else {
+            dense_str = dense.map(_.toString)
+          }
+
+
           val output = scala.collection.mutable.ArrayBuffer[String]()
           output += sample_idx.toString
           output += label
           output += label_arr.map(_.toString).mkString(";")
-          output += dense.map(_.toString).mkString(";")
+          output += dense_str.mkString(";")
           output += idx0.map(_.toString).mkString(";")
           output += idx1.map(_.toString).mkString(";")
           output += idx2.map(_.toString).mkString(";")
