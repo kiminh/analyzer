@@ -67,26 +67,26 @@ fi
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 
-alert_success=${local_dir}/_SUCCESS_alert
-empty_success=${local_dir}/_SUCCESS_empty
+alert=${local_dir}/alert
+empty=${local_dir}/empty
 
-if [[ ! -f "$alert_success" ]]; then
+if [[ ! -f "$alert" ]]; then
     alert_path=${des_dir}/${cur_date}-monitor/alerts
-    hadoop fs -get ${alert_path} ${alert_success}
+    hadoop fs -get ${alert_path} ${alert}
 fi
-if [[ ! -f "$empty_success" ]]; then
+if [[ ! -f "$empty" ]]; then
     empty_path=${des_dir}/${cur_date}-monitor/empty
-    hadoop fs -get ${empty_path} ${empty_success}
+    hadoop fs -get ${empty_path} ${empty}
 fi
 
-if [[ -f "$empty_success" ]]; then
+if [[ -f "$empty" ]]; then
     alert="[No Alerts Found]"
     echo ${alert}
     exit 0
 fi
 
-if [[ -f "$alert_success" ]]; then
-    for line in $(cat ${alert_success})
+if [[ -f "$alert" ]]; then
+    for line in $(cat ${alert}/part-00000)
     do
         alert_info=$((line))
         python kafka_writer.py ${alert_info}
@@ -94,6 +94,7 @@ if [[ -f "$alert_success" ]]; then
     touch ${sent_ok}
     exit 0
 fi
+exit
 
 touch ${spark_in_run}
 
