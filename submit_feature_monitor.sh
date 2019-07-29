@@ -26,16 +26,10 @@ if [[ ! -f "$count" ]]; then
     echo "no count file"
     exit -1
 fi
-cat ${count}
-cat ${count} | while read line
+`cat ${count}` | while read line
 do
     echo "File:${line}"
 done
-
-while read line
-do
-    echo "File:${line}"
-done < ${count}
 
 cat ${count} | awk '{print $0}'
 
