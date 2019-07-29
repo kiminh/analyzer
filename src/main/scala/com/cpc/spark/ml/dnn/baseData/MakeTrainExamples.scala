@@ -103,13 +103,16 @@ object MakeTrainExamples {
 
     //val src_date_list = src_date_str.split(";")
     val src_date_list = ArrayBuffer[String]()
+    val src_week_list = ArrayBuffer[String]()
     val src_date_list_with_week = GetDataRange(date_begin, date_end)
     for (pair <- src_date_list_with_week) {
       src_date_list += pair.split(";")(0)
+      src_week_list += pair.split(";")(1)
     }
     println("src_date_list:" + src_date_list.mkString(";"))
+    println("src_week_list:" + src_week_list.mkString(";"))
     println("src_date_list_with_week:" + src_date_list_with_week.mkString("|"))
-    return
+
 
     /************make text examples************************/
     println("Make text examples")
