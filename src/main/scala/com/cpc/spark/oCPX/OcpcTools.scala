@@ -23,32 +23,31 @@ object OcpcTools {
 
     // 测试实时数据表和离线表
     val dataRaw1 = getBaseData(24, date, hour, spark)
-    val dataRaw2 = getRealtimeData(24, date, hour, spark)
-
     val data1 = dataRaw1
       .filter(s"isclick=1")
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
+        avg(col("exp_cvr")).alias("pre_cvr"),
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv")
       )
-      .withColumn("cvr", col("cv") * 1.0 / col("click"))
-
-    val data2 = dataRaw2
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("cvr", col("cv") * 1.0 / col("click"))
-
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
     data1
       .repartition(5)
       .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
 
-    data2
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
+//    val dataRaw2 = getRealtimeData(24, date, hour, spark)
+//    val data2 = dataRaw2
+//      .groupBy("unitid", "conversion_goal", "media")
+//      .agg(
+//        avg(col("exp_cvr")).alias("pre_cvr"),
+//        sum(col("isclick")).alias("click"),
+//        sum(col("iscvr")).alias("cv")
+//      )
+//      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+//    data2
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
