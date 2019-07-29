@@ -34,6 +34,7 @@ do
 done
 
 echo ${sample_count}
+echo $(check ${sample_count})
 exit
 
 
