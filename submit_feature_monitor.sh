@@ -67,7 +67,7 @@ fi
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 
-alert=${local_dir}/alert
+alert=${local_dir}/alerts
 empty=${local_dir}/empty
 
 if [[ ! -f "$alert" ]]; then
