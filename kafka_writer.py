@@ -10,7 +10,6 @@ if len(sys.argv) != 2:
 
 alert_info = sys.argv[1]
 print 'alert_info', alert_info
-exit(0)
 
 alerts_dict = {
     "message":[
