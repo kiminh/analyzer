@@ -89,6 +89,7 @@ if [[ -f "$alert" ]]; then
     for line in $(cat ${alert}/part-00000)
     do
         alert_info=$((line))
+        echo ${alert_info}
         python kafka_writer.py ${alert_info}
     done
     touch ${sent_ok}
