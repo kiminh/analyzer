@@ -42,7 +42,7 @@ with open(alert_info_file, "r") as fr:
         alerts_json = json.dumps(alerts_dict)
         print(alerts_json)
         #future = producer.send('test', value= b'' + alerts_json)
-        future = producer.send('topic:alarm_error', value= b'' + alerts_json)
+        future = producer.send('alarm_error', value= b'' + alerts_json)
         result = future.get(timeout=5)
         print(result)
 
