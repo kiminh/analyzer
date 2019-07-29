@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.calibration
 
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactor._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorDelay._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
 import java.text.SimpleDateFormat
@@ -78,7 +78,7 @@ object OcpcGetPbDelay {
       .withColumn("post_cvr", col("cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
 
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val pcocDataRaw = OcpcCVRfactorDelayMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
