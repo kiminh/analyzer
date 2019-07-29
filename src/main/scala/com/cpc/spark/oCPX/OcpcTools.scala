@@ -6,8 +6,51 @@ import org.apache.spark.sql.functions._
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import org.apache.log4j.{Level, Logger}
+
 
 object OcpcTools {
+  def main(args: Array[String]): Unit = {
+    /*
+    代码测试
+     */
+    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    Logger.getRootLogger.setLevel(Level.WARN)
+
+    // bash: 2019-01-02 12
+    val date = args(0).toString
+    val hour = args(1).toString
+
+    // 测试实时数据表和离线表
+    val dataRaw1 = getBaseData(24, date, hour, spark)
+    val dataRaw2 = getRealtimeData(24, date, hour, spark)
+
+    val data1 = dataRaw1
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv")
+      )
+      .withColumn("cvr", col("cv") * 1.0 / col("click"))
+
+    val data2 = dataRaw2
+      .groupBy("unitid", "conversion_goal", "media")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv")
+      )
+      .withColumn("cvr", col("cv") * 1.0 / col("click"))
+
+    data1
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
+
+    data2
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
+  }
+
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
 
@@ -189,8 +232,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
-         |  isshow,
-         |  isclick,
+         |  1 as isclick,
          |  exp_cvr * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
@@ -214,7 +256,6 @@ object OcpcTools {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
@@ -222,20 +263,32 @@ object OcpcTools {
       s"""
          |SELECT
          |  searchid,
-         |  label as iscvr,
-         |  cvr_goal
+         |  trace_type,
+         |  trace_op1,
+         |  trace_op2
          |FROM
          |  dl_cpc.cpc_basedata_trace_event
          |WHERE
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvDataRaw = spark
+      .sql(sqlRequest2)
+      .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
+      .select("searchid", "conversion_goal")
+      .withColumn("iscvr", lit(1))
+      .distinct()
+    val cvData3 = cvDataRaw.filter(s"conversion_goal = 2").distinct()
+    val cvData = cvDataRaw
+      .union(cvData3)
+      .select("searchid", "conversion_goal", "iscvr")
+      .distinct()
+
 
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
@@ -269,7 +322,7 @@ object OcpcTools {
     conversion_goal = 4: trace_op1="REPORT_USER_STAYINWX"
      */
     var result = 0
-    if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED" && traceType == "trace_type=apkdown") {
+    if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
       result = 1
     } else if (traceType == "active_third") {
       result = 2
