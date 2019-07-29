@@ -311,7 +311,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
-         |  1 as isclick,
+         |  isclick,
          |  exp_cvr * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
@@ -331,6 +331,8 @@ object OcpcTools {
          |  $mediaSelection
          |AND
          |  ocpc_step > 0
+         |AND
+         |  adslot_type != 7
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
