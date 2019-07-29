@@ -6,6 +6,12 @@ set -e
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
 echo ${cur_date}
+
+
+if [[ ! -d "./feature_monitor" ]]; then
+    mkdir ./feature_monitor
+fi
+
 local_dir=./feature_monitor/${cur_date}
 
 spark_in_run=${local_dir}/spark_running
