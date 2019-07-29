@@ -25,12 +25,12 @@ alerts_dict = {
             }
         }
     ],
-    "topic":"test"
-    #"topic":"alarm_error"
+    #"topic":"test"
+    "topic":"alarm_error"
 }
 
-producer = KafkaProducer(bootstrap_servers=['172.25.20.106:9092'])
-#producer = KafkaProducer(bootstrap_servers=['bigdatacpc.qtt.prd.1sapp.com:9092'])
+#producer = KafkaProducer(bootstrap_servers=['172.25.20.106:9092'])
+producer = KafkaProducer(bootstrap_servers=['bigdatacpc.qtt.prd.1sapp.com:9092'])
 time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 date = time_str.split(" ")[0]
 time = time_str.split(" ")[1]
@@ -42,8 +42,8 @@ with open(alert_info_file, "r") as fr:
         alerts_dict["message"][0]["values"]["info"] = line.strip()
         alerts_json = json.dumps(alerts_dict)
         print(alerts_json)
-        future = producer.send('test', value= b'' + alerts_json)
-        #future = producer.send('alarm_error', value= b'' + alerts_json)
+        #future = producer.send('test', value= b'' + alerts_json)
+        future = producer.send('alarm_error', value= b'' + alerts_json)
         result = future.get(timeout=5)
         print("result", result)
 
