@@ -3,18 +3,36 @@
 set -e
 
 
-
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
 echo ${cur_date}
 local_dir=./feature_monitor/${cur_date}
-rm -rf ${local_dir}
-mkdir ${local_dir}
+
+spark_in_run=${local_dir}/spark_running
+if [[ -f "$spark_in_run" ]]; then
+    exit 0
+fi
+
+sent_ok=${local_dir}/alert_sent_ok
+if [[ -f "$sent_ok" ]]; then
+    exit 0
+fi
+
+
+if [[ ! -d "$local_dir" ]]; then
+    mkdir ${local_dir}
+fi
 
 success=${local_dir}/_SUCCESS
 count=${local_dir}/count
-hadoop fs -get ${src_dir}/${cur_date}/_SUCCESS ${success}
-hadoop fs -get ${src_dir}/${cur_date}/count ${count}
+
+if [[ ! -f "$success" ]]; then
+    hadoop fs -get ${src_dir}/${cur_date}/_SUCCESS ${success}
+fi
+
+if [[ ! -f "$count" ]]; then
+    hadoop fs -get ${src_dir}/${cur_date}/count ${count}
+fi
 
 if [[ ! -f "$success" ]]; then
     alert="[Valid Source Example File Not Found]no _SUCCESS file detected:"${src_dir}/${cur_date}
@@ -41,16 +59,37 @@ if [[ "${sample_count}" -lt 10000000 ]]; then
     exit -1
 fi
 
-exit
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 
+alert_success=${local_dir}/_SUCCESS_alert
+empty_success=${local_dir}/_SUCCESS_empty
 
+if [[ ! -f "$alert_success" ]]; then
+    alert_path=${des_dir}/${cur_date}-monitor/alerts
+    hadoop fs -get ${alert_path} ${alert_success}
+fi
+if [[ ! -f "$empty_success" ]]; then
+    empty_path=${des_dir}/${cur_date}-monitor/empty
+    hadoop fs -get ${empty_path} ${empty_success}
+fi
 
+if [[ -f "$empty_success" ]]; then
+    alert="[No Alerts Found]"
+    echo ${alert}
+    exit 0
+fi
 
+if [[ -f "$alert_success" ]]; then
+    for line in $(cat ${alert_success})
+    do
+        alert_info=$((line))
+        python kafka_writer.py ${alert_info}
+    done
+    touch ${sent_ok}
+    exit 0
+fi
 
-cur_date="2019-06-11-bak"
-cur_date=$1
-#modelVersion=$2
-
+touch ${spark_in_run}
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 
@@ -64,7 +103,6 @@ hadoop fs -get ${jarLib} ${randjar}
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
 begin_date=`date --date='15 days ago' +%Y-%m-%d`
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"
 partitions=1000
 one_hot_cnt=28
 muti_hot_cnt=15
@@ -72,7 +110,7 @@ muti_hot_cnt=15
 spark-submit --master yarn --queue ${queue} \
     --name "feature_monitor" \
     --driver-memory 16g --executor-memory 16g \
-    --num-executors 500 --executor-cores 4 \
+    --num-executors 50 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
@@ -80,5 +118,6 @@ spark-submit --master yarn --queue ${queue} \
     --class com.cpc.spark.ml.dnn.baseData.FeatureMonitor \
     ${randjar} ${one_hot_feature_list} ${src_dir} ${cur_date} ${begin_date} ${des_dir} ${partitions} ${one_hot_cnt} ${muti_hot_cnt}
 
+rm -rf ${spark_in_run}
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-info"${des_date}"*"
 #hadoop fs -chmod -R 0777 ${chmod_des}
