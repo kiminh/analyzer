@@ -88,7 +88,7 @@ fi
 if [[ -d "$alert" ]]; then
     for line in $(cat ${alert}/part-00000)
     do
-        alert_info=$((line))
+        alert_info=${line}
         python kafka_writer.py ${alert_info}
     done
     touch ${sent_ok}
