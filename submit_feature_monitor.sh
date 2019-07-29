@@ -2,6 +2,22 @@
 
 set -e
 
+
+
+src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
+
+
+cur_date=`date --date='1 days ago' +%Y-%m-%d`
+echo $cur_date
+mkdir $cur_date
+hadoop fs -get $src_dir/cur_date/_SUCCESS $cur_date
+hadoop fs -get $src_dir/cur_date/count $cur_date
+exit
+
+
+
+
+
 cur_date="2019-06-11-bak"
 cur_date=$1
 #modelVersion=$2
@@ -17,7 +33,6 @@ hadoop fs -get ${jarLib} ${randjar}
 
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
-src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 cur_date=`date --date='1 days ago' +%Y-%m-%d`
 begin_date=`date --date='15 days ago' +%Y-%m-%d`
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-monitor"

@@ -92,7 +92,7 @@ object FeatureMonitor{
 
     //val src_date_list = sta_date.split(";")
     val src_date_list = GetDataRange(begin_date, cur_date)
-    println("collect sparse feature instances")
+    println("collect sparse feature instances:" + src_date_list.mkString(";"))
     /************collect map instances for id feature************************/
     for (src_date <- src_date_list) {
       val instances_path_success = des_dir + "/" + src_date + "-instances/_SUCCESS"
