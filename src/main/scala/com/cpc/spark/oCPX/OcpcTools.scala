@@ -36,18 +36,18 @@ object OcpcTools {
       .repartition(5)
       .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
 
-    val dataRaw2 = getRealtimeData(24, date, hour, spark)
-    val data2 = dataRaw2
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-    data2
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
+//    val dataRaw2 = getRealtimeData(24, date, hour, spark)
+//    val data2 = dataRaw2
+//      .groupBy("unitid", "conversion_goal", "media")
+//      .agg(
+//        avg(col("exp_cvr")).alias("pre_cvr"),
+//        sum(col("isclick")).alias("click"),
+//        sum(col("iscvr")).alias("cv")
+//      )
+//      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+//    data2
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
   }
 
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
