@@ -15,8 +15,8 @@ mkdir ${local_dir}
 
 success=${local_dir}/_SUCCESS
 count=${local_dir}/count
-hadoop fs -get $src_dir/${cur_date}/_SUCCESS ${success}
-hadoop fs -get $src_dir/${cur_date}/count ${count}
+hadoop fs -get ${src_dir}/${cur_date}/_SUCCESS ${success}
+hadoop fs -get ${src_dir}/${cur_date}/count ${count}
 
 if [[ ! -f "$success" ]]; then
     echo "no success file"
@@ -26,7 +26,7 @@ if [[ ! -f "$count" ]]; then
     echo "no count file"
     exit -1
 fi
-
+cat ${count}
 cat ${count} | while read line
 do
     echo "File:${line}"
