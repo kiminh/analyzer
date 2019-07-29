@@ -32,6 +32,11 @@ do
     echo "File:${line}"
 done
 
+while read line
+do
+    echo "File:${line}"
+done < ${count}
+
 
 exit
 
