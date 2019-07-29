@@ -44,7 +44,7 @@ with open(alert_info_file, "r") as fr:
         #future = producer.send('test', value= b'' + alerts_json)
         future = producer.send('alarm_error', value= b'' + alerts_json)
         result = future.get(timeout=5)
-        print(result)
+        print("result", result)
 
 
 #alerts_json = json.dumps(alerts_dict)
