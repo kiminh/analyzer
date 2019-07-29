@@ -22,19 +22,19 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-//    val dataRaw1 = getBaseData(24, date, hour, spark)
-//    val data1 = dataRaw1
-//      .filter(s"isclick=1")
-//      .groupBy("unitid", "conversion_goal", "media")
-//      .agg(
-//        avg(col("exp_cvr")).alias("pre_cvr"),
-//        sum(col("isclick")).alias("click"),
-//        sum(col("iscvr")).alias("cv")
-//      )
-//      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-//    data1
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
+    val dataRaw1 = getBaseData(24, date, hour, spark)
+    val data1 = dataRaw1
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media")
+      .agg(
+        avg(col("exp_cvr")).alias("pre_cvr"),
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv")
+      )
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+    data1
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
 
     val dataRaw2 = getRealtimeData(24, date, hour, spark)
     val data2 = dataRaw2
