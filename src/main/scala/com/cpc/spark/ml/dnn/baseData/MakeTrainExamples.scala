@@ -13,6 +13,9 @@ import org.apache.spark.util.LongAccumulator
 import scala.collection.mutable.ArrayBuffer
 import java.text.SimpleDateFormat
 import org.apache.commons.lang3.time.DateUtils
+import org.apache.commons.lang3.time.DateFormatUtils
+import java.util.Date
+import java.text.DateFormat
 
 /**
   * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
@@ -61,13 +64,18 @@ object MakeTrainExamples {
     writer.close()
   }
 
+  def formatDate(date: Date, pattern: String="yyyy-MM-dd"): String = {
+    val formatDate = DateFormatUtils.format(date, pattern)
+    formatDate
+  }
+
   def GetDataRange(beginStr: String, endStr: String, format : String = "yyyy-MM-dd"): ArrayBuffer[String] = {
     val ranges = ArrayBuffer[String]()
     val sdf = new SimpleDateFormat(format)
     var dateBegin = sdf.parse(beginStr)
     val dateEnd = sdf.parse(endStr)
     while (dateBegin.compareTo(dateEnd) <= 0) {
-      ranges += sdf.format(dateBegin)
+      ranges += sdf.format(dateBegin) + ";" + DateFormatUtils.format(dateBegin, "E")
       dateBegin = DateUtils.addDays(dateBegin, 1)
     }
     ranges
@@ -96,6 +104,7 @@ object MakeTrainExamples {
     //val src_date_list = src_date_str.split(";")
     val src_date_list = GetDataRange(date_begin, date_end)
     println("src_date_list:" + src_date_list.mkString(";"))
+    return
 
     /************make text examples************************/
     println("Make text examples")
