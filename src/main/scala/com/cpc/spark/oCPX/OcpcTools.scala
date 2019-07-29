@@ -22,19 +22,19 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-//    val dataRaw1 = getBaseData(24, date, hour, spark)
-//    val data1 = dataRaw1
-//      .filter(s"isclick=1")
-//      .groupBy("unitid", "conversion_goal", "media")
-//      .agg(
-//        avg(col("exp_cvr")).alias("pre_cvr"),
-//        sum(col("isclick")).alias("click"),
-//        sum(col("iscvr")).alias("cv")
-//      )
-//      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-//    data1
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
+    val dataRaw1 = getBaseData(24, date, hour, spark)
+    val data1 = dataRaw1
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media")
+      .agg(
+        avg(col("exp_cvr")).alias("pre_cvr"),
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv")
+      )
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+    data1
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
 
     val dataRaw2 = getRealtimeData(24, date, hour, spark)
 //    val data2 = dataRaw2
@@ -320,8 +320,7 @@ object OcpcTools {
          |      when adclass in (110110100, 125100100) then "wzcp"
          |      else "others"
          |  end) as industry,
-         |  conversion_goal,
-         |  hour
+         |  conversion_goal
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
@@ -329,13 +328,9 @@ object OcpcTools {
          |AND
          |  $mediaSelection
          |AND
-         |  ocpc_step > 0
+         |  ocpc_step in (1, 2)
          |AND
          |  adslot_type != 7
-         |AND
-         |  exp_cvr is not null
-         |AND
-         |  media_appsid is not null
          |AND
          |  isclick = 1
        """.stripMargin
@@ -344,61 +339,61 @@ object OcpcTools {
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
-    clickData.show(10)
-    clickData
+//    clickData.show(10)
+//    clickData
 
-//    // 抽取cv数据
-//    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-//      var result = 0
-//      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
-//        result = 1
-//      } else if (traceType == "active_third") {
-//        result = 2
-//      } else if (traceType == "active15" || traceType == "ctsite_active15") {
-//        result = 3
-//      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
-//        result = 4
-//      } else {
-//        result = 0
-//      }
-//      result
-//    })
-//
-//    val sqlRequest2 =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_goal
-//         |FROM
-//         |  dl_cpc.cpc_basedata_trace_event
-//         |WHERE
-//         |  $selectCondition
-//       """.stripMargin
-//    println(sqlRequest2)
-//    val cvDataRaw = spark
-//      .sql(sqlRequest2)
-////      .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
-//      .select("searchid", "conversion_goal")
-//      .filter(s"conversion_goal > 0")
-//      .withColumn("iscvr", lit(1))
-//      .distinct()
-//    val cvData3 = cvDataRaw
-//      .filter(s"conversion_goal = 2")
-//      .withColumn("conversion_goal", lit(3))
-//      .distinct()
-//    val cvData = cvDataRaw
-//      .union(cvData3)
-//      .select("searchid", "conversion_goal", "iscvr")
-//      .distinct()
-//
-//
-//
-//    // 数据关联
-//    val resultDF = clickData
-//      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
-//      .na.fill(0, Seq("iscvr"))
-//
-//    resultDF
+    // 抽取cv数据
+    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
+      var result = 0
+      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
+        result = 1
+      } else if (traceType == "active_third") {
+        result = 2
+      } else if (traceType == "active15" || traceType == "ctsite_active15") {
+        result = 3
+      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
+        result = 4
+      } else {
+        result = 0
+      }
+      result
+    })
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_goal
+         |FROM
+         |  dl_cpc.cpc_basedata_trace_event
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvDataRaw = spark
+      .sql(sqlRequest2)
+//      .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
+      .select("searchid", "conversion_goal")
+      .filter(s"conversion_goal > 0")
+      .withColumn("iscvr", lit(1))
+      .distinct()
+    val cvData3 = cvDataRaw
+      .filter(s"conversion_goal = 2")
+      .withColumn("conversion_goal", lit(3))
+      .distinct()
+    val cvData = cvDataRaw
+      .union(cvData3)
+      .select("searchid", "conversion_goal", "iscvr")
+      .distinct()
+
+
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
   }
 
 
