@@ -357,6 +357,7 @@ object OcpcTools {
       .sql(sqlRequest2)
       .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
       .select("searchid", "conversion_goal")
+      .filter(s"conversion_goal > 0")
       .withColumn("iscvr", lit(1))
       .distinct()
     val cvData3 = cvDataRaw
