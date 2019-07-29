@@ -90,7 +90,6 @@ if [[ -d "$alert" ]]; then
     touch ${sent_ok}
     exit 0
 fi
-exit
 
 touch ${spark_in_run}
 
