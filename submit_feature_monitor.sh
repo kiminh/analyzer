@@ -26,7 +26,8 @@ if [[ ! -f "$count" ]]; then
     echo "no count file"
     exit -1
 fi
-`cat ${count}`|while read line
+
+for line in $(cat ${count})
 do
     echo "File:${line}"
 done
