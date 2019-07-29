@@ -212,7 +212,7 @@ object TopCTRIdeaV3 {
 				title = x.title,
 				adclass = x.adclass,
 				adclass_1 = x.adclass_1,
-				images = x.images + " " + y.images,
+				images = if (x.images==y.images) x.images else x.images + " " + y.images,
 				show = x.show + y.show,
 				click = x.click + y.click
 			))
