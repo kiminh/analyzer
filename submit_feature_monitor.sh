@@ -90,7 +90,7 @@ if [[ -d "$alert" ]]; then
     do
         alert_info=${line}
         echo ${alert_info}
-        python kafka_writer.py ${alert_info}
+        python kafka_writer.py "${alert_info}"
     done
     touch ${sent_ok}
     exit 0
