@@ -116,7 +116,9 @@ object MakeTrainExamples {
 
     /************make text examples************************/
     println("Make text examples")
-    for (src_date <- src_date_list) {
+    for (date_idx <- src_date_list.indices) {
+      val src_date = src_date_list(date_idx)
+      val src_week = src_week_list(date_idx)
       val curr_file_src = src_dir + "/" + src_date
       val tf_text = des_dir + "/" + src_date + "-text"
       if (!exists_hdfs_path(tf_text) && exists_hdfs_path(curr_file_src)) {
@@ -165,7 +167,9 @@ object MakeTrainExamples {
     val instances_all_non_uid_indexed = des_dir + "/" + instances_file + "-non-uid-indexed"
     if (!exists_hdfs_path(instances_all_non_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
-      for (src_date <- src_date_list) {
+      for (date_idx <- src_date_list.indices) {
+        val src_date = src_date_list(date_idx)
+        val src_week = src_week_list(date_idx)
         val tf_text = des_dir + "/" + src_date + "-text"
         if (exists_hdfs_path(tf_text)) {
           data = data.union(
@@ -221,7 +225,9 @@ object MakeTrainExamples {
     val instances_all_for_uid_indexed = des_dir + "/" + instances_file + "-for-uid-indexed"
     if (!exists_hdfs_path(instances_all_for_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
-      for (src_date <- src_date_list) {
+      for (date_idx <- src_date_list.indices) {
+        val src_date = src_date_list(date_idx)
+        val src_week = src_week_list(date_idx)
         val tf_text = des_dir + "/" + src_date + "-text"
         if (exists_hdfs_path(tf_text)) {
           data = data.union(
@@ -285,7 +291,9 @@ object MakeTrainExamples {
 
     /************check sid************************/
     //println("Check Sample Index")
-    //for (src_date <- src_date_list) {
+    //for (date_idx <- src_date_list.indices) {
+    //  val src_date = src_date_list(date_idx)
+    //  val src_week = src_week_list(date_idx)
     //  val tf_text = des_dir + "/" + src_date + "-text"
     //  if (exists_hdfs_path(tf_text)) {
     //    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -305,7 +313,9 @@ object MakeTrainExamples {
 
 
     println("Do Mapping Features")
-    for (src_date <- src_date_list) {
+    for (date_idx <- src_date_list.indices) {
+      val src_date = src_date_list(date_idx)
+      val src_week = src_week_list(date_idx)
       val tf_text_mapped_others = des_dir + "/mapping-info/" + src_date + "-text-mapped-non-uid"
       val tf_text = des_dir + "/" + src_date + "-text"
       if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
@@ -543,7 +553,9 @@ object MakeTrainExamples {
     /************down sampling************************/
     println("Down Sampling")
     val negativeSampleRatio = 0.19
-    for (src_date <- src_date_list) {
+    for (date_idx <- src_date_list.indices) {
+      val src_date = src_date_list(date_idx)
+      val src_week = src_week_list(date_idx)
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       val tf_text_mapped_tf = des_dir + "/" + src_date + "-text-mapped-tf"
@@ -614,7 +626,9 @@ object MakeTrainExamples {
 
     /************check mapped************************/
     /**println("Check Mapped Correctness")
-    for (src_date <- src_date_list) {
+    for (date_idx <- src_date_list.indices) {
+      val src_date = src_date_list(date_idx)
+      val src_week = src_week_list(date_idx)
       val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
       val tf_text_mapped_check = des_dir + "/check-" + src_date
       if (!exists_hdfs_path(tf_text_mapped_check) && exists_hdfs_path(tf_text_mapped)) {
