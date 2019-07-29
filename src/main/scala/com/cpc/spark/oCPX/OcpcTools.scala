@@ -344,6 +344,7 @@ object OcpcTools {
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
+    clickData.show(10)
     clickData
 
 //    // 抽取cv数据
