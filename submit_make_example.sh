@@ -22,10 +22,12 @@ date_begin="2019-07-13"
 date_end="2019-07-27"
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest"
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest-week"
 test_data_src="2019-07-27/part-r-000*"
 test_data_des="test-2019-07-27"
 instances_file="instances-all"
 partitions=1000
+with_week=True
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-tf-make-example" \
@@ -36,7 +38,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
-    ${randjar} ${src_dir} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${partitions}
+    ${randjar} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${partitions}
 
 chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-exp/"${test_data_des}"*"
 hadoop fs -chmod -R 0777 ${chmod_des}

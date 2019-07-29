@@ -82,7 +82,7 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 9) {
       System.err.println(
         """
           |you have to input 6 parameters !!!
@@ -90,7 +90,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
+    val Array(src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, numPartitions) = args
 
     println(args)
 
@@ -139,6 +139,13 @@ object MakeTrainExamples {
             val label_arr = rs.getSeq[Long](5)
             val dense = rs.getSeq[Long](6)
 
+            var dense_str: Seq[String] = null
+            if (with_week == "True") {
+              dense_str = dense.map(_.toString) ++ Seq[String](src_week)
+            } else {
+              dense_str = dense.map(_.toString)
+            }
+
             var label = "0.0"
             if (label_arr.head == 1L) {
               label = "1.0"
@@ -148,7 +155,7 @@ object MakeTrainExamples {
             output += sample_idx.toString
             output += label
             output += label_arr.map(_.toString).mkString(";")
-            output += dense.map(_.toString).mkString(";")
+            output += dense_str.mkString(";")
             output += idx0.map(_.toString).mkString(";")
             output += idx1.map(_.toString).mkString(";")
             output += idx2.map(_.toString).mkString(";")
@@ -169,7 +176,6 @@ object MakeTrainExamples {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
         val src_date = src_date_list(date_idx)
-        val src_week = src_week_list(date_idx)
         val tf_text = des_dir + "/" + src_date + "-text"
         if (exists_hdfs_path(tf_text)) {
           data = data.union(
@@ -227,7 +233,6 @@ object MakeTrainExamples {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
         val src_date = src_date_list(date_idx)
-        val src_week = src_week_list(date_idx)
         val tf_text = des_dir + "/" + src_date + "-text"
         if (exists_hdfs_path(tf_text)) {
           data = data.union(
@@ -281,7 +286,7 @@ object MakeTrainExamples {
     val sparseMapOthers = sc.textFile(instances_all_map_others).map{
       rs => {
         val line = rs.split("\t")
-        val field = line(0).toLong
+        val field = line(0)
         val key = (line(1).toLong - 1L).toString
         (field, key)
       }
@@ -339,7 +344,7 @@ object MakeTrainExamples {
             }
             value_list.++=(idx_arr)
 
-            val mapped = value_list.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
+            val mapped = value_list.map(x => sparseMapOthers.getOrElse(x, "-1"))
             sid + "\t" + uid_value + "\t" + mapped.mkString(";")
           }).saveAsTextFile(tf_text_mapped_others)
       }
@@ -401,7 +406,10 @@ object MakeTrainExamples {
             val idx2 = rs._2._1._5
             val mapped_values_list = rs._2._2.split(";")
             val total_len = mapped_values_list.length
-            val one_hot_len = 28
+            var one_hot_len = 28
+            if (with_week == "True") {
+              one_hot_len = 29
+            }
             val list_one_hot:Array[String] = new Array[String](one_hot_len)
             val list_multi_hot:Array[String] = new Array[String](total_len - one_hot_len)
             for (idx <- 0 until one_hot_len) {
@@ -491,10 +499,16 @@ object MakeTrainExamples {
           val idx_arr = line_list(7).split(";")
 
           val uid_value = dense(25)
-          val value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 28)
 
-          val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
-          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x.toLong, "-1"))
+          var value_list_one_hot: Array[String] = null
+          if (with_week == "True") {
+            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 29)
+          } else {
+            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 28)
+          }
+
+          val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x, "-1"))
+          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
 
           (uid_value.toLong, (sid, mapped_one_hot.mkString(";"), mapped_multi_hot.mkString(";"), label, label_arr, idx0, idx1, idx2))
         }).join(sparseMapUid).map(
