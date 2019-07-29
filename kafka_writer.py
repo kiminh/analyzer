@@ -8,8 +8,8 @@ if len(sys.argv) != 2:
     print("invalid params: python kafka.writer.py alert_info")
     exit(-1)
 
-alert_info = sys.argv[1]
-print 'alert_info', alert_info
+alert_info_file = sys.argv[1]
+print 'alert_info_file', alert_info_file
 
 alerts_dict = {
     "message":[
@@ -21,7 +21,7 @@ alerts_dict = {
             "time":"2019-07-27T17:29:40+08:00",
             "values":{
                 "c":1,
-                "info":alert_info
+                "info":""
             }
         }
     ],
@@ -35,11 +35,21 @@ time = time_str.split(" ")[1]
 time_str_latest = date + "T" + time + "+08:00"
 alerts_dict["message"][0]["time"] = time_str_latest
 
-alerts_json = json.dumps(alerts_dict)
-print(alerts_json)
-future = producer.send('test', value= b'' + alerts_json)
-result = future.get(timeout=10)
-print(result)
+with open(alert_info_file, "r") as fr:
+    for line in fr:
+        alerts_dict["message"][0]["values"]["info"] = line.strip()
+        alerts_json = json.dumps(alerts_dict)
+        print(alerts_json)
+        future = producer.send('test', value= b'' + alerts_json)
+        result = future.get(timeout=5)
+        print(result)
+
+
+#alerts_json = json.dumps(alerts_dict)
+#print(alerts_json)
+#future = producer.send('test', value= b'' + alerts_json)
+#result = future.get(timeout=10)
+#print(result)
 
 #for alert in alerts:
 #    alerts_dict["message"][0]["values"]["info"] = alert

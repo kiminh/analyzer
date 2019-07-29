@@ -86,13 +86,7 @@ if [[ -d "$empty" ]]; then
 fi
 
 if [[ -d "$alert" ]]; then
-    for line in $(cat ${alert}/part-00000)
-    do
-        alert_info=${line}
-        echo ${alert_info}
-        exit 0
-        python kafka_writer.py "${alert_info}"
-    done
+    python kafka_writer.py ${alert}/part-00000
     touch ${sent_ok}
     exit 0
 fi
