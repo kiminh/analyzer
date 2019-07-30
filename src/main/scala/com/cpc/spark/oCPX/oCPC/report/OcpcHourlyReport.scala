@@ -2,6 +2,7 @@ package com.cpc.spark.oCPX.oCPC.report
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.tools.testOperateMySQL
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -30,21 +31,65 @@ object OcpcHourlyReport {
     println(s"date=$date, hour=$hour")
 
     // 拉取点击、消费、转化等基础数据
-    val baseData = getBaseData(date, hour, spark)
-    baseData
-      .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_report_data20190730")
+    val rawData = getBaseData(date, hour, spark)
 
-//    // 分ideaid和conversion_goal统计数据
-//    val rawDataUnit = preprocessDataByIdeaid(baseData, date, hour, spark)
-//    val dataUnit = getDataByIdeaid(rawDataUnit, date, hour, spark)
+    // 分ideaid和conversion_goal统计数据
+    val baseData = calculateData(rawData, date, hour, spark)
 
     // 存储数据到hadoop
-//    saveDataToHDFSv2(dataUnit, dataUser, dataConversion, version, date, hour, spark)
-//    saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
+    saveDataToHDFS(baseData, date, hour, spark)
+
 //    // 存储数据到mysql
 //    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
+  }
+
+
+  def saveDataToHDFS(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val resultDF = data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_ideaid_report_hourly20190730")
+  }
+
+  def calculateData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  unitid,
+         |  userid,
+         |  conversion_goal,
+         |  industry,
+         |  media,
+         |  hour,
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  sum(isshow) as show,
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
+         |  sum(case when isshow=1 then exp_ctr else 0 end) * 1.0 as total_prectr,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['cpagiven'] as double) else 0 end) * 0.01 as total_cpagiven,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_jfbfactor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) * 1.0 as total_cpasuggest,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
+         |FROM
+         |  raw_data
+         |GROUP BY ideaid, unitid, userid, conversion_goal, industry, media, hour
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
+    data
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -69,16 +114,19 @@ object OcpcHourlyReport {
          |    isclick,
          |    isshow,
          |    price,
+         |    bid_discounted_by_ad_slot as bid,
          |    exp_cvr,
          |    exp_ctr,
          |    media_appsid,
-         |    ocpc_log_dict
+         |    ocpc_log,
+         |    hour
          |FROM
-         |    dl_cpc.ocpc_filter_unionlog
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and is_ocpc=1
+         |and ocpc_step = 2
+         |and length(ocpc_log) > 0
          |and $mediaSelection
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
@@ -94,6 +142,7 @@ object OcpcHourlyReport {
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
 
     // 关联转化表
