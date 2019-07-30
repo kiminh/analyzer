@@ -36,10 +36,34 @@ object OcpcHourlyReport {
     // 分ideaid和conversion_goal统计数据
     val baseData = calculateBaseData(rawData, spark)
 
+    // 为邮件准备临时表
     val ideaData = calculateIdea(baseData, spark)
+    ideaData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
+
     val unitData = calculateUnit(baseData, spark)
+    unitData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
+
     val userData = calcualteUser(baseData, spark)
+    userData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
+
     val industry = calculateIndustry(baseData, spark)
+    industry
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
 
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
