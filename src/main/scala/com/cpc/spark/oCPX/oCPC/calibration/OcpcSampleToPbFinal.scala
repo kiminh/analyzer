@@ -57,11 +57,12 @@ object OcpcSampleToPbFinal {
 
 
     val resultDF = result1.union(result2)
+    val finalVersion = version + "pbfile"
     resultDF
       .repartition(5)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("pbfile"))
+      .withColumn("version", lit(finalVersion))
       .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
