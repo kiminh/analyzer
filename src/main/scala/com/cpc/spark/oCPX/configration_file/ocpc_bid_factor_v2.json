@@ -16,3 +16,8 @@
 {"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
 {"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
 {"version": "ocpcv1", "exp_tag": "delayNewHT66", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0, "min_cv": 40}
+{"version": "ocpctest", "exp_tag": "realtimeQtt", "conversion_goal": 1, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"version": "ocpctest", "exp_tag": "realtimeQtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"version": "ocpctest", "exp_tag": "realtimeQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"version": "ocpctest", "exp_tag": "realtimeQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"version": "ocpctest", "exp_tag": "realtimeHT66", "conversion_goal": 2, "high_bid_factor": 1.4, "low_bid_factor": 1.0, "min_cv": 40}
