@@ -528,6 +528,25 @@ object OcpcTools {
     result
   })
 
+  def udfDetermineIndustry() = udf((adslotType: Int, adclass: Int) => {
+    val adclassString = adclass.toString
+    val adclass3 = adclassString.substring(0, 3)
+    var result = "others"
+    if (adclass3 == "134" || adclass3 == "107") {
+      result = "elds"
+    } else if (adclass3 == "100" && adslotType != 7) {
+      result = "feedapp"
+    } else if (adclass3 == "100" && adslotType == 7) {
+      result = "yysc"
+    } else if (adclass == 110110100 || adclass == 125100100) {
+      result = "wzcp"
+    } else {
+      result = "others"
+    }
+    result
+
+  })
+
   def udfDetermineConversionGoal() = udf((traceType: String, traceOp1: String, traceOp2: String) => {
     /*
     conversion_goal = 1: trace_op1="REPORT_DOWNLOAD_PKGADDED" and trace_type=apkdown
