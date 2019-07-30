@@ -34,10 +34,10 @@ object OcpcSampleToPbFinal {
     // bash: 2019-01-02 12 qtt_demo 1
     val date = args(0).toString
     val hour = args(1).toString
-    val version = "ocpctest"
-    val fileName = args(2).toString
+    val version = args(2).toString
+    val fileName = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, fileName:$fileName")
+    println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
     val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
     val version1 = version
