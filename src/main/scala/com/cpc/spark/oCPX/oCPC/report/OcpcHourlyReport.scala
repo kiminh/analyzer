@@ -51,14 +51,14 @@ object OcpcHourlyReport {
       .repartition(5)
       .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
 
-    val userData = calcualteUser(baseData, spark)
+    val userData = calcualteUser(unitData, spark)
     userData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
       .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
 
-    val industry = calculateIndustry(baseData, spark)
+    val industry = calculateIndustry(unitData, spark)
     industry
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -85,21 +85,22 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
-         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(pre_ctr * show) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
-         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
-         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
+         |    sum(cali_precvr * click) * 1.0 / sum(click) as cali_precvr,
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(total_price) as cost,
-         |    sum(total_price) * 1.0 / sum(click) as acp,
-         |    sum(total_bid) * 1.0 / sum(click) as acb,
-         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
-         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
-         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
-         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
-         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
-         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
-         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |    sum(cost) as cost,
+         |    sum(pay) as pay,
+         |    sum(acp * click) * 1.0 / sum(click) as acp,
+         |    sum(acb * click) * 1.0 / sum(click) as acb,
+         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+         |    sum(acp * click) * 1.0 / sum(cv) as cpareal,
+         |    sum(cpasuggest * click) * 1.0 / sum(click) as cpasuggest,
+         |    sum(jfb_factor * click) * 1.0 / sum(click) as jfb_factor,
+         |    sum(cvr_factor * click) * 1.0 / sum(click) as cvr_factor,
+         |    sum(cali_postcvr * click) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(smooth_factor * click) * 1.0 / sum(click) as smooth_factor
          |FROM
          |    base_data
          |GROUP BY media, industry, conversion_goal, is_hidden
@@ -125,21 +126,22 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
-         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(pre_ctr * show) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
-         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
-         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
+         |    sum(cali_precvr * click) * 1.0 / sum(click) as cali_precvr,
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(total_price) as cost,
-         |    sum(total_price) * 1.0 / sum(click) as acp,
-         |    sum(total_bid) * 1.0 / sum(click) as acb,
-         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
-         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
-         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
-         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
-         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
-         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
-         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |    sum(cost) as cost,
+         |    sum(pay) as pay,
+         |    sum(acp * click) * 1.0 / sum(click) as acp,
+         |    sum(acb * click) * 1.0 / sum(click) as acb,
+         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+         |    sum(acp * click) * 1.0 / sum(cv) as cpareal,
+         |    sum(cpasuggest * click) * 1.0 / sum(click) as cpasuggest,
+         |    sum(jfb_factor * click) * 1.0 / sum(click) as jfb_factor,
+         |    sum(cvr_factor * click) * 1.0 / sum(click) as cvr_factor,
+         |    sum(cali_postcvr * click) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(smooth_factor * click) * 1.0 / sum(click) as smooth_factor
          |FROM
          |    base_data
          |GROUP BY userid, adclass, media, industry, conversion_goal, is_hidden
@@ -171,7 +173,7 @@ object OcpcHourlyReport {
          |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
          |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(total_price) as cost,
+         |    sum(total_price) * 0.01 as cost,
          |    sum(total_price) * 1.0 / sum(click) as acp,
          |    sum(total_bid) * 1.0 / sum(click) as acb,
          |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
@@ -186,11 +188,17 @@ object OcpcHourlyReport {
          |GROUP BY unitid, userid, adclass, media, industry, conversion_goal, is_hidden
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest).cache()
+    val data = spark.sql(sqlRequest)
+
+    val result = data
+        .na.fill(0, Seq("cv"))
+        .withColumn("pay", udfCalculatePay()(col("cost"), col("cv"), col("cpagiven")))
     println("unit data:")
-    data.show(10)
-    data
+    result.show(10)
+    result
   }
+
+
 
   def calculateIdea(baseData: DataFrame, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
@@ -213,7 +221,7 @@ object OcpcHourlyReport {
          |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
          |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(total_price) as cost,
+         |    sum(total_price) * 0.01 as cost,
          |    sum(total_price) * 1.0 / sum(click) as acp,
          |    sum(total_bid) * 1.0 / sum(click) as acb,
          |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
@@ -264,16 +272,16 @@ object OcpcHourlyReport {
          |  sum(isshow) as show,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
-         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
-         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid,
+         |  sum(case when isclick=1 then price else 0 end) as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) as total_bid,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
          |  sum(case when isshow=1 then exp_ctr else 0 end) * 1.0 as total_prectr,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['cpagiven'] as double) else 0 end) * 0.01 as total_cpagiven,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['cpagiven'] as double) else 0 end) as total_cpagiven,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_jfbfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) * 0.01 as total_cpasuggest,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) as total_cpasuggest,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data

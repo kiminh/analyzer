@@ -583,4 +583,12 @@ object OcpcTools {
     result
   })
 
+  def udfCalculatePay() = udf((cost: Double, cv: Int, cpagiven: Double) => {
+    var result = cost - 1.2 * 0.01 * cv * cpagiven
+    if (result < 0) {
+      result = 0
+    }
+    result
+  })
+
 }
