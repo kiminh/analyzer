@@ -48,11 +48,13 @@ object OcpcHourlyReport {
   def saveDataToHDFS(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = data
       .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("hour", col("hr"))
+      .select("ideaid", "unitid", "userid", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+
 
     resultDF
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_ideaid_report_hourly20190730")
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
   }
 
   def calculateData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -66,7 +68,7 @@ object OcpcHourlyReport {
          |  conversion_goal,
          |  industry,
          |  media,
-         |  hour,
+         |  hr,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
@@ -80,11 +82,11 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) * 1.0 as total_cpasuggest,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) * 0.01 as total_cpasuggest,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, conversion_goal, industry, media, hour, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
@@ -119,7 +121,7 @@ object OcpcHourlyReport {
          |    exp_ctr,
          |    media_appsid,
          |    ocpc_log,
-         |    hour
+         |    hour as hr
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
