@@ -41,8 +41,8 @@ object CalibrationCheckOnMiduCtr {
 
     // get union log
     val sql = s"""
-                 |select isclick,exp_ctr as ectr,searchid, raw_ctr, substring(adclass,1,6) as adclass,
-                 |adslotid as adslot_id, ideaid,
+                 |select a.isclick,a.exp_ctr as ectr,a.searchid, a.raw_ctr, substring(a.adclass,1,6) as adclass,
+                 |a.adslotid as adslot_id, a.ideaid, b.f88[0] as key,
                  |case
                  |  when user_req_ad_num = 0 then '0'
                  |  when user_req_ad_num = 1 then '1'
@@ -50,9 +50,11 @@ object CalibrationCheckOnMiduCtr {
                  |  when user_req_ad_num in (3,4) then '4'
                  |  when user_req_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_req_ad_num
-                 |  from dl_cpc.slim_union_log
-                 |  where dt = '2019-07-26' and hour = '09'
-                 |  and ctr_model_name = 'qtt-content-dnn-rawid-v7-newcali' and isshow = 1
+                 |from dl_cpc.slim_union_log a
+                 |left join dl_cpc.cpc_ml_nested_snapshot b
+                 |on a.searchid = b.searchid and b.dt = '2019-07-26' and b.hour = '09'
+                 |  where a.dt = '2019-07-26' and a.hour = '09'
+                 |  and a.ctr_model_name = 'qtt-content-dnn-rawid-v7-newcali' and a.isshow = 1
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
@@ -64,13 +66,13 @@ object CalibrationCheckOnMiduCtr {
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num")
+      .withColumn("isload",when(col("group")===col("key"),lit(1)).otherwise(0))
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num","key")
 
     log.show(50)
     println("total data:%d".format(log.count()))
-    log.repartition(5).write.mode("overwrite").saveAsTable("test.wy01")
 
-    val data = log.filter("length(group)>1")
+    val data = log.filter("isload = 1")
     println("calibration data:%d".format(data.count()))
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
