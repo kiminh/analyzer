@@ -40,24 +40,37 @@ object OcpcSmoothfactor {
     // 关联配置文件中的mincv和smooth_factor
     /*
     min_cv:配置文件中如果为负数或空缺，则用默认值10，其他情况使用设定值
-    smooth_factor：配置文件中如果为负数或空缺，则用默认值0.5，其他情况使用设定值
+    smooth_factor：配置文件中如果为负数或空缺，则用默认值(由udfSelectSmoothFactor函数决定)，其他情况使用设定值
      */
     val minCV = getExpConf(version, spark)
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "click", "cv", "cvr")
-      .withColumn("exp_tag", lit(expTag))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(10, Seq("min_cv"))
-      .na.fill(0.5, Seq("smooth_factor"))
+      .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
+      .na.fill(0, Seq("min_cv"))
+      .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
-      .filter(s"cv >= min_cv")
+//      .filter(s"cv >= min_cv")
+      .withColumn("version", lit(version))
 
     resultDF
   }
+
+  def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
+    var factor = conversionGoal match {
+      case 1 => 0.2
+      case 2 => 0.5
+      case 3 => 0.5
+      case 4 => 0.2
+      case _ => 0.0
+    }
+    factor
+  })
+
 
   def udfSetSmoothFactor() = udf((smoothFactor: Double) => {
     var result = smoothFactor
@@ -75,27 +88,18 @@ object OcpcSmoothfactor {
     result
   })
 
-  def udfMediaName() = udf((media: String) => {
-    var result = media match {
-      case "qtt" => "Qtt"
-      case "hottopic" => "HT66"
-      case "novel" => "Midu"
-      case _ => "others"
-    }
-    result
-  })
-
 
   def getExpConf(version: String, spark: SparkSession) ={
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_config.jfb_factor")
+    val confPath = conf.getString("exp_config.smooth_factor")
     val rawData = spark.read.format("json").json(confPath)
     val data = rawData
       .filter(s"version = '$version'")
       .select("exp_tag", "conversion_goal", "min_cv", "smooth_factor")
       .distinct()
 
+    println("smooth factor: config")
     data.show(10)
 
     data
