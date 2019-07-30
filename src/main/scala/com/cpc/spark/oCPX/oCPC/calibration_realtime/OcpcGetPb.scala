@@ -24,7 +24,6 @@ object OcpcGetPb {
     val jfbHourInt = args(4).toInt
     val smoothHourInt = args(5).toInt
     val bidFactorHourInt = args(6).toInt
-    val isHidden = 0
 
     // 主校准回溯时间长度
     val hourInt1 = args(7).toInt
@@ -61,14 +60,28 @@ object OcpcGetPb {
 
     val data = selectWeishiCali(expTag, data1, data2, date, hour, spark)
 
-
-
-    val resultDF = data
+    // 明投单元
+    val resultUnhidden = data
       .withColumn("cpagiven", lit(1.0))
-      .withColumn("is_hidden", lit(isHidden))
+      .withColumn("is_hidden", lit(0))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+    // 暗投单元
+    val hiddenUnits = getCPAgiven(spark)
+    val resultHidden = data
+      .join(hiddenUnits, Seq("unitid"), "inner")
+      .withColumn("is_hidden", lit(1))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+
+    val resultDF = resultUnhidden
+      .union(resultHidden)
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
     resultDF
@@ -171,6 +184,23 @@ object OcpcGetPb {
 
   }
 
+  def getCPAgiven(spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  avg(cpa) as cpagiven
+         |FROM
+         |  test.ocpc_auto_budget_hourly
+         |WHERE
+         |  industry in ('wzcp')
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest).cache()
+    result.show(10)
+    result
+  }
 
 
 }
