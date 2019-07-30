@@ -34,7 +34,12 @@ object OcpcHourlyReport {
     val rawData = getBaseData(date, hour, spark)
 
     // 分ideaid和conversion_goal统计数据
-    val baseData = calculateData(rawData, date, hour, spark)
+    val baseData = calculateBaseData(rawData, spark)
+
+    val ideaData = calculateIdea(baseData, spark)
+    val unitData = calculateUnit(baseData, spark)
+    val userData = calcualteUser(baseData, spark)
+    val industry = calculateIndustry(baseData, spark)
 
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
@@ -44,12 +49,173 @@ object OcpcHourlyReport {
 
   }
 
+  def calculateIndustry(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    media,
+         |    industry,
+         |    conversion_goal,
+         |    is_hidden,
+         |    sum(show) as show,
+         |    sum(click) as click,
+         |    sum(cv) as cv,
+         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(click) * 1.0 / sum(show) as post_ctr,
+         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
+         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(total_price) as cost,
+         |    sum(total_price) * 1.0 / sum(click) as acp,
+         |    sum(total_bid) * 1.0 / sum(click) as acb,
+         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
+         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
+         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
+         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
+         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
+         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |FROM
+         |    base_data
+         |GROUP BY media, industry, conversion_goal, is_hidden
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    println("industry data:")
+    data.show(10)
+    data
+  }
+
+  def calcualteUser(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    userid,
+         |    adclass,
+         |    media,
+         |    industry,
+         |    conversion_goal,
+         |    is_hidden,
+         |    sum(show) as show,
+         |    sum(click) as click,
+         |    sum(cv) as cv,
+         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(click) * 1.0 / sum(show) as post_ctr,
+         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
+         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(total_price) as cost,
+         |    sum(total_price) * 1.0 / sum(click) as acp,
+         |    sum(total_bid) * 1.0 / sum(click) as acb,
+         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
+         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
+         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
+         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
+         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
+         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |FROM
+         |    base_data
+         |GROUP BY userid, adclass, media, industry, conversion_goal, is_hidden
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    println("user data:")
+    data.show(10)
+    data
+  }
+
+  def calculateUnit(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    userid,
+         |    adclass,
+         |    media,
+         |    industry,
+         |    conversion_goal,
+         |    is_hidden,
+         |    sum(show) as show,
+         |    sum(click) as click,
+         |    sum(cv) as cv,
+         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(click) * 1.0 / sum(show) as post_ctr,
+         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
+         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(total_price) as cost,
+         |    sum(total_price) * 1.0 / sum(click) as acp,
+         |    sum(total_bid) * 1.0 / sum(click) as acb,
+         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
+         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
+         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
+         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
+         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
+         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |FROM
+         |    base_data
+         |GROUP BY unitid, userid, adclass, media, industry, conversion_goal, is_hidden
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    println("unit data:")
+    data.show(10)
+    data
+  }
+
+  def calculateIdea(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    adclass,
+         |    media,
+         |    industry,
+         |    conversion_goal,
+         |    is_hidden,
+         |    sum(show) as show,
+         |    sum(click) as click,
+         |    sum(cv) as cv,
+         |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
+         |    sum(click) * 1.0 / sum(show) as post_ctr,
+         |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
+         |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(total_price) as cost,
+         |    sum(total_price) * 1.0 / sum(click) as acp,
+         |    sum(total_bid) * 1.0 / sum(click) as acb,
+         |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
+         |    sum(total_price) * 1.0 / sum(cv) as cpareal,
+         |    sum(total_cpasuggest) * 1.0 / sum(click) as cpasuggest,
+         |    sum(total_jfbfactor) * 1.0 / sum(click) as jfb_factor,
+         |    sum(total_cvrfactor) * 1.0 / sum(click) as cvr_factor,
+         |    sum(total_calipostcvr) * 1.0 / sum(click) as cali_postcvr,
+         |    sum(total_smooth_factor) * 1.0 / sum(click) as smooth_factor
+         |FROM
+         |    base_data
+         |GROUP BY ideaid, unitid, userid, adclass, media, industry, conversion_goal, is_hidden
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    println("idea_data:")
+    data.show(10)
+    data
+  }
+
 
   def saveDataToHDFS(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
 
 
     resultDF
@@ -57,7 +223,7 @@ object OcpcHourlyReport {
       .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
   }
 
-  def calculateData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
       s"""
@@ -65,6 +231,7 @@ object OcpcHourlyReport {
          |  ideaid,
          |  unitid,
          |  userid,
+         |  adclass,
          |  conversion_goal,
          |  industry,
          |  media,
@@ -86,10 +253,11 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
+    println("base_data:")
     data.show(10)
     data
   }
