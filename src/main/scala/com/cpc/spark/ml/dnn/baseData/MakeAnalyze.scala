@@ -27,12 +27,12 @@ object MakeAnalyze {
 
     val data_list = ArrayBuffer[String]()
     for (idx <- 0 until 24) {
-      data_list += prefix + "%2d".format(idx) + tail
+      data_list += prefix + "%02d".format(idx) + tail
     }
 
     prefix = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-30/adlist-v4-up/2019-07-27/"
     for (idx <- 0 until 24) {
-      data_list += prefix + "%2d".format(idx) + tail
+      data_list += prefix + "%02d".format(idx) + tail
     }
 
     for (part <- data_list) {
