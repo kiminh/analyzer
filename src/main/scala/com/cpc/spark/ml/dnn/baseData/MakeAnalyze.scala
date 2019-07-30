@@ -12,7 +12,8 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by fenghuabin on 2019/7/30.
   */
-class MakeAnalyze {
+
+object MakeAnalyze {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
