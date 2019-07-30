@@ -43,7 +43,7 @@ object CalibrationCheckOnMiduCtr {
     val sql = s"""
                  |select a.isclick,a.exp_ctr as ectr,a.searchid, a.raw_ctr, substring(a.adclass,1,6) as adclass,
                  |a.adslotid as adslot_id, a.ideaid, b.f88[0] as key,b.f89[0] as model_md5,b.f85[0] snapshot_rawctr,
-                 |b.f86[0] snapshot_postctr,b.f83[0] snapshot_ectr,
+                 |b.f86[0] snapshot_postctr,b.f83[0] snapshot_ectr,b.f61[0] show_count,
                  |case
                  |  when user_req_ad_num = 0 then '0'
                  |  when user_req_ad_num = 1 then '1'
@@ -68,8 +68,8 @@ object CalibrationCheckOnMiduCtr {
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
       .withColumn("isload",when(col("group")===col("key"),lit(1)).otherwise(0))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num","key"
-      ,"model_md5","snapshot_rawctr","snapshot_postctr","snapshot_ectr")
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num"
+        ,"show_count","key","model_md5","snapshot_rawctr","snapshot_postctr","snapshot_ectr")
 
     log.show(50)
     println("total data:%d".format(log.count()))
