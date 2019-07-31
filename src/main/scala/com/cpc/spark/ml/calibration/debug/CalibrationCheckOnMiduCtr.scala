@@ -45,11 +45,11 @@ object CalibrationCheckOnMiduCtr {
                  |a.adslotid as adslot_id, a.ideaid, b.f88[0] as key,b.f89[0] as model_md5,b.f85[0] snapshot_rawctr,
                  |b.f86[0] snapshot_postctr,b.f83[0] snapshot_ectr,b.f61[0] show_count,
                  |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
+                 |  when user_req_ad_num in (0,1) then '0'
+                 |  when user_req_ad_num = 2 then '1'
+                 |  when user_req_ad_num = 3 then '2'
+                 |  when user_req_ad_num in (4,5) then '4'
+                 |  when user_req_ad_num in (6,7,8) then '7'
                  |  else '8' end as user_req_ad_num
                  |from dl_cpc.slim_union_log a
                  |left join dl_cpc.cpc_ml_nested_snapshot b
