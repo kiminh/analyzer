@@ -11,10 +11,30 @@ hadoop fs -get ${jarLib} ${randjar}
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-feature_ctr"
-cur_date=`date --date='1 days ago' +%Y-%m-%d`
-end_date=`date --date='1 days ago' +%Y-%m-%d`
-begin_date=`date --date='60 days ago' +%Y-%m-%d`
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
+
+#20190727
+collect_date_begin=`date --date='32 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='5 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='4 days ago' +%Y-%m-%d`
+#20190726
+collect_date_begin=`date --date='33 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='6 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
+#20190725
+collect_date_begin=`date --date='34 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='7 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='6 days ago' +%Y-%m-%d`
+#20190724
+collect_date_begin=`date --date='35 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='8 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='7 days ago' +%Y-%m-%d`
+
+echo ${ctr_feature_date}
+echo ${collect_date_begin}
+echo ${collect_date_end}
+
+
 partitions=1000
 one_hot_cnt=28
 multi_hot_cnt=15
@@ -28,6 +48,6 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.FeatureCtr \
-    ${randjar} ${one_hot_feature_list} ${src_dir} ${des_dir} ${cur_date} ${begin_date} ${end_date} ${partitions} ${one_hot_cnt} ${multi_hot_cnt}
+    ${randjar} ${one_hot_feature_list} ${src_dir} ${des_dir} ${ctr_feature_date} ${collect_date_begin} ${collect_date_end} ${partitions} ${one_hot_cnt} ${multi_hot_cnt}
 
 hadoop fs -chmod -R 0777 ${des_dir}
