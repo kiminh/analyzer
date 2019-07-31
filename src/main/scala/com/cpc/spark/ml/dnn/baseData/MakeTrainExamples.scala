@@ -10,12 +10,16 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.sys.process._
 import scala.util.Random
 import org.apache.spark.util.LongAccumulator
+
 import scala.collection.mutable.ArrayBuffer
 import java.text.SimpleDateFormat
+
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.Date
 import java.text.DateFormat
+
+import scala.collection.mutable
 
 /**
   * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
@@ -90,7 +94,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -453,6 +457,17 @@ object MakeTrainExamples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
+    val schema_with_float = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("floats", ArrayType(FloatType, containsNull = true)),
+      StructField("label_single", FloatType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
 
 
     println("Do Mapping Test Examples' features")
@@ -572,6 +587,27 @@ object MakeTrainExamples {
     println("Done.......")
 
 
+    val name_list_one_hot = one_hot_feature_names.split(",")
+    if (name_list_one_hot.length != 28) {
+      println("mismatched, count_one_hot:28, name_list_one_hot.length:" + name_list_one_hot.length.toString)
+      System.exit(1)
+    }
+    val name_list_one_hot_bc = sc.broadcast(name_list_one_hot)
+    val name_idx_map: mutable.Map[String, Int] = mutable.Map()
+    for (idx <- name_list_one_hot.indices) {
+      name_idx_map += (name_list_one_hot(idx) -> idx)
+    }
+
+    val float_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
+    val float_features_list = float_features_str.split(",")
+    val float_feature_map: mutable.Map[String, Int] = mutable.Map()
+    for (name <- float_features_list) {
+      float_feature_map(name) = name_idx_map(name)
+      println(name + "<--------->" + name_idx_map(name))
+    }
+    val float_feature_map_bc = sc.broadcast(float_feature_map)
+
+
     /************down sampling************************/
     println("Down Sampling")
     val negativeSampleRatio = 0.19
@@ -649,46 +685,58 @@ object MakeTrainExamples {
       if (exists_hdfs_path(tf_text_mapped_sampled_tf) && exists_hdfs_path(tf_ctr_feature)) {
         println("exit ctr_feature_file:" + tf_ctr_feature)
         if (!exists_hdfs_path(tf_float)) {
+
+          println("Load Ctr Feature Map:" + tf_ctr_feature)
+          val ctrMap = sc.textFile(tf_ctr_feature).map{
+            rs => {
+              val line = rs.split("\t")
+              val value_type = line(0).split("_")(0)
+              (value_type, line(0), line(3))
+            }
+          }.filter(
+            rs => {
+              var filter = false
+              if (float_feature_map_bc.value.contains(rs._1)) {
+                filter = true
+              }
+              filter
+            }
+          ).map({rs => (rs._2, rs._3)}).collectAsMap()
+          println("ctrMap.size=" + ctrMap.size)
+
+
           val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_text_mapped_sampled_tf + "/part*")
           println("DF file count:" + importedDf.count().toString + " of file:" + tf_text_mapped_sampled_tf + "/part*")
           importedDf.printSchema()
           importedDf.show(3)
 
-          /*importedDf.rdd.map(
+          val float_rdd = importedDf.rdd.map(
             rs => {
               val idx2 = rs.getSeq[Long](0)
               val idx1 = rs.getSeq[Long](1)
-              val idx_arr = rs.getSeq[Long](2)
-              val idx0 = rs.getSeq[Long](3)
-              val sample_idx = rs.getLong(4)
-              val label_arr = rs.getSeq[Long](5)
-              val dense = rs.getSeq[Long](6)
+              val label = rs.getFloat(2)
+              val idx_arr = rs.getSeq[Long](3)
+              val idx0 = rs.getSeq[Long](4)
+              val sample_idx = rs.getLong(5)
+              val label_arr = rs.getSeq[Long](6)
+              val dense = rs.getSeq[Long](7)
 
-              var dense_str: Seq[String] = null
-              if (with_week == "True") {
-                dense_str = dense.map(_.toString) ++ Seq[String](src_week)
-              } else {
-                dense_str = dense.map(_.toString)
+              val float_list = scala.collection.mutable.ArrayBuffer[String]()
+              for (idx <- dense.indices) {
+                val name = name_list_one_hot_bc.value(idx)
+                val key = name + "_" + dense(idx).toString
+                if (float_feature_map_bc.value.contains(name)) {
+                  float_list += ctrMap.getOrElse(key, "0.0")
+                }
               }
 
-              var label = "0.0"
-              if (label_arr.head == 1L) {
-                label = "1.0"
-              }
-
-              val output = scala.collection.mutable.ArrayBuffer[String]()
-              output += sample_idx.toString
-              output += label
-              output += label_arr.map(_.toString).mkString(";")
-              output += dense_str.mkString(";")
-              output += idx0.map(_.toString).mkString(";")
-              output += idx1.map(_.toString).mkString(";")
-              output += idx2.map(_.toString).mkString(";")
-              output += idx_arr.map(_.toString).mkString(";")
-
-              output.mkString("\t")
+              Row(sample_idx, float_list.map(_.toLong), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
             }
-          ).saveAsTextFile(tf_text)*/
+          )
+
+          val float_df: DataFrame = spark.createDataFrame(float_rdd, schema_with_float)
+          float_df.repartition(500).write.format("tfrecords").option("recordType", "Example").save(tf_float)
+          s"hadoop fs -cp $tf_text_mapped_sampled_tf/count $tf_float/count" !
         }
       }
 
