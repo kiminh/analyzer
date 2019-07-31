@@ -65,6 +65,10 @@ object OcpcGetPbV2 {
 
     val data1 = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
+    dataRaw1.unpersist()
+    dataRaw2.unpersist()
+    dataRaw3.unpersist()
+
     val data2 = OcpcGetPbDelayMain(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark)
 
     val data = selectWeishiCali(expTag, data1, data2, date, hour, spark)

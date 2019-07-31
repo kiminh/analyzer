@@ -104,6 +104,10 @@ object OcpcGetPbDelayV2 {
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "exp_tag", "version")
 
+    dataRaw1.unpersist()
+    dataRaw2.unpersist()
+    dataRaw3.unpersist()
+
     resultDF
 
   }
