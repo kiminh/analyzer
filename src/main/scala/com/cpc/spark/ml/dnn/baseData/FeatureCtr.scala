@@ -165,30 +165,31 @@ object FeatureCtr {
               var dense_str: Seq[String] = null
               dense_str = dense.map(_.toString) ++ Seq[String](src_week)
 
-              var count = ""
+              var count = (0L, 0L)
               if (label_arr.head == 1L) {
-                count = "1,1"
+                count = (1L, 1L)
               } else {
-                count = "0,1"
+                count = (0L, 1L)
               }
 
-              val output = scala.collection.mutable.ArrayBuffer[String]()
-              output += "week_" + src_week + ";" + count
+              //val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
+              val output: Array[(String, (Long, Long))] = new Array(count_one_hot.toInt + 1)
+              output(0) = ("week_" + src_week, count)
+
               for (idx <- 0 until count_one_hot.toInt) {
-                output += name_list_one_hot(idx) + "_" + dense(idx).toString + ";" + count
+                output(idx + 1) = (name_list_one_hot(idx) + "_" + dense(idx).toString, count)
                 //var curr_count = (0L, 0L)
                 //if (ctrMapBC.value.contains(curr_feature)) {
                 //  curr_count = ctrMapBC.value(curr_feature)
                 //}
                 //ctrMapBC.value += (curr_feature -> (curr_count._1 + positive, curr_count._2 + negative))
               }
-              output.mkString("\t")
+              output
             }
           ).flatMap(
-            rs => {
-              val line_list = rs.split("\t")
-              for (elem <- line_list)
-                yield (elem.split(";")(0), (elem.split(";")(1).split(",")(0).toLong, elem.split(";")(1).split(",")(1).toLong))
+            output_array => {
+              for (elem <- output_array)
+                yield elem
             }
           ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).map(
             {
