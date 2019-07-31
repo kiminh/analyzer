@@ -260,8 +260,6 @@ object OcpcTools {
          |  is_ocpc = 1
          |AND
          |  isclick = 1
-         |AND
-         |  conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -286,19 +284,9 @@ object OcpcTools {
 
 
     // 数据关联
-    val result = clickData
+    val resultDF = clickData
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
-
-
-    // 从配置文件获取需要特殊化配置的广告主id（微视广告主）
-    val confPath = conf.getString("exp_tag.weishi")
-    val rawData = spark.read.format("json").json(confPath)
-    val confData = rawData
-      .select("userid")
-      .distinct()
-
-    val resultDF = result.join(confData, Seq("userid"), "inner")
 
     resultDF
   }
@@ -463,8 +451,6 @@ object OcpcTools {
          |  adslot_type != 7
          |AND
          |  isclick = 1
-         |AND
-         |  conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -521,18 +507,9 @@ object OcpcTools {
 
 
     // 数据关联
-    val result = clickData
+    val resultDF = clickData
       .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
-
-    // 从配置文件获取需要特殊化配置的广告主id（微视广告主）
-    val confPath = conf.getString("exp_tag.weishi")
-    val rawData = spark.read.format("json").json(confPath)
-    val confData = rawData
-      .select("userid")
-      .distinct()
-
-    val resultDF = result.join(confData, Seq("userid"), "inner")
 
     resultDF
   }

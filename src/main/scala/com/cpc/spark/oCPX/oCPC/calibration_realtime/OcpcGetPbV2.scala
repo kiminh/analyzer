@@ -2,11 +2,10 @@ package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcGetPbDelayV2._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -37,11 +36,11 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt1, spark).cache()
     dataRaw1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseDelayMain(date, hour, hourInt2, spark).cache()
     dataRaw2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw3.show(10)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
@@ -72,18 +71,12 @@ object OcpcGetPbV2 {
     println("bid factor data:")
     bidFactorDataRaw.show(10)
 
-    val data1 = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
-    data1.show(10)
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+    data.show(10)
 
     dataRaw1.unpersist()
     dataRaw2.unpersist()
     dataRaw3.unpersist()
-
-    val data2 = OcpcGetPbDelayMain(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark).cache()
-    data2.show(10)
-
-    val data = selectWeishiCali(expTag, data1, data2, date, hour, spark).cache()
-    data.show(10)
 
     // 明投单元
     val resultUnhidden = data
@@ -111,86 +104,8 @@ object OcpcGetPbV2 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
-
-
-  }
-
-  def selectWeishiCali(expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    dataRaw1
-      .createOrReplaceTempView("raw_data1")
-
-    dataRaw2
-      .withColumn("flag", lit(1))
-      .createOrReplaceTempView("raw_data2")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  a.unitid,
-         |  (case when b.flag = 1 then b.cvr_factor else a.cvr_factor end) as cvr_factor,
-         |  (case when b.flag = 1 then b.jfb_factor else a.jfb_factor end) as jfb_factor,
-         |  (case when b.flag = 1 then b.post_cvr else a.post_cvr end) as post_cvr,
-         |  (case when b.flag = 1 then b.high_bid_factor else a.high_bid_factor end) as high_bid_factor,
-         |  (case when b.flag = 1 then b.low_bid_factor else a.low_bid_factor end) as low_bid_factor,
-         |  a.conversion_goal,
-         |  a.exp_tag,
-         |  a.smooth_factor
-         |FROM
-         |  raw_data1 as a
-         |LEFT JOIN
-         |  raw_data2 as b
-         |ON
-         |  a.untid = b.unitid
-         |AND
-         |  a.conversion_goal = b.conversion_goal
-         |AND
-         |  a.exp_tag = b.exp_tag
-       """.stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest).cache()
-    data.show(10)
-
-    //
-    //    val data2 = dataRaw2
-    //      .withColumn("cvr_factor_bak", col("cvr_factor"))
-    //      .withColumn("jfb_factor_bak", col("jfb_factor"))
-    //      .withColumn("post_cvr_bak", col("post_cvr"))
-    //      .withColumn("high_bid_factor_bak", col("high_bid_factor"))
-    //      .withColumn("low_bid_factor_bak", col("low_bid_factor"))
-    //      .withColumn("flag", lit(1))
-    //      .select("unitid", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag")
-    //
-    //    println("weishi data")
-    //    data2.show(10)
-    //
-    //    val data1 = dataRaw1
-    //      .withColumn("cvr_factor_orig", col("cvr_factor"))
-    //      .withColumn("jfb_factor_orig", col("jfb_factor"))
-    //      .withColumn("post_cvr_orig", col("post_cvr"))
-    //      .withColumn("high_bid_factor_orig", col("high_bid_factor"))
-    //      .withColumn("low_bid_factor_orig", col("low_bid_factor"))
-    //      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "smooth_factor")
-    //    println("complete data")
-    //    data1.show(10)
-    //
-    //    val data = data1
-    //      .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-    //      .na.fill(0, Seq("cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag"))
-    //      .withColumn("cvr_factor", udfSelectValue()(col("flag"), col("cvr_factor_orig"), col("cvr_factor_bak")))
-    //      .withColumn("jfb_factor", udfSelectValue()(col("flag"), col("jfb_factor_orig"), col("jfb_factor_bak")))
-    //      .withColumn("post_cvr", udfSelectValue()(col("flag"), col("post_cvr_orig"), col("post_cvr_bak")))
-    //      .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
-    //      .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
-    //      .cache()
-
-    data.show(10)
-
-    val result = data
-      .select("unitid", "cvr_factor", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "conversion_goal", "exp_tag", "smooth_factor")
-
-    result
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
