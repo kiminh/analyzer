@@ -13,8 +13,8 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 8g --driver-memory 4g \
-    --executor-cores 10 --num-executors 100  \
+    --executor-memory 10g --driver-memory 4g \
+    --executor-cores 10 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
