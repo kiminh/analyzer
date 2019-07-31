@@ -118,58 +118,72 @@ object OcpcGetPbV2 {
   }
 
   def selectWeishiCali(expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    // 获取oCPC单元中userid与unitid的映射关系
-    val useridToUnitid = getConversionGoal(date, hour, spark)
-    val useridUnitid = useridToUnitid
-      .select("unitid", "userid")
-      .distinct()
+    dataRaw1
+      .createOrReplaceTempView("raw_data1")
 
-    // 从配置文件获取需要特殊化配置的广告主id（微视广告主）
-    val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_tag.weishi")
-    val rawData = spark.read.format("json").json(confPath)
-    val confData = rawData
-      .select("userid", "exp_tag")
-      .distinct()
-
-    val flagData = useridUnitid
-      .join(confData, Seq("userid"), "inner")
-      .select("unitid", "userid", "exp_tag")
-      .distinct()
-
-    val data2 = dataRaw2
-      .join(flagData, Seq("unitid", "exp_tag"), "inner")
-      .filter(s"conversion_goal = 2")
-      .withColumn("cvr_factor_bak", col("cvr_factor"))
-      .withColumn("jfb_factor_bak", col("jfb_factor"))
-      .withColumn("post_cvr_bak", col("post_cvr"))
-      .withColumn("high_bid_factor_bak", col("high_bid_factor"))
-      .withColumn("low_bid_factor_bak", col("low_bid_factor"))
+    dataRaw2
       .withColumn("flag", lit(1))
-      .select("unitid", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag")
+      .createOrReplaceTempView("raw_data2")
 
-    println("weishi data")
-    data2.show(10)
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  a.unitid,
+         |  (case when b.flag = 1 then b.cvr_factor else a.cvr_factor end) as cvr_factor,
+         |  (case when b.flag = 1 then b.jfb_factor else a.jfb_factor end) as jfb_factor,
+         |  (case when b.flag = 1 then b.post_cvr else a.post_cvr end) as post_cvr,
+         |  (case when b.flag = 1 then b.high_bid_factor else a.high_bid_factor end) as high_bid_factor,
+         |  (case when b.flag = 1 then b.low_bid_factor else a.low_bid_factor end) as low_bid_factor,
+         |  a.conversion_goal,
+         |  a.exp_tag,
+         |  a.smooth_factor
+         |FROM
+         |  raw_data1 as a
+         |LEFT JOIN
+         |  raw_data2 as b
+         |ON
+         |  a.untid = b.unitid
+         |AND
+         |  a.conversion_goal = b.conversion_goal
+         |AND
+         |  a.exp_tag = b.exp_tag
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
 
-    val data1 = dataRaw1
-      .withColumn("cvr_factor_orig", col("cvr_factor"))
-      .withColumn("jfb_factor_orig", col("jfb_factor"))
-      .withColumn("post_cvr_orig", col("post_cvr"))
-      .withColumn("high_bid_factor_orig", col("high_bid_factor"))
-      .withColumn("low_bid_factor_orig", col("low_bid_factor"))
-      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "smooth_factor")
-    println("complete data")
-    data1.show(10)
-
-    val data = data1
-      .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(0, Seq("cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag"))
-      .withColumn("cvr_factor", udfSelectValue()(col("flag"), col("cvr_factor_orig"), col("cvr_factor_bak")))
-      .withColumn("jfb_factor", udfSelectValue()(col("flag"), col("jfb_factor_orig"), col("jfb_factor_bak")))
-      .withColumn("post_cvr", udfSelectValue()(col("flag"), col("post_cvr_orig"), col("post_cvr_bak")))
-      .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
-      .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
-      .cache()
+    //
+    //    val data2 = dataRaw2
+    //      .withColumn("cvr_factor_bak", col("cvr_factor"))
+    //      .withColumn("jfb_factor_bak", col("jfb_factor"))
+    //      .withColumn("post_cvr_bak", col("post_cvr"))
+    //      .withColumn("high_bid_factor_bak", col("high_bid_factor"))
+    //      .withColumn("low_bid_factor_bak", col("low_bid_factor"))
+    //      .withColumn("flag", lit(1))
+    //      .select("unitid", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag")
+    //
+    //    println("weishi data")
+    //    data2.show(10)
+    //
+    //    val data1 = dataRaw1
+    //      .withColumn("cvr_factor_orig", col("cvr_factor"))
+    //      .withColumn("jfb_factor_orig", col("jfb_factor"))
+    //      .withColumn("post_cvr_orig", col("post_cvr"))
+    //      .withColumn("high_bid_factor_orig", col("high_bid_factor"))
+    //      .withColumn("low_bid_factor_orig", col("low_bid_factor"))
+    //      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "smooth_factor")
+    //    println("complete data")
+    //    data1.show(10)
+    //
+    //    val data = data1
+    //      .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+    //      .na.fill(0, Seq("cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag"))
+    //      .withColumn("cvr_factor", udfSelectValue()(col("flag"), col("cvr_factor_orig"), col("cvr_factor_bak")))
+    //      .withColumn("jfb_factor", udfSelectValue()(col("flag"), col("jfb_factor_orig"), col("jfb_factor_bak")))
+    //      .withColumn("post_cvr", udfSelectValue()(col("flag"), col("post_cvr_orig"), col("post_cvr_bak")))
+    //      .withColumn("high_bid_factor", udfSelectValue()(col("flag"), col("high_bid_factor_orig"), col("high_bid_factor_bak")))
+    //      .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
+    //      .cache()
 
     data.show(10)
 

@@ -8,6 +8,7 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay.OcpcCalibrationBaseDelayMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -107,9 +108,18 @@ object OcpcGetPbDelayV2 {
 
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
+    // 从配置文件获取需要特殊化配置的广告主id（微视广告主）
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_tag.weishi")
+    val rawData = spark.read.format("json").json(confPath)
+    val confData = rawData
+      .select("exp_tag")
+      .distinct()
+
     val resultDF = data
       .withColumn("cpagiven", lit(1.0))
       .withColumn("version", lit(version))
+      .join(confData, Seq("exp_tag"), "inner")
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "exp_tag", "version")
 
     dataRaw1.unpersist()
