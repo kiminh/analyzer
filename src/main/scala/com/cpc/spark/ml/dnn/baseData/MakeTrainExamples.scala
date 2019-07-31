@@ -647,7 +647,7 @@ object MakeTrainExamples {
       val tf_ctr_feature = ctr_feature_dir + "/" + src_date
       val tf_float = des_dir + "/" + src_date + "-text-mapped-tf-sampled-float"
       if (exists_hdfs_path(tf_text_mapped_sampled_tf) && exists_hdfs_path(tf_ctr_feature)) {
-        println("detected ctr_feature_file:" + tf_ctr_feature)
+        println("exit ctr_feature_file:" + tf_ctr_feature)
         if (!exists_hdfs_path(tf_float)) {
           val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_text_mapped_sampled_tf + "/part*")
           println("DF file count:" + importedDf.count().toString + " of file:" + tf_text_mapped_sampled_tf + "/part*")
