@@ -729,7 +729,6 @@ object MakeTrainExamples {
                   float_list += ctrMap.getOrElse(key, "0.0")
                 }
               }
-
               Row(sample_idx, float_list.map(_.toLong), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
             }
           )
@@ -739,8 +738,6 @@ object MakeTrainExamples {
           s"hadoop fs -cp $tf_text_mapped_sampled_tf/count $tf_float/count" !
         }
       }
-
-
     }
     println("Done.......")
 
