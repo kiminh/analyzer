@@ -704,11 +704,10 @@ object MakeTrainExamples {
           ).map({rs => (rs._2, rs._3)}).collectAsMap()
           println("ctrMap.size=" + ctrMap.size)
 
-
           val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_text_mapped_sampled_tf + "/part*")
-          println("DF file count:" + importedDf.count().toString + " of file:" + tf_text_mapped_sampled_tf + "/part*")
-          importedDf.printSchema()
-          importedDf.show(3)
+          //println("DF file count:" + importedDf.count().toString + " of file:" + tf_text_mapped_sampled_tf + "/part*")
+          //importedDf.printSchema()
+          //importedDf.show(3)
 
           val float_rdd = importedDf.rdd.map(
             rs => {
