@@ -36,7 +36,7 @@ object OcpcJFBfactorV2 {
 
     val result = OcpcJFBfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723b")
   }
 
   def OcpcJFBfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
@@ -89,7 +89,7 @@ object OcpcJFBfactorV2 {
 
     calibration.show(10)
     calibration
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723b")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723a")
 
     val resultDF = calibration
       .withColumn("version", lit(version))
