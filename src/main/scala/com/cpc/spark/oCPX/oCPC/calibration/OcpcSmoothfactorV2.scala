@@ -1,6 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.calibration
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -19,40 +20,75 @@ object OcpcSmoothfactorV2 {
     val hour = args(1).toString
     val version = args(2).toString
     val expTag = args(3).toString
-    val hourInt = args(4).toInt
-    println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
-    val result = OcpcSmoothfactorV2Main(date, hour, version, expTag, hourInt, spark)
+    // 主校准回溯时间长度
+    val hourInt1 = args(4).toInt
+    // 备用校准回溯时间长度
+    val hourInt2 = args(5).toInt
+    // 兜底校准时长
+    val hourInt3 = args(6).toInt
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
+
+    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+
+    val result = OcpcSmoothfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723a")
   }
 
-  def OcpcSmoothfactorV2Main(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark: SparkSession) = {
-    val baseData = getBaseData(hourInt, date, hour, spark)
+  def OcpcSmoothfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+    // smooth实验配置文件
+    // min_cv:配置文件中如果为负数或空缺，则用默认值0，其他情况使用设定值
+    // smooth_factor：配置文件中如果为负数或空缺，则用默认值(由udfSelectSmoothFactor函数决定)，其他情况使用设定值
+    val expConf = getExpConf(version, spark)
 
-    // 计算结果
-    val result = calculateCVR(baseData, spark)
-
-    // 关联配置文件中的mincv和smooth_factor
-    /*
-    min_cv:配置文件中如果为负数或空缺，则用默认值10，其他情况使用设定值
-    smooth_factor：配置文件中如果为负数或空缺，则用默认值(由udfSelectSmoothFactor函数决定)，其他情况使用设定值
-     */
-    val minCV = getExpConf(version, spark)
-
-    val resultDF = result
-      .select("unitid", "conversion_goal", "media", "click", "cv", "cvr")
+    val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(minCV, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
+      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(0, Seq("min_cv"))
-      .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+    data1.show(10)
+
+    val data2 = dataRaw2
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(0, Seq("min_cv"))
+      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+    data2.show(10)
+
+    val data3 = dataRaw3
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(0, Seq("min_cv"))
+      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+    data3.show(10)
+
+    // 计算最终值
+    val calibration1 = calculateCalibrationValue(data1, data2, spark)
+    val calibrationNew = data3
+      .withColumn("cvr_new", col("cvr"))
+      .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
+
+    val calibration = calibrationNew
+      .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+      .select("unitid", "conversion_goal", "exp_tag", "cvr_new", "cvr3")
+      .withColumn("cvr", when(col("cvr3").isNotNull, col("cvr3")).otherwise(col("cvr_new")))
+      .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
+      .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
-//      .filter(s"cv >= min_cv")
+      .cache()
+
+    calibration.show(10)
+
+    val resultDF = calibration
       .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "exp_tag", "version", "cvr", "smooth_factor")
 
     resultDF
   }
@@ -80,7 +116,7 @@ object OcpcSmoothfactorV2 {
   def udfSetMinCV() = udf((minCV: Int) => {
     var result = minCV
     if (result < 0) {
-      result = 10
+      result = 0
     }
     result
   })
@@ -100,6 +136,35 @@ object OcpcSmoothfactorV2 {
     data.show(10)
 
     data
+  }
+
+  def calculateCalibrationValue(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
+    /*
+    "identifier", "click", "cv", "pre_cvr", "total_price", "total_bid"
+     */
+
+    // 主校准模型
+    val data1 = dataRaw1
+      .filter(s"cv >= min_cv")
+      .withColumn("cvr1", col("cvr"))
+      .select("unitid", "conversion_goal", "exp_tag", "cvr1")
+
+    // 备用校准模型
+    val data2 = dataRaw2
+      .filter(s"cv >= min_cv")
+      .withColumn("cvr2", col("cvr"))
+      .select("unitid", "conversion_goal", "exp_tag", "cvr2")
+
+    // 数据表关联
+    val data = data2
+      .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(0, Seq("flag"))
+      .withColumn("cvr3", when(col("cvr1").isNotNull, col("cvr1")).otherwise(col("cvr2")))
+
+    data.show()
+
+    data
+
   }
 
   def calculateCVR(rawData: DataFrame, spark: SparkSession) = {

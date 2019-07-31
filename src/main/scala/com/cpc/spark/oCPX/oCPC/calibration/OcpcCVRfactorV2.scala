@@ -71,23 +71,22 @@ object OcpcCVRfactorV2 {
       .na.fill(40, Seq("min_cv"))
     data3.show(10)
 
+    // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
       .withColumn("pcoc_new", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc_new")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc_new")
 
     val calibration = calibrationNew
-      .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag", "version"), "left_outer")
-      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc_new", "pcoc3")
+      .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc_new", "pcoc3")
       .withColumn("pcoc", when(col("pcoc3").isNotNull, col("pcoc3")).otherwise(col("pcoc_new")))
       .cache()
 
     calibration.show(10)
-    data1.unpersist()
-    data2.unpersist()
-    data3.unpersist()
 
     val resultDF = calibration
+      .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc")
 
     resultDF
@@ -119,17 +118,17 @@ object OcpcCVRfactorV2 {
     val data1 = dataRaw1
       .filter(s"cv >= min_cv")
       .withColumn("pcoc1", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc1")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc1")
 
     // 备用校准模型
     val data2 = dataRaw2
       .filter(s"cv >= min_cv")
       .withColumn("pcoc2", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "version", "pcoc2")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc2")
 
     // 数据表关联
     val data = data2
-      .join(data1, Seq("unitid", "conversion_goal", "exp_tag", "version"), "left_outer")
+      .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
       .na.fill(0, Seq("flag"))
       .withColumn("pcoc3", when(col("pcoc1").isNotNull, col("pcoc1")).otherwise(col("pcoc2")))
 
