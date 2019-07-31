@@ -21,8 +21,8 @@ multi_hot_cnt=15
 
 spark-submit --master yarn --queue ${queue} \
     --name "feature_monitor" \
-    --driver-memory 16g --executor-memory 16g \
-    --num-executors 50 --executor-cores 4 \
+    --driver-memory 5g --executor-memory 5g \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
