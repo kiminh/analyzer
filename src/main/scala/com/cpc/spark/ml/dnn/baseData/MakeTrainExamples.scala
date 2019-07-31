@@ -86,10 +86,10 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 11) {
+    if (args.length != 12) {
       System.err.println(
         """
-          |you have to input 6 parameters !!!
+          |you have to input 12 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
