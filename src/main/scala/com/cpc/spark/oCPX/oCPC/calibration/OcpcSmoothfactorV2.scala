@@ -36,7 +36,7 @@ object OcpcSmoothfactorV2 {
 
     val result = OcpcSmoothfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723b")
   }
 
   def OcpcSmoothfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
@@ -77,7 +77,6 @@ object OcpcSmoothfactorV2 {
 
     val calibration = calibrationNew
       .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-      .select("unitid", "conversion_goal", "exp_tag", "cvr_new", "cvr3")
       .withColumn("cvr", when(col("cvr3").isNotNull, col("cvr3")).otherwise(col("cvr_new")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
@@ -86,6 +85,8 @@ object OcpcSmoothfactorV2 {
       .cache()
 
     calibration.show(10)
+    calibration
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723a")
 
     val resultDF = calibration
       .withColumn("version", lit(version))

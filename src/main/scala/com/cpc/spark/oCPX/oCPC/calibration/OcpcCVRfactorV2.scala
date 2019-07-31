@@ -79,11 +79,13 @@ object OcpcCVRfactorV2 {
 
     val calibration = calibrationNew
       .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc_new", "pcoc3")
       .withColumn("pcoc", when(col("pcoc3").isNotNull, col("pcoc3")).otherwise(col("pcoc_new")))
       .cache()
 
     calibration.show(10)
+    calibration
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
+
 
     val resultDF = calibration
       .withColumn("version", lit(version))
