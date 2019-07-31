@@ -47,51 +47,16 @@ object TopCtrIdeaV2 {
     cal.add(Calendar.DATE, -dayBefore)
 
     //读取近10天广告信息。 ((adslot_type, ideaid), Adinfo)
-    /*var adctr: RDD[((Int, Int), Adinfo)] = null
-
-    for (i <- 0 until dayBefore) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      val stmt =
-        """
-          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
-          |from dl_cpc.cpc_basedata_union_events where `day` = "%s" and isshow = 1
-          |and adslot_id > 0 and ideaid > 0
-          |group by adslot_type, ideaid
-        """.stripMargin.format(date)
-      println(stmt)
-      val ulog = spark.sql(stmt)
-        .rdd
-        .map {
-          u =>
-            val key = (u.getAs[Int]("adslot_type"), u.getAs[Int]("ideaid"))
-            val v = Adinfo(
-              idea_id = u.getAs[Int]("ideaid"),
-              adslot_type = u.getAs[Int]("adslot_type"),
-              click = u.getAs[Long]("sum_click").toInt,
-              show = u.getAs[Long]("sum_show").toInt)
-
-            (key, v)
-        }
-
-
-      if (adctr == null) {
-        adctr = ulog
-      } else {
-        adctr = adctr.union(ulog) //合并
-      }
-
-      cal.add(Calendar.DATE, 1)
-    }*/
-
     var adctr: DataFrame = null
     for (i <- 0 until dayBefore) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      // 去掉金币样式,增加对媒体id的group by
       val stmt =
         """
-          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
+          |select adslot_type, ideaid, media_appsid, sum(isclick) as sum_click, sum(isshow) as sum_show
           |from dl_cpc.cpc_basedata_union_events where `day` = "%s" and isshow = 1
-          |and adslot_id > 0 and ideaid > 0
-          |group by adslot_type, ideaid
+          |and adslot_id > 0 and ideaid > 0 and exp_style <> 510127
+          |group by adslot_type, ideaid, media_appsid
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
@@ -105,64 +70,53 @@ object TopCtrIdeaV2 {
     }
 
     val adinfo = adctr
-      .groupBy("adslot_type", "ideaid")
+      .groupBy("adslot_type", "ideaid", "media_appsid")
       .agg(
         expr("sum(sum_click)").cast("int").alias("click"),
-        expr("sum(sum_show)").cast("int").alias("show"),
-        expr("sum(sum_click)/sum(sum_show)*1000000").cast("int").alias("ctr")
+        expr("sum(sum_show)").cast("int").alias("show")
+        // expr("sum(sum_click)/sum(sum_show)*1000000").cast("int").alias("ctr")
       )
       .where("click>0")
-      .where("((adslot_type=1 or adslot_type=2) and show>1000) or adslot_type>2")
+      .where("show>1000") // 对所有栏位类型进行大于1000展示量过滤
       .rdd
       .map { r =>
         val idea_id = r.getAs[Int]("ideaid")
         val adslot_type = r.getAs[Int]("adslot_type")
+        val media_appsid = r.getAs[String]("media_appsid")
+        val media_id = media_appsid match {
+          case "80000001" | "80000002" => 1   // 趣头条
+          case "80001098" | "80001292" | "80001539" | "80002480" | "80001011" | "80004786" | "80004787" => 4    // 米读
+          case "80002819" => 5  // 段子
+          case "80003865" => 6  // 趣键盘
+          case _ => 2 // 联盟头部
+        }
         val click = r.getAs[Int]("click")
         val show = r.getAs[Int]("show")
-        val ctr = r.getAs[Int]("ctr")
+         // val ctr = r.getAs[Int]("ctr")
         val v = Adinfo(
           adslot_type = adslot_type,
           idea_id = idea_id,
+          media_id = media_id,
           show = show,
-          click = click,
-          ctr = ctr)
-        v
+          click = click)
+          // ctr = ctr)
+          // v
+          ((adslot_type, idea_id, media_id), v)
       }
+        .reduceByKey((x, y) => Adinfo(
+            adslot_type = x.adslot_type,
+            idea_id = x.idea_id,
+            media_id = x.media_id,
+            show = x.show + y.show,
+            click = x.click + y.click ))
+        .map(x => x._2)
       .toLocalIterator
       .toSeq
-
 
     /**
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
       */
-    /*val adinfo = adctr
-      .reduceByKey { //计算近10天的click,show
-        (x, y) =>
-          x.copy(
-            click = x.click + y.click,
-            show = x.show + y.show
-          )
-      }
-      .map {
-        x =>
-          val v = x._2 //Adinfo
-        val ctr = (v.click.toDouble / v.show.toDouble * 1e6).toInt
-          v.copy(ctr = ctr)
-      }
-      .filter(x => x.click > 0)
-      .filter { x =>
-        if (x.adslot_type == 1 || x.adslot_type == 2) {
-          x.show > 1000
-        } else {
-          true
-        }
-
-      }
-      .coalesce(5)
-      .toLocalIterator
-      .toSeq*/
-
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
@@ -183,12 +137,17 @@ object TopCtrIdeaV2 {
             var img: Seq[(String, Int)] = Seq()
             if (mtype != 6) {
               img = ad._2.split(",").map(_.toInt).toSeq
-                .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+                 .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
             }
             val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
-
             val adclass = (ad._6 / 1000000) * 1000000 + 100100
+            var image_ids = ""
+            if (mtype == 4) {
+              image_ids = ad._4.toString()
+            } else {
+              image_ids = ad._2
+            }
 
             id += 1
             var topIdea = TopIdea(
@@ -199,12 +158,13 @@ object TopCtrIdeaV2 {
               adclass = ad._6,
               adclass_1 = adclass,
               adslot_type = x.adslot_type,
+              media_id = x.media_id,
               title = ad._1, //title
               mtype = mtype, //type
-              ctr_score = x.ctr,
               from = "cpc_adv",
               show = x.show,
-              click = x.click
+              click = x.click,
+              ctr_score = x.click / x.show * 1000000
             )
 
             if (mtype == 4) { //视频
@@ -283,7 +243,6 @@ object TopCtrIdeaV2 {
           .sortWith(_.ctr_score > _.ctr_score).take(size)
       }
 
-
       println("adslot_type=" + i + "已取出 " + topIdeaRDD2.length + " 条")
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
@@ -293,13 +252,12 @@ object TopCtrIdeaV2 {
       println("###### res: " + topIdeaData(0))
     }
 
-
     val conf = ConfigFactory.load()
-    val mariadbUrl = conf.getString("mariadb.url")
+    val mariadbUrl = conf.getString("mariadb.adv_report.url")
     val mariadbProp = new Properties()
-    mariadbProp.put("user", conf.getString("mariadb.user"))
-    mariadbProp.put("password", conf.getString("mariadb.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.driver"))
+    mariadbProp.put("user", conf.getString("mariadb.adv_report.user"))
+    mariadbProp.put("password", conf.getString("mariadb.adv_report.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.adv_report.driver"))
 
     //truncate table
     try {
@@ -311,7 +269,7 @@ object TopCtrIdeaV2 {
       val stmt = conn.createStatement()
       val sql =
         """
-          |TRUNCATE TABLE report.%s
+          |TRUNCATE TABLE adv_report.%s
         """.stripMargin.format(table)
       stmt.executeUpdate(sql);
       stmt.close()
@@ -344,10 +302,7 @@ object TopCtrIdeaV2 {
     } catch {
       case e: Exception => println("insert table failed : " + e);
     }
-
-
     println("###### num: " + topIdeaData.length)
-
   }
 
   def getUserBelong(): Map[Int, Int] = {
@@ -363,7 +318,7 @@ object TopCtrIdeaV2 {
 
   def getIdeaTitle(): Map[Int, (String, String, Int, Int, Int, Int)] = {
     //荐素材类型: 1为小图，2为长图，3组图，4为视频，6为文本 7互动 8开屏 9 横幅
-    var sql = "select id, title, image, type, video_id, user_id, category from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
+    var sql = "select id, title, image, type, video_id, user_id, category from idea where type in (1,2,3,4,6,7,8,9) limit 100000"  // 去掉了action_type=1的过滤
     val ideas = mutable.Map[Int, (String, String, Int, Int, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
@@ -378,7 +333,7 @@ object TopCtrIdeaV2 {
   }
 
   def getIdaeImg(): Map[Int, (String, Int)] = {
-    val sql = "select id,`type`,remote_url from resource"
+    val sql = "select id,`type`,remote_url from resource limit 100000"
     val images = mutable.Map[Int, (String, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
@@ -421,10 +376,11 @@ object TopCtrIdeaV2 {
                              idea_id: Int = 0,
                              adclass: Int = 0,
                              adslot_type: Int = 0,
+                             media_id: Int = 0,
                              click: Int = 0,
-                             show: Int = 0,
-                             ctr: Int = 0,
-                             ctr_type: Int = 0
+                             show: Int = 0
+                             // ctr: Int = 0,
+                             // ctr_type: Int = 0
                            ) {
 
   }
@@ -437,6 +393,7 @@ object TopCtrIdeaV2 {
                               adclass: Int = 0,
                               adclass_1: Int = 0, //一级行业
                               adslot_type: Int = 0,
+                              media_id: Int = 0,
                               title: String = "",
                               mtype: Int = 0,
                               images: String = "",
