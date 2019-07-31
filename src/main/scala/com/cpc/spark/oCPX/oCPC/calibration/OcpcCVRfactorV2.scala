@@ -55,6 +55,7 @@ object OcpcCVRfactorV2 {
         .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
         .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
         .na.fill(40, Seq("min_cv"))
+        .filter(s"cv > 0")
     data1.show(10)
 
     val data2 = dataRaw2
@@ -62,6 +63,7 @@ object OcpcCVRfactorV2 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
+      .filter(s"cv > 0")
     data2.show(10)
 
     val data3 = dataRaw3
@@ -69,6 +71,7 @@ object OcpcCVRfactorV2 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
+      .filter(s"cv > 0")
     data3.show(10)
 
     // 计算最终值
