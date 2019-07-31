@@ -13,6 +13,11 @@ one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,s
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
 
+#20190724
+collect_date_begin=`date --date='35 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='8 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='7 days ago' +%Y-%m-%d`
+
 #20190727
 collect_date_begin=`date --date='32 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='5 days ago' +%Y-%m-%d`
@@ -25,10 +30,6 @@ ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
 collect_date_begin=`date --date='34 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='7 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='6 days ago' +%Y-%m-%d`
-#20190724
-collect_date_begin=`date --date='35 days ago' +%Y-%m-%d`
-collect_date_end=`date --date='8 days ago' +%Y-%m-%d`
-ctr_feature_date=`date --date='7 days ago' +%Y-%m-%d`
 
 echo ${ctr_feature_date}
 echo ${collect_date_begin}
