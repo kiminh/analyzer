@@ -33,7 +33,12 @@ object OcpcBaseJoin {
 
 
 
-//    val quickUnion = getQuickUnion(date, hour, dayInt, spark)
+    val quickUnion = getQuickUnion(date, hour, dayInt, spark)
+    quickUnion
+      .repartition(500)
+      .write.mode("overwrite").insertInto("test.ocpc_union_quick_log")
+
+
   }
 
   def getQuickUnion(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
