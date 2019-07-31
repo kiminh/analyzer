@@ -135,51 +135,72 @@ object FeatureCtr {
       println("date:" + src_date + ", week:" + src_week)
       val curr_file_src = src_dir + "/" + src_date
       val tf_ctr = des_dir + "/" + src_date + "-ctr"
-      if (!exists_hdfs_path(tf_ctr) && exists_hdfs_path(curr_file_src)) {
-        val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
+      val tf_ctr_rate = des_dir + "/" + src_date + "-ctr-rate"
 
-        importedDf.rdd.map(
-          rs => {
-            val idx2 = rs.getSeq[Long](0)
-            val idx1 = rs.getSeq[Long](1)
-            val idx_arr = rs.getSeq[Long](2)
-            val idx0 = rs.getSeq[Long](3)
-            val sample_idx = rs.getLong(4)
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
-
-            var dense_str: Seq[String] = null
-            dense_str = dense.map(_.toString) ++ Seq[String](src_week)
-
-            var count = ""
-            if (label_arr.head == 1L) {
-              count = "1,1"
-            } else {
-              count = "0,1"
+      if (exists_hdfs_path(curr_file_src)) {
+        if (exists_hdfs_path(tf_ctr)) {
+          sc.textFile(tf_ctr).map(
+            {
+              rs =>
+                val line_list = rs.split("\t")
+                val rate = line_list(1).toDouble/line_list(2).toDouble
+                rs + "\t" + rate
             }
+          ).repartition(1).saveAsTextFile(tf_ctr_rate)
+        } else {
+          val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
+          println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+          val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
 
-            val output = scala.collection.mutable.ArrayBuffer[String]()
-            output += "week_" + src_week + ";" + count
-            for (idx <- 0 until count_one_hot.toInt) {
-              output += name_list_one_hot(idx) + "_" + dense(idx).toString + ";" + count
-              //var curr_count = (0L, 0L)
-              //if (ctrMapBC.value.contains(curr_feature)) {
-              //  curr_count = ctrMapBC.value(curr_feature)
-              //}
-              //ctrMapBC.value += (curr_feature -> (curr_count._1 + positive, curr_count._2 + negative))
+          importedDf.rdd.map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              var dense_str: Seq[String] = null
+              dense_str = dense.map(_.toString) ++ Seq[String](src_week)
+
+              var count = ""
+              if (label_arr.head == 1L) {
+                count = "1,1"
+              } else {
+                count = "0,1"
+              }
+
+              val output = scala.collection.mutable.ArrayBuffer[String]()
+              output += "week_" + src_week + ";" + count
+              for (idx <- 0 until count_one_hot.toInt) {
+                output += name_list_one_hot(idx) + "_" + dense(idx).toString + ";" + count
+                //var curr_count = (0L, 0L)
+                //if (ctrMapBC.value.contains(curr_feature)) {
+                //  curr_count = ctrMapBC.value(curr_feature)
+                //}
+                //ctrMapBC.value += (curr_feature -> (curr_count._1 + positive, curr_count._2 + negative))
+              }
+              output.mkString("\t")
             }
-            output.mkString("\t")
-          }
-        ).flatMap(
-          rs => {
-            val line_list = rs.split("\t")
-            for (elem <- line_list)
-              yield (elem.split(";")(0), (elem.split(";")(1).split(",")(0).toLong, elem.split(";")(1).split(",")(1).toLong))
-          }
-        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).repartition(1).sortByKey().map({rs=>rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2}).saveAsTextFile(tf_ctr)
+          ).flatMap(
+            rs => {
+              val line_list = rs.split("\t")
+              for (elem <- line_list)
+                yield (elem.split(";")(0), (elem.split(";")(1).split(",")(0).toLong, elem.split(";")(1).split(",")(1).toLong))
+            }
+          ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).map(
+            {
+              rs=>
+                rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + (rs._2._1.toDouble/rs._2._2.toDouble)
+            }
+          ).repartition(1).saveAsTextFile(tf_ctr_rate)
+        }
       }
+
+
+
     }
     println("Done.......")
   }
