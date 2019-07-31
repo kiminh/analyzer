@@ -163,7 +163,7 @@ object FeatureCtr {
             val output = scala.collection.mutable.ArrayBuffer[String]()
             output += "week_" + src_week + ";" + count
             for (idx <- 0 until count_one_hot.toInt) {
-              output += one_hot_feature_names(idx) + "_" + dense(idx).toString + ";" + count
+              output += name_list_one_hot(idx) + "_" + dense(idx).toString + ";" + count
               //var curr_count = (0L, 0L)
               //if (ctrMapBC.value.contains(curr_feature)) {
               //  curr_count = ctrMapBC.value(curr_feature)
@@ -178,7 +178,7 @@ object FeatureCtr {
             for (elem <- line_list)
               yield (elem.split(";")(0), (elem.split(";")(1).split(",")(0).toLong, elem.split(";")(1).split(",")(1).toLong))
           }
-        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).sortByKey().repartition(1).saveAsTextFile(tf_ctr)
+        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).sortByKey().map({rs=>rs._1 + "\t" + rs._2._1 + "\t" + rs._2._1}).repartition(1).saveAsTextFile(tf_ctr)
       }
     }
     println("Done.......")
