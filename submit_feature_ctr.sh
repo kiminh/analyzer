@@ -21,15 +21,15 @@ ctr_feature_date=`date --date='7 days ago' +%Y-%m-%d`
 collect_date_begin=`date --date='34 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='7 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='6 days ago' +%Y-%m-%d`
+#20190726
+collect_date_begin=`date --date='33 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='6 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
 
 #20190727
 collect_date_begin=`date --date='32 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='5 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='4 days ago' +%Y-%m-%d`
-#20190726
-collect_date_begin=`date --date='33 days ago' +%Y-%m-%d`
-collect_date_end=`date --date='6 days ago' +%Y-%m-%d`
-ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
 
 echo ${ctr_feature_date}
 echo ${collect_date_begin}
