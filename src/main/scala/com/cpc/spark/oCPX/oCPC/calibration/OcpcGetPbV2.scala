@@ -71,15 +71,18 @@ object OcpcGetPbV2 {
       .cache()
     bidFactorData.show(10)
 
-    val data1 = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
+    val data1 = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+    data1.show(10)
 
     dataRaw1.unpersist()
     dataRaw2.unpersist()
     dataRaw3.unpersist()
 
-    val data2 = OcpcGetPbDelayMain(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark)
+    val data2 = OcpcGetPbDelayMain(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark).cache()
+    data2.show(10)
 
-    val data = selectWeishiCali(expTag, data1, data2, date, hour, spark)
+    val data = selectWeishiCali(expTag, data1, data2, date, hour, spark).cache()
+    data.show(10)
 
     // 明投单元
     val resultUnhidden = data
@@ -197,9 +200,7 @@ object OcpcGetPbV2 {
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
-      .cache()
 
-    data.show(10)
     data
 
 
