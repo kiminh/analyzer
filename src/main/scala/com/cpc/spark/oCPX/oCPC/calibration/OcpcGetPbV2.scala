@@ -43,7 +43,7 @@ object OcpcGetPbV2 {
 
     val jfbDataRaw = OcpcJFBfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val jfbData = jfbDataRaw
-      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
 
     val smoothDataRaw = OcpcSmoothfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
