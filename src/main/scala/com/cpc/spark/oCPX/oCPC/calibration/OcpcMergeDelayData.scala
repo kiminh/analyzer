@@ -57,7 +57,7 @@ object OcpcMergeDelayData {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pb_data_hourly
+         |  dl_cpc.ocpc_pb_data_hourly_exp
          |WHERE
          |  `date` = '$date'
          |AND
