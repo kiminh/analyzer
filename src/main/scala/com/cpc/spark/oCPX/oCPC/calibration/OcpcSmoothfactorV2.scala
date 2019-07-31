@@ -76,12 +76,14 @@ object OcpcSmoothfactorV2 {
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
       .withColumn("cvr_new", col("post_cvr"))
-      .select("unitid", "conversion_goal", "exp_tag", "cvr_new", "min_cv")
+      .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
 
     val calibration = calibrationNew
       .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
       .withColumn("cvr", when(col("cvr3").isNotNull, col("cvr3")).otherwise(col("cvr_new")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(0, Seq("min_cv"))
+      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
       .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
