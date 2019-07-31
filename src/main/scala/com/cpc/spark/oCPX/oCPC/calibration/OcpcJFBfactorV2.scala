@@ -34,12 +34,12 @@ object OcpcJFBfactorV2 {
     val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
     val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
 
-    val result = OcpcJFBfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val result = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723b")
   }
 
-  def OcpcJFBfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+  def OcpcJFBfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
     // smooth实验配置文件
     // min_cv:配置文件中如果为负数或空缺，则用默认值0，其他情况使用设定值
     // smooth_factor：配置文件中如果为负数或空缺，则用默认值(由udfSelectSmoothFactor函数决定)，其他情况使用设定值

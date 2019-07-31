@@ -1,12 +1,12 @@
-package com.cpc.spark.oCPX.oCPC.calibration
+package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcGetPbDelayV2._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcGetPbDelay._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -54,7 +54,7 @@ object OcpcGetPbV2 {
       .withColumn("post_cvr", col("cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
 
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -210,7 +210,6 @@ object OcpcGetPbV2 {
     result.show(10)
     result
   }
-
 
 
 }

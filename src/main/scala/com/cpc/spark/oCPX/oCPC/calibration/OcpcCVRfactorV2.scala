@@ -39,13 +39,13 @@ object OcpcCVRfactorV2 {
     val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
     val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
 
-    val result = OcpcCVRfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
   }
 
-  def OcpcCVRfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
     // cvr实验配置文件
     // min_cv:配置文件中如果为负数或空缺，则用默认值40，其他情况使用设定值
     val expConf = getExpConf(version, spark)
