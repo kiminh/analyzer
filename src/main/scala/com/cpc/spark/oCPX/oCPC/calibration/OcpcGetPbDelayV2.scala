@@ -82,20 +82,28 @@ object OcpcGetPbDelayV2 {
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0)/col("jfb"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
+      .cache()
+    jfbData.show(10)
 
     val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
+      .cache()
+    smoothData.show(10)
 
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
+      .cache()
+    pcocData.show(10)
 
     val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
     val bidFactorData = bidFactorDataRaw
       .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .cache()
+    bidFactorData.show(10)
 
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
