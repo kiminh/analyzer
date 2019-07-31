@@ -78,7 +78,7 @@ object OcpcBIDfactor {
     val resultDF = data1
       .select("unitid", "conversion_goal", "media", "exp_tag")
       .join(data2, Seq("unitid", "conversion_goal", "media"), "inner")
-      .selectExpr("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .selectExpr("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor", "cv")
       .withColumn("version", lit(version))
 
     resultDF
