@@ -82,7 +82,7 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 10) {
+    if (args.length != 11) {
       System.err.println(
         """
           |you have to input 6 parameters !!!
@@ -90,7 +90,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -112,7 +112,6 @@ object MakeTrainExamples {
     println("src_date_list:" + src_date_list.mkString(";"))
     println("src_week_list:" + src_week_list.mkString(";"))
     println("src_date_list_with_week:" + src_date_list_with_week.mkString("|"))
-
 
     /************make text examples************************/
     println("Make text examples")
@@ -644,62 +643,58 @@ object MakeTrainExamples {
         writeNum2File(fileName, sampled_df_count)
         s"hadoop fs -put $fileName $tf_text_mapped_sampled_tf/count" !
       }
+
+      val tf_ctr_feature = ctr_feature_dir + "/" + src_date
+      val tf_float = des_dir + "/" + src_date + "-text-mapped-tf-sampled-float"
+      if (exists_hdfs_path(tf_text_mapped_sampled_tf) && exists_hdfs_path(tf_ctr_feature)) {
+        if (!exists_hdfs_path(tf_float)) {
+          val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(tf_text_mapped_sampled_tf + "/part*")
+          println("DF file count:" + importedDf.count().toString + " of file:" + tf_text_mapped_sampled_tf + "/part*")
+          importedDf.printSchema()
+          importedDf.show(3)
+
+          /*importedDf.rdd.map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              var dense_str: Seq[String] = null
+              if (with_week == "True") {
+                dense_str = dense.map(_.toString) ++ Seq[String](src_week)
+              } else {
+                dense_str = dense.map(_.toString)
+              }
+
+              var label = "0.0"
+              if (label_arr.head == 1L) {
+                label = "1.0"
+              }
+
+              val output = scala.collection.mutable.ArrayBuffer[String]()
+              output += sample_idx.toString
+              output += label
+              output += label_arr.map(_.toString).mkString(";")
+              output += dense_str.mkString(";")
+              output += idx0.map(_.toString).mkString(";")
+              output += idx1.map(_.toString).mkString(";")
+              output += idx2.map(_.toString).mkString(";")
+              output += idx_arr.map(_.toString).mkString(";")
+
+              output.mkString("\t")
+            }
+          ).saveAsTextFile(tf_text)*/
+        }
+        }
+      }
+
+
     }
     println("Done.......")
-
-    /************check mapped************************/
-    /**println("Check Mapped Correctness")
-    for (date_idx <- src_date_list.indices) {
-      val src_date = src_date_list(date_idx)
-      val src_week = src_week_list(date_idx)
-      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
-      val tf_text_mapped_check = des_dir + "/check-" + src_date
-      if (!exists_hdfs_path(tf_text_mapped_check) && exists_hdfs_path(tf_text_mapped)) {
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("check mapped date:" + src_date)
-        val rdd = sc.textFile(tf_text_mapped + "/part*").map(
-          rs => {
-            val ult_list = rs.split("\t")
-            val sid = ult_list(0)
-            val label = ult_list(1)
-            val label_arr = ult_list(2)
-            val dense = ult_list(3).split(";")
-            val idx0 = ult_list(4).split(";")
-            val idx1 = ult_list(5).split(";")
-            val idx2 = ult_list(6).split(";")
-            val idx_arr = ult_list(7).split(";")
-            val mapped_uid = dense(0).toLong
-            var err_code = 0
-
-            if (idx0.length != idx1.length || idx1.length != idx2.length || idx2.length != idx_arr.length) {
-              err_code = 1
-            }
-
-            if (mapped_uid < sparse_map_others_count) {
-              err_code = 2
-            }
-
-            if (mapped_uid > sparse_map_uid_count + sparse_map_others_count - 1) {
-              err_code = 3
-            }
-
-            for (idx <- 1 until dense.length) {
-              if (dense(idx).toLong < 0 || (dense(idx).toLong > sparse_map_others_count - 1)) {
-                err_code = 4
-              }
-            }
-
-            for (idx <- 0 until idx_arr.length) {
-              if (idx_arr(idx).toLong < 0 || (idx_arr(idx).toLong > sparse_map_others_count - 1)) {
-                err_code = 5
-              }
-            }
-            err_code
-          }
-        ).repartition(1).saveAsTextFile(tf_text_mapped_check)
-      }
-    }
-    println("Done.......")**/
 
   }
 }
