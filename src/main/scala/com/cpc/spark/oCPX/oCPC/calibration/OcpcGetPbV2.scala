@@ -2,10 +2,11 @@ package com.cpc.spark.oCPX.oCPC.calibration
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcGetPbDelay._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactor._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcGetPbDelayV2._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -36,17 +37,21 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, jfbHourInt, spark)
+    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+
+    val jfbDataRaw = OcpcJFBfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
 
-    val smoothDataRaw = OcpcSmoothFactorMain(date, hour, version, expTag, smoothHourInt, spark)
+    val smoothDataRaw = OcpcSmoothfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
 
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val pcocDataRaw = OcpcCVRfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -57,7 +62,7 @@ object OcpcGetPbV2 {
 
     val data1 = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark)
 
-    val data2 = OcpcGetPbDelayMain(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark)
+    val data2 = OcpcGetPbDelayV2Main(date, hour, version, expTag, jfbHourInt, smoothHourInt, bidFactorHourInt, hourInt1, hourInt2, hourInt3, 6, spark)
 
     val data = selectWeishiCali(expTag, data1, data2, date, hour, spark)
 
