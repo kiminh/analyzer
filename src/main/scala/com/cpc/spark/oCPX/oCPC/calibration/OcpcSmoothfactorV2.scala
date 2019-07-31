@@ -72,7 +72,7 @@ object OcpcSmoothfactorV2 {
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
-      .withColumn("cvr_new", col("cvr"))
+      .withColumn("cvr_new", col("post_cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
 
     val calibration = calibrationNew
@@ -148,13 +148,13 @@ object OcpcSmoothfactorV2 {
     // 主校准模型
     val data1 = dataRaw1
       .filter(s"cv >= min_cv")
-      .withColumn("cvr1", col("cvr"))
+      .withColumn("cvr1", col("post_cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr1")
 
     // 备用校准模型
     val data2 = dataRaw2
       .filter(s"cv >= min_cv")
-      .withColumn("cvr2", col("cvr"))
+      .withColumn("cvr2", col("post_cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr2")
 
     // 数据表关联
