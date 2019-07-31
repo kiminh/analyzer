@@ -178,7 +178,7 @@ object FeatureCtr {
             for (elem <- line_list)
               yield (elem.split(";")(0), (elem.split(";")(1).split(",")(0).toLong, elem.split(";")(1).split(",")(1).toLong))
           }
-        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).sortByKey().map({rs=>rs._1 + "\t" + rs._2._1 + "\t" + rs._2._1}).repartition(1).saveAsTextFile(tf_ctr)
+        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).sortByKey().map({rs=>rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2}).repartition(1).saveAsTextFile(tf_ctr)
       }
     }
     println("Done.......")
