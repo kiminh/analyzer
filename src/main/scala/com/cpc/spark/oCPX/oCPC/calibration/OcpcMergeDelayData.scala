@@ -65,7 +65,7 @@ object OcpcMergeDelayData {
          |AND
          |  version = '$version'
          |AND
-         |  exp_tag = '$expTag'
+         |  exp_tag like '$expTag%'
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
