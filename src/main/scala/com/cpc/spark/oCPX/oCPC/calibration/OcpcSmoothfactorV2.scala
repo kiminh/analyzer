@@ -79,6 +79,7 @@ object OcpcSmoothfactorV2 {
       .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
       .select("unitid", "conversion_goal", "exp_tag", "cvr_new", "cvr3")
       .withColumn("cvr", when(col("cvr3").isNotNull, col("cvr3")).otherwise(col("cvr_new")))
+      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("smooth_factor_back", udfSelectSmoothFactor()(col("conversion_goal")))
       .withColumn("smooth_factor", when(col("smooth_factor").isNotNull, col("smooth_factor")).otherwise(col("smooth_factor_back")))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
@@ -165,22 +166,5 @@ object OcpcSmoothfactorV2 {
 
     data
 
-  }
-
-  def calculateCVR(rawData: DataFrame, spark: SparkSession) = {
-    val data  =rawData
-      .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("cvr", col("cv") * 1.0 / col("click"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "cvr")
-
-    val result = data
-        .select("unitid", "conversion_goal", "media", "click", "cv", "cvr")
-
-    result
   }
 }
