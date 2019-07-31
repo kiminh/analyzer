@@ -137,7 +137,7 @@ object FeatureCtr {
       val tf_ctr = des_dir + "/" + src_date + "-ctr"
       val tf_ctr_rate = des_dir + "/" + src_date + "-ctr-rate"
 
-      if (exists_hdfs_path(curr_file_src)) {
+      if (exists_hdfs_path(curr_file_src) && !exists_hdfs_path(tf_ctr_rate)) {
         if (exists_hdfs_path(tf_ctr)) {
           sc.textFile(tf_ctr).map(
             {
