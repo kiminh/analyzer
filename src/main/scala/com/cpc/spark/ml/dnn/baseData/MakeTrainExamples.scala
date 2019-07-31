@@ -689,7 +689,6 @@ object MakeTrainExamples {
             }
           ).saveAsTextFile(tf_text)*/
         }
-        }
       }
 
 
