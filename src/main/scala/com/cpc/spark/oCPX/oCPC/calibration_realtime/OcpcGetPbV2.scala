@@ -2,10 +2,10 @@ package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactorDelay.OcpcCVRfactorDelayMain
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -36,11 +36,11 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt1, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
     dataRaw1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseDelayMain(date, hour, hourInt2, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
     dataRaw2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
     dataRaw3.show(10)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
@@ -57,7 +57,7 @@ object OcpcGetPbV2 {
       .cache()
     smoothData.show(10)
 
-    val pcocDataRaw = OcpcCVRfactorDelayMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")

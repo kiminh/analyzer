@@ -1,18 +1,19 @@
-package com.cpc.spark.oCPX.oCPC.calibration
+package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
-import com.cpc.spark.oCPX.OcpcTools._
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
-import com.typesafe.config.ConfigFactory
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay._
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2.OcpcJFBfactorMain
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2.OcpcSmoothfactorMain
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactorDelay._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPbV2 {
+object OcpcGetPbDelayV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -36,11 +37,11 @@ object OcpcGetPbV2 {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt1, spark).cache()
     dataRaw1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseDelayMain(date, hour, hourInt2, spark).cache()
     dataRaw2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw3.show(10)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
@@ -57,7 +58,7 @@ object OcpcGetPbV2 {
       .cache()
     smoothData.show(10)
 
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val pcocDataRaw = OcpcCVRfactorDelayMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -68,7 +69,8 @@ object OcpcGetPbV2 {
     val bidFactorData = bidFactorDataRaw
       .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
       .cache()
-    bidFactorData.show(10)
+    println("bid factor data:")
+    bidFactorDataRaw.show(10)
 
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
     data.show(10)
@@ -103,11 +105,21 @@ object OcpcGetPbV2 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      //      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
+
+  def udfSelectValue() = udf((flag: Int, valueOrigin: Double, valueBak: Double) => {
+    var result = valueOrigin
+    if (flag == 1) {
+      result = valueBak
+    } else {
+      result = valueOrigin
+    }
+    result
+  })
 
 
   def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
