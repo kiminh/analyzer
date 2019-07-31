@@ -74,8 +74,10 @@ object CalibrationCheckOnMiduCtr {
     log.show(50)
     println("total data:%d".format(log.count()))
 
-    val data = log.filter("isload = 1")
+    val data = log.filter("isload = 0")
     println("calibration data:%d".format(data.count()))
+
+    data.show(20)
     var uncalibrated = 0
     data.rdd.toLocalIterator.foreach( x => {
       val isClick = x.getLong(0).toDouble
