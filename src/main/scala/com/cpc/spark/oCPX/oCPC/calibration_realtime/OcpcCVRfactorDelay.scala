@@ -1,13 +1,15 @@
-package com.cpc.spark.oCPX.oCPC.calibration
+package com.cpc.spark.oCPX.oCPC.calibration_realtime
 
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCvrFactorBase._
-import com.typesafe.config.ConfigFactory
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCvrFactorBaseDelay._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcCVRfactor {
+object OcpcCVRfactorDelay {
   def main(args: Array[String]): Unit = {
     /*
     校准策略：
@@ -35,23 +37,31 @@ object OcpcCVRfactor {
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
     // 抽取媒体id
 
-    val result = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val result = OcpcCVRfactorDelayMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
   }
 
-  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
-//    // 抽取媒体id
-//    val conf = ConfigFactory.load("ocpc")
-//    val conf_key = "medias.total.media_selection"
-//    val mediaSelection = conf.getString(conf_key)
+  def OcpcCVRfactorDelayMain(originalDate: String, originalHour: String, version: String, expTag: String, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
+    // real-time
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = originalDate + " " + originalHour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, 2)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date = tmpDateValue(0)
+    val hour = tmpDateValue(1)
 
-    val data1 = OcpcCvrFactorBaseMain(date, hour, version, expTag, hourInt1, spark).cache()
+    val data1 = OcpcCvrFactorBaseDelayMain(date, hour, version, expTag, hourInt1, spark).cache()
     data1.show(10)
-    val data2 = OcpcCvrFactorBaseMain(date, hour, version, expTag, hourInt2, spark).cache()
+    val data2 = OcpcCvrFactorBaseDelayMain(date, hour, version, expTag, hourInt2, spark).cache()
     data2.show(10)
-    val data3 = OcpcCvrFactorBaseMain(date, hour, version, expTag, hourInt3, spark).cache()
+    val data3 = OcpcCvrFactorBaseDelayMain(date, hour, version, expTag, hourInt3, spark).cache()
     data3.show(10)
 
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
