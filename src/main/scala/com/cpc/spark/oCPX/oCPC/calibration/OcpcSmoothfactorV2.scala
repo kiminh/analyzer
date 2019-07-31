@@ -51,6 +51,7 @@ object OcpcSmoothfactorV2 {
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(0, Seq("min_cv"))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+      .filter(s"cv > 0")
     data1.show(10)
 
     val data2 = dataRaw2
@@ -59,6 +60,7 @@ object OcpcSmoothfactorV2 {
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(0, Seq("min_cv"))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+      .filter(s"cv > 0")
     data2.show(10)
 
     val data3 = dataRaw3
@@ -67,13 +69,14 @@ object OcpcSmoothfactorV2 {
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(0, Seq("min_cv"))
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+      .filter(s"cv > 0")
     data3.show(10)
 
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
       .withColumn("cvr_new", col("post_cvr"))
-      .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
+      .select("unitid", "conversion_goal", "exp_tag", "cvr_new", "min_cv")
 
     val calibration = calibrationNew
       .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
