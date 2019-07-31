@@ -34,42 +34,41 @@ object OcpcCVRfactorV2 {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
-    // 抽取媒体id
 
-    val result = OcpcCVRfactorV2Main(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+
+    val result = OcpcCVRfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
   }
 
-  def OcpcCVRfactorV2Main(date: String, hour: String, version: String, expTag: String, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
+  def OcpcCVRfactorV2Main(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
     // cvr实验配置文件
     // min_cv:配置文件中如果为负数或空缺，则用默认值40，其他情况使用设定值
     val expConf = getExpConf(version, spark)
 
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark)
     val data1 = dataRaw1
         .withColumn("media", udfMediaName()(col("media")))
         .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
         .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
         .na.fill(40, Seq("min_cv"))
-        .cache()
     data1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark)
+
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .cache()
     data2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark)
+
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .cache()
     data3.show(10)
 
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
