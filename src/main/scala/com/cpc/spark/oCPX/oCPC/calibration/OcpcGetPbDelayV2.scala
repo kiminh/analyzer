@@ -75,8 +75,11 @@ object OcpcGetPbDelayV2 {
 
     // 计算jfb_factor,cvr_factor,post_cvr
     val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    dataRaw1.show(10)
     val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    dataRaw2.show(10)
     val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    dataRaw3.show(10)
 
     val jfbDataRaw = OcpcJFBfactorV2Main(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val jfbData = jfbDataRaw
