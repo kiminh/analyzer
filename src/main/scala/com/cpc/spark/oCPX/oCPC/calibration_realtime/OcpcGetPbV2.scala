@@ -6,7 +6,7 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBa
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcGetPbDelay._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcGetPbDelayV2._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._

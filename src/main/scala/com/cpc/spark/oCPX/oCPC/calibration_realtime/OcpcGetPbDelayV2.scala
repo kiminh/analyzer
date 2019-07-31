@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay.OcpcCalibrationBaseDelayMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactorDelay._
@@ -71,11 +71,11 @@ object OcpcGetPbDelayV2 {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3, originalDate=$originalDate, originalHour=$originalHour, delayHour=$delayHour")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt1, spark).cache()
     dataRaw1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseDelayMain(date, hour, hourInt2, spark).cache()
     dataRaw2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw3.show(10)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
