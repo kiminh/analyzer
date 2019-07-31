@@ -175,6 +175,8 @@ object OcpcTools {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -255,6 +257,8 @@ object OcpcTools {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
