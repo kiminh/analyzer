@@ -5,7 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBaseDelay._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_realtime.OcpcCVRfactorDelay.OcpcCVRfactorDelayMain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -57,7 +57,7 @@ object OcpcGetPbV2 {
       .cache()
     smoothData.show(10)
 
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
+    val pcocDataRaw = OcpcCVRfactorDelayMain(date, hour, version, expTag, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")

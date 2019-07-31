@@ -145,42 +145,6 @@ object OcpcMergeDelayData {
   })
 
 
-  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
-    // 组装数据
-    val data = jfbData
-      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(smoothData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(bidFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
-      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
-      .cache()
-
-    data.show(10)
-    data
-
-
-  }
-
-  def getCPAgiven(spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  avg(cpa) as cpagiven
-         |FROM
-         |  test.ocpc_auto_budget_hourly
-         |WHERE
-         |  industry in ('wzcp')
-         |GROUP BY unitid
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest).cache()
-    result.show(10)
-    result
-  }
-
-
 
 }
 
