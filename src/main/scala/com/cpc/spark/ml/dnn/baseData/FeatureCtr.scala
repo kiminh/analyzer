@@ -133,21 +133,19 @@ object FeatureCtr {
 
     val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
     val cross_features_list = cross_features_str.split(",")
-    val cross_list_2 = ArrayBuffer[(String, String)]()
+    val cross_features_list_bc = sc.broadcast(cross_features_list)
+
+    val cross_features_list_2 = ArrayBuffer[(String, String)]()
     for (idx <- 0 until cross_features_list.length) {
       for (inner <- (idx + 1) until cross_features_list.length) {
-        cross_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
+        cross_features_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
       }
     }
-    val cross_list_2_bc = sc.broadcast(cross_list_2)
-    println("cross_list_2 len:" + cross_list_2.length)
-    for (pair <- cross_list_2) {
+    println("cross_features_list_2 len:" + cross_features_list_2.length)
+    for (pair <- cross_features_list_2) {
       println(pair._1 + " X " + pair._2)
     }
-
-    return
-
-
+    val cross_featrues_list_2_bc = sc.broadcast(cross_features_list_2)
 
     /** **********make ctr statistics collect ************************/
     println("Make ctr statistics collect")
@@ -182,18 +180,19 @@ object FeatureCtr {
               count = (0L, 1L)
             }
 
-            //val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
-            val output: Array[(String, (Long, Long))] = new Array(count_one_hot.toInt + 1)
+            val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
             output(0) = ("week_" + src_week, count)
 
-            for (idx <- 0 until count_one_hot.toInt) {
-              output(idx + 1) = (name_list_one_hot(idx) + "_" + dense(idx).toString, count)
-              //var curr_count = (0L, 0L)
-              //if (ctrMapBC.value.contains(curr_feature)) {
-              //  curr_count = ctrMapBC.value(curr_feature)
-              //}
-              //ctrMapBC.value += (curr_feature -> (curr_count._1 + positive, curr_count._2 + negative))
+            for (name <- cross_features_list_bc.value) {
+              output += ((name + "\t" + dense(name_idx_map_bc.value(name)), count))
             }
+
+            for (name_pair <- cross_features_list_2_bc.value) {
+              val name = name_pair._1 + "x" + name_pair._2
+              val value = dense(name_idx_map_bc.value(name_pair._1)) + "x" + dense(name_idx_map_bc.value(name_pair._2))
+              output += ((name + "\t" + value, count))
+            }
+
             output
           }
         ).flatMap(
