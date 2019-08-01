@@ -347,6 +347,8 @@ object OcpcRangeCalibrationV2 {
          |  is_ocpc = 1
          |AND
          |  conversion_goal > 0
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val data = spark
