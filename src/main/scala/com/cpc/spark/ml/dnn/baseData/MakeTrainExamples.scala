@@ -684,7 +684,8 @@ object MakeTrainExamples {
       val tf_float = des_dir + "/" + src_date + "-text-mapped-tf-sampled-float"
       if (exists_hdfs_path(tf_text_mapped_sampled_tf) && exists_hdfs_path(tf_ctr_feature)) {
         println("exit ctr_feature_file:" + tf_ctr_feature)
-        if (!exists_hdfs_path(tf_float)) {
+        if (!exists_hdfs_path(tf_float + "/_SUCCESS")) {
+          s"hadoop fs -rm -r $tf_float" !
 
           println("Load Ctr Feature Map:" + tf_ctr_feature)
           val ctrMap = sc.textFile(tf_ctr_feature).map{
@@ -728,7 +729,7 @@ object MakeTrainExamples {
                   float_list += ctrMap.getOrElse(key, "0.0")
                 }
               }
-              Row(sample_idx, float_list.map(_.toLong), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+              Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
             }
           )
 
