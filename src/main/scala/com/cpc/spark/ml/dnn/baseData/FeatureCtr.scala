@@ -125,6 +125,29 @@ object FeatureCtr {
     println("src_week_list:" + src_week_list.mkString(";"))
     println("src_date_list_with_week:" + src_date_list_ori_with_week.mkString("|"))
 
+    val name_idx_map: mutable.Map[String, Int] = mutable.Map()
+    for (idx <- name_list_one_hot.indices) {
+      name_idx_map += (name_list_one_hot(idx) -> idx)
+    }
+    val name_idx_map_bc = sc.broadcast(name_idx_map)
+
+    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
+    val cross_features_list = cross_features_str.split(",")
+    val cross_list_2 = ArrayBuffer[(String, String)]()
+    for (idx <- 0 until cross_features_list.length) {
+      for (inner <- (idx + 1) until cross_features_list.length) {
+        cross_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
+      }
+    }
+    val cross_list_2_bc = sc.broadcast(cross_list_2)
+    println("cross_list_2 len:" + cross_list_2.length)
+    for (pair <- cross_list_2) {
+      println(pair._1 + " X " + pair._2)
+    }
+
+    return
+
+
 
     /** **********make ctr statistics collect ************************/
     println("Make ctr statistics collect")
@@ -188,25 +211,6 @@ object FeatureCtr {
     }
     println("Done.......")
 
-
-    val name_idx_map: mutable.Map[String, Int] = mutable.Map()
-    for (idx <- name_list_one_hot.indices) {
-      name_idx_map += (name_list_one_hot(idx) -> idx)
-    }
-    val name_idx_map_bc = sc.broadcast(name_idx_map)
-
-    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
-    val cross_features_list = cross_features_str.split(",")
-    val cross_list_2 = ArrayBuffer[(String, String)]()
-    for (idx <- 0 until cross_features_list.length) {
-      for (inner <- (idx + 1) until cross_features_list.length) {
-        cross_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
-      }
-    }
-    val cross_list_2_bc = sc.broadcast(cross_list_2)
-    for (pair <- cross_list_2) {
-      println(pair._1 + " X " + pair._2)
-    }
 
 
     /** **********make ctr feature************************/
