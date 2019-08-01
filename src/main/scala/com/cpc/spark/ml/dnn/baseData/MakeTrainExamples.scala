@@ -273,17 +273,17 @@ object MakeTrainExamples {
 
     /************************load map********************************/
     println("Load Uid SparseMap")
-    //val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
-    //val sparseMapUid = sc.textFile(instances_all_map_uid).map{
-    //  rs => {
-    //    val line = rs.split("\t")
-    //    val field = line(0).toLong
-    //    val key = (line(1).toLong - 1L).toString
-    //    (field, key)
-    //  }
-    //}
-    //println("sparseMapUid.size=" + sparseMapUid.count)
-    //val sparse_map_uid_count = sparseMapUid.count
+    val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
+    val sparseMapUid = sc.textFile(instances_all_map_uid).map{
+      rs => {
+        val line = rs.split("\t")
+        val field = line(0).toLong
+        val key = (line(1).toLong - 1L).toString
+        (field, key)
+      }
+    }
+    println("sparseMapUid.size=" + sparseMapUid.count)
+    val sparse_map_uid_count = sparseMapUid.count
 
     println("Load Others SparseMap")
     val instances_all_map_others = des_dir + "/" + instances_file + "-non-uid-indexed"
