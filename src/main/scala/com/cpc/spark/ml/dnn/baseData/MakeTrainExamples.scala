@@ -95,7 +95,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(one_hot_feature_names_mapped, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -472,15 +472,15 @@ object MakeTrainExamples {
 
 
 
-    val name_list_one_hot = one_hot_feature_names.split(",")
-    if (name_list_one_hot.length != 28) {
-      println("mismatched, count_one_hot:28, name_list_one_hot.length:" + name_list_one_hot.length.toString)
+    val name_list_one_hot_mapped = one_hot_feature_names_mapped.split(",")
+    if (name_list_one_hot_mapped.length != 28) {
+      println("mismatched, count_one_hot:28, name_list_one_hot_mapped.length:" + name_list_one_hot_mapped.length.toString)
       System.exit(1)
     }
-    val name_list_one_hot_bc = sc.broadcast(name_list_one_hot)
+    val name_list_one_hot_mapped_bc = sc.broadcast(name_list_one_hot_mapped)
     val name_idx_map: mutable.Map[String, Int] = mutable.Map()
-    for (idx <- name_list_one_hot.indices) {
-      name_idx_map += (name_list_one_hot(idx) -> idx)
+    for (idx <- name_list_one_hot_mapped.indices) {
+      name_idx_map += (name_list_one_hot_mapped(idx) -> idx)
     }
 
     val float_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
@@ -608,7 +608,7 @@ object MakeTrainExamples {
 
               val float_list = scala.collection.mutable.ArrayBuffer[String]()
               for (idx <- dense.indices) {
-                val name = name_list_one_hot_bc.value(idx)
+                val name = name_list_one_hot_mapped_bc.value(idx)
                 val key = name + "_" + dense(idx).toString
                 if (float_feature_map_bc.value.contains(name)) {
                   float_list += ctrMap.getOrElse(key, "0.0")
@@ -793,7 +793,7 @@ object MakeTrainExamples {
 
             val float_list = scala.collection.mutable.ArrayBuffer[String]()
             for (idx <- dense.indices) {
-              val name = name_list_one_hot_bc.value(idx)
+              val name = name_list_one_hot_mapped_bc.value(idx)
               val key = name + "_" + dense(idx).toString
               if (float_feature_map_bc.value.contains(name)) {
                 float_list += ctrMap.getOrElse(key, "0.0")
