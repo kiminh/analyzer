@@ -576,7 +576,7 @@ object MakeTrainExamples {
           val ctrMap = sc.textFile(tf_ctr_feature).map{
             rs => {
               val line = rs.split("\t")
-              val value_type = StringUtils.split("_")(0)
+              val value_type = StringUtils.split(line(0), "_")(0)
               (value_type, line(0), line(3))
             }
           }.filter(
@@ -755,7 +755,7 @@ object MakeTrainExamples {
         val ctrMap = sc.textFile(tf_ctr_feature).map{
           rs => {
             val line = rs.split("\t")
-            val value_type = StringUtils.split("_")(0)
+            val value_type = StringUtils.split(line(0), "_")(0)
             (value_type, line(0), line(3))
           }
         }.filter(
