@@ -14,21 +14,21 @@ src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
 
 #20190724
+collect_date_begin=`date --date='36 days ago' +%Y-%m-%d`
+collect_date_end=`date --date='9 days ago' +%Y-%m-%d`
+ctr_feature_date=`date --date='8 days ago' +%Y-%m-%d`
+#20190725
 collect_date_begin=`date --date='35 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='8 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='7 days ago' +%Y-%m-%d`
-#20190725
+#20190726
 collect_date_begin=`date --date='34 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='7 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='6 days ago' +%Y-%m-%d`
-#20190726
+#20190727
 collect_date_begin=`date --date='33 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='6 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
-#20190727
-collect_date_begin=`date --date='32 days ago' +%Y-%m-%d`
-collect_date_end=`date --date='5 days ago' +%Y-%m-%d`
-ctr_feature_date=`date --date='4 days ago' +%Y-%m-%d`
 
 #collect_date_begin=2019-06-01
 #collect_date_end=2019-07-31
