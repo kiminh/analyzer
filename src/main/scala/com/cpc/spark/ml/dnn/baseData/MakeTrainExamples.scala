@@ -20,6 +20,7 @@ import java.util.Date
 import java.text.DateFormat
 
 import scala.collection.mutable
+import org.apache.commons.lang.StringUtils
 
 /**
   * 解析tfrecord到hdfs并统计区间sparse feature出现的值和做映射以及负采样
@@ -575,7 +576,7 @@ object MakeTrainExamples {
           val ctrMap = sc.textFile(tf_ctr_feature).map{
             rs => {
               val line = rs.split("\t")
-              val value_type = line(0).split('\_')(0)
+              val value_type = StringUtils.split("_")(0)
               (value_type, line(0), line(3))
             }
           }.filter(
@@ -754,7 +755,7 @@ object MakeTrainExamples {
         val ctrMap = sc.textFile(tf_ctr_feature).map{
           rs => {
             val line = rs.split("\t")
-            val value_type = line(0).split('\_')(0)
+            val value_type = StringUtils.split("_")(0)
             (value_type, line(0), line(3))
           }
         }.filter(
