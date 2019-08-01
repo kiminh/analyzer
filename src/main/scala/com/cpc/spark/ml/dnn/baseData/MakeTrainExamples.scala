@@ -470,122 +470,6 @@ object MakeTrainExamples {
     ))
 
 
-    println("Do Mapping Test Examples' features")
-    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    val test_file_src = src_dir + "/" + test_data_src
-    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
-    if (!exists_hdfs_path(test_file_text_mapped)) {
-      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
-      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
-      val mapped_rdd = importedDf.rdd.map(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-          var label = "0.0"
-          if (label_arr.head == 1L) {
-            label = "1.0"
-          }
-
-          var dense_str: Seq[String] = null
-          if (with_week == "True") {
-            dense_str = dense.map(_.toString) ++ Seq[String](test_data_week)
-          } else {
-            dense_str = dense.map(_.toString)
-          }
-
-
-          val output = scala.collection.mutable.ArrayBuffer[String]()
-          output += sample_idx.toString
-          output += label
-          output += label_arr.map(_.toString).mkString(";")
-          output += dense_str.mkString(";")
-          output += idx0.map(_.toString).mkString(";")
-          output += idx1.map(_.toString).mkString(";")
-          output += idx2.map(_.toString).mkString(";")
-          output += idx_arr.map(_.toString).mkString(";")
-          output
-        }
-      ).map(
-        line_list => {
-          val sid = line_list(0)
-          val label = line_list(1)
-          val label_arr = line_list(2)
-          val dense = line_list(3).split(";")
-          val idx0 = line_list(4)
-          val idx1 = line_list(5)
-          val idx2 = line_list(6)
-          val idx_arr = line_list(7).split(";")
-
-          val uid_value = dense(25)
-
-          var value_list_one_hot: Array[String] = null
-          if (with_week == "True") {
-            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 29)
-          } else {
-            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 28)
-          }
-
-          val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x, "-1"))
-          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
-
-          (uid_value.toLong, (sid, mapped_one_hot.mkString(";"), mapped_multi_hot.mkString(";"), label, label_arr, idx0, idx1, idx2))
-        }).join(sparseMapUid).map(
-        rs => {
-          val sid = rs._2._1._1
-          val mapped_one_hot = rs._2._1._2
-          val mapped_mul_hot = rs._2._1._3
-          val label = rs._2._1._4
-          val label_arr = rs._2._1._5
-          val idx0 = rs._2._1._6
-          val idx1 = rs._2._1._7
-          val idx2 = rs._2._1._8
-          val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
-
-          val ult_list:Array[String] = new Array[String](8)
-          ult_list(0) = sid
-          ult_list(1) = label
-          ult_list(2) = label_arr
-          ult_list(3) = mapped_uid + ";" + mapped_one_hot
-          ult_list(4) = idx0
-          ult_list(5) = idx1
-          ult_list(6) = idx2
-          ult_list(7) = mapped_mul_hot
-          ult_list.mkString("\t")
-        }
-      )
-      val mapped_rdd_count = mapped_rdd.count
-      println(s"mapped_rdd_count : $mapped_rdd_count")
-      mapped_rdd.repartition(60).saveAsTextFile(test_file_text_mapped)
-    }
-    val test_file_text_mapped_tf = des_dir + "/" + test_data_des + "-text-mapped-tf"
-    if (!exists_hdfs_path(test_file_text_mapped_tf) && exists_hdfs_path(test_file_text_mapped)) {
-      val test_text_rdd = sc.textFile(test_file_text_mapped).map({
-        rs =>
-          val rs_list = rs.split("\t")
-          val sample_idx = rs_list(0).toLong
-          val label = rs_list(1).toFloat
-          val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
-          val dense = rs_list(3).split(";").map(_.toLong).toSeq
-          val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
-          val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
-          val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
-          val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
-          Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
-      })
-
-      val test_text_rdd_count = test_text_rdd.count
-      println(s"test_text_rdd_count is : $test_text_rdd_count")
-
-      val test_text_df: DataFrame = spark.createDataFrame(test_text_rdd, schema_new)
-      test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tf)
-    }
-    println("Done.......")
-
 
     val name_list_one_hot = one_hot_feature_names.split(",")
     if (name_list_one_hot.length != 28) {
@@ -736,8 +620,188 @@ object MakeTrainExamples {
           val float_df: DataFrame = spark.createDataFrame(float_rdd, schema_with_float)
           float_df.repartition(500).write.format("tfrecords").option("recordType", "Example").save(tf_float)
           s"hadoop fs -cp $tf_text_mapped_sampled_tf/count $tf_float/count" !
+
         }
       }
+    }
+    println("Done.......")
+
+    println("Do Mapping Test Examples' features")
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    val test_file_src = src_dir + "/" + test_data_src
+    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
+    if (!exists_hdfs_path(test_file_text_mapped)) {
+      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
+      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
+      val mapped_rdd = importedDf.rdd.map(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4)
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+          var label = "0.0"
+          if (label_arr.head == 1L) {
+            label = "1.0"
+          }
+
+          var dense_str: Seq[String] = null
+          if (with_week == "True") {
+            dense_str = dense.map(_.toString) ++ Seq[String](test_data_week)
+          } else {
+            dense_str = dense.map(_.toString)
+          }
+
+
+          val output = scala.collection.mutable.ArrayBuffer[String]()
+          output += sample_idx.toString
+          output += label
+          output += label_arr.map(_.toString).mkString(";")
+          output += dense_str.mkString(";")
+          output += idx0.map(_.toString).mkString(";")
+          output += idx1.map(_.toString).mkString(";")
+          output += idx2.map(_.toString).mkString(";")
+          output += idx_arr.map(_.toString).mkString(";")
+          output
+        }
+      ).map(
+        line_list => {
+          val sid = line_list(0)
+          val label = line_list(1)
+          val label_arr = line_list(2)
+          val dense = line_list(3).split(";")
+          val idx0 = line_list(4)
+          val idx1 = line_list(5)
+          val idx2 = line_list(6)
+          val idx_arr = line_list(7).split(";")
+
+          val uid_value = dense(25)
+
+          var value_list_one_hot: Array[String] = null
+          if (with_week == "True") {
+            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 29)
+          } else {
+            value_list_one_hot = dense.slice(0, 25) ++ dense.slice(26, 28)
+          }
+
+          val mapped_one_hot = value_list_one_hot.map(x => sparseMapOthers.getOrElse(x, "-1"))
+          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
+
+          (uid_value.toLong, (sid, mapped_one_hot.mkString(";"), mapped_multi_hot.mkString(";"), label, label_arr, idx0, idx1, idx2))
+        }).join(sparseMapUid).map(
+        rs => {
+          val sid = rs._2._1._1
+          val mapped_one_hot = rs._2._1._2
+          val mapped_mul_hot = rs._2._1._3
+          val label = rs._2._1._4
+          val label_arr = rs._2._1._5
+          val idx0 = rs._2._1._6
+          val idx1 = rs._2._1._7
+          val idx2 = rs._2._1._8
+          val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
+
+          val ult_list:Array[String] = new Array[String](8)
+          ult_list(0) = sid
+          ult_list(1) = label
+          ult_list(2) = label_arr
+          ult_list(3) = mapped_uid + ";" + mapped_one_hot
+          ult_list(4) = idx0
+          ult_list(5) = idx1
+          ult_list(6) = idx2
+          ult_list(7) = mapped_mul_hot
+          ult_list.mkString("\t")
+        }
+      )
+      val mapped_rdd_count = mapped_rdd.count
+      println(s"mapped_rdd_count : $mapped_rdd_count")
+      mapped_rdd.repartition(60).saveAsTextFile(test_file_text_mapped)
+    }
+
+    val test_file_text_mapped_tf = des_dir + "/" + test_data_des + "-text-mapped-tf"
+    if (!exists_hdfs_path(test_file_text_mapped_tf) && exists_hdfs_path(test_file_text_mapped)) {
+      val test_text_rdd = sc.textFile(test_file_text_mapped).map({
+        rs =>
+          val rs_list = rs.split("\t")
+          val sample_idx = rs_list(0).toLong
+          val label = rs_list(1).toFloat
+          val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+          val dense = rs_list(3).split(";").map(_.toLong).toSeq
+          val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+          val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+          val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+          val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+          Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+      val test_text_rdd_count = test_text_rdd.count
+      println(s"test_text_rdd_count is : $test_text_rdd_count")
+
+      val test_text_df: DataFrame = spark.createDataFrame(test_text_rdd, schema_new)
+      test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tf)
+    }
+
+    val test_file_text_mapped_float_tf = des_dir + "/" + test_data_des + "-text-mapped-float-tf"
+    val test_file_text_mapped_float = des_dir + "/" + test_data_des + "-text-mapped-float"
+    if (!exists_hdfs_path(test_file_text_mapped_float_tf) && exists_hdfs_path(test_file_text_mapped)) {
+      val tf_ctr_feature = ctr_feature_dir + "/" + test_data_src.split("/")(0)
+      println("exit ctr_feature_file:" + tf_ctr_feature)
+      if (!exists_hdfs_path(test_file_text_mapped_float_tf + "/_SUCCESS")) {
+        s"hadoop fs -rm -r $test_file_text_mapped_float_tf" !
+
+        println("Load Ctr Feature Map:" + tf_ctr_feature)
+        val ctrMap = sc.textFile(tf_ctr_feature).map{
+          rs => {
+            val line = rs.split("\t")
+            val value_type = line(0).split("_")(0)
+            (value_type, line(0), line(3))
+          }
+        }.filter(
+          rs => {
+            var filter = false
+            if (float_feature_map_bc.value.contains(rs._1)) {
+              filter = true
+            }
+            filter
+          }
+        ).map({rs => (rs._2, rs._3)}).collectAsMap()
+        println("ctrMap.size=" + ctrMap.size)
+
+
+        val test_text_float_rdd = sc.textFile(test_file_text_mapped).map({
+          rs =>
+            val rs_list = rs.split("\t")
+            val sample_idx = rs_list(0).toLong
+            val label = rs_list(1).toFloat
+            val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+            val dense = rs_list(3).split(";").map(_.toLong).toSeq
+            val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+            val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+            val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+            val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+            //Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+
+            val float_list = scala.collection.mutable.ArrayBuffer[String]()
+            for (idx <- dense.indices) {
+              val name = name_list_one_hot_bc.value(idx)
+              val key = name + "_" + dense(idx).toString
+              if (float_feature_map_bc.value.contains(name)) {
+                float_list += ctrMap.getOrElse(key, "0.0")
+              }
+            }
+            Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+        })
+
+        val test_text_float_rdd_count = test_text_float_rdd.count
+        println(s"test_text_float_rdd_count is : $test_text_float_rdd_count")
+
+        val test_text_df: DataFrame = spark.createDataFrame(test_text_float_rdd, schema_new)
+        test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_float_tf)
+
+        test_text_float_rdd.repartition(60).saveAsTextFile(test_file_text_mapped_float)
+      }
+
     }
     println("Done.......")
 
