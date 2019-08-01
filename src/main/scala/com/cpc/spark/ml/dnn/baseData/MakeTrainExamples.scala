@@ -768,6 +768,7 @@ object MakeTrainExamples {
           }
         ).map({rs => (rs._2, rs._3)}).collectAsMap()
         println("ctrMap.size=" + ctrMap.size)
+        val ctrMapBC = sc.broadcast(ctrMap)
 
         val test_text_float_rdd = sc.textFile(test_file_text_mapped).map({
           rs =>
@@ -787,7 +788,7 @@ object MakeTrainExamples {
               val name = name_list_one_hot_bc.value(idx)
               val key = name + "_" + dense(idx).toString
               if (float_feature_map_bc.value.contains(name)) {
-                float_list += ctrMap.getOrElse(key, "0.0")
+                float_list += ctrMapBC.value.getOrElse(key, "0.0")
               }
             }
             Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
