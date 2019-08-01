@@ -53,8 +53,8 @@ object CalibrationCheckOnMiduCtr {
                  |  else '8' end as user_req_ad_num
                  |from dl_cpc.slim_union_log a
                  |left join dl_cpc.cpc_ml_nested_snapshot b
-                 |on a.searchid = b.searchid and b.day = '2019-07-26' and b.hour = '09' and pt = 'qtt'
-                 |  where a.dt = '2019-07-26' and a.hour = '09'
+                 |on a.searchid = b.searchid and b.day = '2019-07-31' and b.hour = '18' and pt = 'qtt'
+                 |  where a.dt = '2019-07-31' and a.hour = '18'
                  |  and a.ctr_model_name = 'qtt-content-dnn-rawid-v7-newcali' and a.isshow = 1
        """.stripMargin
     println(s"sql:\n$sql")
