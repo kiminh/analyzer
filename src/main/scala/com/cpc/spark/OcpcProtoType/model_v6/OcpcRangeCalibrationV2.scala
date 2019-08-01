@@ -82,7 +82,7 @@ object OcpcRangeCalibrationV2 {
     val data2 = calculateData2(baseData2, date, hour, spark)
 
     val resultDF = data1
-      .select("unitid", "conversion_goal", "post_cvr", "pcoc", "jfb")
+      .select("unitid", "conversion_goal", "post_cvr", "pcoc", "jfb", "cv")
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor", "cv")
 
