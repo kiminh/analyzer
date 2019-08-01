@@ -229,7 +229,9 @@ object FeatureCtr {
     }
 
     val tf_ctr_feature = des_dir + "/" + ctr_feature_date
-    if (!exists_hdfs_path(tf_ctr_feature)) {
+    if (!exists_hdfs_path(tf_ctr_feature + "/_SUCCESS")) {
+      s"hadoop fs -rm -r $tf_ctr_feature" !
+
       sc.textFile(valid_collect_file.mkString(",")).map(
         {
           rs =>
