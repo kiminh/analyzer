@@ -17,8 +17,8 @@ object OcpcConversionCV3 {
     println(s"date=$date, hour=$hour, cvrPt=$cvrPt")
     val result = getLabel(cvrPt, date, hour, spark)
     result
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
     println("successfully save data into table: dl_cpc.ocpc_label_cvr_hourly")
   }
 
@@ -72,9 +72,27 @@ object OcpcConversionCV3 {
     println(sqlRequest3)
     val data3 = spark.sql(sqlRequest3)
 
+    // js加粉
+    val sqlRequest4 =
+      s"""
+         |select
+         |    distinct searchid
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'js_active_js_form')
+       """.stripMargin
+    println(sqlRequest4)
+    val data4 = spark.sql(sqlRequest4)
+
     val resultDF = data1
       .union(data2)
       .union(data3)
+      .union(data4)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")
