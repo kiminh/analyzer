@@ -788,7 +788,8 @@ object MakeTrainExamples {
               val name = name_list_one_hot_bc.value(idx)
               val key = name + "_" + dense(idx).toString
               if (float_feature_map_bc.value.contains(name)) {
-                float_list += ctrMapBC.value.getOrElse(key, "0.0")
+                //float_list += ctrMap.getOrElse(key, "0.0")
+                float_list += ctrMap(key)
               }
             }
             Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
