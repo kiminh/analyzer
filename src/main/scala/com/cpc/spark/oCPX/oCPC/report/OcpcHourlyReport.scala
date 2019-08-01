@@ -252,7 +252,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
