@@ -234,7 +234,7 @@ object FeatureCtr {
         {
           rs =>
             val line_list = rs.split("\t")
-            (line_list(0), (line_list(1).toLong, line_list(2).toLong))
+            (line_list(0) + "\t" + line_list(1), (line_list(2).toLong, line_list(3).toLong))
         }
       ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).map(
         {
