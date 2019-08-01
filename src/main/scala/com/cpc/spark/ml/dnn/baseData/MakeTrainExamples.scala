@@ -795,7 +795,7 @@ object MakeTrainExamples {
         val test_text_float_rdd_count = test_text_float_rdd.count
         println(s"test_text_float_rdd_count is : $test_text_float_rdd_count")
 
-        val test_text_df: DataFrame = spark.createDataFrame(test_text_float_rdd, schema_new)
+        val test_text_df: DataFrame = spark.createDataFrame(test_text_float_rdd, schema_with_float)
         test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_float_tf)
 
         test_text_float_rdd.repartition(60).saveAsTextFile(test_file_text_mapped_float)
