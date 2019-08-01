@@ -16,6 +16,7 @@ import java.text.DateFormat
 
 import scala.collection.mutable
 import scala.collection.mutable.Map
+import org.apache.commons.lang.StringUtils
 
 /**
   * 解析tfrecord到hdfs并统计反馈ctr特征
@@ -183,7 +184,7 @@ object FeatureCtr {
             }
 
             val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
-            output += (("week_" + src_week, count))
+            output += (("week\t" + src_week, count))
 
             for (name <- cross_features_list_bc.value) {
               output += ((name + "\t" + dense(name_idx_map_bc.value(name)), count))
@@ -233,7 +234,13 @@ object FeatureCtr {
         {
           rs =>
             val line_list = rs.split("\t")
-            (line_list(0) + "\t" + line_list(1), (line_list(2).toLong, line_list(3).toLong))
+            if (line_list.length == 4) {
+              val feature_name = StringUtils.split(line_list(0), "_")(0)
+              val feature_value = StringUtils.split(line_list(0), "_")(1)
+              (feature_name + "\t" + feature_value, (line_list(1).toLong, line_list(2).toLong))
+            } else {
+              (line_list(0) + "\t" + line_list(1), (line_list(2).toLong, line_list(3).toLong))
+            }
         }
       ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).map(
         {
