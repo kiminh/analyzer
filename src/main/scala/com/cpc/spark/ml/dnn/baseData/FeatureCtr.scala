@@ -156,7 +156,9 @@ object FeatureCtr {
       val curr_file_src = src_dir + "/" + src_date
       val tf_ctr_collect = des_dir + "/collect/" + src_date + "-ctr-rate"
 
-      if (exists_hdfs_path(curr_file_src) && !exists_hdfs_path(tf_ctr_collect)) {
+      if (exists_hdfs_path(curr_file_src) && !exists_hdfs_path(tf_ctr_collect + "/_SUCCESS")) {
+        s"hadoop fs -rm -r $tf_ctr_collect" !
+
         val curr_file_src_collect = src_dir + "/" + src_date + "/part-r-*"
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file_src_collect)
