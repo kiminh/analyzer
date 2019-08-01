@@ -53,9 +53,27 @@ object OcpcConversionNovel {
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
 
+    val sqlRequest2 =
+      s"""
+         |select
+         |    distinct searchid,
+         |    1 as label
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'js_active_copywx')
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
 
 
     val resultDF = data1
+        .union(data2)
         .select("searchid", "label")
         .distinct()
         .withColumn("date", lit(date))
