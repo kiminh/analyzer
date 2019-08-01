@@ -75,6 +75,7 @@ object CalibrationCheckOnMiduCtr {
     println("total data:%d".format(log.count()))
 
     val data = log.filter("isload = 0")
+    data.write.mode("overwrite").saveAsTable("test.wy00")
     println("calibration data:%d".format(data.count()))
 
     data.show(20)
