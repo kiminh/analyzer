@@ -769,7 +769,8 @@ object MakeTrainExamples {
           }
         ).map({rs => (rs._2, rs._3)}).collectAsMap()
         println("ctrMap.size=" + ctrMap.size)
-        val ctrMapBC = sc.broadcast(ctrMap)
+
+        ctrMap.foreach{case (e,i) => println(e,i)}
 
         val test_text_float_rdd = sc.textFile(test_file_text_mapped).map({
           rs =>
