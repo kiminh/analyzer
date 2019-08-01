@@ -37,39 +37,41 @@ object OcpcHourlyReport {
     val baseData = calculateBaseData(rawData, spark)
 
     // 为邮件准备临时表
-    val ideaData = calculateIdea(baseData, spark)
-    ideaData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
+    if (hour == "23") {
+      val ideaData = calculateIdea(baseData, spark)
+      ideaData
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .repartition(5)
+        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
 
-    val unitData = calculateUnit(baseData, spark)
-    unitData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
+      val unitData = calculateUnit(baseData, spark)
+      unitData
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .repartition(5)
+        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
 
-    val userData = calcualteUser(unitData, spark)
-    userData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
+      val userData = calcualteUser(unitData, spark)
+      userData
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .repartition(5)
+        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
 
-    val industry = calculateIndustry(unitData, spark)
-    industry
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
+      val industry = calculateIndustry(unitData, spark)
+      industry
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .repartition(5)
+        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
+    }
 
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
 
-//    // 存储数据到mysql
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+    // 存储数据到mysql
+    saveDataToMysql(baseData, date, hour, spark)
 
   }
 
@@ -191,13 +193,12 @@ object OcpcHourlyReport {
     val data = spark.sql(sqlRequest)
 
     val result = data
-        .na.fill(0, Seq("cv"))
-        .withColumn("pay", udfCalculatePay()(col("cost"), col("cv"), col("cpagiven")))
+      .na.fill(0, Seq("cv"))
+      .withColumn("pay", udfCalculatePay()(col("cost"), col("cv"), col("cpagiven")))
     println("unit data:")
     result.show(10)
     result
   }
-
 
 
   def calculateIdea(baseData: DataFrame, spark: SparkSession) = {
@@ -252,7 +253,7 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      //      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
@@ -372,5 +373,45 @@ object OcpcHourlyReport {
 
   }
 
+  def saveDataToMysql(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    ideaid                  int,
+    unitid                  int,
+    userid                  int,
+    adclass                 int,
+    conversion_goal         int,
+    industry                string,
+    media                   string,
+    show                    bigint,
+    click                   bigint,
+    cv                      bigint,
+    total_price             bigint,
+    total_bid               bigint,
+    total_precvr            double,
+    total_prectr            double,
+    total_cpagiven          bigint,
+    total_jfbfactor         double,
+    total_cvrfactor         double,
+    total_calipcvr          double,
+    total_calipostcvr       double,
+    total_cpasuggest        double,
+    total_smooth_factor     double,
+    is_hidden               int
+     */
+    // unitid详情表
+    val dataUnitMysql = baseData
+      .withColumn("date", lit(date))
+      .withColumn("hour", col("hr"))
+      .withColumn("impression", col("show"))
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+
+    val reportTableUnit = "report2.ocpc_report_base_hourly"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date'"
+
+    testOperateMySQL.update(delSQLunit) //先删除历史数据
+    testOperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
+
+
+  }
 
 }
