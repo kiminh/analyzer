@@ -145,7 +145,7 @@ object FeatureCtr {
     for (pair <- cross_features_list_2) {
       println(pair._1 + " X " + pair._2)
     }
-    val cross_featrues_list_2_bc = sc.broadcast(cross_features_list_2)
+    val cross_features_list_2_bc = sc.broadcast(cross_features_list_2)
 
     /** **********make ctr statistics collect ************************/
     println("Make ctr statistics collect")
