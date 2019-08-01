@@ -176,6 +176,10 @@ object OcpcHourlyReport {
          |    sum(total_calipcvr) * 1.0 / sum(click) as cali_precvr,
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
          |    sum(total_price) * 0.01 as cost,
+         |    (case
+         |      when sum(total_price) <= 1.2 * sum(cv) * sum(total_cpagiven) / sum(click) then 0
+         |      else sum(total_price) - 1.2 * sum(cv) * sum(total_cpagiven) / sum(click)
+         |    end) * 0.01 as pay,
          |    sum(total_price) * 1.0 / sum(click) as acp,
          |    sum(total_bid) * 1.0 / sum(click) as acb,
          |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
@@ -194,7 +198,7 @@ object OcpcHourlyReport {
 
     val result = data
       .na.fill(0, Seq("cv"))
-      .withColumn("pay", udfCalculatePay()(col("cost"), col("cv"), col("cpagiven")))
+//      .withColumn("pay", udfCalculatePay()(col("cost"), col("cv"), col("cpagiven")))
     println("unit data:")
     result.show(10)
     result
@@ -273,7 +277,7 @@ object OcpcHourlyReport {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
-         |  sum(iscvr) as cv,
+         |  sum(case when isclick=1 then iscvr else 0) as cv,
          |  sum(case when isclick=1 then price else 0 end) as total_price,
          |  sum(case when isclick=1 then bid else 0 end) as total_bid,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
