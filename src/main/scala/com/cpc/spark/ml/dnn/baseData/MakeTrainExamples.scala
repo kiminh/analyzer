@@ -482,15 +482,23 @@ object MakeTrainExamples {
     for (idx <- name_list_one_hot_mapped.indices) {
       name_idx_map += (name_list_one_hot_mapped(idx) -> idx)
     }
+    val name_idx_map_bc = sc.broadcast(name_idx_map)
 
-    val float_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
-    val float_features_list = float_features_str.split(",")
-    val float_feature_map: mutable.Map[String, Int] = mutable.Map()
-    for (name <- float_features_list) {
-      float_feature_map(name) = name_idx_map(name)
-      println(name + "<--------->" + name_idx_map(name))
+    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
+    val cross_features_list = cross_features_str.split(",")
+    val cross_features_list_bc = sc.broadcast(cross_features_list)
+
+    val cross_features_list_2 = ArrayBuffer[(String, String)]()
+    for (idx <- 0 until cross_features_list.length) {
+      for (inner <- (idx + 1) until cross_features_list.length) {
+        cross_features_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
+      }
     }
-    val float_feature_map_bc = sc.broadcast(float_feature_map)
+    println("cross_features_list_2 len:" + cross_features_list_2.length)
+    for (pair <- cross_features_list_2) {
+      println(pair._1 + " X " + pair._2)
+    }
+    val cross_features_list_2_bc = sc.broadcast(cross_features_list_2)
 
 
     /************down sampling************************/
@@ -566,33 +574,26 @@ object MakeTrainExamples {
       }
 
       val tf_ctr_feature = ctr_feature_dir + "/" + src_date
-      val tf_float = des_dir + "/" + src_date + "-text-mapped-tf-sampled-float"
+      val tf_float = des_dir + "/" + src_date + "-text-mapped-tf-sampled-float-full"
       if (exists_hdfs_path(tf_text_mapped_sampled_tf) && exists_hdfs_path(tf_ctr_feature)) {
         println("exit ctr_feature_file:" + tf_ctr_feature)
         if (!exists_hdfs_path(tf_float + "/_SUCCESS")) {
           s"hadoop fs -rm -r $tf_float" !
 
           println("Load Ctr Feature Map:" + tf_ctr_feature)
-          val ctrMap = sc.textFile(tf_ctr_feature).map{
+          val ctrMap = sc.textFile(tf_ctr_feature).map(
             rs => {
               val line = rs.split("\t")
-              val feature_name = StringUtils.split(line(0), "_")(0)
-              val feature_value = StringUtils.split(line(0), "_")(1)
-              (feature_name, feature_value, line(3))
-            }
-          }.filter(
-            rs => {
-              var filter = false
-              if (float_feature_map_bc.value.contains(rs._1)) {
-                filter = true
+
+              val name = line(0)
+              var value = line(1)
+              if (value.split("x").length == 2) {
+                val value1 = sparseMapOthers.getOrElse(value.split("x")(0), "-1")
+                val value2 = sparseMapOthers.getOrElse(value.split("x")(1), "-1")
+                (name + "\t" + value1 + "x" + value2, line(4))
+              } else {
+                (name + "\t" + sparseMapOthers.getOrElse(value, "-1"), line(4))
               }
-              filter
-            }
-          ).map(
-            {
-              rs =>
-                val mapped_feature_value = sparseMapOthers.getOrElse(rs._2, "-1")
-                (rs._1 + "_" + mapped_feature_value, rs._3)
             }
           ).collectAsMap()
           println("ctrMap.size=" + ctrMap.size)
@@ -614,12 +615,17 @@ object MakeTrainExamples {
               val dense = rs.getSeq[Long](7)
 
               val float_list = scala.collection.mutable.ArrayBuffer[String]()
-              for (idx <- dense.indices) {
-                val name = name_list_one_hot_mapped_bc.value(idx)
-                val key = name + "_" + dense(idx).toString
-                if (float_feature_map_bc.value.contains(name)) {
-                  float_list += ctrMap.getOrElse(key, "0.0")
-                }
+              for (name <- cross_features_list_bc.value) {
+                val idx = name_idx_map_bc.value(name)
+                val key = name + "\t" + dense(idx).toString
+                float_list += ctrMap.getOrElse(key, "0.0")
+              }
+
+              for (name_pair <- cross_features_list_2_bc.value) {
+                val idx1 = name_idx_map_bc.value(name_pair._1)
+                val idx2 = name_idx_map_bc.value(name_pair._2)
+                val key = name_pair._1 + "x" + name_pair._2 + "\t" + dense(idx1) + "x" + dense(idx2)
+                float_list += ctrMap.getOrElse(key, "0.0")
               }
               Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
             }
@@ -750,8 +756,8 @@ object MakeTrainExamples {
       test_text_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tf)
     }
 
-    val test_file_text_mapped_float_tf = des_dir + "/" + test_data_des + "-text-mapped-float-tf"
-    val test_file_text_mapped_float = des_dir + "/" + test_data_des + "-text-mapped-float"
+    val test_file_text_mapped_float_tf = des_dir + "/" + test_data_des + "-text-mapped-float-tf-full"
+    val test_file_text_mapped_float = des_dir + "/" + test_data_des + "-text-mapped-float-full"
     if (!exists_hdfs_path(test_file_text_mapped_float_tf) && exists_hdfs_path(test_file_text_mapped)) {
       val tf_ctr_feature = ctr_feature_dir + "/" + test_data_src.split("/")(0)
       println("exit ctr_feature_file:" + tf_ctr_feature)
@@ -759,26 +765,19 @@ object MakeTrainExamples {
         s"hadoop fs -rm -r $test_file_text_mapped_float_tf" !
 
         println("Load Ctr Feature Map:" + tf_ctr_feature)
-        val ctrMap = sc.textFile(tf_ctr_feature).map{
+        val ctrMap = sc.textFile(tf_ctr_feature).map(
           rs => {
             val line = rs.split("\t")
-            val feature_name = StringUtils.split(line(0), "_")(0)
-            val feature_value = StringUtils.split(line(0), "_")(1)
-            (feature_name, feature_value, line(3))
-          }
-        }.filter(
-          rs => {
-            var filter = false
-            if (float_feature_map_bc.value.contains(rs._1)) {
-              filter = true
+
+            val name = line(0)
+            var value = line(1)
+            if (value.split("x").length == 2) {
+              val value1 = sparseMapOthers.getOrElse(value.split("x")(0), "-1")
+              val value2 = sparseMapOthers.getOrElse(value.split("x")(1), "-1")
+              (name + "\t" + value1 + "x" + value2, line(4))
+            } else {
+              (name + "\t" + sparseMapOthers.getOrElse(value, "-1"), line(4))
             }
-            filter
-          }
-        ).map(
-          {
-            rs =>
-              val mapped_feature_value = sparseMapOthers.getOrElse(rs._2, "-1")
-              (rs._1 + "_" + mapped_feature_value, rs._3)
           }
         ).collectAsMap()
         println("ctrMap.size=" + ctrMap.size)
@@ -799,13 +798,17 @@ object MakeTrainExamples {
             //Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
 
             val float_list = scala.collection.mutable.ArrayBuffer[String]()
-            for (idx <- dense.indices) {
-              val name = name_list_one_hot_mapped_bc.value(idx)
-              val key = name + "_" + dense(idx).toString
-              if (float_feature_map_bc.value.contains(name)) {
-                float_list += ctrMap.getOrElse(key, "0.0")
-                //float_list += ctrMap(key)
-              }
+            for (name <- cross_features_list_bc.value) {
+              val idx = name_idx_map_bc.value(name)
+              val key = name + "\t" + dense(idx).toString
+              float_list += ctrMap.getOrElse(key, "0.0")
+            }
+
+            for (name_pair <- cross_features_list_2_bc.value) {
+              val idx1 = name_idx_map_bc.value(name_pair._1)
+              val idx2 = name_idx_map_bc.value(name_pair._2)
+              val key = name_pair._1 + "x" + name_pair._2 + "\t" + dense(idx1) + "x" + dense(idx2)
+              float_list += ctrMap.getOrElse(key, "0.0")
             }
             Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
         })
