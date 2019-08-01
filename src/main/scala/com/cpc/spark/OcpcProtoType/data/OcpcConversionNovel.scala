@@ -39,7 +39,7 @@ object OcpcConversionNovel {
 //      cvrPt = "cvr4"
 //    }
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |select
          |    distinct searchid,
@@ -50,10 +50,12 @@ object OcpcConversionNovel {
          |and access_channel="sdk"
          |and a = "sdk_site_wz"
        """.stripMargin
-    println(sqlRequest)
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
 
-    val resultDF = spark
-        .sql(sqlRequest)
+
+
+    val resultDF = data1
         .select("searchid", "label")
         .distinct()
         .withColumn("date", lit(date))
