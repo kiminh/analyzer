@@ -181,7 +181,7 @@ object FeatureCtr {
             }
 
             val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
-            output(0) = ("week_" + src_week, count)
+            output += (("week_" + src_week, count))
 
             for (name <- cross_features_list_bc.value) {
               output += ((name + "\t" + dense(name_idx_map_bc.value(name)), count))
