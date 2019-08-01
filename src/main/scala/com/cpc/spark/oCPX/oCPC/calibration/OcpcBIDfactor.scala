@@ -58,13 +58,19 @@ object OcpcBIDfactor {
 
     // 抽取基础数据
     val baseData = getBaseData(hourInt, date, hour, spark)
+    baseData
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_bid_factor20190723b")
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
+    dataRaw1
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_bid_factor20190723c")
     val data1 = dataRaw1
         .filter(s"cv >= min_cv")
         .cache()
     data1.show(10)
+    data1
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_bid_factor20190723d")
 
 
 
