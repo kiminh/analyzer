@@ -25,15 +25,14 @@ ctr_feature_date=`date --date='6 days ago' +%Y-%m-%d`
 collect_date_begin=`date --date='33 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='6 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='5 days ago' +%Y-%m-%d`
-
 #20190727
 collect_date_begin=`date --date='32 days ago' +%Y-%m-%d`
 collect_date_end=`date --date='5 days ago' +%Y-%m-%d`
 ctr_feature_date=`date --date='4 days ago' +%Y-%m-%d`
 
-collect_date_begin=2019-06-01
-collect_date_end=2019-07-31
-ctr_feature_date=2019-07-31
+#collect_date_begin=2019-06-01
+#collect_date_end=2019-07-31
+#ctr_feature_date=2019-07-31
 
 echo ${ctr_feature_date}
 echo ${collect_date_begin}

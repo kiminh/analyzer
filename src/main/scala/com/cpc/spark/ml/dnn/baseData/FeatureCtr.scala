@@ -213,7 +213,6 @@ object FeatureCtr {
     println("Done.......")
 
 
-
     /** **********make ctr feature************************/
     println("Make ctr feature")
     val valid_collect_file = ArrayBuffer[String]()
