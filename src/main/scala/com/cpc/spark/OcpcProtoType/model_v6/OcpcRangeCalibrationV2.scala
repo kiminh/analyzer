@@ -269,6 +269,7 @@ object OcpcRangeCalibrationV2 {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -279,7 +280,7 @@ object OcpcRangeCalibrationV2 {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date1'
+         |  $selectCondition
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
