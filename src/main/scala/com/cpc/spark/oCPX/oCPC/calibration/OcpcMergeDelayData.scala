@@ -51,7 +51,16 @@ object OcpcMergeDelayData {
 
   }
 
+  def getExpTags(expTag: String, spark: SparkSession) = {
+    val qtt = expTag + "Qtt"
+    val midu = expTag + "Midu"
+    val hottopic = expTag + "HT66"
+    val result = s"exp_tag in ('$qtt', '$midu', '$hottopic')"
+    result
+  }
+
   def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
+    val expTagSelection = getExpTags(expTag, spark)
     val sqlRequest =
       s"""
          |SELECT
@@ -65,7 +74,7 @@ object OcpcMergeDelayData {
          |AND
          |  version = '$version'
          |AND
-         |  exp_tag like '$expTag%'
+         |  $expTagSelection
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
