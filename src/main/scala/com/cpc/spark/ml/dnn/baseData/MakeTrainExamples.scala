@@ -575,7 +575,7 @@ object MakeTrainExamples {
           val ctrMap = sc.textFile(tf_ctr_feature).map{
             rs => {
               val line = rs.split("\t")
-              val value_type = line(0).split("_")(0)
+              val value_type = line(0).split("\_")(0)
               (value_type, line(0), line(3))
             }
           }.filter(
@@ -754,7 +754,7 @@ object MakeTrainExamples {
         val ctrMap = sc.textFile(tf_ctr_feature).map{
           rs => {
             val line = rs.split("\t")
-            val value_type = line(0).split("_")(0)
+            val value_type = line(0).split("\_")(0)
             (value_type, line(0), line(3))
           }
         }.filter(
@@ -784,7 +784,7 @@ object MakeTrainExamples {
             val float_list = scala.collection.mutable.ArrayBuffer[String]()
             for (idx <- dense.indices) {
               val name = name_list_one_hot_bc.value(idx)
-              val key = name + "_" + dense(idx).toString
+              val key = name + "\_" + dense(idx).toString
               if (float_feature_map_bc.value.contains(name)) {
                 float_list += ctrMap.getOrElse(key, "0.0")
               }
