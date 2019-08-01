@@ -273,8 +273,7 @@ object MakeTrainExamples {
 
     /************************load map********************************/
     println("Load Uid SparseMap")
-    //val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
-    val instances_all_map_uid = des_dir + "/" + instances_file + "-non-uid-indexed"
+    val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
     val sparseMapUid = sc.textFile(instances_all_map_uid).map{
       rs => {
         val line = rs.split("\t")
@@ -756,8 +755,9 @@ object MakeTrainExamples {
         val ctrMap = sc.textFile(tf_ctr_feature).map{
           rs => {
             val line = rs.split("\t")
-            val value_type = StringUtils.split(line(0), "_")(0)
-            (value_type, line(0), line(3))
+            val feature_name = StringUtils.split(line(0), "_")(0)
+            val feature_value = StringUtils.split(line(0), "_")(1)
+            (feature_name, feature_value, line(3))
           }
         }.filter(
           rs => {
@@ -767,10 +767,16 @@ object MakeTrainExamples {
             }
             filter
           }
-        ).map({rs => (rs._2, rs._3)}).collectAsMap()
+        ).map(
+          {
+            rs =>
+              val mapped_feature_value = sparseMapOthers.getOrElse(rs._2, "-1")
+              (rs._1 + "_" + mapped_feature_value, rs._3)
+          }
+        ).collectAsMap()
         println("ctrMap.size=" + ctrMap.size)
 
-        ctrMap.foreach{case (e,i) => println(e,i)}
+        //ctrMap.foreach{case (e,i) => println(e,i)}
 
         val test_text_float_rdd = sc.textFile(test_file_text_mapped).map({
           rs =>
@@ -790,8 +796,8 @@ object MakeTrainExamples {
               val name = name_list_one_hot_bc.value(idx)
               val key = name + "_" + dense(idx).toString
               if (float_feature_map_bc.value.contains(name)) {
-                //float_list += ctrMap.getOrElse(key, "0.0")
-                float_list += ctrMap(key)
+                float_list += ctrMap.getOrElse(key, "0.0")
+                //float_list += ctrMap(key)
               }
             }
             Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
