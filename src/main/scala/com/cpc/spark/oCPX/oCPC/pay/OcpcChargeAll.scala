@@ -116,7 +116,6 @@ object OcpcChargeAll {
     println(sqlRequest)
     val result = spark
         .sql(sqlRequest)
-        .select("unitid")
         .withColumn("media", udfDetermineMedia()(col("media_appsid")))
         .filter(s"media in ('qtt', 'hottopic')")
         .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
