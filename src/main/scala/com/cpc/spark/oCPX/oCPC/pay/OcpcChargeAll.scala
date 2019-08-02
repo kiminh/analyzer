@@ -37,6 +37,7 @@ object OcpcChargeAll {
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
       .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
+      .withColumn("adslot_type", lit(0))
 
     val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
     payData.show(10)
