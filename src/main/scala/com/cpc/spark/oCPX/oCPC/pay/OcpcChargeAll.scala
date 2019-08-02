@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.charge
+package com.cpc.spark.oCPX.oCPC.pay
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -22,13 +22,14 @@ object OcpcChargeAll {
     // 计算日期周期
     val date = args(0).toString
     val version = args(1).toString
-    val dayCnt = args(2).toInt
+    val media = args(2).toString
+    val dayCnt = args(3).toInt
 
     val unitidList = getUnitList(date, version, dayCnt, spark).cache()
     unitidList.show(10)
 
 
-    val clickData = getClickData(date, media, dayCnt, spark)
+    val clickData = getClickData(date, dayCnt, spark)
     val cv2Data = getCvData(date, 2, dayCnt, spark)
     val cv3Data = getCvData(date, 3, dayCnt, spark)
     val cpcData = getCPCdata(date, media, dayCnt, spark)
@@ -175,7 +176,11 @@ object OcpcChargeAll {
          |        when adclass in (110110100, 125100100) then "wzcp"
          |        else "others"
          |  end) as industry,
-         |  conversion_goal,
+         |  (case
+         |        when media_appsid in ('80000001', '80000002') then 'qtt'
+         |        when media_appsid = '80002819' then 'hottopic'
+         |        else 'novel'
+         |  end) as media,
          |  isclick,
          |  price,
          |  date,
@@ -190,12 +195,14 @@ object OcpcChargeAll {
          |  is_ocpc = 1
          |AND
          |  isclick=1
+         |AND
+         |  usertype = 2
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
-      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
+      .filter(s"media in ('qtt', 'hottopic')")
       .select("searchid", "unitid", "timestamp", "date", "hour")
       .distinct()
 
@@ -376,7 +383,7 @@ object OcpcChargeAll {
     data
   }
 
-  def getClickData(date: String, media: String, dayCnt: Int, spark: SparkSession) = {
+  def getClickData(date: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -389,7 +396,7 @@ object OcpcChargeAll {
 
     // 媒体选择
     val conf = ConfigFactory.load("ocpc")
-    val conf_key1 = "medias." + media + ".media_selection"
+    val conf_key1 = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key1)
 
     val sqlRequest =
@@ -409,7 +416,12 @@ object OcpcChargeAll {
          |        when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
          |        when adclass in (110110100, 125100100) then "wzcp"
          |        else "others"
-         |    end) as industry,
+         |  end) as industry,
+         |  (case
+         |        when media_appsid in ('80000001', '80000002') then 'qtt'
+         |        when media_appsid = '80002819' then 'hottopic'
+         |        else 'novel'
+         |  end) as media,
          |  isclick,
          |  price,
          |  date,
@@ -424,12 +436,14 @@ object OcpcChargeAll {
          |  is_ocpc = 1
          |AND
          |  isclick=1
+         |AND
+         |  usertype = 2
        """.stripMargin
     println(sqlRequest)
     val result = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
-      .filter(s"(industry = 'feedapp' and conversion_goal = 2) or (industry = 'elds' and conversion_goal = 3)")
+      .filter(s"media in ('qtt', 'hottopic')")
 
 
     result.printSchema()
