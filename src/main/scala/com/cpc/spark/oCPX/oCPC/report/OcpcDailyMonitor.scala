@@ -47,8 +47,8 @@ object OcpcDailyMonitor {
     result
       .withColumn("date", lit(date))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_daily_over_cost_units_report")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_over_cost_units_report")
+//      .write.mode("overwrite").insertInto("test.ocpc_daily_over_cost_units_report")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_over_cost_units_report")
 
   }
 
