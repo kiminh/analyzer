@@ -56,7 +56,7 @@ STORED as PARQUET;
 --final_cpm,
 --exp_cpm
 
-alter table test.ocpc_filter_unionlog add columns (bid_discounted_by_ad_slot bigint);
-alter table test.ocpc_filter_unionlog add columns (second_cpm bigint);
-alter table test.ocpc_filter_unionlog add columns (final_cpm bigint);
-alter table test.ocpc_filter_unionlog add columns (exp_cpm bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (bid_discounted_by_ad_slot bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (second_cpm bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (final_cpm bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (exp_cpm bigint);

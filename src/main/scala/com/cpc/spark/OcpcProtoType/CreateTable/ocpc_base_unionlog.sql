@@ -64,7 +64,5 @@ STORED as PARQUET;
 
 --second_cpm,
 --final_cpm,
---exp_cpm
-alter table test.ocpc_base_unionlog add columns (second_cpm bigint);
-alter table test.ocpc_base_unionlog add columns (final_cpm bigint);
-alter table test.ocpc_base_unionlog add columns (exp_cpm bigint);
+alter table dl_cpc.ocpc_base_unionlog add columns (second_cpm bigint);
+alter table dl_cpc.ocpc_base_unionlog add columns (final_cpm bigint);
