@@ -28,7 +28,6 @@ object UidGroup {
              |      dl_cpc.cpc_basedata_union_events
              |    where
              |      day = '$date'
-             |      and media_appsid in ('80000001', '80000002')
            """.stripMargin
     println(sql)
       val data= spark.sql(sql)
