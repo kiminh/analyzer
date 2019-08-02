@@ -112,16 +112,15 @@ object OcpcChargeAll {
          |  isclick=1
          |AND
          |  length(ocpc_log) = 0
-         |AND
-         |  usertype = 2
        """.stripMargin
     println(sqlRequest)
     val result = spark
         .sql(sqlRequest)
         .select("unitid")
         .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-        .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
         .filter(s"media in ('qtt', 'hottopic')")
+        .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+        .filter(s"industry in ('feedapp', 'elds')")
         .select("unitid")
         .withColumn("cpc_flag", lit(1))
         .distinct()
@@ -174,6 +173,8 @@ object OcpcChargeAll {
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  media_appsid,
+         |  adslot_type,
+         |  adclass,
          |  isclick,
          |  price,
          |  date,
@@ -188,8 +189,6 @@ object OcpcChargeAll {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  usertype = 2
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
@@ -197,6 +196,8 @@ object OcpcChargeAll {
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media in ('qtt', 'hottopic')")
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .filter(s"industry in ('feedapp', 'elds')")
       .select("searchid", "unitid", "media", "timestamp", "date", "hour")
       .distinct()
 
@@ -426,8 +427,6 @@ object OcpcChargeAll {
          |  is_ocpc = 1
          |AND
          |  isclick=1
-         |AND
-         |  usertype = 2
        """.stripMargin
     println(sqlRequest)
     val result = spark
@@ -435,8 +434,9 @@ object OcpcChargeAll {
       .filter(s"is_hidden = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"media in ('qtt', 'hottopic')")
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .filter(s"industry in ('feedapp', 'elds')")
 
 
     result.printSchema()
