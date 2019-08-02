@@ -244,7 +244,7 @@ object FeatureCtr {
         println("collect dates:" + collect_date_list.mkString(","))
 
         val valid_collect_file = ArrayBuffer[String]()
-        for (collect_date <- collect_date_list.indices) {
+        for (collect_date <- collect_date_list) {
           val tf_ctr_collect = des_dir + "/collect/" + collect_date + "-ctr-rate"
           if (exists_hdfs_path(tf_ctr_collect + "/_SUCCESS")) {
             valid_collect_file += tf_ctr_collect
