@@ -89,8 +89,8 @@ object FeatureCtr {
         println("drop invalid src date 2019-06-25")
       } else {
         ranges += sdf.format(dateBegin)
-        dateBegin = DateUtils.addDays(dateBegin, 1)
       }
+      dateBegin = DateUtils.addDays(dateBegin, 1)
     }
     ranges
   }
