@@ -30,3 +30,11 @@
 {"version": "ocpctest", "exp_tag": "adtype15NewQtt", "conversion_goal": 2, "min_cv": 80, "smooth_factor": 0.5}
 {"version": "ocpctest", "exp_tag": "adtype15NewQtt", "conversion_goal": 3, "min_cv": 80, "smooth_factor": 0.5}
 {"version": "ocpctest", "exp_tag": "adtype15NewQtt", "conversion_goal": 4, "min_cv": 80, "smooth_factor": 0.2}
+{"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 1, "min_cv": 80, "smooth_factor": 0.2}
+{"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 2, "min_cv": 80, "smooth_factor": 0.5}
+{"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 3, "min_cv": 80, "smooth_factor": 0.5}
+{"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 4, "min_cv": 80, "smooth_factor": 0.2}
+{"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 1, "min_cv": 80, "smooth_factor": 0.2}
+{"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 2, "min_cv": 80, "smooth_factor": 0.5}
+{"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 3, "min_cv": 80, "smooth_factor": 0.5}
+{"version": "ocpcv1", "exp_tag": "adtype15NewQtt", "conversion_goal": 4, "min_cv": 80, "smooth_factor": 0.2}
