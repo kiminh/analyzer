@@ -228,7 +228,7 @@ object FeatureCtr {
     println("Make ctr feature")
     val date_list_ori = GetDataRange(feature_date_begin, feature_date_end)
     val date_list = date_list_ori.reverse
-    println("make ctr featrues of date_list:" + date_list.mkString(";"))
+    println("make ctr features of date_list:" + date_list.mkString(";"))
 
     for (ctr_feature_date <- date_list) {
       val tf_ctr_feature = des_dir + "/" + ctr_feature_date
@@ -273,7 +273,6 @@ object FeatureCtr {
       }
 
     }
-
     println("Done.......")
 
   }

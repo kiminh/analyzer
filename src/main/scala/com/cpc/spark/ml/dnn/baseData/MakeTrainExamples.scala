@@ -472,6 +472,9 @@ object MakeTrainExamples {
 
 
 
+
+
+
     val name_list_one_hot_mapped = one_hot_feature_names_mapped.split(",")
     if (name_list_one_hot_mapped.length != 28) {
       println("mismatched, count_one_hot:28, name_list_one_hot_mapped.length:" + name_list_one_hot_mapped.length.toString)
