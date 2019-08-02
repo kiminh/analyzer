@@ -36,12 +36,14 @@ object OcpcDailyMonitor {
     val baseData1 = getBaseStatData(date, 1, spark)
     val baseData2 = getBaseStatData(date, 2, spark)
 
-    val unitData = calculateUnit(baseData1, spark)
-    val payUnits = unitData
+    val unitData1 = calculateUnit(baseData1, spark)
+    val payUnits = unitData1
       .filter(s"cost >= 1000")
       .filter(s"pay > 0")
 
-    val result = checkPayReason(payUnits, baseData2, date, hour, spark)
+    val unitData2 = calculateUnit(baseData2, spark)
+
+    val result = checkPayReason(payUnits, unitData2, date, hour, spark)
     result
       .withColumn("date", lit(date))
       .repartition(5)
