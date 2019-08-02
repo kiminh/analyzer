@@ -1,0 +1,36 @@
+CREATE TABLE IF NOT EXISTS test.ocpc_daily_over_cost_units_report
+(
+    unitid                  int,
+    userid                  int,
+    adclass                 int,
+    media                   string,
+    industry                string,
+    conversion_goal         int,
+    is_hidden               int,
+    show                    bigint,
+    click                   bigint,
+    cv                      bigint,
+    pre_ctr                 double,
+    post_ctr                double,
+    pre_cvr                 double,
+    cali_precvr             double,
+    post_cvr                double,
+    cost                    double,
+    pay                     double,
+    acp                     double,
+    acb                     double,
+    cpagiven                double,
+    cpareal                 double,
+    cpasuggest              double,
+    jfb_factor              double,
+    cvr_factor              double,
+    cali_postcvr            double,
+    smooth_factor           double,
+    hour_cnt                bigint,
+    flag1                   int,
+    flag2                   int,
+    flag3                   int,
+    flag4                   int
+)
+PARTITIONED by (`date` string)
+STORED as PARQUET;
