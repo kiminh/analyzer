@@ -221,8 +221,7 @@ object OcpcUnionlog {
          |    ocpc_status,
          |    bscvr,
          |    second_cpm,
-         |    final_cpm,
-         |    exp_cpm
+         |    final_cpm
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
