@@ -50,3 +50,13 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_filter_unionlog add columns (user_req_num int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (is_new_ad int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (is_auto_coin int);
+
+--bid_discounted_by_ad_slot,
+--second_cpm,
+--final_cpm,
+--exp_cpm
+
+alter table dl_cpc.ocpc_filter_unionlog add columns (bid_discounted_by_ad_slot bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (second_cpm bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (final_cpm bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (exp_cpm bigint);

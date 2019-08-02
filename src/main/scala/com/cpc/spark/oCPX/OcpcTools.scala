@@ -175,6 +175,8 @@ object OcpcTools {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -231,6 +233,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  isshow,
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
@@ -255,6 +258,8 @@ object OcpcTools {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -422,6 +427,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  isclick,
          |  cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |  media_appsid,
@@ -528,6 +534,25 @@ object OcpcTools {
     result
   })
 
+  def udfDetermineIndustry() = udf((adslotType: Int, adclass: Int) => {
+    val adclassString = adclass.toString
+    val adclass3 = adclassString.substring(0, 3)
+    var result = "others"
+    if (adclass3 == "134" || adclass3 == "107") {
+      result = "elds"
+    } else if (adclass3 == "100" && adslotType != 7) {
+      result = "feedapp"
+    } else if (adclass3 == "100" && adslotType == 7) {
+      result = "yysc"
+    } else if (adclass == 110110100 || adclass == 125100100) {
+      result = "wzcp"
+    } else {
+      result = "others"
+    }
+    result
+
+  })
+
   def udfDetermineConversionGoal() = udf((traceType: String, traceOp1: String, traceOp2: String) => {
     /*
     conversion_goal = 1: trace_op1="REPORT_DOWNLOAD_PKGADDED" and trace_type=apkdown
@@ -560,6 +585,14 @@ object OcpcTools {
       case "oCPColdflowMidu" => "oCPColdflowNovel"
       case "delayHT66" => "delayhottopic"
       case x => x
+    }
+    result
+  })
+
+  def udfCalculatePay() = udf((cost: Double, cv: Int, cpagiven: Double) => {
+    var result = cost - 1.2 * 0.01 * cv * cpagiven
+    if (result < 0) {
+      result = 0
     }
     result
   })

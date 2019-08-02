@@ -72,9 +72,27 @@ object OcpcConversionCV3 {
     println(sqlRequest3)
     val data3 = spark.sql(sqlRequest3)
 
+    // js加粉
+    val sqlRequest4 =
+      s"""
+         |select
+         |    distinct searchid
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'js_active_js_form')
+       """.stripMargin
+    println(sqlRequest4)
+    val data4 = spark.sql(sqlRequest4)
+
     val resultDF = data1
       .union(data2)
       .union(data3)
+      .union(data4)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")

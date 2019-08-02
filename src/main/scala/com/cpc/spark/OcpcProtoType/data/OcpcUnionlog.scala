@@ -84,7 +84,11 @@ object OcpcUnionlog {
          |    user_req_ad_num,
          |    user_req_num,
          |    is_new_ad,
-         |    is_auto_coin
+         |    is_auto_coin,
+         |    bid_discounted_by_ad_slot,
+         |    second_cpm,
+         |    final_cpm,
+         |    exp_cpm
          |from
          |    base_data
        """.stripMargin
@@ -215,7 +219,9 @@ object OcpcUnionlog {
          |    ocpc_step,
          |    previous_id,
          |    ocpc_status,
-         |    bscvr
+         |    bscvr,
+         |    second_cpm,
+         |    final_cpm
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

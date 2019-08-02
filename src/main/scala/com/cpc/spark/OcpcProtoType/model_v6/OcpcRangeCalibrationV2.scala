@@ -68,10 +68,14 @@ object OcpcRangeCalibrationV2 {
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
     val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
+//    dataRaw1
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_range_calibration20190702b")
     val data1 = dataRaw1
         .filter(s"cv >= $minCV")
         .cache()
     data1.show(10)
+//    data1
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_range_calibration20190702c")
 
 
 
@@ -82,7 +86,7 @@ object OcpcRangeCalibrationV2 {
     val data2 = calculateData2(baseData2, date, hour, spark)
 
     val resultDF = data1
-      .select("unitid", "conversion_goal", "post_cvr", "pcoc", "jfb")
+      .select("unitid", "conversion_goal", "post_cvr", "pcoc", "jfb", "cv")
       .join(data2, Seq("unitid", "conversion_goal"), "inner")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "pcoc", "jfb", "post_cvr", "high_bid_factor", "low_bid_factor")
 
@@ -269,6 +273,7 @@ object OcpcRangeCalibrationV2 {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -279,7 +284,7 @@ object OcpcRangeCalibrationV2 {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date1'
+         |  $selectCondition
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -342,6 +347,8 @@ object OcpcRangeCalibrationV2 {
          |  is_ocpc = 1
          |AND
          |  conversion_goal > 0
+         |AND
+         |  isclick = 1
        """.stripMargin
     println(sqlRequest)
     val data = spark

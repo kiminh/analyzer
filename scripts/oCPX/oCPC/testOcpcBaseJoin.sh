@@ -12,16 +12,14 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 20g --driver-memory 20g \
-    --executor-cores 10 --num-executors 20  \
+    --executor-memory 10g --driver-memory 4g \
+    --executor-cores 10 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.model_v6.OcpcSampleToPb \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4
-
+    --class com.cpc.spark.oCPX.oCPC.OcpcBaseJoin \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
 
 #val date = args(0).toString
 #val hour = args(1).toString
-#val version = args(2).toString
-#val fileName = args(3).toString
+#val dayInt = args(2).toInt
