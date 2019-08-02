@@ -33,8 +33,8 @@ object OcpcDailyMonitor {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val baseData1 = getBaseStatData(date, 1, spark)
-    val baseData2 = getBaseStatData(date, 2, spark)
+    val baseData1 = getBaseStatData(date, 0, spark)
+    val baseData2 = getBaseStatData(date, 1, spark)
 
     val unitData1 = calculateUnit(baseData1, spark)
     val payUnits = unitData1
