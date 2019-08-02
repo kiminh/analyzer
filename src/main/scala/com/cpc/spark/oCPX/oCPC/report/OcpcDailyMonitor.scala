@@ -29,9 +29,8 @@ object OcpcDailyMonitor {
       .getOrCreate()
 
     val date = args(0).toString
-    val hour = args(1).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour")
+    println(s"date=$date")
 
     val baseData1 = getBaseStatData(date, 0, spark)
     val baseData2 = getBaseStatData(date, 1, spark)
@@ -43,7 +42,7 @@ object OcpcDailyMonitor {
 
     val unitData2 = calculateUnit(baseData2, spark)
 
-    val result = checkPayReason(payUnits, unitData2, date, hour, spark)
+    val result = checkPayReason(payUnits, unitData2, date, spark)
     result
       .withColumn("date", lit(date))
       .repartition(5)
@@ -52,7 +51,7 @@ object OcpcDailyMonitor {
 
   }
 
-  def checkPayReason(payData: DataFrame, baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def checkPayReason(payData: DataFrame, baseData: DataFrame, date: String, spark: SparkSession) = {
     /*
     对超成本单元进行数据分析:
     1. 平均投放时间过短
