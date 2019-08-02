@@ -81,8 +81,12 @@ object FeatureCtr {
     var dateBegin = sdf.parse(beginStr)
     val dateEnd = sdf.parse(endStr)
     while (dateBegin.compareTo(dateEnd) <= 0) {
-      ranges += sdf.format(dateBegin)
-      dateBegin = DateUtils.addDays(dateBegin, 1)
+      if (sdf.format(dateBegin) == "2019-06-25") {
+        println("drop invalid src date 2019-06-25")
+      } else {
+        ranges += sdf.format(dateBegin)
+        dateBegin = DateUtils.addDays(dateBegin, 1)
+      }
     }
     ranges
   }
