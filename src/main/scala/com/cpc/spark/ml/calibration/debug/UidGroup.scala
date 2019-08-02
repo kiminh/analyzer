@@ -23,7 +23,7 @@ object UidGroup {
 
       val sql =
           s"""
-             |select distinct uid, from_unixtime(unix_timestamp(day,'yyyy-mm-dd'),'yyyymmdd') as dt
+             |select distinct uid, from_unixtime(unix_timestamp(day,'yyyy-mm-dd'),'yyyymmdd') as dt,day
              |    from
              |      dl_cpc.cpc_basedata_union_events
              |    where
@@ -35,7 +35,7 @@ object UidGroup {
         .withColumn("hashuid",hash(label)(concat(col("uid"),col("dt"))))
         .withColumn("num",col("hashuid")%1000)
         .withColumn("label",lit(label))
-        .select("uid","hashuid","num","dt","label")
+        .select("uid","hashuid","num","day","label")
 
     data.show(10)
 
