@@ -285,8 +285,6 @@ object MakeTrainExamples {
       }
     }
 
-    return
-
 
     /************Collect instances for non uid features************************/
     println("Collect Other Feature(exclude uid) Values and Map to Continuous Index")

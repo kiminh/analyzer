@@ -112,7 +112,7 @@ object FeatureCtr {
     val sc = spark.sparkContext
 
 
-    val name_list_one_hot = one_hot_feature_names.split(",")
+    var name_list_one_hot = one_hot_feature_names.split(",")
     if (count_one_hot.toInt != name_list_one_hot.length) {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
@@ -142,7 +142,7 @@ object FeatureCtr {
     }
     val name_idx_map_bc = sc.broadcast(name_idx_map)
 
-    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
+    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour,week"
     val cross_features_list = cross_features_str.split(",")
     val cross_features_list_bc = sc.broadcast(cross_features_list)
 
@@ -152,10 +152,10 @@ object FeatureCtr {
         cross_features_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
       }
     }
-    println("cross_features_list_2 len:" + cross_features_list_2.length)
     for (pair <- cross_features_list_2) {
       println(pair._1 + " X " + pair._2)
     }
+    println("cross_features_list_2 len:" + cross_features_list_2.length)
     val cross_features_list_2_bc = sc.broadcast(cross_features_list_2)
 
     /** **********make ctr statistics collect ************************/
@@ -194,18 +194,17 @@ object FeatureCtr {
             }
 
             val output = scala.collection.mutable.ArrayBuffer[(String, (Long, Long))]()
-            output += (("week\t" + collect_week, count))
+            //output += (("week\t" + collect_week, count))
 
             for (name <- cross_features_list_bc.value) {
-              output += ((name + "\t" + dense(name_idx_map_bc.value(name)), count))
+              output += ((name + "\t" + dense_str(name_idx_map_bc.value(name)), count))
             }
 
             for (name_pair <- cross_features_list_2_bc.value) {
               val name = name_pair._1 + "x" + name_pair._2
-              val value = dense(name_idx_map_bc.value(name_pair._1)) + "x" + dense(name_idx_map_bc.value(name_pair._2))
+              val value = dense_str(name_idx_map_bc.value(name_pair._1)) + "x" + dense_str(name_idx_map_bc.value(name_pair._2))
               output += ((name + "\t" + value, count))
             }
-
             output
           }
         ).flatMap(
@@ -222,6 +221,33 @@ object FeatureCtr {
       }
     }
     println("Done.......")
+
+
+    val valid_collect_file = ArrayBuffer[String]()
+    for (collect_date <- collect_date_list) {
+      val tf_ctr_collect = des_dir + "/collect/" + collect_date + "-ctr-rate"
+      if (exists_hdfs_path(tf_ctr_collect + "/_SUCCESS")) {
+        valid_collect_file += tf_ctr_collect
+      }
+    }
+
+    val tf_ctr_feature = des_dir + "/instances"
+      sc.textFile(valid_collect_file.mkString(",")).map(
+        {
+          rs =>
+            val line_list = rs.split("\t")
+            val rate = line_list(4).toFloat
+            val reg_rate = rate.formatted("%.4f")
+            (line_list(0) + "\t" + reg_rate, 1L)
+        }
+      ).repartition(1).sortByKey().reduceByKey((a, b) => a + b).map(
+        {
+          rs=>
+            rs._1 + "\t" + rs._2
+        }
+      ).saveAsTextFile(tf_ctr_feature)
+
+    return
 
 
     /** **********make ctr feature************************/
