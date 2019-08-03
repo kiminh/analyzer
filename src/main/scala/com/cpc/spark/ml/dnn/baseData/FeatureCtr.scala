@@ -120,7 +120,8 @@ object FeatureCtr {
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val collect_date_end = feature_date_end
-    val collect_date_begin = sdf.format(DateUtils.addDays(sdf.parse(feature_date_begin), -28))
+    //val collect_date_begin = sdf.format(DateUtils.addDays(sdf.parse(feature_date_begin), -28))
+    val collect_date_begin = feature_date_begin
 
     val collect_date_list_ori = ArrayBuffer[String]()
     val collect_week_list_ori = ArrayBuffer[String]()
