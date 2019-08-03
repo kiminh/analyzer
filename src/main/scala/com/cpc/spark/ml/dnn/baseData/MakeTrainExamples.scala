@@ -285,6 +285,7 @@ object MakeTrainExamples {
       }
     }
 
+    return
 
 
     /************Collect instances for non uid features************************/
