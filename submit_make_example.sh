@@ -42,7 +42,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
-    ${randjar} ${one_hot_feature_list_mapped} ${ctr_feature_dir} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
+    ${randjar}${one_hot_feature_list}  ${one_hot_feature_list_mapped} ${ctr_feature_dir} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
 
 chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest-week"
 hadoop fs -chmod -R 0777 ${chmod_des}

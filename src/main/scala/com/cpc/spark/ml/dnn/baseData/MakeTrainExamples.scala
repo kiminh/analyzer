@@ -87,7 +87,7 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 12) {
+    if (args.length != 13) {
       System.err.println(
         """
           |you have to input 12 parameters !!!
@@ -95,7 +95,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names_mapped, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(one_hot_feature_names, one_hot_feature_names_mapped, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -117,6 +117,7 @@ object MakeTrainExamples {
     println("src_date_list:" + src_date_list.mkString(";"))
     println("src_week_list:" + src_week_list.mkString(";"))
     println("src_date_list_with_week:" + src_date_list_with_week.mkString("|"))
+
 
     /************make text examples************************/
     println("Make text examples")
@@ -171,6 +172,120 @@ object MakeTrainExamples {
       }
     }
     println("Done.......")
+
+    val dense_list = one_hot_feature_names.split(",")
+    if (dense_list.length != 28) {
+      println("mismatched, count_one_hot:28, dense_list.length:" + dense_list.length.toString)
+      System.exit(1)
+    }
+    val dense_list_bc = sc.broadcast(dense_list)
+
+    var name_idx_map: mutable.Map[String, Int] = mutable.Map()
+    for (idx <- dense_list.indices) {
+      name_idx_map += (dense_list(idx) -> idx)
+    }
+    var name_idx_map_bc = sc.broadcast(name_idx_map)
+
+    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
+    val cross_features_list = cross_features_str.split(",")
+    val cross_features_list_bc = sc.broadcast(cross_features_list)
+
+    val cross_features_list_2 = ArrayBuffer[(String, String)]()
+    for (idx <- 0 until cross_features_list.length) {
+      for (inner <- (idx + 1) until cross_features_list.length) {
+        cross_features_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
+      }
+    }
+    println("cross_features_list_2 len:" + cross_features_list_2.length)
+    for (pair <- cross_features_list_2) {
+      println(pair._1 + " X " + pair._2)
+    }
+    val cross_features_list_2_bc = sc.broadcast(cross_features_list_2)
+
+    val schema_with_float = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("floats", ArrayType(FloatType, containsNull = true)),
+      StructField("label_single", FloatType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+    /************Collect Float Features************************/
+    println("Collect Float Features")
+    for (date_idx <- src_date_list.indices) {
+      val src_date = src_date_list(date_idx)
+      val src_week = src_week_list(date_idx)
+      val tf_ctr_feature = ctr_feature_dir + "/collect/" + src_date
+      val tf_text = des_dir + "/" + src_date + "-text"
+      val tf_text_float = des_dir + "/" + src_date + "-text-float"
+      val tf_text_float_tf = des_dir + "/" + src_date + "-text-float-tf"
+      if (exists_hdfs_path(tf_text) && exists_hdfs_path(tf_ctr_feature)) {
+        println("exit ctr_feature_file:" + tf_ctr_feature)
+        if (!exists_hdfs_path(tf_text_float_tf + "/_SUCCESS")) {
+          s"hadoop fs -rm -r $tf_text_float" !
+
+          s"hadoop fs -rm -r $tf_text_float_tf" !
+
+          println("Load Ctr Feature Map:" + tf_ctr_feature)
+          val ctrMap = sc.textFile(tf_ctr_feature).map(
+            rs => {
+              val line = rs.split("\t")
+              val name = line(0)
+              val value = line(1)
+              (name + "\t" + value, line(4))
+            }
+          ).collectAsMap()
+          println("ctrMap.size=" + ctrMap.size)
+
+          val float_rdd = sc.textFile(tf_text).map(
+            rs => {
+              val line_list = rs.split("\t")
+              val sample_idx = line_list(0)
+              val label = line_list(1)
+              val label_arr = line_list(2)
+              val dense = line_list(3)
+              val idx0 = line_list(4)
+              val idx1 = line_list(5)
+              val idx2 = line_list(6)
+              val idx_arr = line_list(7)
+
+              val float_list = scala.collection.mutable.ArrayBuffer[String]()
+              for (name <- cross_features_list_bc.value) {
+                val idx = name_idx_map_bc.value(name)
+                val key = name + "\t" + dense(idx).toString
+                float_list += ctrMap.getOrElse(key, "0.0")
+              }
+
+              for (name_pair <- cross_features_list_2_bc.value) {
+                val idx1 = name_idx_map_bc.value(name_pair._1)
+                val idx2 = name_idx_map_bc.value(name_pair._2)
+                val key = name_pair._1 + "x" + name_pair._2 + "\t" + dense(idx1) + "x" + dense(idx2)
+                float_list += ctrMap.getOrElse(key, "0.0")
+              }
+              Row(sample_idx, float_list.map(_.toFloat), label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+            }
+          )
+
+          val float_rdd_count = float_rdd.count
+          println(s"float_rdd_count : $float_rdd_count")
+          float_rdd.repartition(1000).saveAsTextFile(tf_text_float)
+
+          val float_df: DataFrame = spark.createDataFrame(float_rdd, schema_with_float)
+          float_df.repartition(1000).write.format("tfrecords").option("recordType", "Example").save(tf_text_float_tf)
+
+          //保存count文件
+          val fileName = "count_" + Random.nextInt(100000)
+          writeNum2File(fileName, float_rdd_count)
+          s"hadoop fs -put $fileName $tf_text_float_tf/count" !
+        }
+      }
+    }
+
+
 
     /************Collect instances for non uid features************************/
     println("Collect Other Feature(exclude uid) Values and Map to Continuous Index")
@@ -458,50 +573,23 @@ object MakeTrainExamples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
-    val schema_with_float = StructType(List(
-      StructField("sample_idx", LongType, nullable = true),
-      StructField("floats", ArrayType(FloatType, containsNull = true)),
-      StructField("label_single", FloatType, nullable = true),
-      StructField("label", ArrayType(LongType, containsNull = true)),
-      StructField("dense", ArrayType(LongType, containsNull = true)),
-      StructField("idx0", ArrayType(LongType, containsNull = true)),
-      StructField("idx1", ArrayType(LongType, containsNull = true)),
-      StructField("idx2", ArrayType(LongType, containsNull = true)),
-      StructField("id_arr", ArrayType(LongType, containsNull = true))
-    ))
 
 
 
 
 
 
-    val name_list_one_hot_mapped = one_hot_feature_names_mapped.split(",")
-    if (name_list_one_hot_mapped.length != 28) {
-      println("mismatched, count_one_hot:28, name_list_one_hot_mapped.length:" + name_list_one_hot_mapped.length.toString)
+    val dense_list_mapped = one_hot_feature_names_mapped.split(",")
+    if (dense_list_mapped.length != 28) {
+      println("mismatched, count_one_hot:28, dense_list_mapped.length:" + dense_list_mapped.length.toString)
       System.exit(1)
     }
-    val name_list_one_hot_mapped_bc = sc.broadcast(name_list_one_hot_mapped)
-    val name_idx_map: mutable.Map[String, Int] = mutable.Map()
-    for (idx <- name_list_one_hot_mapped.indices) {
-      name_idx_map += (name_list_one_hot_mapped(idx) -> idx)
-    }
-    val name_idx_map_bc = sc.broadcast(name_idx_map)
 
-    val cross_features_str ="sex,adtype,adclass,os,network,phone_price,brand,city_level,age,hour"
-    val cross_features_list = cross_features_str.split(",")
-    val cross_features_list_bc = sc.broadcast(cross_features_list)
-
-    val cross_features_list_2 = ArrayBuffer[(String, String)]()
-    for (idx <- 0 until cross_features_list.length) {
-      for (inner <- (idx + 1) until cross_features_list.length) {
-        cross_features_list_2 += ((cross_features_list(idx), cross_features_list(inner)))
-      }
+    name_idx_map.clear()
+    for (idx <- dense_list_mapped.indices) {
+      name_idx_map += (dense_list_mapped(idx) -> idx)
     }
-    println("cross_features_list_2 len:" + cross_features_list_2.length)
-    for (pair <- cross_features_list_2) {
-      println(pair._1 + " X " + pair._2)
-    }
-    val cross_features_list_2_bc = sc.broadcast(cross_features_list_2)
+    name_idx_map_bc = sc.broadcast(name_idx_map)
 
 
     /************down sampling************************/
