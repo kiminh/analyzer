@@ -225,5 +225,70 @@ object MakeSampling {
       }
     }
     println("Done.......")
+
+    println("Collect Test Examples")
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    val test_file_src = src_dir + "/" + test_data_src
+    val test_file_text = des_dir + "/" + test_data_des + "-text"
+    val test_file_text_tf = des_dir + "/" + test_data_des + "-text-tf"
+    if (!exists_hdfs_path(test_file_text_tf + "/_SUCCESS")) {
+      s"hadoop fs -rm -r $test_file_text" !
+
+      s"hadoop fs -rm -r $test_file_text_tf" !
+
+      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
+      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
+      importedDf.rdd.map(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4)
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+
+          var label = "0.0"
+          if (label_arr.head == 1L) {
+            label = "1.0"
+          }
+
+          val output = scala.collection.mutable.ArrayBuffer[String]()
+          output += sample_idx.toString
+          output += label
+          output += label_arr.map(_.toString).mkString(";")
+          output += dense.map(_.toString).mkString(";")
+          output += idx0.map(_.toString).mkString(";")
+          output += idx1.map(_.toString).mkString(";")
+          output += idx2.map(_.toString).mkString(";")
+          output += idx_arr.map(_.toString).mkString(";")
+
+          output.mkString("\t")
+        }
+      ).repartition(60).saveAsTextFile(test_file_text)
+
+      val test_file_rdd = sc.textFile(test_file_text).map({
+        rs =>
+          val rs_list = rs.split("\t")
+          val sample_idx = rs_list(0).toLong
+          val label = rs_list(1).toFloat
+          val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+          val dense = rs_list(3).split(";").map(_.toLong).toSeq
+          val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+          val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+          val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+          val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+          Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+      val test_file_rdd_count = test_file_rdd.count
+      println(s"test_file_rdd_count is : $test_file_rdd_count")
+
+      val test_file_df: DataFrame = spark.createDataFrame(test_file_rdd, schema_new)
+      test_file_df.repartition(60).write.format("tfrecords").option("recordType", "Example").save(test_file_text_tf)
+    }
+
+    println("Done.......")
+
   }
 }

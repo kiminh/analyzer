@@ -20,8 +20,8 @@ src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 date_begin=`date --date='31 days ago' +%Y-%m-%d`
 date_end=`date --date='1 days ago' +%Y-%m-%d`
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
-test_data_src="2019-07-27/part-r-000*"
-test_data_des="test-2019-07-27"
+test_data_src="2019-08-03/part-r-000*"
+test_data_des="test-2019-08-03"
 test_data_week="Sat"
 partitions=1000
 
