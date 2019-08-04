@@ -13,8 +13,9 @@ one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,s
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
 
-ctr_feature_date_begin=2019-06-26
-ctr_feature_date_end=2019-07-26
+ctr_feature_date_begin=2019-07-01
+ctr_feature_date_end=2019-08-02
+instance_file=instances_2019-08-03
 
 
 partitions=1000
@@ -30,6 +31,6 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.FeatureCtr \
-    ${randjar} ${one_hot_feature_list} ${src_dir} ${des_dir} ${ctr_feature_date_begin} ${ctr_feature_date_end} ${partitions} ${one_hot_cnt} ${multi_hot_cnt}
+    ${randjar} ${one_hot_feature_list} ${instance_file} ${src_dir} ${des_dir} ${ctr_feature_date_begin} ${ctr_feature_date_end} ${partitions} ${one_hot_cnt} ${multi_hot_cnt}
 
 hadoop fs -chmod -R 0777 ${des_dir}

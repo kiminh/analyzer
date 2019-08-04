@@ -96,14 +96,14 @@ object FeatureCtr {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 9) {
       System.err.println(
         """
-          |you have to input 8 parameters !!!
+          |you have to input 9 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
-    val Array(one_hot_feature_names, src_dir, des_dir, feature_date_begin, feature_date_end, numPartitions, count_one_hot, count_multi_hot) = args
+    val Array(one_hot_feature_names, instances_file, src_dir, des_dir, feature_date_begin, feature_date_end, numPartitions, count_one_hot, count_multi_hot) = args
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val sparkConf = new SparkConf()
@@ -119,8 +119,8 @@ object FeatureCtr {
     }
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    val collect_date_end = feature_date_end
-    //val collect_date_begin = sdf.format(DateUtils.addDays(sdf.parse(feature_date_begin), -28))
+    //val collect_date_end = feature_date_end
+    val collect_date_end = sdf.format(DateUtils.addDays(sdf.parse(feature_date_end), 1))
     val collect_date_begin = feature_date_begin
 
     val collect_date_list_ori = ArrayBuffer[String]()
@@ -224,21 +224,22 @@ object FeatureCtr {
     println("Done.......")
 
 
+    val instances_date_list = GetDataRange(feature_date_begin, feature_date_end)
     val valid_collect_file = ArrayBuffer[String]()
-    for (collect_date <- collect_date_list) {
+    for (collect_date <- instances_date_list) {
       val tf_ctr_collect = des_dir + "/collect/" + collect_date + "-ctr-rate"
       if (exists_hdfs_path(tf_ctr_collect + "/_SUCCESS")) {
         valid_collect_file += tf_ctr_collect
       }
     }
 
-    val tf_ctr_feature = des_dir + "/instances"
+    val tf_ctr_instances = des_dir + instances_file
       sc.textFile(valid_collect_file.mkString(",")).map(
         {
           rs =>
             val line_list = rs.split("\t")
             val rate = line_list(4).toFloat
-            val reg_rate = rate.formatted("%.4f")
+            val reg_rate = rate.formatted("%.5f")
             (line_list(0) + "\t" + reg_rate, 1L)
         }
       ).repartition(1).sortByKey().reduceByKey((a, b) => a + b).map(
@@ -246,7 +247,7 @@ object FeatureCtr {
           rs=>
             rs._1 + "\t" + rs._2
         }
-      ).saveAsTextFile(tf_ctr_feature)
+      ).saveAsTextFile(tf_ctr_instances)
 
     return
 
