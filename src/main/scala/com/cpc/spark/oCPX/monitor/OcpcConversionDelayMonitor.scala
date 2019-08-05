@@ -31,9 +31,35 @@ object OcpcConversionDelayMonitor {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
 
+    // 计算丢失率
+    val lostRate = calculateLostCvr(data, spark)
+    lostRate
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_total_delay_cvr_hourly")
+  }
+
+  def calculateLostCvr(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  media,
+         |  sum(click) as click,
+         |  sum(cv1) as cv1,
+         |  sum(cv2) as cv2,
+         |  sum(cv1) * 1.0 / sum(cv2) as lost_cvr
+         |FROM
+         |  base_data
+         |GROUP BY conversion_goal, media
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def calculateCvr(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -117,7 +143,7 @@ object OcpcConversionDelayMonitor {
       s"""
          |SELECT
          |  searchid,
-         |  label as icvr1,
+         |  label as iscvr1,
          |  cvr_goal
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
@@ -132,7 +158,7 @@ object OcpcConversionDelayMonitor {
       s"""
          |SELECT
          |  searchid,
-         |  label as icvr2,
+         |  label as iscvr2,
          |  cvr_goal
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
