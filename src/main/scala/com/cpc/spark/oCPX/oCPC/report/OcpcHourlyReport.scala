@@ -37,35 +37,33 @@ object OcpcHourlyReport {
     val baseData = calculateBaseData(rawData, spark)
 
     // 为邮件准备临时表
-    if (hour == "23") {
-      val ideaData = calculateIdea(baseData, spark)
-      ideaData
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
+    val ideaData = calculateIdea(baseData, spark)
+    ideaData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
 
-      val unitData = calculateUnit(baseData, spark)
-      unitData
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
+    val unitData = calculateUnit(baseData, spark)
+    unitData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
 
-      val userData = calcualteUser(unitData, spark)
-      userData
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
+    val userData = calcualteUser(unitData, spark)
+    userData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
 
-      val industry = calculateIndustry(unitData, spark)
-      industry
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
-    }
+    val industry = calculateIndustry(unitData, spark)
+    industry
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
 
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
@@ -408,6 +406,8 @@ object OcpcHourlyReport {
       .withColumn("hour", col("hr"))
       .withColumn("impression", col("show"))
       .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .filter(s"date is not null and hour is not null")
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden"))
 
     val reportTableUnit = "report2.ocpc_report_base_hourly"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date'"
