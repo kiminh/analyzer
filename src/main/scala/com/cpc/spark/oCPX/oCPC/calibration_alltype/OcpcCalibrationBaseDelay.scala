@@ -1,6 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.oCPX.oCPC.calibration_alltype.udfs.udfGenerateId
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -33,13 +34,16 @@ object OcpcCalibrationBaseDelay {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
+      .withColumn("identifier", udfGenerateId()(col("unitid"), col("adslot_type")))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
 
 
     resultDF
@@ -50,7 +54,7 @@ object OcpcCalibrationBaseDelay {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media")
+      .groupBy("identifier", "conversion_goal", "media")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -60,7 +64,7 @@ object OcpcCalibrationBaseDelay {
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
 
     data
   }
