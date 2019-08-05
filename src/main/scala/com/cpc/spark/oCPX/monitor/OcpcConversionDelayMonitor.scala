@@ -31,8 +31,8 @@ object OcpcConversionDelayMonitor {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
 
     // 计算丢失率
     val lostRate = calculateLostCvr(data, spark)
@@ -40,8 +40,8 @@ object OcpcConversionDelayMonitor {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_total_delay_cvr_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_delay_cvr_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_total_delay_cvr_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_delay_cvr_hourly")
   }
 
   def calculateLostCvr(baseData: DataFrame, spark: SparkSession) = {
