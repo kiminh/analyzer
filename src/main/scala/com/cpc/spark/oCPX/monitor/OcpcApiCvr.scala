@@ -65,8 +65,9 @@ object OcpcApiCvr {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val time1 = dateConverter.parse(date + " " + hour)
     val time2 = dateConverter.parse(dateCol + " " + hourCol)
-    val timeDiff = time2.compareTo(time1)
-    timeDiff
+    val timeDiff = time1.getTime() - time2.getTime()
+    val diffHours = timeDiff / (60 * 60 * 1000);
+    diffHours
 
   })
 
