@@ -44,7 +44,7 @@ object OcpcApiCvr {
          |  conversion_goal,
          |  media,
          |  date,
-         |  hour
+         |  hour,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then label else 0 end) as click_cv,
          |  sum(label) as show_cv
