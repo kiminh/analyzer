@@ -21,7 +21,10 @@ CREATE TABLE IF NOT EXISTS test.ocpc_report_base_hourly
     total_calipostcvr       double,
     total_cpasuggest        double,
     total_smooth_factor     double,
-    is_hidden               int
+    is_hidden               int,
+    adslot_type             int
 )
 PARTITIONED by (`date` string, `hour` string)
 STORED as PARQUET;
+
+alter table test.ocpc_report_base_hourly add columns (adslot_type int);

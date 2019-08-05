@@ -68,8 +68,8 @@ object OcpcHourlyReport {
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
 
-    // 存储数据到mysql
-    saveDataToMysql(baseData, date, hour, spark)
+//    // 存储数据到mysql
+//    saveDataToMysql(baseData, date, hour, spark)
 
   }
 
@@ -250,13 +250,13 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "date", "hour")
 
 
     resultDF
       .repartition(5)
-      //      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
@@ -268,6 +268,7 @@ object OcpcHourlyReport {
          |  unitid,
          |  userid,
          |  adclass,
+         |  adslot_type,
          |  conversion_goal,
          |  industry,
          |  media,
@@ -289,7 +290,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
