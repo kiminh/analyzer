@@ -168,7 +168,7 @@ object OcpcConversionDelayMonitor {
          |WHERE
          |  $selectCondition
          |OR
-         |  (`date` = '$date1` and `hour` = '$hour1')
+         |  (`date` = '$date1' and `hour` = '$hour1')
        """.stripMargin
     println(sqlRequest3)
     val cvData2 = spark.sql(sqlRequest3)
