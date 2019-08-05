@@ -1,12 +1,11 @@
-CREATE TABLE IF NOT EXISTS test.ocpc_cvr_delay_hourly
+CREATE TABLE IF NOT EXISTS test.ocpc_total_delay_cvr_hourly
 (
-    unitid                  int,
-    userid                  int,
     conversion_goal         int,
     media                   string,
     click                   bigint,
     cv1                     bigint,
-    cv2                     bigint
+    cv2                     bigint,
+    lost_cvr                double
 )
 PARTITIONED by (`date` string, `hour` string)
 STORED as PARQUET;
