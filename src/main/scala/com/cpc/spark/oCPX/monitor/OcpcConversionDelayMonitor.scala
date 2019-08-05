@@ -19,6 +19,20 @@ object OcpcConversionDelayMonitor {
     val hour = args(1).toString
     val hourInt = args(2).toInt
 
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
     // 抽取基础表
     val baseData = getData(date, hour, hourInt, spark)
 
@@ -28,8 +42,8 @@ object OcpcConversionDelayMonitor {
     data.show(10)
     data
       .select("unitid", "userid", "conversion_goal", "media", "click", "cv1", "cv2")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("date", lit(date1))
+      .withColumn("hour", lit(hour1))
       .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
@@ -37,8 +51,8 @@ object OcpcConversionDelayMonitor {
     // 计算丢失率
     val lostRate = calculateLostCvr(data, spark)
     lostRate
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("date", lit(date1))
+      .withColumn("hour", lit(hour1))
       .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_total_delay_cvr_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_delay_cvr_hourly")
