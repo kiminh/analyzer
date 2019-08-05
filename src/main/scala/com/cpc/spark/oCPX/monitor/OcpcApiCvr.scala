@@ -97,7 +97,9 @@ object OcpcApiCvr {
          |    userid,
          |    conversion_goal,
          |    media_appsid,
-         |    isclick
+         |    isclick,
+         |    date,
+         |    hour
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition
          |and isshow = 1
