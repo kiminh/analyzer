@@ -28,3 +28,4 @@ PARTITIONED by (`date` string, `hour` string)
 STORED as PARQUET;
 
 alter table test.ocpc_report_base_hourly add columns (adslot_type int);
+alter table test.ocpc_report_base_hourly add columns (total_exp_cpm double);
