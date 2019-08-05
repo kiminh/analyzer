@@ -4,9 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfConcatStringInt, udfDetermineMedia}
-import com.github.jurajburian.mailer._
 import com.typesafe.config.ConfigFactory
-import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -29,8 +27,10 @@ object OcpcApiCvr {
 
     data.show(10)
     data
+      .select("unitid", "userid", "converion_goal", "media", "click", "click_cv", "show_cv", "date", "hour", "hour_int")
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_api_cvr_data20190805")
+      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
 
   }
 
@@ -55,7 +55,7 @@ object OcpcApiCvr {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .withColumn("hourInt", udfCalculateHourInt(date, hour)(col("date"), col("hour")))
+      .withColumn("hour_int", udfCalculateHourInt(date, hour)(col("date"), col("hour")))
 
     data
   }
