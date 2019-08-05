@@ -27,7 +27,7 @@ object OcpcApiCvr {
 
     data.show(10)
     data
-      .select("unitid", "userid", "converion_goal", "media", "click", "click_cv", "show_cv", "date", "hour", "hour_int")
+      .select("unitid", "userid", "conversion_goal", "media", "click", "click_cv", "show_cv", "date", "hour", "hour_int")
       .repartition(5)
       .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
