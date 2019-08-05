@@ -42,28 +42,28 @@ object OcpcHourlyReport {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email20190805")
 
     val unitData = calculateUnit(baseData, spark)
     unitData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email20190805")
 
     val userData = calcualteUser(unitData, spark)
     userData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email20190805")
 
     val industry = calculateIndustry(unitData, spark)
     industry
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email20190805")
 
     // 存储数据到hadoop
     saveDataToHDFS(baseData, date, hour, spark)
