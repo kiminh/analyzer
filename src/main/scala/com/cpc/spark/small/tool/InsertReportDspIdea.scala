@@ -41,6 +41,7 @@ object InsertReportDspIdea {
     val ctx = SparkSession
       .builder()
       .config("spark.debug.maxToStringFields", "2000")
+      .config("spark.driver.maxResultSize","2g")
       .appName("InsertReportDspIdea is run day is %s".format(argDay))
       .enableHiveSupport()
       .getOrCreate()
@@ -71,6 +72,7 @@ object InsertReportDspIdea {
           info(src, adid_str, ad_title, ad_desc, ad_img_urls, ad_click_url, isshow, isclick)
           ((src, adid_str,adslotid), info(src, adid_str, ad_title, ad_desc, ad_img_urls, ad_click_url, isshow, isclick, adslotid, argDay))
       }
+      .repartition(50)
       .reduceByKey {
         (a, b) =>
           val src = a.src

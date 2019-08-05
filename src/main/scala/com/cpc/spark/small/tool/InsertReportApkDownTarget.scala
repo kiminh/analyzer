@@ -527,9 +527,159 @@ object InsertReportApkDownTarget {
       .repartition(50)
       .cache()
 
+    //激励视频
+    val inciteVideoUnionData = ctx
+      .sql(
+        """
+          |SELECT searchid,planid,unitid,isshow,isclick,sex,age,os,province,phone_level,hour,
+          |network,coin,qukan_new_user,adslot_type,media_appsid,adslot_id,ext_string['brand'],browser_type,
+          |interests,userid
+          |FROM dl_cpc.cpc_basedata_union_events cul
+          |WHERE day="%s" AND isshow>0
+          |AND cul.adsrc=1 AND cul.adtype in(11,15)
+        """.stripMargin.format(argDay))
+      .rdd
+      .map {
+        x =>
+          val searchid = x.getAs[String](0)
+          val planid = x.getAs[Int](1)
+          val unitid = x.getAs[Int](2)
+          val isshow = if (x.getAs[Int](4) > 0) 1 else x.getAs[Int](3).toLong
+          val isclick = x.getAs[Int](4).toLong
+          val sex = x.getAs[Int](5)
+          val age = x.getAs[Int](6)
+          val os = x.getAs[Int](7)
+          val province = x.getAs[Int](8)
+          val phoneLevel = x.getAs[Int](9)
+          val hour = x.getAs[String](10).toInt
+          val network = x.getAs[Int](11)
+          val coin = x.getAs[Int](12)
+          //coin
+          var userLevel = 0
+          if (coin == 0) {
+            userLevel = 1
+          } else if (coin <= 60) {
+            userLevel = 2
+          } else if (coin <= 90) {
+            userLevel = 3
+          } else {
+            userLevel = 4
+          }
+
+          val qukanNewUser = x.getAs[Int](13)
+          val adslotType = x.getAs[Int](14)
+          val mediaId = x.getAs[String](15).toInt
+          val adslotid = x.getAs[String](16).toInt
+          val brand = x.getAs[String](17)
+          val browserType = x.getAs[Int](18)
+
+          val isStudent = 0
+          val userid = x.getAs[Int](20)
+
+          (searchid, (Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
+            network, userLevel, qukanNewUser, adslotType, mediaId, adslotid, brand, browserType, isStudent, 0, 0, 0, "", userid)))
+      }
+      .repartition(50)
+    //println("unionData count", unionData.count())
+
+
+    val inciteVideotraceData = ctx.sql(
+      """
+        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.trace_op1
+        |FROM dl_cpc.cpc_basedata_trace_event cutl
+        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |WHERE cutl.day="%s" AND cul.day="%s"
+        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED","REPORT_DOWNLOAD_INST_HIJACK")
+        |AND cul.isclick>0 AND cul.adsrc=1 AND cul.adtype in(11,15)
+      """.stripMargin.format(argDay, argDay))
+      .rdd
+      .map {
+        x =>
+          val searchid = x.getAs[String](0)
+          val trace_type = x.getAs[String](1)
+          var trace_op1 = x.getAs[String](2)
+          var start: Int = 0
+          var finish: Int = 0
+          var pkgadded: Int = 0
+          var instHijack: Int = 0
+          if (trace_op1 == "REPORT_DOWNLOAD_START") {
+            start = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_FINISH") {
+            finish = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+            pkgadded = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_INST_HIJACK") {
+            instHijack = 1
+          }
+          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
+      }
+      .repartition(50)
+
+    //println("traceData count", traceData.count())
+
+
+    val inciteVideoAllDatax = inciteVideoUnionData
+      .union(inciteVideotraceData)
+      .reduceByKey {
+        (a, b) =>
+          val searchid = if (a.planid != -1) a.searchid else b.searchid
+          val planid = if (a.planid != -1) a.planid else b.planid
+          val unitid = if (a.planid != -1) a.unitid else b.unitid
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
+          val sex = if (a.planid != -1) a.sex else b.sex
+          val age = if (a.planid != -1) a.age else b.age
+          val os = if (a.planid != -1) a.os else b.os
+          val province = if (a.planid != -1) a.province else b.province
+          val phoneLevel = if (a.planid != -1) a.phoneLevel else b.phoneLevel
+          val hour = if (a.planid != -1) a.hour else b.hour
+          val network = if (a.planid != -1) a.network else b.network
+          val userLevel = if (a.planid != -1) a.userLevel else b.userLevel
+          val qukanNewUser = if (a.planid != -1) a.qukanNewUser else b.qukanNewUser
+          val adslotType = if (a.planid != -1) a.adslotType else b.adslotType
+          val mediaid = if (a.planid != -1) a.mediaid else b.mediaid
+          val adslotid = if (a.planid != -1) a.adslotid else b.adslotid
+          val brand = if (a.planid != -1) a.brand else b.brand
+          val browserType = if (a.planid != -1) a.browserType else b.browserType
+          val isStudent = if (a.planid != -1) a.isStudent else b.isStudent
+          val start = a.start + b.start
+          val finish = a.finish + b.finish
+          val pkgadded = a.pkgadded + b.pkgadded
+          val traceType = "incite_video"
+          //if (a.traceType.length > 0) a.traceType else b.traceType
+          var userid = if (a.userid > 0) a.userid else b.userid
+          val instHijack = a.instHijack + b.instHijack
+          Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid, instHijack)
+      }
+      .map {
+        x =>
+          val info = x._2
+          Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
+            info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
+            info.isStudent, info.start, info.finish, info.pkgadded,"incite_video", info.userid, info.instHijack)
+      }
+      .filter { x => x.unitid > 0 && x.planid > 0 }
+      .repartition(50)
+      .cache()
+
     clearReportApkDownTarget(argDay)
 
     //-----
+    var insertDataFrameInciteVideo = ctx.createDataFrame(getInsertAllData(inciteVideoAllDatax, argDay, broadcastBrandMaps))
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
+      .repartition(50)
+
+    insertDataFrameInciteVideo.unpersist(true)
+
+    insertDataFrameInciteVideo.show(10)
+
+    insertDataFrameInciteVideo
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
+    println("insertDataFrameInciteVideo over!")
+
     var insertDataFramelpload = ctx.createDataFrame(getInsertAllData(lploadAllData, argDay, broadcastBrandMaps))
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
