@@ -410,9 +410,9 @@ object OcpcHourlyReport {
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
       .withColumn("impression", col("show"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour", "adslot_type", "total_exp_cpm")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm"))
 
     val reportTableUnit = "report2.ocpc_report_base_hourly"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date'"
