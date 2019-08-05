@@ -2,6 +2,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcJFBfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcSmoothfactor._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -41,16 +42,16 @@ object OcpcGetPb {
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
+      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
       .cache()
     jfbData.show(10)
-//
-//    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
-//    val smoothData = smoothDataRaw
-//      .withColumn("post_cvr", col("cvr"))
-//      .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
-//      .cache()
-//    smoothData.show(10)
+
+    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val smoothData = smoothDataRaw
+      .withColumn("post_cvr", col("cvr"))
+      .select("identifier", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
+      .cache()
+    smoothData.show(10)
 //
 //    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
 //    val pcocData = pcocDataRaw
