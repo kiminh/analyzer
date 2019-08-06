@@ -358,7 +358,8 @@ object MakeTrainExamples {
             val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
 
             (uid_value.toLong, (sid, mapped_prefix.mkString(";"), mapped_tail.mkString(";"), mapped_multi_hot.mkString(";")))
-        }).join(sparseMapUid).map(
+          }
+        ).join(sparseMapUid).map(
           rs => {
             val sid = rs._2._1._1
             val mapped_prefix = rs._2._1._2
@@ -366,7 +367,8 @@ object MakeTrainExamples {
             val mapped_multi_hot = rs._2._1._4
             val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
             sid + "\t" + mapped_prefix + ";" + mapped_uid + ";" + mapped_tail + "\t" + mapped_multi_hot
-        }).saveAsTextFile(mapping_info)
+          }
+        ).saveAsTextFile(mapping_info)
 
         delete_hdfs_path(tf_text_sampled_mapped)
         println("make mapped files:" + tf_text_sampled_mapped)
