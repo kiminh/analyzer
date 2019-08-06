@@ -329,6 +329,17 @@ object MakeTrainExamples {
     //}
     //println("Done.......")
 
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label_single", FloatType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
 
     println("Do Mapping Features")
     for (date_idx <- src_date_list.indices) {
@@ -336,8 +347,9 @@ object MakeTrainExamples {
       val src_week = src_week_list(date_idx)
       val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
       val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
+      val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
       val mapping_info = des_dir + "/mapping-info/" + src_date + "mapping-info"
-      if (!exists_hdfs_path(tf_text_sampled_mapped + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
+      if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(mapping_info)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         println("mapping sampled text file:" + tf_text_sampled)
@@ -371,6 +383,7 @@ object MakeTrainExamples {
         ).saveAsTextFile(mapping_info)
 
         delete_hdfs_path(tf_text_sampled_mapped)
+        delete_hdfs_path(tf_text_sampled_mapped_tfr)
         println("make mapped files:" + tf_text_sampled_mapped)
         val mapping_info_rdd = sc.textFile(mapping_info).map({
           rs =>
@@ -400,45 +413,38 @@ object MakeTrainExamples {
             val idx2 = rs._2._1._5
             val dense = rs._2._2._1
             val idx_arr = rs._2._2._2
-
-            val ult_list: Array[String] = new Array[String](8)
-            ult_list(0) = sid
-            ult_list(1) = label
-            ult_list(2) = label_arr
-            ult_list(3) = dense
-            ult_list(4) = idx0
-            ult_list(5) = idx1
-            ult_list(6) = idx2
-            ult_list(7) = idx_arr
-            ult_list.mkString("\t")
+            Array[String](sid, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
           }
         )
 
-        val ult_rdd_count = ult_rdd.count
-        println(s"ult_rdd_count : $ult_rdd_count")
+        val tf_ult_rdd = ult_rdd.map({
+          rs_list =>
+            val sample_idx = rs_list(0).toLong
+            val label = rs_list(1).toFloat
+            val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+            val dense = rs_list(3).split(";").map(_.toLong).toSeq
+            val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+            val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+            val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+            val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+            Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+        })
+
         ult_rdd.repartition(100).saveAsTextFile(tf_text_sampled_mapped)
 
-        //保存count文件
-        val fileName = "count_" + Random.nextInt(100000)
-        writeNum2File(fileName, ult_rdd_count)
-        s"hadoop fs -put $fileName $tf_text_sampled_mapped/count" !
+        val tf_ult_rdd_count = tf_ult_rdd.count
+        println(s"tf_ult_rdd_count is : $tf_ult_rdd_count")
 
+        val text_df: DataFrame = spark.createDataFrame(tf_ult_rdd, schema_new)
+        text_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(tf_text_sampled_mapped_tfr)
+
+        val fileName = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName, tf_ult_rdd_count)
+        s"hadoop fs -put $fileName $tf_text_sampled_mapped_tfr/count" !
       }
     }
     println("Done.......")
 
-
-
-    val schema_new = StructType(List(
-      StructField("sample_idx", LongType, nullable = true),
-      StructField("label_single", FloatType, nullable = true),
-      StructField("label", ArrayType(LongType, containsNull = true)),
-      StructField("dense", ArrayType(LongType, containsNull = true)),
-      StructField("idx0", ArrayType(LongType, containsNull = true)),
-      StructField("idx1", ArrayType(LongType, containsNull = true)),
-      StructField("idx2", ArrayType(LongType, containsNull = true)),
-      StructField("id_arr", ArrayType(LongType, containsNull = true))
-    ))
 
 
 
