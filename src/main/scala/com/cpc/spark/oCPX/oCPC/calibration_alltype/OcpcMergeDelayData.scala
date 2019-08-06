@@ -43,8 +43,8 @@ object OcpcMergeDelayData {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_alltype")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_alltype")
 
 
   }
@@ -65,7 +65,7 @@ object OcpcMergeDelayData {
          |  *,
          |  cast(split(identifier, '&')[0] as int) unitid
          |FROM
-         |  test.ocpc_pb_data_hourly_exp_alltype
+         |  dl_cpc.ocpc_pb_data_hourly_exp_alltype
          |WHERE
          |  `date` = '$date'
          |AND
