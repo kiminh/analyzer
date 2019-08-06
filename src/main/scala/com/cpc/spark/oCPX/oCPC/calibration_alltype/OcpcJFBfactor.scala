@@ -79,24 +79,22 @@ object OcpcJFBfactor {
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
+      .filter(s"cv >= min_cv")
       .withColumn("jfb_new", col("jfb"))
       .select("identifier", "conversion_goal", "exp_tag", "jfb_new")
 
     val calibration = calibrationNew
       .join(calibration1, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .withColumn("jfb", when(col("jfb3").isNotNull, col("jfb3")).otherwise(col("jfb_new")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(0, Seq("min_cv"))
-      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .cache()
 
     calibration.show(10)
-    calibration
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723a")
+//    calibration
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723a")
 
     val resultDF = calibration
       .withColumn("version", lit(version))
-      .select("identifier", "conversion_goal", "exp_tag", "version", "jfb", "min_cv")
+      .select("identifier", "conversion_goal", "exp_tag", "version", "jfb")
 
 
     resultDF
