@@ -69,30 +69,19 @@ object OcpcGetPb {
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
     data.show(10)
 
-//    dataRaw1.unpersist()
-//    dataRaw2.unpersist()
-//    dataRaw3.unpersist()
-//
-//    // 明投单元
-//    val resultUnhidden = data
-//      .withColumn("cpagiven", lit(1.0))
-//      .withColumn("is_hidden", lit(0))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//    // 暗投单元
-//    val hiddenUnits = getCPAgiven(spark)
-//    val resultHidden = data
-//      .join(hiddenUnits, Seq("identifier"), "inner")
-//      .withColumn("is_hidden", lit(1))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//
+    dataRaw1.unpersist()
+    dataRaw2.unpersist()
+    dataRaw3.unpersist()
+
+    // 明投单元
+    val result = data
+      .withColumn("cpagiven", lit(1.0))
+      .withColumn("is_hidden", lit(0))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
 //    val resultDF = resultUnhidden
 //      .union(resultHidden)
 //      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
