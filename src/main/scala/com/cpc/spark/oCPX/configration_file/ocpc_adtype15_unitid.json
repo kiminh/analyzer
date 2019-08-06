@@ -16,3 +16,9 @@
 {"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 2, "ratio": 1.1}
 {"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 3, "ratio": 1.1}
 {"version": "ocpcv1", "exp_tag": "realtimeQtt", "conversion_goal": 4, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 2, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 3, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "Qtt", "conversion_goal": 4, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 2, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 3, "ratio": 1.1}
+{"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 4, "ratio": 1.1}
