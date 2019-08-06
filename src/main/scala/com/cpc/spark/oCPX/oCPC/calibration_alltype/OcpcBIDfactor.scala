@@ -82,9 +82,9 @@ object OcpcBIDfactor {
     val data2 = calculateData2(baseData2, date, hour, spark)
 
     val resultDF = data1
-      .select("identifier", "conversion_goal", "media", "exp_tag", "cv")
+      .select("identifier", "conversion_goal", "media", "exp_tag", "cv", "min_cv")
       .join(data2, Seq("identifier", "conversion_goal", "media"), "inner")
-      .selectExpr("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .selectExpr("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor", "cv", "min_cv")
       .withColumn("version", lit(version))
 
     resultDF
