@@ -121,12 +121,12 @@ object OcpcMergeDelayData {
       .withColumn("post_cvr_orig", col("post_cvr"))
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
-      .select("identifier", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "is_hidden", "smooth_factor", "cpagiven", "unitid")
+      .select("identifier", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "is_hidden", "smooth_factor", "cpagiven")
     println("complete data")
     data1.show(10)
 
     val data = data1
-      .join(data2, Seq("unitid", "conversion_goal", "exp_tag", "is_hidden"), "left_outer")
+      .join(data2, Seq("identifier", "conversion_goal", "exp_tag", "is_hidden"), "left_outer")
       .na.fill(0, Seq("cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag"))
       .withColumn("cvr_factor", udfSelectValue()(col("flag"), col("cvr_factor_orig"), col("cvr_factor_bak")))
       .withColumn("jfb_factor", udfSelectValue()(col("flag"), col("jfb_factor_orig"), col("jfb_factor_bak")))
