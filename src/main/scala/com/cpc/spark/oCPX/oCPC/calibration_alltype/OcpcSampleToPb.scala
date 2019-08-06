@@ -56,10 +56,9 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
-//    savePbPack(resultDF, fileName, spark)
   }
 
   def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
@@ -79,7 +78,7 @@ object OcpcSampleToPb {
          |  cpagiven,
          |  cast(split(identifier, '&')[0] as int) as unitid
          |FROM
-         |  test.ocpc_pb_data_hourly_alltype
+         |  dl_cpc.ocpc_pb_data_hourly_alltype
          |WHERE
          |  `date` = '$date'
          |AND
