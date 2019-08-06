@@ -17,17 +17,14 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
-one_hot_feature_list_mapped="uid,media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,age,hour"
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-#src_date="2019-07-01;2019-07-02;2019-07-03;2019-07-04;2019-07-05;2019-07-06;2019-07-07;2019-07-08;2019-07-09;2019-07-10;2019-07-11;2019-07-12;2019-07-13;2019-07-14;2019-07-15;2019-07-16"
-date_begin="2019-07-13"
-date_end="2019-07-27"
+date_begin="2019-07-20"
+date_end="2019-08-03"
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest-week"
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest"
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 ctr_feature_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
-test_data_src="2019-07-27/part-r-000*"
-test_data_des="test-2019-07-27"
+test_data_src="2019-08-03/part-r-000*"
+test_data_des="test-2019-08-03"
 test_data_week="Sat"
 instances_file="instances-all"
 partitions=1000
@@ -42,7 +39,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
-    ${randjar}${one_hot_feature_list}  ${one_hot_feature_list_mapped} ${ctr_feature_dir} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
+    ${randjar}${one_hot_feature_list} ${ctr_feature_dir} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
 
 chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest-week"
 hadoop fs -chmod -R 0777 ${chmod_des}
