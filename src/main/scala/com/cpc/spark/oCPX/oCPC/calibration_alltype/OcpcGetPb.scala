@@ -19,16 +19,14 @@ object OcpcGetPb {
     val hour = args(1).toString
     val version = args(2).toString
     val expTag = args(3).toString
-    val jfbHourInt = args(4).toInt
-    val smoothHourInt = args(5).toInt
-    val bidFactorHourInt = args(6).toInt
+    val bidFactorHourInt = args(4).toInt
 
     // 主校准回溯时间长度
-    val hourInt1 = args(7).toInt
+    val hourInt1 = args(5).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(8).toInt
+    val hourInt2 = args(6).toInt
     // 兜底校准时长
-    val hourInt3 = args(9).toInt
+    val hourInt3 = args(7).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
