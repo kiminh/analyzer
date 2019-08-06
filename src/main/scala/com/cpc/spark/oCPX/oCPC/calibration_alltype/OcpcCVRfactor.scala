@@ -86,8 +86,8 @@ object OcpcCVRfactor {
       .cache()
 
     calibration.show(10)
-    calibration
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
+//    calibration
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
 
 
     val resultDF = calibration

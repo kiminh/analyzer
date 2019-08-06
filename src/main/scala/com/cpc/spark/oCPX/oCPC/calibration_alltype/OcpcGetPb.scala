@@ -4,6 +4,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCVRfactor._
+
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -60,12 +61,12 @@ object OcpcGetPb {
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
-//
-//    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
-//    val bidFactorData = bidFactorDataRaw
-//      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
-//      .cache()
-//    bidFactorData.show(10)
+
+    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorData = bidFactorDataRaw
+      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .cache()
+    bidFactorData.show(10)
 //
 //    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
 //    data.show(10)
