@@ -348,7 +348,7 @@ object MakeTrainExamples {
       val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
       val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
       val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
-      val mapping_info = des_dir + "/mapping-info/" + src_date + "mapping-info"
+      val mapping_info = des_dir + "/mapping-info/" + src_date + "-mapping-info"
       if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(mapping_info)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
