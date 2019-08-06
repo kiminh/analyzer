@@ -28,13 +28,16 @@ object OcpcMergeDelayData {
     val date = date0
     val hour = hour0
     val data = selectWeishiCali(expTag, data0, data1, date, hour, spark)
+    data
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_merge_delay20190806")
 
 
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
       .cache()
     resultDF.show(10)
 
@@ -59,7 +62,8 @@ object OcpcMergeDelayData {
     val sqlRequest =
       s"""
          |SELECT
-         |  *
+         |  *,
+         |  cast(split(identifier, '&')[0] as int) unitid
          |FROM
          |  dl_cpc.ocpc_pb_data_hourly_exp_alltype
          |WHERE
@@ -106,7 +110,7 @@ object OcpcMergeDelayData {
       .withColumn("high_bid_factor_bak", col("high_bid_factor"))
       .withColumn("low_bid_factor_bak", col("low_bid_factor"))
       .withColumn("flag", lit(1))
-      .select("unitid", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag", "is_hidden")
+      .select("identifier", "cvr_factor_bak", "jfb_factor_bak", "post_cvr_bak", "high_bid_factor_bak", "low_bid_factor_bak", "flag", "conversion_goal", "exp_tag", "is_hidden", "unitid")
 
     println("weishi data")
     data2.show(10)
@@ -117,7 +121,7 @@ object OcpcMergeDelayData {
       .withColumn("post_cvr_orig", col("post_cvr"))
       .withColumn("high_bid_factor_orig", col("high_bid_factor"))
       .withColumn("low_bid_factor_orig", col("low_bid_factor"))
-      .select("unitid", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "is_hidden", "smooth_factor", "cpagiven")
+      .select("identifier", "cvr_factor_orig", "jfb_factor_orig", "post_cvr_orig", "high_bid_factor_orig", "low_bid_factor_orig", "conversion_goal", "exp_tag", "is_hidden", "smooth_factor", "cpagiven", "unitid")
     println("complete data")
     data1.show(10)
 
@@ -131,7 +135,7 @@ object OcpcMergeDelayData {
       .withColumn("low_bid_factor", udfSelectValue()(col("flag"), col("low_bid_factor_orig"), col("low_bid_factor_bak")))
 
     val result = data
-      .select("unitid", "cvr_factor", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "conversion_goal", "exp_tag", "smooth_factor", "is_hidden", "cpagiven")
+      .select("identifier", "cvr_factor", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "conversion_goal", "exp_tag", "smooth_factor", "is_hidden", "cpagiven", "unitid")
 
     result
 
