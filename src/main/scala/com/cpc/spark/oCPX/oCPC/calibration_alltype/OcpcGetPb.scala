@@ -58,19 +58,19 @@ object OcpcGetPb {
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
+      .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
 
     val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
     val bidFactorData = bidFactorDataRaw
-      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .select("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
       .cache()
     bidFactorData.show(10)
-//
-//    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
-//    data.show(10)
-//
+
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+    data.show(10)
+
 //    dataRaw1.unpersist()
 //    dataRaw2.unpersist()
 //    dataRaw3.unpersist()
@@ -82,22 +82,22 @@ object OcpcGetPb {
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
 //      .withColumn("version", lit(version))
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 //
 //    // 暗投单元
 //    val hiddenUnits = getCPAgiven(spark)
 //    val resultHidden = data
-//      .join(hiddenUnits, Seq("unitid"), "inner")
+//      .join(hiddenUnits, Seq("identifier"), "inner")
 //      .withColumn("is_hidden", lit(1))
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
 //      .withColumn("version", lit(version))
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 //
 //
 //    val resultDF = resultUnhidden
 //      .union(resultHidden)
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 //
 //    resultDF
 //      .repartition(1)
@@ -111,10 +111,10 @@ object OcpcGetPb {
   def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = jfbData
-      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(smoothData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(bidFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+      .join(pcocData, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
+      .join(smoothData, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
+      .join(bidFactorData, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
+      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
 
@@ -122,25 +122,6 @@ object OcpcGetPb {
 
 
   }
-
-  def getCPAgiven(spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  avg(cpa) as cpagiven
-         |FROM
-         |  test.ocpc_auto_budget_hourly
-         |WHERE
-         |  industry in ('wzcp')
-         |GROUP BY unitid
-       """.stripMargin
-    println(sqlRequest)
-    val result = spark.sql(sqlRequest).cache()
-    result.show(10)
-    result
-  }
-
 
 
 }
