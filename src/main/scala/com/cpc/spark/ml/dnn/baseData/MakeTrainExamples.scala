@@ -379,7 +379,6 @@ object MakeTrainExamples {
             sid + "\t" + mapped_prefix + ";" + mapped_uid + ";" + mapped_tail + "\t" + mapped_multi_hot
           }
         ).saveAsTextFile(mapping_info)
-
       }
 
       val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
