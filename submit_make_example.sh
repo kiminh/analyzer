@@ -41,6 +41,6 @@ spark-submit --master yarn --queue ${queue} \
     --class com.cpc.spark.ml.dnn.baseData.MakeTrainExamples \
     ${randjar} ${one_hot_feature_list} ${ctr_feature_dir} ${src_dir} ${with_week} ${date_begin} ${date_end} ${des_dir} ${instances_file} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
 
-chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-latest-week"
+chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 hadoop fs -chmod -R 0777 ${chmod_des}
 
