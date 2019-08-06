@@ -430,7 +430,7 @@ object MakeTrainExamples {
             Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
         })
 
-        ult_rdd.repartition(100).saveAsTextFile(tf_text_sampled_mapped)
+        ult_rdd.map({rs=>rs.mkString("\t")}).repartition(100).saveAsTextFile(tf_text_sampled_mapped)
 
         val tf_ult_rdd_count = tf_ult_rdd.count
         println(s"tf_ult_rdd_count is : $tf_ult_rdd_count")
