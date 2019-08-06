@@ -79,7 +79,7 @@ object OcpcSampleToPb {
          |  cpagiven,
          |  cast(split(identifier, '&')[0] as int) as unitid
          |FROM
-         |  dl_cpc.ocpc_pb_data_hourly_alltype
+         |  test.ocpc_pb_data_hourly_alltype
          |WHERE
          |  `date` = '$date'
          |AND
