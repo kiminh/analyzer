@@ -6,6 +6,7 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.common.Utils.sendMail
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
@@ -16,6 +17,7 @@ import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
   */
 object CalibrationColdStart{
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 //    val modelPath = args(0)
