@@ -279,8 +279,6 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
-    return
-
 
     /************************load map********************************/
     println("Load Uid SparseMap")
@@ -336,14 +334,15 @@ object MakeTrainExamples {
     for (date_idx <- src_date_list.indices) {
       val src_date = src_date_list(date_idx)
       val src_week = src_week_list(date_idx)
-      val tf_text_mapped_others = des_dir + "/mapping-info/" + src_date + "-text-mapped-non-uid"
-      val tf_text = des_dir + "/" + src_date + "-text"
-      if (!exists_hdfs_path(tf_text_mapped_others + "/_SUCCESS") && exists_hdfs_path(tf_text)) {
-        delete_hdfs_path(tf_text_mapped_others)
+      val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
+      val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
+      val mapping_info = des_dir + "/mapping-info/" + src_date + "mapping-info"
+      if (!exists_hdfs_path(tf_text_sampled_mapped + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
+        delete_hdfs_path(mapping_info)
         println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("trans non uid features of part:" + tf_text)
-        println("make " + tf_text_mapped_others)
-        sc.textFile(tf_text).map(
+        println("mapping sampled text file:" + tf_text_sampled)
+        println("make " + mapping_info)
+        sc.textFile(tf_text_sampled).map(
           rs => {
             val line_list = rs.split("\t")
             val sid = line_list(0)
@@ -351,113 +350,82 @@ object MakeTrainExamples {
             val idx_arr = line_list(7).split(";")
 
             val uid_value = dense(25)
-            val value_list = ArrayBuffer[String]()
-            for (idx <- dense.indices) {
-              if (idx != 25) {
-                value_list += dense(idx)
-              }
-            }
-            value_list.++=(idx_arr)
+            val value_list_prefix = dense.slice(0, 25)
+            val value_list_tail = dense.slice(26, 28)
 
-            val mapped = value_list.map(x => sparseMapOthers.getOrElse(x, "-1"))
-            sid + "\t" + uid_value + "\t" + mapped.mkString(";")
-          }).saveAsTextFile(tf_text_mapped_others)
-      }
+            val mapped_prefix = value_list_prefix.map(x => sparseMapOthers.getOrElse(x, "-1"))
+            val mapped_tail = value_list_tail.map(x => sparseMapOthers.getOrElse(x, "-1"))
+            val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
 
-      val tf_text_mapped_cp = des_dir + "/mapping-info/" + src_date + "-text-mapped-cp"
-      if (!exists_hdfs_path(tf_text_mapped_cp + "/_SUCCESS") && exists_hdfs_path(tf_text_mapped_others)) {
-        delete_hdfs_path(tf_text_mapped_cp)
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("trans uid feature of part:" + tf_text_mapped_others)
-        println("make " + tf_text_mapped_cp)
-        sc.textFile(tf_text_mapped_others).map(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            val uid_value = line_list(1)
-            val mapped_others = line_list(2)
-            (uid_value.toLong, (sid, mapped_others))
-          }
-        ).join(sparseMapUid).map(
-          rs => {
-            val sid = rs._2._1._1
-            val mapped_others = rs._2._1._2
-            val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
-            sid + "\t" + mapped_uid + ";" + mapped_others
-          }
-        ).saveAsTextFile(tf_text_mapped_cp)
-      }
+            (uid_value.toLong, (sid, mapped_prefix.mkString(";"), mapped_tail.mkString(";"), mapped_multi_hot.mkString(";")))
+          }).join(sparseMapUid).map(
+        rs => {
+          val sid = rs._2._1._1
+          val mapped_prefix = rs._2._1._2
+          val mapped_tail = rs._2._1._3
+          val mapped_multi_hot = rs._2._1._4
+          val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
+          sid + "\t" + mapped_prefix + ";" + mapped_uid + ";" + mapped_tail + "\t" + mapped_multi_hot
+        }
+      ).saveAsTextFile(mapping_info)
 
-      val tf_text_mapped = des_dir + "/" + src_date + "-text-mapped"
-      if (!exists_hdfs_path(tf_text_mapped + "/_SUCCESS") && exists_hdfs_path(tf_text_mapped_cp)) {
-        delete_hdfs_path(tf_text_mapped)
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("make ult mapped train files:" + tf_text_mapped)
-        val mapped_rdd = sc.textFile(tf_text_mapped_cp).map({
-          rs =>
-            val line_list = rs.split("\t")
-            (line_list(0), line_list(1))
-        })
+      delete_hdfs_path(tf_text_sampled_mapped)
+      println("make mapped files:" + tf_text_sampled_mapped)
+      val mapping_info_rdd = sc.textFile(mapping_info).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), (line_list(1), line_list(2)))
+      })
 
-        val ult_rdd = sc.textFile(tf_text).map(
-          rs => {
-            val line_list = rs.split("\t")
-            val sid = line_list(0)
-            val label = line_list(1)
-            val label_arr = line_list(2)
-            val idx0 = line_list(4)
-            val idx1 = line_list(5)
-            val idx2 = line_list(6)
+      val ult_rdd = sc.textFile(tf_text_sampled).map(
+        rs => {
+          val line_list = rs.split("\t")
+          val sid = line_list(0)
+          val label = line_list(1)
+          val label_arr = line_list(2)
+          val idx0 = line_list(4)
+          val idx1 = line_list(5)
+          val idx2 = line_list(6)
 
-            (sid, (label, label_arr, idx0, idx1, idx2))
-          }
-        ).join(mapped_rdd).map(
-          rs => {
-            val sid = rs._1
-            val label = rs._2._1._1
-            val label_arr = rs._2._1._2
-            val idx0 = rs._2._1._3
-            val idx1 = rs._2._1._4
-            val idx2 = rs._2._1._5
-            val mapped_values_list = rs._2._2.split(";")
-            val total_len = mapped_values_list.length
-            var one_hot_len = 28
-            if (with_week == "True") {
-              one_hot_len = 29
-            }
-            val list_one_hot:Array[String] = new Array[String](one_hot_len)
-            val list_multi_hot:Array[String] = new Array[String](total_len - one_hot_len)
-            for (idx <- 0 until one_hot_len) {
-              list_one_hot(idx) = mapped_values_list(idx)
-            }
-            for (idx <- 0 until (total_len - one_hot_len)) {
-              list_multi_hot(idx) = mapped_values_list(idx + one_hot_len)
-            }
+          (sid, (label, label_arr, idx0, idx1, idx2))
+        }
+      ).join(mapping_info_rdd).map(
+        rs => {
+          val sid = rs._1
+          val label = rs._2._1._1
+          val label_arr = rs._2._1._2
+          val idx0 = rs._2._1._3
+          val idx1 = rs._2._1._4
+          val idx2 = rs._2._1._5
+          val dense = rs._2._2._1
+          val idx_arr = rs._2._2._2
 
-            val ult_list:Array[String] = new Array[String](8)
-            ult_list(0) = sid
-            ult_list(1) = label
-            ult_list(2) = label_arr
-            ult_list(3) = list_one_hot.mkString(";")
-            ult_list(4) = idx0
-            ult_list(5) = idx1
-            ult_list(6) = idx2
-            ult_list(7) = list_multi_hot.mkString(";")
-            ult_list.mkString("\t")
-          }
-        )
-        val ult_rdd_count = ult_rdd.count
-        println(s"ult_rdd_count : $ult_rdd_count")
-        ult_rdd.repartition(1000).saveAsTextFile(tf_text_mapped)
+          val ult_list:Array[String] = new Array[String](8)
+          ult_list(0) = sid
+          ult_list(1) = label
+          ult_list(2) = label_arr
+          ult_list(3) = dense
+          ult_list(4) = idx0
+          ult_list(5) = idx1
+          ult_list(6) = idx2
+          ult_list(7) = idx_arr
+          ult_list.mkString("\t")
+        }
+      )
 
-        //保存count文件
-        val fileName = "count_" + Random.nextInt(100000)
-        writeNum2File(fileName, ult_rdd_count)
-        s"hadoop fs -put $fileName $tf_text_mapped/count" !
+      val ult_rdd_count = ult_rdd.count
+      println(s"ult_rdd_count : $ult_rdd_count")
+      ult_rdd.repartition(100).saveAsTextFile(tf_text_sampled_mapped)
 
-      }
+      //保存count文件
+      val fileName = "count_" + Random.nextInt(100000)
+      writeNum2File(fileName, ult_rdd_count)
+      s"hadoop fs -put $fileName $tf_text_sampled_mapped/count" !
+
     }
     println("Done.......")
+
+
 
     val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
@@ -469,8 +437,6 @@ object MakeTrainExamples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
-
-
 
 
 
