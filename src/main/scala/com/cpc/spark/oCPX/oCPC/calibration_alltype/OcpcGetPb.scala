@@ -4,7 +4,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCVRfactor._
-
+import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcBIDfactor._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
