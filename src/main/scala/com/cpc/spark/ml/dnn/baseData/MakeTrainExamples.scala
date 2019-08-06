@@ -346,13 +346,11 @@ object MakeTrainExamples {
       val src_date = src_date_list(date_idx)
       val src_week = src_week_list(date_idx)
       val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
-      val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
-      val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      println("mapping sampled text file:" + tf_text_sampled)
       val mapping_info = des_dir + "/mapping-info/" + src_date + "-mapping-info"
-      if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
+      if (!exists_hdfs_path(mapping_info + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(mapping_info)
-        println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        println("mapping sampled text file:" + tf_text_sampled)
         println("make " + mapping_info)
         sc.textFile(tf_text_sampled).map(
           rs => {
@@ -382,6 +380,11 @@ object MakeTrainExamples {
           }
         ).saveAsTextFile(mapping_info)
 
+      }
+
+      val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
+      val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
+      if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(mapping_info) && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(tf_text_sampled_mapped)
         delete_hdfs_path(tf_text_sampled_mapped_tfr)
         println("make mapped files:" + tf_text_sampled_mapped)
