@@ -65,7 +65,7 @@ object OcpcMergeDelayData {
          |  *,
          |  cast(split(identifier, '&')[0] as int) unitid
          |FROM
-         |  dl_cpc.ocpc_pb_data_hourly_exp_alltype
+         |  test.ocpc_pb_data_hourly_exp_alltype
          |WHERE
          |  `date` = '$date'
          |AND
