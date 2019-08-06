@@ -121,7 +121,7 @@ object OcpcSampleToPbFinal {
     var cnt = 0
 
     for (record <- data.collect()) {
-      val identifier = record.getAs[Int]("identifier").toString
+      val identifier = record.getAs[String]("identifier")
       val isHidden = record.getAs[Int]("is_hidden").toString
       val expTag = record.getAs[String]("exp_tag")
       val key = expTag + "&" + identifier + "&" + isHidden
