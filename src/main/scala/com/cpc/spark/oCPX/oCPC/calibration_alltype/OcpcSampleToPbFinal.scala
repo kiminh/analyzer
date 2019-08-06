@@ -45,7 +45,7 @@ object OcpcSampleToPbFinal {
     val data2 = getData(date, hour, tableName2, version2, spark)
     data2.printSchema()
 
-    val tableName3 = "test.ocpc_param_pb_data_hourly_alltype"
+    val tableName3 = "dl_cpc.ocpc_param_pb_data_hourly_alltype"
     val version3 = version
     val data3 = getData(date, hour, tableName3, version3, spark)
     data3.printSchema()
