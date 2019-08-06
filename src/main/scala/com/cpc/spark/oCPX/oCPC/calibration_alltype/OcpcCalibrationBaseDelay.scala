@@ -23,12 +23,12 @@ object OcpcCalibrationBaseDelay {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
+    val result = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
   }
 
-  def OcpcCalibrationBaseDelayMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
