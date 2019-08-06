@@ -401,7 +401,7 @@ object MakeTrainExamples {
             val dense = rs._2._2._1
             val idx_arr = rs._2._2._2
 
-            val ult_list:Array[String] = new Array[String](8)
+            val ult_list: Array[String] = new Array[String](8)
             ult_list(0) = sid
             ult_list(1) = label
             ult_list(2) = label_arr
@@ -423,6 +423,7 @@ object MakeTrainExamples {
         writeNum2File(fileName, ult_rdd_count)
         s"hadoop fs -put $fileName $tf_text_sampled_mapped/count" !
 
+      }
     }
     println("Done.......")
 
