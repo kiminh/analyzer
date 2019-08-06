@@ -77,6 +77,7 @@ object OcpcCVRfactor {
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
+      .filter(s"cv >= min_cv")
       .withColumn("pcoc_new", col("pcoc"))
       .select("identifier", "conversion_goal", "exp_tag", "pcoc_new")
 
