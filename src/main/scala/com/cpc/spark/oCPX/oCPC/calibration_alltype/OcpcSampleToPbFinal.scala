@@ -81,8 +81,7 @@ object OcpcSampleToPbFinal {
     val sqlRequest =
       s"""
          |SELECT
-         |  *,
-         |  cast(unitid as string) as identifier
+         |  *
          |FROM
          |  $tableName
          |WHERE
