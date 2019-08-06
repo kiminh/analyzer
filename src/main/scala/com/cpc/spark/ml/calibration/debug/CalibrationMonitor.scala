@@ -29,11 +29,9 @@ object CalibrationMonitor {
     println(s"hour=$hour")
     println(s"modelName=$modelName")
 
-    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
 
-
-    val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
+    import session.implicits._
 
     // get union log
     val sql = s"""
@@ -54,7 +52,20 @@ object CalibrationMonitor {
                  |  and a.ctr_model_name = '$modelName' and a.isshow = 1
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
+    val basedata = session.sql(sql)
+
+    val md5 = basedata.first().getAs[String]("model_md5")
+    val filename = s"hdfs://emr-cluster/user/cpc/wy/calibration/post-calibration-$modelName.txt"
+    val model = spark.sparkContext.textFile(filename)
+      .map(x => (x.split(" ")(0), x.split(" ")(1), x.split(" ")(2)))
+      .toDF("timestamp", "md5", "path")
+
+    model.show(10)
+
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
+    val modelset=calimap.keySet
+
+    val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
       .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
       .withColumn("group3",concat_ws("_",col("adclass"),col("ideaid")))
       .withColumn("group4",col("adclass"))

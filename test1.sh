@@ -28,5 +28,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.debug.CalibrationCheckOnMiduCtr \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/post-calibration-qtt-content-dnn-rawid-v7-newcali.mlm
+    --class com.cpc.spark.ml.calibration.debug.CalibrationColdStart \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar
