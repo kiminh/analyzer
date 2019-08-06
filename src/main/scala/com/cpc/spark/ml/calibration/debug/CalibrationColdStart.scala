@@ -36,7 +36,7 @@ object CalibrationColdStart{
     import session.implicits._
 
     val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
-      .toDF("sid","prediction")
+      .toDF()
 
     dnn_data.show(10)
     println("sum is %d".format(dnn_data.count()))
