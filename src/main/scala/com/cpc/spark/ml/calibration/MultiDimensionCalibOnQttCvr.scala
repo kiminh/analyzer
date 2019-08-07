@@ -146,7 +146,7 @@ object MultiDimensionCalibOnQttCvr {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","group")
+    val result = data.selectExpr("isclick","cast (ectr as long) ectr" ,"group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
