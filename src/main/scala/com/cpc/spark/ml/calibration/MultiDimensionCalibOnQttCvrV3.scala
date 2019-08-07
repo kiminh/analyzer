@@ -62,14 +62,7 @@ object MultiDimensionCalibOnQttCvrV3 {
     // get union log
     val clicksql = s"""
                  |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,
-                 |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid
                  |  from
                  |  (select *
                  |  from dl_cpc.cpc_basedata_union_events
@@ -111,19 +104,7 @@ object MultiDimensionCalibOnQttCvrV3 {
     if(calibrationnum>200000){
       LogToPb(log, session, calimodel)
     }
-    else CalibrationColdStart(startDate, session, model,task)
-
-//    val irModel = IRModel(
-//      boundaries = Seq(1.0),
-//      predictions = Seq(k.toDouble)
-//    )
-//    println(s"k is: $k")
-//    val caliconfig = CalibrationConfig(
-//      name = calimodel,
-//      ir = Option(irModel)
-//    )
-//    val localPath = saveProtoToLocal(calimodel, caliconfig)
-//    saveFlatTextFileForDebug(calimodel, caliconfig)
+    else CalibrationColdStart(startDate, session, calimodel,task)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
