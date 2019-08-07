@@ -298,7 +298,7 @@ object OcpcLightBulb{
          |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
          |        else 'novel'
          |    end) as media
          |FROM
@@ -341,7 +341,7 @@ object OcpcLightBulb{
          |  adclass,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944') then 'hottopic'
          |      else 'novel'
          |  end) as media
          |FROM
