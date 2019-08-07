@@ -69,7 +69,7 @@ object CalibrationColdStart{
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
       .withColumn("isclick",col("iscvr"))
-      .withColumn("ectr",col("prediction"))
+      .withColumn("ectr",col("prediction")*1e6d.toLong)
 
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
