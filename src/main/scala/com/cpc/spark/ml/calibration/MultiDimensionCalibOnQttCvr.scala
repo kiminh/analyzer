@@ -137,8 +137,8 @@ object MultiDimensionCalibOnQttCvr {
 //    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     val calimap =  calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
-//    val localPath = saveProtoToLocal2(model, califile)
-//    saveFlatTextFileForDebug2(model, califile)
+    val localPath = saveProtoToLocal2(model, califile)
+    saveFlatTextFileForDebug2(model, califile)
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
