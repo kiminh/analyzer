@@ -452,13 +452,7 @@ object MakeTrainExamples {
     println("Do Mapping Test Examples")
     val test_file_src = src_dir + "/" + test_data_src
     val test_file_text = des_dir + "/" + test_data_des + "-text"
-    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
-    val test_file_text_mapped_tfr = des_dir + "/" + test_data_des + "-text-mapped-tfr"
-    if (!exists_hdfs_path(test_file_text_mapped)) {
-      delete_hdfs_path(test_file_text_mapped)
-      delete_hdfs_path(test_file_text_mapped_tfr)
-      println("make mapped files:" + test_file_text_mapped)
-
+    if (!exists_hdfs_path(test_file_text)) {
       val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
       println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
       importedDf.rdd.map(
@@ -496,6 +490,14 @@ object MakeTrainExamples {
           output.mkString("\t")
         }
       ).saveAsTextFile(test_file_text)
+    }
+
+    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
+    val test_file_text_mapped_tfr = des_dir + "/" + test_data_des + "-text-mapped-tfr"
+    if (!exists_hdfs_path(test_file_text_mapped)) {
+      delete_hdfs_path(test_file_text_mapped)
+      delete_hdfs_path(test_file_text_mapped_tfr)
+      println("make mapped files:" + test_file_text_mapped)
 
       val mapping_info_rdd = sc.textFile(test_file_text).map(
         rs => {
