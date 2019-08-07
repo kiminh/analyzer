@@ -28,10 +28,15 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_quick_click_log20190807")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
 
-//    // 转化数据
-//    val cvData = getCvLog(date, hour, spark)
+    // 转化数据
+    val cvData = getCvLog(date, hour, spark)
+    cvData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.ocpc_quick_cv_log20190807")
   }
 
   def getClickLog(date: String, hour: String, spark: SparkSession) = {
