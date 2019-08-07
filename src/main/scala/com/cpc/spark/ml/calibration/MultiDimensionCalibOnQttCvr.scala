@@ -119,14 +119,6 @@ object MultiDimensionCalibOnQttCvr {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
-    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
-      .filter("count1>100000")
-      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
-    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
-      .filter("count2>100000")
-      .select("adclass","ideaid","user_req_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter("count3>10000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
@@ -136,12 +128,6 @@ object MultiDimensionCalibOnQttCvr {
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
-    val calimap1 = GroupToConfig(data1, session,model)
-
-    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
-    val calimap2 = GroupToConfig(data2, session,model)
-
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
     val calimap3 = GroupToConfig(data3, session,model)
 
@@ -149,10 +135,10 @@ object MultiDimensionCalibOnQttCvr {
     val calimap4 = GroupToConfig(data4, session,model)
 
 //    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
+    val calimap =  calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal2(model, califile)
-    saveFlatTextFileForDebug2(model, califile)
+//    val localPath = saveProtoToLocal2(model, califile)
+//    saveFlatTextFileForDebug2(model, califile)
   }
 
   def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
@@ -160,14 +146,13 @@ object MultiDimensionCalibOnQttCvr {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","model","group")
+    val result = data.select("isclick","ectr","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(2)
       val group = x.getString(3)
       val key = group
       (key, (ectr, isClick))

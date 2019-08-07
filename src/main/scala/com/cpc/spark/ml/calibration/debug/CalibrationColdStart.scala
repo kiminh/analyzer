@@ -10,6 +10,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 import com.cpc.spark.common.Murmur3Hash.stringHash64
+import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvr.LogToPb
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
@@ -22,22 +23,16 @@ object CalibrationColdStart{
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val dt = args(0)
-//    val hour = args(2)
-//    val modelName = args(3)
-
+    val modelName = args(1)
 
     println(s"dt=$dt")
-//    println(s"hour=$hour")
-//    println(s"modelName=$modelName")
-
+    println(s"modelName=$modelName")
 
     val session = Utils.buildSparkSession("calibration_check")
     import session.implicits._
 
     val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
       .toDF("id","prediction","num")
-    dnn_data.printSchema()
-    dnn_data.show(10)
 
     println("sum is %d".format(dnn_data.count()))
     // get union log
@@ -73,50 +68,17 @@ object CalibrationColdStart{
     val basedata = session.sql(sql)
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
+      .withColumn("isclick",col("iscvr"))
+      .withColumn("ectr",col("prediction"))
 
-    basedata.printSchema()
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
+
+    LogToPb(basedata, session, modelName)
 
   }
 
   def hash64(seed:Int)= udf {
     x:String =>  stringHash64(x,seed)}
 
-
-  def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
-    var index = 0
-    var min = 0
-    var max = boundaries.size - 1
-    while (min <= max) {
-      index = (min + max)/ 2
-      if (num > boundaries(index)){
-        min = index + 1
-      }
-      else if (num < boundaries(index)) {
-        max = index - 1
-      }
-      else {
-        return index
-      }
-    }
-    return min
-  }
-
-  def computeCalibration(prob: Double, irModel: IRModel): Double = {
-    if (prob <= 0) {
-      return 0.0
-    }
-    var index = binarySearch(prob, irModel.boundaries)
-    if (index == 0) {
-      return  Math.min(1.0, irModel.predictions(0) * prob/ irModel.boundaries(0))
-    }
-    if (index == irModel.boundaries.size) {
-      index = index - 1
-    }
-    return Math.max(0.0, Math.min(1.0, irModel.predictions(index-1) +
-      (irModel.predictions(index) - irModel.predictions(index-1))
-        * (prob - irModel.boundaries(index-1))
-        / (irModel.boundaries(index) - irModel.boundaries(index-1))))
-  }
 }
