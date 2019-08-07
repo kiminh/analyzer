@@ -48,6 +48,7 @@ object OcpcQuickLog {
          |  unitid,
          |  userid,
          |  adslot_type,
+         |  adclass,
          |  isclick,
          |  cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |  media_appsid,
