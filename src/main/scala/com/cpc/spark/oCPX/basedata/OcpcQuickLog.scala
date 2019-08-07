@@ -36,7 +36,7 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_quick_cv_log20190807")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
   }
 
   def getClickLog(date: String, hour: String, spark: SparkSession) = {
@@ -126,8 +126,8 @@ object OcpcQuickLog {
 
     val cvData = cvData1
       .union(cvData2)
-//      .filter(s"conversion_goal > 0")
-//      .select("searchid", "conversion_goal")
+      .filter(s"conversion_goal > 0")
+      .select("searchid", "conversion_goal")
       .distinct()
 
     cvData
