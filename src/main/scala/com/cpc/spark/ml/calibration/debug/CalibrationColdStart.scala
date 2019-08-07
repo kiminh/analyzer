@@ -10,7 +10,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 import com.cpc.spark.common.Murmur3Hash.stringHash64
-import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvr.LogToPb
+import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
