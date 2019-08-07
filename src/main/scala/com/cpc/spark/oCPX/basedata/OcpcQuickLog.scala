@@ -126,7 +126,7 @@ object OcpcQuickLog {
 
     val cvData = cvData1
       .union(cvData2)
-      .filter(s"conversion_goal > 0")
+//      .filter(s"conversion_goal > 0")
 //      .select("searchid", "conversion_goal")
       .distinct()
 
