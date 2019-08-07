@@ -9,7 +9,7 @@ import mlmodel.mlmodel.{IRModel, PostCalibrations}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
-import com.cpc.spark.ml.calibration.debug.UidGroup.hash
+import com.cpc.spark.common.Murmur3Hash.stringHash64
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
@@ -36,8 +36,9 @@ object CalibrationColdStart{
 
     val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
       .toDF("id","prediction","num")
-
+    dnn_data.printSchema()
     dnn_data.show(10)
+
     println("sum is %d".format(dnn_data.count()))
     // get union log
 
@@ -70,13 +71,18 @@ object CalibrationColdStart{
        """.stripMargin
     println(s"sql:\n$sql")
     val basedata = session.sql(sql)
-      .withColumn("id",hash(0)(col("searchid")))
+      .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
 
+    basedata.printSchema()
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
 
   }
+
+  def hash64(seed:Int)= udf {
+    x:String =>  stringHash64(x,seed)}
+
 
   def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
     var index = 0
