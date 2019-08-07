@@ -22,3 +22,11 @@
 {"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 2, "min_cv": 80}
 {"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 3, "min_cv": 80}
 {"version": "ocpctest", "exp_tag": "AdslotTypeQtt", "conversion_goal": 4, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 1, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 2, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 3, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "Qtt", "conversion_goal": 4, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "AdslotTypeQtt", "conversion_goal": 1, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "AdslotTypeQtt", "conversion_goal": 2, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "AdslotTypeQtt", "conversion_goal": 3, "min_cv": 80}
+{"version": "ocpcv1", "exp_tag": "AdslotTypeQtt", "conversion_goal": 4, "min_cv": 80}
