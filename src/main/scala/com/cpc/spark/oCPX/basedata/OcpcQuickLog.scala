@@ -124,7 +124,11 @@ object OcpcQuickLog {
       .filter(s"conversion_goal = 2")
       .withColumn("conversion_goal", lit(3))
 
-    val cvData = cvData1.union(cvData2)
+    val cvData = cvData1
+      .union(cvData2)
+      .filter(s"conversion_goal > 0")
+//      .select("searchid", "conversion_goal")
+      .distinct()
 
     cvData
   }
