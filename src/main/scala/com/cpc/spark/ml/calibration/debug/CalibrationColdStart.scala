@@ -24,19 +24,20 @@ object CalibrationColdStart{
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val dt = args(0)
     val modelName = args(1)
+    val task = args(2)
 
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    val session = Utils.buildSparkSession("calibration_check")
-    import session.implicits._
+    import spark.implicits._
 
-    val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
-      .toDF("id","prediction","num")
+//    val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
+//      .toDF("id","prediction","num")
 
+    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
+      s"hour='00' and pt='daily' and task='$task'")
     println("sum is %d".format(dnn_data.count()))
     // get union log
-
 
     val sql = s"""
                  |select a.searchid, substring(a.adclass,1,6) as adclass,
@@ -65,7 +66,7 @@ object CalibrationColdStart{
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
-    val basedata = session.sql(sql)
+    val basedata = spark.sql(sql)
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
       .withColumn("isclick",col("iscvr"))
@@ -74,7 +75,7 @@ object CalibrationColdStart{
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
 
-    LogToPb(basedata, session, modelName)
+    LogToPb(basedata, spark, modelName)
 
   }
 
