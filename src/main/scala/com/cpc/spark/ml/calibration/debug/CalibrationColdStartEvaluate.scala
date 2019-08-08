@@ -81,7 +81,7 @@ object CalibrationColdStartEvaluate{
     val log = basedata
       .withColumn("group3",concat_ws("_",col("adclass"),col("ideaid")))
       .withColumn("group4",concat_ws("_",col("adclass")))
-      .withColumn("group",when(searchMap(modelset)(col("group4")),col("group4")).otherwise(col("0")))
+      .withColumn("group",when(searchMap(modelset)(col("group4")),col("group4")).otherwise(lit("0")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
       .select("ideaid","ectr","searchid","group","group3","group4","isclick")
