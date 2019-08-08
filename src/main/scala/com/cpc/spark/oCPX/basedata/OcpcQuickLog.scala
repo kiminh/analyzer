@@ -24,20 +24,19 @@ object OcpcQuickLog {
 
     // 点击数据
     val clickData = getClickLog(date, hour, spark)
-//    clickData.show(10)
-//    clickData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(10)
-//      .write
-//      .partitionBy("date", "hour")
-//      .mode(SaveMode.Overwrite)
-//      .parquet(
-//      s"""
-//         |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_click_log/
-//         """
-//        .stripMargin.trim)
-//    println("-- write dl_cpc.ocpc_quick_click_log to hive successfully -- ")
+    clickData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(10)
+      .write
+      .partitionBy("date", "hour")
+      .mode(SaveMode.Overwrite)
+      .parquet(
+      s"""
+         |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_click_log/
+         """
+        .stripMargin.trim)
+    println("-- write dl_cpc.ocpc_quick_click_log to hive successfully -- ")
 
     spark.sql(
       s"""
@@ -57,20 +56,19 @@ object OcpcQuickLog {
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
-//    cvData.show(10)
-//    cvData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(10)
-//      .write
-//      .partitionBy("date", "hour")
-//      .mode(SaveMode.Overwrite)
-//      .parquet(
-//        s"""
-//           |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_cv_log/
-//         """
-//          .stripMargin.trim)
-//    println("-- write dl_cpc.ocpc_quick_cv_log to hive successfully -- ")
+    cvData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(10)
+      .write
+      .partitionBy("date", "hour")
+      .mode(SaveMode.Overwrite)
+      .parquet(
+        s"""
+           |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_cv_log/
+         """
+          .stripMargin.trim)
+    println("-- write dl_cpc.ocpc_quick_cv_log to hive successfully -- ")
 
 
     spark.sql(
