@@ -5,7 +5,7 @@ import java.io.FileInputStream
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 import com.cpc.spark.ml.calibration.debug.CalibrationCheckOnMiduCvr.{computeCalibration, searchMap}
-import com.cpc.spark.ml.calibration.exp.RFCalibrationOnQtt.calculateAuc
+import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import com.cpc.spark.tools.CalcMetrics
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.PostCalibrations
@@ -98,12 +98,15 @@ object CalibrationColdStartEvaluate{
       val ectr = x.getDouble(1) / 1e6d
       val group = x.getString(3)
       val irModel = calimap.get(group).get
+      val label = x.getInt(6).toDouble
       val calibrated = computeCalibration(ectr, irModel.ir.get)
-      (1.0, ectr, calibrated, 1.0)
+      (label, ectr, calibrated, 1.0)
     }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4))
     val ectr = result._2 / result._4
     val calibrated_ctr = result._3 / result._4
+    val ctr = result._1/result._4
     println(s"impression: ${result._4}")
+    println(s"ctr: $ctr")
     println(s"ectr: $ectr")
     println(s"calibrated_ctr: $calibrated_ctr")
 
@@ -117,6 +120,8 @@ object CalibrationColdStartEvaluate{
       val calibrated = computeCalibration(ectr, irModel.ir.get)
       (ideaid, ectr, calibrated,label)
     }).toDF("ideaid","ectr","calibrated","label")
+      .withColumn("ectr",col("ectr")*1e6d)
+      .withColumn("calibrated",col("calibrated")*1e6d)
     val modelData = result2.selectExpr("cast(label as Int) label","cast(ectr as Int) prediction","ideaid")
     calculateAuc(modelData,"original",spark)
 
