@@ -42,7 +42,7 @@ object OcpcQuickLog {
     spark.sql(
       s"""
          |ALTER TABLE dl_cpc.ocpc_quick_click_log
-         | add if not exists PARTITION(`day` = "%s", `hour` = "%s")
+         | add if not exists PARTITION(`date` = "%s", `hour` = "%s")
          | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_click_log/date=%s/hour=%s'
       """
         .format(
@@ -76,7 +76,7 @@ object OcpcQuickLog {
     spark.sql(
       s"""
          |ALTER TABLE dl_cpc.ocpc_quick_cv_log
-         | add if not exists PARTITION(`day` = "%s", `hour` = "%s")
+         | add if not exists PARTITION(`date` = "%s", `hour` = "%s")
          | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_cv_log/date=%s/hour=%s'
       """
         .format(
