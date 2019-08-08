@@ -5,6 +5,7 @@ import java.io.FileInputStream
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 import com.cpc.spark.ml.calibration.debug.CalibrationCheckOnMiduCvr.{computeCalibration, searchMap}
+import com.cpc.spark.ml.calibration.exp.RFCalibrationOnQtt.calculateAuc
 import com.cpc.spark.tools.CalcMetrics
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.PostCalibrations
@@ -94,7 +95,7 @@ object CalibrationColdStartEvaluate{
     val data = log.filter("length(group)>0")
     println("calibration data:%d".format(data.count()))
     val result = data.rdd.map( x => {
-      val ectr = x.getInt(1).toDouble
+      val ectr = x.getDouble(1) / 1e6d
       val group = x.getString(3)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(ectr, irModel.ir.get)
@@ -109,7 +110,7 @@ object CalibrationColdStartEvaluate{
     //    raw data
     val result2 = data.rdd.map( x => {
       val ideaid = x.getLong(0)
-      val ectr = x.getInt(1).toDouble
+      val ectr = x.getDouble(1) / 1e6d
       val group = x.getString(3)
       val label = x.getInt(6)
       val irModel = calimap.get(group).get
@@ -121,18 +122,9 @@ object CalibrationColdStartEvaluate{
 
     //    cold calibration
     val calibData = result2.selectExpr("cast(label as Int) label","cast(calibrated as Int) prediction","ideaid")
-    calculateAuc(calibData,"online",spark)
+    calculateAuc(calibData,"calibrated",spark)
   }
 
-  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit = {
-    val testData = data.selectExpr("cast(label as Int) label", "cast(prediction as Int) score")
-    val auc = CalcMetrics.getAuc(spark, testData)
-    println("%s auc:%f".format(cate, auc))
-    val p1 = data.groupBy().agg(avg(col("label")).alias("ctr"), avg(col("prediction")).alias("ectr"))
-    val ctr = p1.first().getAs[Double]("ctr")
-    val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr / ctr))
-  }
 
   def hash64(seed:Int)= udf {
     x:String =>  stringHash64(x,seed)}
