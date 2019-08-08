@@ -1,23 +1,17 @@
 package com.cpc.spark.ml.calibration.debug
 
-import java.io.FileInputStream
-
-import com.cpc.spark.common.Utils
-import com.cpc.spark.common.Utils.sendMail
-import com.google.protobuf.CodedInputStream
-import mlmodel.mlmodel.{IRModel, PostCalibrations}
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{col, udf}
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
   * date: 5/14/19
   */
-object CalibrationColdStart{
+object CalibrationColdStartEvaluate{
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -29,16 +23,11 @@ object CalibrationColdStart{
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    import spark.implicits._
+    val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
+      .toDF("id","prediction","num")
 
-//    val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
-//      .toDF("id","prediction","num")
-
-    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
-      s"hour='00' and pt='daily' and task='$task'")
-        .withColumn("id",col("searchid_hash"))
-        .withColumn("prediction",col("pscore"))
-
+//    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
+//      s"hour='00' and pt='daily' and task='$task'")
     println("sum is %d".format(dnn_data.count()))
     // get union log
 
