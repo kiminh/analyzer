@@ -45,7 +45,7 @@ object CalibrationColdStartEvaluate{
     val sql = s"""
                  |select a.searchid, substring(a.adclass,1,6) as adclass,
                  |a.ideaid,coalesce(c.iscvr,0) as iscvr
-                 |from dl_cpc.cpc_basedata_union_events a
+                 |from dl_cpc.slim_union_log a
                  |join dl_cpc.dw_unitid_conversion_target b
                  |    on a.unitid = b.unitid
                  |    and b.day = '$dt'
@@ -63,7 +63,7 @@ object CalibrationColdStartEvaluate{
                  |      where aa.day = '$dt'
                  |      ) c
                  |  on a.searchid = c.searchid and a.ideaid=c.ideaid
-                 |  where a.day ='$dt'
+                 |  where a.dt ='$dt'
                  |  and a.media_appsid in ('80000001','80000002') and a.isclick = 1
                  |  and a.adsrc = 1
                  |  AND (charge_type IS NULL OR charge_type = 1)
