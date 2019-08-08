@@ -6,7 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.oCPX.OcpcTools._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 
@@ -28,8 +28,15 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+      .write
+      .partitionBy("date", "hour")
+      .mode(SaveMode.Overwrite)
+      .parquet(
+      s"""
+         |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_click_log/
+         """
+        .stripMargin.trim)
+    println("-- write dl_cpc.ocpc_quick_click_log to hive successfully -- ")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +44,16 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+      .write
+      .partitionBy("date", "hour")
+      .mode(SaveMode.Overwrite)
+      .parquet(
+        s"""
+           |hdfs://emr-cluster/warehouse/dl_cpc.db/ocpc_quick_cv_log/
+         """
+          .stripMargin.trim)
+    println("-- write dl_cpc.ocpc_quick_cv_log to hive successfully -- ")
+
   }
 
   def getClickLog(date: String, hour: String, spark: SparkSession) = {
