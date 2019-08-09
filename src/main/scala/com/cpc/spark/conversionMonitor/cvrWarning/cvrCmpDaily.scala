@@ -34,7 +34,7 @@ object cvrCmpDaily {
 
     result
       .repartition(1)
-      .write.mode("ovewrite").insertInto("test.cv_goal_cvr_cmp_hourly")
+      .write.mode("overwrite").insertInto("test.cv_goal_cvr_cmp_hourly")
 
 
   }
