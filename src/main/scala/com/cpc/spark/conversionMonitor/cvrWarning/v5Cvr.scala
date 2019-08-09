@@ -24,7 +24,7 @@ object v5Cvr {
       .union(cv4Data)
 
     val dataToday = clickData
-      .join(cvData)
+      .join(cvData, Seq("searchid"), "left_outer")
       .na.fill(0, Seq("iscvr"))
       .groupBy("conversion_goal", "hour")
       .agg(
