@@ -226,6 +226,8 @@ object LrCalibrationOnQtt {
          |    group by round(score/1000,0)
          |    )
        """.stripMargin
+    val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
+    println("abs_error is %f".format(abs_error))
 
     val p2 = data.groupBy("ideaid")
       .agg(
