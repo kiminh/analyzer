@@ -213,6 +213,20 @@ object LrCalibrationOnQtt {
     val ectr = p1.first().getAs[Double]("ectr")
     println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
 
+    data.createOrReplaceTempView("data")
+    val abs_error_sql =
+      s"""
+         |select
+         |sum(if(click>0,
+         |if(sum_exp_ctr/click/1000000>1,sum_exp_ctr/click/1000000,click*1000000/sum_exp_ctr),1)*imp)/sum(imp) abs_error
+         |from
+         |(
+         |    select round(score/1000,0) as label,sum(score) sum_exp_ctr,sum(label) click,count(*) as imp
+         |    from data
+         |    group by round(score/1000,0)
+         |    )
+       """.stripMargin
+
     val p2 = data.groupBy("ideaid")
       .agg(
         avg(col("label")).alias("ctr"),
