@@ -34,7 +34,7 @@ object cvrCmpDaily {
 
     result
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.cv_goal_cvr_cmp_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.cv_goal_cvr_cmp_hourly")
 
 
   }
@@ -65,7 +65,7 @@ object cvrCmpDaily {
          |SELECT
          |  *
          |FROM
-         |  test.cv_goal_cvr_hourly
+         |  dl_cpc.cv_goal_cvr_hourly
          |WHERE
          |  date = '$date'
        """.stripMargin

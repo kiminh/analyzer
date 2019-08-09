@@ -39,7 +39,7 @@ object v3Cvr {
 
     dataToday
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.cv_goal_cvr_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.cv_goal_cvr_hourly")
   }
 
   def getLabel4(date: String, spark: SparkSession) = {
