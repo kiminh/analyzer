@@ -213,7 +213,7 @@ object LrCalibrationOnQtt {
     val ectr = p1.first().getAs[Double]("ectr")
     println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
 
-    data.createOrReplaceTempView("data")
+    testData.createOrReplaceTempView("data")
     val abs_error_sql =
       s"""
          |select
