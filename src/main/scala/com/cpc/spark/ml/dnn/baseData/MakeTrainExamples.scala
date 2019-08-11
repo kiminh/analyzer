@@ -95,7 +95,7 @@ object MakeTrainExamples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(mapping_version, one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -183,8 +183,8 @@ object MakeTrainExamples {
 
     /************Collect instances for non uid features************************/
     println("Collect Other Feature(exclude uid) Values and Map to Continuous Index")
-    val instances_all_non_uid = des_dir + "/" + instances_file + "-non-uid"
-    val instances_all_non_uid_indexed = des_dir + "/" + instances_file + "-non-uid-indexed"
+    val instances_all_non_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid"
+    val instances_all_non_uid_indexed = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid-indexed"
     if (!exists_hdfs_path(instances_all_non_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
@@ -240,8 +240,8 @@ object MakeTrainExamples {
 
     /************Collect instances for non uid features************************/
     println("Collect Uid Feature's Values and Map to Continuous Index")
-    val instances_all_for_uid = des_dir + "/" + instances_file + "-for-uid"
-    val instances_all_for_uid_indexed = des_dir + "/" + instances_file + "-for-uid-indexed"
+    val instances_all_for_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid"
+    val instances_all_for_uid_indexed = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid-indexed"
     if (!exists_hdfs_path(instances_all_for_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
@@ -282,7 +282,7 @@ object MakeTrainExamples {
 
     /************************load map********************************/
     println("Load Uid SparseMap")
-    val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
+    val instances_all_map_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid-indexed"
     val sparseMapUid = sc.textFile(instances_all_map_uid).map{
       rs => {
         val line = rs.split("\t")
@@ -295,7 +295,7 @@ object MakeTrainExamples {
     val sparse_map_uid_count = sparseMapUid.count
 
     println("Load Others SparseMap")
-    val instances_all_map_others = des_dir + "/" + instances_file + "-non-uid-indexed"
+    val instances_all_map_others = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid-indexed"
     val sparseMapOthers = sc.textFile(instances_all_map_others).map{
       rs => {
         val line = rs.split("\t")
@@ -348,7 +348,7 @@ object MakeTrainExamples {
       val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       println("mapping sampled text file:" + tf_text_sampled)
-      val mapping_info = des_dir + "/mapping-info/" + src_date + "-mapping-info"
+      val mapping_info = des_dir + "/" + mapping_version + "/mapping-info/" + src_date + "-mapping-info"
       if (!exists_hdfs_path(mapping_info + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(mapping_info)
         println("make " + mapping_info)
@@ -381,8 +381,8 @@ object MakeTrainExamples {
         ).saveAsTextFile(mapping_info)
       }
 
-      val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
-      val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
+      val tf_text_sampled_mapped = des_dir + "/" + mapping_version + "/" + src_date + "-text-sampled-mapped"
+      val tf_text_sampled_mapped_tfr = des_dir + "/" + mapping_version + "/" + src_date + "-text-sampled-mapped-tfr"
       if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(mapping_info) && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(tf_text_sampled_mapped)
         delete_hdfs_path(tf_text_sampled_mapped_tfr)
@@ -451,7 +451,7 @@ object MakeTrainExamples {
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Do Mapping Test Examples")
     val test_file_src = src_dir + "/" + test_data_src
-    val test_file_text = des_dir + "/" + test_data_des + "-text"
+    val test_file_text = des_dir + "/" + mapping_version + "/" + test_data_des + "-text"
     if (!exists_hdfs_path(test_file_text)) {
       val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
       println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
@@ -492,8 +492,8 @@ object MakeTrainExamples {
       ).saveAsTextFile(test_file_text)
     }
 
-    val test_file_text_mapped = des_dir + "/" + test_data_des + "-text-mapped"
-    val test_file_text_mapped_tfr = des_dir + "/" + test_data_des + "-text-mapped-tfr"
+    val test_file_text_mapped = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped"
+    val test_file_text_mapped_tfr = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped-tfr"
     if (!exists_hdfs_path(test_file_text_mapped)) {
       delete_hdfs_path(test_file_text_mapped)
       delete_hdfs_path(test_file_text_mapped_tfr)
