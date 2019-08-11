@@ -25,7 +25,7 @@ test_data_week="Sat"
 partitions=1000
 
 spark-submit --master yarn --queue ${queue} \
-    --name "adlist-tf-make-example" \
+    --name "adlist-tf-make-sampling" \
     --driver-memory 4g --executor-memory 4g \
     --num-executors 100 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
