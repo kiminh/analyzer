@@ -262,8 +262,15 @@ object MakeSampling {
           output += idx1.map(_.toString).mkString(";")
           output += idx2.map(_.toString).mkString(";")
           output += idx_arr.map(_.toString).mkString(";")
-
           output.mkString("\t")
+        }
+      ).filter(
+        _ => {
+          var filter = false
+          if (Random.nextFloat() <= 0.1) {
+            filter = true
+          }
+          filter
         }
       ).repartition(60).saveAsTextFile(test_file_text)
 
