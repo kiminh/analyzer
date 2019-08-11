@@ -18,15 +18,15 @@ hadoop fs -get ${jarLib} ${randjar}
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-date_begin="2019-07-20"
-date_end="2019-08-03"
+date_begin="2019-07-27"
+date_end="2019-08-10"
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 ctr_feature_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ctr-feature"
-test_data_src="2019-08-03/part-r-000*"
-test_data_des="test-2019-08-03"
+test_data_src="2019-08-10/part-r-000*"
+test_data_des="test-2019-08-10"
 test_data_week="Sat"
-instances_file="instances-all"
+instances_file="instances-0727-0810"
 partitions=1000
 with_week=False
 
