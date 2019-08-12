@@ -87,15 +87,15 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 12) {
+    if (args.length != 13) {
       System.err.println(
         """
-          |you have to input 12 parameters !!!
+          |you have to input 13 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(mapping_version, one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -183,8 +183,8 @@ object MakeTrainExamples {
 
     /************Collect instances for non uid features************************/
     println("Collect Other Feature(exclude uid) Values and Map to Continuous Index")
-    val instances_all_non_uid = des_dir + "/" + instances_file + "-non-uid"
-    val instances_all_non_uid_indexed = des_dir + "/" + instances_file + "-non-uid-indexed"
+    val instances_all_non_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid"
+    val instances_all_non_uid_indexed = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid-indexed"
     if (!exists_hdfs_path(instances_all_non_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
@@ -240,8 +240,8 @@ object MakeTrainExamples {
 
     /************Collect instances for non uid features************************/
     println("Collect Uid Feature's Values and Map to Continuous Index")
-    val instances_all_for_uid = des_dir + "/" + instances_file + "-for-uid"
-    val instances_all_for_uid_indexed = des_dir + "/" + instances_file + "-for-uid-indexed"
+    val instances_all_for_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid"
+    val instances_all_for_uid_indexed = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid-indexed"
     if (!exists_hdfs_path(instances_all_for_uid_indexed)) {
       var data = sc.parallelize(Array[(String, Long)]())
       for (date_idx <- src_date_list.indices) {
@@ -282,7 +282,7 @@ object MakeTrainExamples {
 
     /************************load map********************************/
     println("Load Uid SparseMap")
-    val instances_all_map_uid = des_dir + "/" + instances_file + "-for-uid-indexed"
+    val instances_all_map_uid = des_dir + "/" + mapping_version + "/" + instances_file + "-for-uid-indexed"
     val sparseMapUid = sc.textFile(instances_all_map_uid).map{
       rs => {
         val line = rs.split("\t")
@@ -295,7 +295,7 @@ object MakeTrainExamples {
     val sparse_map_uid_count = sparseMapUid.count
 
     println("Load Others SparseMap")
-    val instances_all_map_others = des_dir + "/" + instances_file + "-non-uid-indexed"
+    val instances_all_map_others = des_dir + "/" + mapping_version + "/" + instances_file + "-non-uid-indexed"
     val sparseMapOthers = sc.textFile(instances_all_map_others).map{
       rs => {
         val line = rs.split("\t")
@@ -348,7 +348,7 @@ object MakeTrainExamples {
       val tf_text_sampled = des_dir + "/" + src_date + "-text-sampled"
       println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       println("mapping sampled text file:" + tf_text_sampled)
-      val mapping_info = des_dir + "/mapping-info/" + src_date + "-mapping-info"
+      val mapping_info = des_dir + "/" + mapping_version + "/mapping-info/" + src_date + "-mapping-info"
       if (!exists_hdfs_path(mapping_info + "/_SUCCESS") && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(mapping_info)
         println("make " + mapping_info)
@@ -381,8 +381,8 @@ object MakeTrainExamples {
         ).saveAsTextFile(mapping_info)
       }
 
-      val tf_text_sampled_mapped = des_dir + "/" + src_date + "-text-sampled-mapped"
-      val tf_text_sampled_mapped_tfr = des_dir + "/" + src_date + "-text-sampled-mapped-tfr"
+      val tf_text_sampled_mapped = des_dir + "/" + mapping_version + "/" + src_date + "-text-sampled-mapped"
+      val tf_text_sampled_mapped_tfr = des_dir + "/" + mapping_version + "/" + src_date + "-text-sampled-mapped-tfr"
       if (!exists_hdfs_path(tf_text_sampled_mapped_tfr + "/_SUCCESS") && exists_hdfs_path(mapping_info) && exists_hdfs_path(tf_text_sampled)) {
         delete_hdfs_path(tf_text_sampled_mapped)
         delete_hdfs_path(tf_text_sampled_mapped_tfr)
@@ -447,6 +447,135 @@ object MakeTrainExamples {
     }
     println("Done.......")
 
+
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println("Do Mapping Test Examples")
+    val test_file_src = src_dir + "/" + test_data_src
+    val test_file_text = des_dir + "/" + mapping_version + "/" + test_data_des + "-text"
+    if (!exists_hdfs_path(test_file_text)) {
+      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
+      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
+      importedDf.rdd.map(
+        rs => {
+          val idx2 = rs.getSeq[Long](0)
+          val idx1 = rs.getSeq[Long](1)
+          val idx_arr = rs.getSeq[Long](2)
+          val idx0 = rs.getSeq[Long](3)
+          val sample_idx = rs.getLong(4)
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+
+          var dense_str: Seq[String] = null
+          if (with_week == "True") {
+            dense_str = dense.map(_.toString) ++ Seq[String](test_data_week)
+          } else {
+            dense_str = dense.map(_.toString)
+          }
+
+          var label = "0.0"
+          if (label_arr.head == 1L) {
+            label = "1.0"
+          }
+
+          val output = scala.collection.mutable.ArrayBuffer[String]()
+          output += sample_idx.toString
+          output += label
+          output += label_arr.map(_.toString).mkString(";")
+          output += dense_str.mkString(";")
+          output += idx0.map(_.toString).mkString(";")
+          output += idx1.map(_.toString).mkString(";")
+          output += idx2.map(_.toString).mkString(";")
+          output += idx_arr.map(_.toString).mkString(";")
+
+          output.mkString("\t")
+        }
+      ).saveAsTextFile(test_file_text)
+    }
+
+    val test_file_text_mapped = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped"
+    val test_file_text_mapped_tfr = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped-tfr"
+    if (!exists_hdfs_path(test_file_text_mapped)) {
+      delete_hdfs_path(test_file_text_mapped)
+      delete_hdfs_path(test_file_text_mapped_tfr)
+      println("make mapped files:" + test_file_text_mapped)
+
+      val mapping_info_rdd = sc.textFile(test_file_text).map(
+        rs => {
+          val line_list = rs.split("\t")
+          val sid = line_list(0)
+          val dense = line_list(3).split(";")
+          val idx_arr = line_list(7).split(";")
+
+          val uid_value = dense(25)
+          val value_list_prefix = dense.slice(0, 25)
+          val value_list_tail = dense.slice(26, 28)
+
+          val mapped_prefix = value_list_prefix.map(x => sparseMapOthers.getOrElse(x, "-1"))
+          val mapped_tail = value_list_tail.map(x => sparseMapOthers.getOrElse(x, "-1"))
+          val mapped_multi_hot = idx_arr.map(x => sparseMapOthers.getOrElse(x, "-1"))
+
+          (uid_value.toLong, (sid, mapped_prefix.mkString(";"), mapped_tail.mkString(";"), mapped_multi_hot.mkString(";")))
+        }
+      ).join(sparseMapUid).map(
+        rs => {
+          val sid = rs._2._1._1
+          val mapped_prefix = rs._2._1._2
+          val mapped_tail = rs._2._1._3
+          val mapped_multi_hot = rs._2._1._4
+          val mapped_uid = rs._2._2.toLong + sparseMapOthers.size
+          (sid, (mapped_prefix + ";" + mapped_uid + ";" + mapped_tail, mapped_multi_hot))
+        }
+      )
+
+      val ult_rdd = sc.textFile(test_file_text).map(
+        rs => {
+          val line_list = rs.split("\t")
+          val sid = line_list(0)
+          val label = line_list(1)
+          val label_arr = line_list(2)
+          val idx0 = line_list(4)
+          val idx1 = line_list(5)
+          val idx2 = line_list(6)
+
+          (sid, (label, label_arr, idx0, idx1, idx2))
+        }
+      ).join(mapping_info_rdd).map(
+        rs => {
+          val sid = rs._1
+          val label = rs._2._1._1
+          val label_arr = rs._2._1._2
+          val idx0 = rs._2._1._3
+          val idx1 = rs._2._1._4
+          val idx2 = rs._2._1._5
+          val dense = rs._2._2._1
+          val idx_arr = rs._2._2._2
+          Array[String](sid, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+        }
+      )
+
+      val tf_ult_rdd = ult_rdd.map({
+        rs_list =>
+          val sample_idx = rs_list(0).toLong
+          val label = rs_list(1).toFloat
+          val label_arr = rs_list(2).split(";").map(_.toLong).toSeq
+          val dense = rs_list(3).split(";").map(_.toLong).toSeq
+          val idx0 = rs_list(4).split(";").map(_.toLong).toSeq
+          val idx1 = rs_list(5).split(";").map(_.toLong).toSeq
+          val idx2 = rs_list(6).split(";").map(_.toLong).toSeq
+          val idx_arr = rs_list(7).split(";").map(_.toLong).toSeq
+          Row(sample_idx, label, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+      ult_rdd.map({rs=>rs.mkString("\t")}).repartition(100).saveAsTextFile(test_file_text_mapped)
+
+      val tf_ult_rdd_count = tf_ult_rdd.count
+      println(s"tf_ult_rdd_count is : $tf_ult_rdd_count")
+
+      val text_df: DataFrame = spark.createDataFrame(tf_ult_rdd, schema_new)
+      text_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(test_file_text_mapped_tfr)
+    }
+
+    println("Done.......")
 
 
 
