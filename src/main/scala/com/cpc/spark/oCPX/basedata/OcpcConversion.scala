@@ -83,7 +83,7 @@ object OcpcConversion {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'sdk_app_install')
+         |    array_contains(conversion_target, 'site_form')
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark.sql(sqlRequest1)
