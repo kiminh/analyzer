@@ -16,7 +16,7 @@ object OcpcConversionV2 {
     val cv3 = getLabel3(date, hour, spark)
     val cv4 = getLabel4(date, hour, spark)
 
-    val result = cv1.union(cv2).union(cv3)
+    val result = cv1.union(cv2).union(cv3).union(cv4)
     result
       .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
