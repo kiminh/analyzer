@@ -74,8 +74,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -106,12 +106,10 @@ object OcpcSuggestCPA {
     val data = spark.sql(sqlRequest)
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
-//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("adclass") === 110110100, 1).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("adclass") === 125100100, 1).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
+//      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .cache()
 
@@ -120,6 +118,41 @@ object OcpcSuggestCPA {
     resultDF
 
   }
+
+  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Int, auc: Double, isRecommend: Int) => {
+    var result = isRecommend
+    if (isRecommend == 1) {
+      if ((media == "novel" || media == "qtt") && (industry == "elds" || industry == "feedapp")) {
+        if (cv >= 10 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else if (industry == "others") {
+        if (cv >= 10 && auc >= 0.55) {
+          result = 1
+        } else if (cv >= 60 && auc >= 0.5) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else if ((media == "hottopic") && (industry == "feedapp") && (conversion_goal == 1)) {
+        if (cv >= 20 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else {
+        if (cv >= 60 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      }
+    } else {
+      result = isRecommend
+    }
+  })
 
   def getKvalue(baseData: DataFrame, baseStat: DataFrame, date: String, hour: String, spark: SparkSession) = {
     baseStat.createOrReplaceTempView("base_data")
