@@ -87,15 +87,15 @@ object MakeTrainExamples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 13) {
+    if (args.length != 12) {
       System.err.println(
         """
-          |you have to input 13 parameters !!!
+          |you have to input 12 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(mapping_version, one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(mapping_version, one_hot_feature_names, ctr_feature_dir, src_dir, with_week, date_begin, date_end, des_dir, instances_file, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -450,56 +450,15 @@ object MakeTrainExamples {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Do Mapping Test Examples")
-    val test_file_src = src_dir + "/" + test_data_src
-    val test_file_text = des_dir + "/" + mapping_version + "/" + test_data_des + "-text"
-    if (!exists_hdfs_path(test_file_text)) {
-      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file_src)
-      println("DF file count:" + importedDf.count().toString + " of file:" + test_file_src)
-      importedDf.rdd.map(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-
-          var dense_str: Seq[String] = null
-          if (with_week == "True") {
-            dense_str = dense.map(_.toString) ++ Seq[String](test_data_week)
-          } else {
-            dense_str = dense.map(_.toString)
-          }
-
-          var label = "0.0"
-          if (label_arr.head == 1L) {
-            label = "1.0"
-          }
-
-          val output = scala.collection.mutable.ArrayBuffer[String]()
-          output += sample_idx.toString
-          output += label
-          output += label_arr.map(_.toString).mkString(";")
-          output += dense_str.mkString(";")
-          output += idx0.map(_.toString).mkString(";")
-          output += idx1.map(_.toString).mkString(";")
-          output += idx2.map(_.toString).mkString(";")
-          output += idx_arr.map(_.toString).mkString(";")
-
-          output.mkString("\t")
-        }
-      ).saveAsTextFile(test_file_text)
-    }
-
+    val test_file_text_src = des_dir + "/" + test_data_des + "-text"
     val test_file_text_mapped = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped"
     val test_file_text_mapped_tfr = des_dir + "/" + mapping_version + "/" + test_data_des + "-text-mapped-tfr"
-    if (!exists_hdfs_path(test_file_text_mapped)) {
+    if (exists_hdfs_path(test_file_text_src) && !exists_hdfs_path(test_file_text_mapped_tfr + "/_SUCCESS")) {
       delete_hdfs_path(test_file_text_mapped)
       delete_hdfs_path(test_file_text_mapped_tfr)
       println("make mapped files:" + test_file_text_mapped)
 
-      val mapping_info_rdd = sc.textFile(test_file_text).map(
+      val mapping_info_rdd = sc.textFile(test_file_text_src).map(
         rs => {
           val line_list = rs.split("\t")
           val sid = line_list(0)
@@ -527,7 +486,7 @@ object MakeTrainExamples {
         }
       )
 
-      val ult_rdd = sc.textFile(test_file_text).map(
+      val ult_rdd = sc.textFile(test_file_text_src).map(
         rs => {
           val line_list = rs.split("\t")
           val sid = line_list(0)
@@ -576,7 +535,6 @@ object MakeTrainExamples {
     }
 
     println("Done.......")
-
 
 
     /**val dense_list_mapped = one_hot_feature_names_mapped.split(",")
