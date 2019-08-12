@@ -33,7 +33,7 @@ echo ${currentTimeStamp}
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-tf-make-sampling" \
     --driver-memory 4g --executor-memory 4g \
-    --num-executors 100 --executor-cores 4 \
+    --num-executors 200 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
