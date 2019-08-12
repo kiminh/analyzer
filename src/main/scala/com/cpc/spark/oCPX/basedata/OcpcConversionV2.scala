@@ -15,12 +15,46 @@ object OcpcConversionV2 {
     val cv2 = getLabel2(date, hour, spark)
     val cv3 = getLabel3(date, hour, spark)
     val cv4 = getLabel4(date, hour, spark)
+    val cvWZ = getLabelWZ(date, hour, spark)
 
-    val result = cv1.union(cv2).union(cv3).union(cv4)
+    val result = cv1.union(cv2).union(cv3).union(cv4).union(cvWZ)
     result
       .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
     println("successfully save data into table: dl_cpc.ocpc_unit_label_cvr_hourly")
+  }
+
+  def getLabelWZ(date: String, hour: String, spark: SparkSession) = {
+    var selectCondition = s"`date`='$date' and hour = '$hour'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label2 as label
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  label2=1
+         |AND
+         |  label_type in (1, 2, 3)
+         |GROUP BY searchid, label2
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .select("searchid", "label")
+      .distinct()
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("cvr_goal", lit("wz"))
+
+    resultDF.show(10)
+    resultDF.printSchema()
+
+    resultDF
   }
 
   def getLabel4(date: String, hour: String, spark: SparkSession) = {
