@@ -174,13 +174,13 @@ object MakeSampling {
 
     val sta_date_list = GetDataRange(sta_date_begin, sta_date_end)
     sta_date_list += "20190724"
-    println("sta_date_list:" + src_date_list.mkString(";"))
+    println("sta_date_list:" + sta_date_list.mkString(";"))
     /** **********get real ctr************************/
     println("Get Real CTR")
     val real_ctr = des_dir + "/" + "real-ctr-" + sta_date_begin + "-" + sta_date_end
     var data = sc.parallelize(Array[(String, (Long, Long))]())
     for (date_idx <- sta_date_list.indices) {
-      val sta_date = src_date_list(date_idx)
+      val sta_date = sta_date_list(date_idx)
       val tf_text = des_dir + "/" + sta_date + "-text"
       if (exists_hdfs_path(tf_text + "/_SUCCESS")) {
         data = data.union(
@@ -273,7 +273,7 @@ object MakeSampling {
     val sampled_ctr = des_dir + "/" + "sampled-ctr-" + sta_date_begin + "-" + sta_date_end
     var data_sampled = sc.parallelize(Array[(String, (Long, Long))]())
     for (date_idx <- sta_date_list.indices) {
-      val sta_date = src_date_list(date_idx)
+      val sta_date = sta_date_list(date_idx)
       val tf_text = des_dir + "/" + sta_date + "-text-sampled"
       if (exists_hdfs_path(tf_text + "/_SUCCESS")) {
         data_sampled = data_sampled.union(
