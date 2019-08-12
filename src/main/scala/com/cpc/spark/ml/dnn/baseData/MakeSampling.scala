@@ -93,15 +93,15 @@ object MakeSampling {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 10) {
+    if (args.length != 11) {
       System.err.println(
         """
-          |you have to input 10 parameters !!!
+          |you have to input 11 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(sta_date_begin, sta_date_end, src_dir, date_begin, date_end, des_dir, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(time_stamps, sta_date_begin, sta_date_end, src_dir, date_begin, date_end, des_dir, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -173,11 +173,10 @@ object MakeSampling {
     println("Done.......")
 
     val sta_date_list = GetDataRange(sta_date_begin, sta_date_end)
-    sta_date_list += "20190724"
     println("sta_date_list:" + sta_date_list.mkString(";"))
     /** **********get real ctr************************/
     println("Get Real CTR")
-    val real_ctr = des_dir + "/" + "real-ctr-" + sta_date_begin + "-" + sta_date_end
+    val real_ctr = des_dir + "/" + "real-ctr-" + sta_date_begin + "-" + sta_date_end + "-" + time_stamps
     var data = sc.parallelize(Array[(String, (Long, Long))]())
     for (date_idx <- sta_date_list.indices) {
       val sta_date = sta_date_list(date_idx)
@@ -270,7 +269,7 @@ object MakeSampling {
 
     /** **********get sampled real ctr************************/
     println("Get Sampled CTR")
-    val sampled_ctr = des_dir + "/" + "sampled-ctr-" + sta_date_begin + "-" + sta_date_end
+    val sampled_ctr = des_dir + "/" + "sampled-ctr-" + sta_date_begin + "-" + sta_date_end + "-" + time_stamps
     var data_sampled = sc.parallelize(Array[(String, (Long, Long))]())
     for (date_idx <- sta_date_list.indices) {
       val sta_date = sta_date_list(date_idx)

@@ -27,6 +27,9 @@ partitions=1000
 sta_date_begin=2019-07-27
 sta_date_end=2019-08-10
 
+currentTimeStamp=`date +%s`
+echo ${currentTimeStamp}
+
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-tf-make-sampling" \
     --driver-memory 4g --executor-memory 4g \
@@ -36,7 +39,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeSampling \
-    ${randjar} ${sta_date_begin} ${sta_date_end} ${src_dir} ${date_begin} ${date_end} ${des_dir} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
+    ${randjar} ${currentTimeStamp} ${sta_date_begin} ${sta_date_end} ${src_dir} ${date_begin} ${date_end} ${des_dir} ${test_data_src} ${test_data_des} ${test_data_week} ${partitions}
 
 chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 hadoop fs -chmod -R 0777 ${chmod_des}
