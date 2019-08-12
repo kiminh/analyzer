@@ -104,6 +104,7 @@ object OcpcSuggestCPA {
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
+    data.printSchema()
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
