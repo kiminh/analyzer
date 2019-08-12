@@ -172,8 +172,6 @@ object MakeSampling {
     }
     println("Done.......")
 
-
-
     val sta_date_list = GetDataRange(sta_date_begin, sta_date_end)
     sta_date_list += "20190724"
     println("sta_date_list:" + src_date_list.mkString(";"))
@@ -268,6 +266,35 @@ object MakeSampling {
       }
     }
     println("Done.......")
+
+
+    /** **********get sampled real ctr************************/
+    println("Get Sampled CTR")
+    val sampled_ctr = des_dir + "/" + "sampled-ctr-" + sta_date_begin + "-" + sta_date_end
+    var data_sampled = sc.parallelize(Array[(String, (Long, Long))]())
+    for (date_idx <- sta_date_list.indices) {
+      val sta_date = src_date_list(date_idx)
+      val tf_text = des_dir + "/" + sta_date + "-text-sampled"
+      if (exists_hdfs_path(tf_text + "/_SUCCESS")) {
+        data_sampled = data_sampled.union(
+          sc.textFile(tf_text).map(
+            rs => {
+              val line_list = rs.split("\t")
+              val label = line_list(1)
+              if (label == "1.0") {
+                ("placeholder", (1L, 1L))
+              } else {
+                ("placeholder", (0L, 1L))
+              }
+            }
+          ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2))
+        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2))
+      }
+    }
+    data_sampled.reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).repartition(1).saveAsTextFile(sampled_ctr)
+    println("Done.......")
+
+
 
     println("Collect Test Examples")
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
