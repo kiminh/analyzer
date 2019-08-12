@@ -80,16 +80,28 @@ object MakeSampling {
     ranges
   }
 
+  def GetDataRange(beginStr: String, endStr: String, format : String = "yyyy-MM-dd"): ArrayBuffer[String] = {
+    val ranges = ArrayBuffer[String]()
+    val sdf = new SimpleDateFormat(format)
+    var dateBegin = sdf.parse(beginStr)
+    val dateEnd = sdf.parse(endStr)
+    while (dateBegin.compareTo(dateEnd) <= 0) {
+      ranges += sdf.format(dateBegin)
+      dateBegin = DateUtils.addDays(dateBegin, 1)
+    }
+    ranges
+  }
+
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 10) {
       System.err.println(
         """
-          |you have to input 8 parameters !!!
+          |you have to input 10 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(src_dir, date_begin, date_end, des_dir, test_data_src, test_data_des, test_data_week, numPartitions) = args
+    val Array(sta_date_begin, sta_date_end, src_dir, date_begin, date_end, des_dir, test_data_src, test_data_des, test_data_week, numPartitions) = args
 
     println(args)
 
@@ -158,6 +170,37 @@ object MakeSampling {
         ).repartition(1000).saveAsTextFile(tf_text)
       }
     }
+    println("Done.......")
+
+
+
+    val sta_date_list = GetDataRange(sta_date_begin, sta_date_end)
+    sta_date_list += "20190724"
+    println("sta_date_list:" + src_date_list.mkString(";"))
+    /** **********get real ctr************************/
+    println("Get Real CTR")
+    val real_ctr = des_dir + "/" + "real-ctr-" + sta_date_begin + "-" + sta_date_end
+    var data = sc.parallelize(Array[(String, (Long, Long))]())
+    for (date_idx <- sta_date_list.indices) {
+      val sta_date = src_date_list(date_idx)
+      val tf_text = des_dir + "/" + sta_date + "-text"
+      if (exists_hdfs_path(tf_text + "/_SUCCESS")) {
+        data = data.union(
+          sc.textFile(tf_text).map(
+            rs => {
+              val line_list = rs.split("\t")
+              val label = line_list(1)
+              if (label == "1.0") {
+                ("placeholder", (1L, 1L))
+              } else {
+                ("placeholder", (0L, 1L))
+              }
+            }
+          ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2))
+        ).reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2))
+      }
+    }
+    data.reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2)).repartition(1).saveAsTextFile(real_ctr)
     println("Done.......")
 
     val schema_new = StructType(List(
