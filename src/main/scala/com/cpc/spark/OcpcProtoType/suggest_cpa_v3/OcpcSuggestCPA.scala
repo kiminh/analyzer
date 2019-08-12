@@ -107,6 +107,7 @@ object OcpcSuggestCPA {
     data.printSchema()
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
+      .na.fill(0, Seq("cvrcnt", "auc"))
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
 //      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
 //      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
@@ -120,7 +121,7 @@ object OcpcSuggestCPA {
 
   }
 
-  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Int, auc: Double, isRecommend: Int) => {
+  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: BigInt, auc: Double, isRecommend: Int) => {
     var result = isRecommend
     if (isRecommend == 1) {
       if ((media == "novel" || media == "qtt") && (industry == "elds" || industry == "feedapp")) {
