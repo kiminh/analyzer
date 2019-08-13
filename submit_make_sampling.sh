@@ -24,7 +24,7 @@ test_data_des="test-2019-08-10"
 test_data_week="Sat"
 partitions=1000
 
-sta_date_begin=2019-07-27
+sta_date_begin=2019-08-10
 sta_date_end=2019-08-10
 
 currentTimeStamp=`date +%s`
