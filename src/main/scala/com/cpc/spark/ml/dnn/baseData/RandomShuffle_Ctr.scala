@@ -8,7 +8,7 @@ import scala.collection.mutable.WrappedArray
 import scala.sys.process._
 import scala.util.Random
 
-object RandomShuffle {
+object RandomShuffle_Ctr {
 
   def main(args: Array[String]): Unit = {
 
