@@ -108,6 +108,7 @@ object OcpcSuggestCPA {
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
+      .na.fill(0, Seq("is_recommend"))
 //      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
 //      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
