@@ -49,7 +49,7 @@ object cvrModelMonitorDaily {
       .select("model_name", "cvr_yesterday", "hour")
 
     val data = data1
-      .join(data0, Seq("model_name", "hour"), "left_outer")
+      .join(data0, Seq("model_name", "hour"), "outer")
       .withColumn("cvr_diff", (col("cvr_today") - col("cvr_yesterday")) / col("cvr_yesterday"))
       .na.fill(1, Seq("cvr_diff"))
       .withColumn("cvr_diff", abs(col("cvr_diff")))
