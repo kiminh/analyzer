@@ -120,7 +120,7 @@ object OcpcSuggestCPA {
 
   }
 
-  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: BigInt, auc: Double, isRecommend: Int) => {
+  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Long, auc: Double, isRecommend: Int) => {
     var result = isRecommend
     if (isRecommend == 1) {
       if ((media == "novel" || media == "qtt") && (industry == "elds" || industry == "feedapp")) {
