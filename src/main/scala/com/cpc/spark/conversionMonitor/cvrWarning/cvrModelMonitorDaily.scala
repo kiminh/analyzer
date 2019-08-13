@@ -30,7 +30,7 @@ object cvrModelMonitorDaily {
     val cmpResult = cmpData(dataToday, dataYesterday, spark)
     val result = cmpResult
       .withColumn("date", lit(date))
-      .select("cvr_yesterday", "cvr_today", "cvr_diff", "date", "hour", "model_name")
+      .select("cvr_yesterday", "cvr_today", "cvr_diff", "hour", "date", "model_name")
 
     result
       .repartition(1)
