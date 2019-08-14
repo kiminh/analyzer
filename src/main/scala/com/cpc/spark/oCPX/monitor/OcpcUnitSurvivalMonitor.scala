@@ -10,44 +10,43 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object OcpcUnitSurvivalMonitor {
+  /*
+  分媒体统计每个媒体下各个单元的日耗
+  标记每个媒体下的单元数、近7天内新增单元数
+   */
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
     val date = args(0).toString
-    val hour = args(1).toString
-    val hourInt = args(2).toInt
 
     // 抽取基础表
-    val baseData = getData(date, hour, hourInt, spark)
+    val baseData = getData(date, spark)
+    val newUnits = getNewUnits(date, spark)
 
-    // 分小时计算cvr
-    val data = calculateCvr(baseData, date, hour, spark).cache()
-
-    data.show(10)
-    data
-      .select("unitid", "userid", "conversion_goal", "media", "click", "click_cv", "show_cv", "date", "hour", "hour_int")
+    // 存储基础数据
+    baseData
+      .withColumn("date", lit(date))
+      .select("unitid", "userid", "media", "is_ocpc", "show", "click", "cost", "date")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
+      .write.mode("overwrite").saveAsTable("test.unit_cost_by_media_daily")
+
+//    // 分小时计算cvr
+//    val data = calculateCvr(baseData, date, spark).cache()
+//
+//    data.show(10)
+//    data
+//      .select("unitid", "userid", "conversion_goal", "media", "click", "click_cv", "show_cv", "date", "hour", "hour_int")
+//      .repartition(5)
+////      .write.mode("overwrite").insertInto("test.ocpc_cvr_delay_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_delay_hourly")
 
   }
 
-  def getData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def getData(date: String, spark: SparkSession) = {
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val selectCondition = s"`date` = '$date'"
 
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -55,76 +54,83 @@ object OcpcUnitSurvivalMonitor {
     // 取数据: score数据
     val sqlRequest =
       s"""
-         |select
-         |    searchid,
-         |    unitid,
-         |    userid,
-         |    conversion_goal,
-         |    media_appsid,
-         |    isclick,
-         |    date,
-         |    hour
-         |from dl_cpc.ocpc_base_unionlog
-         |where $selectCondition
-         |and isshow = 1
-         |and $mediaSelection
-         |and ideaid > 0 and adsrc = 1
-         |and userid > 0
-         |and conversion_goal > 0
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  media_appsid,
+         |  is_ocpc,
+         |  isshow,
+         |  isclick,
+         |  (case when isclick=1 then price else 0 end) as price
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  label,
-         |  cvr_goal
-         |FROM
-         |  dl_cpc.ocpc_label_cvr_hourly
-         |WHERE
-         |  $selectCondition
-       """.stripMargin
-    println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
-
-
-    // 关联数据
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
-      .na.fill(0, Seq("label"))
+        .groupBy("unitid", "userid", "media", "is_ocpc")
+        .agg(
+          sum(col("isshow")).alias("show"),
+          sum(col("isclick")).alias("click"),
+          sum(col("price")).alias("cost")
+        )
+        .select("unitid", "userid", "media", "is_ocpc", "show", "click", "cost")
+        .distinct()
 
     resultDF
   }
 
-  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
+  def getNewUnits(date: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
 
-    val url = conf.getString("adv_read_mysql.new_deploy.url")
-    val user = conf.getString("adv_read_mysql.new_deploy.user")
-    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
-    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unit_id as unitid,
+         |    aduser as userid,
+         |    target_medias,
+         |    a as media_appsid,
+         |    is_ocpc,
+         |    create_time,
+         |    date(create_time) as create_date
+         |from
+         |    qttdw.dim_unit_ds
+         |lateral view explode(split(target_medias, ',')) b as a
+         |WHERE
+         |    dt = '$date'
+         |and
+         |    target_medias != ''
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+      .select("unitid",  "userid", "media_appsid", "is_ocpc", "create_time", "create_date")
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
+    data
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_report20190814")
 
     val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .withColumn("cpagiven", col("ocpc_bid"))
-      .selectExpr("unitid",  "userid", "cpagiven", "cast(conversion_goal as int) conversion_goal", "is_ocpc", "ocpc_status")
-      .distinct()
+        .filter(s"create_date > '$date1'")
+        .withColumn("flag", lit(1))
+        .select("unitid",  "userid", "media", "is_ocpc", "flag")
+        .distinct()
+
 
     resultDF.show(10)
     resultDF
