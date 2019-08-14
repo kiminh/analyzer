@@ -30,7 +30,7 @@ object OcpcUnitSurvivalMonitor {
       .withColumn("date", lit(date))
       .select("unitid", "userid", "media", "is_ocpc", "show", "click", "cost", "date")
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.unit_cost_by_media_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.unit_cost_by_media_daily")
 
 //    // 分小时计算cvr
 //    val data = calculateCvr(baseData, date, spark).cache()
