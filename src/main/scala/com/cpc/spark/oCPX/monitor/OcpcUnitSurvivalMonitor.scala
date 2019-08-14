@@ -40,7 +40,7 @@ object OcpcUnitSurvivalMonitor {
       .withColumn("date", lit(date))
       .select("media", "is_ocpc", "unitid_cnt", "userid_cnt", "cost", "data_type", "date")
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.unit_changing_by_media_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.unit_changing_by_media_daily")
 
 
   }
