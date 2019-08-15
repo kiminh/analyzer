@@ -19,8 +19,8 @@ object cvrModelMonitor {
 
     // 计算日期周期
     val date = args(0).toString
-    val modelName = args(2).toString
-    val cvr_diff = args(3).toDouble
+    val modelName = args(1).toString
+    val cvr_diff = args(2).toDouble
 
     // 清理ok文件
     s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date.ok" !
