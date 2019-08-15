@@ -59,6 +59,7 @@ object cvrModelMonitor {
     receiver:+="yanglei@qutoutiao.net"
     receiver:+="admodel@qutoutiao.net"
     receiver:+="wanlunjun@qutoutiao.net"
+    receiver:+="wangfang03@qutoutiao.net"
     if (cnt > 0) {
       sendMail(message, sub, receiver)
     } else {
