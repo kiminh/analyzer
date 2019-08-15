@@ -44,7 +44,7 @@ object cvrModelMonitor {
 
     result
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.model_cvr_cmp_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.model_cvr_cmp_daily_v2")
 
     // 数据监控
     val filterResult = result.filter(s"cvr_diff > $cvr_diff")
