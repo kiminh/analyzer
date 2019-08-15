@@ -72,9 +72,9 @@ object OcpcLightBulb{
 //      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
-//    // 存入redis
-//    saveDataToRedis(version, date, hour, spark)
-//    println(s"############## saving redis database ################")
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
   }
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
