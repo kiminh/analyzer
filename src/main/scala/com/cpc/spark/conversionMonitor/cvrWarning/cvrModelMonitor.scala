@@ -49,6 +49,7 @@ object cvrModelMonitor {
     // 数据监控
     val filterResult = result.filter(s"cvr_diff > $cvr_diff")
     val cnt = filterResult.count()
+    filterResult.show(10)
 
     // email content
     val message = s"training set for $modelName is incorrect!"
