@@ -15,3 +15,6 @@ STORED as PARQUET;
 
 alter table dl_cpc.ocpc_quick_click_log add columns (ocpc_step int);
 alter table dl_cpc.ocpc_quick_click_log add columns (adclass int);
+
+alter table dl_cpc.ocpc_quick_click_log add columns (price int);
+alter table dl_cpc.ocpc_quick_click_log add columns (adtype int);
