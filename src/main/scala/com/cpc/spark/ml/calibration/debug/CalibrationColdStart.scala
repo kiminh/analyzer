@@ -31,13 +31,13 @@ object CalibrationColdStart{
 
     import spark.implicits._
 
-//    val dnn_data = spark.read.parquet("hdfs://emr-cluster/user/cpc/wy/dnn_prediction/adcvr-v1wzjf/result-*")
-//      .toDF("id","prediction","num")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$dt/$task/result-*")
+      .toDF("id","prediction","num")
 
-    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
-      s"hour='00' and pt='daily' and task='$task'")
-        .withColumn("id",col("searchid_hash"))
-        .withColumn("prediction",col("pscore"))
+//    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
+//      s"hour='00' and pt='daily' and task='$task'")
+//        .withColumn("id",col("searchid_hash"))
+//        .withColumn("prediction",col("pscore"))
 
     println("sum is %d".format(dnn_data.count()))
     // get union log
