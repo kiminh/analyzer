@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS test.ocpc_quick_click_log
 PARTITIONED by (`date` string, `hour` string)
 STORED as PARQUET;
 
-alter table test.ocpc_quick_click_log add columns (ocpc_step int);
+alter table dl_cpc.ocpc_quick_click_log add columns (ocpc_step int);
