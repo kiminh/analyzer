@@ -35,8 +35,6 @@ object OcpcHourlyReport {
 
     // 分ideaid和conversion_goal统计数据
     val baseData = calculateBaseData(rawData, spark)
-    // 分unitid和conversion_goal统计数据
-    val baseDataUnitid = calculateUnit(baseData, spark)
 
     // 为邮件准备临时表
     val ideaData = calculateIdea(baseData, spark)
