@@ -53,7 +53,7 @@ object cvrModelMonitor {
 
     // email content
     val message = s"training set for $modelName, $date is incorrect!"
-    val sub = "cvr model training dataset monitor is warining"
+    val sub = "cvr model training dataset monitor is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
     receiver:+="yanglei@qutoutiao.net"
