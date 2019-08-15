@@ -49,6 +49,7 @@ object cvrModelMonitor {
     // 数据监控
     val filterResult = result.filter(s"cvr_diff > $cvr_diff")
     val cnt = filterResult.count()
+    val totalCnt = result.count()
     filterResult.show(10)
 
     // email content
@@ -60,7 +61,7 @@ object cvrModelMonitor {
     receiver:+="admodel@qutoutiao.net"
     receiver:+="wanlunjun@qutoutiao.net"
     receiver:+="wangfang03@qutoutiao.net"
-    if (cnt > 0) {
+    if (cnt > 0 && totalCnt != 24) {
       sendMail(message, sub, receiver)
     } else {
       //输出标记文件
