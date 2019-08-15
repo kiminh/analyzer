@@ -62,7 +62,8 @@ object OcpcQuickLog {
          |  cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |  media_appsid,
          |  ocpc_step,
-         |  conversion_goal
+         |  conversion_goal,
+         |  adclass
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
@@ -81,7 +82,7 @@ object OcpcQuickLog {
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass")
 
     clickData
   }
