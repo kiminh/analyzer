@@ -17,7 +17,7 @@ object report_userprofile_effect {
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val date = args(0).toString
     cal.add(Calendar.DATE, -179)
     val date1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 /**
