@@ -87,7 +87,6 @@ object OcpcSampleToPb {
          |  high_bid_factor,
          |  low_bid_factor,
          |  cpagiven,
-         |  row_number() over(partition by unitid, conversion_goal, is_hidden, exp_tag order by date, hour desc) as seq,
          |  date,
          |  hour
          |FROM
@@ -98,7 +97,22 @@ object OcpcSampleToPb {
          |  version = '$version'
        """.stripMargin
     println(sqlRequest1)
-    val dataRaw1 = spark.sql(sqlRequest1)
+    val rawData = spark
+        .sql(sqlRequest1)
+        .withColumn("create_time", concat_ws(" ", col("date"), col("hour")))
+        .withColumn("time_stamp", unix_timestamp(col("create_time"), "yyyy-MM-dd HH"))
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  *,
+         |  row_number() over(partition by unitid, conversion_goal, is_hidden, exp_tag order by time_stamp desc) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val dataRaw1 = spark.sql(sqlRequest2)
+
     dataRaw1
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_sample_topb20190816")
@@ -108,7 +122,7 @@ object OcpcSampleToPb {
         .cache()
     data1.show(10)
 
-    val sqlRequest2 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -120,8 +134,8 @@ object OcpcSampleToPb {
          |  version = 'ocpcv1'
          |GROUP BY unitid, conversion_goal
        """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2).cache()
+    println(sqlRequest3)
+    val data2 = spark.sql(sqlRequest3).cache()
     data2.show(10)
 
     val data = data1
