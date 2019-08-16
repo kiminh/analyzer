@@ -25,7 +25,7 @@ object video_sample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/vdvideoctr-v4/$oneday/")
+      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/")
     val CountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/tmp/"
     val CountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/count"
     CommonUtils.writeCountToFile(spark, sample.count(), CountPathTmpName, CountPathName)
