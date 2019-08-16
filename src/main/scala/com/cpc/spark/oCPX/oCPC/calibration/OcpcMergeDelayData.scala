@@ -52,9 +52,13 @@ object OcpcMergeDelayData {
   }
 
   def getExpTags(expTag: String, spark: SparkSession) = {
-    val qtt = expTag + "Qtt"
-    val midu = expTag + "Midu"
-    val hottopic = expTag + "HT66"
+    var editExpTag = expTag
+    if (expTag == "base") {
+      editExpTag = ""
+    }
+    val qtt = editExpTag + "Qtt"
+    val midu = editExpTag + "Midu"
+    val hottopic = editExpTag + "HT66"
     val result = s"exp_tag in ('$qtt', '$midu', '$hottopic')"
     result
   }

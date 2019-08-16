@@ -85,6 +85,7 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
+         |    sum(exp_cpm * show) * 1.0 / sum(show) as exp_cpm,
          |    sum(pre_ctr * show) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
@@ -126,6 +127,7 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
+         |    sum(exp_cpm * show) * 1.0 / sum(show) as exp_cpm,
          |    sum(pre_ctr * show) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
@@ -168,6 +170,7 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
+         |    sum(total_exp_cpm) * 1.0 / sum(show) as exp_cpm,
          |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
          |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
@@ -219,6 +222,7 @@ object OcpcHourlyReport {
          |    sum(show) as show,
          |    sum(click) as click,
          |    sum(cv) as cv,
+         |    sum(total_exp_cpm) * 1.0 / sum(show) as exp_cpm,
          |    sum(total_prectr) * 1.0 / sum(show) as pre_ctr,
          |    sum(click) * 1.0 / sum(show) as post_ctr,
          |    sum(total_precvr) * 1.0 / sum(click) as pre_cvr,
@@ -250,12 +254,14 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "date", "hour")
+      .filter(s"date is not null and hour is not null")
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm"))
 
 
     resultDF
       .repartition(5)
-      //      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
@@ -268,6 +274,7 @@ object OcpcHourlyReport {
          |  unitid,
          |  userid,
          |  adclass,
+         |  adslot_type,
          |  conversion_goal,
          |  industry,
          |  media,
@@ -280,6 +287,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then bid else 0 end) as total_bid,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
          |  sum(case when isshow=1 then exp_ctr else 0 end) * 1.0 as total_prectr,
+         |  sum(case when isshow=1 then exp_cpm else 0 end) * 1.0 as total_exp_cpm,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cpagiven'] as double) else 0 end) as total_cpagiven,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_jfbfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
@@ -289,7 +297,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
@@ -324,15 +332,14 @@ object OcpcHourlyReport {
          |    exp_cvr,
          |    exp_ctr,
          |    media_appsid,
-         |    ocpc_log,
+         |    ocpc_log_dict,
+         |    cast(exp_cpm as double) / 1000000 as exp_cpm,
          |    hour as hr
          |FROM
-         |    dl_cpc.ocpc_base_unionlog
+         |    dl_cpc.ocpc_filter_unionlog
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and ocpc_step = 2
-         |and length(ocpc_log) > 0
          |and $mediaSelection
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
@@ -348,7 +355,7 @@ object OcpcHourlyReport {
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+//      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
 
     // 关联转化表
@@ -405,9 +412,9 @@ object OcpcHourlyReport {
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
       .withColumn("impression", col("show"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "date", "hour", "adslot_type", "total_exp_cpm")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm"))
 
     val reportTableUnit = "report2.ocpc_report_base_hourly"
     val delSQLunit = s"delete from $reportTableUnit where `date` = '$date'"

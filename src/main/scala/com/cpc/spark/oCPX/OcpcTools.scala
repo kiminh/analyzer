@@ -50,6 +50,19 @@ object OcpcTools {
       .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
   }
 
+  def udfAdslotTypeMapAs() = udf((adslotType: Int) => {
+    var result = adslotType match {
+      case 5 => 14
+      case 6 => 12
+      case 7 => 9
+      case x => x
+    }
+    if (adslotType > 7 || adslotType == 0) {
+      result = 0
+    }
+    result
+  })
+
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
 
@@ -151,6 +164,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  adslot_type,
          |  isshow,
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
@@ -233,6 +247,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  adslot_type,
          |  userid,
          |  isshow,
          |  isclick,
@@ -529,6 +544,7 @@ object OcpcTools {
       case "80000001" => "qtt"
       case "80000002" => "qtt"
       case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
       case _ => "novel"
     }
     result
