@@ -14,7 +14,7 @@ object video_sample {
   Logger.getRootLogger.setLevel(Level.WARN)
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("video sample").enableHiveSupport().getOrCreate()
-    val curday = args(1)
+    val curday = args(0)
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     cal.add(Calendar.DATE, -1)
@@ -26,8 +26,8 @@ object video_sample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/vdvideoctr-v4/$oneday/")
-    val CountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/vdvideoctr-v4/tmp/"
-    val CountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/vdvideoctr-v4/$oneday/count"
+    val CountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/tmp/"
+    val CountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/count"
     CommonUtils.writeCountToFile(spark, sample.count(), CountPathTmpName, CountPathName)
   }
   def getSample(spark: SparkSession, date: String): DataFrame = {
