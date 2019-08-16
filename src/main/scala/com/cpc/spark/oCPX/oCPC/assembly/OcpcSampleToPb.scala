@@ -113,10 +113,6 @@ object OcpcSampleToPb {
     println(sqlRequest2)
     val dataRaw1 = spark.sql(sqlRequest2)
 
-    dataRaw1
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_sample_topb20190816")
-
     val data1 = dataRaw1
         .filter(s"seq = 1")
         .cache()

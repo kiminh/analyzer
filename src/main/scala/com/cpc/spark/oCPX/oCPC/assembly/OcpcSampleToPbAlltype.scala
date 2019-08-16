@@ -50,8 +50,8 @@ object OcpcSampleToPbAlltype {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
   }
 
@@ -110,10 +110,6 @@ object OcpcSampleToPbAlltype {
        """.stripMargin
     println(sqlRequest2)
     val dataRaw1 = spark.sql(sqlRequest2)
-
-    dataRaw1
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_sample_topb20190816")
 
     val data1 = dataRaw1
       .filter(s"seq = 1")
