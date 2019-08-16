@@ -1,20 +1,16 @@
 package com.cpc.spark.oCPX.oCPC.assembly
 
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDate
 import com.typesafe.config.ConfigFactory
-import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
-
-import scala.collection.mutable.ListBuffer
 
 
-object OcpcSampleToPb {
+object OcpcSampleToPbAlltype {
   def main(args: Array[String]): Unit = {
     /*
     pb文件格式：
@@ -35,11 +31,11 @@ object OcpcSampleToPb {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val hourInt = args(3).toInt
+    val fileName = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
-    val data = getCalibrationData(date, hour, version, hourInt, spark)
+    val data = getCalibrationData(date, hour, version, spark)
 
     val adtype15List = getAdtype15(date, hour, 48, version, spark)
     val resultDF = data
@@ -49,34 +45,21 @@ object OcpcSampleToPb {
       .withColumn("jfb_factor", col("jfb_factor_old") *  col("ratio"))
 
     resultDF
-      .select("unitid", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+
   }
 
-  def getCalibrationData(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
-
+  def getCalibrationData(date: String, hour: String, version: String, spark: SparkSession) = {
     val sqlRequest1 =
       s"""
          |SELECT
-         |  unitid,
+         |  identifier,
          |  conversion_goal,
          |  is_hidden,
          |  exp_tag,
@@ -87,42 +70,21 @@ object OcpcSampleToPb {
          |  high_bid_factor,
          |  low_bid_factor,
          |  cpagiven,
-         |  date,
-         |  hour
+         |  cast(split(identifier, '&')[0] as int) as unitid
          |FROM
-         |  dl_cpc.ocpc_pb_data_hourly
+         |  dl_cpc.ocpc_pb_data_hourly_alltype
          |WHERE
-         |  $selectCondition
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
          |AND
          |  version = '$version'
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark
-        .sql(sqlRequest1)
-        .withColumn("create_time", concat_ws(" ", col("date"), col("hour")))
-        .withColumn("time_stamp", unix_timestamp(col("create_time"), "yyyy-MM-dd HH"))
-    rawData.createOrReplaceTempView("raw_data")
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  *,
-         |  row_number() over(partition by unitid, conversion_goal, is_hidden, exp_tag order by time_stamp desc) as seq
-         |FROM
-         |  raw_data
-       """.stripMargin
-    println(sqlRequest2)
-    val dataRaw1 = spark.sql(sqlRequest2)
-
-    dataRaw1
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_sample_topb20190816")
-
-    val data1 = dataRaw1
-        .filter(s"seq = 1")
-        .cache()
+    val data1 = spark.sql(sqlRequest1).cache()
     data1.show(10)
 
-    val sqlRequest3 =
+    val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
@@ -134,13 +96,13 @@ object OcpcSampleToPb {
          |  version = 'ocpcv1'
          |GROUP BY unitid, conversion_goal
        """.stripMargin
-    println(sqlRequest3)
-    val data2 = spark.sql(sqlRequest3).cache()
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2).cache()
     data2.show(10)
 
     val data = data1
       .join(data2, Seq("unitid", "conversion_goal"), "left_outer")
-      .select("unitid", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven", "unitid")
       .withColumn("cali_value", udfCheckCali(0.1, 5.0)(col("cali_value")))
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
       .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
@@ -160,6 +122,7 @@ object OcpcSampleToPb {
     }
     result
   })
+
 
   def getAdtype15(date: String, hour: String, hourInt: Int, version: String, spark: SparkSession) = {
     // 抽取媒体id
