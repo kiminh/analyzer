@@ -20,15 +20,16 @@ object video_sample {
     cal.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val sample = getSample(spark, oneday).repartition(500).persist(StorageLevel.MEMORY_AND_DISK_SER_2)
-    sample.write
+    val sample = getSample(spark, oneday)
+    sample.repartition(500).write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/")
     val CountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/tmp/"
     val CountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/count"
-    CommonUtils.writeCountToFile(spark, sample.count(), CountPathTmpName, CountPathName)
+    val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/part*").count()
+    CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
