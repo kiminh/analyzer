@@ -26,7 +26,7 @@ object video_sample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/")
-    val CountPathTmpName = s"hdfs://emr-cluster2/user/cpc/aiclk_dataflow/daily/videoctr-v1/tmp/"
+    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/tmp/"
     val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/count"
     val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v1/$oneday/part*").count()
     CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
