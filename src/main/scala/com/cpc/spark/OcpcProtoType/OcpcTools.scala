@@ -1,11 +1,13 @@
 package com.cpc.spark.OcpcProtoType
 
-import java.io.FileOutputStream
+import java.io.{FileInputStream, FileOutputStream, InputStreamReader, ObjectInputStream}
+import java.nio.file.FileSystem
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem}
 
 object OcpcTools {
   def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
@@ -56,6 +58,41 @@ object OcpcTools {
 
   def udfConcatStringInt(str: String) = udf((intValue: Int) => {
     val result = str + intValue.toString
+    result
+  })
+
+  def getConfCPA(version: String, date: String, hour: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val suggestCpaPath = conf.getString("ocpc_all.light_control.suggest_path_v2")
+    val rawData = spark.read.format("json").json(suggestCpaPath)
+    val data = rawData
+      .filter(s"version = '$version'")
+      .groupBy("unitid", "media")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest")
+      )
+      .selectExpr("unitid", "media", "cpa_suggest")
+
+    data.show()
+    data
+  }
+
+  def getExpConf(version: String, expTag: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val tag = "ocpc_exp." + version + "." + expTag
+    val conf = ConfigFactory.load(tag)
+    conf
+  }
+
+  def udfDetermineMedia() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
+      case _ => "novel"
+    }
     result
   })
 }

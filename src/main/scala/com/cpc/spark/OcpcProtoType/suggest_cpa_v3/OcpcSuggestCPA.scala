@@ -58,8 +58,15 @@ object OcpcSuggestCPA {
     val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).repartition(10).cache()
     aucData.show(10)
 
+    // 获取ocpc_status
+    val ocpcStatusRaw = getConversionGoal(date, hour, spark)
+    val ocpcStatus = ocpcStatusRaw
+      .select("unitid", "userid", "ocpc_status")
+      .distinct()
+
+
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, spark)
+    val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
     val resultDF = result
       .withColumn("date", lit(date))
@@ -72,34 +79,40 @@ object OcpcSuggestCPA {
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
-  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, spark: SparkSession) = {
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcStatus: DataFrame, spark: SparkSession) = {
     /*
     assemlby the data together
      */
     val rawData = baseData
       .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
       .join(aucData, Seq("unitid", "conversion_goal", "media"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc")
+      .join(ocpcStatus, Seq("unitid", "userid"), "left_outer")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "ocpc_status")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
       s"""
          |SELECT
          |  *,
-         |  (case when industry in ('elds', 'feedapp') and media = 'qtt' then 10
-         |        else 60 end) as cv_threshold
+         |  (case
+         |    when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
+         |    when media = 'hottopic' and conversion_goal = 1 and industry = 'feedapp' then 20
+         |    else 60
+         |  end) as cv_threshold
          |FROM
          |  raw_data
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
+    data.printSchema()
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend")
+      .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
+      .na.fill(0, Seq("is_recommend"))
+//      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .cache()
 
     resultDF.show(10)
@@ -107,6 +120,42 @@ object OcpcSuggestCPA {
     resultDF
 
   }
+
+  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Long, auc: Double, isRecommend: Int) => {
+    var result = isRecommend
+    if (isRecommend == 1) {
+      if ((media == "novel" || media == "qtt") && (industry == "elds" || industry == "feedapp")) {
+        if (cv >= 10 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else if (industry == "others") {
+        if (cv >= 10 && auc >= 0.55) {
+          result = 1
+        } else if (cv >= 60 && auc >= 0.5) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else if ((media == "hottopic") && (industry == "feedapp") && (conversion_goal == 1)) {
+        if (cv >= 20 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      } else {
+        if (cv >= 60 && auc >= 0.6) {
+          result = 1
+        } else {
+          result = 0
+        }
+      }
+    } else {
+      result = isRecommend
+    }
+    result
+  })
 
   def getKvalue(baseData: DataFrame, baseStat: DataFrame, date: String, hour: String, spark: SparkSession) = {
     baseStat.createOrReplaceTempView("base_data")
@@ -223,7 +272,7 @@ object OcpcSuggestCPA {
          |    bid_discounted_by_ad_slot as bid,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    (case

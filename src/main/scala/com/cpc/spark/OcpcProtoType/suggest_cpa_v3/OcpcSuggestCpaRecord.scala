@@ -3,6 +3,7 @@ package com.cpc.spark.OcpcProtoType.suggest_cpa_v3
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.OcpcProtoType.OcpcTools.getConfCPA
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
@@ -125,7 +126,7 @@ object OcpcSuggestCpaRecord {
          |    isclick,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
@@ -162,8 +163,9 @@ object OcpcSuggestCpaRecord {
          |SELECT
          |  unitid,
          |  media,
-         |  cpa as cpa_suggest,
-         |  conversion_goal
+         |  cpa as cpa1,
+         |  conversion_goal,
+         |  is_recommend
          |FROM
          |  dl_cpc.ocpc_recommend_units_hourly
          |WHERE
@@ -172,21 +174,34 @@ object OcpcSuggestCpaRecord {
          |  `hour` = '$hour'
          |AND
          |  version='$version'
-         |AND
-         |  is_recommend = 1
        """.stripMargin
     println(sqlRequest1)
-    val data = spark
+    val data1 = spark
       .sql(sqlRequest1)
-      .groupBy("unitid", "media", "conversion_goal")
+      .groupBy("unitid", "media", "conversion_goal", "is_recommend")
       .agg(
-        avg("cpa_suggest").alias("cpa_suggest")
+        avg("cpa1").alias("cpa1")
       )
-      .select("unitid", "media", "conversion_goal", "cpa_suggest")
+      .select("unitid", "media", "conversion_goal", "cpa1", "is_recommend")
 
 
+    val data2raw = getConfCPA(version, date, hour, spark)
+    val data2 = data2raw
+      .withColumn("cpa2", col("cpa_suggest"))
+      .select("unitid", "media", "cpa2")
 
-    data
+
+    val data = data1
+        .join(data2, Seq("unitid", "media"), "left_outer")
+        .select("unitid", "media", "conversion_goal", "cpa1", "cpa2", "is_recommend")
+        .withColumn("is_recommend", when(col("cpa2").isNotNull, 1).otherwise(col("is_recommend")))
+        .withColumn("cpa_suggest", when(col("cpa2").isNotNull, col("cpa2")).otherwise(col("cpa1")))
+
+    val resultDF = data
+        .filter(s"is_recommend = 1")
+        .select("unitid", "media", "conversion_goal", "cpa_suggest")
+
+    resultDF
   }
 
   def updateCPAsuggest(newDataRaw: DataFrame, prevDataRaw: DataFrame, spark: SparkSession) = {

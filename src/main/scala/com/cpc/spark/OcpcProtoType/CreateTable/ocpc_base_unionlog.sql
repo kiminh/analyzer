@@ -60,3 +60,7 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (ocpc_step int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (previous_id string);
 --alter table dl_cpc.ocpc_base_unionlog add columns (ocpc_status int)
+--alter table dl_cpc.ocpc_base_unionlog add columns (bscvr bigint)
+--alter table dl_cpc.ocpc_base_unionlog add columns (second_cpm bigint);
+--alter table dl_cpc.ocpc_base_unionlog add columns (final_cpm bigint);
+--alter table dl_cpc.ocpc_base_unionlog add columns (ocpc_expand int);
