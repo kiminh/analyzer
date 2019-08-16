@@ -247,7 +247,7 @@ val sqlRequest2 =
         |sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v2
         |where date='$date' group by date,userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
         |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tc.profile_tag is not null or tb.tag is not null or cast(coalesce(ta.tag,0) as int)<1000
-      """.stripMargin).write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
+      """.stripMargin).repartition(5).write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
 
     unionlog.unpersist()
     base.unpersist()
