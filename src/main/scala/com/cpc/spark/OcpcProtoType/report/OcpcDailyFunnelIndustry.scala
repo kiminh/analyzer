@@ -198,7 +198,7 @@ object OcpcDailyFunnelIndustry {
          |    end) as industry,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid = '80002819' then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    is_api_callback
