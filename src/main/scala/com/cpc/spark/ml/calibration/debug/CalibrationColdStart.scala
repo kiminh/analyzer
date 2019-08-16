@@ -31,7 +31,7 @@ object CalibrationColdStart{
 
     import spark.implicits._
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$dt/$task/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/$dt/result-*")
       .toDF("id","prediction","num")
 
 //    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
