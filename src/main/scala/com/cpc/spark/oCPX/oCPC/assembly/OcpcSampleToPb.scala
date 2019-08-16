@@ -4,7 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -54,11 +54,25 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly")
   }
 
   def getCalibrationData(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
     val sqlRequest1 =
       s"""
          |SELECT
@@ -72,18 +86,26 @@ object OcpcSampleToPb {
          |  smooth_factor,
          |  high_bid_factor,
          |  low_bid_factor,
-         |  cpagiven
+         |  cpagiven,
+         |  row_number() over(partition by unitid, conversion_goal, is_hidden, exp_tag order by date, hour desc) as seq,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_pb_data_hourly
          |WHERE
-         |  `date` = '$date'
-         |AND
-         |  `hour` = '$hour'
+         |  $selectCondition
          |AND
          |  version = '$version'
        """.stripMargin
     println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1).cache()
+    val dataRaw1 = spark.sql(sqlRequest1)
+    dataRaw1
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_sample_topb20190816")
+
+    val data1 = dataRaw1
+        .filter(s"seq = 1")
+        .cache()
     data1.show(10)
 
     val sqlRequest2 =
