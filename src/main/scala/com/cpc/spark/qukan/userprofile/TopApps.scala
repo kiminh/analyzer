@@ -31,13 +31,12 @@ object TopApps {
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
-    val pkgs = spark.read.parquet(inpath)
-      .rdd
+    val pkgs = spark.read.parquet(inpath).rdd
+
+    //1. 所有媒体活跃用户DAU大于2w 的app
+    val allApps = pkgs
       .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
-
-    //所有媒体活跃用户DAU大于2w 的app
-    val allApps = pkgs
       .reduceByKey(_ + _)
       .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
@@ -61,20 +60,22 @@ object TopApps {
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-//    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-//      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
-//      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
-//      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-//      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
+    //    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    //      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
+    //      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
+    //      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+    //      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
     val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
 
 
-    //安装qtt活跃用户DAU大于2w的app
+    //2. 安装qtt活跃用户DAU大于2w的app
     val qttApps = pkgs
-      .filter(x => x._1.contains("com.jifen.qukan-趣头条"))
+      .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
+      .filter(x => x._2.contains("com.jifen.qukan-趣头条"))
+      .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
       .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
@@ -86,11 +87,11 @@ object TopApps {
       qtt_txt = qtt_txt + "%s %s\n".format(t._1, t._2)
     }
 
-//    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-//      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
-//      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
-//      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-//      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
+    //    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    //      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
+    //      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
+    //      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+    //      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
     val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!qtt) {
       println("发送邮件失败")
