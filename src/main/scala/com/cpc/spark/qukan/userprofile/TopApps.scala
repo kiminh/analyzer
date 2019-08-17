@@ -31,7 +31,7 @@ object TopApps {
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
-    val pkgs = spark.read.parquet(inpath).rdd
+    val pkgs = spark.read.parquet(inpath).rdd.cache()
 
     //1. 所有媒体活跃用户DAU大于2w 的app
     val allApps = pkgs
@@ -96,6 +96,9 @@ object TopApps {
     if (!qtt) {
       println("发送邮件失败")
     }
+
+    pkgs.unpersist()
+    spark.close()
 
   }
 }
