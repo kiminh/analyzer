@@ -52,8 +52,15 @@ object OcpcLightBulb{
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
     val result = getUpdateTableV2(currentLight, date, hour, version, spark)
 
+    // 抽取adv的ocpc单元
+    val ocpcUnitsRaw = getConversionGoal(date, hour, spark)
+    val ocpcUnits = ocpcUnitsRaw
+      .filter(s"is_ocpc=1")
+      .select("unitid").distinct()
+
     // 存储到redis
     val resultDF = result
+      .join(ocpcUnits, Seq("unitid"), "inner")
       .withColumn("unit_id", col("unitid"))
       .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
       .withColumn("date", lit(date))
@@ -64,11 +71,6 @@ object OcpcLightBulb{
       .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
-
-
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(version, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(version, date, hour, spark)
@@ -298,7 +300,7 @@ object OcpcLightBulb{
          |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
          |        else 'novel'
          |    end) as media
          |FROM
@@ -341,7 +343,7 @@ object OcpcLightBulb{
          |  adclass,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944') then 'hottopic'
          |      else 'novel'
          |  end) as media
          |FROM

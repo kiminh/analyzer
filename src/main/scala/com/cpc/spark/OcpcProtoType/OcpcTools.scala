@@ -84,4 +84,15 @@ object OcpcTools {
     val conf = ConfigFactory.load(tag)
     conf
   }
+
+  def udfDetermineMedia() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
+      case _ => "novel"
+    }
+    result
+  })
 }
