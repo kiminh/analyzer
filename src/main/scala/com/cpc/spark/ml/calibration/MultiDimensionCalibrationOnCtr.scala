@@ -55,12 +55,12 @@ object MultiDimensionCalibrationOnCtr {
                  |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
                  |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid,
                  |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |  when user_show_ad_num = 0 then '0'
+                 |  when user_show_ad_num = 1 then '1'
+                 |  when user_show_ad_num = 2 then '2'
+                 |  when user_show_ad_num in (3,4) then '4'
+                 |  when user_show_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_show_ad_num
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
                  | and $mediaSelection and isshow = 1
@@ -75,14 +75,14 @@ object MultiDimensionCalibrationOnCtr {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
-    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
+    val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslotid")))
       .filter("count1>100000")
-      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
-    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
+      .select("adclass","ideaid","user_show_ad_num","adslotid","group")
+    val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .filter("count2>100000")
-      .select("adclass","ideaid","user_req_ad_num","group")
+      .select("adclass","ideaid","user_show_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter("count3>100000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
@@ -92,10 +92,10 @@ object MultiDimensionCalibrationOnCtr {
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
+    val data1 = log.join(group1,Seq("adclass","ideaid","user_show_ad_num","adslotid"),"inner")
     val calimap1 = GroupToConfig(data1, session,model)
 
-    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
+    val data2 = log.join(group2,Seq("adclass","ideaid","user_show_ad_num"),"inner")
     val calimap2 = GroupToConfig(data2, session,model)
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")

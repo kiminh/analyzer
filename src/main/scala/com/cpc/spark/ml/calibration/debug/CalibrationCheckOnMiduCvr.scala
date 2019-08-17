@@ -44,16 +44,16 @@ object CalibrationCheckOnMiduCvr {
     // get union log
     val sql = s"""
                  |select postcali_value as ecvr,searchid, raw_cvr, key, substring(adclass,1,6) as adclass, adslotid as adslot_id, ideaid,
-                 |case when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |case when user_show_ad_num = 1 then '1'
+                 |  when user_show_ad_num = 2 then '2'
+                 |  when user_show_ad_num in (3,4) then '4'
+                 |  when user_show_ad_num in (5,6,7) then '7'
+                 |  else '8' end as user_show_ad_num
                  |  from test.wy00
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-      .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
+    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
+      .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .withColumn("group3",concat_ws("_",col("adclass"),col("ideaid")))
       .withColumn("group4",concat_ws("_",col("adclass")))
       .withColumn("group",when(searchMap(modelset)(col("group4")),col("group4")).otherwise(lit("0")))
@@ -61,7 +61,7 @@ object CalibrationCheckOnMiduCvr {
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("ideaid","raw_cvr","ecvr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num")
+      .select("ideaid","raw_cvr","ecvr","searchid","group","group1","group2","group3","adslot_id","user_show_ad_num")
 
     log.show(50)
     println("total data:%d".format(log.count()))

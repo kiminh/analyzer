@@ -14,6 +14,7 @@ object KFactorCaliv3 {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
+    //激励视频校准
     // parse and process input
     val endDate = args(0)
     val endHour = args(1)

@@ -20,6 +20,7 @@ object KFactorCali {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
+    //激励视频ctr校准
 
     // parse and process input
     val endDate = args(0)
