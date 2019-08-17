@@ -24,5 +24,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 #val date = args(0).toString
 #val hour = args(1).toString
 #val version = args(2).toString
-#val hourInt = args(3).toInt
+#val fileName = args(3).toString
 
