@@ -83,7 +83,7 @@ object TopApps {
     val iteratorQtt = qttApps.toLocalIterator
     var qtt_txt = ""
     while (iteratorQtt.hasNext) {
-      val t = iterator.next()
+      val t = iteratorQtt.next()
       qtt_txt = qtt_txt + "%s %s\n".format(t._1, t._2)
     }
 
