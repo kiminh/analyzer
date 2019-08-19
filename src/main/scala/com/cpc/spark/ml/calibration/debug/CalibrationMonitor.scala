@@ -55,13 +55,14 @@ object CalibrationMonitor {
     val basedata = session.sql(sql)
 
     val md5 = basedata.first().getAs[String]("model_md5")
-    val filename = s"hdfs://emr-cluster/user/cpc/wy/calibration/post-calibration-$modelName.txt"
-    val model = spark.sparkContext.textFile(filename)
+    val filename = s"hdfs://emr-cluster/user/cpc/wy/calibration/post-calibration-${modelName}.txt"
+    val timestamp = spark.sparkContext.textFile(filename)
       .map(x => (x.split(" ")(0), x.split(" ")(1), x.split(" ")(2)))
       .toDF("timestamp", "md5", "path")
-      .
+      .filter(s"md5 = $md5")
+      .first().getAs[Double]("timestamp")
 
-    model.show(10)
+    val modelPatch =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPatch}/calibration/dnn/${timestamp}/post-calibration-${modelName}.mlm"
 
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
     val modelset=calimap.keySet
