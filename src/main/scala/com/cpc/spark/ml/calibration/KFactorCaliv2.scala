@@ -14,7 +14,7 @@ object KFactorCaliv2 {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    // parse and process input
+    // public k calibration
 
     val k = args(0).toDouble
     val calimodel = args(1)
