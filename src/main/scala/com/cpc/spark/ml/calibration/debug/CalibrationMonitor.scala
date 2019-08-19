@@ -6,6 +6,8 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.common.Utils.sendMail
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
@@ -62,9 +64,11 @@ object CalibrationMonitor {
       .filter(s"md5 = '$md5'")
       .first().getAs[String]("timestamp")
 
-    val caliPath =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
-
-    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(caliPath))).caliMap
+    val dir: String  = s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
+    val conf = new Configuration()
+    val path = new Path(dir)
+    val califile = path.getFileSystem(conf).listStatus(path)
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(califile))).caliMap
     val modelset=calimap.keySet
 
     val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
