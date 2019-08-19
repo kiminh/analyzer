@@ -1,8 +1,7 @@
-package com.cpc.spark.oCPX.oCPC.calibration_alltype_v2
+package com.cpc.spark.oCPX.oCPC.calibration_alltype.realtime
 
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.udfs._
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
