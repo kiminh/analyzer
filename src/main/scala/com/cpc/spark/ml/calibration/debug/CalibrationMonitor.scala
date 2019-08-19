@@ -64,8 +64,15 @@ object CalibrationMonitor {
       .filter(s"md5 = '$md5'")
       .first().getAs[String]("timestamp")
 
-    val caliPath =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
     val path = s"/home/cpc/wy/post-calibration-${modelName}-monitor.mlm"
+    val localfile = new File(filename)
+    println(filename)
+    val deleteMlm =  s"rm ${path}"
+    if (localfile.exists()) {
+      deleteMlm !
+    }
+    val caliPath =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
+
     val getfilefromhdfs = s"hadoop fs -get ${caliPath} ${path}"
     getfilefromhdfs !
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(path))).caliMap
