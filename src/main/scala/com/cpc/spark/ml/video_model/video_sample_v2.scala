@@ -38,9 +38,9 @@ object video_sample_v2 {
     val adtype8_hash = Murmur3Hash.stringHash64("f8" + "#" + "8", 0)
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
     val video_sample = original_sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense", $"ideaidhash")
-    val ideaid_feature = spark.sql(s"""select ideaid, resourceid from dl_cpc.video_feature""").select(hash("f11")($"ideaid").alias("ideaidhash"),$"resourceid")
+    val ideaid_feature = spark.sql(s"""select ideaid, resource from dl_cpc.resource where model='video'""").select(hash("f11")($"ideaid").alias("ideaidhash"),$"resource")
     val result = video_sample.join(ideaid_feature, Seq("ideaidhash"), "left_outer").
-      select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", hash("f" + 28)($"resourceid").alias("resourceidhash")).rdd.map{
+      select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", hash("f" + 28)($"resource").alias("resourceidhash")).rdd.map{
       r =>
         val sample_idx = r.getAs[Long]("sample_idx")
         val label = r.getAs[Seq[Long]]("label")
