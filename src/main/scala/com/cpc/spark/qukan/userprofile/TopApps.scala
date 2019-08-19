@@ -22,22 +22,26 @@ object TopApps {
 
     val date = args(0)
 
-    val spark = SparkSession.builder().appName("save user installed apps " + date)
+    val spark = SparkSession
+      .builder()
+      .appName("save user installed apps " + date)
       .enableHiveSupport().getOrCreate()
 
     val inpath = "/user/cpc/userInstalledApp/%s".format(date)
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
-    val pkgs = spark.read.parquet(inpath)
-      .rdd
+    val pkgs = spark.read.parquet(inpath).rdd.cache()
+
+    //1. 所有媒体活跃用户DAU大于2w 的app
+    val allApps = pkgs
       .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
       .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
 
-    pkgs.toDF("app_name", "install_user_num")
+    allApps.toDF("pkg", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/top_apps/%s".format(date))
@@ -47,32 +51,54 @@ object TopApps {
         |ALTER TABLE dl_cpc.top_apps add if not exists PARTITION(`date` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
       """.stripMargin.format(date, date))
+    println("all Apps count: " + allApps.count())
 
-    println("count: " + pkgs.count())
-
-
-    val iterator = pkgs.toLocalIterator
-
+    val iterator = allApps.toLocalIterator
     var txt = ""
     while (iterator.hasNext) {
       val t = iterator.next()
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-    //    for (i <- 0 until topApps_top100.length) {
-    //      val t = topApps_top100(i)
-    //      txt = txt + "%s %s\n".format(t._1, t._2)
-    //    }
-
-    val b = sendMail(txt, "%s topApps 活跃用户DAU大于2w".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
       "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
       "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
       "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
       "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
-    //val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com"))
+    //val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
+
+
+    //2. 安装qtt活跃用户DAU大于2w的app
+    val qttApps = pkgs
+      .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
+      .filter(x => x._2.contains("com.jifen.qukan-趣头条"))
+      .flatMap(_._2.map(x => (x, 1l)))
+      .reduceByKey(_ + _)
+      .filter(_._2 > 20000)
+      .sortBy(x => x._2, false)
+
+    val iteratorQtt = qttApps.toLocalIterator
+    var qtt_txt = ""
+    while (iteratorQtt.hasNext) {
+      val t = iteratorQtt.next()
+      qtt_txt = qtt_txt + "%s %s\n".format(t._1, t._2)
+    }
+
+    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
+      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
+      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
+    //val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com"))
+    if (!qtt) {
+      println("发送邮件失败")
+    }
+
+    pkgs.unpersist()
+    spark.close()
 
   }
 }
