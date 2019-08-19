@@ -84,9 +84,13 @@ object CalibrationMonitor {
       .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_show_ad_num"
         ,"show_count","key","model_md5","snapshot_rawctr","snapshot_postctr","snapshot_ectr")
 
-    log.show(50)
+    log.show(20)
     val data_sum = log.count()
     println("total data:%d".format(data_sum))
+
+    val wrong = log.filter("isload = 0")
+    wrong.show(10)
+    wrong.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.calibration_wrong_sample")
 
     val data = log.filter("isload = 1")
     val data_rightkey = data.count()
