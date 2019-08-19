@@ -15,7 +15,7 @@ import scala.sys.process._
 import scala.util.Random
 
 /**
-  * 解析tfrecord到hdfs并下采样
+  * 解析tfrecord并统计广告相关id
   * created time : 2019/07/13 10:38
   * @author fenghuabin
   * @version 1.0

@@ -27,7 +27,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.dnn.baseData.MakeSampling \
+    --class com.cpc.spark.ml.dnn.baseData.MakeUserIdStatistics \
     ${randjar} ${src_dir} ${date_begin} ${date_end} ${des_dir}
 
 chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
