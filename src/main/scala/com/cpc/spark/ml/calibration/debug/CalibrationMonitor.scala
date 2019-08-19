@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.calibration.debug
 
 import java.io.{File, FileInputStream, PrintWriter}
-
+import sys.process._
 import com.cpc.spark.common.Utils
 import com.cpc.spark.common.Utils.sendMail
 import com.google.protobuf.CodedInputStream
@@ -64,11 +64,11 @@ object CalibrationMonitor {
       .filter(s"md5 = '$md5'")
       .first().getAs[String]("timestamp")
 
-    val dir: String  = s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
-    val conf = new Configuration()
-    val path = new Path(dir)
-    val califile = path.getFileSystem(conf).listStatus(path)
-    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(califile))).caliMap
+    val caliPath =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
+    val path = s"/home/cpc/wy/post-calibration-${modelName}-monitor.mlm"
+    val getfilefromhdfs = s"hadoop fs -get -f ${caliPath} ${path}"
+    getfilefromhdfs !
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(path))).caliMap
     val modelset=calimap.keySet
 
     val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
