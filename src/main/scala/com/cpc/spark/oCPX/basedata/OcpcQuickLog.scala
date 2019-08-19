@@ -28,8 +28,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
@@ -84,7 +84,7 @@ object OcpcQuickLog {
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid")
 
     clickData
   }
