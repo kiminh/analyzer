@@ -39,12 +39,12 @@ object CalibrationMonitor {
                  |a.adslotid as adslot_id, a.ideaid, b.f88[0] as key,b.f89[0] as model_md5,b.f85[0] snapshot_rawctr,
                  |b.f86[0] snapshot_postctr,b.f83[0] snapshot_ectr,b.f61[0] show_count,
                  |case
-                 |  when user_req_ad_num in (0,1) then '0'
-                 |  when user_req_ad_num = 2 then '1'
-                 |  when user_req_ad_num = 3 then '2'
-                 |  when user_req_ad_num in (4,5) then '4'
-                 |  when user_req_ad_num in (6,7,8) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |  when user_show_ad_num in (0,1) then '0'
+                 |  when user_show_ad_num = 2 then '1'
+                 |  when user_show_ad_num = 3 then '2'
+                 |  when user_show_ad_num in (4,5) then '4'
+                 |  when user_show_ad_num in (6,7,8) then '7'
+                 |  else '8' end as user_show_ad_num
                  |from dl_cpc.slim_union_log a
                  |left join dl_cpc.cpc_ml_nested_snapshot b
                  |on a.searchid = b.searchid and b.day = '$dt' and b.hour = '$hour' and pt = 'qtt'
@@ -59,14 +59,15 @@ object CalibrationMonitor {
     val model = spark.sparkContext.textFile(filename)
       .map(x => (x.split(" ")(0), x.split(" ")(1), x.split(" ")(2)))
       .toDF("timestamp", "md5", "path")
+      .
 
     model.show(10)
 
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
     val modelset=calimap.keySet
 
-    val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-      .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
+    val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
+      .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .withColumn("group3",concat_ws("_",col("adclass"),col("ideaid")))
       .withColumn("group4",col("adclass"))
       .withColumn("group",when(searchMap(modelset)(col("group4")),col("group4")).otherwise(lit("0")))
@@ -75,7 +76,7 @@ object CalibrationMonitor {
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
       .withColumn("isload",when(col("group")===col("key"),lit(1)).otherwise(0))
-      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_req_ad_num"
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_show_ad_num"
         ,"show_count","key","model_md5","snapshot_rawctr","snapshot_postctr","snapshot_ectr")
 
     log.show(50)

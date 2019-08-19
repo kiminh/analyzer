@@ -81,11 +81,11 @@ object MultiDimensionCalibrationOnQttCtr {
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
     val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslotid")))
       .filter("count1>100000")
       .select("adclass","ideaid","user_show_ad_num","adslotid","group")
     val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .filter("count2>100000")
       .select("adclass","ideaid","user_show_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
