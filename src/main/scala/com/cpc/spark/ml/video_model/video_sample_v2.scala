@@ -33,7 +33,7 @@ object video_sample_v2 {
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     var original_sample: DataFrame = null
-    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/$date/part*9").
+    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/$date/part*").
       select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense",expr("dense[8]").alias("adtypehash"),expr("dense[11]").alias("ideaidhash"))
     val adtype8_hash = Murmur3Hash.stringHash64("f8" + "#" + "8", 0)
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
