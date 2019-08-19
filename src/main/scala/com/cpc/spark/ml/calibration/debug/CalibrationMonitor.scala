@@ -62,7 +62,7 @@ object CalibrationMonitor {
       .filter(s"md5 = $md5")
       .first().getAs[Double]("timestamp")
 
-    val modelPatch =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPatch}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
+    val modelPatch =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
 
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
     val modelset=calimap.keySet
