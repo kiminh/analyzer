@@ -60,7 +60,7 @@ object CalibrationMonitor {
       .map(x => (x.split(" ")(0), x.split(" ")(1), x.split(" ")(2)))
       .toDF("timestamp", "md5", "path")
       .filter(s"md5 = '$md5'")
-      .first().getAs[Double]("timestamp")
+      .first().getAs[String]("timestamp")
 
     val modelPatch =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
 
