@@ -34,10 +34,9 @@ object OcpcCalibrationBase {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
-      .withColumn("identifier", udfGenerateId()(col("unitid"), col("adslot_type")))
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr")
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
