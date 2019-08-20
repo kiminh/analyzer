@@ -341,7 +341,7 @@ object OcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
+         |  media in ('qtt', 'novel', 'hottopic')
          |AND
          |  ocpc_step in (1, 2)
          |AND
