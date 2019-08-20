@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
