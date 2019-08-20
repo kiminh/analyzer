@@ -1,6 +1,9 @@
 package com.cpc.spark.oCPX.oCPC.calibration_all
 
-import com.cpc.spark.oCPX.OcpcTools.{udfMediaName, udfSetExpTag}
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -35,44 +38,24 @@ object OcpcCVRfactorRealtime {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
 
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
 
-    val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
   }
 
-  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw: DataFrame, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
     // cvr实验配置文件
     // min_cv:配置文件中如果为负数或空缺，则用默认值40，其他情况使用设定值
     val expConf = getExpConf(version, spark)
 
-    val data1 = dataRaw1
-        .withColumn("media", udfMediaName()(col("media")))
-        .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-        .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-        .na.fill(40, Seq("min_cv"))
-        .filter(s"cv > 0")
-    data1.show(10)
+    val data1 = selectDataByHourInt(dataRaw, date, hour, hourInt1, expConf, expTag, spark)
 
-    val data2 = dataRaw2
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
-    data2.show(10)
+    val data2 = selectDataByHourInt(dataRaw, date, hour, hourInt2, expConf, expTag, spark)
 
-    val data3 = dataRaw3
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
-    data3.show(10)
+    val data3 = selectDataByHourInt(dataRaw, date, hour, hourInt3, expConf, expTag, spark)
 
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
@@ -87,8 +70,8 @@ object OcpcCVRfactorRealtime {
       .cache()
 
     calibration.show(10)
-//    calibration
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
+    calibration
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723a")
 
 
     val resultDF = calibration
@@ -97,6 +80,43 @@ object OcpcCVRfactorRealtime {
 
     resultDF
 
+  }
+
+  def selectDataByHourInt(dataRaw: DataFrame, date: String, hour: String, hourInt: Int, expConf: DataFrame, expTag: String, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val data = dataRaw
+      .filter(selectCondition)
+      .groupBy("identifier", "conversion_goal", "media")
+      .agg(
+        sum(col("click")).alias("click"),
+        sum(col("cv")).alias("cv"),
+        sum(col("total_pre_cvr")).alias("total_pre_cvr")
+      )
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "conversion_goal", "media", "pcoc", "cv")
+      .na.fill(0, Seq("cv"))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+      .na.fill(40, Seq("min_cv"))
+      .filter(s"cv > 0")
+    data.show(10)
+
+    data
   }
 
   def getExpConf(version: String, spark: SparkSession) ={
