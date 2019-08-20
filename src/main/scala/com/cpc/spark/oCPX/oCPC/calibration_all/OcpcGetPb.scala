@@ -4,6 +4,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime.OcpcCalibrationBaseMain
 import org.apache.spark.sql.functions._
 import org.apache.log4j.{Level, Logger}
@@ -56,35 +57,34 @@ object OcpcGetPb {
       .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
-//
-//    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
-//    val bidFactorData = bidFactorDataRaw
-//      .select("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
-//      .cache()
-//    bidFactorData.show(10)
-//
-//    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
-//    data.show(10)
-//
-//    dataRaw1.unpersist()
-//    dataRaw2.unpersist()
-//    dataRaw3.unpersist()
-//
-//    // 明投单元
-//    val result = data
-//      .withColumn("cpagiven", lit(1.0))
-//      .withColumn("is_hidden", lit(0))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//    val resultDF = result
-//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//    resultDF
-//      .repartition(1)
-////      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp_alltype")
+
+    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorData = bidFactorDataRaw
+      .select("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .cache()
+    bidFactorData.show(10)
+
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+    data.show(10)
+
+    dataRaw.unpersist()
+    dataRawRealtime.unpersist()
+
+    // 明投单元
+    val result = data
+      .withColumn("cpagiven", lit(1.0))
+      .withColumn("is_hidden", lit(0))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp_alltype")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp_alltype")
 
 
