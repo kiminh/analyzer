@@ -333,7 +333,7 @@ object OcpcTools {
          |  unitid,
          |  isclick,
          |  exp_cvr,
-         |  media_appsid,
+         |  media,
          |  industry,
          |  conversion_goal
          |FROM
@@ -352,7 +352,7 @@ object OcpcTools {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+//      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
     val sqlRequest2 =
