@@ -3,6 +3,8 @@ package com.cpc.spark.oCPX.oCPC.calibration_all
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime.OcpcCalibrationBaseMain
 import org.apache.spark.sql.functions._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -47,12 +49,13 @@ object OcpcGetPb {
       .cache()
     smoothData.show(10)
 
-//    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
-//    val pcocData = pcocDataRaw
-//      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
-//      .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
-//      .cache()
-//    pcocData.show(10)
+    val dataRawRealtime = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRawRealtime, hourInt1, hourInt2, hourInt3, spark)
+    val pcocData = pcocDataRaw
+      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
+      .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
+      .cache()
+    pcocData.show(10)
 //
 //    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
 //    val bidFactorData = bidFactorDataRaw
