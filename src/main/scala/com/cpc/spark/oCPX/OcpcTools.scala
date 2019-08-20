@@ -180,6 +180,7 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  date,
          |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -264,6 +265,7 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  date,
          |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
