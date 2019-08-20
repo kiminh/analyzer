@@ -57,7 +57,7 @@ object OcpcBIDfactor {
     // 抽取基础数据
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+      .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isshow", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 
     // 计算各维度下的pcoc、jfb以及后验cvr等指标
