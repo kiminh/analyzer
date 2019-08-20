@@ -55,13 +55,11 @@ object OcpcCalibrationBase {
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
-        avg(col("bid")).alias("acb"),
-        avg(col("price")).alias("acp"),
-        avg(col("exp_cvr")).alias("pre_cvr")
+        sum(col("bid")).alias("total_bid"),
+        sum(col("price")).alias("total_price"),
+        sum(col("exp_cvr")).alias("total_pre_cvr")
       )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
     data
   }
