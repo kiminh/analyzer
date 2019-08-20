@@ -335,7 +335,9 @@ object OcpcTools {
          |  exp_cvr,
          |  media,
          |  industry,
-         |  conversion_goal
+         |  conversion_goal,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_quick_click_log
          |WHERE

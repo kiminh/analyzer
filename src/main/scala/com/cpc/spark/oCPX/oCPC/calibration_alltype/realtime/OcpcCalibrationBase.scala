@@ -36,13 +36,13 @@ object OcpcCalibrationBase {
      */
     val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour")
 
 
     resultDF
@@ -52,7 +52,7 @@ object OcpcCalibrationBase {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media")
+      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -62,7 +62,7 @@ object OcpcCalibrationBase {
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour")
 
     data
   }
