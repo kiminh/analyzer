@@ -60,7 +60,9 @@ object OcpcPIDcontrolV1 {
         .withColumn("key", col("identifier"))
         .select("key", "current_cali", "date", "hour", "exp_tag", "version")
         .repartition(5)
-        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
+//        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_pid_hourly")
+
     println("successfully save data into hive")
   }
 
