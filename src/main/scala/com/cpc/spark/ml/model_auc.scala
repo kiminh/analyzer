@@ -19,6 +19,7 @@ object model_auc {
     val sql =
       s"""
          |select ctr_model_name
+         |    ,adtype
          |    ,exp_ctr as score
          |    ,isclick as label
          |from dl_cpc.cpc_basedata_union_events
@@ -49,12 +50,35 @@ object model_auc {
 
     for (ctr_model_name <- ctr_model_name_list) {
       println(ctr_model_name)
-      val d = data.filter(s"ctr_model_name = '$ctr_model_name'")
+      val d = data.filter(s"ctr_model_name = '$ctr_model_name'").select($"ctr_model_name", $"score", $"label")
       val auc = CalcMetrics.getAuc(spark, d)
       spark.sql(
         s"""
            |insert into dl_cpc.cpc_model_auc partition (day='$day', type='ctr')
            |select '$ctr_model_name', show, '$auc', pcoc from show_pcoc where ctr_model_name='$ctr_model_name'
+         """.stripMargin)
+    }
+
+    //video auc
+    val videp_data = data.filter(s"adtype in (8, 10)")
+    val video_ctr_model_name_list = videp_data.rdd.map(x => x.getAs[String]("ctr_model_name")).distinct().collect()
+    videp_data.createOrReplaceTempView("video_base_event")
+    spark.sql(
+      s"""
+         |select
+         |    ctr_model_name,
+         |    count(*) as show,
+         |    sum(score)/1000000/sum(label) as pcoc from video_base_event group by ctr_model_name
+       """.stripMargin).createOrReplaceTempView("video_show_pcoc")
+
+    for (video_ctr_model_name <- video_ctr_model_name_list) {
+      println(video_ctr_model_name)
+      val video_d = data.filter(s"ctr_model_name = '$video_ctr_model_name'").select($"ctr_model_name", $"score", $"label")
+      val video_auc = CalcMetrics.getAuc(spark, video_d)
+      spark.sql(
+        s"""
+           |insert into dl_cpc.cpc_model_auc partition (day='$day', type='video')
+           |select '$video_ctr_model_name', show, '$video_auc', pcoc from video_show_pcoc where ctr_model_name='$video_ctr_model_name'
          """.stripMargin)
     }
   }
