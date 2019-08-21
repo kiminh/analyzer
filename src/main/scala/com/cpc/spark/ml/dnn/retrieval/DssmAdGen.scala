@@ -59,7 +59,7 @@ object DssmAdGen {
 
     val adCountPathTmpName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-${adVersion}/tmp/"
     val adCountPathName = CommonUtils.HDFS_PREFIX_PATH + s"/user/cpc/hzh/dssm/ad-info-${adVersion}/${yesterday}/count"
-    CommonUtils.writeCountToFile(spark, adCount, adCountPathTmpName, adCountPathName)
+    CommonUtils.(spark, adCount, adCountPathTmpName, adCountPathName)
   }
 
   def getAdOneHotFeatures(spark: SparkSession, yesterday: String): RDD[(String, (String, Array[Long]))] = {
