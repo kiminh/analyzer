@@ -38,7 +38,7 @@ object OcpcCVRfactorRealtime {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
 
-    val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt3, spark).cache()
 
     val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     result

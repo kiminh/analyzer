@@ -5,7 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime._
 import org.apache.spark.sql.functions._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -50,7 +50,7 @@ object OcpcGetPb {
       .cache()
     smoothData.show(10)
 
-    val dataRawRealtime = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRawRealtime = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt3, spark).cache()
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRawRealtime, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))

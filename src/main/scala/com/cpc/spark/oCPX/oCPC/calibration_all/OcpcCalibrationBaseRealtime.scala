@@ -22,12 +22,12 @@ object OcpcCalibrationBaseRealtime {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
+    val result = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
   }
 
-  def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcCalibrationBaseRealtimeMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "exp_cvr", "date", "hour")
