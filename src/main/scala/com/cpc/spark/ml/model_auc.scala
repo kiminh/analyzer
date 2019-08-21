@@ -53,7 +53,7 @@ object model_auc {
       val auc = CalcMetrics.getAuc(spark, d)
       spark.sql(
         s"""
-           |insert into dl_cpc.cpc_model_auc partitions (day='$day', type='ctr')
+           |insert into dl_cpc.cpc_model_auc partition (day='$day', type='ctr')
            |select '$ctr_model_name', show, '$auc', pcoc from show_pcoc where ctr_model_name='$ctr_model_name'
          """.stripMargin)
     }
