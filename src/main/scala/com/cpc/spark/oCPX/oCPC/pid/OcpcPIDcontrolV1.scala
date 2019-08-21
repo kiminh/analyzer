@@ -33,6 +33,10 @@ object OcpcPIDcontrolV1 {
     val prevError = getPrevData(hourInt, expTag, version, date, hour, spark)
     val prevCali = getPrevCali(baseData, date, hour, spark)
 
+    baseData
+      .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_piddata20190821")
+
     val data = errorData
       .join(prevError, Seq("identifier", "conversion_goal", "media"), "left_outer")
       .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "cv")
