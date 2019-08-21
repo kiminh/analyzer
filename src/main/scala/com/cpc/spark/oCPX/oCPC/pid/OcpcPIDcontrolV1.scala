@@ -106,6 +106,7 @@ object OcpcPIDcontrolV1 {
          |  `date` = '$date'
          |AND
          |  `hour` = '$hour'
+         |GROUP BY identifier, conversion_goal, media
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
