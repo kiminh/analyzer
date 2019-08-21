@@ -66,8 +66,8 @@ object OcpcPIDcontrolV1 {
       .withColumn("kp", lit(kp))
       .withColumn("ki", lit(ki))
       .withColumn("kd", lit(kd))
-      .withColumn("current_calivalue", udfUpdateCali(minCV)(col("increment_value"), col("prev_cali"), col("cv")))
-      .select("identifier", "conversion_goal", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_calivalue", "cv", "online_cali")
+      .withColumn("current_cali", udfUpdateCali(minCV)(col("increment_value"), col("prev_cali"), col("cv")))
+      .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_cali", "cv", "prev_cali")
 
     result
   }
