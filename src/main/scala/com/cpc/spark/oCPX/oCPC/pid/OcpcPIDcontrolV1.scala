@@ -218,7 +218,8 @@ object OcpcPIDcontrolV1 {
       s"""
          |SELECT
          |  searchid,
-         |  cast(unitid as string) identifier,
+         |  unitid,
+         |  cvr_model_name,
          |  adslot_type,
          |  isshow,
          |  isclick,
@@ -247,6 +248,8 @@ object OcpcPIDcontrolV1 {
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
+      .withColumn("identifier", concat_ws("&", col("adslot_type"), col("unitid")))
 
     // 抽取cv数据
     val sqlRequest2 =
