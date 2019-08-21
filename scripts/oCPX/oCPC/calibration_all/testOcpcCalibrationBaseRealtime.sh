@@ -18,8 +18,9 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4
 
 #val date = args(0).toString
 #val hour = args(1).toString
 #val hourInt = args(2).toInt
+#val isDelay = args(3).toInt

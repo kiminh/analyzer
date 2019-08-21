@@ -19,12 +19,32 @@ object OcpcCalibrationBaseRealtime {
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
+    val isDelay = args(3).toInt
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt, spark)
+    var result = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt, spark)
+    if (isDelay == 1) {
+      result = OcpcCalibrationBaseRealtimeDelayMain(date, hour, hourInt, spark)
+    }
+
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
+  }
+
+  def OcpcCalibrationBaseRealtimeDelayMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val baseDataRaw = getRealtimeDataDelay(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "exp_cvr", "date", "hour")
+
+    // 计算结果
+    val result = calculateParameter(baseData, spark)
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_pre_cvr", "date", "hour")
+
+
+    resultDF
   }
 
   def OcpcCalibrationBaseRealtimeMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
