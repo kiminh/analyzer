@@ -33,10 +33,6 @@ object OcpcPIDcontrolV1 {
     val prevError = getPrevData(hourInt, expTag, version, date, hour, spark)
     val prevCali = getPrevCali(baseData, date, hour, spark)
 
-    baseData
-      .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_piddata20190821")
-
     val data = errorData
       .join(prevError, Seq("identifier", "conversion_goal", "media"), "left_outer")
       .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "cv")
@@ -54,12 +50,17 @@ object OcpcPIDcontrolV1 {
       .withColumn("exp_tag", lit(expTag))
       .withColumn("version", lit(version))
       .cache()
-//
+
     pidResult
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
 
+    pidResult
+        .withColumn("key", col("identifier"))
+        .select("key", "current_cali", "date", "hour", "exp_tag", "version")
+        .repartition(5)
+        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
     println("successfully save data into hive")
   }
 
@@ -142,7 +143,7 @@ object OcpcPIDcontrolV1 {
          |  current_error as error1,
          |  prev_error as error2
          |FROM
-         |  test.ocpc_pid_data_hourly
+         |  dl_cpc.ocpc_pid_data_hourly
          |WHERE
          |  `date` = '$date1'
          |AND
