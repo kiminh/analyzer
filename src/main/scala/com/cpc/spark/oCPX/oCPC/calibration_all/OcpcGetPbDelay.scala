@@ -33,7 +33,7 @@ object OcpcGetPbDelay {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
@@ -50,7 +50,7 @@ object OcpcGetPbDelay {
       .cache()
     smoothData.show(10)
 
-    val dataRawRealtime = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt3, spark).cache()
+    val dataRawRealtime = OcpcCalibrationBaseRealtimeDelayMain(date, hour, hourInt3, spark).cache()
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRawRealtime, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
