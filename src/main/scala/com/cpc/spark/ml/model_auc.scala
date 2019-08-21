@@ -37,6 +37,7 @@ object model_auc {
              """.stripMargin
     print(sql)
     val data = spark.sql(sql).cache()
+    val ctr_model_name_list = data.rdd.map(x => x.getAs[String]("ctr_model_name")).distinct().collect()
     data.createOrReplaceTempView("base_event")
     spark.sql(
       s"""
@@ -45,8 +46,6 @@ object model_auc {
          |    count(*) as show,
          |    sum(score)/1000000/sum(label) as pcoc from base_event group by ctr_model_name
        """.stripMargin).createOrReplaceTempView("show_pcoc")
-
-    val ctr_model_name_list = data.rdd.map(x => x.getAs[String]("ctr_model_name")).distinct().collect()
 
     for (ctr_model_name <- ctr_model_name_list) {
       println(ctr_model_name)
