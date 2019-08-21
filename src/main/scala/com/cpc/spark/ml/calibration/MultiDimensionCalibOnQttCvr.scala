@@ -62,12 +62,12 @@ object MultiDimensionCalibOnQttCvr {
                       |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
                       |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,
                       |case
-                      |  when user_req_ad_num = 0 then '0'
-                      |  when user_req_ad_num = 1 then '1'
-                      |  when user_req_ad_num = 2 then '2'
-                      |  when user_req_ad_num in (3,4) then '4'
-                      |  when user_req_ad_num in (5,6,7) then '7'
-                      |  else '8' end as user_req_ad_num
+                      |  when user_show_ad_num = 0 then '0'
+                      |  when user_show_ad_num = 1 then '1'
+                      |  when user_show_ad_num = 2 then '2'
+                      |  when user_show_ad_num in (3,4) then '4'
+                      |  when user_show_ad_num in (5,6,7) then '7'
+                      |  else '8' end as user_show_ad_num
                       |  from
                       |  (select *
                       |  from dl_cpc.cpc_basedata_union_events
@@ -119,14 +119,14 @@ object MultiDimensionCalibOnQttCvr {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
-    val group1 = log.groupBy("adclass","ideaid","user_req_ad_num","adslotid").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num"),col("adslotid")))
+    val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").count().withColumn("count1",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslotid")))
       .filter("count1>100000")
-      .select("adclass","ideaid","user_req_ad_num","adslotid","group")
-    val group2 = log.groupBy("adclass","ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_req_ad_num")))
+      .select("adclass","ideaid","user_show_ad_num","adslotid","group")
+    val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").count().withColumn("count2",col("count"))
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .filter("count2>100000")
-      .select("adclass","ideaid","user_req_ad_num","group")
+      .select("adclass","ideaid","user_show_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter("count3>10000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
@@ -136,10 +136,10 @@ object MultiDimensionCalibOnQttCvr {
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
-    val data1 = log.join(group1,Seq("adclass","ideaid","user_req_ad_num","adslotid"),"inner")
+    val data1 = log.join(group1,Seq("adclass","ideaid","user_show_ad_num","adslotid"),"inner")
     val calimap1 = GroupToConfig(data1, session,model)
 
-    val data2 = log.join(group2,Seq("adclass","ideaid","user_req_ad_num"),"inner")
+    val data2 = log.join(group2,Seq("adclass","ideaid","user_show_ad_num"),"inner")
     val calimap2 = GroupToConfig(data2, session,model)
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
@@ -148,8 +148,8 @@ object MultiDimensionCalibOnQttCvr {
     val data4 = log.join(group4,Seq("adclass"),"inner")
     val calimap4 = GroupToConfig(data4, session,model)
 
-    //    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
-    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
+    val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
@@ -215,7 +215,7 @@ object MultiDimensionCalibOnQttCvr {
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
     var boundaries = Seq[Double]()
     var predictions = Seq[Double]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr")
+    val result = data.select("user_show_ad_num","adslot_id","ideaid","isclick","ectr")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(3) != null) {
