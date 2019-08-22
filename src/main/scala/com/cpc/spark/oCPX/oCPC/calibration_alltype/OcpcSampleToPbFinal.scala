@@ -95,6 +95,7 @@ object OcpcSampleToPbFinal {
         avg(col("smooth_factor")).alias("smooth_factor_new")
       )
       .distinct()
+    confData.show(10)
 
     val data = baseData
       .join(confData, Seq("exp_tag", "identifier"), "left_outer")
