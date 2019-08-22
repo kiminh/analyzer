@@ -79,13 +79,14 @@ object OcpcSampleToPbFinal {
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
-    savePbPack(resultDF, fileName, spark)
+//    savePbPack(resultDF, fileName, spark)
   }
 
   def setDataByConfig(baseData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     // smooth factor
     val conf = ConfigFactory.load("ocpc")
     val confPath = conf.getString("exp_config.unit_smooth_factor")
+    println(confPath)
     val rawData = spark.read.format("json").json(confPath)
     val confData = rawData
       .filter(s"version = '$version'")
