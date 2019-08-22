@@ -3,9 +3,7 @@ package com.cpc.spark.oCPX.oCPC.pid
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.pid.OcpcPIDretrieveData._
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
