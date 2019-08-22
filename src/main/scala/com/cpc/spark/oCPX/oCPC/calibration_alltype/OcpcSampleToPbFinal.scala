@@ -2,6 +2,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import java.io.FileOutputStream
 
+import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -62,7 +63,10 @@ object OcpcSampleToPbFinal {
 
 
 
-    val resultDF = result1.union(result2).union(result3)
+    val result = result1.union(result2).union(result3)
+    val resultDF = setDataByConfig(result, version, date, hour, spark)
+
+
     val finalVersion = version + "pbfile"
     resultDF
       .repartition(5)
@@ -75,6 +79,34 @@ object OcpcSampleToPbFinal {
 
 
     savePbPack(resultDF, fileName, spark)
+  }
+
+  def setDataByConfig(baseData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+    // smooth factor
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_config.unit_smooth_factor")
+    val rawData = spark.read.format("json").json(confPath)
+    val confData = rawData
+      .filter(s"version = '$version'")
+      .select("exp_tag", "identifier", "smooth_factor")
+      .groupBy("exp_tag", "identifier")
+      .agg(
+        avg(col("smooth_factor")).alias("smooth_factor_new")
+      )
+      .distinct()
+
+    val data = baseData
+      .join(confData, Seq("exp_tag", "identifier"), "left_outer")
+      .withColumn("smooth_factor_old", col("smooth_factor"))
+      .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
+      .cache()
+
+    data.show(10)
+    data
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190822")
+
+    data
   }
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
