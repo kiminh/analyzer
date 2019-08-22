@@ -56,7 +56,7 @@ object OcpcPIDcontrolV1 {
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
 
     pidResult
-        .withColumn("key", col("identifier"))
+        .withColumn("key", concat_ws("&", col("exp_tag"), col("identifier")))
         .select("key", "current_cali", "date", "hour", "exp_tag", "version")
         .repartition(5)
 //        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
