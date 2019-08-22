@@ -63,7 +63,7 @@ object OcpcSampleToPbFinal {
 
 
 
-    val result = result1.union(result2).union(result3)
+    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
     val resultDF = setDataByConfig(result, version, date, hour, spark)
 
 
