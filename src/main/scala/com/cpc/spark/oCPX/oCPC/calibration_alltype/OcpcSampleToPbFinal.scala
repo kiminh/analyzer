@@ -69,6 +69,7 @@ object OcpcSampleToPbFinal {
 
     val finalVersion = version + "pbfile"
     resultDF
+      .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .repartition(5)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
