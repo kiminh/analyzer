@@ -281,7 +281,7 @@ object OcpcHourlyReport {
 
 
     resultDF
-      .repartition(5)
+      .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
