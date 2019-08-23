@@ -30,9 +30,9 @@ object cvrModelMonitorV2 {
     val filterResult = dataToday.filter(s"cvr < $min_cvr")
     val cnt = filterResult.count()
     val totalCnt = dataToday.count()
-    println("complete data:")
+    println(s"complete data: $totalCnt")
     dataToday.show(10)
-    println("incorrect data:")
+    println(s"incorrect data: $cnt")
     filterResult.show(10)
 
     // email content
