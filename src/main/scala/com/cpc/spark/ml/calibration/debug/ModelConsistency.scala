@@ -31,10 +31,10 @@ object ModelConsistency{
     // get union log
 
     val sql = s"""
-                 |select a.searchid, a.raw_ctr
+                 |select a.searchid, a.raw_ctr,b.f84[0]
                  |from dl_cpc.cpc_basedata_union_events a
                  |join dl_cpc.cpc_ml_nested_snapshot b
-                 |  on a.searchid = b.searchid and b.f84[0]='85c093b037c3d43037c797a8c62ce6c5'
+                 |  on a.searchid = b.searchid and pt='qtt'
                  |  and b.day = '$dt' and b.hour = '12'
                  |  where a.day = '$dt' and a.hour = '12'
                  |  and a.media_appsid in ('80000001','80000002') and a.isshow = 1
