@@ -45,7 +45,7 @@ object cvrModelMonitorV2 {
 //    receiver:+="wanlunjun@qutoutiao.net"
 //    receiver:+="wangfang03@qutoutiao.net"
 //    receiver:+="dongjinbao@qutoutiao.net"
-    if (cnt > 0 && totalCnt != 24) {
+    if (cnt > 0 || totalCnt != 24) {
       println(s"send email: count is $cnt and $totalCnt")
       sendMail(message, sub, receiver)
     } else {
