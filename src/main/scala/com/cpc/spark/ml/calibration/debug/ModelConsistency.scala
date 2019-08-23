@@ -42,7 +42,6 @@ object ModelConsistency{
     val basedata = spark.sql(sql)
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
-      .withColumn("isclick",col("iscvr"))
       .withColumn("ectr",col("prediction")*1e6d)
       .withColumn("flag",when(col("ectr")/col("raw_ctr")>0.99 and col("ectr")/col("raw_ctr")<1.01,1).otherwise(0))
 
