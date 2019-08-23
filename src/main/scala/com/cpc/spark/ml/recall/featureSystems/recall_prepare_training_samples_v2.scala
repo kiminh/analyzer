@@ -124,37 +124,37 @@ object recall_prepare_training_samples_v2 {
     val result = original_sample.join(sample_new, Seq("uidhash"), "left_outer").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
         mkSparseFeature_m(multihot_feature_number)(array(
-      hashSeq("m9", "string")($"slotid9").alias("slotid9"),
-      hashSeq("m10", "string")($"slotid10").alias("slotid10"),
-      hashSeq("m11", "string")($"slotid11").alias("slotid11"),
-      hashSeq("m12", "string")($"slotid12").alias("slotid12"),
-      hashSeq("m13", "string")($"slotid13").alias("slotid13"),
-      hashSeq("m14", "string")($"slotid14").alias("slotid14"),
-      hashSeq("m15", "string")($"slotid15").alias("slotid15"),
-      hashSeq("m16", "string")($"slotid16").alias("slotid16"),
-      hashSeq("m17", "string")($"slotid17").alias("slotid17"),
-      hashSeq("m18", "string")($"slotid18").alias("slotid18"),
-      hashSeq("m19", "string")($"slotid19").alias("slotid19"),
-      hashSeq("m20", "string")($"slotid20").alias("slotid20"),
-      hashSeq("m21", "string")($"slotid21").alias("slotid21"),
-      hashSeq("m143", "string")($"slotid143").alias("slotid143"),
-      hashSeq("m206", "string")($"slotid206").alias("slotid206"),
-      hashSeq("m207", "string")($"slotid207").alias("slotid207"),
-      hashSeq("m208", "string")($"slotid208").alias("slotid208"),
-      hashSeq("m209", "string")($"slotid209").alias("slotid209"),
-      hashSeq("m210", "string")($"slotid210").alias("slotid210"),
-      hashSeq("m211", "string")($"slotid211").alias("slotid211"),
-      hashSeq("m212", "string")($"slotid212").alias("slotid212"),
-      hashSeq("m213", "string")($"slotid213").alias("slotid213"),
-      hashSeq("m214", "string")($"slotid214").alias("slotid214"),
-      hashSeq("m215", "string")($"slotid215").alias("slotid215"),
-      hashSeq("m219", "string")($"slotid219").alias("slotid219"),
-      hashSeq("m220", "string")($"slotid220").alias("slotid220"),
-      hashSeq("m221", "string")($"slotid221").alias("slotid221"),
-      hashSeq("m222", "string")($"slotid222").alias("slotid222"),
-      hashSeq("m223", "string")($"slotid223").alias("slotid223"),
-      hashSeq("m224", "string")($"slotid224").alias("slotid224"),
-      hashSeq("m225", "string")($"slotid225").alias("slotid225")
+      hashSeq("ud102", "string")($"slotid9").alias("slotid9"),
+      hashSeq("ud103", "string")($"slotid10").alias("slotid10"),
+      hashSeq("ud104", "string")($"slotid11").alias("slotid11"),
+      hashSeq("ud105", "string")($"slotid12").alias("slotid12"),
+      hashSeq("ud106", "string")($"slotid13").alias("slotid13"),
+      hashSeq("ud107", "string")($"slotid14").alias("slotid14"),
+      hashSeq("ud108", "string")($"slotid15").alias("slotid15"),
+      hashSeq("ud109", "string")($"slotid16").alias("slotid16"),
+      hashSeq("ud110", "string")($"slotid17").alias("slotid17"),
+      hashSeq("ud111", "string")($"slotid18").alias("slotid18"),
+      hashSeq("ud112", "string")($"slotid19").alias("slotid19"),
+      hashSeq("ud113", "string")($"slotid20").alias("slotid20"),
+      hashSeq("ud114", "string")($"slotid21").alias("slotid21"),
+      hashSeq("ud115", "string")($"slotid143").alias("slotid143"),
+      hashSeq("ud116", "string")($"slotid206").alias("slotid206"),
+      hashSeq("ud117", "string")($"slotid207").alias("slotid207"),
+      hashSeq("ud118", "string")($"slotid208").alias("slotid208"),
+      hashSeq("ud119", "string")($"slotid209").alias("slotid209"),
+      hashSeq("ud120", "string")($"slotid210").alias("slotid210"),
+      hashSeq("ud121", "string")($"slotid211").alias("slotid211"),
+      hashSeq("ud122", "string")($"slotid212").alias("slotid212"),
+      hashSeq("ud123", "string")($"slotid213").alias("slotid213"),
+      hashSeq("ud124", "string")($"slotid214").alias("slotid214"),
+      hashSeq("ud125", "string")($"slotid215").alias("slotid215"),
+      hashSeq("ud126", "string")($"slotid219").alias("slotid219"),
+      hashSeq("ud127", "string")($"slotid220").alias("slotid220"),
+      hashSeq("ud128", "string")($"slotid221").alias("slotid221"),
+      hashSeq("ud129", "string")($"slotid222").alias("slotid222"),
+      hashSeq("ud130", "string")($"slotid223").alias("slotid223"),
+      hashSeq("ud131", "string")($"slotid224").alias("slotid224"),
+      hashSeq("ud132", "string")($"slotid225").alias("slotid225")
     )).alias("sparse")).select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
       $"sparse".getField("_1").alias("idx0_new"),
       $"sparse".getField("_2").alias("idx1_new"),
@@ -207,14 +207,14 @@ object recall_prepare_training_samples_v2 {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
-          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + "#"  + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix + "#" , 0))
           re.slice(0, 1000)
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
-          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + "#"  + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix + "#" , 0))
           re.slice(0, 1000)
       }
     }
