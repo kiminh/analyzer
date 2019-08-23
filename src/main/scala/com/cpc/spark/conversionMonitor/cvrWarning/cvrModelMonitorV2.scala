@@ -25,30 +25,14 @@ object cvrModelMonitorV2 {
     s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date-v2.ok" !
 
     val dataToday = getData(date, modelName, spark)
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, -1)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-//    val dataYesterday = getData(date1, modelName, spark)
-//
-//    // 数据对比
-//    val cmpResult = cmpData(dataToday, dataYesterday, spark)
-//    val result = cmpResult
-//      .withColumn("date", lit(date))
-//      .select("cvr_yesterday", "cvr_today", "cvr_diff", "hour", "date", "model_name")
-//
-//    result
-//      .repartition(1)
-//      .write.mode("overwrite").insertInto("dl_cpc.model_cvr_cmp_daily_v2")
 
     // 数据监控
     val filterResult = dataToday.filter(s"cvr < $min_cvr")
     val cnt = filterResult.count()
     val totalCnt = dataToday.count()
+    println("complete data:")
+    dataToday.show(10)
+    println("incorrect data:")
     filterResult.show(10)
 
     // email content
