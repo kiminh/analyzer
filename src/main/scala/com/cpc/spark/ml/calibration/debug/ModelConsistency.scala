@@ -31,12 +31,14 @@ object ModelConsistency{
     // get union log
 
     val sql = s"""
-                 |select searchid, raw_ctr
-                 |from dl_cpc.cpc_basedata_union_events
-                 |  where day ='$dt' and hour='12'
-                 |  and media_appsid in ('80000001','80000002') and isshow = 1
-                 |  and adsrc = 1 and ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
-                 |  AND (charge_type IS NULL OR charge_type = 1)
+                 |select a.searchid, a.raw_ctr
+                 |from dl_cpc.cpc_basedata_union_events a
+                 |join dl_cpc.cpc_ml_nested_snapshot b
+                 |  on a.searchid = b.searchid and b.f84[0]='85c093b037c3d43037c797a8c62ce6c5'
+                 |  and b.day = '$dt' and b.hour = '12'
+                 |  where a.day = '$dt' and a.hour = '12'
+                 |  and a.media_appsid in ('80000001','80000002') and a.isshow = 1
+                 |  and a.adsrc = 1 and a.ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
        """.stripMargin
     println(s"sql:\n$sql")
     val basedata = spark.sql(sql)
