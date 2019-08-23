@@ -11,7 +11,7 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
-
+hadoop fs -get hdfs://emr-cluster/warehouse/azkaban/lib/cvr_model_monitor.jar test.jar
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
@@ -21,7 +21,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.conversionMonitor.cvrWarning.cvrModelMonitor \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
+    test.jar $1 $2 $3
 
 
 #val date = args(0).toString
