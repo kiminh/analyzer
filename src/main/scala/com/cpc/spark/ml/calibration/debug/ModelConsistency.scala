@@ -34,7 +34,7 @@ object ModelConsistency{
                  |select searchid, raw_ctr
                  |from dl_cpc.cpc_basedata_union_events
                  |  where day ='$dt' and hour='12'
-                 |  and media_appsid in ('80000001','80000002') and isclick = 1
+                 |  and media_appsid in ('80000001','80000002') and isshow = 1
                  |  and adsrc = 1 and ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
                  |  AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
