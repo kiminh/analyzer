@@ -11,6 +11,9 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
+
+rm test.jar
+
 hadoop fs -get hdfs://emr-cluster/warehouse/azkaban/lib/cvr_model_monitor.jar test.jar
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
@@ -27,3 +30,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
 #val date = args(0).toString
 #val modelName = args(2).toString
 #val cvr_diff = args(3).toDouble
+
+
+rm test.jar
