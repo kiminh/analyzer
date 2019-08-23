@@ -40,11 +40,11 @@ object cvrModelMonitorV2 {
     val sub = "cvr model training dataset monitorV2 is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
-    receiver:+="yanglei@qutoutiao.net"
-    receiver:+="admodel@qutoutiao.net"
-    receiver:+="wanlunjun@qutoutiao.net"
-    receiver:+="wangfang03@qutoutiao.net"
-    receiver:+="dongjinbao@qutoutiao.net"
+//    receiver:+="yanglei@qutoutiao.net"
+//    receiver:+="admodel@qutoutiao.net"
+//    receiver:+="wanlunjun@qutoutiao.net"
+//    receiver:+="wangfang03@qutoutiao.net"
+//    receiver:+="dongjinbao@qutoutiao.net"
     if (cnt > 0 || totalCnt != 24) {
       println(s"send email: count is $cnt and $totalCnt")
       sendMail(message, sub, receiver)
