@@ -46,10 +46,10 @@ object cvrModelMonitorV2 {
 //    receiver:+="wangfang03@qutoutiao.net"
 //    receiver:+="dongjinbao@qutoutiao.net"
     if (cnt > 0 && totalCnt != 24) {
-      println(s"count is $cnt and $totalCnt")
+      println(s"send email: count is $cnt and $totalCnt")
       sendMail(message, sub, receiver)
     } else {
-      println(s"count is $cnt and $totalCnt")
+      println(s"touch file: count is $cnt and $totalCnt")
       //输出标记文件
       s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date-v2.ok" !
     }
