@@ -91,7 +91,8 @@ object OcpcUnionlog {
          |    second_cpm,
          |    final_cpm,
          |    exp_cpm,
-         |    ocpc_expand
+         |    ocpc_expand,
+         |    expids
          |from
          |    base_data
        """.stripMargin
@@ -225,7 +226,8 @@ object OcpcUnionlog {
          |    bscvr,
          |    second_cpm,
          |    final_cpm,
-         |    ocpc_expand
+         |    ocpc_expand,
+         |    ext_string['exp_ids'] as expids
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
