@@ -73,7 +73,7 @@ object model_auc {
 
     for (video_ctr_model_name <- video_ctr_model_name_list) {
       println(video_ctr_model_name)
-      val video_d = data.filter(s"ctr_model_name = '$video_ctr_model_name'").select($"ctr_model_name", $"score", $"label")
+      val video_d = videp_data.filter(s"ctr_model_name = '$video_ctr_model_name'").select($"ctr_model_name", $"score", $"label")
       val video_auc = CalcMetrics.getAuc(spark, video_d)
       spark.sql(
         s"""
