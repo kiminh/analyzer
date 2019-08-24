@@ -36,32 +36,32 @@ object recall_prepare_training_samples_v2 {
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$oneday")
 
-    cal1.add(Calendar.DATE, -1)
-    val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, "train", threeday, twoday).repartition(1000)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$twoday")
-
-    cal1.add(Calendar.DATE, -1)
-    val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, "train", fourday, threeday).repartition(1000)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$threeday")
-
-    cal1.add(Calendar.DATE, -1)
-    val fiveday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, "train", fiveday, fourday).repartition(1000)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$fourday")
+//    cal1.add(Calendar.DATE, -1)
+//    val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+//    getSample(spark, model_version, featureName, "train", threeday, twoday).repartition(1000)
+//      .write
+//      .mode("overwrite")
+//      .format("tfrecords")
+//      .option("recordType", "Example")
+//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$twoday")
+//
+//    cal1.add(Calendar.DATE, -1)
+//    val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+//    getSample(spark, model_version, featureName, "train", fourday, threeday).repartition(1000)
+//      .write
+//      .mode("overwrite")
+//      .format("tfrecords")
+//      .option("recordType", "Example")
+//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$threeday")
+//
+//    cal1.add(Calendar.DATE, -1)
+//    val fiveday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+//    getSample(spark, model_version, featureName, "train", fiveday, fourday).repartition(1000)
+//      .write
+//      .mode("overwrite")
+//      .format("tfrecords")
+//      .option("recordType", "Example")
+//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$fourday")
 
   }
 
