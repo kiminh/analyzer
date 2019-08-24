@@ -39,7 +39,7 @@ object video_sample_v2 {
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
     val video_sample = original_sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense", $"ideaidhash")
     val ideaid_feature = spark.sql(s"""select ideaid, resource from dl_cpc.resource where model='video'""").select(hash("f11")($"ideaid").alias("ideaidhash"),$"resource")
-    val result = original_sample.join(ideaid_feature, Seq("ideaidhash"), "left_outer").union(video_sample.join(ideaid_feature, Seq("ideaidhash"), "left_outer")).
+    val result = original_sample.join(ideaid_feature, Seq("ideaidhash"), "left_outer").union((video_sample.join(ideaid_feature, Seq("ideaidhash"), "left_outer"))).
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", array(hash("f" + 73)($"resource")).alias("resourceidhash")).rdd.map{
       r =>
         val sample_idx = r.getAs[Long]("sample_idx")
