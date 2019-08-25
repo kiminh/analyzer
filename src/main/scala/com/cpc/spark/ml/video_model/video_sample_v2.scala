@@ -23,7 +23,7 @@ object video_sample_v2 {
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
 
     val sample = getSample(spark, oneday).repartition(500).cache()
-    sample.where(s"adtypehash[0] in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
+    sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
@@ -33,7 +33,7 @@ object video_sample_v2 {
     val count = sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").count()
     CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
 
-    sample.union(sample.where(s"adtypehash[0] in ($adtype8_hash, $adtype10_hash)")).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
+    sample.union(sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)")).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
@@ -64,7 +64,7 @@ object video_sample_v2 {
         val idx2 = r.getAs[Seq[Long]]("idx2")
         val id_arr = r.getAs[Seq[Long]]("id_arr")
         val dense = r.getAs[Seq[Long]]("dense")
-        val adtype = r.getAs[Seq[Long]]("adtypehash")
+        val adtype = r.getAs[Long]("adtypehash")
         val resourceidhash = r.getAs[Seq[Long]]("resourceidhash")
         (sample_idx, label, dense ++ resourceidhash, idx0, idx1, idx2, id_arr, adtype)
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "adtypehash")
