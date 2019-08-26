@@ -24,7 +24,7 @@ object ModelConsistency{
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/2019-08-25/result-*")
       .toDF("id","prediction","num")
 
     println("sum is %d".format(dnn_data.count()))
