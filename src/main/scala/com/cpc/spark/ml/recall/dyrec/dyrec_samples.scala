@@ -15,19 +15,18 @@ object dyrec_samples {
   //multi hot 特征默认hash code
   private val default_hash = for (i <- 1 to 37) yield Seq((i.toLong - 1, 0.toLong, Murmur3Hash.stringHash64("m" + i, 0)))
 
-  def main(args: String): Unit = {
+  def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dyrec_samples")
       .enableHiveSupport()
       .getOrCreate()
-    val curday = args
-    print(curday)
+    val curday = args(0)
     val model_version = "cpc_tensorflow_example_v2_half"
     val cal1 = Calendar.getInstance()
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(s"$curday"))
-    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal1.getTime)
-    val minute = new SimpleDateFormat("mm").format(cal1.getTime)
+    val today = args(0)
+    val hour = args(1)
+    val minute = args(2)
     print(today + " " + hour + " " + minute)
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
