@@ -51,7 +51,7 @@ object ModelConsistency{
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
     println("right is %d".format(basedata.filter("flag=1").count()))
-    println("bias is %f".format(basedata.groupBy().avg("bias").alias("avg_bias")
+    println("bias is %f".format(basedata.groupBy().agg(avg(col("bias")).alias("avg_bias"))
       .first().getAs[Double]("avg_bias")))
 
 
