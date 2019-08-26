@@ -45,11 +45,15 @@ object ModelConsistency{
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
       .withColumn("ectr",col("prediction")*1e6d.toInt)
-      .withColumn("flag",when(col("ectr")/col("raw_ctr")>0.99 and col("ectr")/col("raw_ctr")<1.01,1).otherwise(0))
+      .withColumn("bias",col("raw_ctr")/col("ectr"))
+      .withColumn("flag",when(col("bias")>0.98 and col("bias")<1.02,1).otherwise(0))
 
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
     println("right is %d".format(basedata.filter("flag=1").count()))
+    println("bias is %f".format(basedata.groupBy().avg("bias").alias("avg_bias")
+      .first().getAs[Double]("avg_bias")))
+
 
 
   }
