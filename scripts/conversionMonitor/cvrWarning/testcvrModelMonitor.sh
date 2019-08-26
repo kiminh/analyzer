@@ -12,7 +12,6 @@ jars=(
 )
 
 
-rm test.jar
 
 hadoop fs -get hdfs://emr-cluster/warehouse/azkaban/lib/cvr_model_monitor.jar test.jar
 
