@@ -27,6 +27,7 @@ object dyrec_samples {
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     val hour = new SimpleDateFormat("HH").format(cal1.getTime)
     val minute = new SimpleDateFormat("mm").format(cal1.getTime)
+    print(today + " " + hour + " " + minute)
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     var Type = "2"
