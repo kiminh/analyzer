@@ -31,9 +31,9 @@ object dyrec_samples {
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     var Type = "2"
     if(minute == "30") {
-      Type = "0"
-    } else {
       Type = "1"
+    } else if (minute == "00") {
+      Type = "0"
     }
 
     cal1.add(Calendar.DATE, -1)
