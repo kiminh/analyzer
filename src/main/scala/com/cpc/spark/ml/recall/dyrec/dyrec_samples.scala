@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.dnn.Utils.CommonUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -43,6 +44,10 @@ object dyrec_samples {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-${minute}/adlist-v4dyrec/$today/$hour/")
+    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4dyrec/tmp/"
+    val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-${minute}/adlist-v4dyrec/$today/$hour/count"
+    val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-${minute}/adlist-v4dyrec/$today/$hour/part*").count()
+    CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
 
   def getSample(spark: SparkSession, model_version: String, Type: String, today: String, oneday: String, hour: String): DataFrame = {
