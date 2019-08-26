@@ -22,7 +22,7 @@ object video_sample_v2 {
     val adtype8_hash = Murmur3Hash.stringHash64("f8" + "#" + "8", 0)
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
 
-    val sample = getSample(spark, oneday).repartition(500).cache()
+    val sample = getSample(spark, oneday).repartition(1000).cache()
     sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
       .mode("overwrite")
       .format("tfrecords")
