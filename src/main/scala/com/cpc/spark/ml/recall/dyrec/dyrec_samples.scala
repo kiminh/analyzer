@@ -19,8 +19,7 @@ object dyrec_samples {
       .appName("dyrec_samples")
       .enableHiveSupport()
       .getOrCreate()
-    val featureName = args(0)
-    val curday = args(1)
+    val curday = args(0)
     val model_version = "cpc_tensorflow_example_v2_half"
     val cal1 = Calendar.getInstance()
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(s"$curday"))
