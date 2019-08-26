@@ -23,7 +23,7 @@ object dyrec_samples {
     val curday = args(0)
     val model_version = "cpc_tensorflow_example_v2_half"
     val cal1 = Calendar.getInstance()
-    cal1.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(s"$curday"))
+    cal1.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     val today = args(0)
     val hour = args(1)
     val minute = args(2)
