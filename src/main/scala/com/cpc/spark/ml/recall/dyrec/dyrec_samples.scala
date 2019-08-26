@@ -15,12 +15,13 @@ object dyrec_samples {
   //multi hot 特征默认hash code
   private val default_hash = for (i <- 1 to 37) yield Seq((i.toLong - 1, 0.toLong, Murmur3Hash.stringHash64("m" + i, 0)))
 
-  def main(args: Array[String]): Unit = {
+  def main(args: String): Unit = {
     val spark = SparkSession.builder()
       .appName("dyrec_samples")
       .enableHiveSupport()
       .getOrCreate()
-    val curday = args(0)
+    val curday = args
+    print(curday)
     val model_version = "cpc_tensorflow_example_v2_half"
     val cal1 = Calendar.getInstance()
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(s"$curday"))
