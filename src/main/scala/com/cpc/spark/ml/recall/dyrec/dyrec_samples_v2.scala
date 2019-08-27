@@ -39,7 +39,7 @@ object dyrec_samples_v2 {
 
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, minute, today, oneday, hour).repartition(1000)
+    getSample(spark, model_version, Type, today, oneday, hour).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
