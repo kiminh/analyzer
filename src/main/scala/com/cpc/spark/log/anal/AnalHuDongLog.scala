@@ -105,14 +105,14 @@ object AnalHuDongLog {
       .filter(x => x.adslot_id > 0)
     println(11111)
 
+    //0827停止任务双写数据库
     //写入union.report_hudong
-    clearReportHourData("report_hudong", date, hour)
-    spark.createDataFrame(hudongLog)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
-
-    println("write to union.report_hudong done.")
+    //clearReportHourData("report_hudong", date, hour)
+    //spark.createDataFrame(hudongLog)
+    //  .write
+    //  .mode(SaveMode.Append)
+    //  .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
+    //println("write to union.report_hudong done.")
 
     //写入adv_report.report_hudong
     clearReportHourData2("report_hudong", date, hour)
