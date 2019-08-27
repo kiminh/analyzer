@@ -54,15 +54,15 @@ object OcpcPIDcontrolV2 {
 
     pidResult
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
 
     pidResult
         .withColumn("key", concat_ws("&", col("exp_tag"), col("identifier")))
         .select("key", "current_cali", "date", "hour", "exp_tag", "version")
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_pid_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_pid_hourly")
 
     println("successfully save data into hive")
   }
@@ -110,10 +110,6 @@ object OcpcPIDcontrolV2 {
          |  sum(case when isclick=1 then pid_factor else 0 end) * 1.0 / sum(isclick) as prev_cali
          |FROM
          |  base_data
-         |WHERE
-         |  `date` = '$date'
-         |AND
-         |  `hour` = '$hour'
          |GROUP BY identifier, conversion_goal, media
        """.stripMargin
     println(sqlRequest)
