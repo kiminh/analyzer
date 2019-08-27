@@ -65,6 +65,7 @@ object OcpcPIDretrieveData{
          |  media_appsid,
          |  conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['pid_factor'] as double) as pid_factor,
          |  date,
          |  hour
          |FROM
@@ -81,6 +82,7 @@ object OcpcPIDretrieveData{
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
+      .filter(s"pid_factor is not null")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
