@@ -1,14 +1,15 @@
-package com.cpc.spark.ml.recall.featureSystems
+package com.cpc.spark.ml.recall.dyrec
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.dnn.Utils.CommonUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{udf, _}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object recall_prepare_training_samples_v2 {
+object dyrec_samples_v2 {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
@@ -16,67 +17,51 @@ object recall_prepare_training_samples_v2 {
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("recall_prepare_training_samples")
+      .appName("dyrec_samples")
       .enableHiveSupport()
       .getOrCreate()
-    val featureName = args(0)
-    val curday = args(1)
-    val model_version = "adlist-v4"
+    val curday = args(0)
+    val model_version = "cpc_tensorflow_example_half"
     val cal1 = Calendar.getInstance()
     cal1.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
+    val today = args(0)
+    val hour = args(1)
+    val minute = args(2)
+    print(today + " " + hour + " " + minute)
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    var Type = "2"
+    if(minute == "15") {
+      Type = "0"
+    } else if (minute == "45") {
+      Type = "1"
+    }
 
     cal1.add(Calendar.DATE, -1)
     val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, featureName, "test", twoday, oneday).repartition(1000)
+    getSample(spark, model_version, Type, today, oneday, hour).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$oneday")
-
-//    cal1.add(Calendar.DATE, -1)
-//    val threeday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-//    getSample(spark, model_version, featureName, "train", threeday, twoday).repartition(1000)
-//      .write
-//      .mode("overwrite")
-//      .format("tfrecords")
-//      .option("recordType", "Example")
-//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$twoday")
-//
-//    cal1.add(Calendar.DATE, -1)
-//    val fourday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-//    getSample(spark, model_version, featureName, "train", fourday, threeday).repartition(1000)
-//      .write
-//      .mode("overwrite")
-//      .format("tfrecords")
-//      .option("recordType", "Example")
-//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$threeday")
-//
-//    cal1.add(Calendar.DATE, -1)
-//    val fiveday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-//    getSample(spark, model_version, featureName, "train", fiveday, fourday).repartition(1000)
-//      .write
-//      .mode("overwrite")
-//      .format("tfrecords")
-//      .option("recordType", "Example")
-//      .save(s"hdfs://emr-cluster/user/cpc/sample/recall/featureSystem/offlineAuc/$featureName/$fourday")
-
+      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4dyrec/$today/$hour/$Type")
+    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4dyrec/tmp/"
+    val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4dyrec/$today/$hour/$Type/count"
+    val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4dyrec/$today/$hour/$Type/part*").count()
+    CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
 
-  def getSample(spark: SparkSession, model_version: String, featureName: String, Type: String, date: String, date1: String): DataFrame = {
+  def getSample(spark: SparkSession, model_version: String, Type: String, today: String, oneday: String, hour: String): DataFrame = {
     import spark.implicits._
     var original_sample: DataFrame = null
-    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/$model_version/$date1/part*").
+    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster2ns2/user/$model_version/$today/$hour/$Type/part*").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", expr("dense[25]").alias("uidhash"))
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
-
     val sample = spark.sql(
       s"""
          |select * from (select *,
-         |row_number() over(partition by uid order by hour desc) as row_num from dl_cpc.recall_rec_feature where day='$date') t1
+         |row_number() over(partition by uid order by hour desc) as row_num from dl_cpc.recall_rec_feature where day='$oneday') t1
          |where row_num=1
        """.stripMargin)
     val uid_memberid = spark.sql(
