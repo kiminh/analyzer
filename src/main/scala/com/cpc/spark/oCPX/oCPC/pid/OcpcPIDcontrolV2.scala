@@ -8,7 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcPIDcontrolV1 {
+object OcpcPIDcontrolV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -27,11 +27,11 @@ object OcpcPIDcontrolV1 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, hourInt=$hourInt, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd, exptag=$expTag")
 
-    val baseDataRaw = getBaseDataV1(hourInt, date, hour, spark)
-    val expIdSelection = s"array_contains(split(expids, ','), '35707')"
-    val baseData = baseDataRaw.filter(expIdSelection)
+    val baseData = getBaseDataV1(hourInt, date, hour, spark)
+//    val expIdSelection = s"array_contains(split(expids, ','), '35707')"
+//    val baseData = baseDataRaw.filter(expIdSelection)
     val errorData = calculateError(baseData, date, hour, spark)
-    val prevError = getPrevData(1, expTag, version, date, hour, spark)
+    val prevError = getPrevData(hourInt, expTag, version, date, hour, spark)
     val prevCali = getPrevCali(baseData, date, hour, spark)
 
     val data = errorData
@@ -54,15 +54,15 @@ object OcpcPIDcontrolV1 {
 
     pidResult
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pid_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pid_data_hourly")
 
     pidResult
         .withColumn("key", concat_ws("&", col("exp_tag"), col("identifier")))
         .select("key", "current_cali", "date", "hour", "exp_tag", "version")
         .repartition(5)
-        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
-//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_pid_hourly")
+//        .write.mode("overwrite").insertInto("test.ocpc_calibration_pid_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_pid_hourly")
 
     println("successfully save data into hive")
   }
