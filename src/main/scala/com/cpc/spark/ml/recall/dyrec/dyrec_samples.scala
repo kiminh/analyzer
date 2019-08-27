@@ -61,7 +61,7 @@ object dyrec_samples {
     val sample = spark.sql(
       s"""
          |select * from (select *,
-         |row_number() over(partition by uid order by day, hour desc) as row_num from dl_cpc.recall_rec_feature where (day='$oneday' and hour>='$hour') or (day='$today' and hour=<'$hour')) t1
+         |row_number() over(partition by uid order by day, hour desc) as row_num from dl_cpc.recall_rec_feature where (day='$oneday' and hour>='$hour') or (day='$today' and hour<='$hour')) t1
          |where row_num=1
        """.stripMargin)
     val uid_memberid = spark.sql(
