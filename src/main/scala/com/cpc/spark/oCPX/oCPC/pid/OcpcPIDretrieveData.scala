@@ -66,6 +66,7 @@ object OcpcPIDretrieveData{
          |  conversion_goal,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['pid_factor'] as double) as pid_factor,
+         |  expids,
          |  date,
          |  hour
          |FROM
