@@ -13,6 +13,8 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by Roy on 2017/4/18.
+  *
+  * desc: adv那边计算互动外部收入的在使用report_hudong这张表
   */
 object AnalHuDongLog {
 
@@ -23,6 +25,9 @@ object AnalHuDongLog {
 
   var mariadbUrl = ""
   val mariadbProp = new Properties()
+
+  val advReportProps = new Properties()
+  var advReportUrl = ""
 
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
@@ -52,6 +57,11 @@ object AnalHuDongLog {
     mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
+
+    advReportUrl = conf.getString("mariadb.adv_report.url")
+    advReportProps.put("user", conf.getString("mariadb.adv_report.user"))
+    advReportProps.put("password", conf.getString("mariadb.adv_report.password"))
+    advReportProps.put("driver", conf.getString("mariadb.adv_report.driver"))
 
     val logTypeArr = logTypeStr.split(",")
     if (logTypeArr.length <= 0) {
@@ -94,11 +104,23 @@ object AnalHuDongLog {
     }
       .filter(x => x.adslot_id > 0)
     println(11111)
-    clearReportHourData("report_hudong", date, hour)
+
+    //0827停止任务双写数据库
+    //写入union.report_hudong
+    //clearReportHourData("report_hudong", date, hour)
+    //spark.createDataFrame(hudongLog)
+    //  .write
+    //  .mode(SaveMode.Append)
+    //  .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
+    //println("write to union.report_hudong done.")
+
+    //写入adv_report.report_hudong
+    clearReportHourData2("report_hudong", date, hour)
     spark.createDataFrame(hudongLog)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
+      .jdbc(advReportUrl, "adv_report.report_hudong", advReportProps)
+
     spark.stop()
     for (h <- 0 until 50) {
       println("-")
@@ -117,6 +139,24 @@ object AnalHuDongLog {
       val sql =
         """
           |delete from union.%s where `date` = "%s" and hour ="%s"
+        """.stripMargin.format(tbl, date, hour)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+
+  def clearReportHourData2(tbl: String, date: String, hour: String): Unit = {
+    try {
+      Class.forName(advReportProps.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        advReportUrl,
+        advReportProps.getProperty("user"),
+        advReportProps.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from adv_report.%s where `date` = "%s" and hour ="%s"
         """.stripMargin.format(tbl, date, hour)
       stmt.executeUpdate(sql);
     } catch {
