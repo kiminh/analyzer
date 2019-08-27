@@ -54,7 +54,7 @@ object dyrec_samples {
   def getSample(spark: SparkSession, model_version: String, minute: String, today: String, oneday: String, hour: String): DataFrame = {
     import spark.implicits._
     var original_sample: DataFrame = null
-    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-${minute}/adlist-v4dyrec/$today/$hour/part*").
+    original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-${minute}/adlist-v4-up/$today/$hour/part*").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", expr("dense[25]").alias("uidhash"))
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
