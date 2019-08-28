@@ -18,23 +18,23 @@ object Antispam_TKID {
 
     val sql1 =
 		s"""
-		   |select tkid
+           |select tkid
            |from (
-           |     select tkid
-           |           ,sum(case when adslot_type=3 then 0.2 else 1 end) as ad_cnt
-           |           ,sum(case when isshow=1 then 1 else 0 end) as show_cnt
-           |           ,sum(case when isshow=0 then 1 else 0 end) as noshow_cnt
-           |     from dl_cpc.cpc_basedata_union_events
-           |     where day="${date_before3hours}" and hour="${hour_before3hours}" and media_appsid in (80000001,80000002)
-           |     group by tkid having sum(case when adslot_type=3 then 0.2 else 1 end)>10
-           |     ) a
+           |  select tkid
+           |    ,sum(case when adslot_type=3 then 0.2 else 1 end) as ad_cnt
+           |    ,sum(case when isshow=1 then 1 else 0 end) as show_cnt
+           |    ,sum(case when isshow=0 then 1 else 0 end) as noshow_cnt
+           |  from dl_cpc.cpc_basedata_union_events
+           |  where day='${date_before3hours}' and hour='${hour_before3hours}' and media_appsid in (80000001,80000002)
+           |  group by tkid having sum(case when adslot_type=3 then 0.2 else 1 end)>10
+           |) a
            |left join (
-           |          SELECT distinct tk
-           |          from bdm.qukan_log_cmd_p_byhour
-           |          where day="${date_before3hours}" and hour="${hour_before3hours}"
-           |          ) b on b.tk=a.tkid
+           |  SELECT tk
+           |  from bdm.qukan_log_cmd_p_byhour
+           |  where day='${date_before3hours}' and hour<='${hour_before3hours}'
+           |  group by tk having count(1)>=3
+           |) b on b.tk=a.tkid
            |where show_cnt=0 and b.tk is null
-           |order by ad_cnt desc
 		 """.stripMargin
 
     val sql2=
