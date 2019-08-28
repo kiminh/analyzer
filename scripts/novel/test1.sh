@@ -1,4 +1,6 @@
 #!/bin/bash
+git pull
+sbt assembly
 
 cur=/home/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
@@ -24,8 +26,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --executor-cores 4 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=5g'\
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
-    --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV2 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-07-03 16 2 qtt qtt-cvr-dnn-rawid-v1-180-newcali
+    --class com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-08-07 15 24 qtt qtt-cvr-dnn-rawid-v2form qtt-cvr-dnn-rawid-v2form-newcali adcvr-v2form

@@ -1,26 +1,16 @@
-package com.cpc.spark.ml.calibration
+package com.cpc.spark.ml.calibration.exp
 
-import java.io.{File, FileOutputStream, PrintWriter}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import com.cpc.spark.tools.CalcMetrics
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.{Pipeline, PipelineStage}
-import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer, VectorAssembler}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.DoubleType
+import org.apache.spark.sql.{Row, SparkSession}
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 
-
-object LrCalibrationOnQtt {
+object LrCalibrationOnQttCvr {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .config("spark serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -30,39 +20,16 @@ object LrCalibrationOnQtt {
       .getOrCreate()
     import spark.implicits._
     // parse and process input
-    val endDate = args(0)
-    val endHour = args(1)
-    val hourRange = args(2).toInt
-    val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
-
-
-    val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
-    val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
-
-    val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-    val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
-
-    println(s"endDate=$endDate")
-    println(s"endHour=$endHour")
-    println(s"hourRange=$hourRange")
-    println(s"startDate=$startDate")
-    println(s"startHour=$startHour")
+    val model = "qtt-cvr-dnn-rawid-v1-180"
+    val calimodel ="qtt-cvr-dnn-rawid-v1-180"
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
-    val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
-
     // get union log
     val sql = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num, hour
-                 | from dl_cpc.slim_union_log
-                 | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type = 1
-                 | and ctr_model_name in ('$model','$calimodel')
-                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 |select iscvr as isclick,raw_cvr as raw_ctr,exp_cvr as exp_ctr, adslotid, ideaid, user_req_ad_num,hour
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-20'
        """.stripMargin
     println(s"sql:\n$sql")
     val log= session.sql(sql)
@@ -119,13 +86,8 @@ object LrCalibrationOnQtt {
     sample.show(5)
 
     val sql2 = s"""
-                 |select isclick, raw_ctr, adslotid, ideaid,user_req_ad_num,exp_ctr,hour
-                 | from dl_cpc.slim_union_log
-                 | where dt = '2019-05-19'  and hour = '22'
-                 | and media_appsid in ('80000001', '80000002') and isshow = 1 and adslot_type = 1
-                 | and ctr_model_name in ('$calimodel')
-                 | and ideaid > 0 and adsrc = 1 AND userid > 0
-                 | AND (charge_type IS NULL OR charge_type = 1)
+                 |select iscvr as isclick,raw_cvr as raw_ctr,exp_cvr as exp_ctr, adslotid, ideaid, user_req_ad_num,hour
+                 |  from dl_cpc.qtt_cvr_calibration_sample where dt = '2019-05-21'
        """.stripMargin
     println(s"sql:\n$sql2")
     val testsample = session.sql(sql2)
@@ -208,39 +170,5 @@ object LrCalibrationOnQtt {
         (x.getInt(0), x.getDouble(1))
       })
       Vectors.sparse(profile_num, new_els)
-  }
-
-  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
-    import spark.implicits._
-    val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
-    val auc = CalcMetrics.getAuc(spark,testData)
-    println("%s auc:%f".format(cate,auc))
-    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")/1e6d).alias("ectr"))
-    val ctr = p1.first().getAs[Double]("ctr")
-    val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
-
-    val p2 = data.groupBy("ideaid")
-      .agg(
-        avg(col("label")).alias("ctr"),
-        avg(col("prediction")/1e6d).alias("ectr"),
-        count(col("label")).cast(DoubleType).alias("ctrnum")
-      )
-      .withColumn("pcoc",col("ectr")/col("ctr"))
-    println("ideaid sum:%d".format(p2.count()))
-    p2.createOrReplaceTempView("idea")
-    val sql =
-      s"""
-         |select ideaid,ctr,ectr,ctrnum,pcoc,ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
-         |from idea
-       """.stripMargin
-    val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
-    p3.show(10)
-    val ctr2 = p2.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
-    val ectr2 = p2.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
-    val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
-    val allnum = p3.count().toDouble
-    val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count().toDouble
-    println("%s calibration by ideaid: avgctr:%f,avgectr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.1 error:%f".format(cate, ctr2, ectr2, pcoc,allnum,rightnum,rightnum/allnum))
   }
 }

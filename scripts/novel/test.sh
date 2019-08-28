@@ -1,9 +1,12 @@
 #!/bin/bash
+git pull
+sbt assembly
 
-cur=/data/cpc/anal
+cur=/home/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.bigdata
-#date=`date +"%Y-%m-%d" -d "-1day"`
+#day=`date +"%Y-%m-%d" -d "-2 hour"`
+#hour=`date +"%H" -d "-2 hour"`
 day=$1
 hour=$2
 
@@ -19,12 +22,11 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 12g --driver-memory 4g \
+    --executor-memory 20g --driver-memory 8g \
     --executor-cores 4 --num-executors 50  \
     --conf 'spark.yarn.executor.memoryOverhead=5g'\
     --conf 'spark.dynamicAllocation.maxExecutors=100'\
-    --conf 'spark.sql.shuffle.partitions=2000'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --conf "spark.sql.shuffle.partitions=1000" \
-    --class com.cpc.spark.ml.calibration.CalibrationCheckOnMidu\
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar /home/cpc/wy/post-calibration-novel-ctr-dnn-rawid-v9-newcali-2019-06-14-02.mlm 2019-06-14 05 novel-ctr-dnn-rawid-v9
+    --class com.cpc.spark.ml.calibration.debug.CalibrationColdStart \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2019-08-14 test-cvr adcvr-v3conv5 /home/cpc/scheduled_job/hourly_calibration/post-calibration-test-cvr.mlm

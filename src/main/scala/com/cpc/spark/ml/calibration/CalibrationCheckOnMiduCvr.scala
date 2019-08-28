@@ -4,7 +4,7 @@ import java.io.{File, FileInputStream, PrintWriter}
 
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.calibration.CalibrationCheckOnMidu.computeCalibration
-import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
+import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
 import org.apache.spark.sql.SparkSession

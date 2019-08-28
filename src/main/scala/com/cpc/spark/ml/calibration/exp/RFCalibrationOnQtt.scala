@@ -1,18 +1,17 @@
-package com.cpc.spark.ml.calibration
+package com.cpc.spark.ml.calibration.exp
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import org.apache.spark.mllib.regression.LabeledPoint
+
 import com.cpc.spark.common.Utils
 import com.cpc.spark.tools.CalcMetrics
-import org.apache.spark.mllib.tree.RandomForest
-import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.sql.functions.{udf, _}
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.tree.RandomForest
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import scala.collection.mutable
-import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object RFCalibrationOnQtt {

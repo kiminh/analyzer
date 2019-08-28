@@ -1,11 +1,13 @@
 package com.cpc.spark.ml.calibration.debug
 
 import java.io.{File, FileInputStream, PrintWriter}
-
+import sys.process._
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
+import com.cpc.spark.common.Utils.sendMail
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
@@ -14,11 +16,10 @@ import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
   * author: wangyao
   * date: 5/14/19
   */
-object CalibrationCheckOnMiduCvr {
+object CalibrationMonitor {
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    import spark.implicits._
     val modelPath = args(0)
     val dt = args(1)
     val hour = args(2)
@@ -30,48 +31,86 @@ object CalibrationCheckOnMiduCvr {
     println(s"hour=$hour")
     println(s"modelName=$modelName")
 
-    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
 
-    val localPath ="/home/cpc/wy/novel_v8_postcali.txt"
-    val outFile = new File(localPath)
-    outFile.getParentFile.mkdirs()
-    new PrintWriter(localPath) { write(calimap.toString); close() }
-
-    val modelset=calimap.keySet
     val session = Utils.buildSparkSession("calibration_check")
-    val timeRangeSql = Utils.getTimeRangeSql_3(dt, hour, dt, hour)
+    import session.implicits._
 
     // get union log
     val sql = s"""
-                 |select postcali_value as ecvr,searchid, raw_cvr, key, substring(adclass,1,6) as adclass, adslotid as adslot_id, ideaid,
-                 |case when user_show_ad_num = 1 then '1'
+                 |select a.isclick,a.exp_ctr as ectr,a.searchid, a.raw_ctr, substring(a.adclass,1,6) as adclass,
+                 |a.adslotid as adslot_id, a.ideaid, b.f88[0] as key,b.f89[0] as model_md5,b.f85[0] snapshot_rawctr,
+                 |b.f86[0] snapshot_postctr,b.f83[0] snapshot_ectr,b.f61[0] show_count,
+                 |case
+                 |  when user_show_ad_num = 0 then '0'
+                 |  when user_show_ad_num = 1 then '1'
                  |  when user_show_ad_num = 2 then '2'
                  |  when user_show_ad_num in (3,4) then '4'
                  |  when user_show_ad_num in (5,6,7) then '7'
                  |  else '8' end as user_show_ad_num
-                 |  from test.wy00
+                 |from dl_cpc.slim_union_log a
+                 |left join dl_cpc.cpc_ml_nested_snapshot b
+                 |on a.searchid = b.searchid and b.day = '$dt' and b.hour = '$hour' and pt = 'qtt'
+                 |  where a.dt = '$dt' and a.hour = '$hour'
+                 |  and a.ctr_model_name = '$modelName' and a.isshow = 1
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
+    val basedata = session.sql(sql)
+
+    val md5 = basedata.first().getAs[String]("model_md5")
+    val filename = s"hdfs://emr-cluster/user/cpc/wy/calibration/post-calibration-${modelName}.txt"
+    val timestamp = spark.sparkContext.textFile(filename)
+      .map(x => (x.split(" ")(0), x.split(" ")(1), x.split(" ")(2)))
+      .toDF("timestamp", "md5", "path")
+      .filter(s"md5 = '$md5'")
+      .first().getAs[String]("timestamp")
+
+    val path = s"/home/cpc/wy/post-calibration-${modelName}-monitor.mlm"
+    val localfile = new File(filename)
+    println(filename)
+    val deleteMlm =  s"rm ${path}"
+    if (localfile.exists()) {
+      deleteMlm !
+    }
+    val caliPath =  s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/${modelPath}/calibration/${timestamp}/post-calibration-${modelName}.mlm"
+
+    val getfilefromhdfs = s"hadoop fs -get ${caliPath} ${path}"
+    getfilefromhdfs !
+    val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(path))).caliMap
+    val modelset=calimap.keySet
+
+    val log = basedata.withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
       .withColumn("group2",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .withColumn("group3",concat_ws("_",col("adclass"),col("ideaid")))
-      .withColumn("group4",concat_ws("_",col("adclass")))
+      .withColumn("group4",col("adclass"))
       .withColumn("group",when(searchMap(modelset)(col("group4")),col("group4")).otherwise(lit("0")))
       .withColumn("group",when(searchMap(modelset)(col("group3")),col("group3")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group2")),col("group2")).otherwise(col("group")))
       .withColumn("group",when(searchMap(modelset)(col("group1")),col("group1")).otherwise(col("group")))
       .withColumn("len",length(col("group")))
-      .select("ideaid","raw_cvr","ecvr","searchid","group","group1","group2","group3","adslot_id","user_show_ad_num")
+      .withColumn("isload",when(col("group")===col("key"),lit(1)).otherwise(0))
+      .select("isclick","raw_ctr","ectr","searchid","group","group1","group2","group3","adslot_id","user_show_ad_num"
+        ,"show_count","key","model_md5","snapshot_rawctr","snapshot_postctr","snapshot_ectr")
 
-    log.show(50)
-    println("total data:%d".format(log.count()))
-    log.repartition(5).write.mode("overwrite").saveAsTable("test.wy01")
+    log.show(20)
+    val data_sum = log.count()
+    println("total data:%d".format(data_sum))
 
-    val data = log.filter("length(group)>0")
-    println("calibration data:%d".format(data.count()))
+    val wrong = log.filter("isload = 0")
+    wrong.show(10)
+    wrong.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.calibration_wrong_sample")
+
+    val data = log.filter("isload = 1")
+    val data_rightkey = data.count()
+    println("calibration data:%d".format(data_rightkey))
+
+    if(data_rightkey*1.0/data_sum < 0.95){sendMail("calibration errors", "unmatched key exceeds 5%",
+      Seq("wangyao@qutoutiao.net"))}
+
+    data.show(20)
     val result = data.rdd.map( x => {
-      val ectr = x.getInt(1).toDouble / 1e6d
-      val onlineCtr = x.getInt(2).toDouble / 1e6d
+      val isClick = x.getLong(0).toDouble
+      val ectr = x.getLong(1).toDouble / 1e6d
+      val onlineCtr = x.getLong(2).toDouble / 1e6d
       val group = x.getString(4)
       val irModel = calimap.get(group).get
       val calibrated = computeCalibration(ectr, irModel.ir.get)
@@ -79,16 +118,24 @@ object CalibrationCheckOnMiduCvr {
       if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
         mistake = 1
       }
-      (1.0, ectr, calibrated, 1.0, onlineCtr, mistake)
+      (isClick, ectr, calibrated, 1.0, onlineCtr, mistake)
     }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
+    val ctr = result._1 / result._4
     val ectr = result._2 / result._4
     val calibrated_ctr = result._3 / result._4
     val onlineCtr = result._5 / result._4
     println(s"impression: ${result._4}")
+    println(s"mistake: ${result._6}")
+    println(s"ctr: $ctr")
     println(s"ectr: $ectr")
     println(s"online ctr: $onlineCtr")
     println(s"calibrated_ctr: $calibrated_ctr")
+    println(s"no calibration: ${ectr / ctr}")
+    println(s"online calibration: ${onlineCtr / ctr}")
+    println(s"new calibration: ${calibrated_ctr / ctr}")
 
+    if(result._6 *1.0 /result._4 > 0.03){sendMail("calibration errors", "mistake exceeds 3%",
+      Seq("wangyao@qutoutiao.net"))}
   }
 
   def searchMap(modelset:Set[String])= udf{
