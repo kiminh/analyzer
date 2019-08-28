@@ -49,6 +49,7 @@ object ModelConsistency{
       .withColumn("flag",when(col("bias")>0.98 and col("bias")<1.02,1).otherwise(0))
 
     basedata.show(10)
+    basedata.filter("flag=0").write.mode("overwrite").saveAsTable("dl_cpc.wy_test02")
     println("sum is %d".format(basedata.count()))
     println("right is %d".format(basedata.filter("flag=1").count()))
     println("bias is %f".format(basedata.groupBy().agg(avg(col("bias")).alias("avg_bias"))
