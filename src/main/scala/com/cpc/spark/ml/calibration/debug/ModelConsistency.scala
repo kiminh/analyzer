@@ -31,7 +31,7 @@ object ModelConsistency{
     // get union log
 
     val sql = s"""
-                 |select a.searchid, a.raw_ctr,b.f84[0]
+                 |select a.searchid, a.raw_ctr,b.f84[0] as model_id
                  |from dl_cpc.cpc_basedata_union_events a
                  |join dl_cpc.cpc_ml_nested_snapshot b
                  |  on a.searchid = b.searchid and pt='qtt'
@@ -54,7 +54,7 @@ object ModelConsistency{
     println("right is %d".format(basedata.filter("flag=1").count()))
     println("bias is %f".format(basedata.groupBy().agg(avg(col("bias")).alias("avg_bias"))
       .first().getAs[Double]("avg_bias")))
-    println("model id %d".format(basedata.groupBy("f84[0]").agg(count(col("id"))).count()))
+    println("model id %d".format(basedata.groupBy("model_id").agg(count(col("id"))).count()))
 
 
 
