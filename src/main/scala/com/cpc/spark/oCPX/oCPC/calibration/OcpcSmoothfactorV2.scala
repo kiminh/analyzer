@@ -82,6 +82,7 @@ object OcpcSmoothfactorV2 {
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
+      .filter(s"cv >= min_cv")
       .withColumn("cvr_new", col("post_cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
 
