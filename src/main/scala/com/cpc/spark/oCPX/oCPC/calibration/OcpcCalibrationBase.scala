@@ -41,8 +41,6 @@ object OcpcCalibrationBase {
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
-    baseDataRaw
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190829a")
 
     val sqlRequest =
       s"""
