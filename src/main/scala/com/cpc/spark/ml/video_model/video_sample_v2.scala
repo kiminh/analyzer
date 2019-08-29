@@ -22,26 +22,26 @@ object video_sample_v2 {
     val adtype8_hash = Murmur3Hash.stringHash64("f8" + "#" + "8", 0)
     val adtype10_hash = Murmur3Hash.stringHash64("f8" + "#" + "10", 0)
 
-    val sample = getSample(spark, oneday).repartition(1000).cache()
-    sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/$oneday/")
-    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/tmp/"
-    val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/$oneday/count"
-    val count = sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").count()
-    CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
-
-    sample.union(sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)")).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
+    val sample = getSample(spark, oneday)
+    sample.repartition(1000).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v3/$oneday/")
     val CountPathTmpNamev3 = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v3/tmp/"
     val CountPathNamev3 = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v3/$oneday/count"
-    val countv3 = sample.union(sample.where(s"adtypehash in ($adtype8_hash, $adtype10_hash)")).count()
-    CommonUtils.writeCountToFile(spark, countv3, CountPathTmpNamev3, CountPathNamev3)
+    val today_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v3/$oneday/part*")
+    CommonUtils.writeCountToFile(spark, today_sample.count(), CountPathTmpNamev3, CountPathNamev3)
+
+    today_sample.select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense",expr("dense[8]").alias("adtypehash")).where(s"adtypehash in ($adtype8_hash, $adtype10_hash)").select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/$oneday/")
+    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/tmp/"
+    val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/$oneday/count"
+    val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/videoctr-v2/$oneday/part*").count()
+    CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
