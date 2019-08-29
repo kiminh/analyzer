@@ -50,10 +50,12 @@ object OcpcGetPbV2 {
       .cache()
     jfbData.show(10)
 
-    val dataRawOnlySmooth1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt1, spark)
-    val dataRawOnlySmooth2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt2, spark)
-    val dataRawOnlySmooth3 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark)
-
+    val dataRawOnlySmooth1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt1, spark).cache()
+    dataRawOnlySmooth1.show(10)
+    val dataRawOnlySmooth2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt2, spark).cache()
+    dataRawOnlySmooth2.show(10)
+    val dataRawOnlySmooth3 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
+    dataRawOnlySmooth3.show(10)
     val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRawOnlySmooth1, dataRawOnlySmooth2, dataRawOnlySmooth3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))

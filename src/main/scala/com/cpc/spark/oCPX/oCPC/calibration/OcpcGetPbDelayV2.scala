@@ -51,6 +51,12 @@ object OcpcGetPbDelayV2 {
       .cache()
     jfbData.show(10)
 
+    val dataRawOnlySmooth1 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt1, spark).cache()
+    dataRawOnlySmooth1.show(10)
+    val dataRawOnlySmooth2 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt2, spark).cache()
+    dataRawOnlySmooth2.show(10)
+    val dataRawOnlySmooth3 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt3, spark).cache()
+    dataRawOnlySmooth3.show(10)
     val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))

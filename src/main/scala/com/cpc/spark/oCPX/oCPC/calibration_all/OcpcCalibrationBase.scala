@@ -31,6 +31,42 @@ object OcpcCalibrationBase {
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
   }
 
+  def OcpcCalibrationBaseDelayMainOnlySmooth(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    /*
+    动态计算alpha平滑系数
+    1. 基于原始pcoc，计算预测cvr的量纲系数
+    2. 二分搜索查找到合适的平滑系数
+     */
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data_raw")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  base_data_raw
+         |WHERE
+         |  ocpc_expand = 0
+         |AND
+         |  array_contains(split(expids, ','), '35456')
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+
+    // 计算结果
+    val result = calculateParameter(baseData, spark)
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+
+
+    resultDF
+  }
+
+
   def OcpcCalibrationBaseDelayMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
@@ -50,6 +86,42 @@ object OcpcCalibrationBase {
 
     resultDF
   }
+
+  def OcpcCalibrationBaseMainOnlySmooth(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    /*
+    动态计算alpha平滑系数
+    1. 基于原始pcoc，计算预测cvr的量纲系数
+    2. 二分搜索查找到合适的平滑系数
+     */
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data_raw")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  base_data_raw
+         |WHERE
+         |  ocpc_expand = 0
+         |AND
+         |  array_contains(split(expids, ','), '35456')
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+
+    // 计算结果
+    val result = calculateParameter(baseData, spark)
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+
+
+    resultDF
+  }
+
 
   def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
