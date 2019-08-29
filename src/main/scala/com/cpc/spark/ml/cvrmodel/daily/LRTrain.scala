@@ -107,7 +107,7 @@ object LRTrain {
       println(key)
     }
 
-    if (parser == "cvrparser8"){
+    if (parser == "cvrparser8" || parser == "cvrparser9"){
       dates.foreach(dt => {
         val tomorrow=DateUtils.getPrevDate(dt, -1)
 
@@ -342,6 +342,9 @@ object LRTrain {
     }else if (parser == "cvrparser8"){
       name="qtt-bs-cvrparser8-daily"
       destfile="qtt-bs-cvrparser8-daily.lrm"
+    }else if (parser == "cvrparser9"){
+      name="qtt-bs-cvrparser9-daily"
+      destfile="qtt-bs-cvrparser9-daily.lrm"
     }
 
     train(
@@ -592,6 +595,8 @@ object LRTrain {
                   getCvrVectorParser7(u)
                 case "cvrparser8" =>
                   getCvrVectorParser4(u)
+                case "cvrparser9" =>
+                  getCvrVectorParser5(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
