@@ -180,6 +180,8 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  expids,
+         |  ocpc_expand,
          |  date,
          |  hour
          |FROM
@@ -264,6 +266,8 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  expids,
+         |  ocpc_expand,
          |  date,
          |  hour
          |FROM
