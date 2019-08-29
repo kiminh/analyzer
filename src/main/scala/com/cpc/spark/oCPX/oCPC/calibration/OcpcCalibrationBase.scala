@@ -49,9 +49,9 @@ object OcpcCalibrationBase {
          |FROM
          |  base_data_raw
          |WHERE
-         |  (ocpc_expand = 0 AND array_contains(split(expids, ','), '35456'))
-         |AND
-         |  media != 'qtt'
+         |  (media = 'qtt' and ocpc_expand = 0 AND array_contains(split(expids, ','), '35456'))
+         |OR
+         |  media in ('hottopic', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark.sql(sqlRequest)
