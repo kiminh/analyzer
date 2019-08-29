@@ -50,7 +50,11 @@ object OcpcGetPbV2 {
       .cache()
     jfbData.show(10)
 
-    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+    val dataRawOnlySmooth1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt1, spark)
+    val dataRawOnlySmooth2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt2, spark)
+    val dataRawOnlySmooth3 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark)
+
+    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRawOnlySmooth1, dataRawOnlySmooth2, dataRawOnlySmooth3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
@@ -77,6 +81,9 @@ object OcpcGetPbV2 {
     dataRaw2.unpersist()
     dataRaw3.unpersist()
 
+    dataRawOnlySmooth1.unpersist()
+    dataRawOnlySmooth2.unpersist()
+    dataRawOnlySmooth3.unpersist()
     // 明投单元
     val resultUnhidden = data
       .withColumn("cpagiven", lit(1.0))
@@ -103,8 +110,8 @@ object OcpcGetPbV2 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
