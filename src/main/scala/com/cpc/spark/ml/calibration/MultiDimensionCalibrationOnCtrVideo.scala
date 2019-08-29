@@ -3,33 +3,36 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import sys.process._
+
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveFlatTextFileForDebug, saveProtoToLocal}
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-
-object MultiDimensionCalibOnQtt {
+object MultiDimensionCalibrationOnCtrVideo {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
-  val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 10
   val MIN_BIN_SIZE = 100000
+  val all_k = 1.2
+  val new_k = 3.0
+  val less_k = 1.5
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     // parse and process input
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val softMode = args(3).toInt
-    val model = "qtt-list-dnn-rawid-v4"
-    val calimodel ="qtt-list-dnn-rawid-v4-postcali"
+    val selectCondition = args(3)
+    val model = args(4)
+    val calimodel = args(5)
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -43,82 +46,102 @@ object MultiDimensionCalibOnQtt {
     println(s"hourRange=$hourRange")
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
-    println(s"softMode=$softMode")
 
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
-
     val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
-                 |select isclick, cast(raw_ctr as bigint) as ectr, ctr_model_name, adslotid as adslot_id, cast(ideaid as string) ideaid,
-                 |case
-                 |  when user_req_ad_num = 0 then '0'
-                 |  when user_req_ad_num = 1 then '1'
-                 |  when user_req_ad_num = 2 then '2'
-                 |  when user_req_ad_num in (3,4) then '4'
-                 |  when user_req_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_req_ad_num
+                 |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
+                 |ctr_model_name as model, cast(ideaid as string) ideaid
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and adslot_type = 1 and isshow = 1
-                 | and ctr_model_name in ('$model','$calimodel')
+                 | and media_appsid in ('80000001','80000002') and adtype = 15 and isshow = 1
+                 | and ctr_model_name in ('$model','$calimodel','qtt-list-dnn-rawid-v4-video-cali')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-
-    val group1 = log.groupBy("ideaid","user_req_ad_num","adslot_id").count().withColumn("count1",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num"),col("adslot_id")))
-      .filter("count1>100000")
-      .select("ideaid","user_req_ad_num","adslot_id","group")
-    val group2 = log.groupBy("ideaid","user_req_ad_num").count().withColumn("count2",col("count"))
-      .withColumn("group",concat_ws("_",col("ideaid"),col("user_req_ad_num")))
-      .filter("count2>100000")
-      .select("ideaid","user_req_ad_num","group")
-    val group3 = log.groupBy("ideaid").count().withColumn("count3",col("count"))
-      .filter("count3>10000")
-      .withColumn("group",col("ideaid"))
-      .select("ideaid","group")
-
-    val data1 = log.join(group1,Seq("user_req_ad_num","adslot_id","ideaid"),"inner")
-    val data2 = log.join(group2,Seq("ideaid","user_req_ad_num"),"inner")
-    val data3 = log.join(group3,Seq("ideaid"),"inner")
-
-    //create cali pb
-    val calimap1 = GroupToConfig(data1, session,calimodel)
-    val calimap2 = GroupToConfig(data2, session,calimodel)
-    val calimap3 = GroupToConfig(data3, session,calimodel)
-    val calimap = calimap1 ++ calimap2 ++ calimap3
-    val califile = PostCalibrations(calimap.toMap)
-    val localPath = saveProtoToLocal(calimodel, califile)
-    saveFlatTextFileForDebug(calimodel, califile)
-    if (softMode == 0) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$calimodel.mlm", conf))
-      println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$calimodel.mlm", conf))
-    }
+    log.show(10)
+    LogToPb(log, session, calimodel)
+    val irModel = IRModel(
+      boundaries = Seq(1.0),
+      predictions = Seq(all_k)
+    )
+    println(s"k is:$all_k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
+  def LogToPb(log:DataFrame, session: SparkSession, model: String)={
+    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
+      .filter("count3>10000")
+      .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
+      .select("adclass","ideaid","group")
+    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
+      .filter("count4>10000")
+      .withColumn("group",col("adclass"))
+      .select("adclass","group")
 
-  def GroupToConfig(data:DataFrame, session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
+    val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
+    val calimap3 = GroupToConfig(data3, session,model)
+
+    val data4 = log.join(group4,Seq("adclass"),"inner")
+    val calimap4 = GroupToConfig(data4, session,model)
+
+    val calimap = calimap3 ++ calimap4
+    val califile = PostCalibrations(calimap.toMap)
+    val localPath = saveProtoToLocal2(model, califile)
+    saveFlatTextFileForDebug2(model, califile)
+  }
+
+  def UntargetCali(data:DataFrame, session: SparkSession,k:Double): Map[String,CalibrationConfig] = {
+    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
+    data.show(5)
+    val result = data.select("adclass","ideaid","group")
+      .rdd.map( x => {
+      val adclass = x.getString(0)
+      val ideaid = x.getString(1)
+      val group = x.getString(2)
+      val key = group
+      val irModel = IRModel(
+        boundaries = Seq(1.0),
+        predictions = Seq(k)
+      )
+      val config = CalibrationConfig(key,Option(irModel))
+      calimap += ((key,config))
+
+      calimap
+    }).collect().flatten.toMap[String,CalibrationConfig]
+    val resultkey = result.keySet
+    resultkey.foreach(x=>{
+      println("less unit is:%s".format(x))})
+    println("less cali value is:%f".format(k))
+
+    return result
+  }
+
+  def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
-    import session.implicits._
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("user_req_ad_num","adslot_id","ideaid","isclick","ectr","ctr_model_name","group")
+    val result = data.select("isclick","ectr","model","group")
       .rdd.map( x => {
       var isClick = 0d
-      if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
+      if (x.get(0) != null) {
+        isClick = x.getInt(0).toDouble
       }
-      val ectr = x.getLong(4).toDouble / 1e6d
-      val model = x.getString(5)
-      val group = x.getString(6)
-      val key = calimodel + "_" + group
+      val ectr = x.getLong(1).toDouble / 1e6d
+      val model = x.getString(2)
+      val group = x.getString(3)
+      val key = group
       (key, (ectr, isClick))
     }).groupByKey()
       .mapValues(
@@ -205,8 +228,8 @@ object MultiDimensionCalibOnQtt {
         / (irModel.boundaries(index) - irModel.boundaries(index-1))))
   }
 
-  def saveProtoToLocal(modelName: String, config: PostCalibrations): String = {
-    val filename = s"calibration-$modelName.mlm"
+  def saveProtoToLocal2(modelName: String, config: PostCalibrations): String = {
+    val filename = s"post-calibration-$modelName.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
@@ -214,8 +237,8 @@ object MultiDimensionCalibOnQtt {
     return localPath
   }
 
-  def saveFlatTextFileForDebug(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"calibration-flat-$modelName.txt"
+  def saveFlatTextFileForDebug2(modelName: String, config: PostCalibrations): Unit = {
+    val filename = s"post-calibration-flat-$modelName.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()

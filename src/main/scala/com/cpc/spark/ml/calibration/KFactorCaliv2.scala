@@ -14,13 +14,13 @@ object KFactorCaliv2 {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    // parse and process input
+    // public k calibration
 
     val k = args(0).toDouble
     val calimodel = args(1)
     val irModel = IRModel(
-      boundaries = Seq(0.0, 1.0),
-      predictions = Seq(0.0, k)
+      boundaries = Seq(1.0),
+      predictions = Seq(k)
     )
     println(s"calimodel is: $calimodel")
     println(s"k is: $k")

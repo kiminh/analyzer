@@ -12,7 +12,7 @@ import org.apache.spark.mllib.regression.IsotonicRegression
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object MultiDimensionCalibrationOnCtr {
+object MultiDimensionCalibrationOnQttCtr {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
@@ -29,6 +29,7 @@ object MultiDimensionCalibrationOnCtr {
     val media = args(3)
     val calimodel = args(4)
     val model = args(5)
+    val adslot_type = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -47,13 +48,17 @@ object MultiDimensionCalibrationOnCtr {
     println(s"startHour=$startHour")
 
     // build spark session
-    val session = Utils.buildSparkSession("hourlyCalibration")
+    val session = SparkSession.builder()
+      .appName("[trident] extract as event")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .enableHiveSupport()
+      .getOrCreate()
     val timeRangeSql = Utils.getTimeRangeSql_3(startDate, startHour, endDate, endHour)
 
     // get union log
     val sql = s"""
                  |select cast(isclick as int) isclick, cast(raw_ctr as bigint) as ectr, substring(adclass,1,6) as adclass,
-                 |ctr_model_name as model, adslotid, cast(ideaid as string) ideaid,
+                 | adslotid, cast(ideaid as string) ideaid,
                  |case
                  |  when user_show_ad_num = 0 then '0'
                  |  when user_show_ad_num = 1 then '1'
@@ -63,7 +68,7 @@ object MultiDimensionCalibrationOnCtr {
                  |  else '8' end as user_show_ad_num
                  | from dl_cpc.slim_union_log
                  | where $timeRangeSql
-                 | and $mediaSelection and isshow = 1
+                 | and $mediaSelection and isshow = 1 and adslot_type = $adslot_type
                  | and ctr_model_name in ('$model','$calimodel')
                  | and ideaid > 0 and adsrc = 1 AND userid > 0
                  | AND (charge_type IS NULL OR charge_type = 1)
@@ -93,37 +98,37 @@ object MultiDimensionCalibrationOnCtr {
       .select("adclass","group")
 
     val data1 = log.join(group1,Seq("adclass","ideaid","user_show_ad_num","adslotid"),"inner")
-    val calimap1 = GroupToConfig(data1, session,model)
+    val calimap1 = GroupToConfig(data1, session)
 
     val data2 = log.join(group2,Seq("adclass","ideaid","user_show_ad_num"),"inner")
-    val calimap2 = GroupToConfig(data2, session,model)
+    val calimap2 = GroupToConfig(data2, session)
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
-    val calimap3 = GroupToConfig(data3, session,model)
+    val calimap3 = GroupToConfig(data3, session)
 
     val data4 = log.join(group4,Seq("adclass"),"inner")
-    val calimap4 = GroupToConfig(data4, session,model)
+    val calimap4 = GroupToConfig(data4, session)
 
+//    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
   }
 
-  def GroupToConfig(data:DataFrame, session: SparkSession, model: String, minBinSize: Int = MIN_BIN_SIZE,
+  def GroupToConfig(data:DataFrame, session: SparkSession ,minBinSize: Int = MIN_BIN_SIZE,
                     maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","model","group")
+    val result = data.select("isclick","ectr","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(2)
-      val group = x.getString(3)
+      val group = x.getString(2)
       val key = group
       (key, (ectr, isClick))
     }).groupByKey()

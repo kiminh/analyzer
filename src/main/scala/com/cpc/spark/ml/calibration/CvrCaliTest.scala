@@ -6,8 +6,7 @@ import com.cpc.spark.common.Utils
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.ml.calibration.CalibrationCheckOnMidu.searchMap
-import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.saveFlatTextFileForDebug
-import com.cpc.spark.ml.calibration.LrCalibrationOnQtt.calculateAuc
+import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 
 object CvrCaliTest{
 

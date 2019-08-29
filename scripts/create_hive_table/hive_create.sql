@@ -359,10 +359,9 @@ create table if not exists dl_cpc.cvr_mlcpp_uid_label
 (
 uid string,
 hashuid double,
-num double,
-label int
+num double
 )
-PARTITIONED by (dt STRING)
+PARTITIONED by (dt STRING,label int)
 STORED as PARQUET;
 
 

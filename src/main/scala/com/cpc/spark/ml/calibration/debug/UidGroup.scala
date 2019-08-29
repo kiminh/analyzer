@@ -14,6 +14,7 @@ object UidGroup {
   def main(args: Array[String]): Unit = {
 
       val date = args(0)
+      val label = args(1).toInt
 
           val spark = SparkSession.builder()
             .appName(s"midu_userprofile")
@@ -22,19 +23,18 @@ object UidGroup {
 
       val sql =
           s"""
-             |select distinct uid, from_unixtime(unix_timestamp(day,'yyyy-mm-dd'),'yyyymmdd') as dt
+             |select distinct uid, from_unixtime(unix_timestamp(day,'yyyy-mm-dd'),'yyyymmdd') as dt,day
              |    from
              |      dl_cpc.cpc_basedata_union_events
              |    where
              |      day = '$date'
-             |      and media_appsid in ('80000001', '80000002')
            """.stripMargin
     println(sql)
       val data= spark.sql(sql)
-        .withColumn("hashuid",hash(concat(col("uid"),col("dt"))))
+        .withColumn("hashuid",hash(label)(concat(col("uid"),col("dt"))))
         .withColumn("num",col("hashuid")%1000)
-        .withColumn("label",when(col("num")>950,lit(1)).otherwise(lit(0)))
-        .select("uid","hashuid","num","label","dt")
+        .withColumn("label",lit(label))
+        .select("uid","hashuid","num","day","label")
 
     data.show(10)
 
@@ -43,9 +43,9 @@ object UidGroup {
 
   }
 
-  def hash= udf {
+  def hash(seed:Int)= udf {
     x:String => {
-      var a = stringHash32(x,79).toDouble
+      var a = stringHash32(x,seed).toDouble
       if(a<0){
         a += scala.math.pow(2,32)
       }
