@@ -91,7 +91,7 @@ object OcpcSmoothfactorV2 {
 
     calibration.show(10)
     calibration
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723c")
 
     val resultDF = calibration
       .withColumn("version", lit(version))
