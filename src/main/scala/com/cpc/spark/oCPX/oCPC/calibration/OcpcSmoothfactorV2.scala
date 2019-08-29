@@ -53,8 +53,6 @@ object OcpcSmoothfactorV2 {
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .filter(s"cv > 0")
     data1.show(10)
-    data1
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190829a")
 
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
@@ -64,8 +62,6 @@ object OcpcSmoothfactorV2 {
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .filter(s"cv > 0")
     data2.show(10)
-    data2
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190829b")
 
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
@@ -75,8 +71,6 @@ object OcpcSmoothfactorV2 {
       .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
       .filter(s"cv > 0")
     data3.show(10)
-    data3
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190829c")
 
 
     // 计算最终值
@@ -98,8 +92,6 @@ object OcpcSmoothfactorV2 {
       .cache()
 
     calibration.show(10)
-    calibration
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723d")
 
     val resultDF = calibration
       .withColumn("version", lit(version))
