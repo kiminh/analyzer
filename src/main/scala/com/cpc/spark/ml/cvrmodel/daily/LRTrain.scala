@@ -333,19 +333,21 @@ object LRTrain {
 
     var name=""
     var destfile=""
-    if (parser == "ctrparser4"){
+    if ("ctrparser4".equals(parser)){
       name="qtt-bs-cvrparser4-daily"
       destfile="qtt-bs-cvrparser4-daily.lrm"
-    }else if(parser == "cvrparser5"){
+    }else if("cvrparser5".equals(parser)){
       name="qtt-bs-cvrparser5-daily"
       destfile="qtt-bs-cvrparser5-daily.lrm"
-    }else if (parser == "cvrparser8"){
+    }else if ("cvrparser8".equals(parser)){
       name="qtt-bs-cvrparser8-daily"
       destfile="qtt-bs-cvrparser8-daily.lrm"
-    }else if (parser == "cvrparser9"){
+    }else if ("cvrparser9".equals(parser)){
       name="qtt-bs-cvrparser9-daily"
       destfile="qtt-bs-cvrparser9-daily.lrm"
     }
+
+    println("name = " + name + " , destfile = " + destfile)
 
     train(
       spark,
