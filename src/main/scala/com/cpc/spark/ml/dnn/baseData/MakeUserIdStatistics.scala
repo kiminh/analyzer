@@ -201,43 +201,43 @@ object MakeUserIdStatistics {
       val tf_text = des_dir + "/" + src_date + "-text"
       if (exists_hdfs_path(tf_text)) {
         println("now " + tf_text)
-        data = data.union(
-          sc.textFile(tf_text).map(
-            rs => {
-              val line_list = rs.split("\t")
+        val data_tmp = sc.textFile(tf_text).map(
+          rs => {
+            val line_list = rs.split("\t")
 
-              val idealId = line_list(0)
-              val unitId = line_list(1)
-              val planId = line_list(2)
-              val userId = line_list(3)
+            val idealId = line_list(0)
+            val unitId = line_list(1)
+            val planId = line_list(2)
+            val userId = line_list(3)
 
-              if (idealIdMapBC.value.contains(idealId)) {
-                idealIdMapBC.value(idealId) = idealIdMapBC.value(idealId) + 1
-              } else {
-                idealIdMapBC.value(idealId) = 1
-              }
-
-              if (unitIdMapBC.value.contains(unitId)) {
-                unitIdMapBC.value(unitId) = unitIdMapBC.value(unitId) + 1
-              } else {
-                unitIdMapBC.value(unitId) = 1
-              }
-
-              if (planIdMapBC.value.contains(planId)) {
-                planIdMapBC.value(planId) = planIdMapBC.value(planId) + 1
-              } else {
-                planIdMapBC.value(planId) = 1
-              }
-
-              if (userIdMapBC.value.contains(userId)) {
-                userIdMapBC.value(userId) = userIdMapBC.value(userId) + 1
-              } else {
-                userIdMapBC.value(userId) = 1
-              }
-              (userId + "_" + idealId, 1L)
+            if (idealIdMapBC.value.contains(idealId)) {
+              idealIdMapBC.value(idealId) = idealIdMapBC.value(idealId) + 1
+            } else {
+              idealIdMapBC.value(idealId) = 1
             }
-          ).reduceByKey(_ + _)
+
+            if (unitIdMapBC.value.contains(unitId)) {
+              unitIdMapBC.value(unitId) = unitIdMapBC.value(unitId) + 1
+            } else {
+              unitIdMapBC.value(unitId) = 1
+            }
+
+            if (planIdMapBC.value.contains(planId)) {
+              planIdMapBC.value(planId) = planIdMapBC.value(planId) + 1
+            } else {
+              planIdMapBC.value(planId) = 1
+            }
+
+            if (userIdMapBC.value.contains(userId)) {
+              userIdMapBC.value(userId) = userIdMapBC.value(userId) + 1
+            } else {
+              userIdMapBC.value(userId) = 1
+            }
+            (userId + "_" + idealId, 1L)
+          }
         ).reduceByKey(_ + _)
+
+        data = data.union(data_tmp)
       }
     }
     println("Done.......")
