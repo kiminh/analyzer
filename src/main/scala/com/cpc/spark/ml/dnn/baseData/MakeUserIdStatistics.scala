@@ -201,6 +201,7 @@ object MakeUserIdStatistics {
       val tf_text = des_dir + "/" + src_date + "-text"
       val user_ideal_file = des_dir + "/" + src_date + "-user-ideal"
       if (exists_hdfs_path(tf_text)) {
+        delete_hdfs_path(user_ideal_file)
         println("now " + tf_text)
         val data_tmp = sc.textFile(tf_text).map(
           rs => {
