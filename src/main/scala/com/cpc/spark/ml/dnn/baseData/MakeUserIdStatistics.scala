@@ -198,6 +198,7 @@ object MakeUserIdStatistics {
       val src_date = src_date_list(date_idx)
       val tf_text = des_dir + "/" + src_date + "-text"
       if (exists_hdfs_path(tf_text)) {
+        println("now " + tf_text)
         sc.textFile(tf_text).map(
           rs => {
             val line_list = rs.split("\t")
