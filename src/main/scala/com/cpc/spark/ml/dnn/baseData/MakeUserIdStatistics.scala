@@ -199,6 +199,7 @@ object MakeUserIdStatistics {
     for (date_idx <- src_date_list.indices) {
       val src_date = src_date_list(date_idx)
       val tf_text = des_dir + "/" + src_date + "-text"
+      val user_ideal_file = des_dir + "/" + src_date + "-user-ideal"
       if (exists_hdfs_path(tf_text)) {
         println("now " + tf_text)
         val data_tmp = sc.textFile(tf_text).map(
@@ -235,18 +236,16 @@ object MakeUserIdStatistics {
             }
             (userId + "_" + idealId, 1L)
           }
-        ).reduceByKey(_ + _)
-
-        data = data.union(data_tmp)
+        ).reduceByKey(_ + _).repartition(1).saveAsTextFile(user_ideal_file)
       }
     }
     println("Done.......")
 
-    val user_ideal_info = des_dir + "/" + "user-ideal-info"
-    data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
-      case (key, value) =>
-        key + "\t" + value.toString
-    }.saveAsTextFile(user_ideal_info)
+    //val user_ideal_info = des_dir + "/" + "user-ideal-info"
+    //data.reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map {
+    //  case (key, value) =>
+    //    key + "\t" + value.toString
+    //}.saveAsTextFile(user_ideal_info)
 
 
     println("idealIdMap Size:" + idealIdMapBC.value.size)
