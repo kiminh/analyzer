@@ -95,8 +95,8 @@ object LRTrain {
     }
 
     val dates = nDayBefore(date, days)
-    val dfPath = cachePrefix + date + ".parquet"
-    val idPath = cachePrefix + date + "apIndex" + ".parquet"
+    val dfPath = cachePrefix + date + "_" + parser + ".parquet"
+    val idPath = cachePrefix + date + "_" + parser + "apIndex" + ".parquet"
 
     s"hdfs dfs -rm -r ${dfPath}" !
 
