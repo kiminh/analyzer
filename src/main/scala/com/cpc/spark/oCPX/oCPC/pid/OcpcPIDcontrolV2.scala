@@ -27,9 +27,9 @@ object OcpcPIDcontrolV2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, hourInt=$hourInt, minCV=$minCV, kp=$kp, ki=$ki, kd=$kd, exptag=$expTag")
 
-    val baseData = getBaseDataV1(hourInt, date, hour, spark)
-//    val expIdSelection = s"array_contains(split(expids, ','), '35707')"
-//    val baseData = baseDataRaw.filter(expIdSelection)
+    val baseDataRaw = getBaseDataV1(hourInt, date, hour, spark)
+    val expIdSelection = s"array_contains(split(expids, ','), '36611')"
+    val baseData = baseDataRaw.filter(expIdSelection)
     val errorData = calculateError(baseData, date, hour, spark)
     val prevError = getPrevData(hourInt, expTag, version, date, hour, spark)
     val prevCali = getPrevCali(baseData, date, hour, spark)
