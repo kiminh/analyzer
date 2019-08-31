@@ -100,7 +100,7 @@ object OcpcLightBulb{
     val sqlRequest =
       s"""
          |SELECT
-         |    unit_id as unitid,
+         |    id as unitid,
          |    user_id as userid,
          |    cast(conversion_goal as int) as conversion_goal,
          |    ocpc_status,
