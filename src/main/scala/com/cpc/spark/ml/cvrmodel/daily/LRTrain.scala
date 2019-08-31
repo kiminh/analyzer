@@ -73,11 +73,19 @@ object LRTrain {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val days = args(0).toInt
-    val cvrPathSep = getPathSeq(days)
-    println("cvrPathSep = " + cvrPathSep)
-    //    val cvrPathSep = getPathSeq(args(1).toInt)
     val date = args(1)
     val parser = args(2)
+
+    var cvrPathSep = getPathSeq(days)
+    println("cvrPathSep = " + cvrPathSep)
+    //    val cvrPathSep = getPathSeq(args(1).toInt)
+
+    if (parser != "ctrparser4" && parser != "cvrparser5"){
+      val cur_time = args(3)
+      cvrPathSep = getPathSeq(cur_time, days)
+      println("cvrPathSep = " + cvrPathSep)
+      //    val cvrPathSep = getPathSeq(args(1).toInt)
+    }
 
 
 
@@ -159,6 +167,7 @@ object LRTrain {
              |    and user_cvr_threshold > 0
              |),
              |conversion as (
+             |  select * from (
              |  select A.searchid,A.ideaid,
              |           case when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
              |             when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
@@ -169,7 +178,7 @@ object LRTrain {
              |             when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
              |           else 0 end as label
              |
-             |   from
+ |   from
              |      (
              |         select
              |            searchid,
@@ -197,7 +206,8 @@ object LRTrain {
              |      and label=1
              |      group by searchid
              |   ) B
-             |   on A.searchid=B.searchid
+             |   on A.searchid=B.searchid)tmp
+             |where label=1
              |)
              |select
              |  features.*,
@@ -405,7 +415,24 @@ object LRTrain {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 1, 0, 0)
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(12, 14).toInt, dateStart.substring(16, 18).toInt, 0)
+    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
+    val pathSep = mutable.Map[String, Seq[String]]()
+
+    for (n <- 1 to days * 24) {
+      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      hour = new SimpleDateFormat("HH").format(cal.getTime)
+      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
+      cal.add(Calendar.HOUR, 1)
+    }
+
+    pathSep
+  }
+
+  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
+    var date = ""
+    var hour = ""
+    val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
