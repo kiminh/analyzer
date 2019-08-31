@@ -39,8 +39,8 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
@@ -90,8 +90,8 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 //    // 存入redis
 //    saveDataToRedis(version, date, hour, spark)
