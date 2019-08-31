@@ -70,6 +70,8 @@ object OcpcSuggestCPA {
 
     // 新单元自动进入二阶段单元
     // todo
+//    val unitid = getUnitidList(date, hour, spark)
+
 
 
     val resultDF = result
@@ -100,18 +102,6 @@ object OcpcSuggestCPA {
       .option("dbtable", table)
       .load()
 
-//    // 时间区间选择
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-//    val endDay = date + " " + hour
-//    val endDayTime = dateConverter.parse(endDay)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(endDayTime)
-//    calendar.add(Calendar.HOUR, -3)
-//    val startDateTime = calendar.getTime
-//    val startDateStr = dateConverter.format(startDateTime)
-//    val date1 = startDateStr.split(" ")(0)
-//    val hour1 = startDateStr.split(" ")(1)
-//    val deadline = date1 + " " + hour1 + ":00:00"
     val deadline = date + " " + hour + ":00:00"
 
     data.createOrReplaceTempView("base_data")
@@ -129,11 +119,17 @@ object OcpcSuggestCPA {
          |WHERE
          |  create_time >= '$deadline'
        """.stripMargin
-    val resultDF = spark
+    val result = spark
       .sql(sqlRequest)
       .filter(s"is_ocpc = 1")
       .filter(s"ocpc_status not in (2, 4)")
       .distinct()
+
+    val totalCnt = result.count()
+    val cnt = totalCnt.toFloat / 10
+    val resultDF = result
+        .orderBy(rand())
+        .limit(cnt.toInt)
 
     resultDF.show(10)
     resultDF

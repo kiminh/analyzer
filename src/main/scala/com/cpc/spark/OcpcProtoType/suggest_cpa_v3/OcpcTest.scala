@@ -28,16 +28,8 @@ object OcpcTest{
     println(s"date=$date, hour=$hour")
 
     val data = getUnitidList(date, hour, spark)
-    val totalCnt = data.count()
     data
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831a")
-    val cnt = totalCnt.toFloat / 10
-    val randomData = data
-      .orderBy(rand())
-      .limit(cnt.toInt)
-    randomData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831b")
 
   }
 
