@@ -69,9 +69,6 @@ object OcpcLightBulb{
       .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
       .na.fill(0.0, Seq("current_cpa"))
 
-    result
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831a")
 
     // 抽取adv的ocpc单元
     val ocpcUnitsRaw = getConversionGoal(date, hour, spark)
