@@ -128,7 +128,7 @@ object OcpcLightBulb{
       .distinct()
 
     val totalCnt = result.count()
-    val cnt = totalCnt.toFloat / 1
+    val cnt = totalCnt.toFloat / 10
     val resultDF = result
       .orderBy(rand())
       .limit(cnt.toInt)
