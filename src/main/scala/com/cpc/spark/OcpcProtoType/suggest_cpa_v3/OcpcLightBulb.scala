@@ -57,7 +57,9 @@ object OcpcLightBulb{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+
 
 
     val result = lightUnits1
