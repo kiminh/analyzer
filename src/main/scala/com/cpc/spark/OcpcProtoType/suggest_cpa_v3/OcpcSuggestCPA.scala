@@ -68,6 +68,10 @@ object OcpcSuggestCPA {
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
+    // 新单元自动进入二阶段单元
+    // todo
+
+
     val resultDF = result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -77,6 +81,62 @@ object OcpcSuggestCPA {
 //      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
+  }
+
+  def getUnitidList(date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status, target_medias, create_time from adv.unit where ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+//    // 时间区间选择
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+//    val endDay = date + " " + hour
+//    val endDayTime = dateConverter.parse(endDay)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(endDayTime)
+//    calendar.add(Calendar.HOUR, -3)
+//    val startDateTime = calendar.getTime
+//    val startDateStr = dateConverter.format(startDateTime)
+//    val date1 = startDateStr.split(" ")(0)
+//    val hour1 = startDateStr.split(" ")(1)
+//    val deadline = date1 + " " + hour1 + ":00:00"
+    val deadline = date + " " + hour + ":00:00"
+
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  id as unitid,
+         |  user_id as userid,
+         |  cast(conversion_goal as int) as conversion_goal,
+         |  cast(is_ocpc as int) as is_ocpc,
+         |  cast(ocpc_status as int) ocpc_status,
+         |  create_time
+         |FROM
+         |  base_data
+         |WHERE
+         |  create_time >= '$deadline'
+       """.stripMargin
+    val resultDF = spark
+      .sql(sqlRequest)
+      .filter(s"is_ocpc = 1")
+      .filter(s"ocpc_status not in (2, 4)")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcStatus: DataFrame, spark: SparkSession) = {
