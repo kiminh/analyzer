@@ -78,6 +78,8 @@ object OcpcQuickLog {
          |  adslot_type != 7
          |AND
          |  isclick = 1
+         |AND
+         |  antispam_score = 10000
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
