@@ -121,7 +121,48 @@ object LRTrain {
         val tomorrow=DateUtils.getPrevDate(dt, -1)
 
         val queryRawDataFromUnionEvents =
-          s"""select
+          s"""select A.searchid
+             |    , sex
+             |    , age
+             |    , os
+             |    , network
+             |    , isp
+             |    , city
+             |    , media_appsid
+             |    , phone_level
+             |    , `timestamp`
+             |    , adtype
+             |    , planid
+             |    , unitid
+             |    , ideaid
+             |    , adclass
+             |    , adslotid
+             |    , adslot_type
+             |    , brand
+             |    , media_type
+             |    , channel
+             |    , sdk_type
+             |    , dtu_id
+             |    , interaction
+             |    , pagenum
+             |    , bookid
+             |    , userid
+             |    , siteid
+             |    , province
+             |    , city_level
+             |    , doc_id
+             |    , doc_cat
+             |    , is_new_ad
+             |    , uid,case when cv_types = null then 0
+             |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
+             |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
+             |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
+             |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
+             |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
+             |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
+             |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
+             |      else 0 end as label from
+             |(select
              |    searchid
              |    , sex
              |    , age
@@ -155,17 +196,15 @@ object LRTrain {
              |    , category as doc_cat
              |    , is_new_ad
              |    , uid
-             |    , case when cv_types = null then 0
-             |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
-             |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
-             |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
-             |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
-             |      else 0 end as label
+             |    , conversion_goal
+             |    , is_api_callback
              |  from
-             |    dl_cpc.cpc_basedata_union_events A
+             |    dl_cpc.cpc_basedata_union_events
+             |    where
+             |    day = "$dt"
+             |    and isshow = 1
+             |    and isclick = 1
+             |    and charge_type = 1) A
              |  left outer join
              |   (
              |      select
@@ -177,11 +216,8 @@ object LRTrain {
              |      and label=1
              |      group by searchid
              |   ) B
-             |  where
-             |    day = "$dt"
-             |    and isshow = 1
-             |    and isclick = 1
-             |    and charge_type = 1
+             |   on A.searchid=B.searchid
+             |
          """.stripMargin
 
         println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
