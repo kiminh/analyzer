@@ -81,9 +81,9 @@ object LRTrain {
     //    val cvrPathSep = getPathSeq(args(1).toInt)
 
     if (parser != "ctrparser4" && parser != "cvrparser5"){
-      val cur_time = args(3)
-      println("cur_time = " + cur_time)
-      cvrPathSep = getPathSeq(cur_time, days)
+      val datehour = args(3)
+      println("datehour = " + datehour)
+      cvrPathSep = getPathSeq(datehour, days)
       println("cvrPathSep = " + cvrPathSep)
       //    val cvrPathSep = getPathSeq(args(1).toInt)
     }
@@ -416,7 +416,7 @@ object LRTrain {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(12, 14).toInt, dateStart.substring(16, 18).toInt, 0)
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(11, 12).toInt, dateStart.substring(13, 14).toInt, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
