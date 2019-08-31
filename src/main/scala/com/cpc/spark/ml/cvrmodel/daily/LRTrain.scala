@@ -82,6 +82,7 @@ object LRTrain {
 
     if (parser != "ctrparser4" && parser != "cvrparser5"){
       val cur_time = args(3)
+      println("cur_time = " + cur_time)
       cvrPathSep = getPathSeq(cur_time, days)
       println("cvrPathSep = " + cvrPathSep)
       //    val cvrPathSep = getPathSeq(args(1).toInt)
