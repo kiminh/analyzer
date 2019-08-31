@@ -66,22 +66,42 @@ object OcpcSuggestCPA {
 
 
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
+    val assembleData = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
     // 新单元自动进入二阶段单元
     // todo
-//    val unitid = getUnitidList(date, hour, spark)
+    val unitidList = getUnitidList(date, hour, spark)
+    val autoUnits = assembleData
+      .join(unitidList, Seq("unitid", "userid", "conversion_goal"), "inner")
+      .filter(s"media in ('qtt', 'hottopic')")
+      .withColumn("test_flag", lit(1))
+      .select("unitid", "userid", "conversion_goal", "test_flag")
+    autoUnits
+      .select("unitid", "userid", "conversion_goal")
+      .withColumn(date, lit(date))
+      .withColumn(hour, lit(hour))
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
 
+    val result = assembleData
+      .join(autoUnits, Seq("unitid", "userid", "conversion_goal"), "left_outer")
+      .withColumn("is_recommend_old", col("is_recommend"))
+      .withColumn("is_recommend", when(col("test_flag").isNotNull, lit(1)).otherwise(col("is_recommend")))
+
+    result
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831a")
 
 
     val resultDF = result
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
