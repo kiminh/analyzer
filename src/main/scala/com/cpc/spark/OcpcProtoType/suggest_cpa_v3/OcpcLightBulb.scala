@@ -100,25 +100,31 @@ object OcpcLightBulb{
     val sqlRequest =
       s"""
          |SELECT
-         |  id as unitid,
-         |  user_id as userid,
-         |  cast(conversion_goal as int) as conversion_goal,
-         |  cast(is_ocpc as int) as is_ocpc,
-         |  cast(ocpc_status as int) ocpc_status,
-         |  create_time
-         |FROM
-         |  base_data
+         |    unit_id as unitid,
+         |    user_id as userid,
+         |    cast(conversion_goal as int) as conversion_goal,
+         |    ocpc_status,
+         |    is_ocpc,
+         |    cast(a as string) as media_appsid,
+         |    create_time
+         |from
+         |    base_data
+         |lateral view explode(split(target_medias, ',')) b as a
          |WHERE
-         |  create_time >= '$deadline'
+         |    create_time >= '$deadline'
+         |and
+         |    is_ocpc = 1
+         |and
+         |    ocpc_status not in (2, 4)
        """.stripMargin
+
     val result = spark
       .sql(sqlRequest)
-      .filter(s"is_ocpc = 1")
-      .filter(s"ocpc_status not in (2, 4)")
-      .distinct()
+      .na.fill("", Seq("media_appsid"))
+      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
 
     val totalCnt = result.count()
-    val cnt = totalCnt.toFloat / 10
+    val cnt = totalCnt.toFloat / 2
     val resultDF = result
       .orderBy(rand())
       .limit(cnt.toInt)
@@ -126,6 +132,19 @@ object OcpcLightBulb{
     resultDF.show(10)
     resultDF
   }
+
+  def udfDetermineMediaNew() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
+      case "" => "qtt"
+      case _ => "novel"
+    }
+    result
+  })
+
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
