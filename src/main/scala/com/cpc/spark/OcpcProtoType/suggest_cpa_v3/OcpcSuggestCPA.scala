@@ -66,32 +66,7 @@ object OcpcSuggestCPA {
 
 
     // 数据组装
-    val assembleData = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
-
-    // 新单元自动进入二阶段单元
-    // todo
-    val unitidList = getUnitidList(date, hour, spark)
-    val autoUnits = assembleData
-      .join(unitidList, Seq("unitid", "userid", "conversion_goal"), "inner")
-      .filter(s"media in ('qtt', 'hottopic')")
-      .withColumn("test_flag", lit(1))
-      .select("unitid", "userid", "conversion_goal", "test_flag")
-    autoUnits
-      .select("unitid", "userid", "conversion_goal")
-      .withColumn(date, lit(date))
-      .withColumn(hour, lit(hour))
-      .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-
-    val result = assembleData
-      .join(autoUnits, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .withColumn("is_recommend_old", col("is_recommend"))
-      .withColumn("is_recommend", when(col("test_flag").isNotNull, lit(1)).otherwise(col("is_recommend")))
-
-    result
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831a")
-
+    val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
     val resultDF = result
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
@@ -103,56 +78,6 @@ object OcpcSuggestCPA {
       .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
-  }
-
-  def getUnitidList(date: String, hour: String, spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
-
-    val url = conf.getString("adv_read_mysql.new_deploy.url")
-    val user = conf.getString("adv_read_mysql.new_deploy.user")
-    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
-    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status, target_medias, create_time from adv.unit where ideas is not null) as tmp"
-
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val deadline = date + " " + hour + ":00:00"
-
-    data.createOrReplaceTempView("base_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  id as unitid,
-         |  user_id as userid,
-         |  cast(conversion_goal as int) as conversion_goal,
-         |  cast(is_ocpc as int) as is_ocpc,
-         |  cast(ocpc_status as int) ocpc_status,
-         |  create_time
-         |FROM
-         |  base_data
-         |WHERE
-         |  create_time >= '$deadline'
-       """.stripMargin
-    val result = spark
-      .sql(sqlRequest)
-      .filter(s"is_ocpc = 1")
-      .filter(s"ocpc_status not in (2, 4)")
-      .distinct()
-
-    val totalCnt = result.count()
-    val cnt = totalCnt.toFloat / 10
-    val resultDF = result
-        .orderBy(rand())
-        .limit(cnt.toInt)
-
-    resultDF.show(10)
-    resultDF
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcStatus: DataFrame, spark: SparkSession) = {
@@ -397,7 +322,7 @@ object OcpcSuggestCPA {
          |FROM
          |    dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    `date` >= '$date1'
+         |    $timeSelection
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)
