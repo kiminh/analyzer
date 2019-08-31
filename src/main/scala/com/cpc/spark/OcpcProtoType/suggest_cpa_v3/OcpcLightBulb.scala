@@ -104,7 +104,7 @@ object OcpcLightBulb{
          |    user_id as userid,
          |    cast(conversion_goal as int) as conversion_goal,
          |    ocpc_status,
-         |    is_ocpc,
+         |    cast(is_ocpc as int) as is_ocpc,
          |    cast(a as string) as media_appsid,
          |    create_time
          |from
@@ -120,11 +120,12 @@ object OcpcLightBulb{
 
     val result = spark
       .sql(sqlRequest)
+      .filter(s"is_ocpc = 1")
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
 
     val totalCnt = result.count()
-    val cnt = totalCnt.toFloat / 2
+    val cnt = totalCnt.toFloat / 1
     val resultDF = result
       .orderBy(rand())
       .limit(cnt.toInt)
