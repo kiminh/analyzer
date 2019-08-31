@@ -84,23 +84,23 @@ object LRTrain {
     val spark: SparkSession = model
       .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
 
-    val cachePrefix = "/tmp/cvr_cache/"
-
-    if (parser == "cvrparser6" || parser == "cvrparser7") {
-      initIntFeatureDictV6(spark, cvrPathSep)
-      initLongFeatureDictV6(spark, cvrPathSep)
-      initStringFeatureDictV6(spark, cvrPathSep)
-    } else {
-      initFeatureDict(spark, cvrPathSep)
-    }
-
+//    val cachePrefix = "/tmp/cvr_cache/"
+//
+//    if (parser == "cvrparser6" || parser == "cvrparser7") {
+//      initIntFeatureDictV6(spark, cvrPathSep)
+//      initLongFeatureDictV6(spark, cvrPathSep)
+//      initStringFeatureDictV6(spark, cvrPathSep)
+//    } else {
+//      initFeatureDict(spark, cvrPathSep)
+//    }
+//
     val dayBefore=DateUtils.getPrevDate(today,days)
     val yesterday=DateUtils.getPrevDate(today, 1)
-
-    val userAppIdx = getUidApp(spark, cvrPathSep)
-    for (key <- dictStr.keys) {
-      println(key)
-    }
+//
+//    val userAppIdx = getUidApp(spark, cvrPathSep)
+//    for (key <- dictStr.keys) {
+//      println(key)
+//    }
 
     var queryRawDataFromUnionEvents = ""
     if (parser == "cvrparser8" || parser == "cvrparser9") {
@@ -276,58 +276,58 @@ object LRTrain {
 
     println(queryRawDataFromUnionEvents)
 
-    val df = spark
-      .sql(queryRawDataFromUnionEvents)
-
-    val allData = getLeftJoinData(df, userAppIdx)
-
-    model.clearResult()
-
-    var name=""
-    var destfile=""
-    if ("ctrparser4".equals(parser)){
-      name="qtt-bs-cvrparser4-daily"
-      destfile="qtt-bs-cvrparser4-daily.lrm"
-    }else if("cvrparser5".equals(parser)){
-      name="qtt-bs-cvrparser5-daily"
-      destfile="qtt-bs-cvrparser5-daily.lrm"
-    }else if ("cvrparser8".equals(parser)){
-      name="qtt-bs-cvrparser8-daily"
-      destfile="qtt-bs-cvrparser8-daily.lrm"
-    }else if ("cvrparser9".equals(parser)){
-      name="qtt-bs-cvrparser9-daily"
-      destfile="qtt-bs-cvrparser9-daily.lrm"
-    }
-
-    println("name = " + name + " , destfile = " + destfile)
-
-    train(
-      spark,
-      parser,
-      name,
-      allData,
-      destfile,
-      1e8
-    )
-
-    Utils
-      .sendMail(
-        trainLog.mkString("\n"),
-        s"[cpc-bs-q] ${name} 训练复盘",
-        Seq(
-          "fanyiming@qutoutiao.net",
-          "xiongyao@qutoutiao.net",
-          "duanguangdong@qutoutiao.net",
-          "xulu@qutoutiao.net",
-          "wangyao@qutoutiao.net",
-          "qizhi@qutoutiao.net",
-          "huazhenhao@qutoutiao.net"
-        )
-      )
-
-    allData.unpersist()
-
-    println(trainLog.mkString("\n"))
+//    val df = spark
+//      .sql(queryRawDataFromUnionEvents)
+//
+//    val allData = getLeftJoinData(df, userAppIdx)
+//
+//    model.clearResult()
+//
+//    var name=""
+//    var destfile=""
+//    if ("ctrparser4".equals(parser)){
+//      name="qtt-bs-cvrparser4-daily"
+//      destfile="qtt-bs-cvrparser4-daily.lrm"
+//    }else if("cvrparser5".equals(parser)){
+//      name="qtt-bs-cvrparser5-daily"
+//      destfile="qtt-bs-cvrparser5-daily.lrm"
+//    }else if ("cvrparser8".equals(parser)){
+//      name="qtt-bs-cvrparser8-daily"
+//      destfile="qtt-bs-cvrparser8-daily.lrm"
+//    }else if ("cvrparser9".equals(parser)){
+//      name="qtt-bs-cvrparser9-daily"
+//      destfile="qtt-bs-cvrparser9-daily.lrm"
+//    }
+//
+//    println("name = " + name + " , destfile = " + destfile)
+//
+//    train(
+//      spark,
+//      parser,
+//      name,
+//      allData,
+//      destfile,
+//      1e8
+//    )
+//
+//    Utils
+//      .sendMail(
+//        trainLog.mkString("\n"),
+//        s"[cpc-bs-q] ${name} 训练复盘",
+//        Seq(
+//          "fanyiming@qutoutiao.net",
+//          "xiongyao@qutoutiao.net",
+//          "duanguangdong@qutoutiao.net",
+//          "xulu@qutoutiao.net",
+//          "wangyao@qutoutiao.net",
+//          "qizhi@qutoutiao.net",
+//          "huazhenhao@qutoutiao.net"
+//        )
+//      )
+//
+//    allData.unpersist()
+//
+//    println(trainLog.mkString("\n"))
 
   }
 
