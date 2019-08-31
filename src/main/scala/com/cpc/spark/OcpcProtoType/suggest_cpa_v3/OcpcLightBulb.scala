@@ -124,6 +124,8 @@ object OcpcLightBulb{
       .filter(s"is_ocpc = 1")
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .select("unitid", "conversion_goal", "media")
+      .distinct()
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 1
