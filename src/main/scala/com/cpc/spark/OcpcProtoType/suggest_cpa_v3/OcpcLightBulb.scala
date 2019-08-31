@@ -104,6 +104,7 @@ object OcpcLightBulb{
          |    user_id as userid,
          |    cast(conversion_goal as int) as conversion_goal,
          |    ocpc_status,
+         |    target_medias,
          |    cast(is_ocpc as int) as is_ocpc,
          |    cast(a as string) as media_appsid,
          |    create_time
