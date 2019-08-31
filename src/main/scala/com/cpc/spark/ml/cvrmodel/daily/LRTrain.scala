@@ -112,16 +112,8 @@ object LRTrain {
         val tomorrow=DateUtils.getPrevDate(dt, -1)
 
         val queryRawDataFromUnionEvents =
-          s"""select sum(case when label=1 then 1 else 0 end) as label1,sum(case when label=0 then 1 else 0 end) as label0,sum(1) as total
-             |from(
-             |select
-             |  features.*,
-             |  case
-             |    when conversion.label=1 then 1
-             |    else 0
-             |  end as label
-             |from
-             |  (select
+          s"""with features as (
+             |  select
              |    searchid
              |    , sex
              |    , age
@@ -164,10 +156,10 @@ object LRTrain {
              |    and unitid > 0
              |    and media_appsid in ('80000001', '80000002')
              |    and adslot_type in (1, 2)
-             |    and user_cvr_threshold > 0) features
-             |  left outer join
-             |  (select * from
-             |  (select A.searchid,A.ideaid,
+             |    and user_cvr_threshold > 0
+             |),
+             |conversion as (
+             |  select A.searchid,A.ideaid,
              |           case when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
              |             when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
              |             when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
@@ -177,7 +169,7 @@ object LRTrain {
              |             when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
              |           else 0 end as label
              |
- |   from
+             |   from
              |      (
              |         select
              |            searchid,
@@ -205,9 +197,18 @@ object LRTrain {
              |      and label=1
              |      group by searchid
              |   ) B
-             |   on A.searchid=B.searchid)tmp
-             |   where label=1) conversion on features.searchid = conversion.searchid
-             |  and features.ideaid = conversion.ideaid)t1
+             |   on A.searchid=B.searchid
+             |)
+             |select
+             |  features.*,
+             |  case
+             |    when conversion.label=1 then 1
+             |    else 0
+             |  end as label
+             |from
+             |  features
+             |  left join conversion on features.searchid = conversion.searchid
+             |  and features.ideaid = conversion.ideaid
          """.stripMargin
 
         println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
