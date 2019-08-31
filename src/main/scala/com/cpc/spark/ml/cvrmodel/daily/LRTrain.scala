@@ -401,10 +401,11 @@ object LRTrain {
 
   }
 
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
+  def getPathSeq(dateStart: String, days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 1, 0, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
