@@ -274,6 +274,8 @@ object LRTrain {
          """.stripMargin
     }
 
+    println(queryRawDataFromUnionEvents)
+
     val df = spark
       .sql(queryRawDataFromUnionEvents)
 
