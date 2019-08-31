@@ -9,7 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.OcpcProtoType.suggest_cpa_v3.OcpcSuggestCPA.getUnitidList
+import com.cpc.spark.OcpcProtoType.suggest_cpa_v3.OcpcLightBulb.getUnitidList
 
 
 object OcpcTest{
