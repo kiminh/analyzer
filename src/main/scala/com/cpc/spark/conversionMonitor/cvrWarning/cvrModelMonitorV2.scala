@@ -3,8 +3,7 @@ package com.cpc.spark.conversionMonitor.cvrWarning
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.conversionMonitor.monitorJiafen.sendMail
-import com.github.jurajburian.mailer.{Content, Mailer, Message, SessionFactory, SmtpAddress}
+import com.github.jurajburian.mailer._
 import javax.mail.internet.InternetAddress
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -12,7 +11,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.sys.process._
 
-object cvrModelMonitor {
+object cvrModelMonitorV2 {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -20,41 +19,25 @@ object cvrModelMonitor {
     // 计算日期周期
     val date = args(0).toString
     val modelName = args(1).toString
-    val cvr_diff = args(2).toDouble
+    val min_cvr = args(2).toDouble
 
     // 清理ok文件
-    s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date.ok" !
+    s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date-v2.ok" !
 
     val dataToday = getData(date, modelName, spark)
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val dataYesterday = getData(date1, modelName, spark)
-
-    // 数据对比
-    val cmpResult = cmpData(dataToday, dataYesterday, spark)
-    val result = cmpResult
-      .withColumn("date", lit(date))
-      .select("cvr_yesterday", "cvr_today", "cvr_diff", "hour", "date", "model_name")
-
-    result
-      .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.model_cvr_cmp_daily_v2")
 
     // 数据监控
-    val filterResult = result.filter(s"cvr_diff > $cvr_diff")
+    val filterResult = dataToday.filter(s"cvr < $min_cvr")
     val cnt = filterResult.count()
-    val totalCnt = result.count()
+    val totalCnt = dataToday.count()
+    println(s"complete data: $totalCnt")
+    dataToday.show(10)
+    println(s"incorrect data: $cnt")
     filterResult.show(10)
 
     // email content
-    val message = s"training set for $modelName, $date is incorrect!"
-    val sub = "cvr model training dataset monitor is warning"
+    val message = s"warning_v2: training set for $modelName, $date is incorrect!"
+    val sub = "cvr model training dataset monitorV2 is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
     receiver:+="yanglei@qutoutiao.net"
@@ -63,10 +46,12 @@ object cvrModelMonitor {
     receiver:+="wangfang03@qutoutiao.net"
     receiver:+="dongjinbao@qutoutiao.net"
     if (cnt > 0 || totalCnt != 24) {
+      println(s"send email: count is $cnt and $totalCnt")
       sendMail(message, sub, receiver)
     } else {
+      println(s"touch file: count is $cnt and $totalCnt")
       //输出标记文件
-      s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date.ok" !
+      s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date-v2.ok" !
     }
 
   }

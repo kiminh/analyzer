@@ -11,24 +11,24 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
+
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 20g --driver-memory 4g \
+    --executor-memory 20g --driver-memory 20g \
     --executor-cores 10 --num-executors 20  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2 \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6 $7
+    --class com.cpc.spark.oCPX.oCPC.pid.OcpcPIDcontrolV2 \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6 $7 $8 $9
 
 #val date = args(0).toString
 #val hour = args(1).toString
 #val version = args(2).toString
-#val expTag = args(3).toString
-#
-#// 主校准回溯时间长度
-#val hourInt1 = args(4).toInt
-#// 备用校准回溯时间长度
-#val hourInt2 = args(5).toInt
-#// 兜底校准时长
-#val hourInt3 = args(6).toInt
+#val hourInt = args(3).toInt
+#val minCV = args(4).toInt
+#val kp = args(5).toDouble
+#val ki = args(6).toDouble
+#val kd = args(7).toDouble
+#val expTag = args(8).toString
