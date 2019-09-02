@@ -104,6 +104,16 @@ object OcpcLightBulb{
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
     val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status, target_medias, create_time from adv.unit where ideas is not null) as tmp"
 
+    val ocpcBlackListConf = conf.getString("ocpc_all.light_control.ocpc_black_list")
+    val ocpcBlacklist = spark
+      .read
+      .format("json")
+      .json(ocpcBlackListConf)
+      .select("userid")
+      .withColumn("black_flag", lit(1))
+      .distinct()
+
+
     val data = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
@@ -137,14 +147,24 @@ object OcpcLightBulb{
          |    ocpc_status not in (2, 4)
        """.stripMargin
 
-    val result = spark
+    val rawResult = spark
       .sql(sqlRequest)
       .filter(s"is_ocpc = 1")
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
       .select("unitid", "userid", "conversion_goal", "media")
       .distinct()
+      .join(ocpcBlacklist, Seq("userid"), "left_outer")
+    rawResult
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902a")
+
+    val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"black_flag is not null")
+    result
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902b")
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 10
