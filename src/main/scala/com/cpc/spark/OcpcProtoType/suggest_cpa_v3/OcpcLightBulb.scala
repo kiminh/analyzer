@@ -112,6 +112,8 @@ object OcpcLightBulb{
       .select("userid")
       .withColumn("black_flag", lit(1))
       .distinct()
+    println("ocpc blacklist for testing ocpc light:")
+    ocpcBlacklist.show(10)
 
 
     val data = spark.read.format("jdbc")
