@@ -116,223 +116,129 @@ object LRTrain {
       println(key)
     }
 
-    if (parser == "cvrparser8" || parser == "cvrparser9"){
-      dates.foreach(dt => {
-        val tomorrow=DateUtils.getPrevDate(dt, -1)
+    dates.foreach(dt => {
+      val tomorrow=DateUtils.getPrevDate(dt, -1)
 
-        val queryRawDataFromUnionEvents =
-          s"""select A.searchid
-             |    , sex
-             |    , age
-             |    , os
-             |    , network
-             |    , isp
-             |    , city
-             |    , media_appsid
-             |    , phone_level
-             |    , `timestamp`
-             |    , adtype
-             |    , planid
-             |    , unitid
-             |    , ideaid
-             |    , adclass
-             |    , adslotid
-             |    , adslot_type
-             |    , brand
-             |    , media_type
-             |    , channel
-             |    , sdk_type
-             |    , dtu_id
-             |    , interaction
-             |    , pagenum
-             |    , bookid
-             |    , userid
-             |    , siteid
-             |    , province
-             |    , city_level
-             |    , doc_id
-             |    , doc_cat
-             |    , is_new_ad
-             |    , uid,case when cv_types = null then 0
-             |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
-             |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
-             |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
-             |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
-             |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
-             |      else 0 end as label from
-             |(select
-             |    searchid
-             |    , sex
-             |    , age
-             |    , os
-             |    , network
-             |    , isp
-             |    , city
-             |    , media_appsid
-             |    , phone_level
-             |    , `timestamp`
-             |    , adtype
-             |    , planid
-             |    , unitid
-             |    , ideaid
-             |    , adclass
-             |    , adslot_id as adslotid
-             |    , adslot_type
-             |    , brand_title as brand
-             |    , media_type
-             |    , channel
-             |    , client_type as sdk_type
-             |    , dtu_id
-             |    , interaction
-             |    , interact_pagenum as pagenum
-             |    , interact_bookid as bookid
-             |    , userid
-             |    , siteid
-             |    , province
-             |    , city_level
-             |    , content_id as doc_id
-             |    , category as doc_cat
-             |    , is_new_ad
-             |    , uid
-             |    , conversion_goal
-             |    , is_api_callback
-             |  from
-             |    dl_cpc.cpc_basedata_union_events
-             |    where
-             |    day = "$dt"
-             |    and isshow = 1
-             |    and isclick = 1
-             |    and charge_type = 1) A
-             |  left outer join
-             |   (
-             |      select
-             |      searchid, concat_ws(',', collect_set(cvr_goal)) as cv_types
-             |      from
-             |         dl_cpc.ocpc_label_cvr_hourly
-             |      where
-             |         `date`>="$dt" and `date`<="$tomorrow"
-             |      and label=1
-             |      group by searchid
-             |   ) B
-             |   on A.searchid=B.searchid
-             |
+      val queryRawDataFromUnionEvents =
+        s"""select A.searchid
+           |    , sex
+           |    , age
+           |    , os
+           |    , network
+           |    , isp
+           |    , city
+           |    , media_appsid
+           |    , phone_level
+           |    , `timestamp`
+           |    , adtype
+           |    , planid
+           |    , unitid
+           |    , ideaid
+           |    , adclass
+           |    , adslotid
+           |    , adslot_type
+           |    , brand
+           |    , media_type
+           |    , channel
+           |    , sdk_type
+           |    , dtu_id
+           |    , interaction
+           |    , pagenum
+           |    , bookid
+           |    , userid
+           |    , siteid
+           |    , province
+           |    , city_level
+           |    , doc_id
+           |    , doc_cat
+           |    , is_new_ad
+           |    , uid,case when cv_types = null then 0
+           |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
+           |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
+           |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
+           |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
+           |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
+           |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
+           |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
+           |      else 0 end as label from
+           |(select
+           |    searchid
+           |    , sex
+           |    , age
+           |    , os
+           |    , network
+           |    , isp
+           |    , city
+           |    , media_appsid
+           |    , phone_level
+           |    , `timestamp`
+           |    , adtype
+           |    , planid
+           |    , unitid
+           |    , ideaid
+           |    , adclass
+           |    , adslot_id as adslotid
+           |    , adslot_type
+           |    , brand_title as brand
+           |    , media_type
+           |    , channel
+           |    , client_type as sdk_type
+           |    , dtu_id
+           |    , interaction
+           |    , interact_pagenum as pagenum
+           |    , interact_bookid as bookid
+           |    , userid
+           |    , siteid
+           |    , province
+           |    , city_level
+           |    , content_id as doc_id
+           |    , category as doc_cat
+           |    , is_new_ad
+           |    , uid
+           |    , conversion_goal
+           |    , is_api_callback
+           |  from
+           |    dl_cpc.cpc_basedata_union_events
+           |    where
+           |    day = "$dt"
+           |    and isshow = 1
+           |    and isclick = 1
+           |    and charge_type = 1) A
+           |  left outer join
+           |   (
+           |      select
+           |      searchid, concat_ws(',', collect_set(cvr_goal)) as cv_types
+           |      from
+           |         dl_cpc.ocpc_label_cvr_hourly
+           |      where
+           |         `date`>="$dt" and `date`<="$tomorrow"
+           |      and label=1
+           |      group by searchid
+           |   ) B
+           |   on A.searchid=B.searchid
+           |
          """.stripMargin
 
-        println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+      println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-        val df = spark
-          .sql(queryRawDataFromUnionEvents)
+      val df = spark
+        .sql(queryRawDataFromUnionEvents)
 
-        /*val ideaids = df
-          .select("ideaid")
-          .groupBy("ideaid")
-          .count()
-          .where("count > %d".format(minIdeaNum))
+      /*val ideaids = df
+        .select("ideaid")
+        .groupBy("ideaid")
+        .count()
+        .where("count > %d".format(minIdeaNum))
 
-        val sample = df.join(ideaids, Seq("ideaid")).cache()*/
+      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-        val joined = getLeftJoinData(df, userAppIdx)
-        joined.write.mode(SaveMode.Append).parquet(dfPath)
+      val joined = getLeftJoinData(df, userAppIdx)
+      joined.write.mode(SaveMode.Append).parquet(dfPath)
 
-        joined.unpersist()
-        // ideaids.unpersist()
-        df.unpersist()
-      })
-    }else{
-      dates.foreach(dt => {
-
-        val queryRawDataFromUnionEvents =
-          s"""with features as (
-             |  select
-             |    searchid
-             |    , sex
-             |    , age
-             |    , os
-             |    , network
-             |    , isp
-             |    , city
-             |    , media_appsid
-             |    , phone_level
-             |    , `timestamp`
-             |    , adtype
-             |    , planid
-             |    , unitid
-             |    , ideaid
-             |    , adclass
-             |    , adslot_id as adslotid
-             |    , adslot_type
-             |    , brand_title as brand
-             |    , media_type
-             |    , channel
-             |    , client_type as sdk_type
-             |    , dtu_id
-             |    , interaction
-             |    , interact_pagenum as pagenum
-             |    , interact_bookid as bookid
-             |    , userid
-             |    , siteid
-             |    , province
-             |    , city_level
-             |    , content_id as doc_id
-             |    , category as doc_cat
-             |    , is_new_ad
-             |    , uid
-             |  from
-             |    dl_cpc.cpc_basedata_union_events
-             |  where
-             |    day = "$dt"
-             |    and isclick = 1
-             |    and ideaid > 0
-             |    and unitid > 0
-             |    and media_appsid in ('80000001', '80000002')
-             |    and adslot_type in (1, 2)
-             |    and user_cvr_threshold > 0
-             |),
-             |conversion as (
-             |  select
-             |    searchid,
-             |    ideaid,
-             |    1 as label
-             |  from
-             |    dl_cpc.dm_conversion_detail
-             |  where
-             |    dt = "$dt"
-             |)
-             |select
-             |  features.*,
-             |  case
-             |    when conversion.label is not NULL then 1
-             |    else 0
-             |  end as label
-             |from
-             |  features
-             |  left join conversion on features.searchid = conversion.searchid
-             |  and features.ideaid = conversion.ideaid
-         """.stripMargin
-
-        println(queryRawDataFromUnionEvents)
-
-        val df = spark
-          .sql(queryRawDataFromUnionEvents)
-
-        /*val ideaids = df
-          .select("ideaid")
-          .groupBy("ideaid")
-          .count()
-          .where("count > %d".format(minIdeaNum))
-
-        val sample = df.join(ideaids, Seq("ideaid")).cache()*/
-
-        val joined = getLeftJoinData(df, userAppIdx)
-        joined.write.mode(SaveMode.Append).parquet(dfPath)
-
-        joined.unpersist()
-        // ideaids.unpersist()
-        df.unpersist()
-      })
-    }
+      joined.unpersist()
+      // ideaids.unpersist()
+      df.unpersist()
+    })
 
 
 
@@ -348,12 +254,6 @@ object LRTrain {
     }else if("cvrparser5".equals(parser)){
       name="qtt-bs-cvrparser5-daily"
       destfile="qtt-bs-cvrparser5-daily.lrm"
-    }else if ("cvrparser8".equals(parser)){
-      name="qtt-bs-cvrparser8-daily"
-      destfile="qtt-bs-cvrparser8-daily.lrm"
-    }else if ("cvrparser9".equals(parser)){
-      name="qtt-bs-cvrparser9-daily"
-      destfile="qtt-bs-cvrparser9-daily.lrm"
     }
 
     println("name = " + name + " , destfile = " + destfile)
@@ -622,10 +522,6 @@ object LRTrain {
                   getCvrVectorParser6(u)
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
-                case "cvrparser8" =>
-                  getCvrVectorParser4(u)
-                case "cvrparser9" =>
-                  getCvrVectorParser5(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
