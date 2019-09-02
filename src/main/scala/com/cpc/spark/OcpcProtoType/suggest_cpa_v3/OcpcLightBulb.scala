@@ -163,7 +163,7 @@ object OcpcLightBulb{
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
-      .filter(s"black_flag is not null")
+      .filter(s"black_flag is null")
     result
       .repartition(5)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902b")
