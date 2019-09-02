@@ -78,17 +78,6 @@ object LRTrain {
 
     var cvrPathSep = getPathSeq(days)
     println("cvrPathSep = " + cvrPathSep)
-    //    val cvrPathSep = getPathSeq(args(1).toInt)
-
-//    if (parser != "ctrparser4" && parser != "cvrparser5"){
-//      val datehour = args(3)
-//      println("datehour = " + datehour)
-//      cvrPathSep = getPathSeq(datehour, days)
-//      println("cvrPathSep = " + cvrPathSep)
-//      //    val cvrPathSep = getPathSeq(args(1).toInt)
-//    }
-
-
 
     val spark: SparkSession = model
       .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
@@ -248,7 +237,7 @@ object LRTrain {
 
     var name=""
     var destfile=""
-    if ("ctrparser4".equals(parser)){
+    if ("cvrparser4".equals(parser)){
       name="qtt-bs-cvrparser4-daily"
       destfile="qtt-bs-cvrparser4-daily.lrm"
     }else if("cvrparser5".equals(parser)){
@@ -516,7 +505,7 @@ object LRTrain {
               val vec = parser match {
                 case "cvrparser5" =>
                   getCvrVectorParser5(u)
-                case "ctrparser4" =>
+                case "cvrparser4" =>
                   getCvrVectorParser4(u)
                 case "cvrparser6" =>
                   getCvrVectorParser6(u)
