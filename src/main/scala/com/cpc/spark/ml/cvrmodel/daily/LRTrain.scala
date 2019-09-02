@@ -237,7 +237,7 @@ object LRTrain {
 
     var name=""
     var destfile=""
-    if ("cvrparser4".equals(parser)){
+    if ("ctrparser4".equals(parser)){
       name="qtt-bs-cvrparser4-daily"
       destfile="qtt-bs-cvrparser4-daily.lrm"
     }else if("cvrparser5".equals(parser)){
@@ -505,7 +505,7 @@ object LRTrain {
               val vec = parser match {
                 case "cvrparser5" =>
                   getCvrVectorParser5(u)
-                case "cvrparser4" =>
+                case "ctrparser4" =>
                   getCvrVectorParser4(u)
                 case "cvrparser6" =>
                   getCvrVectorParser6(u)
