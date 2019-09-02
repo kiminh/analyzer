@@ -39,8 +39,8 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
@@ -87,8 +87,8 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
 //    // 存入redis
 //    saveDataToRedis(version, date, hour, spark)
@@ -157,16 +157,16 @@ object OcpcLightBulb{
       .select("unitid", "userid", "conversion_goal", "media")
       .distinct()
       .join(ocpcBlacklist, Seq("userid"), "left_outer")
-    rawResult
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902a")
+//    rawResult
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902a")
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
       .filter(s"black_flag is null")
-    result
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902b")
+//    result
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190902b")
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 10
