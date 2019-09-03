@@ -23,8 +23,8 @@ object OcpcCalibrationBase {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result1 = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
-    val result2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt, spark)
+    val result1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
+    val result2 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt, spark)
 
     result1
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190903a")
