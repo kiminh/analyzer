@@ -33,8 +33,8 @@ object OcpcSmoothfactor {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
 
-    val dataRaw1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt3, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
 
     val result1 = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, hourInt1, hourInt2, hourInt3, spark)
     result1
