@@ -207,7 +207,7 @@ object OcpcBsData {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787', '80002819')
          |AND
          |  isshow = 1
          |AND
