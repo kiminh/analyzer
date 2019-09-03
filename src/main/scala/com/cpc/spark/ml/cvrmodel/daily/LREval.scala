@@ -16,7 +16,11 @@ object LREval {
 
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val spark = SparkSession.builder().appName("GetBaseIndex").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("LREval").enableHiveSupport().getOrCreate()
+
+    import spark.implicits._
+
+    val date = args(0)
 
     val sql =
       s"""
@@ -33,7 +37,7 @@ object LREval {
          |  from
          |  dl_cpc.cpc_basedata_union_events
          |  where
-         |  day in ('2019-09-02')
+         |  day in ('$date')
          |  and media_appsid in ('80000001','80000002')
          |  and array_contains(exptags, 'bslradtypecorrection')
          |  distribute by if(array_contains(exptags, 'bslrcvr=bs-v4-cvr') and array_contains(exptags, 'bscvrfactor=0'), 'bs-v4-cvr', 'no-cvr') sort by exp_ctr DESC
