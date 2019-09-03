@@ -22,9 +22,14 @@ object LREval {
 
     val date = args(0)
 
+    val beforeSql=
+      """
+        |create temporary function auc as 'hivemall.evaluation.AUCUDAF' using jar "/home/cpc/anal/lib/hivemall-all-0.5.2-incubating.jar";
+      """.stripMargin
+    spark.sql(beforeSql)
+
     val sql =
       s"""
-         |create temporary function auc as 'hivemall.evaluation.AUCUDAF' using jar "/home/cpc/anal/lib/hivemall-all-0.5.2-incubating.jar";
          |select
          |ctr_model_name,
          |count(*) as show_cnt,
