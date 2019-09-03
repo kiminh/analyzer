@@ -41,8 +41,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -207,7 +207,7 @@ object OcpcBsData {
          |WHERE
          |  $selectCondition
          |AND
-         |  media_appsid in ('80000001', '80000002', '80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787', '80002819')
+         |  $mediaSelection
          |AND
          |  isshow = 1
          |AND
