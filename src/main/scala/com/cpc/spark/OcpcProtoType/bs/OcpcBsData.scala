@@ -197,7 +197,7 @@ object OcpcBsData {
          |  isclick,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'Qtt'
-         |      when media_appsid in ('80002819') then 'HT66'
+         |      when media_appsid in ('80002819', '80004944') then 'HT66'
          |      else 'MiDu'
          |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
