@@ -183,6 +183,8 @@ object OcpcBsData {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
+    // todo:
+    // Midu的实验媒体名称应该是MiDu
     val sqlRequest =
       s"""
          |SELECT
@@ -196,7 +198,7 @@ object OcpcBsData {
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'Qtt'
          |      when media_appsid in ('80002819') then 'HT66'
-         |      else 'Midu'
+         |      else 'MiDu'
          |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr
