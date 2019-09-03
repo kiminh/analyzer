@@ -23,12 +23,21 @@ object OcpcCalibrationBase {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    var result = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
-    if (isDelay == 1) {
-      result = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
-    }
-    result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
+    val result1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
+    val result2 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt, spark)
+
+    result1
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190903a")
+    result2
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190903b")
+
+
+//    var result = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
+//    if (isDelay == 1) {
+//      result = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
+//    }
+//    result
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
   }
 
   def OcpcCalibrationBaseDelayMainOnlySmooth(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
@@ -47,9 +56,9 @@ object OcpcCalibrationBase {
          |FROM
          |  base_data_raw
          |WHERE
-         |  ocpc_expand = 0
-         |AND
-         |  array_contains(split(expids, ','), '35456')
+         |  (media = 'qtt' and ocpc_expand = 0 AND array_contains(split(expids, ','), '35456'))
+         |OR
+         |  media in ('hottopic', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark
@@ -103,9 +112,9 @@ object OcpcCalibrationBase {
          |FROM
          |  base_data_raw
          |WHERE
-         |  ocpc_expand = 0
-         |AND
-         |  array_contains(split(expids, ','), '35456')
+         |  (media = 'qtt' and ocpc_expand = 0 AND array_contains(split(expids, ','), '35456'))
+         |OR
+         |  media in ('hottopic', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark

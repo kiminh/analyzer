@@ -43,7 +43,9 @@ object OcpcGetPb {
       .cache()
     jfbData.show(10)
 
-    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val dataRawOnlySmooth = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
+    dataRawOnlySmooth.show(10)
+    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRawOnlySmooth, hourInt1, hourInt2, hourInt3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
       .select("identifier", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
@@ -68,6 +70,7 @@ object OcpcGetPb {
     data.show(10)
 
     dataRaw.unpersist()
+    dataRawOnlySmooth.unpersist()
     dataRawRealtime.unpersist()
 
     // 明投单元

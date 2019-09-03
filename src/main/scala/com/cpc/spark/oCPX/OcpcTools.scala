@@ -471,7 +471,7 @@ object OcpcTools {
     var result = media match {
       case "qtt" => "Qtt"
       case "hottopic" => "HT66"
-      case "novel" => "Midu"
+      case "novel" => "MiDu"
       case _ => "others"
     }
     result
@@ -536,7 +536,7 @@ object OcpcTools {
     }
 
     var result = result1 match {
-      case "oCPColdflowMidu" => "oCPColdflowNovel"
+      case "oCPColdflowMiDu" => "oCPColdflowNovel"
       case "delayHT66" => "delayhottopic"
       case x => x
     }
