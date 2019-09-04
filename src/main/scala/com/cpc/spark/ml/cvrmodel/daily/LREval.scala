@@ -158,7 +158,7 @@ object LREval {
          |        distribute by AA.conversion_goal sort by AA.bs_cvr DESC
          |    ) AAA
          |group by AAA.conversion_goal
-         |order by AAA.conversion_goal;
+         |order by AAA.conversion_goal
       """.stripMargin
     println("sql="+bs_sql)
     val bs_df=spark.sql(bs_sql)

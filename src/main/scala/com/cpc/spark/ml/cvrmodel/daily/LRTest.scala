@@ -25,7 +25,7 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
     // model
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/qizhi/bslr/qtt-bs-ctrparser4-daily-2019-09-03.lrm")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/qizhi/bslr/lrmodel-qtt-bs-ctrparser4-daily-2019-09-04-05-20.lrm")
 
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
@@ -90,7 +90,28 @@ object LRTest {
     i += 6774 + 1 // unitid
     i += 16927 + 1 // ideaid*/
 
-    val vectorToPredict : Vector = Vectors.sparse(69611, els)
+    //ctr
+    val mediaid=44
+    val planid=8888
+    val unitid=9986
+    val ideaid=24735
+    val slotid=404
+    val adclass=89
+    val cityid=367
+
+    //cvr
+//    val mediaid=47
+//    val planid=9548
+//    val unitid=10755
+//    val ideaid=26635
+//    val slotid=414
+//    val adclass=93
+//    val cityid=367
+
+    val size=7+24+9+100+10+20+10+cityid+mediaid+slotid+10+100+100+adclass+16+10+planid+unitid+ideaid
+    println("size = " + size)
+
+    val vectorToPredict : Vector = Vectors.sparse(size, els)
 
     println("-- prediction result: %s --"
       .format(
