@@ -165,7 +165,7 @@ object LRTestOnline {
 
     val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
 
-    allData.write.mode("overwrite").text(savepath)
+    allData.write.mode("overwrite").format("csv").save(savepath)
 
 
     model.clearResult()

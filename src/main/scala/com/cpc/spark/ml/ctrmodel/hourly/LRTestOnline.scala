@@ -93,7 +93,7 @@ object LRTestOnline {
 
     val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
 
-    qttAll.write.mode("overwrite").text(savepath)
+    qttAll.write.mode("overwrite").format("csv").save(savepath)
 
 
     //qtt-all-parser3-hourly
