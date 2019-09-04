@@ -70,7 +70,7 @@ object LREval {
          |   on A.searchid=B.searchid
          |  distribute by cvr_model_name sort by raw_cvr DESC
          |) t1
-         |group by cvr_model_name;
+         |group by cvr_model_name
       """.stripMargin
     println("sql="+sql)
     val df=spark.sql(sql)
