@@ -164,6 +164,8 @@ object LRTestOnline {
 
     val allData = getLeftJoinData(df, userAppIdx).repartition(1)
 
+    allData.cache()
+
     allData.show(10)
 
     model.clearResult()
@@ -615,7 +617,7 @@ object LRTestOnline {
     i += dict("ideaid").size + 1
 
     //label
-    els = els :+ (i + 1, x.getAs[Int]("label").toDouble)
+    els = els :+ (i, x.getAs[Int]("label").toDouble)
     i += 1
 
     println("Vectors size = " + i)
