@@ -30,8 +30,8 @@ object LRTest {
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
 
-    els = els :+ (2, 1d)
-    els = els :+ (22, 1d) // hour
+    els = els :+ (3, 1d)  //week
+    els = els :+ (28, 1d) // hour
     els = els :+ (31, 1d) // sex
     els = els :+ (40, 1d) // age
     els = els :+ (141, 1d) // os
@@ -39,16 +39,16 @@ object LRTest {
     els = els :+ (171, 1d) // network
     els = els :+ (543, 1d) // cityid
     els = els :+ (548, 1d) // mediaid
-    els = els :+ (991, 1d) // slotid
-    els = els :+ (2068, 1d) // phone_level
-    els = els :+ (2074, 1d) // pagenum
-    els = els :+ (2174, 1d) // bookid
-    els = els :+ (2316, 1d) // adclass
-    els = els :+ (2387, 1d) // adtype
-    els = els :+ (2397, 1d) // adslot_type
-    els = els :+ (2633, 1d) // planid
-    els = els :+ (18555, 1d) // unitid
-    els = els :+ (29745, 1d) // ideaid
+    els = els :+ (593, 1d) // slotid
+    els = els :+ (1002, 1d) // phone_level
+    els = els :+ (1008, 1d) // pagenum
+    els = els :+ (1108, 1d) // bookid
+    els = els :+ (1208, 1d) // adclass
+    els = els :+ (1301, 1d) // adtype
+    els = els :+ (1309, 1d) // adslot_type
+    els = els :+ (1318, 1d) // planid
+    els = els :+ (10207, 1d) // unitid
+    els = els :+ (20194, 1d) // ideaid
 
     /*els = els :+ (68621, 1d)
     els = els :+ (68652, 1d)
