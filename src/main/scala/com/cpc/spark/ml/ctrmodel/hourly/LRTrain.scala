@@ -470,6 +470,8 @@ object LRTrain {
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
+    println("Vectors size = " + i)
+
     try {
       Vectors.sparse(i, els)
     } catch {
@@ -602,6 +604,8 @@ object LRTrain {
     }
     els = els :+ (urn_idx + i, 1d)
     i += 5 + 1
+
+    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
@@ -753,6 +757,8 @@ object LRTrain {
     }
     i += 1000 + 1*/
 
+    println("Vectors size = " + i)
+
     try {
       Vectors.sparse(i, els)
     } catch {
@@ -901,6 +907,7 @@ object LRTrain {
     els = els :+ (user_click + i, 1d)
     i += 6
 
+    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
@@ -1063,6 +1070,8 @@ object LRTrain {
     }
     i += 1000 + 1
 
+    println("Vectors size = " + i)
+
     try {
       Vectors.sparse(i, els)
     } catch {
@@ -1223,6 +1232,8 @@ object LRTrain {
       els = els ++ inxList
     }
     i += 1000 + 1*/
+
+    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
