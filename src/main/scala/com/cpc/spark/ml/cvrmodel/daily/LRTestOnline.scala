@@ -163,11 +163,6 @@ object LRTestOnline {
 
     allData.show(10)
 
-    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
-
-    allData.write.mode("overwrite").format("csv").save(savepath)
-
-
     model.clearResult()
 
     var name=""
@@ -184,8 +179,11 @@ object LRTestOnline {
 
     val sampleTest = formatSample(spark, parser, allData)
 
-
     println(sampleTest.take(10).foreach(x => println(x.features)))
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
+
+    allData.select("searchid,label").write.mode("overwrite").format("csv").save(savepath)
 
   }
 

@@ -32,13 +32,15 @@ object LRTestOnline {
       .initSpark("[cpc-model] linear regression")
 
     val days = 3
-    val datehour = "2019-09-04-04-15"
+    val datehour = "2019-09-04-02-15"
     val date="2019-09-04"
     val hour="21"
     val parser = "ctrparser4"
 
     // 按分区取数据
     val ctrPathSep = getPathSeq("2019-09-04-14-30",3)
+
+    println("ctrPathSep" + ctrPathSep)
 
 
     initFeatureDict(spark, ctrPathSep)
@@ -91,10 +93,6 @@ object LRTestOnline {
 
     qttAll.show(10)
 
-    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
-
-    qttAll.write.mode("overwrite").format("csv").save(savepath)
-
 
     //qtt-all-parser3-hourly
     model.clearResult()
@@ -103,6 +101,10 @@ object LRTestOnline {
 
 
     println(sampleTest.take(10).foreach(x => println(x.features)))
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
+
+    qttAll.select("searchid,label").write.mode("overwrite").format("csv").save(savepath)
   }
 
 
