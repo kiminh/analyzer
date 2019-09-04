@@ -190,8 +190,10 @@ object LRTrain {
            |    dl_cpc.cpc_basedata_union_events
            |    where
            |    day = "$dt"
-           |    and isshow = 1
-           |    and isclick = 1
+           |    and media_appsid in ('80000001','80000002')
+           |    and isshow > 1
+           |    and isclick > 1
+           |    and adsrc=1
            |    and charge_type = 1) A
            |  left outer join
            |   (

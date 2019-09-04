@@ -53,8 +53,11 @@ object LREval {
          |  dl_cpc.cpc_basedata_union_events
          |  where
          |  day in ('$date')
-         |  and isshow=1
+         |  and isshow>0
+         |  and isclick>0
          |  and media_appsid in ('80000001','80000002')
+         |  and adsrc=1
+         |  and charge_type = 1
          |  and array_contains(exptags, 'bslradtypecorrection'))A
          |  left outer join
          |   (
