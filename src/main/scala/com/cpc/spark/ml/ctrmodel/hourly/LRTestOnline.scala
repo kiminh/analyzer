@@ -306,7 +306,7 @@ object LRTestOnline {
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
               }
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              LabeledPoint(u.getAs[Long]("label").toDouble, vec)
           }
       }
   }
