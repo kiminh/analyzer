@@ -38,7 +38,7 @@ object LREval {
          |avg(raw_cvr)*sum(isclick)/sum(label) as pcoc
          |from
          |(
-         |select cvr_model_name, isshow, isclick, raw_cvr/1000000 as raw_cvr, exptags,case when cv_types = null then 0
+         |select cvr_model_name, isshow, isclick, raw_cvr, exptags,case when cv_types = null then 0
          |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
          |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
          |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
@@ -77,6 +77,7 @@ object LREval {
       """.stripMargin
     println("as_sql="+as_sql)
     val as_df=spark.sql(as_sql)
+    println("============= as_df ===============")
     as_df.show(5)
 
 
@@ -84,11 +85,11 @@ object LREval {
       s"""
          |select
          |cvr_model_name,
-         |auc(raw_cvr, coalesce(label,0)) as auc,
-         |avg(raw_cvr)*sum(isclick)/sum(label) as pcoc
+         |auc(bsrawcvr, coalesce(label,0)) as auc,
+         |avg(bsrawcvr)*sum(isclick)/sum(label) as pcoc
          |from
          |(
-         |select cvr_model_name, isshow, isclick, raw_cvr/1000000 as raw_cvr, exptags,case when cv_types = null then 0
+         |select cvr_model_name, isshow, isclick, bsrawcvr, exptags,case when cv_types = null then 0
          |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
          |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
          |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
@@ -121,12 +122,13 @@ object LREval {
          |      group by searchid
          |   ) B
          |   on A.searchid=B.searchid
-         |  distribute by cvr_model_name sort by raw_cvr DESC
+         |  distribute by cvr_model_name sort by bsrawcvr DESC
          |) t1
          |group by cvr_model_name
       """.stripMargin
     println("sql="+bs_sql)
     val bs_df=spark.sql(bs_sql)
+    println("============= bs_df ===============")
     bs_df.show(5)
 
   }
