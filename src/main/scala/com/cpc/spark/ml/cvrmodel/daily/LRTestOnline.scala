@@ -112,24 +112,26 @@ object LRTestOnline {
          |    , unitid
          |    , ideaid
          |    , adclass
-         |    , adslotid
+         |    , adslot_id as adslotid
          |    , adslot_type
-         |    , brand
+         |    , brand_title as brand
          |    , media_type
          |    , channel
-         |    , sdk_type
+         |    , client_type as sdk_type
          |    , dtu_id
          |    , interaction
-         |    , pagenum
-         |    , bookid
+         |    , interact_pagenum as pagenum
+         |    , interact_bookid as bookid
          |    , userid
          |    , siteid
          |    , province
          |    , city_level
-         |    , doc_id
-         |    , doc_cat
+         |    , content_id as doc_id
+         |    , category as doc_cat
          |    , is_new_ad
          |    , uid
+         |    , conversion_goal
+         |    , is_api_callback
          |    , bsrawcvr as label
          |    from
          |    dl_cpc.cpc_basedata_union_events
