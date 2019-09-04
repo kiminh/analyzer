@@ -20,14 +20,14 @@ object GetDayUv {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    if (args.length < 2) {
-      System.err.println(
-        s"""
-           |Usage: GetDayUv <hive_table> <day_before>
-           |
-        """.stripMargin)
-      System.exit(1)
-    }
+//    if (args.length < 2) {
+//      System.err.println(
+//        s"""
+//           |Usage: GetDayUv <hive_table> <day_before>
+//           |
+//        """.stripMargin)
+//      System.exit(1)
+//    }
 //    val table = args(0)
 //    val dayBefore = args(1).toInt
 //    val cal = Calendar.getInstance()
