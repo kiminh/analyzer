@@ -132,7 +132,7 @@ object LRTestOnline {
          |    , uid
          |    , conversion_goal
          |    , is_api_callback
-         |    , bsrawcvr as label
+         |    , bsrawcvr/1000000.0 as label
          |    from
          |    dl_cpc.cpc_basedata_union_events
          |    where
@@ -404,7 +404,7 @@ object LRTestOnline {
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
               }
-              LabeledPoint(u.getAs[Long]("label").toDouble, vec)
+              LabeledPoint(u.getAs[Double]("label"), vec)
           }
       }
   }
