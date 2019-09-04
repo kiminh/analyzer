@@ -143,6 +143,7 @@ object LRTestOnline {
          |    and isclick = 1
          |    and adsrc=1
          |    and charge_type = 1
+         |    and bsrawcvr != 0
          |    limit 10
          """.stripMargin
 
@@ -183,7 +184,7 @@ object LRTestOnline {
 
     val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
 
-    allData.select("searchid,label").write.mode("overwrite").format("csv").save(savepath)
+    allData.select("cpc_basedata_union_events.searchid,label").write.mode("overwrite").format("csv").save(savepath)
 
   }
 
