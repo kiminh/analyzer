@@ -25,7 +25,7 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
     // model
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/qizhi/bslr/lrmodel-qtt-bs-ctrparser4-daily-2019-09-04-05-20.lrm")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-04-05-20")
 
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
