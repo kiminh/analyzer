@@ -3,6 +3,7 @@ package com.cpc.spark.ml.ctrmodel.hourly
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import scala.sys.process._
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.train.LRIRModel
 import org.apache.log4j.{Level, Logger}
@@ -94,6 +95,12 @@ object LRTestOnline {
     model.clearResult()
 
     val sampleTest = formatSample(spark, parser, qttAll)
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
+
+    s"hdfs dfs -rm -r ${savepath}" !
+
+    sampleTest.saveAsTextFile(savepath)
 
     println(sampleTest.take(10).foreach(x => println(x.features)))
   }

@@ -180,6 +180,12 @@ object LRTestOnline {
 
     val sampleTest = formatSample(spark, parser, allData)
 
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
+
+    s"hdfs dfs -rm -r ${savepath}" !
+
+    sampleTest.saveAsTextFile(savepath)
+
     println(sampleTest.take(10).foreach(x => println(x.features)))
 
   }
