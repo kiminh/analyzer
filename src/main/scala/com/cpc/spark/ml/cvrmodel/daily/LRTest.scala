@@ -25,11 +25,33 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
     // model
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-04-05-20")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50")
 
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
 
+    //1
+//    els = els :+ (3, 1d)  //week
+//    els = els :+ (28, 1d) // hour
+//    els = els :+ (31, 1d) // sex
+//    els = els :+ (40, 1d) // age
+//    els = els :+ (141, 1d) // os
+//    els = els :+ (150, 1d) // isp
+//    els = els :+ (171, 1d) // network
+//    els = els :+ (543, 1d) // cityid
+//    els = els :+ (548, 1d) // mediaid
+//    els = els :+ (593, 1d) // slotid
+//    els = els :+ (1002, 1d) // phone_level
+//    els = els :+ (1008, 1d) // pagenum
+//    els = els :+ (1108, 1d) // bookid
+//    els = els :+ (1208, 1d) // adclass
+//    els = els :+ (1301, 1d) // adtype
+//    els = els :+ (1309, 1d) // adslot_type
+//    els = els :+ (1318, 1d) // planid
+//    els = els :+ (10207, 1d) // unitid
+//    els = els :+ (20194, 1d) // ideaid
+
+    //3
     els = els :+ (3, 1d)  //week
     els = els :+ (28, 1d) // hour
     els = els :+ (31, 1d) // sex
@@ -39,16 +61,16 @@ object LRTest {
     els = els :+ (171, 1d) // network
     els = els :+ (543, 1d) // cityid
     els = els :+ (548, 1d) // mediaid
-    els = els :+ (593, 1d) // slotid
-    els = els :+ (1002, 1d) // phone_level
-    els = els :+ (1008, 1d) // pagenum
-    els = els :+ (1108, 1d) // bookid
-    els = els :+ (1208, 1d) // adclass
-    els = els :+ (1301, 1d) // adtype
-    els = els :+ (1309, 1d) // adslot_type
-    els = els :+ (1318, 1d) // planid
-    els = els :+ (10207, 1d) // unitid
-    els = els :+ (20194, 1d) // ideaid
+    els = els :+ (596, 1d) // slotid
+    els = els :+ (1015, 1d) // phone_level
+    els = els :+ (1021, 1d) // pagenum
+    els = els :+ (1121, 1d) // bookid
+    els = els :+ (1221, 1d) // adclass
+    els = els :+ (1318, 1d) // adtype
+    els = els :+ (1326, 1d) // adslot_type
+    els = els :+ (1335, 1d) // planid
+    els = els :+ (10884, 1d) // unitid
+    els = els :+ (21640, 1d) // ideaid
 
     /*els = els :+ (68621, 1d)
     els = els :+ (68652, 1d)
