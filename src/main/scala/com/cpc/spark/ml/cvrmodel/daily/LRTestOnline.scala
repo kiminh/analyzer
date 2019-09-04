@@ -132,7 +132,7 @@ object LRTestOnline {
          |    , uid
          |    , conversion_goal
          |    , is_api_callback
-         |    , bsrawcvr/1000000.0 as label
+         |    , cast(bsrawcvr as int) as label
          |    from
          |    dl_cpc.cpc_basedata_union_events
          |    where
@@ -404,7 +404,7 @@ object LRTestOnline {
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
               }
-              LabeledPoint(u.getAs[Double]("label"), vec)
+              LabeledPoint(u.getAs[Int]("label"), vec)
           }
       }
   }
@@ -614,9 +614,9 @@ object LRTestOnline {
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-//    //label
-//    els = els :+ (i + 1, x.getAs[Double]("label"))
-//    i += 1
+    //label
+    els = els :+ (i + 1, x.getAs[Int]("label"))
+    i += 1
 
     println("Vectors size = " + i)
 
