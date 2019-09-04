@@ -87,20 +87,20 @@ object LRTestOnline {
        """.stripMargin
 
     val qttAll = spark
-      .sql(queryRawDataFromUnionEvents)
+      .sql(queryRawDataFromUnionEvents).repartition(1)
 
     qttAll.show(10)
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
+
+    qttAll.write.mode("overwrite").text(savepath)
+
 
     //qtt-all-parser3-hourly
     model.clearResult()
 
     val sampleTest = formatSample(spark, parser, qttAll)
 
-    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
-
-    s"hdfs dfs -rm -r ${savepath}" !
-
-    sampleTest.saveAsTextFile(savepath)
 
     println(sampleTest.take(10).foreach(x => println(x.features)))
   }

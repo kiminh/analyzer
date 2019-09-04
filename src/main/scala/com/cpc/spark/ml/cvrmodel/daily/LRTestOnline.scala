@@ -159,9 +159,13 @@ object LRTestOnline {
 
     val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-    val allData = getLeftJoinData(df, userAppIdx)
+    val allData = getLeftJoinData(df, userAppIdx).repartition(1)
 
     allData.show(10)
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
+
+    allData.write.mode("overwrite").text(savepath)
 
 
     model.clearResult()
@@ -180,11 +184,6 @@ object LRTestOnline {
 
     val sampleTest = formatSample(spark, parser, allData)
 
-    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
-
-    s"hdfs dfs -rm -r ${savepath}" !
-
-    sampleTest.saveAsTextFile(savepath)
 
     println(sampleTest.take(10).foreach(x => println(x.features)))
 
