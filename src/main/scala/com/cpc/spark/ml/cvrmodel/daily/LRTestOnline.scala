@@ -216,40 +216,6 @@ object LRTestOnline {
     pathSep
   }
 
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
-    var date = ""
-    var hour = ""
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
-    val pathSep = mutable.Map[String, Seq[String]]()
-
-    for (n <- 1 to days * 24) {
-      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
-      cal.add(Calendar.HOUR, 1)
-    }
-
-    pathSep
-  }
-
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
-    var date = ""
-    var hour = ""
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
-    val pathSep = mutable.Map[String, Seq[String]]()
-
-    for (n <- 1 to days * 24) {
-      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
-      cal.add(Calendar.HOUR, 1)
-    }
-
-    pathSep
-  }
-
 
   def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     val inpath = "hdfs://emr-cluster/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
