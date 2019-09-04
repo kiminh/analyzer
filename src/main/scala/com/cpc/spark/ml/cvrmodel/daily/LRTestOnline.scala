@@ -71,17 +71,15 @@ object LRTestOnline {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val days = args(0).toInt
-    val date = args(1)
-    val parser = args(2)
+    val days = 3
+    val date = "2019-09-04-14-30"
+    val parser = "ctrparser4"
 
-    var cvrPathSep = getPathSeq(days)
+    var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
     val spark: SparkSession = model
       .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
-
-    val cachePrefix = "/tmp/cvr_cache/"
 
     if (parser == "cvrparser6" || parser == "cvrparser7") {
       initIntFeatureDictV6(spark, cvrPathSep)
@@ -92,149 +90,78 @@ object LRTestOnline {
     }
 
     val dates = nDayBefore(date, days)
-    val dfPath = cachePrefix + date + "_" + parser + ".parquet"
-    val idPath = cachePrefix + date + "_" + parser + "apIndex" + ".parquet"
 
-    s"hdfs dfs -rm -r ${dfPath}" !
-
-    s"hdfs dfs -rm -r ${idPath}" !
 
     val userAppIdx = getUidApp(spark, cvrPathSep)
     for (key <- dictStr.keys) {
       println(key)
     }
 
-    dates.foreach(dt => {
-      val tomorrow=DateUtils.getPrevDate(dt, -1)
-
-      val queryRawDataFromUnionEvents =
-        s"""select A.searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslotid
-           |    , adslot_type
-           |    , brand
-           |    , media_type
-           |    , channel
-           |    , sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , pagenum
-           |    , bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , doc_id
-           |    , doc_cat
-           |    , is_new_ad
-           |    , uid,case when cv_types = null then 0
-           |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
-           |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
-           |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
-           |      else 0 end as label from
-           |(select
-           |    searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslot_id as adslotid
-           |    , adslot_type
-           |    , brand_title as brand
-           |    , media_type
-           |    , channel
-           |    , client_type as sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , interact_pagenum as pagenum
-           |    , interact_bookid as bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , content_id as doc_id
-           |    , category as doc_cat
-           |    , is_new_ad
-           |    , uid
-           |    , conversion_goal
-           |    , is_api_callback
-           |  from
-           |    dl_cpc.cpc_basedata_union_events
-           |    where
-           |    day = "$dt"
-           |    and media_appsid in ('80000001','80000002')
-           |    and isshow = 1
-           |    and isclick = 1
-           |    and adsrc=1
-           |    and charge_type = 1) A
-           |  left outer join
-           |   (
-           |      select
-           |      searchid, concat_ws(',', collect_set(cvr_goal)) as cv_types
-           |      from
-           |         dl_cpc.ocpc_label_cvr_hourly
-           |      where
-           |         `date`>="$dt" and `date`<="$tomorrow"
-           |      and label=1
-           |      group by searchid
-           |   ) B
-           |   on A.searchid=B.searchid
-           |
+    val queryRawDataFromUnionEvents =
+      s"""select searchid
+         |    , sex
+         |    , age
+         |    , os
+         |    , network
+         |    , isp
+         |    , city
+         |    , media_appsid
+         |    , phone_level
+         |    , `timestamp`
+         |    , adtype
+         |    , planid
+         |    , unitid
+         |    , ideaid
+         |    , adclass
+         |    , adslotid
+         |    , adslot_type
+         |    , brand
+         |    , media_type
+         |    , channel
+         |    , sdk_type
+         |    , dtu_id
+         |    , interaction
+         |    , pagenum
+         |    , bookid
+         |    , userid
+         |    , siteid
+         |    , province
+         |    , city_level
+         |    , doc_id
+         |    , doc_cat
+         |    , is_new_ad
+         |    , uid
+         |    , bsrawcvr as label
+         |    from
+         |    dl_cpc.cpc_basedata_union_events
+         |    where
+         |    day = "2019-09-04"
+         |    and hour = '21'
+         |    and media_appsid in ('80000001','80000002')
+         |    and isshow = 1
+         |    and isclick = 1
+         |    and adsrc=1
+         |    and charge_type = 1
+         |    limit 10
          """.stripMargin
 
-      println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+    println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-      val df = spark
-        .sql(queryRawDataFromUnionEvents)
+    val df = spark
+      .sql(queryRawDataFromUnionEvents)
 
-      /*val ideaids = df
-        .select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
+    /*val ideaids = df
+      .select("ideaid")
+      .groupBy("ideaid")
+      .count()
+      .where("count > %d".format(minIdeaNum))
 
-      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
+    val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-      val joined = getLeftJoinData(df, userAppIdx)
-      joined.write.mode(SaveMode.Append).parquet(dfPath)
-
-      joined.unpersist()
-      // ideaids.unpersist()
-      df.unpersist()
-    })
-
+    val allData = getLeftJoinData(df, userAppIdx)
 
 
     model.clearResult()
-
-    val allData = spark.sqlContext.read.parquet(dfPath)
 
     var name=""
     var destfile=""
@@ -248,37 +175,9 @@ object LRTestOnline {
 
     println("name = " + name + " , destfile = " + destfile)
 
-    train(
-      spark,
-      parser,
-      name,
-      allData,
-      destfile,
-      1e8
-    )
+    val sampleTest = formatSample(spark, parser, allData)
 
-    Utils
-      .sendMail(
-        trainLog.mkString("\n"),
-        s"[cpc-bs-q] ${name} 训练复盘",
-        Seq(
-          "fanyiming@qutoutiao.net",
-          "xiongyao@qutoutiao.net",
-          "duanguangdong@qutoutiao.net",
-          "xulu@qutoutiao.net",
-          "wangyao@qutoutiao.net",
-          "qizhi@qutoutiao.net",
-          "huazhenhao@qutoutiao.net"
-        )
-      )
-
-    allData.unpersist()
-
-    println(trainLog.mkString("\n"))
-
-    s"hdfs dfs -rm -r $idPath" !
-
-    s"hdfs dfs -rm -r $dfPath" !
+    println(sampleTest.take(5).foreach(x => println(x.features)))
 
   }
 
@@ -305,6 +204,23 @@ object LRTestOnline {
     var hour = ""
     val cal = Calendar.getInstance()
     cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(11, 13).toInt, dateStart.substring(14, 16).toInt, 0)
+    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
+    val pathSep = mutable.Map[String, Seq[String]]()
+
+    for (n <- 1 to days * 24) {
+      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      hour = new SimpleDateFormat("HH").format(cal.getTime)
+      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
+      cal.add(Calendar.HOUR, 1)
+    }
+
+    pathSep
+  }
+
+  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
+    var date = ""
+    var hour = ""
+    val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
@@ -725,13 +641,7 @@ object LRTestOnline {
 
     println("Vectors size = " + i)
 
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
+    println("els = " + els)
   }
 
   // 190523: baseline features + appidx + dnn features.
