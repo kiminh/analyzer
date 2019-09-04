@@ -186,7 +186,7 @@ object LRTestOnline {
 
     val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
 
-    allData.select("cpc_basedata_union_events.searchid,label").write.mode("overwrite").format("csv").save(savepath)
+    allData.select("cpc_basedata_union_events.searchid","label").write.mode("overwrite").format("csv").save(savepath)
 
   }
 
