@@ -32,7 +32,6 @@ object LREval {
 
     val sql =
       s"""
-         |create temporary function auc as 'hivemall.evaluation.AUCUDAF' using jar "/home/cpc/anal/lib/hivemall-all-0.5.2-incubating.jar";
          |select
          |cvr_model_name,
          |auc(raw_cvr, coalesce(label,0)) as auc,
