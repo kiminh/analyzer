@@ -67,7 +67,6 @@ object LRTestOnline {
     "doc_id"
   )
 
-
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -642,6 +641,14 @@ object LRTestOnline {
     println("Vectors size = " + i)
 
     println("els = " + els)
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
   }
 
   // 190523: baseline features + appidx + dnn features.
