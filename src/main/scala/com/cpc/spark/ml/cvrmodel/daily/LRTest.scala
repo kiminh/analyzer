@@ -113,22 +113,22 @@ object LRTest {
     i += 16927 + 1 // ideaid*/
 
     //ctr
-    val mediaid=44
-    val planid=8888
-    val unitid=9986
-    val ideaid=24735
-    val slotid=404
-    val adclass=89
-    val cityid=367
-
-    //cvr
-//    val mediaid=47
-//    val planid=9548
-//    val unitid=10755
-//    val ideaid=26635
-//    val slotid=414
-//    val adclass=93
+//    val mediaid=44
+//    val planid=8888
+//    val unitid=9986
+//    val ideaid=24735
+//    val slotid=404
+//    val adclass=89
 //    val cityid=367
+
+//    cvr
+    val mediaid=47
+    val planid=9548
+    val unitid=10755
+    val ideaid=26635
+    val slotid=414
+    val adclass=93
+    val cityid=367
 
     val size=7+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1
     println("size = " + size)
