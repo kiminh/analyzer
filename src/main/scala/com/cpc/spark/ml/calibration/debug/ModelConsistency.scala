@@ -24,7 +24,7 @@ object ModelConsistency{
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/2019-08-25/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/2019-09-02/result-*")
       .toDF("id","prediction","num")
 
     println("sum is %d".format(dnn_data.count()))
@@ -35,8 +35,8 @@ object ModelConsistency{
                  |from dl_cpc.cpc_basedata_union_events a
                  |join dl_cpc.cpc_ml_nested_snapshot b
                  |  on a.searchid = b.searchid and pt='qtt'
-                 |  and b.day = '$dt' and b.hour = '13'
-                 |  where a.day = '$dt' and a.hour = '13'
+                 |  and b.day = '$dt' and b.hour = '18'
+                 |  where a.day = '$dt' and a.hour = '18'
                  |  and a.media_appsid in ('80000001','80000002') and a.isshow = 1
                  |  and a.adsrc = 1 and a.ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
        """.stripMargin
