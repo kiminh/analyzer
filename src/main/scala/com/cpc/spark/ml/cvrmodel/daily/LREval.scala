@@ -24,7 +24,7 @@ object LREval {
 
     val beforeSql=
       """
-        |create temporary function auc as 'hivemall.evaluation.AUCUDAF' using jar "/home/cpc/anal/lib/hivemall-all-0.5.2-incubating.jar";
+        |create temporary function auc as 'hivemall.evaluation.AUCUDAF' using jar "/home/cpc/anal/lib/hivemall-all-0.5.2-incubating.jar"
       """.stripMargin
     spark.sql(beforeSql)
 
@@ -47,7 +47,7 @@ object LREval {
          |  and array_contains(exptags, 'bslradtypecorrection')
          |  distribute by if(array_contains(exptags, 'bslrcvr=bs-v4-cvr') and array_contains(exptags, 'bscvrfactor=0'), 'bs-v4-cvr', 'no-cvr') sort by exp_ctr DESC
          |) A
-         |group by ctr_model_name;
+         |group by ctr_model_name
       """.stripMargin
     val df=spark.sql(sql)
     df.show(5)
