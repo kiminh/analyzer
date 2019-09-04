@@ -108,7 +108,7 @@ object LRTest {
 //    val adclass=93
 //    val cityid=367
 
-    val size=7+24+9+100+10+20+10+cityid+mediaid+slotid+10+100+100+adclass+16+10+planid+unitid+ideaid
+    val size=7+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1
     println("size = " + size)
 
     val vectorToPredict : Vector = Vectors.sparse(size, els)
