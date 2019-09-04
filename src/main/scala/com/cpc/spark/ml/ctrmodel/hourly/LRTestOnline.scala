@@ -80,25 +80,22 @@ object LRTestOnline {
          |  and isshow = 1
          |  and ideaid > 0
          |  and unitid > 0
+         |  and media_appsid in ('80000001','80000002')
+         |  and adslot_type in (1,2)
          |  limit 100
        """.stripMargin
 
-    val rawDataFromTrident = spark
+    val qttAll = spark
       .sql(queryRawDataFromUnionEvents)
-      .filter(_.getAs[Int]("ideaid") > 0)
+
+    qttAll.show(10)
 
     //qtt-all-parser3-hourly
     model.clearResult()
 
-    val qttAll = rawDataFromTrident
-      .filter(x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
-          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
-      )
-
     val sampleTest = formatSample(spark, parser, qttAll)
 
-    println(sampleTest.take(5).foreach(x => println(x.features)))
+    println(sampleTest.take(10).foreach(x => println(x.features)))
   }
 
 

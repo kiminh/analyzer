@@ -159,6 +159,8 @@ object LRTestOnline {
 
     val allData = getLeftJoinData(df, userAppIdx)
 
+    allData.show(10)
+
 
     model.clearResult()
 
@@ -176,7 +178,7 @@ object LRTestOnline {
 
     val sampleTest = formatSample(spark, parser, allData)
 
-    println(sampleTest.take(5).foreach(x => println(x.features)))
+    println(sampleTest.take(10).foreach(x => println(x.features)))
 
   }
 
