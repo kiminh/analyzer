@@ -143,7 +143,9 @@ object LRTestOnline {
          |    and isclick = 1
          |    and adsrc=1
          |    and charge_type = 1
-         |    and bsrawcvr != 0
+         |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
+         |    and array_contains(exptags, 'bscvrfactor=0')
+         |    and array_contains(exptags, 'bslradtypecorrection')
          |    limit 10
          """.stripMargin
 
