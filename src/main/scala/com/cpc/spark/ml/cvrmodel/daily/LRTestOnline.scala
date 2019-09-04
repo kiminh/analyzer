@@ -615,7 +615,7 @@ object LRTestOnline {
     i += dict("ideaid").size + 1
 
     //label
-    els = els :+ (i + 1, x.getAs[Int]("label"))
+    els = els :+ (i + 1, x.getAs[Int]("label").toDouble)
     i += 1
 
     println("Vectors size = " + i)
