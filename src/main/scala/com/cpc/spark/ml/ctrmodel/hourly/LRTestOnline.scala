@@ -32,7 +32,7 @@ object LRTestOnline {
       .initSpark("[cpc-model] linear regression")
 
     val days = 3
-    val datehour = "2019-09-04-14-30"
+    val datehour = "2019-09-04-04-15"
     val date="2019-09-04"
     val hour="21"
     val parser = "ctrparser4"
