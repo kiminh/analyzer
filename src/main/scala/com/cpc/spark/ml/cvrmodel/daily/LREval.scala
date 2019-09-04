@@ -72,6 +72,7 @@ object LREval {
          |) t1
          |group by cvr_model_name;
       """.stripMargin
+    println("sql="+sql)
     val df=spark.sql(sql)
     df.show(5)
 
