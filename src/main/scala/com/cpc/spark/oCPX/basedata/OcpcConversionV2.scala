@@ -1,10 +1,12 @@
 package com.cpc.spark.oCPX.basedata
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 object OcpcConversionV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
