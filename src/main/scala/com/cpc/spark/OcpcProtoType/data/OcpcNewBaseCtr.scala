@@ -18,8 +18,8 @@ object OcpcNewBaseCtr {
     val resultDF = preprocessUnionlog(date, hour, spark)
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
-      .write.mode("overwrite").insertInto("test.ocpc_ctr_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpc_ctr_data_hourly")
   }
 
