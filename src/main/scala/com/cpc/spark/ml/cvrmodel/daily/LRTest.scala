@@ -82,26 +82,49 @@ object LRTest {
 //    els = els :+ (10884, 1d) // unitid
 //    els = els :+ (21640, 1d) // ideaid
 
-    //List((3,1.0), (28,1.0), (32,1.0), (43,1.0), (141,1.0), (152,1.0), (174,1.0), (180,1.0), (550,1.0), (798,1.0), (1013,1.0), (1021,1.0), (1121,1.0), (1293,1.0), (1317,1.0), (1332,1.0), (2639,1.0), (13352,1.0), (32946,1.0), (48283,69.0)) 48283 requirement failed: You may not write an element to index 48283 because the declared size of your vector is 48283
-     els = els :+ (3, 1d)  //week
-     els = els :+ (28, 1d) // hour
-     els = els :+ (32, 1d) // sex
-     els = els :+ (43, 1d) // age
-     els = els :+ (141, 1d) // os
-     els = els :+ (152, 1d) // isp
-     els = els :+ (174, 1d) // network
-     els = els :+ (180, 1d) // cityid
-     els = els :+ (550, 1d) // mediaid
-     els = els :+ (798, 1d) // slotid
-     els = els :+ (1013, 1d) // phone_level
-     els = els :+ (1021, 1d) // pagenum
-     els = els :+ (1121, 1d) // bookid
-     els = els :+ (1293, 1d) // adclass
-     els = els :+ (1317, 1d) // adtype
-     els = els :+ (1332, 1d) // adslot_type
-     els = els :+ (2639, 1d) // planid
-     els = els :+ (13352, 1d) // unitid
-     els = els :+ (32946, 1d) // ideaid
+//    //List((3,1.0), (28,1.0), (32,1.0), (43,1.0), (141,1.0), (152,1.0), (174,1.0), (180,1.0), (550,1.0), (798,1.0), (1013,1.0), (1021,1.0), (1121,1.0), (1293,1.0), (1317,1.0), (1332,1.0), (2639,1.0), (13352,1.0), (32946,1.0), (48283,69.0)) 48283 requirement failed: You may not write an element to index 48283 because the declared size of your vector is 48283
+//    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
+//     els = els :+ (3, 1d)  //week
+//     els = els :+ (28, 1d) // hour
+//     els = els :+ (32, 1d) // sex
+//     els = els :+ (43, 1d) // age
+//     els = els :+ (141, 1d) // os
+//     els = els :+ (152, 1d) // isp
+//     els = els :+ (174, 1d) // network
+//     els = els :+ (180, 1d) // cityid
+//     els = els :+ (550, 1d) // mediaid
+//     els = els :+ (798, 1d) // slotid
+//     els = els :+ (1013, 1d) // phone_level
+//     els = els :+ (1021, 1d) // pagenum
+//     els = els :+ (1121, 1d) // bookid
+//     els = els :+ (1293, 1d) // adclass
+//     els = els :+ (1317, 1d) // adtype
+//     els = els :+ (1332, 1d) // adslot_type
+//     els = els :+ (2639, 1d) // planid
+//     els = els :+ (13352, 1d) // unitid
+//     els = els :+ (32946, 1d) // ideaid
+
+    //(48283,[3,28,33,44,141,152,171,281,549,597,1014,1021,1121,1235,1323,1332,1341,10890,21646,48282],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,11454.0])
+    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
+    els = els :+ (3, 1d)  //week
+    els = els :+ (28, 1d) // hour
+    els = els :+ (33, 1d) // sex
+    els = els :+ (44, 1d) // age
+    els = els :+ (141, 1d) // os
+    els = els :+ (152, 1d) // isp
+    els = els :+ (171, 1d) // network
+    els = els :+ (281, 1d) // cityid
+    els = els :+ (549, 1d) // mediaid
+    els = els :+ (597, 1d) // slotid
+    els = els :+ (1014, 1d) // phone_level
+    els = els :+ (1021, 1d) // pagenum
+    els = els :+ (1121, 1d) // bookid
+    els = els :+ (1235, 1d) // adclass
+    els = els :+ (1323, 1d) // adtype
+    els = els :+ (1332, 1d) // adslot_type
+    els = els :+ (1341, 1d) // planid
+    els = els :+ (10890, 1d) // unitid
+    els = els :+ (21646, 1d) // ideaid
 
 
     //    hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50
