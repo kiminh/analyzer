@@ -51,8 +51,8 @@ object OcpcChargeAll {
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -62,8 +62,8 @@ object OcpcChargeAll {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -262,9 +262,11 @@ object OcpcChargeAll {
     // 数据关联并更新pay_cnt与pay_date:
     // 如果pay_cnt为空，则初始化为0，pay_date初始化为本赔付周期开始日期
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
+    val ocpcChargeTime = date + " 00:00:00"
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
+      .na.fill(ocpcChargeTime, Seq("ocpc_charge_time"))
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
       .na.fill(1, Seq("flag"))
