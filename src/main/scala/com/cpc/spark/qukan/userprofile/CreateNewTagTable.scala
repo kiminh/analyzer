@@ -85,6 +85,7 @@ object CreateNewTagTable {
       println("begin to insert")
       mainJoinUnionTable
         .write
+        .partitionBy("date")
         .mode(SaveMode.Append)
         .parquet("hdfs://emr-cluster/warehouse/%s.db/cpc_uid_memberid_tag_daily/".format(dbnameToGo))
 
