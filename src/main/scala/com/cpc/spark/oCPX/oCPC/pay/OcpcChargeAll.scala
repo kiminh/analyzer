@@ -262,7 +262,7 @@ object OcpcChargeAll {
     // 数据关联并更新pay_cnt与pay_date:
     // 如果pay_cnt为空，则初始化为0，pay_date初始化为本赔付周期开始日期
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
-    val ocpcChargeTime = date + " 00:00:00"
+    val ocpcChargeTime = date1 + " 00:00:00"
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
