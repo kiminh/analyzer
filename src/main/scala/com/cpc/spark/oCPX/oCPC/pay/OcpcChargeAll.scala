@@ -51,8 +51,8 @@ object OcpcChargeAll {
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -62,8 +62,8 @@ object OcpcChargeAll {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -118,7 +118,7 @@ object OcpcChargeAll {
     val result = spark
         .sql(sqlRequest)
         .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-        .filter(s"media in ('qtt', 'hottopic')")
+        .filter(s"media in ('qtt', 'hottopic', 'novel')")
         .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
         .filter(s"industry in ('feedapp', 'elds')")
         .select("unitid")
@@ -195,7 +195,7 @@ object OcpcChargeAll {
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
       .select("searchid", "unitid", "media", "timestamp", "date", "hour")
@@ -436,7 +436,7 @@ object OcpcChargeAll {
       .filter(s"is_hidden = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
 
