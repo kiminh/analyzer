@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.cvrmodel.daily.LRTest.model
 import com.cpc.spark.ml.dnn.Utils.DateUtils
 import org.apache.spark.sql.SaveMode
 
@@ -104,137 +105,7 @@ object LRTrainEval {
       println(key)
     }
 
-    dates.foreach(dt => {
-      val tomorrow=DateUtils.getPrevDate(dt, -1)
-
-      val queryRawDataFromUnionEvents =
-        s"""select A.searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslotid
-           |    , adslot_type
-           |    , brand
-           |    , media_type
-           |    , channel
-           |    , sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , pagenum
-           |    , bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , doc_id
-           |    , doc_cat
-           |    , is_new_ad
-           |    , uid,case when cv_types = null then 0
-           |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
-           |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
-           |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
-           |      else 0 end as label from
-           |(select
-           |    searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslot_id as adslotid
-           |    , adslot_type
-           |    , brand_title as brand
-           |    , media_type
-           |    , channel
-           |    , client_type as sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , interact_pagenum as pagenum
-           |    , interact_bookid as bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , content_id as doc_id
-           |    , category as doc_cat
-           |    , is_new_ad
-           |    , uid
-           |    , conversion_goal
-           |    , is_api_callback
-           |  from
-           |    dl_cpc.cpc_basedata_union_events
-           |    where
-           |    day = "$dt"
-           |    and media_appsid in ('80000001','80000002')
-           |    and isshow = 1
-           |    and isclick = 1
-           |    and adsrc=1
-           |    and charge_type = 1) A
-           |  left outer join
-           |   (
-           |      select
-           |      searchid, concat_ws(',', collect_set(cvr_goal)) as cv_types
-           |      from
-           |         dl_cpc.ocpc_label_cvr_hourly
-           |      where
-           |         `date`>="$dt" and `date`<="$tomorrow"
-           |      and label=1
-           |      group by searchid
-           |   ) B
-           |   on A.searchid=B.searchid
-           |
-         """.stripMargin
-
-      println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
-
-      val df = spark
-        .sql(queryRawDataFromUnionEvents)
-
-      /*val ideaids = df
-        .select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
-
-      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
-
-      val joined = getLeftJoinData(df, userAppIdx)
-      joined.write.mode(SaveMode.Append).parquet(dfPath)
-
-      joined.unpersist()
-      // ideaids.unpersist()
-      df.unpersist()
-    })
-
-
-
     model.clearResult()
-
-    val allData = spark.sqlContext.read.parquet(dfPath)
 
     var name=""
     var destfile=""
@@ -333,7 +204,8 @@ object LRTrainEval {
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    day = "$date"
+         |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
+         |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and isclick = 1
@@ -374,7 +246,6 @@ object LRTrainEval {
       spark,
       parser,
       name,
-      allData,
       testDF,
       destfile,
       1e8
@@ -394,8 +265,6 @@ object LRTrainEval {
           "huazhenhao@qutoutiao.net"
         )
       )
-
-    allData.unpersist()
 
     println(trainLog.mkString("\n"))
 
@@ -523,7 +392,6 @@ object LRTrainEval {
              spark: SparkSession,
              parser: String,
              name: String,
-             ulog: DataFrame,
              testDF: DataFrame,
              destfile: String,
              n: Double
@@ -534,42 +402,7 @@ object LRTrainEval {
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    val num = ulog.count().toDouble
-    println("sample num", num)
-    trainLog :+= "total size %.0f".format(num)
-
-    //最多n条训练数据
-    var trainRate = 0.9
-    if (num * trainRate > n) {
-      trainRate = n / num
-    }
-
-    //最多1000w条测试数据
-    var testRate = 0.09
-    if (num * testRate > 1e7) {
-      testRate = 1e7 / num
-    }
-
-    val Array(train, test, tmp) = ulog
-      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
-    ulog.unpersist()
-
-
-    val tnum = train.count().toDouble
-    val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
-    val nnum = tnum - pnum
-
-    //保证训练数据正负比例 1:9
-    val rate = (pnum * 9 / nnum * 1000).toInt
-    println("total positive negative", tnum, pnum, nnum, rate)
-    trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
-
-    val sampleTrain = formatSample(spark, parser, train)/*.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))*/
-    val sampleTest = formatSample(spark, parser, test)
-
-    println(sampleTrain.take(5).foreach(x => println(x.features)))
-    println("training")
-    model.run(sampleTrain, 200, 1e-8)
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
 
     trainLog :+= "=========== tomorrow test ==========="
 
@@ -578,25 +411,9 @@ object LRTrainEval {
 
     model.printLrTestLog()
     trainLog :+= model.getLrTestLog()
-    var testNum = sampleTest.count().toDouble * 0.9
+    var testNum = tomorrowTest.count().toDouble * 0.9
     val minBinSize = 1000d
     var binNum = 100d
-    if (testNum < minBinSize * binNum) {
-      binNum = testNum / minBinSize
-    }
-
-    model.runIr(binNum.toInt, 0.95)
-    trainLog :+= model.binsLog.mkString("\n")
-
-    trainLog :+= "=========== 1:9 test ==========="
-
-    model.test(sampleTest)
-
-    model.printLrTestLog()
-    trainLog :+= model.getLrTestLog()
-
-
-    testNum = sampleTest.count().toDouble * 0.9
     if (testNum < minBinSize * binNum) {
       binNum = testNum / minBinSize
     }
