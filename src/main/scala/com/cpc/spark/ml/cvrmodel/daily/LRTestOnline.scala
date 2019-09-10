@@ -517,122 +517,6 @@ object LRTestOnline {
 
   // 190511: baseline features.
   // bs-q项目最初的特征集, 从前同事的项目继承而来.
-  def getCvrVectorParser4(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (4 + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (17 + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (0 + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (0 + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (1 + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (0 + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (1 + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(130800, 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(392, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(11, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (4 + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = 0
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = 0
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(101101111, 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (3 + i, 1d)
-    i += 16
-
-    //adslot_type
-    els = els :+ (1 + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(12, 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(12, 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(12, 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //label
-    els = els :+ (i, 1d)
-    i += 1
-
-    println("Vectors size = " + i)
-
-    println("els = " + els)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-//  // 190511: baseline features.
-//  // bs-q项目最初的特征集, 从前同事的项目继承而来.
 //  def getCvrVectorParser4(x: Row): Vector = {
 //
 //    val cal = Calendar.getInstance()
@@ -642,50 +526,50 @@ object LRTestOnline {
 //    var els = Seq[(Int, Double)]()
 //    var i = 0
 //
-//    els = els :+ (week + i - 1, 1d)
+//    els = els :+ (4 + i - 1, 1d)
 //    i += 7
 //
 //    //(24)
-//    els = els :+ (hour + i, 1d)
+//    els = els :+ (17 + i, 1d)
 //    i += 24
 //
 //    //sex
-//    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+//    els = els :+ (0 + i, 1d)
 //    i += 9
 //
 //    //age
-//    els = els :+ (x.getAs[Int]("age") + i, 1d)
+//    els = els :+ (0 + i, 1d)
 //    i += 100
 //
 //    //os 96 - 97 (2)
-//    els = els :+ (x.getAs[Int]("os") + i, 1d)
+//    els = els :+ (1 + i, 1d)
 //    i += 10
 //
 //    //isp
-//    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+//    els = els :+ (0 + i, 1d)
 //    i += 20
 //
 //    //net
-//    els = els :+ (x.getAs[Int]("network") + i, 1d)
+//    els = els :+ (1 + i, 1d)
 //    i += 10
 //
-//    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+//    els = els :+ (dict("cityid").getOrElse(130800, 0) + i, 1d)
 //    i += dict("cityid").size + 1
 //
 //    //media id
-//    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+//    els = els :+ (dict("mediaid").getOrElse(392, 0) + i, 1d)
 //    i += dict("mediaid").size + 1
 //
 //    //ad slot id
-//    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+//    els = els :+ (dict("slotid").getOrElse(11, 0) + i, 1d)
 //    i += dict("slotid").size + 1
 //
 //    //0 to 4
-//    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+//    els = els :+ (4 + i, 1d)
 //    i += 10
 //
 //    //pagenum
-//    var pnum = x.getAs[Int]("pagenum")
+//    var pnum = 0
 //    if (pnum < 0 || pnum > 50) {
 //      pnum = 0
 //    }
@@ -695,7 +579,7 @@ object LRTestOnline {
 //    //bookid
 //    var bid = 0
 //    try {
-//      bid = x.getAs[String]("bookid").toInt
+//      bid = 0
 //    } catch {
 //      case e: Exception =>
 //    }
@@ -706,32 +590,32 @@ object LRTestOnline {
 //    i += 100
 //
 //    //ad class
-//    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+//    val adcls = dict("adclass").getOrElse(101101111, 0)
 //    els = els :+ (adcls + i, 1d)
 //    i += dict("adclass").size + 1
 //
 //    //adtype
-//    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+//    els = els :+ (3 + i, 1d)
 //    i += 16
 //
 //    //adslot_type
-//    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+//    els = els :+ (1 + i, 1d)
 //    i += 10
 //
 //    //planid
-//    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+//    els = els :+ (dict("planid").getOrElse(12, 0) + i, 1d)
 //    i += dict("planid").size + 1
 //
 //    //unitid
-//    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+//    els = els :+ (dict("unitid").getOrElse(12, 0) + i, 1d)
 //    i += dict("unitid").size + 1
 //
 //    //ideaid
-//    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+//    els = els :+ (dict("ideaid").getOrElse(12, 0) + i, 1d)
 //    i += dict("ideaid").size + 1
 //
 //    //label
-//    els = els :+ (i, x.getAs[Int]("label").toDouble)
+//    els = els :+ (i, 1d)
 //    i += 1
 //
 //    println("Vectors size = " + i)
@@ -746,6 +630,122 @@ object LRTestOnline {
 //        null
 //    }
 //  }
+
+  // 190511: baseline features.
+  // bs-q项目最初的特征集, 从前同事的项目继承而来.
+  def getCvrVectorParser4(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 16
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    //label
+    els = els :+ (i, x.getAs[Int]("label").toDouble)
+    i += 1
+
+    println("Vectors size = " + i)
+
+    println("els = " + els)
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
 
   // 190523: baseline features + appidx + dnn features.
   // 增加了app特征 和 cqq带来的dnn特征.

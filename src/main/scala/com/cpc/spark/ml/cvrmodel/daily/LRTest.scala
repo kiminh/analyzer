@@ -170,49 +170,6 @@ object LRTest {
     val adclass=100
     val cityid=367
 
-    /*els = els :+ (68621, 1d)
-    els = els :+ (68652, 1d)
-    els = els :+ (68612, 1d)
-    els = els :+ (68611, 1d)
-    els = els :+ (68644, 1d)
-    els = els :+ (68618, 1d)
-    els = els :+ (68616, 1d)
-    els = els :+ (68769, 1d)
-    els = els :+ (68655, 1d)
-    els = els :+ (68642, 1d)
-    els = els :+ (68617, 1d)
-    els = els :+ (68614, 1d)
-    els = els :+ (68695, 1d)
-    els = els :+ (68645, 1d)
-    els = els :+ (68632, 1d)
-    els = els :+ (68613, 1d)
-    els = els :+ (69583, 1d)*/
-
-    /*var i = 0
-
-    i += 7
-    i += 24
-    i += 9
-    i += 100
-    i += 10
-    i += 20
-    i += 10
-    i += 367 + 1 // cityid
-    i += 371 + 1 // mediaid
-    i += 946 + 1 // slotid
-    i += 10
-    i += 100
-    i += 100
-    i += 94 + 1 // adclass
-    i += 10
-    i += 10
-    i += 5156 + 1 // planid
-    i += 6774 + 1 // unitid
-    i += 16927 + 1 // ideaid*/
-
-
-
-
 
     val size=7+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1
     println("size = " + size)
