@@ -248,23 +248,9 @@ object LRTrainPredictToHive {
       name,
       testDF,
       destfile,
-      1e8
+      1e8,
+      date
     )
-
-    Utils
-      .sendMail(
-        trainLog.mkString("\n"),
-        s"[cpc-bs-q] ${name} 训练复盘",
-        Seq(
-          "fanyiming@qutoutiao.net",
-          "xiongyao@qutoutiao.net",
-          "duanguangdong@qutoutiao.net",
-          "xulu@qutoutiao.net",
-          "wangyao@qutoutiao.net",
-          "qizhi@qutoutiao.net",
-          "huazhenhao@qutoutiao.net"
-        )
-      )
 
     println(trainLog.mkString("\n"))
 
@@ -394,7 +380,8 @@ object LRTrainPredictToHive {
              name: String,
              testDF: DataFrame,
              destfile: String,
-             n: Double
+             n: Double,
+             date: String
            ): Unit = {
 
     trainLog :+= "\n------train log--------"
@@ -407,19 +394,16 @@ object LRTrainPredictToHive {
     trainLog :+= "=========== tomorrow test ==========="
 
     val tomorrowTest = formatSample(spark, parser, testDF)
-    model.predict(tomorrowTest)
-
-    model.printLrTestLog()
-    trainLog :+= model.getLrTestLog()
-    var testNum = tomorrowTest.count().toDouble * 0.9
-    val minBinSize = 1000d
-    var binNum = 100d
-    if (testNum < minBinSize * binNum) {
-      binNum = testNum / minBinSize
-    }
-
-    model.runIr(binNum.toInt, 0.95)
-    trainLog :+= model.binsLog.mkString("\n")
+    val predictDF=model.predict(tomorrowTest)
+    import spark.implicits._
+    val df=predictDF.toDF("searchid", "ideaid", "bsrawctr", "predict").repartition(1000).cache()
+    df.createOrReplaceTempView("tmp_table")
+    val insertSql=s"""
+                     |insert overwrite table dl_cpc.bs_lr_predict_eval partition (`dt`='$date')
+                     |select * from tmp_table
+       """.stripMargin
+    println("insertSql = " + insertSql)
+    spark.sql(insertSql)
 
   }
 
