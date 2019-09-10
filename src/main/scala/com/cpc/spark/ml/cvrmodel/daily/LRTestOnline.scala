@@ -71,7 +71,7 @@ object LRTestOnline {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val days = 3
-    val date = "2019-09-04-14-30"
+    val date = "2019-09-09-17-44"
     val parser = "ctrparser4"
 
     var cvrPathSep = getPathSeq(date, days)
