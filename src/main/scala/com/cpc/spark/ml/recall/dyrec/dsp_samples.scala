@@ -62,7 +62,7 @@ object dsp_samples {
     val sample = spark.sql(
       s"""
          |select distinct uid,click_adsrc_3,show_adsrc_3,adsrc_high_freq
-         |from dl_cpc.dsp_adsrc_feature2 where day='$oneday'
+         |from dl_cpc.dsp_adsrc_feature2 where dt='$oneday'
        """.stripMargin)
 
     sample.createOrReplaceTempView("sample_new")
