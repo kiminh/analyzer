@@ -9,7 +9,7 @@ package com.cpc.spark.qukan.userprofile
 import java.util.Calendar
 
 import sys.process._
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.qukan.utils.Udfs
 
@@ -18,11 +18,9 @@ import scala.collection.mutable
 object CreateNewTagTable {
 
   def main(args: Array[String]): Unit = {
-    
+
     val dateValue = args(0)
     val dateRange = args(1).toInt
-
-    val dbnameToGo = "dl_cpc"
 
     val spark = SparkSession.builder()
       .appName("[root-cpc] create new tag table")
@@ -81,13 +79,14 @@ object CreateNewTagTable {
       //.select("uid", "member_id",  "isstudent", "iszfb", "birthday", "date")
 
       mainJoinUnionTable.show()
+      val tableName = "dl_cpc.cpc_uid_memberid_tag_daily"
 
       println("begin to insert")
+      println(mainJoinUnionTable.count())
       mainJoinUnionTable
         .write
-        .partitionBy("date")
-        .mode(SaveMode.Append)
-        .parquet("hdfs://emr-cluster/warehouse/%s.db/cpc_uid_memberid_tag_daily/".format(dbnameToGo))
+        .mode("overwrite")
+        .insertInto(tableName)
 
       println(dateValue,i,"done")
 
