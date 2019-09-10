@@ -20,19 +20,21 @@ object GetDayUv {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    if (args.length < 2) {
-      System.err.println(
-        s"""
-           |Usage: GetDayUv <hive_table> <day_before>
-           |
-        """.stripMargin)
-      System.exit(1)
-    }
-    val table = args(0)
-    val dayBefore = args(1).toInt
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -dayBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+//    if (args.length < 2) {
+//      System.err.println(
+//        s"""
+//           |Usage: GetDayUv <hive_table> <day_before>
+//           |
+//        """.stripMargin)
+//      System.exit(1)
+//    }
+//    val table = args(0)
+//    val dayBefore = args(1).toInt
+//    val cal = Calendar.getInstance()
+//    cal.add(Calendar.DATE, -dayBefore)
+//    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    val date = args(0)
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")

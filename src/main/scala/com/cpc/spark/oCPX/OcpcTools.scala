@@ -180,6 +180,9 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  expids,
+         |  ocpc_expand,
+         |  date,
          |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -248,7 +251,6 @@ object OcpcTools {
          |  searchid,
          |  unitid,
          |  adslot_type,
-         |  userid,
          |  isshow,
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
@@ -264,6 +266,9 @@ object OcpcTools {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
+         |  expids,
+         |  ocpc_expand,
+         |  date,
          |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -292,7 +297,7 @@ object OcpcTools {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  date >= '$date1'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2)
@@ -333,15 +338,17 @@ object OcpcTools {
          |  unitid,
          |  isclick,
          |  exp_cvr,
-         |  media_appsid,
+         |  media,
          |  industry,
-         |  conversion_goal
+         |  conversion_goal,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_quick_click_log
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
+         |  media in ('qtt', 'novel', 'hottopic')
          |AND
          |  ocpc_step in (1, 2)
          |AND
@@ -352,7 +359,7 @@ object OcpcTools {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+//      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -399,31 +406,26 @@ object OcpcTools {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDay(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
          |SELECT
          |  searchid,
          |  unitid,
-         |  userid,
          |  isclick,
-         |  cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
-         |  media_appsid,
-         |  (case
-         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
-         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
-         |      when adclass in (110110100, 125100100) then "wzcp"
-         |      else "others"
-         |  end) as industry,
-         |  conversion_goal
+         |  exp_cvr,
+         |  media,
+         |  industry,
+         |  conversion_goal,
+         |  date,
+         |  hour
          |FROM
-         |  dl_cpc.cpc_basedata_click_event
+         |  dl_cpc.ocpc_quick_click_log
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
+         |  media in ('qtt', 'novel', 'hottopic')
          |AND
          |  ocpc_step in (1, 2)
          |AND
@@ -434,53 +436,25 @@ object OcpcTools {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-
-    //    clickData.show(10)
-    //    clickData
+    //      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
-    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-      var result = 0
-      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
-        result = 1
-      } else if (traceType == "active_third") {
-        result = 2
-      } else if (traceType == "active15" || traceType == "ctsite_active15") {
-        result = 3
-      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
-        result = 4
-      } else {
-        result = 0
-      }
-      result
-    })
-
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
-         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_goal
+         |  conversion_goal
          |FROM
-         |  dl_cpc.cpc_basedata_trace_event
+         |  dl_cpc.ocpc_quick_cv_log
          |WHERE
-         |  day >= '$date1'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
-    val cvDataRaw = spark
+    val cvData = spark
       .sql(sqlRequest2)
-      //      .withColumn("conversion_goal", udfDetermineConversionGoal()(col("trace_type"), col("trace_op1"), col("trace_op2")))
       .select("searchid", "conversion_goal")
       .filter(s"conversion_goal > 0")
       .withColumn("iscvr", lit(1))
-      .distinct()
-    val cvData3 = cvDataRaw
-      .filter(s"conversion_goal = 2")
-      .withColumn("conversion_goal", lit(3))
-      .distinct()
-    val cvData = cvDataRaw
-      .union(cvData3)
-      .select("searchid", "conversion_goal", "iscvr")
       .distinct()
 
 
@@ -497,7 +471,7 @@ object OcpcTools {
     var result = media match {
       case "qtt" => "Qtt"
       case "hottopic" => "HT66"
-      case "novel" => "Midu"
+      case "novel" => "MiDu"
       case _ => "others"
     }
     result
@@ -562,7 +536,7 @@ object OcpcTools {
     }
 
     var result = result1 match {
-      case "oCPColdflowMidu" => "oCPColdflowNovel"
+      case "oCPColdflowMiDu" => "oCPColdflowNovel"
       case "delayHT66" => "delayhottopic"
       case x => x
     }

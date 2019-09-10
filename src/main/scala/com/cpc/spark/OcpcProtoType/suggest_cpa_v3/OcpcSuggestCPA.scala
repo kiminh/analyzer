@@ -69,6 +69,7 @@ object OcpcSuggestCPA {
     val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
 
     val resultDF = result
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -321,7 +322,7 @@ object OcpcSuggestCPA {
          |FROM
          |    dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |    `date` >= '$date1'
+         |    $timeSelection
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)

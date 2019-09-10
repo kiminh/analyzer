@@ -20,7 +20,6 @@ object OcpcLightBulb{
     2. mappartition打开redis，并存储数据
      */
     // 计算日期周期
-//    2019-02-02 10 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
@@ -50,7 +49,25 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
+    val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
+    val lightUnits2 = getUnitidList(date, hour, spark)
+    lightUnits2
+      .select("unitid", "userid", "conversion_goal", "media")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+
+
+
+    val result = lightUnits1
+      .select("unitid", "ocpc_light", "current_cpa")
+      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
+      .withColumn("ocpc_light_old", col("ocpc_light"))
+      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
+      .na.fill(0.0, Seq("current_cpa"))
+
 
     // 抽取adv的ocpc单元
     val ocpcUnitsRaw = getConversionGoal(date, hour, spark)
@@ -76,6 +93,99 @@ object OcpcLightBulb{
     saveDataToRedis(version, date, hour, spark)
     println(s"############## saving redis database ################")
   }
+
+  def getUnitidList(date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status, target_medias, create_time from adv.unit where ideas is not null) as tmp"
+
+    val ocpcBlackListConf = conf.getString("ocpc_all.light_control.ocpc_black_list")
+    val ocpcBlacklist = spark
+      .read
+      .format("json")
+      .json(ocpcBlackListConf)
+      .select("userid")
+      .withColumn("black_flag", lit(1))
+      .distinct()
+    println("ocpc blacklist for testing ocpc light:")
+    ocpcBlacklist.show(10)
+
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val deadline = date + " " + hour + ":00:00"
+
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    id as unitid,
+         |    user_id as userid,
+         |    cast(conversion_goal as int) as conversion_goal,
+         |    ocpc_status,
+         |    target_medias,
+         |    cast(is_ocpc as int) as is_ocpc,
+         |    cast(a as string) as media_appsid,
+         |    create_time
+         |from
+         |    base_data
+         |lateral view explode(split(target_medias, ',')) b as a
+         |WHERE
+         |    create_time >= '$deadline'
+         |and
+         |    is_ocpc = 1
+         |and
+         |    ocpc_status not in (2, 4)
+       """.stripMargin
+
+    val rawResult = spark
+      .sql(sqlRequest)
+      .filter(s"is_ocpc = 1")
+      .na.fill("", Seq("media_appsid"))
+      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .select("unitid", "userid", "conversion_goal", "media")
+      .distinct()
+      .join(ocpcBlacklist, Seq("userid"), "left_outer")
+
+    val result = rawResult
+      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"black_flag is null")
+
+    val totalCnt = result.count()
+    val cnt = totalCnt.toFloat / 10
+    val resultDF = result
+      .orderBy(rand())
+      .limit(cnt.toInt)
+      .withColumn("test_flag", lit(1))
+      .select("unitid", "userid", "conversion_goal", "media", "test_flag")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def udfDetermineMediaNew() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
+      case "" => "qtt"
+      case _ => "novel"
+    }
+    result
+  })
+
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     /*

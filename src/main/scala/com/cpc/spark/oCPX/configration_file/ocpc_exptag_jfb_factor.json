@@ -1,0 +1,12 @@
+{"version": "ocpcv1", "exp_tag": "delayNewHT66", "conversion_goal": 1, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "delayNoSmoothHT66", "conversion_goal": 1, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "realtimeHT66", "conversion_goal": 1, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "HT66", "conversion_goal": 1, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "delayNewHT66", "conversion_goal": 2, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "delayNoSmoothHT66", "conversion_goal": 2, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "realtimeHT66", "conversion_goal": 2, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "HT66", "conversion_goal": 2, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "delayNewHT66", "conversion_goal": 3, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "delayNoSmoothHT66", "conversion_goal": 3, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "realtimeHT66", "conversion_goal": 3, "weight": 1.2}
+{"version": "ocpcv1", "exp_tag": "HT66", "conversion_goal": 3, "weight": 1.2}

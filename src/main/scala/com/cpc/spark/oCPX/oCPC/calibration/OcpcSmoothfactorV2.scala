@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.calibration
 
 import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -30,9 +30,9 @@ object OcpcSmoothfactorV2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt1=$hourInt1, hourInt2=$hourInt2, hourInt3=$hourInt3")
 
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt1, spark).cache()
+    val dataRaw2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt2, spark).cache()
+    val dataRaw3 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
 
     val result = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     result
@@ -72,9 +72,11 @@ object OcpcSmoothfactorV2 {
       .filter(s"cv > 0")
     data3.show(10)
 
+
     // 计算最终值
     val calibration1 = calculateCalibrationValue(data1, data2, spark)
     val calibrationNew = data3
+      .filter(s"cv >= min_cv")
       .withColumn("cvr_new", col("post_cvr"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_new")
 
@@ -90,14 +92,49 @@ object OcpcSmoothfactorV2 {
       .cache()
 
     calibration.show(10)
-//    calibration
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_smooth_factor20190723a")
+
+    // 手动按照配置文件设置smooth_factor
+    val smoothFactorData = getSmoothFactor(date, hour, spark)
 
     val resultDF = calibration
+      .join(smoothFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+      .withColumn("smooth_factor", when(col("smooth_factor_config").isNotNull, col("smooth_factor_config")).otherwise(col("smooth_factor")))
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "exp_tag", "version", "cvr", "smooth_factor")
 
     resultDF
+  }
+
+  def getSmoothFactor(date: String, hour: String, spark: SparkSession) = {
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_config.user_smooth_factor")
+    val rawData = spark.read.format("json").json(confPath)
+    val data = rawData
+      .select("exp_tag", "userid", "smooth_factor")
+      .groupBy("exp_tag", "userid")
+      .agg(avg(col("smooth_factor")).alias("smooth_factor_config"))
+      .select("exp_tag", "userid", "smooth_factor_config")
+      .distinct()
+
+    println("smooth factor: user data")
+    data.show(10)
+
+    val unitidUserRaw = getConversionGoal(date, hour, spark)
+    val unitidList = unitidUserRaw
+      .filter(s"is_ocpc = 1")
+      .select("userid", "unitid", "conversion_goal")
+      .distinct()
+
+    val result = unitidList
+      .join(data, Seq("userid"), "inner")
+      .select("exp_tag", "userid", "unitid", "conversion_goal", "smooth_factor_config")
+      .cache()
+
+    result.show(10)
+
+    result
+
   }
 
   def udfSelectSmoothFactor() = udf((conversionGoal: Int) => {
