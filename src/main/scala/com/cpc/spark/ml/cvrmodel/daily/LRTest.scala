@@ -138,27 +138,27 @@ object LRTest {
 //    val cityid=367
 
 
-    //(48283,[3,28,33,44,141,152,171,281,549,597,1014,1021,1121,1235,1323,1332,1341,10890,21646,48282],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,11454.0])
+    //(71152,[2,14,33,44,141,152,174,180,549,620,1056,1062,1162,1308,1371,1380,13918,29502,67468,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,6336.0])
     //预测结果 1.4236643345148817E-6  实际线上 1745*10e-6
-    els = els :+ (3, 1d)  //week
-    els = els :+ (28, 1d) // hour
+    els = els :+ (2, 1d)  //week
+    els = els :+ (14, 1d) // hour
     els = els :+ (33, 1d) // sex
     els = els :+ (44, 1d) // age
     els = els :+ (141, 1d) // os
     els = els :+ (152, 1d) // isp
-    els = els :+ (171, 1d) // network
-    els = els :+ (281, 1d) // cityid
+    els = els :+ (174, 1d) // network
+    els = els :+ (180, 1d) // cityid
     els = els :+ (549, 1d) // mediaid
-    els = els :+ (597, 1d) // slotid
-    els = els :+ (1014, 1d) // phone_level
-    els = els :+ (1021, 1d) // pagenum
-    els = els :+ (1121, 1d) // bookid
-    els = els :+ (1235, 1d) // adclass
-    els = els :+ (1323, 1d) // adtype
-    els = els :+ (1332, 1d) // adslot_type
-    els = els :+ (1341, 1d) // planid
-    els = els :+ (10890, 1d) // unitid
-    els = els :+ (21646, 1d) // ideaid
+    els = els :+ (620, 1d) // slotid
+    els = els :+ (1056, 1d) // phone_level
+    els = els :+ (1062, 1d) // pagenum
+    els = els :+ (1162, 1d) // bookid
+    els = els :+ (1308, 1d) // adclass
+    els = els :+ (1371, 1d) // adtype
+    els = els :+ (1380, 1d) // adslot_type
+    els = els :+ (13918, 1d) // planid
+    els = els :+ (29502, 1d) // unitid
+    els = els :+ (67468, 1d) // ideaid
 
 
     // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
