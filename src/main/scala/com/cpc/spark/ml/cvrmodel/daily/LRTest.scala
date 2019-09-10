@@ -181,26 +181,48 @@ object LRTest {
 //    els = els :+ (67468, 1d) // ideaid
 
 
-    //(71152,[2,14,32,43,141,153,171,292,549,645,1056,1062,1162,1275,1367,1380,2849,16974,55036,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,2.0]) 0.006273059528128782  week更改正确后0.006336525382594287
+//    //(71152,[2,14,32,43,141,153,171,292,549,645,1056,1062,1162,1275,1367,1380,2849,16974,55036,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,2.0])   week更改正确后 2.295015318586404E-6
+//    els = els :+ (1, 1d)  //week
+//    els = els :+ (14, 1d) // hour
+//    els = els :+ (32, 1d) // sex
+//    els = els :+ (43, 1d) // age
+//    els = els :+ (141, 1d) // os
+//    els = els :+ (153, 1d) // isp
+//    els = els :+ (171, 1d) // network
+//    els = els :+ (292, 1d) // cityid
+//    els = els :+ (549, 1d) // mediaid
+//    els = els :+ (645, 1d) // slotid
+//    els = els :+ (1056, 1d) // phone_level
+//    els = els :+ (1062, 1d) // pagenum
+//    els = els :+ (1162, 1d) // bookid
+//    els = els :+ (1275, 1d) // adclass
+//    els = els :+ (1367, 1d) // adtype
+//    els = els :+ (1380, 1d) // adslot_type
+//    els = els :+ (2849, 1d) // planid
+//    els = els :+ (16974, 1d) // unitid
+//    els = els :+ (55036, 1d) // ideaid
+
+
+    //(71152,[2,14,31,40,141,152,171,502,549,708,1056,1063,1162,1276,1368,1382,4191,18438,39246,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0]) 0.006273059528128782  week更改正确后0.006336525382594287
     els = els :+ (1, 1d)  //week
     els = els :+ (14, 1d) // hour
-    els = els :+ (32, 1d) // sex
-    els = els :+ (43, 1d) // age
+    els = els :+ (31, 1d) // sex
+    els = els :+ (40, 1d) // age
     els = els :+ (141, 1d) // os
-    els = els :+ (153, 1d) // isp
+    els = els :+ (152, 1d) // isp
     els = els :+ (171, 1d) // network
-    els = els :+ (292, 1d) // cityid
+    els = els :+ (502, 1d) // cityid
     els = els :+ (549, 1d) // mediaid
-    els = els :+ (645, 1d) // slotid
+    els = els :+ (708, 1d) // slotid
     els = els :+ (1056, 1d) // phone_level
-    els = els :+ (1062, 1d) // pagenum
+    els = els :+ (1063, 1d) // pagenum
     els = els :+ (1162, 1d) // bookid
-    els = els :+ (1275, 1d) // adclass
-    els = els :+ (1367, 1d) // adtype
-    els = els :+ (1380, 1d) // adslot_type
-    els = els :+ (2849, 1d) // planid
-    els = els :+ (16974, 1d) // unitid
-    els = els :+ (55036, 1d) // ideaid
+    els = els :+ (1276, 1d) // adclass
+    els = els :+ (1368, 1d) // adtype
+    els = els :+ (1382, 1d) // adslot_type
+    els = els :+ (4191, 1d) // planid
+    els = els :+ (18438, 1d) // unitid
+    els = els :+ (39246, 1d) // ideaid
 
 
     // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
