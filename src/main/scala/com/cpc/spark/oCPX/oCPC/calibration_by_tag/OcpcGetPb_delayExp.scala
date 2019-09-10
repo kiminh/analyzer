@@ -109,7 +109,7 @@ object OcpcGetPb_delayExp {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
@@ -166,7 +166,7 @@ object OcpcGetPb_delayExp {
      */
 
     // 抽取基础数据
-    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
