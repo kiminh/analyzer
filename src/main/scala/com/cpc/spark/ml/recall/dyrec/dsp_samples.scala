@@ -44,9 +44,9 @@ object dsp_samples {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"hdfs://emr-cluster2/user/cpc/aiclk_dataflow/realtime/adlist-v4-dsp/$today/$hour/$Type")
-    val CountPathTmpName = s"hdfs://emr-cluster2/user/cpc/aiclk_dataflow/daily/adlist-v4-dsp/tmp/"
-    val CountPathName = s"hdfs://emr-cluster2/user/cpc/aiclk_dataflow/realtime/adlist-v4-dsp/$today/$hour/$Type/count"
+      .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4-dsp/$today/$hour/$Type")
+    val CountPathTmpName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4-dsp/tmp/"
+    val CountPathName = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4-dsp/$today/$hour/$Type/count"
     val count = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4-dsp/$today/$hour/$Type/part*").count()
     CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
