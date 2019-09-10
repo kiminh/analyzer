@@ -149,6 +149,11 @@ class LRIRModel {
     rmse = rmetrics.rootMeanSquaredError
   }
 
+  def predict(sample: RDD[(LabeledPoint,String,Int,Int)]): RDD[(String,Int,Int,Double)] = {
+    val predictDF=sample.map{case (LabeledPoint(label, features),searchid,ideaid,bsrawctr) => (searchid,ideaid,bsrawctr,lrmodel.predict(features))}
+    predictDF
+  }
+
   def clearResult(): Unit = {
     auPRC = 0
     auROC = 0

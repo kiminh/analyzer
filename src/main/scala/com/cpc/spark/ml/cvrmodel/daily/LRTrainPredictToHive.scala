@@ -4,9 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.cvrmodel.daily.LRTest.model
 import com.cpc.spark.ml.dnn.Utils.DateUtils
-import org.apache.spark.sql.SaveMode
 
 import scala.collection.immutable
 import scala.sys.process._
@@ -26,7 +24,7 @@ import scala.collection.mutable.WrappedArray
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190520).
   */
-object LRTrainEval {
+object LRTrainPredictToHive {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -156,6 +154,7 @@ object LRTrainEval {
          |    , doc_id
          |    , doc_cat
          |    , is_new_ad
+         |    , bsrawctr
          |    , uid,case when cv_types = null then 0
          |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
          |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
@@ -201,11 +200,12 @@ object LRTrainEval {
          |    , uid
          |    , conversion_goal
          |    , is_api_callback
+         |    , bsrawctr
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
          |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
-         |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
+         |    and array_contains(exptags, 'bslradtypecorrection')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and isclick = 1
@@ -397,18 +397,17 @@ object LRTrainEval {
              n: Double
            ): Unit = {
 
-    println("-------train log--------")
+    trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-
     model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
 
-    println("=========== tomorrow test ===========")
+    trainLog :+= "=========== tomorrow test ==========="
 
     val tomorrowTest = formatSample(spark, parser, testDF)
-    model.test(tomorrowTest)
+    model.predict(tomorrowTest)
 
     model.printLrTestLog()
     trainLog :+= model.getLrTestLog()
@@ -424,7 +423,7 @@ object LRTrainEval {
 
   }
 
-  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
+  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[(LabeledPoint,String,Int,Int)] = {
     val BcDict = spark.sparkContext.broadcast(dict)
     val BcDictStr = spark.sparkContext.broadcast(dictStr)
     val BcDictLong = spark.sparkContext.broadcast(dictLong)
@@ -447,7 +446,7 @@ object LRTrainEval {
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
               }
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              (LabeledPoint(u.getAs[Int]("label").toDouble, vec),u.getAs[String]("searchid"),u.getAs[Int]("ideaid"),u.getAs[Int]("bsrawctr"))
           }
       }
   }
