@@ -181,6 +181,7 @@ object OcpcTools {
          |  end) as industry,
          |  conversion_goal,
          |  expids,
+         |  exptags,
          |  ocpc_expand,
          |  date,
          |  hour
@@ -267,6 +268,7 @@ object OcpcTools {
          |  end) as industry,
          |  conversion_goal,
          |  expids,
+         |  exptags,
          |  ocpc_expand,
          |  date,
          |  hour
