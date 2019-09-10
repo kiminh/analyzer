@@ -2,17 +2,15 @@ package com.cpc.spark.oCPX.oCPC.calibration_by_tag
 
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
-//import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBase._
-//import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalibrationBaseRealtime._
+import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
-import com.cpc.spark.oCPX.OcpcTools._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb_delayNew {
+object OcpcGetPb_delayExp {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -58,7 +56,7 @@ object OcpcGetPb_delayNew {
       .cache()
     pcocData.show(10)
 
-    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorDataRaw = OcpcBIDfactorData(date, hour, version, expTag, bidFactorHourInt, spark)
     val bidFactorData = bidFactorDataRaw
       .select("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
       .cache()
@@ -121,7 +119,7 @@ object OcpcGetPb_delayNew {
          |FROM
          |  base_data_raw
          |WHERE
-         |  (media = 'hottopic' and exptags like '%ocpcMedia:delayNewHT66,HT66%')
+         |  (media = 'hottopic' and (exptags like '%ocpcMedia:delayNewHT66,HT66%') or (exptags like '%ocpcMedia:delayExpHT66,HT66%'))
          |OR
          |  media in ('qtt', 'novel')
        """.stripMargin
@@ -159,6 +157,60 @@ object OcpcGetPb_delayNew {
     data
   }
 
+  def OcpcBIDfactorData(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark:SparkSession) = {
+    /*
+    计算新版的cvr平滑策略：
+    1. 抽取基础数据
+    2. 计算该维度下pcoc与计费比、后验cvr等等指标
+    3. 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+     */
+
+    // 抽取基础数据
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data_raw")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  base_data_raw
+         |WHERE
+         |  (media = 'hottopic' and (exptags like '%ocpcMedia:delayNewHT66,HT66%') or (exptags like '%ocpcMedia:delayExpHT66,HT66%'))
+         |OR
+         |  media in ('qtt', 'novel')
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isshow", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+
+
+    // 计算各维度下的pcoc、jfb以及后验cvr等指标
+    val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
+
+    val data1 = dataRaw1
+      .filter(s"cv >= min_cv")
+      .cache()
+    data1.show(10)
+
+
+    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+    val baseData2 = baseData
+      .withColumn("media", udfMediaName()(col("media")))
+      .join(data1, Seq("identifier", "conversion_goal", "media"), "inner")
+
+    val data2 = calculateData2(baseData2, date, hour, spark)
+
+    val resultDF = data1
+      .select("identifier", "conversion_goal", "media", "exp_tag", "cv", "min_cv")
+      .join(data2, Seq("identifier", "conversion_goal", "media"), "inner")
+      .selectExpr("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor", "cv", "min_cv")
+      .withColumn("version", lit(version))
+
+    resultDF
+
+  }
 
 }
 
