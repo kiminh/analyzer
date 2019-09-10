@@ -79,7 +79,7 @@ object dsp_samples {
         mkSparseFeature_m(multihot_feature_number)(array(
           hashSeq("ud136", "string")($"click_adsrc_3").alias("click_adsrc_3"),
           hashSeq("ud137", "string")($"show_adsrc_3").alias("show_adsrc_3"),
-          hashSeq("ud138", "string")($"adsrc_high_freq").alias("adsrc_high_freq"),
+          hashSeq("ud138", "string")($"adsrc_high_freq").alias("adsrc_high_freq")
         )).alias("sparse")).select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
       $"sparse".getField("_1").alias("idx0_new"),
       $"sparse".getField("_2").alias("idx1_new"),
