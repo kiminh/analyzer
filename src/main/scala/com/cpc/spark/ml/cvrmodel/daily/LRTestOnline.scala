@@ -137,7 +137,7 @@ object LRTestOnline {
          |    dl_cpc.cpc_basedata_union_events
          |    where
          |    day = "2019-09-10"
-         |    and hour = '07'
+         |    and hour = '08'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and isclick = 1
