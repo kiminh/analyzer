@@ -105,8 +105,41 @@ object LRTest {
 //     els = els :+ (13352, 1d) // unitid
 //     els = els :+ (32946, 1d) // ideaid
 
+//    //(48283,[3,28,33,44,141,152,171,281,549,597,1014,1021,1121,1235,1323,1332,1341,10890,21646,48282],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,11454.0])
+//    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
+//    els = els :+ (3, 1d)  //week
+//    els = els :+ (28, 1d) // hour
+//    els = els :+ (33, 1d) // sex
+//    els = els :+ (44, 1d) // age
+//    els = els :+ (141, 1d) // os
+//    els = els :+ (152, 1d) // isp
+//    els = els :+ (171, 1d) // network
+//    els = els :+ (281, 1d) // cityid
+//    els = els :+ (549, 1d) // mediaid
+//    els = els :+ (597, 1d) // slotid
+//    els = els :+ (1014, 1d) // phone_level
+//    els = els :+ (1021, 1d) // pagenum
+//    els = els :+ (1121, 1d) // bookid
+//    els = els :+ (1235, 1d) // adclass
+//    els = els :+ (1323, 1d) // adtype
+//    els = els :+ (1332, 1d) // adslot_type
+//    els = els :+ (1341, 1d) // planid
+//    els = els :+ (10890, 1d) // unitid
+//    els = els :+ (21646, 1d) // ideaid
+//
+//
+//    //    hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50
+//    val mediaid=47
+//    val planid=9548
+//    val unitid=10755
+//    val ideaid=26635
+//    val slotid=414
+//    val adclass=93
+//    val cityid=367
+
+
     //(48283,[3,28,33,44,141,152,171,281,549,597,1014,1021,1121,1235,1323,1332,1341,10890,21646,48282],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,11454.0])
-    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
+    //预测结果 1.4236643345148817E-6  实际线上 1745*10e-6
     els = els :+ (3, 1d)  //week
     els = els :+ (28, 1d) // hour
     els = els :+ (33, 1d) // sex
@@ -128,13 +161,13 @@ object LRTest {
     els = els :+ (21646, 1d) // ideaid
 
 
-    //    hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50
-    val mediaid=47
-    val planid=9548
-    val unitid=10755
-    val ideaid=26635
-    val slotid=414
-    val adclass=93
+    // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
+    val mediaid=59
+    val planid=14120
+    val unitid=15978
+    val ideaid=39661
+    val slotid=443
+    val adclass=100
     val cityid=367
 
     /*els = els :+ (68621, 1d)
