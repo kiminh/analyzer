@@ -57,7 +57,7 @@ object dsp_samples {
     original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster2ns2/user/$model_version/$today/$hour/$Type/part*").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", expr("dense[25]").alias("uidhash"))
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
-    multihot_feature.show()
+    println(multihot_feature)
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
     val sample = spark.sql(
       s"""
@@ -77,15 +77,15 @@ object dsp_samples {
     val result = original_sample.join(sample_new, Seq("uidhash"), "left_outer").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
         mkSparseFeature_m(multihot_feature_number)(array(
-      hashSeq("ud136", "string")($"click_adsrc_3").alias("click_adsrc_3"),
-      hashSeq("ud137", "string")($"show_adsrc_3").alias("show_adsrc_3"),
-      hashSeq("ud138", "string")($"adsrc_high_freq").alias("adsrc_high_freq"),
-    )).alias("sparse")).select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
+          hashSeq("ud136", "string")($"click_adsrc_3").alias("click_adsrc_3"),
+          hashSeq("ud137", "string")($"show_adsrc_3").alias("show_adsrc_3"),
+          hashSeq("ud138", "string")($"adsrc_high_freq").alias("adsrc_high_freq"),
+        )).alias("sparse")).select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
       $"sparse".getField("_1").alias("idx0_new"),
       $"sparse".getField("_2").alias("idx1_new"),
       $"sparse".getField("_3").alias("idx2_new"),
       $"sparse".getField("_4").alias("id_arr_new")
-    ).rdd.map{
+    ).rdd.map {
       r =>
         val sample_idx = r.getAs[Long]("sample_idx")
         val label = r.getAs[Seq[Long]]("label")
