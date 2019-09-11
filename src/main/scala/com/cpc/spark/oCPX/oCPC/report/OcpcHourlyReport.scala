@@ -38,32 +38,32 @@ object OcpcHourlyReport {
 
     // 为邮件准备临时表
     val ideaData = calculateIdea(baseData, spark)
-//    ideaData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
+    ideaData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_idea_report_email")
 
     val unitData = calculateUnit(baseData, spark)
-//    unitData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
+    unitData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_unit_report_email")
 
     val userData = calcualteUser(unitData, spark)
-//    userData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
+    userData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_user_report_email")
 
     val industry = calculateIndustry(unitData, spark)
-//    industry
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
+    industry
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
 
     // 存储数据到hadoop
     saveBaseDataToHDFS(baseData, date, hour, spark)
@@ -264,8 +264,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_report_industry_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_industry_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_industry_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_industry_hourly")
 
 
   }
@@ -282,8 +282,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
