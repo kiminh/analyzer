@@ -321,7 +321,7 @@ object UnitDemensionCvrTargetV2 {
     val rawResult = spark.sql(sqlRequest1).cache()
 
     rawResult
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190911")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190911a")
 
     val sqlRequest2 =
       s"""
