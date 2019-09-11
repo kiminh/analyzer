@@ -114,7 +114,7 @@ object OcpcBsData {
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
          |  sum(isclick) * 1.0 / sum(isshow) as ctr,
-         |  sum(case when isclick=1 then bscvr else 0 end) * 1.0 / sum(isclick) as bscvr
+         |  sum(case when isclick=1 and bscvr>0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr
          |FROM
          |  base_data
          |GROUP BY unitid, media
@@ -126,7 +126,8 @@ object OcpcBsData {
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
       .select("key", "cv", "cvr", "ctr", "bscvr")
-      .withColumn("cvr_factor", col("bscvr") * 1.0 / col("cvr"))
+      .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
+      .na.fill(1.0, Seq("cvr_factor"))
       .select("key", "cv", "cvr", "ctr", "cvr_factor")
       .cache()
 
@@ -140,7 +141,7 @@ object OcpcBsData {
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
          |  sum(isclick) * 1.0 / sum(isshow) as ctr,
-         |  sum(case when isclick=1 then bscvr else 0 end) * 1.0 / sum(isclick) as bscvr
+         |  sum(case when isclick=1 and bscvr > 0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr
          |
          |FROM
          |  base_data
@@ -153,7 +154,8 @@ object OcpcBsData {
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
       .select("key", "cv", "cvr", "ctr", "bscvr")
-      .withColumn("cvr_factor", col("bscvr") * 1.0 / col("cvr"))
+      .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
+      .na.fill(1.0, Seq("cvr_factor"))
       .select("key", "cv", "cvr", "ctr", "cvr_factor")
       .cache()
 
