@@ -149,7 +149,7 @@ class LRIRModel {
     rmse = rmetrics.rootMeanSquaredError
   }
 
-  def predict(sample: RDD[(LabeledPoint,String,Int,Int)]): RDD[(String,Int,Int,Double)] = {
+  def predict(sample: RDD[(LabeledPoint,String,Int,Long)]): RDD[(String,Int,Long,Double)] = {
     if (lrmodel == null) {
       throw new Exception("must train lr first")
     }

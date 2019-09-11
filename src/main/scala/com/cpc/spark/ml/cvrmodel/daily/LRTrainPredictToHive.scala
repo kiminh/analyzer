@@ -408,7 +408,7 @@ object LRTrainPredictToHive {
 
   }
 
-  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[(LabeledPoint,String,Int,Int)] = {
+  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[(LabeledPoint,String,Int,Long)] = {
     val BcDict = spark.sparkContext.broadcast(dict)
     val BcDictStr = spark.sparkContext.broadcast(dictStr)
     val BcDictLong = spark.sparkContext.broadcast(dictLong)
@@ -431,7 +431,7 @@ object LRTrainPredictToHive {
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
               }
-              (LabeledPoint(u.getAs[Int]("label").toDouble, vec),u.getAs[String]("searchid"),u.getAs[Int]("ideaid"),u.getAs[Int]("bsrawctr"))
+              (LabeledPoint(u.getAs[Int]("label").toDouble, vec),u.getAs[String]("searchid"),u.getAs[Int]("ideaid"),u.getAs[Long]("bsrawctr"))
           }
       }
   }
