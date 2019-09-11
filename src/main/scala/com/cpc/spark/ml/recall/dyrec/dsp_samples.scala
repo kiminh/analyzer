@@ -61,7 +61,9 @@ object dsp_samples {
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
     val sample = spark.sql(
       s"""
-         |select distinct uid,click_adsrc_3,show_adsrc_3,adsrc_high_freq
+         |select distinct uid,cast(click_adsrc_3 as Array<String>) click_adsrc_3,
+         |cast(show_adsrc_3 as Array<String>) show_adsrc_3,
+         |cast(adsrc_high_freq as Array<String>) adsrc_high_freq
          |from dl_cpc.dsp_adsrc_feature2 where dt='$oneday'
        """.stripMargin)
 
