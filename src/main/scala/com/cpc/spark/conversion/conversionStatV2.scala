@@ -128,9 +128,9 @@ object conversionStatV2 {
       )
       .select("userid", "unitid", "ideaid", "conversion_target", "cv")
 
-    baseDataRaw
-        .repartition(10)
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_conversion_data20190911")
+//    baseDataRaw
+//        .repartition(10)
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_conversion_data20190911")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
