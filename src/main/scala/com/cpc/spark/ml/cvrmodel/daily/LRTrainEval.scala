@@ -76,7 +76,7 @@ object LRTrainEval {
     val date = args(1)
     val parser = args(2)
 
-    var cvrPathSep = getPathSeq(days)
+    var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
     val spark: SparkSession = model

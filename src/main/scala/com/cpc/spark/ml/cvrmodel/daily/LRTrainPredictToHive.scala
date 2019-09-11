@@ -74,7 +74,7 @@ object LRTrainPredictToHive {
     val date = args(1)
     val parser = args(2)
 
-    var cvrPathSep = getPathSeq(days)
+    var cvrPathSep = getPathSeq(date,days)
     println("cvrPathSep = " + cvrPathSep)
 
     val spark: SparkSession = model
@@ -297,7 +297,6 @@ object LRTrainPredictToHive {
   }
 
   def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
-    var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 17, 0, 0)
