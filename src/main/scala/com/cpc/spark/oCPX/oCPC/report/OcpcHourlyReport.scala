@@ -264,8 +264,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_report_industry_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_industry_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_report_industry_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_industry_hourly")
 
 
   }
@@ -282,8 +282,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
@@ -362,12 +362,7 @@ object OcpcHourlyReport {
          |    `date` = '$date'
          |and `hour` <= '$hour'
          |and $mediaSelection
-         |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
-         |and ideaid > 0
-         |and adsrc = 1
-         |and adslot_type in (1,2,3)
-         |and searchid is not null
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
