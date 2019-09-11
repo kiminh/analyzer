@@ -35,7 +35,7 @@ object dyrec_feature_daily {
          |where member_id > 0 and device_code is not null group by member_id,device_code
       """.stripMargin)
 
-    sample.join(uid_memberid, Seq("uid"), "left_outer").createOrReplaceTempView("sample_new")
+    sample.join(uid_memberid, Seq("uid"), "left_outer").repartition(1000).createOrReplaceTempView("sample_new")
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.recall_rec_feature_daily partition (day="$oneday")
