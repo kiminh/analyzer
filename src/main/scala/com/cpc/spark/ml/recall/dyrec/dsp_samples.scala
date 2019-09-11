@@ -57,7 +57,7 @@ object dsp_samples {
     original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster2ns2/user/$model_version/$today/$hour/$Type/part*").
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", expr("dense[25]").alias("uidhash"))
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
-    println(multihot_feature)
+    println(multihot_feature.mkString("&&&"))
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
     val sample = spark.sql(
       s"""
