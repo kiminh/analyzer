@@ -114,17 +114,19 @@ object conversionStatV2 {
          |  size(conversion_target) > 0
        """.stripMargin
     println(sqlRequest1)
-    val baseData = spark
+    val baseDataRaw = spark
       .sql(sqlRequest1)
+      .filter(s"conversion_target_old in ('api', 'sdk_app_install', 'sdk_site_wz', 'site_form', 'js_active_copywx', 'js_active_js_form', 'sdk_banner_wz', 'sdk_popupwindow_wz')")
+      .withColumn("conversion_target", udfDetermineConversionTarget()(col("conversion_target_old")))
+
+    val baseData = baseDataRaw
       .groupBy("userid", "unitid", "ideaid", "conversion_target")
       .agg(
         countDistinct(col("searchid")).alias("cv")
       )
       .select("userid", "unitid", "ideaid", "conversion_target", "cv")
-      .filter(s"conversion_target_old in ('api', 'sdk_app_install', 'sdk_site_wz', 'site_form', 'js_active_copywx', 'js_active_js_form', 'sdk_banner_wz', 'sdk_popupwindow_wz')")
-      .withColumn("conversion_target", udfDetermineConversionTarget()(col("conversion_target_old")))
 
-    baseData
+    baseDataRaw
         .repartition(10)
         .write.mode("overwrite").saveAsTable("test.check_ocpc_conversion_data20190911")
 
