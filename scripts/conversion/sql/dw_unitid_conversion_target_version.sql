@@ -12,7 +12,7 @@ create table if not exists test.dw_unitid_conversion_target_version
     ideaids             array<int>,
     conversion_target   array<string>
 )
-partitioned by (`date` string, version string)
+partitioned by (day string, version string)
 stored as parquet;
 
 

@@ -320,8 +320,8 @@ object UnitDemensionCvrTargetV2 {
     println(sqlRequest1)
     val rawResult = spark.sql(sqlRequest1).cache()
 
-//    rawResult
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190628")
+    rawResult
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190911")
 
     val sqlRequest2 =
       s"""
@@ -365,8 +365,8 @@ object UnitDemensionCvrTargetV2 {
           "day"
         )
         .withColumn("version", lit("v1"))
-//        .repartition(10).write.mode("overwrite").insertInto(tableName)
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190910")
+        .repartition(10).write.mode("overwrite").insertInto(tableName)
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190910")
 
     println("-- write dw_unitid_conversion_target_version into hdfs successfully --")
 
