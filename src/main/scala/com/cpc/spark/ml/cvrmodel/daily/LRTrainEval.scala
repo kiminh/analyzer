@@ -204,7 +204,7 @@ object LRTrainEval {
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    day = "$date" and hour >= "20"
+         |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
          |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
@@ -314,6 +314,7 @@ object LRTrainEval {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 17, 0, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 

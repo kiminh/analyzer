@@ -300,6 +300,7 @@ object LRTrainPredictToHive {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, 17, 0, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
