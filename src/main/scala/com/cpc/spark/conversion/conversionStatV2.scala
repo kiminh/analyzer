@@ -14,7 +14,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   * @desc
   */
 
-object conversionStat {
+object conversionStatV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("[ocpc-monitor] extract log data")
@@ -39,14 +39,15 @@ object conversionStat {
 
     ideaidBase
       .withColumn("date", lit(date))
-      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily")
-//      .write.mode("overwrite").insertInto("test.idea_conversion_target_daily")
+      //      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("test.idea_conversion_target_daily_version")
 
 
     unitBase
       .withColumn("date", lit(date))
-      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily")
-//      .write.mode("overwrite").insertInto("test.unit_conversion_target_daily")
+      //      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("test.unit_conversion_target_daily_version")
+
 
   }
 
@@ -103,7 +104,7 @@ object conversionStat {
          |  userid,
          |  unitid,
          |  ideaid,
-         |  a as conversion_target
+         |  a as conversion_target_old
          |FROM
          |  dl_cpc.cpc_conversion
          |lateral view explode(conversion_target) b as a
@@ -120,7 +121,12 @@ object conversionStat {
         countDistinct(col("searchid")).alias("cv")
       )
       .select("userid", "unitid", "ideaid", "conversion_target", "cv")
-      .filter(s"conversion_target in ('api', 'sdk_app_install', 'sdk_site_wz', 'site_form')")
+      .filter(s"conversion_target_old in ('api', 'sdk_app_install', 'sdk_site_wz', 'site_form', 'js_active_copywx', 'js_active_js_form', 'sdk_banner_wz', 'sdk_popupwindow_wz')")
+      .withColumn("conversion_target", udfDetermineConversionTarget()(col("conversion_target_old")))
+
+    baseData
+        .repartition(10)
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_conversion_data20190911")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
@@ -143,6 +149,17 @@ object conversionStat {
     data
 
   }
+
+  def udfDetermineConversionTarget() = udf((conversionTarget: String) => {
+    val result = conversionTarget match {
+      case "js_active_copywx" => "sdk_site_wz"
+      case "js_active_js_form" => "site_form"
+      case "sdk_banner_wz" => "sdk_site_wz"
+      case "sdk_popupwindow_wz" => "sdk_site_wz"
+      case x => x
+    }
+    result
+  })
 
   def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
