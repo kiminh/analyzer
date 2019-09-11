@@ -139,7 +139,7 @@ object OcpcBsData {
          |  conversion_goal,
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
-         |  sum(isclick) * 1.0 / sum(isshow) as ctr
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr,
          |  sum(case when isclick=1 then bscvr else 0 end) * 1.0 / sum(isclick) as bscvr
          |
          |FROM
