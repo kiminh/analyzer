@@ -150,7 +150,12 @@ class LRIRModel {
   }
 
   def predict(sample: RDD[(LabeledPoint,String,Int,Int)]): RDD[(String,Int,Int,Double)] = {
-    val predictDF=sample.map{case (LabeledPoint(label, features),searchid,ideaid,bsrawctr) => (searchid,ideaid,bsrawctr,lrmodel.predict(features))}
+    if (lrmodel == null) {
+      throw new Exception("must train lr first")
+    }
+    val lr = lrmodel
+    lr.clearThreshold()
+    val predictDF=sample.map{case (LabeledPoint(label, features),searchid,ideaid,bsrawctr) => (searchid,ideaid,bsrawctr,lr.predict(features))}
     predictDF
   }
 
