@@ -1,5 +1,8 @@
 package com.cpc.spark.report
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object Antispam_TKID {
@@ -16,6 +19,10 @@ object Antispam_TKID {
       .enableHiveSupport()
       .getOrCreate()
 
+    val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
+
     val sql1 =
 		s"""
            |select tkid
@@ -25,13 +32,13 @@ object Antispam_TKID {
            |    ,sum(case when isshow=1 then 1 else 0 end) as show_cnt
            |    ,sum(case when isshow=0 then 1 else 0 end) as noshow_cnt
            |  from dl_cpc.cpc_basedata_union_events
-           |  where day='${date_before3hours}' and hour='${hour_before3hours}' and media_appsid in (80000001,80000002)
+           |  where day='$date_before3hours' and hour='$hour_before3hours' and media_appsid in (80000001,80000002)
            |  group by tkid having sum(case when adslot_type=3 then 0.2 else 1 end)>10
            |) a
            |left join (
            |  SELECT tk
            |  from bdm.qukan_log_cmd_p_byhour
-           |  where day='${date_before3hours}' and hour<='${hour_before3hours}'
+           |  where day='$date_before3hours' and hour<='$hour_before3hours'
            |  group by tk having count(1)>=3
            |) b on b.tk=a.tkid
            |where show_cnt=0 and b.tk is null
@@ -44,34 +51,48 @@ object Antispam_TKID {
          |     select tkid
          |           ,count(1) as cnt
          |     from dl_cpc.cpc_basedata_union_events
-         |     where day = "${date_before5hours}" and hour="${hour_before5hours}"
+         |     where day = "$date_before5hours" and hour="$hour_before5hours"
          |     group by tkid having count(1)>=400
          |     )a
          |inner join (
          |          select tkid
          |                ,count(1) as cnt
          |          from dl_cpc.cpc_basedata_union_events
-         |          where day = "${date_before4hours}" and hour="${hour_before4hours}"
+         |          where day = "$date_before4hours" and hour="$hour_before4hours"
          |          group by tkid having count(1)>=400
          |          )b on b.tkid=a.tkid
          |inner join (
          |          select tkid
          |                ,count(1) as cnt
          |          from dl_cpc.cpc_basedata_union_events
-         |          where day = "${date_before3hours}" and hour="${hour_before3hours}"
+         |          where day = "$date_before3hours" and hour="$hour_before3hours"
          |          group by tkid having count(1)>=400
          |          )c on c.tkid=a.tkid
        """.stripMargin
 
-    println("sql1: "+sql1)
-    println("sql2: "+sql2)
+    val sql3 =
+		s"""
+		   |select
+           |  tk as tkid, sum(1) as cnt
+           |from
+           |  dl_cpc.antispam_strategy_v2
+           |where
+           |  thedate = '$yesterday'
+           |  and cid = '47514950895225'
+           |group by tk
+		 """.stripMargin
 
-    val res1=spark.sql(sql1)
-    val res2=spark.sql(sql2)
+    println("sql1: " + sql1)
+    println("sql2: " + sql2)
+    println("sql3: " + sql3)
+
+    val res1 = spark.sql(sql1)
+    val res2 = spark.sql(sql2)
+    val res3 = spark.sql(sql3)
 
     import spark.implicits._
 
-    val tkidDF = res1.union(res2)
+    val tkidDF = res1.union(res2).union(res3)
         .distinct()
         .select("tkid")
         .map(x => x.getAs[String]("tkid"))
