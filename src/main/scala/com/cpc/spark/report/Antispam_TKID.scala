@@ -1,5 +1,8 @@
 package com.cpc.spark.report
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object Antispam_TKID {
@@ -15,6 +18,10 @@ object Antispam_TKID {
       .appName("antispam tkid")
       .enableHiveSupport()
       .getOrCreate()
+
+    val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
 
     val sql1 =
 		s"""
@@ -70,7 +77,7 @@ object Antispam_TKID {
            |from
            |  dl_cpc.antispam_strategy_v2
            |where
-           |  thedate = '$date_before3hours'
+           |  thedate = '$yesterday'
            |  and cid = '47514950895225'
            |group by tk
 		 """.stripMargin
