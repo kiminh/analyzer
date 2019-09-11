@@ -8,4 +8,4 @@ partitioned by (`date` string, `hour` string, exp_tag string, version string)
 stored as parquet;
 
 
-alter table test.ocpc_bs_params_pb_hourly add columns (cvr_factor double)
+alter table dl_cpc.ocpc_bs_params_pb_hourly add columns (cvr_factor double)
