@@ -13,6 +13,8 @@ jars=(
 
 
 
+hadoop fs -get hdfs://emr-cluster/warehouse/azkaban/lib/cvr_model_monitor.jar test.jar
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 20g \
@@ -21,9 +23,12 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.conversionMonitor.cvrWarning.cvrModelMonitor \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
+    test.jar $1 $2 $3
 
 
 #val date = args(0).toString
 #val modelName = args(2).toString
 #val cvr_diff = args(3).toDouble
+
+
+rm test.jar

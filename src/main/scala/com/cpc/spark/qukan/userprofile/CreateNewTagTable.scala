@@ -18,7 +18,7 @@ import scala.collection.mutable
 object CreateNewTagTable {
 
   def main(args: Array[String]): Unit = {
-    
+
     val dateValue = args(0)
     val dateRange = args(1).toInt
 
@@ -82,7 +82,11 @@ object CreateNewTagTable {
       val tableName = "dl_cpc.cpc_uid_memberid_tag_daily"
 
       println("begin to insert")
-      mainJoinUnionTable.write.mode("overwrite").insertInto(tableName)
+      println(mainJoinUnionTable.count())
+      mainJoinUnionTable
+        .write
+        .mode("overwrite")
+        .insertInto(tableName)
 
       println(dateValue,i,"done")
 
