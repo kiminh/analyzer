@@ -41,12 +41,21 @@ object conversionStat {
       .withColumn("date", lit(date))
 //      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily")
       .write.mode("overwrite").insertInto("test.idea_conversion_target_daily")
+    ideaidBase
+      .withColumn("date", lit(date))
+      //      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("test.idea_conversion_target_daily_version")
+
 
 
     unitBase
       .withColumn("date", lit(date))
 //      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily")
       .write.mode("overwrite").insertInto("test.unit_conversion_target_daily")
+    unitBase
+      .withColumn("date", lit(date))
+      //      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("test.unit_conversion_target_daily_version")
 
 
   }
