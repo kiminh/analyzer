@@ -154,7 +154,7 @@ object LRTrainPredictToHive {
          |    , doc_id
          |    , doc_cat
          |    , is_new_ad
-         |    , bsrawctr
+         |    , bsrawcvr
          |    , uid,case when cv_types = null then 0
          |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
          |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
@@ -200,7 +200,7 @@ object LRTrainPredictToHive {
          |    , uid
          |    , conversion_goal
          |    , is_api_callback
-         |    , bsrawctr
+         |    , bsrawcvr
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
@@ -397,7 +397,7 @@ object LRTrainPredictToHive {
     val tomorrowTest = formatSample(spark, parser, testDF)
     val predictDF=model.predict(tomorrowTest)
     import spark.implicits._
-    val df=predictDF.toDF("searchid", "ideaid", "bsrawctr", "predict").repartition(1000).cache()
+    val df=predictDF.toDF("searchid", "ideaid", "bsrawcvr", "predict").repartition(1000).cache()
     df.createOrReplaceTempView("tmp_table")
     val insertSql=s"""
                      |insert overwrite table dl_cpc.bs_lr_predict_eval partition (`dt`='$date')
@@ -431,7 +431,7 @@ object LRTrainPredictToHive {
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
               }
-              (LabeledPoint(u.getAs[Int]("label").toDouble, vec),u.getAs[String]("searchid"),u.getAs[Int]("ideaid"),u.getAs[Long]("bsrawctr"))
+              (LabeledPoint(u.getAs[Int]("label").toDouble, vec),u.getAs[String]("searchid"),u.getAs[Int]("ideaid"),u.getAs[Long]("bsrawcvr"))
           }
       }
   }
