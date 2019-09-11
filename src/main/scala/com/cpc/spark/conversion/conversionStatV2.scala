@@ -40,15 +40,15 @@ object conversionStatV2 {
     ideaidBase
       .withColumn("date", lit(date))
       .withColumn("version", lit("v1"))
-      //      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily_version")
-      .write.mode("overwrite").insertInto("test.idea_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("dl_cpc.idea_conversion_target_daily_version")
+//      .write.mode("overwrite").insertInto("test.idea_conversion_target_daily_version")
 
 
     unitBase
       .withColumn("date", lit(date))
       .withColumn("version", lit("v1"))
-      //      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily_version")
-      .write.mode("overwrite").insertInto("test.unit_conversion_target_daily_version")
+      .write.mode("overwrite").insertInto("dl_cpc.unit_conversion_target_daily_version")
+//      .write.mode("overwrite").insertInto("test.unit_conversion_target_daily_version")
 
 
   }

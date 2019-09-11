@@ -332,6 +332,8 @@ object UnitDemensionCvrTargetV2 {
          |  dl_cpc.unit_conversion_target_daily_version
          |WHERE
          |  `date` = '$date'
+         |AND
+         |  version = 'v1'
        """.stripMargin
     println(sqlRequest2)
     val unitConversion = spark.sql(sqlRequest2)
@@ -362,10 +364,11 @@ object UnitDemensionCvrTargetV2 {
           "conversion_target",
           "day"
         )
+        .withColumn("version", lit("v1"))
 //        .repartition(10).write.mode("overwrite").insertInto(tableName)
         .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190910")
 
-    println("-- write dw_unitid_detail into hdfs successfully --")
+    println("-- write dw_unitid_conversion_target_version into hdfs successfully --")
 
     union.unpersist()
     spark.close()
