@@ -73,7 +73,7 @@ object Antispam_TKID {
     val sql3 =
 		s"""
 		   |select
-           |  tk as tkid, sum(1) as cnt
+           |  tk as tkid
            |from
            |  dl_cpc.antispam_strategy_v2
            |where
