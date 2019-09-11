@@ -30,6 +30,9 @@ object OcpcBsData {
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
+    baseData
+      .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190911b")
 
     // 计算结果
     val data = calculateData(baseData, expTag, spark)
