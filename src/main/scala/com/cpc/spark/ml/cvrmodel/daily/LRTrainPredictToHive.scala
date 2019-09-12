@@ -71,7 +71,7 @@ object LRTrainPredictToHive {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val days = args(0).toInt
-    val date = args(1)
+    var date = args(1)
     val parser = args(2)
 
     var cvrPathSep = getPathSeq(date,days)
@@ -118,6 +118,7 @@ object LRTrainPredictToHive {
     println("name = " + name + " , destfile = " + destfile)
 
     println("========= test ===========")
+    date=DateUtils.getPrevDate(date, -1)
     //test
     val tomorrow=DateUtils.getPrevDate(date, -1)
 
