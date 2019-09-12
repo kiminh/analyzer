@@ -50,6 +50,13 @@ object OcpcGetPb_realtimev3 {
     jfbData
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
 
+    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val smoothData = smoothDataRaw
+      .withColumn("post_cvr", col("cvr"))
+      .select("identifier", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
+      .cache()
+    smoothData.show(10)
+
     val dataRawRealtime = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt3, spark).cache()
     dataRawRealtime
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912e")
@@ -71,7 +78,7 @@ object OcpcGetPb_realtimev3 {
     bidFactorData
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912h")
 
-    val data = assemblyData(jfbData, pcocData, bidFactorData, spark).cache()
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
     data.show(10)
 
     dataRaw.unpersist()
@@ -91,23 +98,24 @@ object OcpcGetPb_realtimev3 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp_alltype")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp_alltype")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp_alltype")
 
 
   }
 
 
-  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
+  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = pcocData
       .filter(s"cvr_factor is not null")
       .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
+      .join(smoothData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .join(bidFactorData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
-      .withColumn("post_cvr", lit(0.0))
       .withColumn("smooth_factor", lit(0.0))
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
 
     data
   }

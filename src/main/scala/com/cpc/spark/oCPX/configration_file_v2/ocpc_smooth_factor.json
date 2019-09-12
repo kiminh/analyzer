@@ -26,3 +26,7 @@
 {"exp_tag": "delayNoSmoothHT66", "conversion_goal": 2, "min_cv": 0, "smooth_factor": 0}
 {"exp_tag": "delayNoSmoothHT66", "conversion_goal": 3, "min_cv": 0, "smooth_factor": 0}
 {"exp_tag": "delayNoSmoothHT66", "conversion_goal": 4, "min_cv": 0, "smooth_factor": 0}
+{"exp_tag": "realtimev3Qtt", "conversion_goal": 1, "min_cv": 40, "smooth_factor": 0}
+{"exp_tag": "realtimev3Qtt", "conversion_goal": 2, "min_cv": 40, "smooth_factor": 0}
+{"exp_tag": "realtimev3Qtt", "conversion_goal": 3, "min_cv": 40, "smooth_factor": 0}
+{"exp_tag": "realtimev3Qtt", "conversion_goal": 4, "min_cv": 40, "smooth_factor": 0}
