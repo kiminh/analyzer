@@ -150,7 +150,16 @@ object OcpcGetPb_realtimev3 {
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "exp_cvr", "date", "hour")
 
     // 计算结果
-    val result = calculateParameter(baseData, spark)
+    val result = baseData
+      .filter(s"isclick=1")
+      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        sum(col("exp_cvr")).alias("total_pre_cvr")
+      )
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_pre_cvr", "date", "hour")
+
 
     val resultDF = result
       .select("identifier", "conversion_goal", "media", "click", "cv", "total_pre_cvr", "date", "hour")
@@ -158,6 +167,21 @@ object OcpcGetPb_realtimev3 {
 
     resultDF
   }
+
+//  def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
+//    val data  =rawData
+//      .filter(s"isclick=1")
+//      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
+//      .agg(
+//        sum(col("isclick")).alias("click"),
+//        sum(col("iscvr")).alias("cv"),
+//        sum(col("exp_cvr")).alias("total_pre_cvr")
+//      )
+//      .select("identifier", "conversion_goal", "media", "click", "cv", "total_pre_cvr", "date", "hour")
+//
+//    data
+//  }
+
 
 
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
