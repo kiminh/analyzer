@@ -137,28 +137,29 @@ object TestUserProfileSamples {
     sample_new.show(10,false)
 
     val df = original_sample.join(sample_new, Seq("uidhash"), "inner")
-    println("join result")
+    println("joriginal_sample count:",original_sample.count())
+    println("join result count:",df.count())
     df.show(10,false)
 
-    val resultDF = df.rdd.map{
-      r =>
-        val sample_idx = r.getAs[Long]("sample_idx")
-        val label = r.getAs[Seq[Long]]("label")
-        val idx0 = r.getAs[Seq[Long]]("idx0")
-        val idx1 = r.getAs[Seq[Long]]("idx1")
-        val idx2 = r.getAs[Seq[Long]]("idx2")
-        val id_arr = r.getAs[Seq[Long]]("id_arr")
-        val dense = r.getAs[Seq[Long]]("dense")
-        val idx0_new = r.getAs[Seq[Long]]("idx0_new")
-        val idx1_new = r.getAs[Seq[Long]]("idx1_new")
-        val idx2_new = r.getAs[Seq[Long]]("idx2_new")
-        val id_arr_new = r.getAs[Seq[Long]]("id_arr_new")
-        (sample_idx, label, dense, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
-    }
-    println("merge result")
-    resultDF.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr").show(10,false)
-    val result = resultDF.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-    result
+//    val resultDF = df.rdd.map{
+//      r =>
+//        val sample_idx = r.getAs[Long]("sample_idx")
+//        val label = r.getAs[Seq[Long]]("label")
+//        val idx0 = r.getAs[Seq[Long]]("idx0")
+//        val idx1 = r.getAs[Seq[Long]]("idx1")
+//        val idx2 = r.getAs[Seq[Long]]("idx2")
+//        val id_arr = r.getAs[Seq[Long]]("id_arr")
+//        val dense = r.getAs[Seq[Long]]("dense")
+//        val idx0_new = r.getAs[Seq[Long]]("idx0_new")
+//        val idx1_new = r.getAs[Seq[Long]]("idx1_new")
+//        val idx2_new = r.getAs[Seq[Long]]("idx2_new")
+//        val id_arr_new = r.getAs[Seq[Long]]("id_arr_new")
+//        (sample_idx, label, dense, idx0 ++ idx0_new, idx1 ++ idx1_new, idx2 ++ idx2_new, id_arr ++ id_arr_new)
+//    }
+//    println("merge result")
+//    resultDF.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr").show(10,false)
+//    val result = resultDF.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+    null
   }
 
   private def mkSparseFeature_m(origin_num: Int) = udf {
