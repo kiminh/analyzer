@@ -12,7 +12,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 /**
   * created by xiongyao on 2019/9/4
   */
-object UserProfileSamples {
+object TestUserProfileSamples {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
