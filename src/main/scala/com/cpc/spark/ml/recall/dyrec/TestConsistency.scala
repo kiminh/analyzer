@@ -17,10 +17,13 @@ object TestConsistency {
 
     val originTfrecords = spark.read.format("tfrecords").option("recordType", "Example").load(originPath)
     val originNum = originTfrecords.count()
+    originTfrecords.select($"sample_idx", $"id_arr", $"dense").show(10,false)
+
     originTfrecords.select($"sample_idx", $"id_arr", $"dense").createOrReplaceTempView("origin_table")
 
     val newTfrecords = spark.read.format("tfrecords").option("recordType", "Example").load(newPath)
     val newNum = newTfrecords.count()
+    newTfrecords.select($"sample_idx", $"id_arr", $"dense").show(10,false)
     newTfrecords.select($"sample_idx", $"id_arr", $"dense").createOrReplaceTempView("new_table")
 
     val sql =
