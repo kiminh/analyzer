@@ -136,15 +136,15 @@ object LRTestOnline {
          |    from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    day = "2019-09-10"
-         |    and hour = '08'
+         |    day = "2019-09-12"
+         |    and hour <= '13'
+         |    and searchid in ('czrhQyX-A3ati-WQ6jJ0e4RTU7w4ydgNqzwY3S8a','quUOPHiVHRZu-H_KNmBpOYfnPBs4y0CeUEFf3qzD','YLqXmjWZ_lH02t9psLP9XpvW8jU4y0ch00J-yq74','qMFGvHCagamY4-vHup0E3J8QlAs4yVZXmGkf3aBA','7IAyYEyguLWGlgqFo2hGMxoyi8U4y2yBwrx0Gp9Z','IXAVDaNRUbU7tXWXpKTZfFVwfSU4y8L-Yx1f3aAg','9-Pkwq4lCQQDVWh2I8ur54bhjZk4y0ohow8Vy1-n','k_dl4jp_pE3re-xHwtAffiGI6kw4yd-R-AxpE8zb','LSZKhamJva42KQf3YtcPPdB41uo4ydQFbXXDs-k-','XUoktwwrAMGRX_8cOBjTj26c4r-4ysRUGyCwKKTo')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and isclick = 1
          |    and adsrc=1
          |    and charge_type = 1
          |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
-         |    limit 10
          """.stripMargin
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
