@@ -390,7 +390,7 @@ object LRTrainPredictToHive {
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-10-15-48")
 
     trainLog :+= "=========== tomorrow test ==========="
 
