@@ -54,8 +54,6 @@ object TestUserProfileSamples {
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
 
-    println("multihot_feature_number",multihot_feature_number)
-
     val sample = spark.sql(
       s"""
          select
@@ -138,27 +136,7 @@ object TestUserProfileSamples {
     println("sample_new:")
     sample_new.show(10,false)
 
-    val df = original_sample.join(sample_new, Seq("uidhash"), "left_outer").
-      select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
-        mkSparseFeature_m(multihot_feature_number)(array(
-          hashSeq("ud139", "string")($"fea1").alias("fea1"),
-          hashSeq("ud140", "string")($"fea2").alias("fea2"),
-          hashSeq("ud141", "string")($"fea3").alias("fea3"),
-          hashSeq("ud142", "string")($"fea4").alias("fea4"),
-          hashSeq("ud143", "string")($"fea5").alias("fea5"),
-          hashSeq("ud144", "string")($"fea6").alias("fea6"),
-          hashSeq("ud136", "string")($"fea7").alias("fea7"),
-          hashSeq("ud137", "string")($"fea8").alias("fea8"),
-          hashSeq("ud138", "string")($"fea9").alias("fea9"),
-          hashSeq("ud133", "string")($"fea10").alias("fea10"),
-          hashSeq("ud134", "string")($"fea11").alias("fea11"),
-          hashSeq("ud135", "string")($"fea12").alias("fea12")
-        )).alias("sparse")).select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense",
-      $"sparse".getField("_1").alias("idx0_new"),
-      $"sparse".getField("_2").alias("idx1_new"),
-      $"sparse".getField("_3").alias("idx2_new"),
-      $"sparse".getField("_4").alias("id_arr_new")
-    )
+    val df = original_sample.join(sample_new, Seq("uidhash"), "inner")
     println("join result")
     df.show(10,false)
 
