@@ -205,7 +205,7 @@ object LRTrainPredictToHive {
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    ((day = "$tomorrow" and hour <= "13"))
+         |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
          |    and array_contains(exptags, 'bslradtypecorrection')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
