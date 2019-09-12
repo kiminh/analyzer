@@ -36,6 +36,10 @@ object OcpcGetPb {
     val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
+    dataRaw
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
+
+
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
@@ -43,10 +47,13 @@ object OcpcGetPb {
       .cache()
     jfbData.show(10)
     jfbData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
 
     val dataRawOnlySmooth = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
     dataRawOnlySmooth.show(10)
+    dataRawOnlySmooth
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912c")
+
     val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRawOnlySmooth, hourInt1, hourInt2, hourInt3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
@@ -54,9 +61,12 @@ object OcpcGetPb {
       .cache()
     smoothData.show(10)
     smoothData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912d")
 
     val dataRawRealtime = OcpcCalibrationBaseRealtimeMain(date, hour, hourInt3, spark).cache()
+    dataRawRealtime
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912e")
+
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRawRealtime, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
@@ -64,7 +74,7 @@ object OcpcGetPb {
       .cache()
     pcocData.show(10)
     pcocData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912c")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912f")
 
     val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
     val bidFactorData = bidFactorDataRaw
@@ -72,7 +82,7 @@ object OcpcGetPb {
       .cache()
     bidFactorData.show(10)
     bidFactorData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912d")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912h")
 
     val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
     data.show(10)
