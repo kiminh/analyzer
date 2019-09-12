@@ -75,7 +75,7 @@ object Antispam_TKID {
 		   |select
            |  tk as tkid
            |from
-           |  dl_cpc.antispam_strategy_v2
+           |  dl_cpc.antispam_strategy
            |where
            |  thedate = '$yesterday'
            |  and cid = '47514950895225'
