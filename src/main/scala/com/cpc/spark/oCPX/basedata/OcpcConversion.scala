@@ -100,6 +100,8 @@ object OcpcConversion {
          |    `hour` = '$hour'
          |and
          |    array_contains(conversion_target, 'api')
+         |and
+         |    (adclass like '134%' or adclass like '107%')
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
