@@ -10,10 +10,12 @@ object TestConsistency {
 
     //hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-30/adlist-v4user-profile-features/2019-09-11/09/part*
     //hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-30/adlist-v4-up-show-click/2019-09-11/09/part*
-    val originPath = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-30/adlist-v4user-profile-features/2019-09-11/09/part*"
+//    val originPath = "hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime-30/adlist-v4user-profile-features/2019-09-11/09/part*"
     //hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/2019-09-11/11/1/part*
     //hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/adlist-v4-up-show-click/2019-09-11/11/1/part*
-    val newPath = "hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/2019-09-11/10/1/part*"
+    val originPath = "hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/2019-09-11/10/1/part*"
+
+    val newPath = " hdfs://emr-cluster/user/cpc/aiclk_dataflow/realtime/gpu/adlist-v4user-profile-features/2019-09-11/10/1/part*"
 
     val originTfrecords = spark.read.format("tfrecords").option("recordType", "Example").load(originPath)
     val originNum = originTfrecords.count()
