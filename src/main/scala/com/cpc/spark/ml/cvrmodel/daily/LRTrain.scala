@@ -141,6 +141,7 @@ object LRTrain {
            |    , doc_id
            |    , doc_cat
            |    , is_new_ad
+           |    , conversion_goal
            |    , uid,case when cv_types = null then 0
            |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
            |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
