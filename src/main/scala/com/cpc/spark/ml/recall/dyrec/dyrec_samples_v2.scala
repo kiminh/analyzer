@@ -12,7 +12,6 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object dyrec_samples_v2 {
   Logger.getRootLogger.setLevel(Level.WARN)
 
-  //multi hot 特征默认hash code
   private val default_hash = for (i <- 1 to 100) yield Seq((i.toLong - 1, 0.toLong, Murmur3Hash.stringHash64("m" + i, 0)))
 
   def main(args: Array[String]): Unit = {
