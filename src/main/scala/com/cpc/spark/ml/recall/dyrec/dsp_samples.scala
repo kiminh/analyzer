@@ -27,19 +27,22 @@ object dsp_samples {
     val today = args(0)
     val hour = args(1)
     val minute = args(2)
-    print(today + " " + hour + " " + minute)
     cal1.add(Calendar.DATE, -1)
-    val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    var maxday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     var Type = "2"
     if(minute == "15") {
       Type = "0"
     } else if (minute == "45") {
       Type = "1"
     }
+    if(hour.toInt < 3){
+      cal1.add(Calendar.DATE, -1)
+      maxday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
+    }
+    print(today + " " + hour + " " + minute + " " + maxday)
 
-    cal1.add(Calendar.DATE, -1)
-    val twoday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    getSample(spark, model_version, Type, today, oneday, hour).repartition(1000)
+
+    getSample(spark, model_version, Type, today, maxday, hour).repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -51,7 +54,7 @@ object dsp_samples {
     CommonUtils.writeCountToFile(spark, count, CountPathTmpName, CountPathName)
   }
 
-  def getSample(spark: SparkSession, model_version: String, Type: String, today: String, oneday: String, hour: String): DataFrame = {
+  def getSample(spark: SparkSession, model_version: String, Type: String, today: String, maxday: String, hour: String): DataFrame = {
     import spark.implicits._
     var original_sample: DataFrame = null
     original_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster2ns2/user/$model_version/$today/$hour/$Type/part*").
@@ -64,7 +67,7 @@ object dsp_samples {
          |select distinct uid,cast(click_adsrc_3 as Array<String>) click_adsrc_3,
          |cast(show_adsrc_3 as Array<String>) show_adsrc_3,
          |cast(adsrc_high_freq as Array<String>) adsrc_high_freq
-         |from dl_cpc.dsp_adsrc_feature2 where dt='$oneday'
+         |from dl_cpc.dsp_adsrc_feature2 where dt='$maxday'
        """.stripMargin)
 
     sample.createOrReplaceTempView("sample_new")

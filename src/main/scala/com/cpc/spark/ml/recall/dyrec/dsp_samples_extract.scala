@@ -30,7 +30,7 @@ object dsp_samples_extract {
     val today = "2019-09-12"
     val hour = "12"
     val minute = "15"
-    print(today + " " + hour + " " + minute)
+    println(today + " " + hour + " " + minute)
     cal1.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     var Type = "2"
