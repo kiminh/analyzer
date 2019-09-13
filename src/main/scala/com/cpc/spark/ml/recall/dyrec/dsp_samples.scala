@@ -62,13 +62,14 @@ object dsp_samples {
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     println(multihot_feature.mkString("&&&"))
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
-    val sample = spark.sql(
-      s"""
-         |select distinct uid,cast(click_adsrc_3 as Array<String>) click_adsrc_3,
-         |cast(show_adsrc_3 as Array<String>) show_adsrc_3,
-         |cast(adsrc_high_freq as Array<String>) adsrc_high_freq
-         |from dl_cpc.dsp_adsrc_feature2 where dt='$maxday'
-       """.stripMargin)
+    val sql=s"""
+               |select distinct uid,cast(click_adsrc_3 as Array<String>) click_adsrc_3,
+               |cast(show_adsrc_3 as Array<String>) show_adsrc_3,
+               |cast(adsrc_high_freq as Array<String>) adsrc_high_freq
+               |from dl_cpc.dsp_adsrc_feature2 where dt='$maxday'
+       """.stripMargin
+    println(sql)
+    val sample = spark.sql(sql)
 
     sample.createOrReplaceTempView("sample_new")
     val sample_new = spark.sql(
