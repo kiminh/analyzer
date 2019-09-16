@@ -30,9 +30,9 @@ object OcpcBsData {
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
-//    baseData
-//      .repartition(100)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190911b")
+    baseData
+      .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190916b")
 
     // 计算结果
     val data = calculateData(baseData, expTag, spark)
@@ -44,8 +44,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -76,16 +76,17 @@ object OcpcBsData {
       val postcvr = record.getAs[Double]("cvr")
       val postctr = record.getAs[Double]("ctr")
       val cvrFactor = record.getAs[Double]("cvr_factor")
+      val jfbFactor = record.getAs[Double]("jfb_factor")
 
       if (cnt % 100 == 0) {
-        println(s"key:$key, postcvr:$postcvr, postctr:$postctr, cvrFactor:$cvrFactor")
+        println(s"key:$key, postcvr:$postcvr, postctr:$postctr, cvrFactor:$cvrFactor, jfbFactor:$jfbFactor")
       }
       cnt += 1
 
       val currentItem = SingleItem(
         key = key,
         cvrCalFactor = cvrFactor,
-        jfbFactor = 1.0,
+        jfbFactor = jfbFactor,
         smoothFactor = 0.0,
         postCvr = postcvr,
         postCtr = postctr
@@ -117,7 +118,9 @@ object OcpcBsData {
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
          |  sum(isclick) * 1.0 / sum(isshow) as ctr,
-         |  sum(case when isclick=1 and bscvr>0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr
+         |  sum(case when isclick=1 and bscvr>0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid
          |FROM
          |  base_data
          |GROUP BY unitid, media
@@ -130,8 +133,9 @@ object OcpcBsData {
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
       .select("key", "cv", "cvr", "ctr", "bscvr")
       .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
-      .na.fill(1.0, Seq("cvr_factor"))
-      .select("key", "cv", "cvr", "ctr", "cvr_factor")
+      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
+      .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
       .cache()
 
     val sqlRequest2 =
@@ -144,8 +148,9 @@ object OcpcBsData {
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
          |  sum(isclick) * 1.0 / sum(isshow) as ctr,
-         |  sum(case when isclick=1 and bscvr > 0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr
-         |
+         |  sum(case when isclick=1 and bscvr > 0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid
          |FROM
          |  base_data
          |GROUP BY media, adslot_type, adtype, conversion_goal
@@ -158,8 +163,9 @@ object OcpcBsData {
       .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
       .select("key", "cv", "cvr", "ctr", "bscvr")
       .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
-      .na.fill(1.0, Seq("cvr_factor"))
-      .select("key", "cv", "cvr", "ctr", "cvr_factor")
+      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
+      .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
       .cache()
 
     data1.show(10)
@@ -167,7 +173,7 @@ object OcpcBsData {
 
     val data = data1
       .union(data2)
-      .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor")
+      .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
 
 
     data
@@ -196,8 +202,6 @@ object OcpcBsData {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
-    // todo:
-    // Midu的实验媒体名称应该是MiDu
     val sqlRequest =
       s"""
          |SELECT
@@ -215,7 +219,9 @@ object OcpcBsData {
          |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr,
-         |  cast(bscvr as double) * 1.0 / 1000000 as bscvr
+         |  cast(bscvr as double) * 1.0 / 1000000 as bscvr,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
