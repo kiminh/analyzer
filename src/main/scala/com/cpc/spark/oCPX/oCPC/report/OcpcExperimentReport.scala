@@ -24,6 +24,8 @@ object OcpcExperimentReport{
       .enableHiveSupport()
       .getOrCreate()
 
+    val date1 = args(0).toString
+    val date2 = args(1).toString
 
     val sqlRequest =
       s"""
@@ -73,7 +75,7 @@ object OcpcExperimentReport{
          |    if(charge_type=2,isshow*price/1000,isclick*price) as chg,
          |    if(charge_type=2,isshow*bid/1000,if(ocpc_log like '%IsHiddenOcpc:0%', isclick*bid_discounted_by_ad_slot,isclick*bid)) as cbid
          | from dl_cpc.cpc_basedata_union_events
-         | where day between '2019-09-09' and '2019-09-15'
+         | where day between '$date1' and '$date2'
          | and adsrc>0
          | and media_appsid in ('80000001', '80000002')
          |) a where expid in ('sy', 'dz')
