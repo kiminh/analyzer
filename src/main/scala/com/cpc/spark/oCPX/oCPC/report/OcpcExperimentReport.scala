@@ -20,7 +20,7 @@ object OcpcExperimentReport{
      */
     val spark = SparkSession
       .builder()
-      .appName("OcpcHourlyReport")
+      .appName("OcpcExperimentReport")
       .enableHiveSupport()
       .getOrCreate()
 
