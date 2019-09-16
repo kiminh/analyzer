@@ -83,7 +83,8 @@ object OcpcExperimentReport{
          |) c order by expid, tag, ocpc_flag desc
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_exp20190916a")
   }
