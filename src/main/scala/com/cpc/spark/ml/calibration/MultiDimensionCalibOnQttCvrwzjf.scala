@@ -3,20 +3,20 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
 import com.cpc.spark.OcpcProtoType.model_novel_v3.OcpcSuggestCPAV3.matchcvr
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveFlatTextFileForDebug, saveProtoToLocal}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions._
-import com.cpc.spark.ml.calibration.HourlyCalibration.{saveProtoToLocal,saveFlatTextFileForDebug}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object MultiDimensionCalibOnQttCvr {
+object MultiDimensionCalibOnQttCvrwzjf {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val newDestDir = "/home/cpc/model_server/calibration/"
@@ -86,21 +86,17 @@ object MultiDimensionCalibOnQttCvr {
     val clickData = session.sql(clicksql)
     val cvrsql =s"""
                    |select distinct a.searchid,
-                   |       a.conversion_target as unit_target,
-                   |       b.conversion_target[0] as real_target
-                   |from
-                   |   (select *
-                   |    from dl_cpc.cpc_conversion
-                   |   where $selectCondition2
-                   |and size(conversion_target)>0) a
-                   |join dl_cpc.dw_unitid_conversion_target_hourly b
-                   |    on a.unitid=b.unitid
-                   |    and b.day = '$endDate' and b.hour = '$endHour'
+                   |       1 iscvr
+                   |  from dl_cpc.cpc_conversion
+                   |  where $selectCondition2
+                   |  and (array_contains(conversion_target,'sdk_site_wz')
+                   |  or array_contains(conversion_target,'sdk_banner_wz')
+                   |  or array_contains(conversion_target,'sdk_popupwindow_wz')
+                   |  or array_contains(conversion_target,'js_active_copywx')
+                   |  or array_contains(conversion_target,'js_active_js_form')
+                   |  or array_contains(conversion_target,'site_form'))
        """.stripMargin
     val cvrData = session.sql(cvrsql)
-      .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
-      .filter("iscvr = 1")
-      .select("searchid", "iscvr")
     val log = clickData.join(cvrData,Seq("searchid"),"left")
       .withColumn("isclick",col("iscvr"))
     log.show(10)
