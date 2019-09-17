@@ -76,7 +76,7 @@ object LRTrain {
     val date = args(1)
     val parser = args(2)
 
-    var cvrPathSep = getPathSeq(days)
+    var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
     val spark: SparkSession = model
@@ -309,7 +309,7 @@ object LRTrain {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(11, 13).toInt, dateStart.substring(14, 16).toInt, 0)
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 14, 15, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
