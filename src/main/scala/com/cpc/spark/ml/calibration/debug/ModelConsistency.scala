@@ -36,7 +36,7 @@ object ModelConsistency{
                  |from dl_cpc.cpc_basedata_union_events a
                  |join dl_cpc.cpc_ml_nested_snapshot b
                  |  on a.searchid = b.searchid and pt='qtt'
-                 |  and b.day = '$dt' and b.hour = '19' and b.f84[0]='ad03717cceb1a53dd917b89ba2fe48e0'
+                 |  and b.day = '$dt' and b.hour = '19' and b.f84[0]='d635b3ff4b666563f3cfd9041db0a8a3'
                  |  where a.day = '$dt' and a.hour = '19'
                  |  and a.media_appsid in ('80000001','80000002') and a.isshow = 1
                  |  and a.adsrc = 1 and a.ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
