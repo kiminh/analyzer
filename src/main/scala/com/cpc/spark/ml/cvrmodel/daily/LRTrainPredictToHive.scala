@@ -122,7 +122,6 @@ object LRTrainPredictToHive {
     println("name = " + name + " , destfile = " + destfile)
 
     println("========= test ===========")
-    date=DateUtils.getPrevDate(date, -1)
     //test
     val tomorrow=DateUtils.getPrevDate(date, -1)
 
