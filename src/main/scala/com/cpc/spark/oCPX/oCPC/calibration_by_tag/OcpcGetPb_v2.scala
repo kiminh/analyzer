@@ -154,7 +154,7 @@ object OcpcGetPb_v2 {
           col("post_cvr").alias("post_cvr2"),
           col("cvr_factor").alias("cvr_factor2")
         )
-        .selectExpr("cast(identifier as int) conversion_goal", "cast(exp_tag as string) exp_tag", "jfb_factor2", "cvr_factor2", "post_cvr2")
+        .selectExpr("cast(conversion_goal as int) conversion_goal", "cast(exp_tag as string) exp_tag", "jfb_factor2", "cvr_factor2", "post_cvr2")
 
     // 兜底校准系数
     val bottomData = baseData
