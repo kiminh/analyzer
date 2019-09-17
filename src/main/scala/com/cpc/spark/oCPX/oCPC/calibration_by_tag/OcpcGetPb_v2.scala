@@ -97,8 +97,8 @@ object OcpcGetPb_v2 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -124,9 +124,6 @@ object OcpcGetPb_v2 {
         col("high_bid_factor"),
         col("low_bid_factor")
       )
-
-    caliData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_calidata20190917a")
 
     // 主要数据：最近84小时有记录
     val baseData = baseDataRaw
@@ -177,10 +174,6 @@ object OcpcGetPb_v2 {
         .withColumn("jfb_factor", udfBottomValue()(col("jfb_factor_cali"), col("jfb_factor_base")))
         .withColumn("cvr_factor", udfBottomValue()(col("cvr_factor_cali"), col("cvr_factor_base")))
         .withColumn("post_cvr", udfBottomValue()(col("post_cvr_cali"), col("post_cvr_base")))
-
-
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_calidata20190917b")
 
 
     data
