@@ -114,6 +114,9 @@ object LRTrainPredictToHive {
     }else if("cvrparser5".equals(parser)){
       name="qtt-bs-cvrparser5-daily"
       destfile="qtt-bs-cvrparser5-daily.lrm"
+    }else if("cvrparser8".equals(parser)){
+      name="qtt-bs-cvrparser8-daily"
+      destfile="qtt-bs-cvrparser8-daily.lrm"
     }
 
     println("name = " + name + " , destfile = " + destfile)
@@ -157,6 +160,7 @@ object LRTrainPredictToHive {
          |    , doc_cat
          |    , is_new_ad
          |    , bsrawcvr
+         |    , conversion_goal
          |    , uid,case when cv_types = null then 0
          |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
          |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
@@ -202,6 +206,7 @@ object LRTrainPredictToHive {
          |    , uid
          |    , conversion_goal
          |    , is_api_callback
+         |    , conversion_goal
          |    , bsrawcvr
          |  from
          |    dl_cpc.cpc_basedata_union_events
