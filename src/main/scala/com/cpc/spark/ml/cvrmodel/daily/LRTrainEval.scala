@@ -404,7 +404,7 @@ object LRTrainEval {
     trainLog :+= "destfile = %s".format(destfile)
 
 
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser5-daily_2019-09-15-15-22")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser8-daily_2019-09-17-13-07")
 
     println("=========== tomorrow test ===========")
 
