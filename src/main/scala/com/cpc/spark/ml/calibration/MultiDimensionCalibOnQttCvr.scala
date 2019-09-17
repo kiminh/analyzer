@@ -186,7 +186,7 @@ object MultiDimensionCalibOnQttCvr {
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (bins._1.size < minBinCount) {
+          if (positiveSize < 5) {
             println("bin size too small, don't output the calibration")
             CalibrationConfig()
           } else {
