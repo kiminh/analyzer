@@ -35,6 +35,12 @@ object OcpcGetPb_v2 {
     val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
+    // 计算兜底校准系数:jfb_factor, post_cvr, cvr_factor
+    val dataRaw1 = dataRaw
+        .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
+      .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+    val useridResult = calculateCalibrationValueData(dataRaw1, 40, spark)
+
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
@@ -119,14 +125,11 @@ object OcpcGetPb_v2 {
          |FROM
          |  base_data_raw
          |WHERE
-         |  (media = 'hottopic' and (exptags like '%ocpcMedia:delayNewHT66,HT66%') or (exptags like '%ocpcMedia:delayExpHT66,HT66%'))
-         |OR
-         |  media in ('qtt', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+      .selectExpr("cast(unitid as string) identifier", "userid", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 
 
@@ -134,7 +137,7 @@ object OcpcGetPb_v2 {
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+      .select("identifier", "userid", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
 
     resultDF
@@ -144,7 +147,7 @@ object OcpcGetPb_v2 {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
+      .groupBy("identifier", "userid", "conversion_goal", "media", "date", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -152,7 +155,7 @@ object OcpcGetPb_v2 {
         sum(col("price")).alias("total_price"),
         sum(col("exp_cvr")).alias("total_pre_cvr")
       )
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+      .select("identifier", "userid", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
     data
   }
