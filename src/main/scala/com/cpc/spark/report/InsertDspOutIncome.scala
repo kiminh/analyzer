@@ -31,16 +31,15 @@ object InsertDspOutIncome {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
-    mariadbUrl = conf.getString("mariadb.union_write.url")
-    mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
-    mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
+    mariadbUrl = conf.getString("mariadb.union_arch_infra_write.url")
+    mariadbProp.put("user", conf.getString("mariadb.union_arch_infra_write.user"))
+    mariadbProp.put("password", conf.getString("mariadb.union_arch_infra_write.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.union_arch_infra_write.driver"))
 
     val spark = SparkSession.builder()
       .appName("insert dsp_out_income date " + day)
       .enableHiveSupport()
       .getOrCreate()
-
 
     /* 1.外媒dsp结算信息自动化 */
     /*val sql2 =
