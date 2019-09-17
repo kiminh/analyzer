@@ -21,15 +21,20 @@ object OcpcCalculateCalibrationValue {
     val hour = args(1).toString
     // 兜底校准时长
     val hourInt = args(2).toInt
+    val expTag = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, expTag=$expTag")
 
     val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt, spark).cache()
     val dataRaw1 = dataRaw
-      .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal"), col("media")))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal"), col("exp_tag")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
     val dataRaw2 = dataRaw
-      .withColumn("identifier", concat_ws("-", col("conversion_goal"), col("media")))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("identifier", concat_ws("-", col("conversion_goal"), col("exp_tag")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
     val result = OcpcCalculateCalibrationValueMain(dataRaw1, 40, spark)
