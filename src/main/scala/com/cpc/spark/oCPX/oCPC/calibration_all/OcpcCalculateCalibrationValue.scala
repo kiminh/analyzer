@@ -177,7 +177,6 @@ object OcpcCalculateCalibrationValue {
          |  *
          |FROM
          |  base_data_raw
-         |WHERE
        """.stripMargin
     println(sqlRequest)
     val baseData = spark

@@ -5,6 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -39,7 +40,9 @@ object OcpcGetPb_v2 {
     val dataRaw1 = dataRaw
         .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
-    val useridResult = calculateCalibrationValueData(dataRaw1, 40, spark)
+    val useridResult = OcpcCalculateCalibrationValueMain(dataRaw1, 40, spark)
+    val dataRaw2 = dataRaw
+      .selectExpr("cast(conversion_goal as string) identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
@@ -124,7 +127,6 @@ object OcpcGetPb_v2 {
          |  *
          |FROM
          |  base_data_raw
-         |WHERE
        """.stripMargin
     println(sqlRequest)
     val baseData = spark
@@ -178,10 +180,6 @@ object OcpcGetPb_v2 {
          |  *
          |FROM
          |  base_data_raw
-         |WHERE
-         |  (media = 'hottopic' and (exptags like '%ocpcMedia:delayNewHT66,HT66%') or (exptags like '%ocpcMedia:delayExpHT66,HT66%'))
-         |OR
-         |  media in ('qtt', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark
