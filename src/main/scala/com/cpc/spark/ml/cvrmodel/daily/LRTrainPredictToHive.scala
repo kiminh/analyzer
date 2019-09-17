@@ -74,7 +74,7 @@ object LRTrainPredictToHive {
     var date = args(1)
     val parser = args(2)
 
-    var cvrPathSep = getPathSeq(date,days)
+    var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
     val spark: SparkSession = model
@@ -205,7 +205,7 @@ object LRTrainPredictToHive {
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
+         |    day = "$tomorrow"
          |    and array_contains(exptags, 'bslradtypecorrection')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
@@ -219,12 +219,11 @@ object LRTrainPredictToHive {
          |      from
          |         dl_cpc.ocpc_label_cvr_hourly
          |      where
-         |         `date`>="$date" and `date`<="$tomorrow"
+         |         `date`="$tomorrow"
          |      and label=1
          |      group by searchid
          |   ) B
          |   on A.searchid=B.searchid
-         |
          """.stripMargin
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
@@ -391,7 +390,7 @@ object LRTrainPredictToHive {
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-10-15-48")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser8-daily_2019-09-17-13-07")
 
     trainLog :+= "=========== tomorrow test ==========="
 
