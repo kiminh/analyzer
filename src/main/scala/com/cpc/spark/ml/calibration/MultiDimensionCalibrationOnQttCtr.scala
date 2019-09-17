@@ -74,10 +74,9 @@ object MultiDimensionCalibrationOnQttCtr {
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql).cache()
+    val log = session.sql(sql)
     log.show(10)
     LogToPb(log, session, calimodel)
-    log.unpersist()
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
