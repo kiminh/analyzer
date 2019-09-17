@@ -37,7 +37,7 @@ object OcpcCalculateCalibrationValue {
       .withColumn("identifier", concat_ws("-", col("conversion_goal"), col("exp_tag")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
-    val result = OcpcCalculateCalibrationValueMain(dataRaw1, 40, spark)
+    val result = OcpcCalculateCalibrationValueMain(dataRaw2, 0, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190917b")
   }
