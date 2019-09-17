@@ -70,6 +70,7 @@ object dsp_samples {
        """.stripMargin
     println(sql)
     val sample = spark.sql(sql)
+    sample.show(10)
 
     sample.createOrReplaceTempView("sample_new")
     val sample_new = spark.sql(
