@@ -61,6 +61,7 @@ object OcpcCalculateCalibrationValue {
     val resultDF = data
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
+      .filter(s"cv >= min_cv")
       .select("identifier", "jfb_factor", "cvr_factor", "post_cvr")
 
 
