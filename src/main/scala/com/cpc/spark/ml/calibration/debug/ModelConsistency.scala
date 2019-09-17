@@ -5,7 +5,8 @@ import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-//import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
+import org.tensorflow.hadoop.util.Crc32C
+
 
 /**
   * author: wangyao
@@ -42,7 +43,8 @@ object ModelConsistency{
        """.stripMargin
     println(s"sql:\n$sql")
     val basedata = spark.sql(sql)
-      .withColumn("id",hash64(0)(col("searchid")))
+//      .withColumn("id",hash64(0)(col("searchid")))
+      .withColumn("id",crc32(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
       .withColumn("ectr",col("prediction")*1e6d.toInt)
       .withColumn("bias",col("raw_ctr")/col("ectr"))
@@ -62,5 +64,12 @@ object ModelConsistency{
 
   def hash64(seed:Int)= udf {
     x:String =>  stringHash64(x,seed)}
+
+  def crc32= udf{
+    x:String =>
+      val crc32C = new Crc32C()
+      val checksum = crc32C
+      checksum.update(x.toArray[Byte],0,x.toArray[Byte].length)
+  }
 
 }
