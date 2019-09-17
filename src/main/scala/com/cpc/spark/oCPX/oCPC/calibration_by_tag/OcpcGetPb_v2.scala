@@ -38,11 +38,17 @@ object OcpcGetPb_v2 {
 
     // 计算兜底校准系数:jfb_factor, post_cvr, cvr_factor
     val dataRaw1 = dataRaw
-        .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal"), col("exp_tag")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
     val useridResult = OcpcCalculateCalibrationValueMain(dataRaw1, 40, spark)
     val dataRaw2 = dataRaw
-      .selectExpr("cast(conversion_goal as string) identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("identifier", concat_ws("-", col("conversion_goal"), col("exp_tag")))
+      .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+    val cvgoalResult = OcpcCalculateCalibrationValueMain(dataRaw2, 0, spark)
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
@@ -71,13 +77,14 @@ object OcpcGetPb_v2 {
       .cache()
     bidFactorData.show(10)
 
-    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, useridResult, cvgoalResult, dataRaw, expTag, spark).cache()
     data.show(10)
 
     dataRaw.unpersist()
 
     // 明投单元
     val result = data
+      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(0))
       .withColumn("date", lit(date))
@@ -90,27 +97,94 @@ object OcpcGetPb_v2 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
 
 
-  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
+  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, useridResultRaw: DataFrame, cvgoalResultRaw: DataFrame, baseDataRaw: DataFrame, expTag: String, spark: SparkSession) = {
     // 组装数据
-    val data = jfbData
-      .join(pcocData, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
-      .join(smoothData, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
+    val caliData = pcocData
+      .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "inner")
+      .join(smoothData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .join(bidFactorData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
+      .na.fill(1.0, Seq("jfb_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+      .select(
+        col("identifier"),
+        col("conversion_goal"),
+        col("exp_tag"),
+        col("jfb_factor").alias("jfb_factor_cali"),
+        col("post_cvr").alias("post_cvr_cali"),
+        col("smooth_factor"),
+        col("cvr_factor").alias("cvr_factor_cali"),
+        col("high_bid_factor"),
+        col("low_bid_factor")
+      )
+
+    // 主要数据：最近84小时有记录
+    val baseData = baseDataRaw
+        .select("identifier", "userid", "conversion_goal", "media")
+        .withColumn("media", udfMediaName()(col("media")))
+        .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+        .select("identifier", "userid", "conversion_goal", "exp_tag")
+        .distinct()
+
+    val useridResult = useridResultRaw
+        .withColumn("id", split(col("identifier"), "-"))
+        .select(
+          col("id").getItem(0).as("userid"),
+          col("id").getItem(1).as("conversion_goal"),
+          col("id").getItem(2).as("exp_tag"),
+          col("jfb_factor").alias("jfb_factor1"),
+          col("post_cvr").alias("post_cvr1"),
+          col("cvr_factor").alias("cvr_factor1")
+        )
+        .selectExpr("cast(userid as int) userid", "cast(conversion_goal as int) conversion_goal", "cast(exp_tag as string) exp_tag", "jfb_factor1", "cvr_factor1", "post_cvr1")
+
+    val cvgoalResult = cvgoalResultRaw
+      .withColumn("id", split(col("identifier"), "-"))
+      .select(
+          col("id").getItem(0).as("conversion_goal"),
+          col("id").getItem(1).as("exp_tag"),
+          col("jfb_factor").alias("jfb_factor2"),
+          col("post_cvr").alias("post_cvr2"),
+          col("cvr_factor").alias("cvr_factor2")
+        )
+        .selectExpr("cast(identifier as int) conversion_goal", "cast(exp_tag as string) exp_tag", "jfb_factor2", "cvr_factor2", "post_cvr2")
+
+    // 兜底校准系数
+    val bottomData = baseData
+        .join(useridResult, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(cvgoalResult, Seq("conversion_goal", "exp_tag"), "left_outer")
+        .na.fill(-1.0, Seq("jfb_factor1", "cvr_factor1", "post_cvr1", "jfb_factor2", "cvr_factor2", "post_cvr2"))
+        .withColumn("jfb_factor_base", udfBottomValue()(col("jfb_factor1"), col("jfb_factor2")))
+        .withColumn("cvr_factor_base", udfBottomValue()(col("cvr_factor1"), col("cvr_factor2")))
+        .withColumn("post_cvr_base", udfBottomValue()(col("post_cvr1"), col("post_cvr2")))
+
+    // 数据关联
+    val data = bottomData
+        .join(caliData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
+        .na.fill(-1.0, Seq("jfb_factor_cali", "cvr_factor_cali", "post_cvr_cali"))
+        .na.fill(0.0, Seq("smooth_factor", "high_bid_factor", "low_bid_factor"))
+        .withColumn("jfb_factor", udfBottomValue()(col("jfb_factor_cali"), col("jfb_factor_base")))
+        .withColumn("cvr_factor", udfBottomValue()(col("cvr_factor_cali"), col("cvr_factor_base")))
+        .withColumn("post_cvr", udfBottomValue()(col("post_cvr_cali"), col("post_cvr_base")))
 
     data
 
-
   }
+
+  def udfBottomValue() = udf((value1: Double, value2: Double) => {
+    var result = value1
+    if (value1 <= 0.0) {
+      result = value2
+    }
+    result
+  })
 
   def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
