@@ -125,6 +125,9 @@ object OcpcGetPb_v2 {
         col("low_bid_factor")
       )
 
+    caliData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_calidata20190917a")
+
     // 主要数据：最近84小时有记录
     val baseData = baseDataRaw
         .select("identifier", "userid", "conversion_goal", "media")
@@ -169,10 +172,16 @@ object OcpcGetPb_v2 {
     val data = bottomData
         .join(caliData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
         .na.fill(-1.0, Seq("jfb_factor_cali", "cvr_factor_cali", "post_cvr_cali"))
-        .na.fill(0.0, Seq("smooth_factor", "high_bid_factor", "low_bid_factor"))
+        .na.fill(0.0, Seq("smooth_factor"))
+        .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
         .withColumn("jfb_factor", udfBottomValue()(col("jfb_factor_cali"), col("jfb_factor_base")))
         .withColumn("cvr_factor", udfBottomValue()(col("cvr_factor_cali"), col("cvr_factor_base")))
         .withColumn("post_cvr", udfBottomValue()(col("post_cvr_cali"), col("post_cvr_base")))
+
+
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_calidata20190917b")
+
 
     data
 
