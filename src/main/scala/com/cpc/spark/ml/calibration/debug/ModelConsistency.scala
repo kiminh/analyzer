@@ -70,6 +70,7 @@ object ModelConsistency{
       val crc32C = new Crc32C()
       val checksum = crc32C
       checksum.update(x.getBytes(),0,x.getBytes().length)
+      checksum.getIntValue
   }
 
 }
