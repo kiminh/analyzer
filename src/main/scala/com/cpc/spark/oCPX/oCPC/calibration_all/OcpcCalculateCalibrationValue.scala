@@ -28,9 +28,11 @@ object OcpcCalculateCalibrationValue {
     val dataRaw1 = dataRaw
       .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
       .select("identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+    val dataRaw2 = dataRaw
+      .selectExpr("cast(conversion_goal as string) identifier", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
 
-    val minCV = 40
-    val result = OcpcCalculateCalibrationValueMain(dataRaw1, minCV, spark)
+    val minCV = 0
+    val result = OcpcCalculateCalibrationValueMain(dataRaw2, minCV, spark)
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190917b")
   }
@@ -61,7 +63,7 @@ object OcpcCalculateCalibrationValue {
     val resultDF = data
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
-      .filter(s"cv >= min_cv")
+//      .filter(s"cv >= min_cv")
       .select("identifier", "jfb_factor", "cvr_factor", "post_cvr")
 
 
