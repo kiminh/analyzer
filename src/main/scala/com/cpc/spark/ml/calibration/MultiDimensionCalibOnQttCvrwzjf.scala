@@ -85,7 +85,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
     println(s"sql:\n$clicksql")
     val clickData = session.sql(clicksql)
     val cvrsql =s"""
-                   |select distinct a.searchid,
+                   |select distinct searchid,
                    |       1 iscvr
                    |  from dl_cpc.cpc_conversion
                    |  where $selectCondition2
@@ -98,9 +98,10 @@ object MultiDimensionCalibOnQttCvrwzjf {
        """.stripMargin
     val cvrData = session.sql(cvrsql)
     val log = clickData.join(cvrData,Seq("searchid"),"left")
-      .withColumn("isclick",col("iscvr"))
+      .withColumn("isclick",col("iscvr")).cache()
     log.show(10)
     LogToPb(log, session, calimodel)
+    log.unpersist()
     val irModel = IRModel(
       boundaries = Seq(1.0),
       predictions = Seq(k.toDouble)
