@@ -204,7 +204,7 @@ object LRTrainEval {
          |  from
          |    dl_cpc.cpc_basedata_union_events
          |    where
-         |    ((day = "$date" and hour >= "20") or (day = "$tomorrow" and hour <= "13"))
+         |    day = "$tomorrow"
          |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
@@ -218,7 +218,7 @@ object LRTrainEval {
          |      from
          |         dl_cpc.ocpc_label_cvr_hourly
          |      where
-         |         `date`>="$date" and `date`<="$tomorrow"
+         |         `date`="$tomorrow"
          |      and label=1
          |      group by searchid
          |   ) B
