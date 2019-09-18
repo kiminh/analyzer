@@ -66,10 +66,11 @@ object OcpcHourlyReport {
       .write.mode("overwrite").saveAsTable("test.ocpc_hourly_industry_report_email")
 
     // 存储数据到hadoop
-    saveDataToHDFS(baseData, date, hour, spark)
+    saveBaseDataToHDFS(baseData, date, hour, spark)
+    saveIndustryDataToHDF(industry, date, hour, spark)
 
-    // 存储数据到mysql
-    saveDataToMysql(baseData, date, hour, spark)
+//    // 存储数据到mysql
+//    saveDataToMysql(baseData, date, hour, spark)
 
   }
 
@@ -93,6 +94,7 @@ object OcpcHourlyReport {
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
          |    sum(cost) as cost,
          |    sum(pay) as pay,
+         |    sum(buffer) as buffer,
          |    sum(acp * click) * 1.0 / sum(click) as acp,
          |    sum(acb * click) * 1.0 / sum(click) as acb,
          |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
@@ -135,6 +137,7 @@ object OcpcHourlyReport {
          |    sum(cv) * 1.0 / sum(click) as post_cvr,
          |    sum(cost) as cost,
          |    sum(pay) as pay,
+         |    sum(buffer) as buffer,
          |    sum(acp * click) * 1.0 / sum(click) as acp,
          |    sum(acb * click) * 1.0 / sum(click) as acb,
          |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
@@ -181,6 +184,10 @@ object OcpcHourlyReport {
          |      when sum(total_price) <= 1.2 * sum(cv) * sum(total_cpagiven) / sum(click) then 0
          |      else sum(total_price) - 1.2 * sum(cv) * sum(total_cpagiven) / sum(click)
          |    end) * 0.01 as pay,
+         |    (case
+         |      when sum(cv) * sum(total_cpagiven) / sum(click) <= sum(total_price) then 0
+         |      else sum(cv) * sum(total_cpagiven) / sum(click) - sum(total_price)
+         |    end) * 0.01 as buffer,
          |    sum(total_price) * 1.0 / sum(click) as acp,
          |    sum(total_bid) * 1.0 / sum(click) as acb,
          |    sum(total_cpagiven) * 1.0 / sum(click) as cpagiven,
@@ -249,8 +256,22 @@ object OcpcHourlyReport {
     data
   }
 
+  def saveIndustryDataToHDF(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val resultDF = data
+      .select("media", "industry", "conversion_goal", "is_hidden", "show", "click", "cv", "exp_cpm", "pre_ctr", "post_ctr", "pre_cvr", "cali_precvr", "post_cvr", "cost", "pay", "buffer", "acp", "acb", "cpagiven", "jfb_factor", "cvr_factor", "cali_postcvr", "smooth_factor")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
-  def saveDataToHDFS(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    resultDF
+      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_report_industry_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_industry_hourly")
+
+
+  }
+
+
+  def saveBaseDataToHDFS(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
@@ -260,7 +281,7 @@ object OcpcHourlyReport {
 
 
     resultDF
-      .repartition(5)
+      .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
@@ -282,7 +303,7 @@ object OcpcHourlyReport {
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
-         |  sum(case when isclick=1 then iscvr else 0 end) as cv,
+         |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) as total_price,
          |  sum(case when isclick=1 then bid else 0 end) as total_bid,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
@@ -341,12 +362,7 @@ object OcpcHourlyReport {
          |    `date` = '$date'
          |and `hour` <= '$hour'
          |and $mediaSelection
-         |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
-         |and ideaid > 0
-         |and adsrc = 1
-         |and adslot_type in (1,2,3)
-         |and searchid is not null
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)

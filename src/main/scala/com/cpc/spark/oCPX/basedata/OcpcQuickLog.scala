@@ -78,6 +78,8 @@ object OcpcQuickLog {
          |  adslot_type != 7
          |AND
          |  isclick = 1
+         |AND
+         |  antispam_score = 10000
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -91,6 +93,7 @@ object OcpcQuickLog {
 
   def getCvLog(date: String, hour: String, spark: SparkSession) = {
     // 抽取cv数据
+    // todo 数据调研
     spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
       var result = 0
       if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {

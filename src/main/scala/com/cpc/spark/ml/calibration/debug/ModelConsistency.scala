@@ -5,7 +5,8 @@ import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-//import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
+import org.tensorflow.hadoop.util.Crc32C
+
 
 /**
   * author: wangyao
@@ -24,7 +25,7 @@ object ModelConsistency{
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/2019-08-25/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/2019-09-16/result-*")
       .toDF("id","prediction","num")
 
     println("sum is %d".format(dnn_data.count()))
@@ -35,14 +36,15 @@ object ModelConsistency{
                  |from dl_cpc.cpc_basedata_union_events a
                  |join dl_cpc.cpc_ml_nested_snapshot b
                  |  on a.searchid = b.searchid and pt='qtt'
-                 |  and b.day = '$dt' and b.hour = '13'
-                 |  where a.day = '$dt' and a.hour = '13'
+                 |  and b.day = '$dt' and b.hour = '19' and b.f84[0]='d635b3ff4b666563f3cfd9041db0a8a3'
+                 |  where a.day = '$dt' and a.hour = '19'
                  |  and a.media_appsid in ('80000001','80000002') and a.isshow = 1
                  |  and a.adsrc = 1 and a.ctr_model_name = 'qtt-list-dnn-rawid-v4-dsp'
        """.stripMargin
     println(s"sql:\n$sql")
     val basedata = spark.sql(sql)
-      .withColumn("id",hash64(0)(col("searchid")))
+//      .withColumn("id",hash64(0)(col("searchid")))
+      .withColumn("id",crc32(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
       .withColumn("ectr",col("prediction")*1e6d.toInt)
       .withColumn("bias",col("raw_ctr")/col("ectr"))
@@ -62,5 +64,13 @@ object ModelConsistency{
 
   def hash64(seed:Int)= udf {
     x:String =>  stringHash64(x,seed)}
+
+  def crc32= udf{
+    x:String =>
+      val crc32C = new Crc32C()
+      val checksum = crc32C
+      checksum.update(x.getBytes(),0,x.getBytes().length)
+      checksum.getIntValue
+  }
 
 }

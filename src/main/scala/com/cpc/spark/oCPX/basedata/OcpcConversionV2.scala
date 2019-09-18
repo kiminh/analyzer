@@ -1,10 +1,12 @@
 package com.cpc.spark.oCPX.basedata
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 object OcpcConversionV2 {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -174,10 +176,28 @@ object OcpcConversionV2 {
     println(sqlRequest4)
     val data4 = spark.sql(sqlRequest4)
 
+    // 鲸鱼建站
+    val sqlRequest5 =
+      s"""
+         |select
+         |    distinct searchid
+         |from
+         |    dl_cpc.cpc_conversion
+         |where
+         |    day = '$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'site_form')
+       """.stripMargin
+    println(sqlRequest5)
+    val data5 = spark.sql(sqlRequest5)
+
     val resultDF = data1
       .union(data2)
       .union(data3)
       .union(data4)
+      .union(data5)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")

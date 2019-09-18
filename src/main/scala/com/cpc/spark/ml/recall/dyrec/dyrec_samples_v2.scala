@@ -12,8 +12,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object dyrec_samples_v2 {
   Logger.getRootLogger.setLevel(Level.WARN)
 
-  //multi hot 特征默认hash code
-  private val default_hash = for (i <- 1 to 37) yield Seq((i.toLong - 1, 0.toLong, Murmur3Hash.stringHash64("m" + i, 0)))
+  private val default_hash = for (i <- 1 to 100) yield Seq((i.toLong - 1, 0.toLong, Murmur3Hash.stringHash64("m" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -58,23 +57,27 @@ object dyrec_samples_v2 {
       select($"sample_idx", $"idx0", $"idx1", $"idx2", $"id_arr", $"label", $"dense", expr("dense[25]").alias("uidhash"))
     val multihot_feature = original_sample.limit(10).cache().select(expr("max(idx1[size(idx1)-1])").alias("idx1")).collect()
     val multihot_feature_number = multihot_feature(0)(0).toString.toInt + 1
-    val sample = spark.sql(
+//    val sample = spark.sql(
+//      s"""
+//         |select * from (select *,
+//         |row_number() over(partition by uid order by hour desc) as row_num from dl_cpc.recall_rec_feature where day='$oneday') t1
+//         |where row_num=1
+//       """.stripMargin)
+//    val uid_memberid = spark.sql(
+//      s"""
+//         |select member_id as uid,device_code as uid_ad from gobblin.qukan_member_info_incre
+//         |where member_id > 0 and device_code is not null group by member_id,device_code
+//      """.stripMargin)
+    spark.sql(
       s"""
-         |select * from (select *,
-         |row_number() over(partition by uid order by hour desc) as row_num from dl_cpc.recall_rec_feature where day='$oneday') t1
-         |where row_num=1
-       """.stripMargin)
-    val uid_memberid = spark.sql(
-      s"""
-         |select member_id as uid,device_code as uid_ad from gobblin.qukan_member_info_incre
-         |where member_id > 0 and device_code is not null group by member_id,device_code
-      """.stripMargin)
+         |select * from dl_cpc.recall_rec_feature_daily where day in (select max(day) from dl_cpc.recall_rec_feature_successday)
+         |""".stripMargin).createOrReplaceTempView("sample_new")
 
-    sample.join(uid_memberid, Seq("uid"), "left_outer").createOrReplaceTempView("sample_new")
+//    sample.join(uid_memberid, Seq("uid"), "left_outer").createOrReplaceTempView("sample_new")
     val sample_new = spark.sql(
       s"""
-         |select COALESCE(uid_ad, uid) as uid_new, * from sample_new
-       """.stripMargin).select(hash("f25")($"uid_new").alias("uidhash"), $"slotid9",
+         |select * from sample_new
+       """.stripMargin).select(hash("f25")($"uid").alias("uidhash"), $"slotid9",
       $"slotid10",
       $"slotid11",
       $"slotid12",

@@ -2,6 +2,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import java.io.FileOutputStream
 
+import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -62,9 +63,12 @@ object OcpcSampleToPbFinal {
 
 
 
-    val resultDF = result1.union(result2).union(result3)
+    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
+    val resultDF = setDataByConfig(result, version, date, hour, spark)
+
     val finalVersion = version + "pbfile"
     resultDF
+      .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .repartition(5)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -75,6 +79,53 @@ object OcpcSampleToPbFinal {
 
 
     savePbPack(resultDF, fileName, spark)
+  }
+
+  def setDataByConfig(baseData: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+    // smooth factor
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_config.unit_smooth_factor")
+    println(confPath)
+    val rawData = spark.read.format("json").json(confPath)
+    val confData = rawData
+      .filter(s"version = '$version'")
+      .select("exp_tag", "identifier", "smooth_factor")
+      .groupBy("exp_tag", "identifier")
+      .agg(
+        avg(col("smooth_factor")).alias("smooth_factor_new")
+      )
+      .distinct()
+    confData.show(10)
+
+    // jfb factor
+    val confPath2 = conf.getString("exp_config.exptag_jfb_factor")
+    val rawData2 = spark.read.format("json").json(confPath2)
+    val confData2 = rawData2
+      .filter(s"version = '$version'")
+      .select("exp_tag", "conversion_goal", "weight")
+      .groupBy("exp_tag", "conversion_goal")
+      .agg(
+        avg(col("weight")).alias("weight")
+      )
+      .select("exp_tag", "conversion_goal", "weight")
+
+
+    val data = baseData
+      .join(confData, Seq("exp_tag", "identifier"), "left_outer")
+      .withColumn("smooth_factor_old", col("smooth_factor"))
+      .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
+      .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("weight"))
+      .withColumn("jfb_factor_old", col("jfb_factor"))
+      .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .cache()
+
+    data.show(10)
+//    data
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+
+    data
   }
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {

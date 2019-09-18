@@ -22,9 +22,47 @@ object OcpcCalibrationBaseDelay {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
-    result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
+    // todo
+    val result1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
+    val result2 = OcpcCalibrationBaseDelayMainOnlySmooth(date, hour, hourInt, spark)
+    result1
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190829a")
+    result2
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190829b")
+  }
+
+  def OcpcCalibrationBaseDelayMainOnlySmooth(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    /*
+    动态计算alpha平滑系数
+    1. 基于原始pcoc，计算预测cvr的量纲系数
+    2. 二分搜索查找到合适的平滑系数
+     */
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data_raw")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  base_data_raw
+         |WHERE
+         |  ocpc_expand = 0
+         |AND
+         |  array_contains(split(expids, ','), '35456')
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+
+    // 计算结果
+    val result = calculateParameter(baseData, spark)
+
+    val resultDF = result
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+
+
+    resultDF
   }
 
   def OcpcCalibrationBaseDelayMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {

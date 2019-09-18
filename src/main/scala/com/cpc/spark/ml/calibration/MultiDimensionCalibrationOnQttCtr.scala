@@ -74,9 +74,10 @@ object MultiDimensionCalibrationOnQttCtr {
                  | AND (charge_type IS NULL OR charge_type = 1)
        """.stripMargin
     println(s"sql:\n$sql")
-    val log = session.sql(sql)
+    val log = session.sql(sql).cache()
     log.show(10)
     LogToPb(log, session, calimodel)
+    log.unpersist()
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
@@ -146,8 +147,8 @@ object MultiDimensionCalibrationOnQttCtr {
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (bins._1.size < minBinCount) {
-            println("bin size too small, don't output the calibration")
+          if (positiveSize < 5) {
+            println("positive sample too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
