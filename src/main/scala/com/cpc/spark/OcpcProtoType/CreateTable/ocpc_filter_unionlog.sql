@@ -56,3 +56,5 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_filter_unionlog add columns (exp_cpm bigint);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (ocpc_expand int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (expids string);
+alter table dl_cpc.ocpc_filter_unionlog add columns (bsctr bigint);
+alter table dl_cpc.ocpc_filter_unionlog add columns (bscvr bigint);

@@ -25,7 +25,7 @@ object OcpcUnionlog {
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-      .repartition(10)
+      .repartition(50)
 //      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
@@ -92,7 +92,9 @@ object OcpcUnionlog {
          |    final_cpm,
          |    exp_cpm,
          |    ocpc_expand,
-         |    expids
+         |    expids,
+         |    bsctr,
+         |    bscvr
          |from
          |    base_data
        """.stripMargin
@@ -227,7 +229,8 @@ object OcpcUnionlog {
          |    second_cpm,
          |    final_cpm,
          |    ocpc_expand,
-         |    ext_string['exp_ids'] as expids
+         |    ext_string['exp_ids'] as expids,
+         |    bsctr
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

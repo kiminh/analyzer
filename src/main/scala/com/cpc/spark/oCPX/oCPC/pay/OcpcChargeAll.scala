@@ -118,7 +118,7 @@ object OcpcChargeAll {
     val result = spark
         .sql(sqlRequest)
         .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-        .filter(s"media in ('qtt', 'hottopic')")
+        .filter(s"media in ('qtt', 'hottopic', 'novel')")
         .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
         .filter(s"industry in ('feedapp', 'elds')")
         .select("unitid")
@@ -195,7 +195,7 @@ object OcpcChargeAll {
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
       .select("searchid", "unitid", "media", "timestamp", "date", "hour")
@@ -262,9 +262,11 @@ object OcpcChargeAll {
     // 数据关联并更新pay_cnt与pay_date:
     // 如果pay_cnt为空，则初始化为0，pay_date初始化为本赔付周期开始日期
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
+    val ocpcChargeTime = date1 + " 00:00:00"
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
+      .na.fill(ocpcChargeTime, Seq("ocpc_charge_time"))
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
       .na.fill(1, Seq("flag"))
@@ -434,7 +436,7 @@ object OcpcChargeAll {
       .filter(s"is_hidden = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
 

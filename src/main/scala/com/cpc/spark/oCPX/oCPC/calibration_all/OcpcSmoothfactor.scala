@@ -152,11 +152,15 @@ object OcpcSmoothfactor {
   def getExpConf(version: String, spark: SparkSession) ={
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_config.smooth_factor")
+    val confPath = conf.getString("exp_config_v2.smooth_factor")
     val rawData = spark.read.format("json").json(confPath)
     val data = rawData
-      .filter(s"version = '$version'")
       .select("exp_tag", "conversion_goal", "min_cv", "smooth_factor")
+      .groupBy("exp_tag", "conversion_goal")
+      .agg(
+        min(col("min_cv")).alias("min_cv"),
+        min(col("smooth_factor")).alias("smooth_factor")
+      )
       .distinct()
 
     println("smooth factor: config")

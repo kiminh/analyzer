@@ -181,6 +181,7 @@ object OcpcTools {
          |  end) as industry,
          |  conversion_goal,
          |  expids,
+         |  exptags,
          |  ocpc_expand,
          |  date,
          |  hour
@@ -250,6 +251,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  adslot_type,
          |  isshow,
          |  isclick,
@@ -267,6 +269,7 @@ object OcpcTools {
          |  end) as industry,
          |  conversion_goal,
          |  expids,
+         |  exptags,
          |  ocpc_expand,
          |  date,
          |  hour
