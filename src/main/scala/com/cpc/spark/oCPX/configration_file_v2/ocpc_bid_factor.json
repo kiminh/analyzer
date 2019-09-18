@@ -18,3 +18,7 @@
 {"exp_tag": "adtype15NoSmoothQtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
 {"exp_tag": "adtype15NoSmoothQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
 {"exp_tag": "adtype15NoSmoothQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"exp_tag": "baselineQtt", "conversion_goal": 1, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"exp_tag": "baselineQtt", "conversion_goal": 2, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"exp_tag": "baselineQtt", "conversion_goal": 3, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
+{"exp_tag": "baselineQtt", "conversion_goal": 4, "high_bid_factor": 1.2, "low_bid_factor": 0.9, "min_cv": 40}
