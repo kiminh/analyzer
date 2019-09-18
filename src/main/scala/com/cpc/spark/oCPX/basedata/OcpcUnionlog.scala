@@ -19,8 +19,8 @@ object OcpcUnionlog {
     data
       .limit(1)
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -28,8 +28,8 @@ object OcpcUnionlog {
     ocpcData
       .limit(1)
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
