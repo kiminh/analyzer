@@ -34,17 +34,6 @@ if [[ -f "$shell_in_run" ]]; then
 fi
 touch ${shell_in_run}
 
-busy_file=collect_inc_mom_busy_data
-busy=${dir}/${busy_file}
-rm ${busy}
-remote_busy="hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-dnn-rawid_v4refult/"${busy_file}
-hadoop fs -get ${remote_busy} ${busy}
-if [[ -f "$busy" ]]; then
-    printf "cluster are busy now, existing\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
 end=part-*
