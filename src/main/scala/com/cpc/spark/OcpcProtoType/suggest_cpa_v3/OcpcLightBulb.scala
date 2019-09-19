@@ -38,15 +38,15 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
     val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
@@ -56,8 +56,8 @@ object OcpcLightBulb{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
@@ -86,12 +86,12 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
-    // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    // 存入redis
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def getUnitidList(date: String, hour: String, spark: SparkSession) = {
@@ -163,6 +163,20 @@ object OcpcLightBulb{
       .select("userid", "conversion_goal", "media", "cost", "cost_flag")
 
 
+    // 增加单元层级白名单
+    val ocpcWhiteUnits = conf.getString("ocpc_all.light_control.ocpc_unit_whitelist")
+    val ocpcWhiteUnitList= spark
+      .read
+      .format("json")
+      .json(ocpcBlackListConf)
+      .select("unitid", "userid", "media")
+      .withColumn("unit_white_flag", lit(1))
+      .distinct()
+    println("ocpc unit white list for testing ocpc light:")
+    ocpcWhiteUnitList.show(10)
+
+
+
     val data = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
@@ -206,17 +220,21 @@ object OcpcLightBulb{
       .join(ocpcBlacklist, Seq("userid"), "left_outer")
       .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
       .na.fill(0, Seq("cost_flag"))
+      .join(ocpcWhiteUnitList, Seq("unitid", "userid", "media"), "left_outer")
+      .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
+      .withColumn("check_flag", udfDetermineFlag()(col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-//    rawResult
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+    rawResult
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
-      .filter(s"black_flag is null")
-      .filter(s"cost_flag = 1")
+      .filter(s"check_flag = 1")
+//      .filter(s"black_flag is null")
+//      .filter(s"cost_flag = 1")
 
-//    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
 
 
     val totalCnt = result.count()
@@ -233,6 +251,24 @@ object OcpcLightBulb{
     resultDF.show(10)
     resultDF
   }
+
+  def udfDetermineFlag() = udf((blackFlag: Int, costFlag: Int, unitWhiteFlag: Int) => {
+    var result = 1
+    if (unitWhiteFlag == 1) {
+      result = 1
+    } else {
+      if (blackFlag == 1) {
+        result = 0
+      } else {
+        if (costFlag == 1) {
+          result = 1
+        } else {
+          result = 0
+        }
+      }
+    }
+    result
+  })
 
   def udfDetermineMediaNew() = udf((mediaId: String) => {
     var result = mediaId match {
