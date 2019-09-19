@@ -163,6 +163,20 @@ object OcpcLightBulb{
       .select("userid", "conversion_goal", "media", "cost", "cost_flag")
 
 
+    // 增加单元层级白名单
+    val ocpcWhiteUnits = conf.getString("ocpc_all.light_control.ocpc_unit_whitelist")
+    val ocpcWhiteUnitList= spark
+      .read
+      .format("json")
+      .json(ocpcWhiteUnits)
+      .select("unitid", "userid", "media")
+      .withColumn("unit_white_flag", lit(1))
+      .distinct()
+    println("ocpc unit white list for testing ocpc light:")
+    ocpcWhiteUnitList.show(10)
+
+
+
     val data = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
@@ -184,13 +198,13 @@ object OcpcLightBulb{
          |    target_medias,
          |    cast(is_ocpc as int) as is_ocpc,
          |    cast(a as string) as media_appsid,
-         |    create_time
+         |    (case when create_time >= '$deadline' then 1 else 0 end) as time_flag,
+         |    create_time,
+         |    '$deadline' as deadline
          |from
          |    base_data
          |lateral view explode(split(target_medias, ',')) b as a
          |WHERE
-         |    create_time >= '$deadline'
-         |and
          |    is_ocpc = 1
          |and
          |    ocpc_status not in (2, 4)
@@ -201,19 +215,23 @@ object OcpcLightBulb{
       .filter(s"is_ocpc = 1")
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
-      .select("unitid", "userid", "conversion_goal", "media")
+      .select("unitid", "userid", "conversion_goal", "media", "time_flag", "create_time")
       .distinct()
       .join(ocpcBlacklist, Seq("userid"), "left_outer")
       .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
       .na.fill(0, Seq("cost_flag"))
+      .join(ocpcWhiteUnitList, Seq("unitid", "userid", "media"), "left_outer")
+      .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
+      .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
 //    rawResult
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
-      .filter(s"black_flag is null")
-      .filter(s"cost_flag = 1")
+      .filter(s"check_flag = 1")
+//      .filter(s"black_flag is null")
+//      .filter(s"cost_flag = 1")
 
 //    result
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
@@ -233,6 +251,29 @@ object OcpcLightBulb{
     resultDF.show(10)
     resultDF
   }
+
+  def udfDetermineFlag() = udf((timeFlag: Int, blackFlag: Int, costFlag: Int, unitWhiteFlag: Int) => {
+    var result = 1
+    if (unitWhiteFlag == 1) {
+      result = 1
+    } else {
+      if (timeFlag == 1 && blackFlag == 0 && costFlag == 1) {
+        result = 1
+      } else {
+        result = 0
+      }
+//      if (blackFlag == 1) {
+//        result = 0
+//      } else {
+//        if (costFlag == 1) {
+//          result = 1
+//        } else {
+//          result = 0
+//        }
+//      }
+    }
+    result
+  })
 
   def udfDetermineMediaNew() = udf((mediaId: String) => {
     var result = mediaId match {
