@@ -111,6 +111,10 @@ object MakeAdListV4Samples {
     println("Extract Test Examples' AD Info")
     val text_test = des_dir + "/" + curr_date + "-" + time_id + "-test"
 
+    if (exists_hdfs_path(text_test)) {
+      delete_hdfs_path(text_test)
+    }
+
     val importedDfTest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(test_file)
     println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
     importedDfTest.printSchema()
@@ -262,6 +266,14 @@ object MakeAdListV4Samples {
 
     val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
     val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
+
+    if (exists_hdfs_path(text_train)) {
+      delete_hdfs_path(text_train)
+    }
+
+    if (exists_hdfs_path(tf_train)) {
+      delete_hdfs_path(tf_train)
+    }
 
     val tf_df: DataFrame = spark.createDataFrame(tf_train_rdd, schema_new)
     tf_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(tf_train)
