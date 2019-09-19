@@ -45,8 +45,8 @@ object OcpcLightBulb{
       .repartition(5)
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
     val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
@@ -89,9 +89,9 @@ object OcpcLightBulb{
 //      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
-//    // 存入redis
-//    saveDataToRedis(version, date, hour, spark)
-//    println(s"############## saving redis database ################")
+    // 存入redis
+    saveDataToRedis(version, date, hour, spark)
+    println(s"############## saving redis database ################")
   }
 
   def getUnitidList(date: String, hour: String, spark: SparkSession) = {
@@ -224,8 +224,8 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-    rawResult
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+//    rawResult
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
@@ -233,8 +233,8 @@ object OcpcLightBulb{
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+//    result
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
 
 
     val totalCnt = result.count()
