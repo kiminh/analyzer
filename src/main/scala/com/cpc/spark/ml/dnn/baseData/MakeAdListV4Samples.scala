@@ -234,8 +234,8 @@ object MakeAdListV4Samples {
     //val tf_train_rdd_count = tf_train_rdd.count
     //println(s"tf_train_rdd_count is : $tf_train_rdd_count")
 
-    val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
-    val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
+    val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
+    val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
 
     if (exists_hdfs_path(text_train)) {
       delete_hdfs_path(text_train)
