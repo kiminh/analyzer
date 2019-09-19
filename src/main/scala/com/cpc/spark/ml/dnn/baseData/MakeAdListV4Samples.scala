@@ -169,6 +169,11 @@ object MakeAdListV4Samples {
       }
     ).repartition(100).saveAsTextFile(text_test)
 
+    println("idealIdMap Size:" + idealIdMapBC.value.size)
+    println("unitIdMap Size:" + unitIdMapBC.value.size)
+    println("planIdMap Size:" + planIdMapBC.value.size)
+    println("userIdMap Size:" + userIdMapBC.value.size)
+
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Filter Train Examples")
     val schema_new = StructType(List(
