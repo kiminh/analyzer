@@ -205,16 +205,11 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${test_file} ${curr_date} ${id}
+    ${randjar} ${des_dir} ${train_file} ${test_file} ${curr_date} ${last_id}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 #hadoop fs -chmod -R 0777 ${chmod_des}
 
 
 
-
-busy=${dir}/${busy_file}
-touch ${busy}
-hadoop fs -put ${busy} ${remote_busy}
-hadoop fs -chmod 0777 ${remote_busy}
 rm ${shell_in_run}

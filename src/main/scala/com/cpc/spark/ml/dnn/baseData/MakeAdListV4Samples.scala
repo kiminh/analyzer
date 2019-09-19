@@ -231,8 +231,8 @@ object MakeAdListV4Samples {
         Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
     })
 
-    val tf_train_rdd_count = tf_train_rdd.count
-    println(s"tf_train_rdd_count is : $tf_train_rdd_count")
+    //val tf_train_rdd_count = tf_train_rdd.count
+    //println(s"tf_train_rdd_count is : $tf_train_rdd_count")
 
     val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
     val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
@@ -250,7 +250,7 @@ object MakeAdListV4Samples {
 
     //保存count文件
     val fileName = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName, tf_train_rdd_count)
+    writeNum2File(fileName, text_train_rdd_count)
     s"hadoop fs -put $fileName $tf_train/count" !
 
     s"hadoop fs -chmod -R 0777 $tf_train" !
