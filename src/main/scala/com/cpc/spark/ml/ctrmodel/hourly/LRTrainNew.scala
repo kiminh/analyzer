@@ -32,7 +32,7 @@ object LRTrainNew {
       .initSpark("[cpc-model] linear regression")
 
     val ctrDays = args(0).toInt
-    val cvrDays = args(1).toInt
+    val dictDays = args(1).toInt
 
     val date = args(2)
     val hour = args(3)
@@ -43,11 +43,13 @@ object LRTrainNew {
 
     // 按分区取数据
     val ctrPathSep = getPathSeq(date, hour, ctrDays)
-    val cvrPathSep = getPathSeq(date, hour, ctrDays)
+    val dictPathSep = getPathSeq(date, hour, dictDays)
 
     println("ctrPathSep = " + ctrPathSep)
+    println("dictPathSep = " + dictPathSep)
 
-    initFeatureDict(spark, ctrPathSep)
+    initFeatureDict(spark, dictPathSep)
+    initStrFeatureDict(spark, dictPathSep)
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
@@ -338,11 +340,14 @@ object LRTrainNew {
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
+    val BcDictStr = spark.sparkContext.broadcast(dictStr)
 
     ulog.rdd
       .mapPartitions {
         p =>
           dict = BcDict.value
+          dictStr = BcDictStr.value
+
           p.map {
             u =>
               val vec = parser match {
@@ -357,7 +362,7 @@ object LRTrainNew {
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
-  var strDict = mutable.Map[String, Map[String, Int]]()
+  var dictStr = mutable.Map[String, Map[String, Int]]()
 
   val dictNames = Seq(
     "mediaid",
@@ -369,7 +374,13 @@ object LRTrainNew {
     "cityid",
     "userid"
   )
-  var dictStr = mutable.Map[String, Map[String, Int]]()
+
+
+  val dictStrNames = Seq(
+    "brand",
+    "channel",
+    "dtu_id"
+  )
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
 
@@ -397,16 +408,10 @@ object LRTrainNew {
     }
   }
 
-  val strDictNames = Seq(
-    "brand",
-    "channel",
-    "dtu_id"
-  )
-
   def initStrFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
 
     trainLog :+= "\n------dict size------"
-    for (name <- strDictNames) {
+    for (name <- dictStrNames) {
       val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       var n = 0
       val ids = mutable.Map[String, Int]()
@@ -423,7 +428,7 @@ object LRTrainNew {
             n += 1
             ids.update(id, n)
         }
-      strDict.update(name, ids.toMap)
+      dictStr.update(name, ids.toMap)
       println("dict", name, ids.size)
       trainLog :+= "%s=%d".format(name, ids.size)
     }
@@ -727,16 +732,16 @@ object LRTrainNew {
     i += dict("userid").size + 1
 
     //brand_title
-    els = els :+ (strDict("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
-    i += strDict("brand").size + 1
+    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
+    i += dictStr("brand").size + 1
 
     //channel
-    els = els :+ (strDict("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
-    i += strDict("channel").size + 1
+    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
+    i += dictStr("channel").size + 1
 
     //dtu_id
-    els = els :+ (strDict("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
-    i += strDict("dtu_id").size + 1
+    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
+    i += dictStr("dtu_id").size + 1
 
 
     //media_type 0，1，3只有3个
