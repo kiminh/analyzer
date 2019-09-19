@@ -89,7 +89,7 @@ sample_list=(
 )
 
 
-now_id=0021
+now_id=0013
 for idx in "${!sample_list[@]}";
 do
     p00="${sample_list[$idx]}"
