@@ -168,7 +168,7 @@ object OcpcLightBulb{
     val ocpcWhiteUnitList= spark
       .read
       .format("json")
-      .json(ocpcBlackListConf)
+      .json(ocpcWhiteUnits)
       .select("unitid", "userid", "media")
       .withColumn("unit_white_flag", lit(1))
       .distinct()
