@@ -209,7 +209,7 @@ des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
-    --driver-memory 4g --executor-memory 4g \
+    --driver-memory 4g --executor-memory 2g \
     --num-executors 1000 --executor-cores 2 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
