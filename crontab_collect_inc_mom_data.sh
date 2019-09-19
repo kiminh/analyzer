@@ -208,7 +208,7 @@ hadoop fs -get ${jarLib} ${randjar}
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 
 spark-submit --master yarn --queue ${queue} \
-    --name "adlist-tf-make-sampling" \
+    --name "adlist-v4-make-samples" \
     --driver-memory 4g --executor-memory 4g \
     --num-executors 100 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
