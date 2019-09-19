@@ -119,7 +119,7 @@ object MakeAdListV4Samples {
     println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
     importedDfTest.printSchema()
     importedDfTest.show(3)
-    importedDfTest.rdd.map(
+    val totalMap = importedDfTest.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -129,55 +129,26 @@ object MakeAdListV4Samples {
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
 
-        //11,12,13,14
+        //10,11,12,13
         //,ideaid,unitid,planid,userid
-        //(dense(11).toString, dense(12).toString, dense(13).toString, dense(14).toString)
-        val idealId = dense(11).toString
-        val unitId = dense(12).toString
-        val planId = dense(13).toString
-        val userId = dense(14).toString
-
-        if (idealIdMapBC.value.contains(idealId)) {
-          idealIdMapBC.value(idealId) = idealIdMapBC.value(idealId) + 1
-        } else {
-          idealIdMapBC.value(idealId) = 1
-        }
-
-        if (unitIdMapBC.value.contains(unitId)) {
-          unitIdMapBC.value(unitId) = unitIdMapBC.value(unitId) + 1
-        } else {
-          unitIdMapBC.value(unitId) = 1
-        }
-
-        if (planIdMapBC.value.contains(planId)) {
-          planIdMapBC.value(planId) = planIdMapBC.value(planId) + 1
-        } else {
-          planIdMapBC.value(planId) = 1
-        }
-
-        if (userIdMapBC.value.contains(userId)) {
-          userIdMapBC.value(userId) = userIdMapBC.value(userId) + 1
-        } else {
-          userIdMapBC.value(userId) = 1
-        }
-
+        //(dense(10).toString, dense(11).toString, dense(12).toString, dense(13).toString)
         val output = scala.collection.mutable.ArrayBuffer[String]()
-        output += sample_idx.toString
-        output += label_arr.map(_.toString).mkString(";")
-        output += dense.map(_.toString).mkString(";")
-        output += idx0.map(_.toString).mkString(";")
-        output += idx1.map(_.toString).mkString(";")
-        output += idx2.map(_.toString).mkString(";")
-        output += idx_arr.map(_.toString).mkString(";")
+        output += dense(10).toString
+        output += dense(11).toString
+        output += dense(12).toString
+        output += dense(13).toString
         output.mkString("\t")
       }
-    ).repartition(100).saveAsTextFile(text_test)
+    ).flatMap(
+      rs => {
+        val line = rs.split("\t")
+        for (elem <- line)
+          yield (elem, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("totalMap.size=" + totalMap.size)
 
-    println("idealIdMap Size:" + idealIdMapBC.value.size)
-    println("unitIdMap Size:" + unitIdMapBC.value.size)
-    println("planIdMap Size:" + planIdMapBC.value.size)
-    println("userIdMap Size:" + userIdMapBC.value.size)
-
+    //.repartition(100).saveAsTextFile(text_test)
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Filter Train Examples")
     val schema_new = StructType(List(
@@ -189,7 +160,6 @@ object MakeAdListV4Samples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
-
 
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
     println("DF file count:" + importedDf.count().toString + " of train files")
@@ -203,10 +173,10 @@ object MakeAdListV4Samples {
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
 
-        val idealId = dense(11).toString
-        val unitId = dense(12).toString
-        val planId = dense(13).toString
-        val userId = dense(14).toString
+        val idealId = dense(10).toString
+        val unitId = dense(11).toString
+        val planId = dense(12).toString
+        val userId = dense(13).toString
 
         val output = scala.collection.mutable.ArrayBuffer[String]()
         output += sample_idx.toString
@@ -225,16 +195,16 @@ object MakeAdListV4Samples {
         val planId = rs._3
         val userId = rs._4
         var filter = true
-        if (!idealIdMapBC.value.contains(idealId)) {
+        if (!totalMap.contains(idealId)) {
           filter = false
         }
-        if (!unitIdMapBC.value.contains(unitId)) {
+        if (!totalMap.contains(unitId)) {
           filter = false
         }
-        if (planIdMapBC.value.contains(planId)) {
+        if (!totalMap.contains(planId)) {
           filter = false
         }
-        if (!userIdMapBC.value.contains(userId)) {
+        if (!totalMap.contains(userId)) {
           filter = false
         }
         filter
