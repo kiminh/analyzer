@@ -117,6 +117,7 @@ object MultiDimensionCalibOnKddCvr {
                |            and userid > 0
                |            and ideaid > 0
                |            and isclick = 1
+               |            and is_ocpc = 1
                |            and cvr_model_name in ('$calimodel','$model')
                |            and (charge_type is null or charge_type = 1)
                |    ) A
