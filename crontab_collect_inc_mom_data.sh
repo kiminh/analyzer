@@ -198,7 +198,6 @@ train_file="$( IFS=$','; echo "${all_data[*]}" )"
 printf "train_file:%s\n" ${train_file}
 printf "test_file:%s\n" ${test_file}
 
-exit 0
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
