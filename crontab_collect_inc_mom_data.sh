@@ -10,17 +10,8 @@ ml_ver=v4refult
 date_full=`date`
 printf "*****************************${date_full}********************************\n"
 
-inc_epochs=$1
-update_online=$2
-name_space=$3
-total=$4
-worker=$5
-ps_server=$6
-tf_server=$7
-
 curr_date=`date --date='1 days ago' +%Y-%m-%d`
 printf "now curr_date is:${curr_date}\n"
-printf "max_epoch_num is:${inc_epochs}\n"
 
 now_hour=$(date "+%H")
 now_minutes=$(date "+%M")
