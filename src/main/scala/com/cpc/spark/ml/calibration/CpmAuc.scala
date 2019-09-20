@@ -24,7 +24,7 @@ object CpmAuc {
     import spark.implicits._
     val sql =
       s"""
-         | select b.cpm,isclick,raw_ctr
+         | select 2 as cpm,isclick,raw_ctr
          |    from dl_cpc.cpc_basedata_union_events a
          |    join
          |    (
@@ -52,6 +52,7 @@ object CpmAuc {
       .withColumn("label",col("isclick"))
 
     val result = getCpmAuc(spark,basedata)
+    result.show(5)
     result.write.mode("overwrite").saveAsTable("dl_cpc.wy_test00")
 
   }
