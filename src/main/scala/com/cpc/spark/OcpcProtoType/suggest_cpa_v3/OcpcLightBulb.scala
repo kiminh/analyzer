@@ -256,7 +256,7 @@ object OcpcLightBulb{
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 10
-    val resultDF = result
+    val resultDF1 = result
       .orderBy(rand())
       .limit(cnt.toInt)
       .withColumn("test_flag", lit(1))
@@ -264,6 +264,19 @@ object OcpcLightBulb{
       .distinct()
 
     println(s"totalCnt=$totalCnt, cnt=$cnt")
+
+    val resultDF2 = rawResult
+      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"unit_white_flag = 1")
+      .withColumn("test_flag", lit(1))
+      .select("unitid", "userid", "conversion_goal", "media", "test_flag")
+      .distinct()
+
+
+    val resultDF = resultDF1
+      .union(resultDF2)
+      .distinct()
+
 
     resultDF.show(10)
     resultDF
