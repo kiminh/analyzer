@@ -86,7 +86,7 @@ object CpmAuc {
         val n = pos.sum
         val m = neg.sum
 
-        var negSum = 0
+        var negSum = 0.0
         var auc: Double = 0
         for (i <- 0 to max ) {
           auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
