@@ -411,7 +411,6 @@ object LRTrainNew {
   )
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
-    trainLog :+= "\n------only app------"
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
       val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
