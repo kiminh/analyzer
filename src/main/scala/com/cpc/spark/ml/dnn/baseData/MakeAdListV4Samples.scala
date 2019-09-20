@@ -195,18 +195,18 @@ object MakeAdListV4Samples {
         val planId = rs._3
         val userId = rs._4
         var filter = true
-        if (!totalMap.contains(idealId)) {
-          filter = false
-        }
+        //if (!totalMap.contains(idealId)) {
+        //  filter = false
+        //}
         //if (!totalMap.contains(unitId)) {
         //  filter = false
         //}
         //if (!totalMap.contains(planId)) {
         //  filter = false
         //}
-        //if (!totalMap.contains(userId)) {
-        //  filter = false
-        //}
+        if (!totalMap.contains(userId)) {
+          filter = false
+        }
         filter
       }
     ).map(
