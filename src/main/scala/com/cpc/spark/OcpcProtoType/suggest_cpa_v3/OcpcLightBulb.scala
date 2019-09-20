@@ -185,6 +185,10 @@ object OcpcLightBulb{
       .option("dbtable", table)
       .load()
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
+
+
     val deadline = date + " " + hour + ":00:00"
 
     data.createOrReplaceTempView("base_data")
