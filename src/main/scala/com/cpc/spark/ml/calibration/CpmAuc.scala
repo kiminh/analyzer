@@ -24,7 +24,7 @@ object CpmAuc {
     import spark.implicits._
     val sql =
       s"""
-         | select 2 as cpm,isclick,raw_ctr
+         | select 2 as cpm,isclick,raw_ctr,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events a
          |    join
          |    (
@@ -47,7 +47,6 @@ object CpmAuc {
     println(sql)
 
     val basedata = spark.sql(sql)
-      .select("cpm","isclick","raw_ctr")
       .withColumn("score",col("raw_ctr"))
       .withColumn("label",col("isclick"))
 
