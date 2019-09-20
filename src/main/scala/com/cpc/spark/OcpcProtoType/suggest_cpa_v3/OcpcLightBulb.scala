@@ -216,13 +216,22 @@ object OcpcLightBulb{
     println(sqlRequest2)
     val rawResult1 = spark
       .sql(sqlRequest2)
-      .filter(s"is_ocpc = 1")
+
+
+    rawResult1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918d")
+
+      //      .filter(s"is_ocpc = 1")
+    val rawResult2 = rawResult1
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
       .select("unitid", "userid", "conversion_goal", "media", "time_flag", "create_time")
       .distinct()
 
-    val rawResult = rawResult1
+    rawResult2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918e")
+
+    val rawResult = rawResult2
       .join(ocpcBlacklist, Seq("userid"), "left_outer")
       .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
       .na.fill(0, Seq("cost_flag"))
@@ -233,8 +242,6 @@ object OcpcLightBulb{
     rawResult
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
-    rawResult1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918d")
 
 
     val result = rawResult
