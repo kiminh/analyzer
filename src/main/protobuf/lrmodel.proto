@@ -29,6 +29,11 @@ message Pack {
     map<int32, int32> cityid = 10;
     map<int32, int32> mediaid = 11;
     map<string,int32> appid = 12;
+    map<int32, int32> userid = 13;
+    map<string,int32> brand = 14;
+    map<string,int32> channel = 15;
+    map<string,int32> dtuid = 16;
+    map<string,int32> lengthmap = 17;
 }
 
 

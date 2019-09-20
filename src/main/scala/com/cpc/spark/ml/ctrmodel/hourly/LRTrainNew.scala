@@ -42,16 +42,16 @@ object LRTrainNew {
     }
 
     // 按分区取数据
-    val ctrPathSep = getPathSeq(date, hour, ctrDays)
+    val appPathSep = getPathSeq(date, hour, ctrDays)
     val dictPathSep = getPathSeq(date, hour, dictDays)
 
-    println("ctrPathSep = " + ctrPathSep)
+    println("appPathSep = " + appPathSep)
     println("dictPathSep = " + dictPathSep)
 
     initFeatureDict(spark, dictPathSep)
     initStrFeatureDict(spark, dictPathSep)
 
-    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
@@ -308,28 +308,56 @@ object LRTrainNew {
     model.runIr(binNum.toInt, 0.95)
     trainLog :+= model.binsLog.mkString("\n")
 
+    var dictLength = mutable.Map[String, Int]()
+
+    dictLength.update("bias",1)
+    dictLength.update("hour",24)
+    dictLength.update("sex",9)
+    dictLength.update("age",100)
+    dictLength.update("os",10)
+    dictLength.update("isp",20)
+    dictLength.update("net",10)
+    dictLength.update("cityid",dict("cityid").size + 1)
+    dictLength.update("mediaid",dict("mediaid").size + 1)
+    dictLength.update("slotid",dict("slotid").size + 1)
+    dictLength.update("phone_level",10)
+    dictLength.update("pagenum",100)
+    dictLength.update("bookid",100)
+    dictLength.update("adclass",dict("adclass").size + 1)
+    dictLength.update("adtype",16)
+    dictLength.update("adslot_type",10)
+    dictLength.update("planid",dict("planid").size + 1)
+    dictLength.update("unitid",dict("unitid").size + 1)
+    dictLength.update("ideaid",dict("ideaid").size + 1)
+    dictLength.update("appIdx",1001)
+    dictLength.update("phone_price",1)
+    dictLength.update("userid",dict("userid").size + 1)
+    dictLength.update("brand",dictStr("brand").size + 1)
+    dictLength.update("channel",dictStr("channel").size + 1)
+    dictLength.update("dtu_id",dictStr("dtu_id").size + 1)
+    dictLength.update("media_type",5)
+    dictLength.update("province",40)
+    dictLength.update("city_level",10)
+    dictLength.update("interaction",5)
+    dictLength.update("is_new_ad",2)
+
+
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
-    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
-    val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
 
     // backup on hdfs.
     model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
     model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
 
     // backup on local machine.
-    model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
+    model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
-    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
 
     /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
@@ -383,7 +411,7 @@ object LRTrainNew {
   )
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
-
+    trainLog :+= "\n------only app------"
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
       val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
@@ -657,15 +685,15 @@ object LRTrainNew {
     els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
     i += dict("cityid").size + 1
 
-    //media id
+    //mediaid
     els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
     i += dict("mediaid").size + 1
 
-    //ad slot id
+    //adslotid
     els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
     i += dict("slotid").size + 1
 
-    //0 to 4
+    //phone_level 0 to 4
     els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
@@ -690,7 +718,7 @@ object LRTrainNew {
     els = els :+ (bid + i, 1d)
     i += 100
 
-    //ad class
+    //adclass
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ (adcls + i, 1d)
     i += dict("adclass").size + 1
@@ -723,46 +751,7 @@ object LRTrainNew {
     }
     i += 1000 + 1
 
-    //phone_price
-    els = els :+ ( 1 + i, x.getAs[Int]("phone_price").toDouble)
-    i += 1
 
-    //userid
-    els = els :+ (dict("userid").getOrElse(x.getAs[Int]("userid"), 0) + i, 1d)
-    i += dict("userid").size + 1
-
-    //brand_title
-    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
-    i += dictStr("brand").size + 1
-
-    //channel
-    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
-    i += dictStr("channel").size + 1
-
-    //dtu_id
-    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
-    i += dictStr("dtu_id").size + 1
-
-
-    //media_type 0，1，3只有3个
-    els = els :+ (x.getAs[Int]("media_type") + i, 1d)
-    i += 5
-
-    //province 0~34总共35个
-    els = els :+ (x.getAs[Int]("province") + i, 1d)
-    i += 40
-
-    //city_level 1~6总共6
-    els = els :+ (x.getAs[Int]("city_level") + i, 1d)
-    i += 10
-
-    //interaction 1~2总共2
-    els = els :+ (x.getAs[Int]("interaction") + i, 1d)
-    i += 5
-
-    //is_new_ad 0~1总共2
-    els = els :+ (x.getAs[Int]("is_new_ad") + i, 1d)
-    i += 2
 
     println("Vectors size = " + i)
 

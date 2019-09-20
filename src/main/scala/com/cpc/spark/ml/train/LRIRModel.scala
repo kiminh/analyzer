@@ -330,6 +330,48 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
+  def savePbPackNew(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]], dictLength: Map[String, Int],withIR:Boolean=true): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      auPRC = auPRC,
+      auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir:Option[IRModel] = if(withIR) {
+      Option(IRModel(
+        boundaries = irmodel.boundaries.toSeq,
+        predictions = irmodel.predictions.toSeq,
+        meanSquareError = irError * irError
+      ))
+    }else{
+      None
+    }
+    val pack = Pack(
+      lr = Option(lr),
+      ir = ir,
+      createTime = new Date().getTime,
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      appid = dictStr("appid"),
+      userid = dict("userid"),
+      brand = dictStr("brand"),
+      channel = dictStr("channel"),
+      dtuid = dictStr("dtu_id"),
+      lengthmap = dictLength
+    )
+    pack.writeTo(new FileOutputStream(path))
+  }
+
   // fym 190527.
   def savePbPackV5(
                     parser: String,
@@ -380,7 +422,6 @@ class LRIRModel {
       mediaid = dict("mediaid"),
       appid = dictStr("appid")
     )
-
     pack.writeTo(new FileOutputStream(path))
   }
 
