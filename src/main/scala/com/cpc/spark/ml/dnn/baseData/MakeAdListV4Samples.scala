@@ -198,15 +198,15 @@ object MakeAdListV4Samples {
         if (!totalMap.contains(idealId)) {
           filter = false
         }
-        if (!totalMap.contains(unitId)) {
-          filter = false
-        }
-        if (!totalMap.contains(planId)) {
-          filter = false
-        }
-        if (!totalMap.contains(userId)) {
-          filter = false
-        }
+        //if (!totalMap.contains(unitId)) {
+        //  filter = false
+        //}
+        //if (!totalMap.contains(planId)) {
+        //  filter = false
+        //}
+        //if (!totalMap.contains(userId)) {
+        //  filter = false
+        //}
         filter
       }
     ).map(

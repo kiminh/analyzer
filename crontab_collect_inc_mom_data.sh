@@ -10,7 +10,7 @@ ml_ver=v4refult
 date_full=`date`
 printf "*****************************${date_full}********************************\n"
 
-curr_date=`date --date='1 days ago' +%Y-%m-%d`
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
 printf "now curr_date is:${curr_date}\n"
 
 now_hour=$(date "+%H")
@@ -89,7 +89,7 @@ sample_list=(
 )
 
 
-now_id=0013
+now_id=3016
 for idx in "${!sample_list[@]}";
 do
     p00="${sample_list[$idx]}"
