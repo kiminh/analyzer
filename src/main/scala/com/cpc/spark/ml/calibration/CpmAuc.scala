@@ -58,6 +58,7 @@ object CpmAuc {
   case class LabeledPred(predict: Double, label: Int)
 
   def getCpmAuc(spark:SparkSession, data:DataFrame, g:String = "ctr_model_name"):DataFrame = {
+    import spark.implicits._
     val aucAndSum = data
       .select("score","label","cpm",g)
       .rdd
