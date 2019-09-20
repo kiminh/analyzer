@@ -185,8 +185,8 @@ object OcpcLightBulb{
       .option("dbtable", table)
       .load()
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
 
 
     val deadline = date + " " + hour + ":00:00"
@@ -214,24 +214,13 @@ object OcpcLightBulb{
          |    ocpc_status not in (2, 4)
        """.stripMargin
     println(sqlRequest2)
-    val rawResult1 = spark
+    val rawResult = spark
       .sql(sqlRequest2)
-
-
-    rawResult1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918d")
-
-      //      .filter(s"is_ocpc = 1")
-    val rawResult2 = rawResult1
+      .filter(s"is_ocpc = 1")
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
       .select("unitid", "userid", "conversion_goal", "media", "time_flag", "create_time")
       .distinct()
-
-    rawResult2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918e")
-
-    val rawResult = rawResult2
       .join(ocpcBlacklist, Seq("userid"), "left_outer")
       .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
       .na.fill(0, Seq("cost_flag"))
