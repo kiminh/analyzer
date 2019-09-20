@@ -228,8 +228,8 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-    rawResult
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+//    rawResult
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
 
 
@@ -239,8 +239,8 @@ object OcpcLightBulb{
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+//    result
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
 
 
     val totalCnt = result.count()
