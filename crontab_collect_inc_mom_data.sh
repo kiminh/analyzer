@@ -244,7 +244,7 @@ do
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
     all_data+=(${p00}${end})
-    test_file=${p00}${end}
+    #test_file=${p00}${end}
     last_id=${id}
 done
 
