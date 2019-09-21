@@ -25,19 +25,19 @@ object CpmAuc {
     val sql =
       s"""
          | select 2.0 as cpm,isclick,raw_ctr,ctr_model_name
-         |    from dl_cpc.cpc_basedata_union_events a
+         |    from dl_cpc.slim_union_log a
          |    join
          |    (
          |    select ideaid, sum(if(isclick = 1,price,0))/sum(isshow)*10 cpm
-         |    from dl_cpc.cpc_basedata_union_events
-         |    where day = '2019-09-15'
+         |    from dl_cpc.slim_union_log
+         |    where d = '2019-09-15'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and adsrc in (1,28)
          |    group by ideaid
          |    ) b
          |    on a.ideaid = b.ideaid
-         |    where day = '2019-09-15'
+         |    where dt = '2019-09-15'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and adsrc in (1,28)
