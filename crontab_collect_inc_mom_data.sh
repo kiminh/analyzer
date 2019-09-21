@@ -10,22 +10,10 @@ ml_ver=v4refult
 date_full=`date`
 printf "*****************************${date_full}********************************\n"
 
-curr_date=`date --date='0 days ago' +%Y-%m-%d`
-printf "now curr_date is:${curr_date}\n"
-
-now_hour=$(date "+%H")
-now_minutes=$(date "+%M")
-now_id="00"${now_hour}
-if [ ${now_minutes} -ge 30 ];then
-    now_id="30"${now_hour}
-fi
-printf "now id is:%s\n" ${now_id}
-
 dir=collect_inc_mom
 if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
-printf "now id is:%s\n" ${now_id}
 
 shell_in_run=${dir}/shell_in_busy
 if [[ -f "$shell_in_run" ]]; then
@@ -34,65 +22,154 @@ if [[ -f "$shell_in_run" ]]; then
 fi
 touch ${shell_in_run}
 
+
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
-prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
 end=part-*
 sample_list=(
-    ${prefix}"/00/0/"
-    ${prefix}"/00/1/"
-    ${prefix}"/01/0/"
-    ${prefix}"/01/1/"
-    ${prefix}"/02/0/"
-    ${prefix}"/02/1/"
-    ${prefix}"/03/0/"
-    ${prefix}"/03/1/"
-    ${prefix}"/04/0/"
-    ${prefix}"/04/1/"
-    ${prefix}"/05/0/"
-    ${prefix}"/05/1/"
-    ${prefix}"/06/0/"
-    ${prefix}"/06/1/"
-    ${prefix}"/07/0/"
-    ${prefix}"/07/1/"
-    ${prefix}"/08/0/"
-    ${prefix}"/08/1/"
-    ${prefix}"/09/0/"
-    ${prefix}"/09/1/"
-    ${prefix}"/10/0/"
-    ${prefix}"/10/1/"
-    ${prefix}"/11/0/"
-    ${prefix}"/11/1/"
-    ${prefix}"/12/0/"
-    ${prefix}"/12/1/"
-    ${prefix}"/13/0/"
-    ${prefix}"/13/1/"
-    ${prefix}"/14/0/"
-    ${prefix}"/14/1/"
-    ${prefix}"/15/0/"
-    ${prefix}"/15/1/"
-    ${prefix}"/16/0/"
-    ${prefix}"/16/1/"
-    ${prefix}"/17/0/"
-    ${prefix}"/17/1/"
-    ${prefix}"/18/0/"
-    ${prefix}"/18/1/"
-    ${prefix}"/19/0/"
-    ${prefix}"/19/1/"
-    ${prefix}"/20/0/"
-    ${prefix}"/20/1/"
-    ${prefix}"/21/0/"
-    ${prefix}"/21/1/"
-    ${prefix}"/22/0/"
-    ${prefix}"/22/1/"
-    ${prefix}"/23/0/"
-    ${prefix}"/23/1/"
+    "/00/0/"
+    "/00/1/"
+    "/01/0/"
+    "/01/1/"
+    "/02/0/"
+    "/02/1/"
+    "/03/0/"
+    "/03/1/"
+    "/04/0/"
+    "/04/1/"
+    "/05/0/"
+    "/05/1/"
+    "/06/0/"
+    "/06/1/"
+    "/07/0/"
+    "/07/1/"
+    "/08/0/"
+    "/08/1/"
+    "/09/0/"
+    "/09/1/"
+    "/10/0/"
+    "/10/1/"
+    "/11/0/"
+    "/11/1/"
+    "/12/0/"
+    "/12/1/"
+    "/13/0/"
+    "/13/1/"
+    "/14/0/"
+    "/14/1/"
+    "/15/0/"
+    "/15/1/"
+    "/16/0/"
+    "/16/1/"
+    "/17/0/"
+    "/17/1/"
+    "/18/0/"
+    "/18/1/"
+    "/19/0/"
+    "/19/1/"
+    "/20/0/"
+    "/20/1/"
+    "/21/0/"
+    "/21/1/"
+    "/22/0/"
+    "/22/1/"
+    "/23/0/"
+    "/23/1/"
 )
 
 
-now_id=3016
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+last_date=`date --date='1 days ago' +%Y-%m-%d`
+printf "last_date is:${last_date}\n"
+prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${last_date}
 for idx in "${!sample_list[@]}";
 do
-    p00="${sample_list[$idx]}"
+    p00=${prefix}"${sample_list[$idx]}"
+    id="${id_list[$idx]}"
+
+    is_new=${dir}/train_done_${last_date}_${id}
+    if [[ -f "$is_new" ]]; then
+        continue
+    fi
+
+    file_count=${dir}/${last_date}_${id}_count
+    file_part=${dir}/${last_date}_${id}_part-10-0
+
+    if [[ ! -f ${file_count} ]]; then
+        hadoop fs -get ${p00}count ${file_count} &
+    fi
+    if [[ ! -f ${file_part} ]]; then
+        hadoop fs -get ${p00}part-10-0 ${file_part} &
+    fi
+done
+printf "waiting for downloading real-time data in parallel...\n"
+wait
+printf "downloaded real-time data file in parallel...\n"
+all_data=()
+for idx in "${!sample_list[@]}";
+do
+    p00=${prefix}"${sample_list[$idx]}"
+    id="${id_list[$idx]}"
+
+    is_new=${dir}/train_done_${last_date}_${id}
+    if [[ -f "$is_new" ]]; then
+        printf "detected real-time file ${p00}\n"
+        all_data+=(${p00}${end})
+        continue
+    fi
+
+    file_count=${dir}/${last_date}_${id}_count
+    file_part=${dir}/${last_date}_${id}_part-10-0
+
+    if [[ ! -f ${file_count} ]]; then
+        printf "no ${file_count} file, continue...\n"
+        continue
+    fi
+    if [[ ! -f ${file_part} ]]; then
+        printf "no ${file_part} file, continue...\n"
+        continue
+    fi
+
+    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 1000 ]
+    then
+        printf "invalid ${file_part} file size:${file_size}, continue...\n"
+        continue
+    fi
+
+    touch ${is_new}
+    rm ${file_count}
+    rm ${file_part}
+
+    printf "detected real-time file ${p00}\n"
+    all_data+=(${p00}${end})
+done
+
+if [[ ${#all_data[@]} -le 0 ]] ; then
+    printf "no history real-time training data file detected, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+printf "got ${#all_data[@]} history real-time training data file\n"
+train_file="$( IFS=$','; echo "${all_data[*]}" )"
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+
+
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
+printf "now curr_date is:${curr_date}\n"
+now_hour=$(date "+%H")
+now_minutes=$(date "+%M")
+now_id="00"${now_hour}
+if [ ${now_minutes} -ge 30 ];then
+    now_id="30"${now_hour}
+fi
+printf "now id is:%s\n" ${now_id}
+
+prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
+#now_id=3016
+for idx in "${!sample_list[@]}";
+do
+    p00=${prefix}"${sample_list[$idx]}"
     id="${id_list[$idx]}"
 
     if [ "${id}" = "${now_id}"  ];then
@@ -116,18 +193,16 @@ do
     fi
 done
 
-
 printf "waiting for downloading real-time data in parallel...\n"
 wait
 printf "downloaded real-time data file in parallel...\n"
-
 
 inc_data=()
 done_data=()
 all_data=()
 for idx in "${!sample_list[@]}";
 do
-    p00="${sample_list[$idx]}"
+    p00=${prefix}"${sample_list[$idx]}"
     id="${id_list[$idx]}"
 
     if [ "${id}" = "${now_id}"  ];then
@@ -180,13 +255,15 @@ if [[ ${#inc_data[@]} -le 0 ]] ; then
 fi
 
 printf "got ${#inc_data[@]} new collect inc real-time training data file\n"
+test_file="$( IFS=$','; echo "${all_data[*]}" )"
 
-train_file="$( IFS=$','; echo "${all_data[*]}" )"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 #test_file=${prefix}"/12/1/"${end}
 printf "train_file:%s\n" ${train_file}
 printf "test_file:%s\n" ${test_file}
 
+exit 0
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
