@@ -30,7 +30,7 @@ object CpmAuc {
          |    (
          |    select ideaid, sum(if(isclick = 1,price,0))/sum(isshow)*10 cpm
          |    from dl_cpc.slim_union_log
-         |    where d = '2019-09-15'
+         |    where dt = '2019-09-15'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and adsrc in (1,28)
