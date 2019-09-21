@@ -188,25 +188,16 @@ object MakeAdListV4Samples {
         output += idx_arr.map(_.toString).mkString(";")
         (idealId, unitId, planId, userId, output.mkString("\t"))
       }
-    ).filter(
+    )
+
+    val ideal_id_filter_rdd = text_train_rdd
+      .filter(
       rs => {
         val idealId = rs._1
-        val unitId = rs._2
-        val planId = rs._3
-        val userId = rs._4
         var filter = true
         if (!totalMap.contains(idealId)) {
           filter = false
         }
-        //if (!totalMap.contains(unitId)) {
-        //  filter = false
-        //}
-        //if (!totalMap.contains(planId)) {
-        //  filter = false
-        //}
-        //if (!totalMap.contains(userId)) {
-        //  filter = false
-        //}
         filter
       }
     ).map(
@@ -215,50 +206,108 @@ object MakeAdListV4Samples {
       }
     )
 
-    val text_train_rdd_count = text_train_rdd.count
-    println(s"filter text_train_rdd_count is : $text_train_rdd_count")
+    val unit_id_filter_rdd = text_train_rdd
+      .filter(
+        rs => {
+          val unitId = rs._2
+          var filter = true
+          if (!totalMap.contains(unitId)) {
+            filter = false
+          }
+          filter
+        }
+      ).map(
+      rs => {
+        rs._5
+      }
+    )
 
-    val tf_train_rdd = text_train_rdd.map({
-      rs =>
-        val rs_list = rs.split("\t")
-        val sample_idx = rs_list(0).toLong
-        val label_arr = rs_list(1).split(";").map(_.toLong).toSeq
-        val dense = rs_list(2).split(";").map(_.toLong).toSeq
-        val idx0 = rs_list(3).split(";").map(_.toLong).toSeq
-        val idx1 = rs_list(4).split(";").map(_.toLong).toSeq
-        val idx2 = rs_list(5).split(";").map(_.toLong).toSeq
-        val idx_arr = rs_list(6).split(";").map(_.toLong).toSeq
-        Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
-    })
+    val plan_id_filter_rdd = text_train_rdd
+      .filter(
+        rs => {
+          val planId = rs._3
+          var filter = true
+          if (!totalMap.contains(planId)) {
+            filter = false
+          }
+          filter
+        }
+      ).map(
+      rs => {
+        rs._5
+      }
+    )
 
-    //val tf_train_rdd_count = tf_train_rdd.count
-    //println(s"tf_train_rdd_count is : $tf_train_rdd_count")
+    val user_id_filter_rdd = text_train_rdd
+      .filter(
+        rs => {
+          val userId = rs._4
+          var filter = true
+          if (!totalMap.contains(userId)) {
+            filter = false
+          }
+          filter
+        }
+      ).map(
+      rs => {
+        rs._5
+      }
+    )
 
-    val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
-    val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
+    val ideal_id_filter_rdd_count = ideal_id_filter_rdd.count
+    println(s"ideal_id_filter_rdd_count is : $ideal_id_filter_rdd_count")
 
-    if (exists_hdfs_path(text_train)) {
-      delete_hdfs_path(text_train)
-    }
+    val unit_id_filter_rdd_count = unit_id_filter_rdd.count
+    println(s"unit_id_filter_rdd_count is : $unit_id_filter_rdd_count")
 
-    if (exists_hdfs_path(tf_train)) {
-      delete_hdfs_path(tf_train)
-    }
+    val plan_id_filter_rdd_count = plan_id_filter_rdd.count
+    println(s"plan_id_filter_rdd_count is : $plan_id_filter_rdd_count")
 
-    val tf_df: DataFrame = spark.createDataFrame(tf_train_rdd, schema_new)
-    tf_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(tf_train)
+    val user_id_filter_rdd_count = user_id_filter_rdd.count
+    println(s"user_id_filter_rdd_count is : $user_id_filter_rdd_count")
 
-    //保存count文件
-    val fileName = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName, text_train_rdd_count)
-    s"hadoop fs -put $fileName $tf_train/count" !
 
-    s"hadoop fs -chmod -R 0777 $tf_train" !
+    //val tf_train_rdd = text_train_rdd.map({
+    //  rs =>
+    //    val rs_list = rs.split("\t")
+    //    val sample_idx = rs_list(0).toLong
+    //    val label_arr = rs_list(1).split(";").map(_.toLong).toSeq
+    //    val dense = rs_list(2).split(";").map(_.toLong).toSeq
+    //    val idx0 = rs_list(3).split(";").map(_.toLong).toSeq
+    //    val idx1 = rs_list(4).split(";").map(_.toLong).toSeq
+    //    val idx2 = rs_list(5).split(";").map(_.toLong).toSeq
+    //    val idx_arr = rs_list(6).split(";").map(_.toLong).toSeq
+    //    Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
+    //})
 
-    text_train_rdd.repartition(100).saveAsTextFile(text_train)
-    s"hadoop fs -put $fileName $text_train/count" !
+    ////val tf_train_rdd_count = tf_train_rdd.count
+    ////println(s"tf_train_rdd_count is : $tf_train_rdd_count")
 
-    s"hadoop fs -chmod -R 0777 $text_train" !
+    //val text_train = des_dir + "/" + curr_date + "-" + time_id + "-train-text"
+    //val tf_train = des_dir + "/" + curr_date + "-" + time_id + "-train-tf"
+
+    //if (exists_hdfs_path(text_train)) {
+    //  delete_hdfs_path(text_train)
+    //}
+
+    //if (exists_hdfs_path(tf_train)) {
+    //  delete_hdfs_path(tf_train)
+    //}
+
+    //val tf_df: DataFrame = spark.createDataFrame(tf_train_rdd, schema_new)
+    //tf_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(tf_train)
+
+    ////保存count文件
+    //val fileName = "count_" + Random.nextInt(100000)
+    //writeNum2File(fileName, text_train_rdd_count)
+    //s"hadoop fs -put $fileName $tf_train/count" !
+
+    //s"hadoop fs -chmod -R 0777 $tf_train" !
+
+    //text_train_rdd.repartition(100).saveAsTextFile(text_train)
+    //s"hadoop fs -put $fileName $text_train/count" !
+
+    //s"hadoop fs -chmod -R 0777 $text_train" !
 
   }
 }
