@@ -24,7 +24,7 @@ object CpmAuc {
     import spark.implicits._
     val sql =
       s"""
-         | select 2 as cpm,isclick,raw_ctr,ctr_model_name
+         | select 2.0 as cpm,isclick,raw_ctr,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events a
          |    join
          |    (
