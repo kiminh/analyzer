@@ -24,7 +24,7 @@ object CpmAuc {
     import spark.implicits._
     val sql =
       s"""
-         | select 2.0 as cpm,isclick,raw_ctr,ctr_model_name
+         | select 2.0 as cpm,cast(isclick as Interger) as isclick,raw_ctr,ctr_model_name
          |    from dl_cpc.slim_union_log a
          |    join
          |    (
@@ -53,6 +53,7 @@ object CpmAuc {
     val result = getCpmAuc(spark,basedata)
     result.show(5)
     result.write.mode("overwrite").saveAsTable("dl_cpc.wy_test00")
+    println("job success")
 
   }
   case class LabeledPred(predict: Double, label: Int)
