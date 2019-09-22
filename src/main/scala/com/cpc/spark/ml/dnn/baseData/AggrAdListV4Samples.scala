@@ -114,7 +114,7 @@ object AggrAdListV4Samples {
     val date_list = src_date_list.split(";")
     val file_list = src_file_list.split(";")
 
-    for (list_idx <- src_date_list.indices) {
+    for (list_idx <- date_list.indices) {
 
       val curr_date = date_list(list_idx)
       val curr_file = file_list(list_idx)
