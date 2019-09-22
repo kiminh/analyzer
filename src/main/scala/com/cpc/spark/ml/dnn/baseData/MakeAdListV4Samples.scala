@@ -97,6 +97,7 @@ object MakeAdListV4Samples {
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
+    /**
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Extract Test Examples' AD Info")
     val text_test = des_dir + "/" + curr_date + "-" + time_id + "-test"
@@ -255,7 +256,7 @@ object MakeAdListV4Samples {
 
     val user_id_filter_rdd_count = user_id_filter_rdd.count
     println(s"user_id_filter_rdd_count is : $user_id_filter_rdd_count")
-
+    **/
 
     val importedDfHistory: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(history_files)
     println("history DF file count:" + importedDfHistory.count().toString + " of train files")

@@ -273,11 +273,14 @@ hadoop fs -get ${jarLib} ${randjar}
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 
 
-
-p00="fenghuabin/rockefeller_backup/2019-09-21-aggr/part-*"
-p01="fenghuabin/rockefeller_backup/2019-09-20-aggr/part-*"
-p02="fenghuabin/rockefeller_backup/2019-09-19-aggr/part-*"
-history_file="${p00},${p01},${p02}"
+p00="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-21-aggr/part-*"
+p01="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-20-aggr/part-*"
+p02="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-19-aggr/part-*"
+p03="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-18-aggr/part-*"
+p04="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-17-aggr/part-*"
+p05="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-16-aggr/part-*"
+p06="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-15-aggr/part-*"
+history_file="${p00},${p01},${p02},${p03},${p04},${p05},${p06}"
 
 
 spark-submit --master yarn --queue ${queue} \
