@@ -248,13 +248,13 @@ do
     last_id=${id}
 done
 
-if [[ ${#inc_data[@]} -le 0 ]] ; then
-    printf "no incremental real-time training data file detected, existing...\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-
-printf "got ${#inc_data[@]} new collect inc real-time training data file\n"
+#if [[ ${#inc_data[@]} -le 0 ]] ; then
+#    printf "no incremental real-time training data file detected, existing...\n"
+#    rm ${shell_in_run}
+#    exit 0
+#fi
+#
+#printf "got ${#inc_data[@]} new collect inc real-time training data file\n"
 train_file="$( IFS=$','; echo "${all_data[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
