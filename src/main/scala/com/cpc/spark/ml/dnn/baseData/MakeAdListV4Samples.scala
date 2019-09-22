@@ -78,15 +78,15 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 5) {
+    if (args.length != 6) {
       System.err.println(
         """
-          |you have to input 8 parameters !!!
+          |you have to input 6 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, test_file, curr_date, time_id) = args
+    val Array(des_dir, train_files, test_file, curr_date, time_id, history_files) = args
 
     println(args)
 
@@ -96,16 +96,6 @@ object MakeAdListV4Samples {
     sparkConf.set("spark.driver.maxResultSize", "5g")
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
-
-    val idealIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val unitIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val planIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val userIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-
-    val idealIdMapBC = sc.broadcast(idealIdMap)
-    val unitIdMapBC = sc.broadcast(unitIdMap)
-    val planIdMapBC = sc.broadcast(planIdMap)
-    val userIdMapBC = sc.broadcast(userIdMap)
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Extract Test Examples' AD Info")
@@ -129,14 +119,14 @@ object MakeAdListV4Samples {
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
 
-        //10,11,12,13
+        //11,12,13,14
         //,ideaid,unitid,planid,userid
-        //(dense(10).toString, dense(11).toString, dense(12).toString, dense(13).toString)
+        //(dense(11).toString, dense(12).toString, dense(13).toString, dense(14).toString)
         val output = scala.collection.mutable.ArrayBuffer[String]()
-        output += dense(10).toString
         output += dense(11).toString
         output += dense(12).toString
         output += dense(13).toString
+        output += dense(14).toString
         output.mkString("\t")
       }
     ).flatMap(
@@ -173,10 +163,10 @@ object MakeAdListV4Samples {
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
 
-        val idealId = dense(10).toString
-        val unitId = dense(11).toString
-        val planId = dense(12).toString
-        val userId = dense(13).toString
+        val idealId = dense(11).toString
+        val unitId = dense(12).toString
+        val planId = dense(13).toString
+        val userId = dense(14).toString
 
         val output = scala.collection.mutable.ArrayBuffer[String]()
         output += sample_idx.toString
@@ -265,6 +255,85 @@ object MakeAdListV4Samples {
 
     val user_id_filter_rdd_count = user_id_filter_rdd.count
     println(s"user_id_filter_rdd_count is : $user_id_filter_rdd_count")
+
+
+    val importedDfHistory: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(history_files)
+    println("history DF file count:" + importedDfHistory.count().toString + " of train files")
+    val his_rdd = importedDfHistory.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val idealId = dense(11).toString
+        val unitId = dense(12).toString
+        val planId = dense(13).toString
+        val userId = dense(14).toString
+        val adclass = dense(16).toString
+
+        (idealId, unitId, planId, userId, adclass)
+      }
+    )
+
+    val ideal_id_single = his_rdd.map(
+      rs => {
+          (rs._1, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("ideal_id_single.size=" + ideal_id_single.size)
+    val ideal_id_adclass = his_rdd.map(
+      rs => {
+        (rs._1 + "_" + rs._5, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("ideal_id_adclass.size=" + ideal_id_adclass.size)
+
+    val unit_id_single = his_rdd.map(
+      rs => {
+        (rs._2, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("unit_id_single.size=" + unit_id_single.size)
+    val unit_id_adclass = his_rdd.map(
+      rs => {
+        (rs._2 + "_" + rs._5, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("unit_id_adclass.size=" + unit_id_adclass.size)
+
+    val plan_id_single = his_rdd.map(
+      rs => {
+        (rs._3, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("plan_id_single.size=" + plan_id_single.size)
+    val plan_id_adclass = his_rdd.map(
+      rs => {
+        (rs._3 + "_" + rs._5, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("plan_id_adclass.size=" + plan_id_adclass.size)
+
+    val user_id_single = his_rdd.map(
+      rs => {
+        (rs._4, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("user_id_single.size=" + user_id_single.size)
+    val user_id_adclass = his_rdd.map(
+      rs => {
+        (rs._4 + "_" + rs._5, 1L)
+      }
+    ).reduceByKey(_ + _).collectAsMap()
+    println("user_id_adclass.size=" + user_id_adclass.size)
+
+
+
+
 
 
     //val tf_train_rdd = text_train_rdd.map({

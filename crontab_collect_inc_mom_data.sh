@@ -272,6 +272,14 @@ hadoop fs -get ${jarLib} ${randjar}
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 
+
+
+p00="fenghuabin/rockefeller_backup/2019-09-21-aggr/part-*"
+p01="fenghuabin/rockefeller_backup/2019-09-20-aggr/part-*"
+p02="fenghuabin/rockefeller_backup/2019-09-19-aggr/part-*"
+history_file="${p00},${p01},${p02}"
+
+
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
     --driver-memory 4g --executor-memory 2g \
@@ -281,7 +289,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${test_file} ${curr_date} ${last_id}
+    ${randjar} ${des_dir} ${train_file} ${test_file} ${curr_date} ${last_id} ${history_file}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 #hadoop fs -chmod -R 0777 ${chmod_des}
