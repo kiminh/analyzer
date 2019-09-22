@@ -177,8 +177,8 @@ do
     echo "collected "${#valid_data[@]}" real-time training data file for ${curr_date}"
     train_file="$( IFS=$','; echo "${valid_data[*]}" )"
 
-    if [[ ${#valid_data[@]} -le 46 ]] ; then
-        printf "too less real-time data detected, less than 46, for ${curr_date}, continue...\n"
+    if [[ ${#valid_data[@]} -le 48 ]] ; then
+        printf "too less real-time data detected, less than 48, for ${curr_date}, continue...\n"
         continue
     fi
     #printf "${train_file}\n"
@@ -189,6 +189,7 @@ done
 date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
 file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
 echo "${date_list}"
+echo "${file_list}"
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
