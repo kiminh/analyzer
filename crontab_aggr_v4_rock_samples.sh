@@ -37,11 +37,6 @@ sample_list=(
     `date --date='12 days ago' +%Y-%m-%d`
     `date --date='13 days ago' +%Y-%m-%d`
     `date --date='14 days ago' +%Y-%m-%d`
-    `date --date='15 days ago' +%Y-%m-%d`
-    `date --date='16 days ago' +%Y-%m-%d`
-    `date --date='17 days ago' +%Y-%m-%d`
-    `date --date='18 days ago' +%Y-%m-%d`
-    `date --date='19 days ago' +%Y-%m-%d`
 )
 
 collect_file=()
