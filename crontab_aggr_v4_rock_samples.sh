@@ -154,7 +154,7 @@ do
     echo "collected "${#valid_data[@]}" real-time training data file for ${curr_date}"
     train_file="$( IFS=$','; echo "${valid_data[*]}" )"
 
-    if [[ ${#valid_data[@]} -le 48 ]] ; then
+    if [[ ${#valid_data[@]} -lt 48 ]] ; then
         printf "too less real-time data detected, less than 48, for ${curr_date}, continue...\n"
         continue
     fi
