@@ -260,6 +260,8 @@ object MakeAdListV4Samples {
 
     val importedDfHistory: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(history_files)
     println("history DF file count:" + importedDfHistory.count().toString + " of train files")
+    importedDfHistory.printSchema()
+    importedDfHistory.show(3)
     val his_rdd = importedDfHistory.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
