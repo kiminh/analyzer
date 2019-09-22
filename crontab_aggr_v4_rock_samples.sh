@@ -22,13 +22,6 @@ if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
 
-shell_in_run=${dir}/shell_in_busy
-if [[ -f "$shell_in_run" ]]; then
-    printf "shell are busy now, existing\n"
-    exit 0
-fi
-touch ${shell_in_run}
-
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
     `date --date='2 days ago' +%Y-%m-%d`
@@ -189,7 +182,6 @@ do
 
     if [[ ${#valid_data[@]} -le 46 ]] ; then
         printf "too less real-time data detected, less than 46, for ${curr_date}, continue...\n"
-        rm ${shell_in_run}
         continue
     fi
     #printf "${train_file}\n"
@@ -221,7 +213,4 @@ spark-submit --master yarn --queue ${queue} \
     --class com.cpc.spark.ml.dnn.baseData.AggrAdListV4Samples\
     ${randjar} ${des_dir} ${date_list} ${file_list}
 
-#chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
-#hadoop fs -chmod -R 0777 ${chmod_des}
-rm ${shell_in_run}
 
