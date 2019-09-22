@@ -5,16 +5,6 @@ source /etc/profile
 
 date_full=`date`
 printf "*****************************${date_full}********************************\n"
-ml_name=adlist
-ml_ver=v4refult
-
-day_cnt=$1
-inc_epochs=$2
-name_space=$3
-total=$4
-worker=$5
-ps_server=$6
-tf_server=$7
 
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
 dir=aggr_rock_samples
