@@ -118,7 +118,9 @@ object AggrAdListV4Samples {
 
       val curr_date = date_list(list_idx)
       val curr_file = file_list(list_idx)
+      println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       println(s"curr_date : $curr_date")
+      println(s"curr_file : $curr_file")
 
       val file_des = des_dir + "/" + curr_date + "-aggr"
       if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count") ) {
