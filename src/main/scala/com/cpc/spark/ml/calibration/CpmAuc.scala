@@ -73,7 +73,7 @@ object CpmAuc {
       )
       .mapValues(x => {
         val label = x.map(x => x._2)
-        val max = x.map(x => x._1).max + 1
+        val max = x.map(x => x._1).max + 2
         val cpm = x.map(x => x._2)
         val pos = Array.fill(max)(0.0)
         val neg = Array.fill(max)(0.0)
@@ -89,7 +89,7 @@ object CpmAuc {
 
         var negSum = 0.0
         var auc: Double = 0
-        for (i <- 0 to max ) {
+        for (i <- 0 to max - 1 ) {
           auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
           negSum += neg(i)
         }
