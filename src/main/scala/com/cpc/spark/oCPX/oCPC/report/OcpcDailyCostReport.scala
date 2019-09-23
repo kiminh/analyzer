@@ -57,7 +57,7 @@ object OcpcDailyCostReport {
          |    media_appsid,
          |    ocpc_log,
          |    (case when len(ocpc_log) > 0 then 2 else 1 end) as ocpc_step,
-         |    (case when ocpc_log like '%IsHiddenOcpc:1%' as 1 else 0 end) as is_hidden
+         |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
          |FROM
          |    dl_cpc.cpc_union_log
          |WHERE
