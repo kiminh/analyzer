@@ -142,6 +142,8 @@ object MakeAdListV4Samples {
       }
     )
 
+    println("total_rdd.size=" + totalMap.count())
+
     val bid_map = totalMap.map({
       rs => {
         (rs._1, rs._3)
