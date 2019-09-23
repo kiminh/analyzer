@@ -24,7 +24,7 @@ object CpmAuc {
     import spark.implicits._
     val sql =
       s"""
-         | select 2.0 as cpm,cast(isclick as int) as isclick,cast(raw_ctr as int) raw_ctr,ctr_model_name
+         | select cast(2.0 as double) as cpm,cast(isclick as int) as isclick,cast(raw_ctr as int) raw_ctr,ctr_model_name
          |    from dl_cpc.slim_union_log a
          |    join
          |    (
