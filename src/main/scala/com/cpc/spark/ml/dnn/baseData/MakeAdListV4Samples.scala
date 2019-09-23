@@ -110,7 +110,7 @@ object MakeAdListV4Samples {
     //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
     importedDfTest.printSchema()
     importedDfTest.show(3)
-    val totalMap = importedDfTest.rdd.map(
+    val total_rdd = importedDfTest.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -128,10 +128,22 @@ object MakeAdListV4Samples {
         val bid = dense(10).toString
         val adclass = dense(16).toString
 
-        (bid, adclass, label)
 
+        val output = scala.collection.mutable.ArrayBuffer[String]()
+        output += sample_idx.toString
+        output += label_arr.map(_.toString).mkString(";")
+        output += dense.map(_.toString).mkString(";")
+        output += idx0.map(_.toString).mkString(";")
+        output += idx1.map(_.toString).mkString(";")
+        output += idx2.map(_.toString).mkString(";")
+        output += idx_arr.map(_.toString).mkString(";")
+
+        (bid, adclass, label, output.mkString("\t"))
       }
-    ).filter(
+    )
+
+
+    val positive_rdd = total_rdd.filter(
       rs => {
         val label = rs._3
         var filter = false
@@ -142,21 +154,104 @@ object MakeAdListV4Samples {
       }
     )
 
-    println("total_rdd.size=" + totalMap.count())
+    println("total_rdd.size=" + positive_rdd.count())
+    val total_count = sc.broadcast(positive_rdd.count())
 
+    val bid_adclass_info = des_dir + "/bid-adclass-info"
+    if (exists_hdfs_path(bid_adclass_info)) {
+      delete_hdfs_path(bid_adclass_info)
+    }
+    val bid_adclass_rdd = positive_rdd.map(
+      {
+      rs => {
+        (rs._1 + "_" + rs._2, rs._3)
+      }
+      }
+    ).reduceByKey(_ + _).map(
+      {
+        rs =>
+          (rs._1, rs._2, total_count.value.toDouble / (total_count.value.toDouble + rs._2.toDouble))
+      }
+    )
+
+    val component_rdd = bid_adclass_rdd.map(
+      {
+        rs =>
+          (rs._1, rs._3)
+
+      }
+    )
+
+    println("bid_adclass_rdd.size=" + bid_adclass_rdd.count())
+    bid_adclass_rdd.repartition(1).sortBy(_._2 * -1).map({
+      case (key, value1, value2) =>
+        key + "\t" + value1.toString + "\t" + value2.toString
+    }).saveAsTextFile(bid_adclass_info)
+
+
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("weight", DoubleType, nullable = true),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+    val weighted_rdd = total_rdd.map(
+      {
+        rs =>
+          (rs._1 + "_" + rs._2, rs._4)
+      }
+    ).join(component_rdd).map({
+      rs =>
+        val weight = rs._2._2
+        val line_list = rs._2._1.split("\t")
+        val sample_idx = line_list(0).toLong
+        val label_arr = line_list(1).split(";").map(_.toLong).toSeq
+        val dense = line_list(2).split(";").map(_.toLong).toSeq
+        val idx0 = line_list(3).split(";").map(_.toLong).toSeq
+        val idx1 = line_list(4).split(";").map(_.toLong).toSeq
+        val idx2 = line_list(5).split(";").map(_.toLong).toSeq
+        val idx_arr = line_list(6).split(";").map(_.toLong).toSeq
+        Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
+    })
+
+    val weighted_rdd_count = weighted_rdd.count
+    println(s"weighted_rdd_count is : $weighted_rdd_count")
+
+    val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"
+    val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
+    tf_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(weighted_file)
+
+    //保存count文件
+    val fileName = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName, weighted_rdd_count)
+    s"hadoop fs -put $fileName $weighted_file/count" !
+
+    s"hadoop fs -chmod -R 0777 $weighted_file" !
+
+
+    /**
     val bid_info = des_dir + "/bid-info"
     if (exists_hdfs_path(bid_info)) {
       delete_hdfs_path(bid_info)
     }
-    val bid_rdd = totalMap.map({
+    val bid_rdd = positive_rdd.map({
       rs => {
         (rs._1, rs._3)
       }
     }).reduceByKey(_ + _)
+    .map({
+      rs =>
+        (rs._1, rs._2, total_count.value.toDouble / (total_count.value.toDouble + rs._2.toDouble))
+    })
     println("bid_rdd.size=" + bid_rdd.count())
     bid_rdd.repartition(1).sortBy(_._2 * -1).map({
-      case (key, value) =>
-        key + "\t" + value.toString
+      case (key, value1, value2) =>
+        key + "\t" + value1.toString + "\t" + value2
     }).saveAsTextFile(bid_info)
 
 
@@ -164,7 +259,7 @@ object MakeAdListV4Samples {
     if (exists_hdfs_path(adclass_info)) {
       delete_hdfs_path(adclass_info)
     }
-    val adclass_rdd = totalMap.map({
+    val adclass_rdd = positive_rdd.map({
       rs => {
         (rs._2, rs._3)
       }
@@ -180,7 +275,7 @@ object MakeAdListV4Samples {
     if (exists_hdfs_path(bid_adclass_info)) {
       delete_hdfs_path(bid_adclass_info)
     }
-    val bid_adclass_rdd = totalMap.map({
+    val bid_adclass_rdd = positive_rdd.map({
       rs => {
         (rs._1 + "_" + rs._2, rs._3)
       }
@@ -189,7 +284,7 @@ object MakeAdListV4Samples {
     bid_adclass_rdd.repartition(1).sortBy(_._2 * -1).map({
       case (key, value) =>
         key + "\t" + value.toString
-    }).saveAsTextFile(bid_adclass_info)
+    }).saveAsTextFile(bid_adclass_info)**/
 
 
 
