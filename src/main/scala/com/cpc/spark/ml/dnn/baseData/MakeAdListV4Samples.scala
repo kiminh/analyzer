@@ -155,7 +155,7 @@ object MakeAdListV4Samples {
     )
 
     val positive_cnt = positive_rdd.count()
-    println("total_rdd.size=" + positive_cnt)
+    println("positive_rdd.size=" + positive_cnt)
     val total_count = sc.broadcast(positive_cnt)
 
     val bid_adclass_info = des_dir + "/bid-adclass-info"
