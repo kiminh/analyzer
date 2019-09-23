@@ -119,7 +119,7 @@ object LREval {
          |  and ideaid > 0
          |  and unitid > 0
          |  and userid in (1562482,1568203,1582093,1598145,1604411,1616036,1616821,1629979,1629982,1638653,1641461,1641463,1641469,1588335,1594022,1641470,1653235,1656197,1665043,1673378,1666928,1629538,1629537,1569962) )t2
-         |on t1.imei=t2.uid and dt<=day and before7dt>=day)t3)t4
+         |on t1.imei=t2.uid and dt>=day and before7dt<=day)t3)t4
       """.stripMargin
     println("sql="+bs_sql)
     val bs_df=spark.sql(bs_sql)
