@@ -52,6 +52,7 @@ object CpmAuc {
     val basedata = spark.sql(sql)
       .withColumn("score",col("raw_ctr"))
       .withColumn("label",col("isclick"))
+      .repartition(1000)
 
     val result = getCpmAuc(spark,basedata)
     result.show(10)
