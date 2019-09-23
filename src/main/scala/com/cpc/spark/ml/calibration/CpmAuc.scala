@@ -30,14 +30,15 @@ object CpmAuc {
          |    (
          |    select ideaid, sum(if(isclick = 1,price,0))/sum(isshow)*10 cpm
          |    from dl_cpc.slim_union_log
-         |    where dt = '2019-09-15'
+         |    where dt = '2019-09-15' and hour = '11'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
+         |    and adtype != 15
          |    and adsrc in (1,28)
          |    group by ideaid
          |    ) b
          |    on a.ideaid = b.ideaid
-         |    where dt = '2019-09-15'
+         |    where dt = '2019-09-15' and hour = '11'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
          |    and adsrc in (1,28)
@@ -92,7 +93,7 @@ object CpmAuc {
           auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
           negSum += neg(i)
         }
-        val result = if (m <= 0 || n <= 0) (-1.0, 0.0 + m + n) else (auc / (1.0 * m * n), 0.0 + m + n)
+        val result = if (m <= 0.0 || n <= 0.0) (-1.0, 0.0 + m + n) else (auc / (1.0 * m * n), 0.0 + m + n)
         result
       }).map(x => (x._1,x._2._1,x._2._2))
       .map(x => CpmAuc(model = x._1, auc = x._2, sum = x._3))
