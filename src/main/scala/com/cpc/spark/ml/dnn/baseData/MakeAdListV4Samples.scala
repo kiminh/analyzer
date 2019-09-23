@@ -160,7 +160,6 @@ object MakeAdListV4Samples {
     }).saveAsTextFile(bid_info)
 
 
-
     val adclass_info = des_dir + "/adclass-info"
     if (exists_hdfs_path(adclass_info)) {
       delete_hdfs_path(adclass_info)
@@ -176,6 +175,21 @@ object MakeAdListV4Samples {
         key + "\t" + value.toString
     }).saveAsTextFile(adclass_info)
 
+
+    val bid_adclass_info = des_dir + "/bid-adclass-info"
+    if (exists_hdfs_path(bid_adclass_info)) {
+      delete_hdfs_path(bid_adclass_info)
+    }
+    val bid_adclass_rdd = totalMap.map({
+      rs => {
+        (rs._1 + "_" + rs._2, rs._3)
+      }
+    }).reduceByKey(_ + _)
+    println("bid_adclass_rdd.size=" + bid_adclass_rdd.count())
+    bid_adclass_rdd.repartition(1).sortBy(_._2 * -1).map({
+      case (key, value) =>
+        key + "\t" + value.toString
+    }).saveAsTextFile(bid_adclass_info)
 
 
 
