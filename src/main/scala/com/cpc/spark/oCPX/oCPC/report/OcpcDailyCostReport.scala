@@ -49,21 +49,22 @@ object OcpcDailyCostReport {
          |    searchid,
          |    unitid,
          |    userid,
+         |    ext['usertype'].int_value as usertype,
          |    adslot_type,
-         |    adclass,
+         |    ext['adclass'].int_value as adclass,
          |    isclick,
          |    isshow,
          |    price,
          |    media_appsid,
-         |    ocpc_log,
-         |    (case when len(ocpc_log) > 0 then 2 else 1 end) as ocpc_step,
-         |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
+         |    ext_string['ocpc_log'] as ocpc_log,
+         |    (case when length(ext_string['ocpc_log']) > 0 then 2 else 1 end) as ocpc_step,
+         |    (case when ext_string['ocpc_log'] like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
          |FROM
          |    dl_cpc.cpc_union_log
          |WHERE
          |    `date` = '$date'
          |and $mediaSelection
-         |and is_ocpc=1
+         |and ext_int['is_ocpc'] = 1
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
@@ -80,6 +81,7 @@ object OcpcDailyCostReport {
          |SELECT
          |  unitid,
          |  userid,
+         |  usertype,
          |  adslot_type,
          |  media,
          |  adclass,
@@ -89,7 +91,7 @@ object OcpcDailyCostReport {
          |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
          |FROM
          |  raw_data
-         |GROUP BY unitid, userid, adslot_type, media, adclass, ocpc_step
+         |GROUP BY unitid, userid, usertype, adslot_type, media, adclass, ocpc_step
        """.stripMargin
     println(sqlRequest2)
     val resultDF = spark.sql(sqlRequest2)
