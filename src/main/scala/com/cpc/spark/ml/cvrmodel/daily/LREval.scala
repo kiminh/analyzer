@@ -117,7 +117,7 @@ object LREval {
          | , ideaid
          | , `timestamp`
          |from dl_cpc.cpc_basedata_click_event
-         |where day>='2019-08-01' and day<='2019-09-09'
+         |where day>='2019-06-01' and day<='2019-09-09'
          |  and media_appsid in ('80000001','80000002')
          |  and adslot_type in (1, 2)
          |  and isclick = 1
