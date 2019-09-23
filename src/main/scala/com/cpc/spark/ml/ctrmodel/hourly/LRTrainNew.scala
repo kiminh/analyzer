@@ -750,46 +750,46 @@ object LRTrainNew {
     }
     i += 1000 + 1
 
-    //phone_price
-    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
-    i += 1
-
-    //userid
-    els = els :+ (dict("userid").getOrElse(x.getAs[Int]("userid"), 0) + i, 1d)
-    i += dict("userid").size + 1
-
-    //brand_title
-    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
-    i += dictStr("brand").size + 1
-
-    //channel
-    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
-    i += dictStr("channel").size + 1
-
-    //dtu_id
-    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
-    i += dictStr("dtu_id").size + 1
-
-
-    //media_type 0，1，3只有3个
-    els = els :+ (x.getAs[Int]("media_type") + i, 1d)
-    i += 5
-
-    //province 0~34总共35个
-    els = els :+ (x.getAs[Int]("province") + i, 1d)
-    i += 40
-
-    //city_level 1~6总共6
-    els = els :+ (x.getAs[Int]("city_level") + i, 1d)
-    i += 10
-
-    //interaction 1~2总共2
-    els = els :+ (x.getAs[Int]("interaction") + i, 1d)
-    i += 5
-
-    //is_new_ad 0~1总共2
-    els = els :+ (x.getAs[Int]("is_new_ad") + i, 1d)
-    i += 2
+//    //phone_price
+//    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
+//    i += 1
+//
+//    //userid
+//    els = els :+ (dict("userid").getOrElse(x.getAs[Int]("userid"), 0) + i, 1d)
+//    i += dict("userid").size + 1
+//
+//    //brand_title
+//    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
+//    i += dictStr("brand").size + 1
+//
+//    //channel
+//    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
+//    i += dictStr("channel").size + 1
+//
+//    //dtu_id
+//    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
+//    i += dictStr("dtu_id").size + 1
+//
+//
+//    //media_type 0，1，3只有3个
+//    els = els :+ (x.getAs[Int]("media_type") + i, 1d)
+//    i += 5
+//
+//    //province 0~34总共35个
+//    els = els :+ (x.getAs[Int]("province") + i, 1d)
+//    i += 40
+//
+//    //city_level 1~6总共6
+//    els = els :+ (x.getAs[Int]("city_level") + i, 1d)
+//    i += 10
+//
+//    //interaction 1~2总共2
+//    els = els :+ (x.getAs[Int]("interaction") + i, 1d)
+//    i += 5
+//
+//    //is_new_ad 0~1总共2
+//    els = els :+ (x.getAs[Int]("is_new_ad") + i, 1d)
+//    i += 2
 
     println("Vectors size = " + i)
 
