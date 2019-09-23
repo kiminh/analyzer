@@ -32,15 +32,87 @@ object LREval {
 
     val bs_sql =
       s"""
-         |select uid,day,IF(rank=1,1,0) as label from
-         |(select uid,day,Row_Number() OVER (partition by uid ORDER BY day desc) as rank from
-         |(select uid,day from
+         |insert overwrite table dl_cpc.pass_back_label_test_qizhi
+         |select searchid
+         | , uid
+         | , day
+         | , hour
+         | , sex
+         | , age
+         | , os
+         | , isp
+         | , network
+         | , city
+         | , media_appsid
+         | , adslotid
+         | , phone_level
+         | , adclass
+         | , adtype
+         | , planid
+         | , unitid
+         | , ideaid,IF(rank=1,1,0) as label from
+         |(select searchid
+         | , uid
+         | , day
+         | , hour
+         | , sex
+         | , age
+         | , os
+         | , isp
+         | , network
+         | , city
+         | , media_appsid
+         | , adslotid
+         | , phone_level
+         | , adclass
+         | , adtype
+         | , planid
+         | , unitid
+         | , ideaid
+         | , Row_Number() OVER (partition by uid ORDER BY `timestamp` desc) as rank from
+         |(select searchid
+         | , uid
+         | , day
+         | , hour
+         | , sex
+         | , age
+         | , os
+         | , isp
+         | , network
+         | , city
+         | , media_appsid
+         | , adslotid
+         | , phone_level
+         | , adclass
+         | , adtype
+         | , planid
+         | , unitid
+         | , ideaid
+         | , `timestamp` from
          |(select imei,dt,date_add(dt,-7) as before7dt from dl_cpc.pass_back_test_qizhi)t1
          |join
          |(select
-         |  md5(uid) as uid,day
+         |   searchid
+         | , md5(uid) as uid
+         | , day
+         | , hour
+         | , sex
+         | , age
+         | , os
+         | , isp
+         | , network
+         | , city
+         | , media_appsid
+         | , adslotid
+         | , phone_level
+         | , adclass
+         | , adtype
+         | , planid
+         | , unitid
+         | , ideaid
+         | , `timestamp`
          |from dl_cpc.cpc_basedata_click_event
-         |where day>='2019-06-01' and day<='2019-09-09'
+         |where day>='2019-08-01' and day<='2019-09-09'
          |  and media_appsid in ('80000001','80000002')
          |  and adslot_type in (1, 2)
          |  and isclick = 1
