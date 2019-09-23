@@ -97,6 +97,150 @@ object MakeAdListV4Samples {
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
+
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println("Extract Test Examples' AD Info")
+    val text_test = des_dir + "/" + curr_date + "-" + time_id + "-test"
+
+    if (exists_hdfs_path(text_test)) {
+      delete_hdfs_path(text_test)
+    }
+
+    val importedDfTest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
+    println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
+    importedDfTest.printSchema()
+    importedDfTest.show(3)
+    val totalMap = importedDfTest.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        var label = 0L
+        if (label_arr.head == 1L) {
+          label = 1L
+        }
+
+        val bid = dense(10).toString
+        val adclass = dense(16).toString
+
+        (bid, adclass, label)
+
+      }
+    ).filter(
+      rs => {
+        val label = rs._3
+        var filter = false
+        if (label == 1L) {
+          filter = true
+        }
+        filter
+      }
+    )
+
+    val bid_map = totalMap.map({
+      rs => {
+        (rs._1, rs._3)
+      }
+    }).reduceByKey(_ + _).collectAsMap()
+    println("bid_map.size=" + bid_map.size)
+    println(bid_map)
+
+    val adclass_map = totalMap.map({
+      rs => {
+        (rs._2, rs._3)
+      }
+    }).reduceByKey(_ + _).collectAsMap()
+    println("adclass_map.size=" + adclass_map.size)
+    println(adclass_map)
+
+
+    //  .flatMap(
+    //  rs => {
+    //    val line = rs.split("\t")
+    //    for (elem <- line)
+    //      yield (elem, 1L)
+    //  }
+    //).reduceByKey(_ + _).collectAsMap()
+    println("totalMap.size=" + totalMap.size)
+
+    //.repartition(100).saveAsTextFile(text_test)
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println("Filter Train Examples")
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+    val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
+    println("DF file count:" + importedDf.count().toString + " of train files")
+    val text_train_rdd = importedDf.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val idealId = dense(11).toString
+        val unitId = dense(12).toString
+        val planId = dense(13).toString
+        val userId = dense(14).toString
+
+        val output = scala.collection.mutable.ArrayBuffer[String]()
+        output += sample_idx.toString
+        output += label_arr.map(_.toString).mkString(";")
+        output += dense.map(_.toString).mkString(";")
+        output += idx0.map(_.toString).mkString(";")
+        output += idx1.map(_.toString).mkString(";")
+        output += idx2.map(_.toString).mkString(";")
+        output += idx_arr.map(_.toString).mkString(";")
+        (idealId, unitId, planId, userId, output.mkString("\t"))
+      }
+    )
+
+    val ideal_id_filter_rdd = text_train_rdd
+      .filter(
+        rs => {
+          val idealId = rs._1
+          var filter = true
+          if (!totalMap.contains(idealId)) {
+            filter = false
+          }
+          filter
+        }
+      ).map(
+      rs => {
+        rs._5
+      }
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Extract Test Examples' AD Info")
@@ -258,6 +402,7 @@ object MakeAdListV4Samples {
     println(s"user_id_filter_rdd_count is : $user_id_filter_rdd_count")
     **/
 
+      /**
     val importedDfHistory: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(history_files)
     println("history DF file count:" + importedDfHistory.count().toString + " of train files")
     importedDfHistory.printSchema()
@@ -333,6 +478,7 @@ object MakeAdListV4Samples {
       }
     ).reduceByKey(_ + _).collectAsMap()
     println("user_id_adclass.size=" + user_id_adclass.size)
+        **/
 
 
 

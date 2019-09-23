@@ -262,7 +262,7 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #test_file=${prefix}"/12/1/"${end}
 printf "train_file:%s\n" ${train_file}
-printf "test_file:%s\n" ${test_file}
+#printf "test_file:%s\n" ${test_file}
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
