@@ -29,8 +29,8 @@ object OcpcDailyCostReport {
     baseData
       .withColumn("date", lit(date))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
 
 
   }
