@@ -144,25 +144,37 @@ object MakeAdListV4Samples {
 
     println("total_rdd.size=" + totalMap.count())
 
-    val bid_map = totalMap.map({
+    val bid_info = des_dir + "/bid-info"
+    if (exists_hdfs_path(bid_info)) {
+      delete_hdfs_path(bid_info)
+    }
+    val bid_rdd = totalMap.map({
       rs => {
         (rs._1, rs._3)
       }
-    }).reduceByKey(_ + _).collectAsMap()
-    println("bid_map.size=" + bid_map.size)
-    println(bid_map)
+    }).reduceByKey(_ + _)
+    println("bid_rdd.size=" + bid_rdd.count())
+    bid_rdd.repartition(1).sortBy(_._2 * -1).map({
+      case (key, value) =>
+        key + "\t" + value.toString
+    }).saveAsTextFile(bid_info)
 
-    val adclass_map = totalMap.map({
+
+
+    val adclass_info = des_dir + "/adclass-info"
+    if (exists_hdfs_path(adclass_info)) {
+      delete_hdfs_path(adclass_info)
+    }
+    val adclass_rdd = totalMap.map({
       rs => {
         (rs._2, rs._3)
       }
-    }).reduceByKey(_ + _).collectAsMap()
-    println("adclass_map.size=" + adclass_map.size)
-    println(adclass_map)
-
-
-
-
+    }).reduceByKey(_ + _)
+    println("adclass_rdd.size=" + adclass_rdd.count())
+    adclass_rdd.repartition(1).sortBy(_._2 * -1).map({
+      case (key, value) =>
+        key + "\t" + value.toString
+    }).saveAsTextFile(adclass_info)
 
 
 
