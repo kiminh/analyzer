@@ -266,6 +266,7 @@ printf "train_file:%s\n" ${train_file}
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
+queue=root.cpc.report
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
@@ -286,8 +287,8 @@ history_file="${p00},${p01},${p02},${p03},${p04},${p05},${p06}"
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
-    --driver-memory 4g --executor-memory 2g \
-    --num-executors 1000 --executor-cores 2 \
+    --driver-memory 4g --executor-memory 4g \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
