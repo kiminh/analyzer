@@ -107,7 +107,7 @@ object MakeAdListV4Samples {
     }
 
     val importedDfTest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
-    println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
+    //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
     importedDfTest.printSchema()
     importedDfTest.show(3)
     val totalMap = importedDfTest.rdd.map(
