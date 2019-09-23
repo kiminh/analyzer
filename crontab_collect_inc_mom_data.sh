@@ -166,7 +166,7 @@ fi
 printf "now id is:%s\n" ${now_id}
 
 prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
-#now_id=3016
+now_id=0013
 for idx in "${!sample_list[@]}";
 do
     p00=${prefix}"${sample_list[$idx]}"
