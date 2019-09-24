@@ -78,10 +78,10 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 6) {
+    if (args.length != 7) {
       System.err.println(
         """
-          |you have to input 6 parameters !!!
+          |you have to input 7 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
