@@ -37,6 +37,8 @@ object LRTrainPassBack {
     val hour = args(3)
     var parserArg = "ctrparser9"
 
+    println("parserArg = " + parserArg)
+
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)
 
