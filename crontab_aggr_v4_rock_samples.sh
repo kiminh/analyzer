@@ -248,8 +248,6 @@ file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
 echo "${date_list}"
 echo "${file_list}"
 
-exit
-
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
 queue=root.cpc.develop
