@@ -24,13 +24,13 @@ object OcpcDailyCostReport {
     println(s"date=$date")
 
     // 拉取点击、消费、转化等基础数据
-    val baseData = getBaseData(date, spark)
+    val baseData = getBaseDataV2(date, spark)
 
     baseData
       .withColumn("date", lit(date))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
 
 
   }
@@ -66,6 +66,73 @@ object OcpcDailyCostReport {
          |    `date` = '$date'
          |and $mediaSelection
          |and ext_int['is_ocpc'] = 1
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark
+      .sql(sqlRequest1)
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .filter(s"ocpc_step=1 or (ocpc_step=2 and is_hidden=0)")
+
+    rawData.createOrReplaceTempView("raw_data")
+
+    // 数据关联
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  userid,
+         |  usertype,
+         |  adslot_type,
+         |  media,
+         |  adclass,
+         |  ocpc_step,
+         |  sum(isshow) as show,
+         |  sum(isclick) as click,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
+         |FROM
+         |  raw_data
+         |GROUP BY unitid, userid, usertype, adslot_type, media, adclass, ocpc_step
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2)
+
+    resultDF
+
+  }
+
+
+  def getBaseDataV2(date: String, spark: SparkSession) = {
+    /**
+      * 重新计算抽取全天截止当前时间的数据日志
+      */
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 抽取基础数据：所有跑ocpc的广告主
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    usertype,
+         |    adslot_type,
+         |    adclass,
+         |    isclick,
+         |    isshow,
+         |    price,
+         |    media_appsid,
+         |    ocpc_log,
+         |    (case when length(ocpc_log) > 0 then 2 else 1 end) as ocpc_step,
+         |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
+         |FROM
+         |    dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |    `date` = '$date'
+         |and $mediaSelection
+         |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark
