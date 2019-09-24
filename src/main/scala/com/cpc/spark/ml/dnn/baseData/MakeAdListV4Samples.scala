@@ -78,15 +78,15 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 7) {
+    if (args.length != 8) {
       System.err.println(
         """
-          |you have to input 7 parameters !!!
+          |you have to input 8 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, train_files_latest, test_file, curr_date, time_id, history_files) = args
+    val Array(des_dir, train_files, train_files_latest, test_file, curr_date, time_id, history_files, delete_old) = args
 
     println(args)
 
@@ -112,9 +112,16 @@ object MakeAdListV4Samples {
 
     val bid_cpm_file = des_dir + "/" + "bid-cpm-info-" + time_id
     val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"
+    if (delete_old == "true") {
+      delete_hdfs_path(bid_cpm_file)
+      delete_hdfs_path(weighted_file)
+    }
+
+
+    var total_cmp = 0.0d
+    val total_cmp_bc = sc.broadcast(total_cmp)
 
     if (!exists_hdfs_path(bid_cpm_file)) {
-      var total_cmp = 0.0d
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
       //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
       df_train_files.printSchema()
@@ -162,12 +169,12 @@ object MakeAdListV4Samples {
           val value_pair = rs._2
           val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
           val cpm = ctr * bid_ori
-          total_cmp += cpm
+          total_cmp_bc.value += cpm
           (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
       }).map({
         rs =>
-          val weight = rs._4 / total_cmp
-          (rs._1, rs._2, rs._3, rs._4, total_cmp, weight, rs._5, rs._6)
+          val weight = rs._4 / total_cmp_bc.value
+          (rs._1, rs._2, rs._3, rs._4, total_cmp_bc.value, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
         rs=>
           rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8

@@ -305,6 +305,7 @@ p05="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-16-aggr/p
 p06="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-15-aggr/part-*"
 history_file="${p00},${p01},${p02},${p03},${p04},${p05},${p06}"
 
+delete_old=true
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
@@ -315,7 +316,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_file_latest} ${test_file} ${curr_date} ${last_id} ${history_file}
+    ${randjar} ${des_dir} ${train_file} ${train_file_latest} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 #hadoop fs -chmod -R 0777 ${chmod_des}
