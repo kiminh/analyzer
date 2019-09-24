@@ -30,8 +30,8 @@ object LRTrainPassBack {
     val spark: SparkSession = model
       .initSpark("[cpc-model] linear regression")
 
-    val ctrDays = args(0).toInt
-    val dictDays = args(1).toInt
+    val dictDays = args(0).toInt
+    val appDays = args(1).toInt
 
     val date = args(2)
     val hour = args(3)
