@@ -166,7 +166,7 @@ fi
 printf "now id is:%s\n" ${now_id}
 
 prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
-now_id=0013
+#now_id=0013
 for idx in "${!sample_list[@]}";
 do
     p00=${prefix}"${sample_list[$idx]}"
@@ -308,8 +308,8 @@ history_file="${p00},${p01},${p02},${p03},${p04},${p05},${p06}"
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
-    --driver-memory 10g --executor-memory 2g \
-    --num-executors 100 --executor-cores 2 \
+    --driver-memory 10g --executor-memory 4g \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
