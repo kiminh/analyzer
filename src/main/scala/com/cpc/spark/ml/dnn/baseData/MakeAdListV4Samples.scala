@@ -168,7 +168,7 @@ object MakeAdListV4Samples {
           val value_pair = rs._2
           val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
           val cpm = ctr * bid_ori
-          accumulator += cpm
+          accumulator.add(cpm)
           (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
       }).map({
         rs =>
