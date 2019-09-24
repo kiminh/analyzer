@@ -142,6 +142,9 @@ object MakeAdListV4Samples {
       }
     )
 
+    val total_rdd_count = total_rdd.count()
+    println("total_rdd_count.size=" + total_rdd_count)
+
 
     val positive_rdd = total_rdd.filter(
       rs => {
@@ -156,7 +159,7 @@ object MakeAdListV4Samples {
 
     val positive_cnt = positive_rdd.count()
     println("positive_rdd.size=" + positive_cnt)
-    val total_count = sc.broadcast(positive_cnt)
+    val positive_cnt_bc = sc.broadcast(positive_cnt)
 
     val bid_adclass_info = des_dir + "/bid-adclass-info"
     if (exists_hdfs_path(bid_adclass_info)) {
@@ -171,7 +174,7 @@ object MakeAdListV4Samples {
     ).reduceByKey(_ + _).map(
       {
         rs =>
-          (rs._1, rs._2, total_count.value.toDouble / (total_count.value.toDouble + rs._2.toDouble))
+          (rs._1, rs._2, positive_cnt_bc.value.toDouble / (positive_cnt_bc.value.toDouble + rs._2.toDouble))
       }
     )
 
@@ -220,7 +223,7 @@ object MakeAdListV4Samples {
         Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
     })
 
-    val weighted_rdd_count = weighted_rdd.count
+    val weighted_rdd_count = total_rdd_count
     println(s"weighted_rdd_count is : $weighted_rdd_count")
 
     val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"
