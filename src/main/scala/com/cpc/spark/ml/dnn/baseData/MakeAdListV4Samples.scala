@@ -119,8 +119,7 @@ object MakeAdListV4Samples {
     }
 
 
-    val acc = new DoubleAccumulator
-    sc.register(acc)
+    val acc = sc.doubleAccumulator("cpm_acc")
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
@@ -175,13 +174,13 @@ object MakeAdListV4Samples {
       }).map({
         rs =>
           val weight = rs._4 / acc.value
-          (rs._1, rs._2, rs._3, rs._4, acc, weight, rs._5, rs._6)
+          (rs._1, rs._2, rs._3, rs._4, acc.value, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
         rs=>
           rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
       }).saveAsTextFile(bid_cpm_file)
 
-      println("accumulator=" + acc)
+      println("accumulator=" + acc.value)
 
       val sta_map = sc.textFile(bid_cpm_file).map({
         rs =>
