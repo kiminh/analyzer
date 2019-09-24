@@ -73,6 +73,7 @@ object LRTrainPassBack {
          | , ideaid
          | , label
          |from dl_cpc.pass_back_label_test_qizhi
+         |where label=0 or label=1
        """.stripMargin
 
 
