@@ -33,6 +33,7 @@ collect_file=()
 collect_date=()
 for idx in "${!sample_list[@]}";
 do
+    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     valid_data=()
     curr_date="${sample_list[$idx]}"
     echo "curr_date:${curr_date}"
@@ -212,7 +213,7 @@ do
     echo "collected "${#valid_data[@]}" real-time training data file for ${curr_date}"
     train_file="$( IFS=$','; echo "${valid_data[*]}" )"
 
-    real_curr_date=`date --date='0 days ago' +%Y-%m-%d`
+    real_curr_date=`date --date='1 days ago' +%Y-%m-%d`
 
     if [ "${curr_date}" != "${now_id}" ];then
         printf "curr_date ${curr_date} not really today ${real_curr_date} add to collect and continue...\n"
