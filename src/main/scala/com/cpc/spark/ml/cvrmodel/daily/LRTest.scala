@@ -25,217 +25,45 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
     // model
-    //model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-04-05-20")
+    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-23-16-07")
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50")
-    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
+//    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
 
     // generate feature vector manually.
     var els = Seq[(Int, Double)]()
 
-    //ctr 通过包聪给的虚拟数据验证 hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-04-05-20 计算出来的结果为0.1488252831958059和预测值0.148825一致
-//    els = els :+ (3, 1d)  //week
-//    els = els :+ (28, 1d) // hour
-//    els = els :+ (31, 1d) // sex
-//    els = els :+ (40, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (150, 1d) // isp
-//    els = els :+ (171, 1d) // network
-//    els = els :+ (543, 1d) // cityid
-//    els = els :+ (548, 1d) // mediaid
-//    els = els :+ (593, 1d) // slotid
-//    els = els :+ (1002, 1d) // phone_level
-//    els = els :+ (1008, 1d) // pagenum
-//    els = els :+ (1108, 1d) // bookid
-//    els = els :+ (1208, 1d) // adclass
-//    els = els :+ (1301, 1d) // adtype
-//    els = els :+ (1309, 1d) // adslot_type
-//    els = els :+ (1318, 1d) // planid
-//    els = els :+ (10207, 1d) // unitid
-//    els = els :+ (20194, 1d) // ideaid
-    //    hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-04-05-20
-    //    val mediaid=44
-    //    val planid=8888
-    //    val unitid=9986
-    //    val ideaid=24735
-    //    val slotid=404
-    //    val adclass=89
-    //    val cityid=367
-
-
-//    //cvr 通过包聪给的虚拟数据验证 hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50 计算出来的结果为0.005459209875961871和预测值0.005459一致
-//    els = els :+ (3, 1d)  //week
-//    els = els :+ (28, 1d) // hour
-//    els = els :+ (31, 1d) // sex
-//    els = els :+ (40, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (150, 1d) // isp
-//    els = els :+ (171, 1d) // network
-//    els = els :+ (543, 1d) // cityid
-//    els = els :+ (548, 1d) // mediaid
-//    els = els :+ (596, 1d) // slotid
-//    els = els :+ (1015, 1d) // phone_level
-//    els = els :+ (1021, 1d) // pagenum
-//    els = els :+ (1121, 1d) // bookid
-//    els = els :+ (1221, 1d) // adclass
-//    els = els :+ (1318, 1d) // adtype
-//    els = els :+ (1326, 1d) // adslot_type
-//    els = els :+ (1335, 1d) // planid
-//    els = els :+ (10884, 1d) // unitid
-//    els = els :+ (21640, 1d) // ideaid
-
-//    //List((3,1.0), (28,1.0), (32,1.0), (43,1.0), (141,1.0), (152,1.0), (174,1.0), (180,1.0), (550,1.0), (798,1.0), (1013,1.0), (1021,1.0), (1121,1.0), (1293,1.0), (1317,1.0), (1332,1.0), (2639,1.0), (13352,1.0), (32946,1.0), (48283,69.0)) 48283 requirement failed: You may not write an element to index 48283 because the declared size of your vector is 48283
-//    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
-//     els = els :+ (3, 1d)  //week
-//     els = els :+ (28, 1d) // hour
-//     els = els :+ (32, 1d) // sex
-//     els = els :+ (43, 1d) // age
-//     els = els :+ (141, 1d) // os
-//     els = els :+ (152, 1d) // isp
-//     els = els :+ (174, 1d) // network
-//     els = els :+ (180, 1d) // cityid
-//     els = els :+ (550, 1d) // mediaid
-//     els = els :+ (798, 1d) // slotid
-//     els = els :+ (1013, 1d) // phone_level
-//     els = els :+ (1021, 1d) // pagenum
-//     els = els :+ (1121, 1d) // bookid
-//     els = els :+ (1293, 1d) // adclass
-//     els = els :+ (1317, 1d) // adtype
-//     els = els :+ (1332, 1d) // adslot_type
-//     els = els :+ (2639, 1d) // planid
-//     els = els :+ (13352, 1d) // unitid
-//     els = els :+ (32946, 1d) // ideaid
-
-//    //(48283,[3,28,33,44,141,152,171,281,549,597,1014,1021,1121,1235,1323,1332,1341,10890,21646,48282],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,11454.0])
-//    //预测结果 1.4236643345148817E-6  实际线上 6.9*10-5
-//    els = els :+ (3, 1d)  //week
-//    els = els :+ (28, 1d) // hour
-//    els = els :+ (33, 1d) // sex
-//    els = els :+ (44, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (152, 1d) // isp
-//    els = els :+ (171, 1d) // network
-//    els = els :+ (281, 1d) // cityid
-//    els = els :+ (549, 1d) // mediaid
-//    els = els :+ (597, 1d) // slotid
-//    els = els :+ (1014, 1d) // phone_level
-//    els = els :+ (1021, 1d) // pagenum
-//    els = els :+ (1121, 1d) // bookid
-//    els = els :+ (1235, 1d) // adclass
-//    els = els :+ (1323, 1d) // adtype
-//    els = els :+ (1332, 1d) // adslot_type
-//    els = els :+ (1341, 1d) // planid
-//    els = els :+ (10890, 1d) // unitid
-//    els = els :+ (21646, 1d) // ideaid
-//
-//
-//    //    hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50
-//    val mediaid=47
-//    val planid=9548
-//    val unitid=10755
-//    val ideaid=26635
-//    val slotid=414
-//    val adclass=93
-//    val cityid=367
-
-
-//    //(71152,[2,14,33,44,141,152,174,180,549,620,1056,1062,1162,1308,1371,1380,13918,29502,67468,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,6336.0]) 0.006273059528128782
-//    els = els :+ (2, 1d)  //week
-//    els = els :+ (14, 1d) // hour
-//    els = els :+ (33, 1d) // sex
-//    els = els :+ (44, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (152, 1d) // isp
-//    els = els :+ (174, 1d) // network
-//    els = els :+ (180, 1d) // cityid
-//    els = els :+ (549, 1d) // mediaid
-//    els = els :+ (620, 1d) // slotid
-//    els = els :+ (1056, 1d) // phone_level
-//    els = els :+ (1062, 1d) // pagenum
-//    els = els :+ (1162, 1d) // bookid
-//    els = els :+ (1308, 1d) // adclass
-//    els = els :+ (1371, 1d) // adtype
-//    els = els :+ (1380, 1d) // adslot_type
-//    els = els :+ (13918, 1d) // planid
-//    els = els :+ (29502, 1d) // unitid
-//    els = els :+ (67468, 1d) // ideaid
-
-    //(71152,[2,14,33,44,141,152,174,180,549,620,1056,1062,1162,1308,1371,1380,13918,29502,67468,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,6336.0]) 0.006273059528128782  week更改正确后0.006336525382594287
-//    els = els :+ (1, 1d)  //week
-//    els = els :+ (14, 1d) // hour
-//    els = els :+ (33, 1d) // sex
-//    els = els :+ (44, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (152, 1d) // isp
-//    els = els :+ (174, 1d) // network
-//    els = els :+ (180, 1d) // cityid
-//    els = els :+ (549, 1d) // mediaid
-//    els = els :+ (620, 1d) // slotid
-//    els = els :+ (1056, 1d) // phone_level
-//    els = els :+ (1062, 1d) // pagenum
-//    els = els :+ (1162, 1d) // bookid
-//    els = els :+ (1308, 1d) // adclass
-//    els = els :+ (1371, 1d) // adtype
-//    els = els :+ (1380, 1d) // adslot_type
-//    els = els :+ (13918, 1d) // planid
-//    els = els :+ (29502, 1d) // unitid
-//    els = els :+ (67468, 1d) // ideaid
-
-
-//    //(71152,[2,14,32,43,141,153,171,292,549,645,1056,1062,1162,1275,1367,1380,2849,16974,55036,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,2.0])   week更改正确后 2.295015318586404E-6
-//    els = els :+ (1, 1d)  //week
-//    els = els :+ (14, 1d) // hour
-//    els = els :+ (32, 1d) // sex
-//    els = els :+ (43, 1d) // age
-//    els = els :+ (141, 1d) // os
-//    els = els :+ (153, 1d) // isp
-//    els = els :+ (171, 1d) // network
-//    els = els :+ (292, 1d) // cityid
-//    els = els :+ (549, 1d) // mediaid
-//    els = els :+ (645, 1d) // slotid
-//    els = els :+ (1056, 1d) // phone_level
-//    els = els :+ (1062, 1d) // pagenum
-//    els = els :+ (1162, 1d) // bookid
-//    els = els :+ (1275, 1d) // adclass
-//    els = els :+ (1367, 1d) // adtype
-//    els = els :+ (1380, 1d) // adslot_type
-//    els = els :+ (2849, 1d) // planid
-//    els = els :+ (16974, 1d) // unitid
-//    els = els :+ (55036, 1d) // ideaid
-
-
-    //(71152,[2,14,31,40,141,152,171,502,549,708,1056,1063,1162,1276,1368,1382,4191,18438,39246,71151],[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0])   week更改正确后0.0418397876611848
-    els = els :+ (1, 1d)  //week
-    els = els :+ (14, 1d) // hour
-    els = els :+ (31, 1d) // sex
-    els = els :+ (40, 1d) // age
-    els = els :+ (141, 1d) // os
-    els = els :+ (152, 1d) // isp
-    els = els :+ (171, 1d) // network
-    els = els :+ (502, 1d) // cityid
-    els = els :+ (549, 1d) // mediaid
-    els = els :+ (708, 1d) // slotid
-    els = els :+ (1056, 1d) // phone_level
-    els = els :+ (1063, 1d) // pagenum
-    els = els :+ (1162, 1d) // bookid
-    els = els :+ (1276, 1d) // adclass
-    els = els :+ (1368, 1d) // adtype
-    els = els :+ (1382, 1d) // adslot_type
-    els = els :+ (4191, 1d) // planid
-    els = els :+ (18438, 1d) // unitid
-    els = els :+ (39246, 1d) // ideaid
+    els = els :+ (0, 1d)  //bias
+    els = els :+ (19, 1d) // hour
+    els = els :+ (25, 1d) // sex
+    els = els :+ (34, 1d) // age
+    els = els :+ (135, 1d) // os
+    els = els :+ (147, 1d) // isp
+    els = els :+ (165, 1d) // network
+    els = els :+ (537, 1d) // cityid
+    els = els :+ (542, 1d) // mediaid
+    els = els :+ (580, 1d) // slotid
+    els = els :+ (1028, 1d) // phone_level
+    els = els :+ (1034, 1d) // pagenum
+    els = els :+ (1134, 1d) // bookid
+    els = els :+ (1234, 1d) // adclass
+    els = els :+ (1335, 1d) // adtype
+    els = els :+ (1351, 1d) // adslot_type
+    els = els :+ (1360, 1d) // planid
+    els = els :+ (15892, 1d) // unitid
+    els = els :+ (32213, 1d) // ideaid
 
 
     // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
-    val mediaid=59
-    val planid=14120
-    val unitid=15978
-    val ideaid=39661
+    val mediaid=37
+    val planid=14531
+    val unitid=16320
+    val ideaid=37990
     val slotid=443
-    val adclass=100
+    val adclass=99
     val cityid=367
 
 
-    val size=7+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1
+    val size=1+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1+1001
     println("size = " + size)
 
     val vectorToPredict : Vector = Vectors.sparse(size, els)

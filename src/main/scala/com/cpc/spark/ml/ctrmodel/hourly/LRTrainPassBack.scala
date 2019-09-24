@@ -257,7 +257,10 @@ object LRTrainPassBack {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
+    val trainSample=train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate).cache()
+
+    trainLog :+= "\n trainSample = %.0f \n".format(trainSample.count())
+    val sampleTrain = formatSample(spark, parser, trainSample)
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
