@@ -109,18 +109,20 @@ object MakeAdListV4Samples {
 
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    println("Extract Test Examples' AD Info")
-    val text_test = des_dir + "/" + curr_date + "-" + time_id + "-test"
 
-    if (exists_hdfs_path(text_test)) {
-      delete_hdfs_path(text_test)
+    val bid_cpm_file = des_dir + "/" + "bid-cpm-info"
+    if (exists_hdfs_path(bid_cpm_file)) {
+      delete_hdfs_path(bid_cpm_file)
     }
+
+    var total_cmp = 0.0d
+
 
     val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
     //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
     df_train_files.printSchema()
     df_train_files.show(3)
-    val total_rdd = df_train_files.rdd.map(
+    df_train_files.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -152,22 +154,83 @@ object MakeAdListV4Samples {
         //(bid, bid_ori, label, 1L, output.mkString("\t"))
         (bid, bid_ori, label, 1L)
       }
-    )
-
-    val bid_cpm_file = des_dir + "/" + "bid-cpm-info"
-    if (exists_hdfs_path(bid_cpm_file)) {
-      delete_hdfs_path(bid_cpm_file)
-    }
-    total_rdd.map({
+    ).map({
       rs =>
         (rs._1 + "\t" + rs._2, (rs._3, rs._4))
     }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
       rs =>
         val key = rs._1
+        val key_list = key.split("\t")
+        val bid_ori = key_list(1).toDouble
         val value_pair = rs._2
-        val ctr = rs._2._1.toDouble * 1000.0 / rs._2._2.toDouble
-        (key, ctr, value_pair._1, value_pair._2)
-    }).repartition(1).sortBy(_._4 * -1).saveAsTextFile(bid_cpm_file)
+        val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
+        val cpm = ctr * bid_ori
+        total_cmp += cpm
+        (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
+    }).map({
+      rs =>
+        val weight = rs._4 / total_cmp
+        (rs._1, rs._2, rs._3, rs._4, total_cmp, weight, rs._5, rs._6)
+    }).repartition(1).sortBy(_._6 * -1).map({
+      rs=>
+        rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
+    }).saveAsTextFile(bid_cpm_file)
+
+    val sta_map = sc.textFile(bid_cpm_file).map({
+      rs =>
+        val line_list = rs.split(",")
+        val bid_hash = line_list(0)
+        val bid_ori = line_list(1)
+        val ctr = line_list(2)
+        val cpm = line_list(3)
+        val total_cpm = line_list(4)
+        val weight = line_list(5)
+        val click = line_list(6)
+        val imp = line_list(7)
+        (bid_hash, weight)
+    }).collectAsMap()
+
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("weight", DoubleType, nullable = true),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+    val weighted_rdd = df_train_files.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val weight = sta_map.getOrElse(bid, "1e-5")
+
+        Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+      val weighted_rdd_count = weighted_rdd.count()
+      println(s"weighted_rdd_count is : $weighted_rdd_count")
+
+      val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"
+      val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
+      tf_df.repartition(1000).write.format("tfrecords").option("recordType", "Example").save(weighted_file)
+
+      //保存count文件
+      val fileName = "count_" + Random.nextInt(100000)
+      writeNum2File(fileName, weighted_rdd_count)
+      s"hadoop fs -put $fileName $weighted_file/count" !
+
+      s"hadoop fs -chmod -R 0777 $weighted_file" !
+
 
     //val total_rdd_count = total_rdd.count()
     //println("total_rdd_count.size=" + total_rdd_count)
