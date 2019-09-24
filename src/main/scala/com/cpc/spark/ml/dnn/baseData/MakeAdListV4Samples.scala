@@ -98,6 +98,16 @@ object MakeAdListV4Samples {
     val sc = spark.sparkContext
 
 
+    val bid_mmh_map_file = des_dir + "/" + "bid_mmh_map.txt"
+
+    val bid_mmh_map = sc.textFile(bid_mmh_map_file).map({
+      rs =>
+        val line_list = rs.split("\t")
+        (line_list(0), line_list(1))
+    }).collectAsMap()
+    println("bid_mmh_map.size=" + bid_mmh_map.size)
+
+
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Extract Test Examples' AD Info")
     val text_test = des_dir + "/" + curr_date + "-" + time_id + "-test"
@@ -126,25 +136,43 @@ object MakeAdListV4Samples {
         }
 
         val bid = dense(10).toString
-        val adclass = dense(16).toString
+        //val adclass = dense(16).toString
 
+        val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
 
-        val output = scala.collection.mutable.ArrayBuffer[String]()
-        output += sample_idx.toString
-        output += label_arr.map(_.toString).mkString(";")
-        output += dense.map(_.toString).mkString(";")
-        output += idx0.map(_.toString).mkString(";")
-        output += idx1.map(_.toString).mkString(";")
-        output += idx2.map(_.toString).mkString(";")
-        output += idx_arr.map(_.toString).mkString(";")
+        //val output = scala.collection.mutable.ArrayBuffer[String]()
+        //output += sample_idx.toString
+        //output += label_arr.map(_.toString).mkString(";")
+        //output += dense.map(_.toString).mkString(";")
+        //output += idx0.map(_.toString).mkString(";")
+        //output += idx1.map(_.toString).mkString(";")
+        //output += idx2.map(_.toString).mkString(";")
+        //output += idx_arr.map(_.toString).mkString(";")
 
-        (bid, adclass, label, output.mkString("\t"))
+        //(bid, bid_ori, label, 1L, output.mkString("\t"))
+        (bid, bid_ori, label, 1L)
       }
     )
+
+    val bid_cpm_file = des_dir + "/" + "bid-cpm-info"
+    if (exists_hdfs_path(bid_cpm_file)) {
+      delete_hdfs_path(bid_cpm_file)
+    }
+    total_rdd.map({
+      rs =>
+        (rs._1 + "\t" + rs._2, (rs._3, rs._4))
+    }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+      rs =>
+        val key = rs._1
+        val value_pair = rs._2
+        val ctr = rs._2._1.toDouble * 1000.0 / rs._2._2.toDouble
+        (key, ctr, value_pair._1, value_pair._2)
+    }).repartition(1).sortBy(_._2 * -1).saveAsTextFile(bid_cpm_file)
 
     //val total_rdd_count = total_rdd.count()
     //println("total_rdd_count.size=" + total_rdd_count)
 
+    /**
     val positive_rdd = total_rdd.filter(
       rs => {
         val label = rs._3
@@ -264,6 +292,7 @@ object MakeAdListV4Samples {
     s"hadoop fs -put $fileName $weighted_file/count" !
 
     s"hadoop fs -chmod -R 0777 $weighted_file" !
+      **/
 
 
     /**
