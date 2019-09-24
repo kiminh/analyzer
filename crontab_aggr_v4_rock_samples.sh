@@ -61,17 +61,24 @@ do
         printf "no ${file_count}, continue to aggr ${curr_date}...\n"
         done_curr_date="false"
     fi
-    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
-    if [ ${file_size} -lt 1000 ]
-    then
-        printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
+
+    if [[ ! -f ${file_part} ]]; then
+        printf "no ${file_part}, continue to aggr ${curr_date}...\n"
         done_curr_date="false"
+    fi
+
+    if [[ -f ${file_part} ]]; then
+        file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+        if [ ${file_size} -lt 1000 ]
+        then
+            printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
+            done_curr_date="false"
+        fi
     fi
 
     if [ "${done_curr_date}" = "true" ];then
         continue
     fi
-
 
     id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
     #prefix=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}
