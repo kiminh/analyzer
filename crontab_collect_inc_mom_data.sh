@@ -215,6 +215,7 @@ do
         printf "done with ${p00}, continuing\n"
         done_data+=(${p00}${end})
         all_data+=(${p00}${end})
+        test_file=${p00}${end}
         last_id=${id}
         continue
     fi
