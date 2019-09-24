@@ -77,6 +77,7 @@ do
     fi
 
     if [ "${done_curr_date}" = "true" ];then
+        printf "curr_date ${curr_date} has aggr file, continue...\n"
         continue
     fi
 
