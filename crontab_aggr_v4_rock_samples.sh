@@ -6,6 +6,14 @@ source /etc/profile
 date_full=`date`
 printf "*****************************${date_full}********************************\n"
 
+now_hour=$(date "+%H")
+now_minutes=$(date "+%M")
+now_id="00"${now_hour}
+if [ ${now_minutes} -ge 30 ];then
+    now_id="30"${now_hour}
+fi
+printf "now id is:%s\n" ${now_id}
+
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
 dir=aggr_rock_samples
 if [[ ! -d "${dir}" ]]; then
@@ -14,7 +22,12 @@ fi
 
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
+    `date --date='2 days ago' +%Y-%m-%d`
+    `date --date='3 days ago' +%Y-%m-%d`
+    `date --date='4 days ago' +%Y-%m-%d`
+    `date --date='5 days ago' +%Y-%m-%d`
 )
+
 
 collect_file=()
 collect_date=()
@@ -23,6 +36,41 @@ do
     valid_data=()
     curr_date="${sample_list[$idx]}"
     echo "curr_date:${curr_date}"
+
+    aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
+    file_success=${dir}/${curr_date}_aggr_success
+    file_count=${dir}/${curr_date}_aggr_count
+    file_part=${dir}/${curr_date}_aggr_part-r-00099
+
+    if [[ ! -f ${file_success} ]]; then
+        hadoop fs -get ${aggr_path}/_SUCCESS ${file_success} &
+    fi
+    if [[ ! -f ${file_count} ]]; then
+        hadoop fs -get ${aggr_path}/count ${file_count} &
+    fi
+    if [[ ! -f ${file_part} ]]; then
+        hadoop fs -get ${aggr_path}/part-r-00099 ${file_part} &
+    fi
+
+    done_curr_date="true"
+    if [[ ! -f ${file_success} ]]; then
+        printf "no ${file_success}, continue to aggr ${curr_date}...\n"
+        done_curr_date="false"
+    fi
+    if [[ ! -f ${file_count} ]]; then
+        printf "no ${file_count}, continue to aggr ${curr_date}...\n"
+        done_curr_date="false"
+    fi
+    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 1000 ]
+    then
+        printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
+        done_curr_date="false"
+    fi
+
+    if [ "${done_curr_date}" = "true" ];then
+        continue
+    fi
 
 
     id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
@@ -80,7 +128,6 @@ do
         ${prefix}"/23/0/"
         ${prefix}"/23/1/"
     )
-
 
     for idx in "${!realtime_list[@]}";
     do
@@ -154,19 +201,42 @@ do
     echo "collected "${#valid_data[@]}" real-time training data file for ${curr_date}"
     train_file="$( IFS=$','; echo "${valid_data[*]}" )"
 
-    if [[ ${#valid_data[@]} -lt 48 ]] ; then
-        printf "too less real-time data detected, less than 48, for ${curr_date}, continue...\n"
+    real_curr_date=`date --date='0 days ago' +%Y-%m-%d`
+
+    if [ "${curr_date}" != "${now_id}" ];then
+        printf "curr_date ${curr_date} not really today ${real_curr_date} add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${train_file})
         continue
     fi
-    #printf "${train_file}\n"
-    collect_date+=(${curr_date})
-    collect_file+=(${train_file})
+
+    if [ "${now_id}" != "0000" ];then
+        printf "curr_date ${curr_date} is really today ${real_curr_date}, but now_id=${now_id}, add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${train_file})
+        continue
+    fi
+
+    if [[ ${#valid_data[@]} -eq 48 ]] ; then
+        printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=48, add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${train_file})
+        continue
+    fi
+    printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=${#valid_data[@]}, add nothing and continue...\n"
 done
+
+if [[ ${#collect_file[@]} -le 0 ]] ; then
+    printf "no real-time training data file need to be aggr, existing...\n"
+    exit 0
+fi
 
 date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
 file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
 echo "${date_list}"
 echo "${file_list}"
+
+exit
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
