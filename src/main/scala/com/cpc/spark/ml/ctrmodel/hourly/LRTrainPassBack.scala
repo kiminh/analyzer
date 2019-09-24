@@ -37,8 +37,6 @@ object LRTrainPassBack {
     val hour = args(3)
     var parserArg = "ctrparser9"
 
-    println("parserArg = " + parserArg)
-
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)
 
@@ -78,7 +76,6 @@ object LRTrainPassBack {
 
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
-    println("parserArg = " + parserArg)
 
     val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
 
@@ -534,9 +531,9 @@ object LRTrainPassBack {
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
     i += 16
 
-//    //adslot_type
-//    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-//    i += 10
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
 
     //planid
     els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
@@ -700,9 +697,9 @@ object LRTrainPassBack {
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
     i += 16
 
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
+//    //adslot_type
+//    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+//    i += 10
 
     //planid
     els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
