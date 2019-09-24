@@ -13,6 +13,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable.ArrayBuffer
 import scala.sys.process._
 import scala.util.Random
+import org.apache.spark.util.DoubleAccumulator
 
 /**
   * 解析adlistv4tfrecord特征
@@ -118,7 +119,8 @@ object MakeAdListV4Samples {
     }
 
 
-    var accumulator = sc.accumulator(0.0d)
+    val acc = new DoubleAccumulator
+    spark.sparkContext.register(acc)
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
@@ -168,18 +170,18 @@ object MakeAdListV4Samples {
           val value_pair = rs._2
           val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
           val cpm = ctr * bid_ori
-          accumulator.add(cpm)
+          acc.add(cpm)
           (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
       }).map({
         rs =>
-          val weight = rs._4 / accumulator.value
-          (rs._1, rs._2, rs._3, rs._4, accumulator, weight, rs._5, rs._6)
+          val weight = rs._4 / acc.value
+          (rs._1, rs._2, rs._3, rs._4, acc, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
         rs=>
           rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
       }).saveAsTextFile(bid_cpm_file)
 
-      println("accumulator=" + accumulator)
+      println("accumulator=" + acc)
 
       val sta_map = sc.textFile(bid_cpm_file).map({
         rs =>
