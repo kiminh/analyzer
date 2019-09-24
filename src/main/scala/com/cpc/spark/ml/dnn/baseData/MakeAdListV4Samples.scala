@@ -122,7 +122,7 @@ object MakeAdListV4Samples {
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
-      println("DF file count:" + df_train_files.count().toString + " of file:" + test_file)
+      println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
       df_train_files.printSchema()
       df_train_files.show(3)
       df_train_files.rdd.map(
