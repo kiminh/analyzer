@@ -119,14 +119,12 @@ object MakeAdListV4Samples {
     }
 
 
-    val acc = sc.doubleAccumulator("cpm_acc")
-
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
       println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
       df_train_files.printSchema()
       df_train_files.show(3)
-      df_train_files.rdd.map(
+      val info_rdd = df_train_files.rdd.map(
         rs => {
           val idx2 = rs.getSeq[Long](0)
           val idx1 = rs.getSeq[Long](1)
@@ -169,18 +167,26 @@ object MakeAdListV4Samples {
           val value_pair = rs._2
           val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
           val cpm = ctr * bid_ori
-          acc.add(cpm)
           (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
-      }).map({
+      })
+
+      val total_cpm_map = info_rdd.map({
         rs =>
-          val weight = rs._4 / acc.value
-          (rs._1, rs._2, rs._3, rs._4, acc.value, weight, rs._5, rs._6)
+          ("placeholder", rs._4)
+      }).reduceByKey(_ + _).collectAsMap()
+
+      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0d)
+      println("total_cpm=" + total_cpm)
+
+      info_rdd.map({
+        rs =>
+          val weight = rs._4.toDouble / total_cpm
+          (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
         rs=>
           rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
       }).saveAsTextFile(bid_cpm_file)
 
-      println("accumulator=" + acc.value)
 
       val sta_map = sc.textFile(bid_cpm_file).map({
         rs =>
