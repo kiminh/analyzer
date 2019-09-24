@@ -120,7 +120,7 @@ object MakeAdListV4Samples {
 
 
     val acc = new DoubleAccumulator
-    spark.sparkContext.register(acc)
+    sc.register(acc)
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
