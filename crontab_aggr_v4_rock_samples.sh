@@ -215,7 +215,7 @@ do
 
     real_curr_date=`date --date='1 days ago' +%Y-%m-%d`
 
-    if [ "${curr_date}" != "${now_id}" ];then
+    if [ "${curr_date}" != "${real_curr_date}" ];then
         printf "curr_date ${curr_date} not really today ${real_curr_date} add to collect and continue...\n"
         collect_date+=(${curr_date})
         collect_file+=(${train_file})
