@@ -74,7 +74,6 @@ object LRTrainPassBack {
          | , label
          |from dl_cpc.pass_back_label_test_qizhi
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 24))
 
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
@@ -86,10 +85,10 @@ object LRTrainPassBack {
     var parser=""
     var parserName=""
     var parserDestFile=""
-    if ("ctrparser8".equals(parserArg)){
-      parser = "ctrparser8"
-      parserName = "qtt-bs-ctrparser8-daily"
-      parserDestFile = "qtt-bs-ctrparser8-daily.lrm"
+    if ("ctrparser9".equals(parserArg)){
+      parser = "ctrparser9"
+      parserName = "qtt-bs-ctrparser9-daily"
+      parserDestFile = "qtt-bs-ctrparser9-daily.lrm"
     }else{
       parser = "ctrparser4"
       parserName = "qtt-bs-ctrparser4-daily"
@@ -351,8 +350,8 @@ object LRTrainPassBack {
               val vec = parser match {
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
-                case "ctrparser8" =>
-                  getCtrVectorParser8(u)
+                case "ctrparser9" =>
+                  getCtrVectorParser9(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
@@ -613,7 +612,7 @@ object LRTrainPassBack {
   }
 
 
-  def getCtrVectorParser8(x: Row): Vector = {
+  def getCtrVectorParser9(x: Row): Vector = {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
@@ -666,26 +665,26 @@ object LRTrainPassBack {
     els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
+//    //pagenum
+//    var pnum = x.getAs[Int]("pagenum")
+//    if (pnum < 0 || pnum > 50) {
+//      pnum = 0
+//    }
+//    els = els :+ (pnum + i, 1d)
+//    i += 100
+//
+//    //bookid
+//    var bid = 0
+//    try {
+//      bid = x.getAs[String]("bookid").toInt
+//    } catch {
+//      case e: Exception =>
+//    }
+//    if (bid < 0 || bid > 50) {
+//      bid = 0
+//    }
+//    els = els :+ (bid + i, 1d)
+//    i += 100
 
     //adclass
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
@@ -712,13 +711,13 @@ object LRTrainPassBack {
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-    //user installed app
-    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null) {
-      val inxList = appIdx.map(p => (p + i, 1d))
-      els = els ++ inxList
-    }
-    i += 1000 + 1
+//    //user installed app
+//    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+//    if (appIdx != null) {
+//      val inxList = appIdx.map(p => (p + i, 1d))
+//      els = els ++ inxList
+//    }
+//    i += 1000 + 1
 
 //    //phone_price
 //    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
