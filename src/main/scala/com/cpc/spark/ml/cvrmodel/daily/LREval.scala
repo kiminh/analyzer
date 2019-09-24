@@ -73,7 +73,7 @@ object LREval {
          | , unitid
          | , ideaid
          | , imeinotnull
-         | , Row_Number() OVER (partition by uid,part ORDER BY `timestamp` desc) as rank from
+         | , Row_Number() OVER (partition by uid,part,dt ORDER BY `timestamp` desc) as rank from
          |(select searchid
          | , uid
          | , md5uid
@@ -94,6 +94,7 @@ object LREval {
          | , unitid
          | , ideaid
          | , `timestamp`
+         | , dt
          | , IF(imei is not null,1,0) as imeinotnull
          | , IF(imei is not null,10100,int(rand()*10000)) as part from
          |(select
