@@ -310,7 +310,7 @@ delete_old=true
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-make-samples" \
     --driver-memory 8g --executor-memory 4g \
-    --num-executors 500 --executor-cores 4 \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
