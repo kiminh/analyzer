@@ -102,6 +102,19 @@ object OcpcSmoothfactorV2 {
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "exp_tag", "version", "cvr", "smooth_factor")
 
+
+    data1
+        .write.mode("overwrite").saveAsTable("test.check_smooth_data20190925a")
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_smooth_data20190925b")
+    data3
+      .write.mode("overwrite").saveAsTable("test.check_smooth_data20190925c")
+    calibration
+      .write.mode("overwrite").saveAsTable("test.check_smooth_data20190925d")
+
+
+
+
     resultDF
   }
 
