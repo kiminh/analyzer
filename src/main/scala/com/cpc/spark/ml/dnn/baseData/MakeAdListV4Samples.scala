@@ -86,7 +86,7 @@ object MakeAdListV4Samples {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, test_file, curr_date, time_id, history_files) = args
+    val Array(des_dir, train_files, train_files_latest, test_file, curr_date, time_id, history_files) = args
 
     println(args)
 
@@ -106,11 +106,11 @@ object MakeAdListV4Samples {
       delete_hdfs_path(text_test)
     }
 
-    val importedDfTest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
+    val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
     //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
-    importedDfTest.printSchema()
-    importedDfTest.show(3)
-    val total_rdd = importedDfTest.rdd.map(
+    df_train_files.printSchema()
+    df_train_files.show(3)
+    val total_rdd = df_train_files.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -142,9 +142,8 @@ object MakeAdListV4Samples {
       }
     )
 
-    val total_rdd_count = total_rdd.count()
-    println("total_rdd_count.size=" + total_rdd_count)
-
+    //val total_rdd_count = total_rdd.count()
+    //println("total_rdd_count.size=" + total_rdd_count)
 
     val positive_rdd = total_rdd.filter(
       rs => {
@@ -204,12 +203,41 @@ object MakeAdListV4Samples {
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
 
-    val weighted_rdd = total_rdd.map(
-      {
-        rs =>
-          (rs._1 + "_" + rs._2, rs._4)
+
+    val df_train_files_latest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_latest)
+    //println("DF file count:" + importedDfTest.count().toString + " of file:" + test_file)
+    df_train_files_latest.printSchema()
+    df_train_files_latest.show(3)
+    val latest_rdd = df_train_files_latest.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val adclass = dense(16).toString
+
+        val output = scala.collection.mutable.ArrayBuffer[String]()
+        output += sample_idx.toString
+        output += label_arr.map(_.toString).mkString(";")
+        output += dense.map(_.toString).mkString(";")
+        output += idx0.map(_.toString).mkString(";")
+        output += idx1.map(_.toString).mkString(";")
+        output += idx2.map(_.toString).mkString(";")
+        output += idx_arr.map(_.toString).mkString(";")
+
+        (bid + "_" + adclass, output.mkString("\t"))
       }
-    ).join(component_rdd).map({
+    )
+
+    val latest_rdd_count = latest_rdd.count()
+    println("latest_rdd_count.size=" + latest_rdd_count)
+
+    val weighted_rdd = latest_rdd.join(component_rdd).map({
       rs =>
         val weight = rs._2._2
         val line_list = rs._2._1.split("\t")
@@ -223,7 +251,7 @@ object MakeAdListV4Samples {
         Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
     })
 
-    val weighted_rdd_count = total_rdd_count
+    val weighted_rdd_count = latest_rdd_count
     println(s"weighted_rdd_count is : $weighted_rdd_count")
 
     val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"

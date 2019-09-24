@@ -77,80 +77,80 @@ sample_list=(
 )
 
 
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-last_date=`date --date='1 days ago' +%Y-%m-%d`
-printf "last_date is:${last_date}\n"
-prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${last_date}
-for idx in "${!sample_list[@]}";
-do
-    p00=${prefix}"${sample_list[$idx]}"
-    id="${id_list[$idx]}"
-
-    is_new=${dir}/train_done_${last_date}_${id}
-    if [[ -f "$is_new" ]]; then
-        continue
-    fi
-
-    file_count=${dir}/${last_date}_${id}_count
-    file_part=${dir}/${last_date}_${id}_part-10-0
-
-    if [[ ! -f ${file_count} ]]; then
-        hadoop fs -get ${p00}count ${file_count} &
-    fi
-    if [[ ! -f ${file_part} ]]; then
-        hadoop fs -get ${p00}part-10-0 ${file_part} &
-    fi
-done
-printf "waiting for downloading real-time data in parallel...\n"
-wait
-printf "downloaded real-time data file in parallel...\n"
-all_data=()
-for idx in "${!sample_list[@]}";
-do
-    p00=${prefix}"${sample_list[$idx]}"
-    id="${id_list[$idx]}"
-
-    is_new=${dir}/train_done_${last_date}_${id}
-    if [[ -f "$is_new" ]]; then
-        printf "detected real-time file ${p00}\n"
-        all_data+=(${p00}${end})
-        continue
-    fi
-
-    file_count=${dir}/${last_date}_${id}_count
-    file_part=${dir}/${last_date}_${id}_part-10-0
-
-    if [[ ! -f ${file_count} ]]; then
-        printf "no ${file_count} file, continue...\n"
-        continue
-    fi
-    if [[ ! -f ${file_part} ]]; then
-        printf "no ${file_part} file, continue...\n"
-        continue
-    fi
-
-    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
-    if [ ${file_size} -lt 1000 ]
-    then
-        printf "invalid ${file_part} file size:${file_size}, continue...\n"
-        continue
-    fi
-
-    touch ${is_new}
-    rm ${file_count}
-    rm ${file_part}
-
-    printf "detected real-time file ${p00}\n"
-    all_data+=(${p00}${end})
-done
-
-if [[ ${#all_data[@]} -le 0 ]] ; then
-    printf "no history real-time training data file detected, existing...\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-printf "got ${#all_data[@]} history real-time training data file\n"
-test_file="$( IFS=$','; echo "${all_data[*]}" )"
+#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+#last_date=`date --date='1 days ago' +%Y-%m-%d`
+#printf "last_date is:${last_date}\n"
+#prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${last_date}
+#for idx in "${!sample_list[@]}";
+#do
+#    p00=${prefix}"${sample_list[$idx]}"
+#    id="${id_list[$idx]}"
+#
+#    is_new=${dir}/train_done_${last_date}_${id}
+#    if [[ -f "$is_new" ]]; then
+#        continue
+#    fi
+#
+#    file_count=${dir}/${last_date}_${id}_count
+#    file_part=${dir}/${last_date}_${id}_part-10-0
+#
+#    if [[ ! -f ${file_count} ]]; then
+#        hadoop fs -get ${p00}count ${file_count} &
+#    fi
+#    if [[ ! -f ${file_part} ]]; then
+#        hadoop fs -get ${p00}part-10-0 ${file_part} &
+#    fi
+#done
+#printf "waiting for downloading real-time data in parallel...\n"
+#wait
+#printf "downloaded real-time data file in parallel...\n"
+#all_data=()
+#for idx in "${!sample_list[@]}";
+#do
+#    p00=${prefix}"${sample_list[$idx]}"
+#    id="${id_list[$idx]}"
+#
+#    is_new=${dir}/train_done_${last_date}_${id}
+#    if [[ -f "$is_new" ]]; then
+#        printf "detected real-time file ${p00}\n"
+#        all_data+=(${p00}${end})
+#        continue
+#    fi
+#
+#    file_count=${dir}/${last_date}_${id}_count
+#    file_part=${dir}/${last_date}_${id}_part-10-0
+#
+#    if [[ ! -f ${file_count} ]]; then
+#        printf "no ${file_count} file, continue...\n"
+#        continue
+#    fi
+#    if [[ ! -f ${file_part} ]]; then
+#        printf "no ${file_part} file, continue...\n"
+#        continue
+#    fi
+#
+#    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+#    if [ ${file_size} -lt 1000 ]
+#    then
+#        printf "invalid ${file_part} file size:${file_size}, continue...\n"
+#        continue
+#    fi
+#
+#    touch ${is_new}
+#    rm ${file_count}
+#    rm ${file_part}
+#
+#    printf "detected real-time file ${p00}\n"
+#    all_data+=(${p00}${end})
+#done
+#
+#if [[ ${#all_data[@]} -le 0 ]] ; then
+#    printf "no history real-time training data file detected, existing...\n"
+#    rm ${shell_in_run}
+#    exit 0
+#fi
+#printf "got ${#all_data[@]} history real-time training data file\n"
+#test_file="$( IFS=$','; echo "${all_data[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
@@ -245,7 +245,7 @@ do
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
     all_data+=(${p00}${end})
-    #test_file=${p00}${end}
+    test_file=${p00}${end}
     last_id=${id}
 done
 
@@ -257,12 +257,32 @@ done
 #
 #printf "got ${#inc_data[@]} new collect inc real-time training data file\n"
 train_file="$( IFS=$','; echo "${all_data[*]}" )"
+train_file_latest="$( IFS=$','; echo "${all_data[*]}" )"
+
+if [[ ${#all_data[@]} -gt 8 ]] ; then
+    real_data=()
+    last=${#all_data[@]}
+    for (( idx=last-1 ; idx>=last-8 ; idx-- ));do
+        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
+        p00="${all_data[$idx]}"
+        id="${id_list[$idx]}"
+        real_data+=(${p00})
+        printf "add real time file ${p00}, continue...\n"
+    done
+    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
+    train_file_latest="$( IFS=$','; echo "${real_data[*]}" )"
+fi
+
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 #test_file=${prefix}"/12/1/"${end}
+printf "test_file:%s\n" ${test_file}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file:%s\n" ${train_file}
-#printf "test_file:%s\n" ${test_file}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+printf "train_file_latest:%s\n" ${train_file_latest}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
@@ -293,7 +313,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${test_file} ${curr_date} ${last_id} ${history_file}
+    ${randjar} ${des_dir} ${train_file} ${train_file_latest} ${test_file} ${curr_date} ${last_id} ${history_file}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
 #hadoop fs -chmod -R 0777 ${chmod_des}
