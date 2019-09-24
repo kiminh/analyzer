@@ -97,8 +97,8 @@ object OcpcGetPb_baseline {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -175,6 +175,11 @@ object OcpcGetPb_baseline {
         .withColumn("cvr_factor", udfBottomValue()(col("cvr_factor_cali"), col("cvr_factor_base")))
         .withColumn("post_cvr", udfBottomValue()(col("post_cvr_cali"), col("post_cvr_base")))
 
+    // todo
+    data
+        .repartition(10)
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_pb_data20190920")
+
 
     data
 
@@ -194,7 +199,8 @@ object OcpcGetPb_baseline {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    // todo
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
@@ -247,7 +253,8 @@ object OcpcGetPb_baseline {
      */
 
     // 抽取基础数据
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    // todo
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
