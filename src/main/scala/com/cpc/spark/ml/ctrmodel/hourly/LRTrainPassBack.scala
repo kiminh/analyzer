@@ -322,10 +322,10 @@ object LRTrainPassBack {
     model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
 
     // backup on local machine.
-    model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
+    model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     // for go-live.
-    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
