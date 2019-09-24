@@ -167,7 +167,7 @@ object MakeAdListV4Samples {
         val value_pair = rs._2
         val ctr = rs._2._1.toDouble * 1000.0 / rs._2._2.toDouble
         (key, ctr, value_pair._1, value_pair._2)
-    }).repartition(1).sortBy(_._2 * -1).saveAsTextFile(bid_cpm_file)
+    }).repartition(1).sortBy(_._4 * -1).saveAsTextFile(bid_cpm_file)
 
     //val total_rdd_count = total_rdd.count()
     //println("total_rdd_count.size=" + total_rdd_count)
