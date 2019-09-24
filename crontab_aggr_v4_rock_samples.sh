@@ -38,6 +38,7 @@ do
     echo "curr_date:${curr_date}"
 
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
+    echo ${aggr_path}
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
     file_part=${dir}/${curr_date}_aggr_part-r-00099
