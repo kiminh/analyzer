@@ -190,6 +190,8 @@ object MakeAdListV4Samples {
         (bid_hash, weight)
     }).collectAsMap()
 
+    println("sta_map.size=" + sta_map.size)
+
     val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
