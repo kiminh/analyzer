@@ -119,7 +119,7 @@ object MakeAdListV4Samples {
 
 
     var total_cmp = 0.0d
-    val total_cmp_bc = sc.broadcast(total_cmp)
+    var total_cmp_bc = sc.broadcast(total_cmp)
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
@@ -169,7 +169,7 @@ object MakeAdListV4Samples {
           val value_pair = rs._2
           val ctr = rs._2._1.toDouble * 1000.0d / rs._2._2.toDouble
           val cpm = ctr * bid_ori
-          total_cmp_bc.value += cpm
+          total_cmp_bc.value = total_cmp_bc.value + cpm
           (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
       }).map({
         rs =>
