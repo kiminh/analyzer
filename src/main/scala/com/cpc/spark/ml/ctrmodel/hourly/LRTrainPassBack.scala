@@ -534,9 +534,9 @@ object LRTrainPassBack {
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
     i += 16
 
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
+//    //adslot_type
+//    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+//    i += 10
 
     //planid
     els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
