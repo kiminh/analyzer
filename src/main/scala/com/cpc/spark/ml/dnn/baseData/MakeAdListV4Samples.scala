@@ -226,7 +226,7 @@ object MakeAdListV4Samples {
           val dense = rs.getSeq[Long](6)
 
           val bid = dense(10).toString
-          val weight = sta_map.getOrElse(bid, "1e-5")
+          val weight = sta_map.getOrElse(bid, "1e-5").toDouble
 
           Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
         })
