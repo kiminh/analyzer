@@ -179,6 +179,8 @@ object MakeAdListV4Samples {
           rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
       }).saveAsTextFile(bid_cpm_file)
 
+      println("accumulator=" + accumulator)
+
       val sta_map = sc.textFile(bid_cpm_file).map({
         rs =>
           val line_list = rs.split(",")
