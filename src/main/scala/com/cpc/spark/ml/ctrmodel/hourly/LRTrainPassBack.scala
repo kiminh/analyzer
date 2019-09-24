@@ -41,73 +41,45 @@ object LRTrainPassBack {
     }
 
     // 按分区取数据
-    val appPathSep = getPathSeq(date, hour, ctrDays)
     val dictPathSep = getPathSeq(date, hour, dictDays)
 
-    println("appPathSep = " + appPathSep)
     println("dictPathSep = " + dictPathSep)
 
     initFeatureDict(spark, dictPathSep)
     initStrFeatureDict(spark, dictPathSep)
-
-    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
       s"""
          |select
          |  searchid
-         |  , isclick as label
-         |  , sex
-         |  , age
-         |  , os
-         |  , isp
-         |  , network
-         |  , city
-         |  , media_appsid
-         |  , phone_level
-         |  , `timestamp`
-         |  , adtype
-         |  , planid
-         |  , unitid
-         |  , ideaid
-         |  , adclass
-         |  , adslot_id as adslotid -- bottom-up compatibility.
-         |  , adslot_type
-         |  , interact_pagenum as pagenum -- bottom-up compatibility.
-         |  , interact_bookid as bookid -- bottom-up compatibility.
-         |  , brand_title
-         |  , user_req_num
-         |  , uid
-         |  , click_count as user_click_num
-         |  , click_unit_count as user_click_unit_num
-         |  , long_click_count as user_long_click_count
-         |  , phone_price
-         |  , province
-         |  , city_level
-         |  , media_type
-         |  , channel
-         |  , dtu_id
-         |  , interaction
-         |  , userid
-         |  , is_new_ad
-         |  , hour
-         |from dl_cpc.cpc_basedata_union_events
-         |where %s
-         |  and media_appsid in ('80000001','80000002')
-         |  and adslot_type in (1, 2)
-         |  and isshow = 1
-         |  and ideaid > 0
-         |  and unitid > 0
+         | , uid
+         | , md5uid
+         | , day
+         | , hour
+         | , sex
+         | , age
+         | , os
+         | , isp
+         | , network
+         | , city
+         | , media_appsid
+         | , adslotid
+         | , phone_level
+         | , adclass
+         | , adtype
+         | , planid
+         | , unitid
+         | , ideaid
+         | , label
+         |from dl_cpc.pass_back_label_test_qizhi
        """.stripMargin
         .format(getSelectedHoursBefore(date, hour, 24))
 
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
-
-    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+    val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
 
     model.clearResult()
 
@@ -149,7 +121,6 @@ object LRTrainPassBack {
       )
 
     qttAll.unpersist()
-    userAppIdx.unpersist()
   }
 
 
