@@ -35,10 +35,7 @@ object LRTrainPassBack {
 
     val date = args(2)
     val hour = args(3)
-    var parserArg = "ctrparser4"
-    if (args.length >= 5){
-      parserArg = args(4)
-    }
+    var parserArg = "ctrparser9"
 
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)

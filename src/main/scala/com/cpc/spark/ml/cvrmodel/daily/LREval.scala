@@ -52,6 +52,7 @@ object LREval {
          | , planid
          | , unitid
          | , ideaid
+         | , `timestamp`
          | , IF(imeinotnull=1,1,0) as label from
          |(select searchid
          | , uid
