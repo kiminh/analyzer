@@ -78,6 +78,7 @@ object LRTrainPassBack {
 
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+    println("parserArg = " + parserArg)
 
     val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
 
