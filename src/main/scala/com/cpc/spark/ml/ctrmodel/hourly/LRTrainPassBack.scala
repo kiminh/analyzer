@@ -259,7 +259,7 @@ object LRTrainPassBack {
 
     val trainSample=train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate).cache()
 
-    trainLog :+= "\n trainSample = %.0f \n".format(trainSample.count())
+    trainLog :+= "\n trainSample = %.0f \n".format(trainSample.count().toDouble)
     val sampleTrain = formatSample(spark, parser, trainSample)
     val sampleTest = formatSample(spark, parser, test)
 
