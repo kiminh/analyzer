@@ -213,7 +213,13 @@ object MakeAdListV4Samples {
         StructField("id_arr", ArrayType(LongType, containsNull = true))
       ))
 
-      val weighted_rdd = df_train_files.rdd.map(
+
+      val df_train_files_latest: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_latest)
+      println("DF file count:" + df_train_files_latest.count().toString + " of file:" + train_files_latest)
+      df_train_files_latest.printSchema()
+      df_train_files_latest.show(3)
+
+      val weighted_rdd = df_train_files_latest.rdd.map(
         rs => {
           val idx2 = rs.getSeq[Long](0)
           val idx1 = rs.getSeq[Long](1)
