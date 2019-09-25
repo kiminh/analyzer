@@ -42,7 +42,7 @@ object CpmAuc {
          |    where dt = '2019-09-15'
          |    and media_appsid in ('80000001','80000002')
          |    and isshow = 1
-         |    and ctr_model_name = 'qtt-list-dnn-rawid-v4-dyrec'
+         |    and ctr_model_name = 'qtt-list-dnn-rawid-v4dyrec'
          |    and adslot_type = 1
          |    and adtype != 15
          |    and adsrc in (1,28)
