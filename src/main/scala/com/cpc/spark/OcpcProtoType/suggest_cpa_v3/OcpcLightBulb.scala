@@ -185,9 +185,6 @@ object OcpcLightBulb{
       .option("dbtable", table)
       .load()
 
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
-
 
     val deadline = date + " " + hour + ":00:00"
 
@@ -230,7 +227,7 @@ object OcpcLightBulb{
 
     // todo
     rawResult
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925a")
 
 
 
@@ -242,7 +239,7 @@ object OcpcLightBulb{
 
     // todo
     result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925b")
 
 
     val totalCnt = result.count()
@@ -256,7 +253,7 @@ object OcpcLightBulb{
 
     // todo
     resultDF1raw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925c")
 
     val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
     val resultDF1CV3 = resultDF1raw
@@ -269,7 +266,7 @@ object OcpcLightBulb{
 
     // todo
     resultDF1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918d")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925d")
 
 
 

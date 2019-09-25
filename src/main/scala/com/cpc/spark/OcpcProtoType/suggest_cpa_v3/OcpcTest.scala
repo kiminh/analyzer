@@ -29,7 +29,7 @@ object OcpcTest{
 
     val data = getUnitidList(date, hour, spark)
     data
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_data20190831a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_test20190925a")
 
   }
 
