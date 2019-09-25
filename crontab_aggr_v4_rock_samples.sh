@@ -22,27 +22,6 @@ fi
 
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
-    `date --date='2 days ago' +%Y-%m-%d`
-    `date --date='3 days ago' +%Y-%m-%d`
-    `date --date='4 days ago' +%Y-%m-%d`
-    `date --date='5 days ago' +%Y-%m-%d`
-    `date --date='6 days ago' +%Y-%m-%d`
-    `date --date='7 days ago' +%Y-%m-%d`
-    `date --date='8 days ago' +%Y-%m-%d`
-    `date --date='9 days ago' +%Y-%m-%d`
-    `date --date='10 days ago' +%Y-%m-%d`
-    `date --date='11 days ago' +%Y-%m-%d`
-    `date --date='12 days ago' +%Y-%m-%d`
-    `date --date='13 days ago' +%Y-%m-%d`
-    `date --date='14 days ago' +%Y-%m-%d`
-    `date --date='15 days ago' +%Y-%m-%d`
-    `date --date='16 days ago' +%Y-%m-%d`
-    `date --date='17 days ago' +%Y-%m-%d`
-    `date --date='18 days ago' +%Y-%m-%d`
-    `date --date='19 days ago' +%Y-%m-%d`
-    `date --date='20 days ago' +%Y-%m-%d`
-    `date --date='21 days ago' +%Y-%m-%d`
-    `date --date='22 days ago' +%Y-%m-%d`
 )
 
 
@@ -103,8 +82,8 @@ do
     fi
 
     id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
+    #prefix=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}
     prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
-    prefix=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}
     end=part-*
 
     realtime_list=(
