@@ -84,7 +84,7 @@ object MakeBaseDailyWeight {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, file_list, , curr_date, delete_old) = args
+    val Array(des_dir, file_list, curr_date, delete_old) = args
 
     println(args)
 
