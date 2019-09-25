@@ -18,6 +18,7 @@ fi
 shell_in_run=${dir}/shell_in_busy
 if [[ -f "$shell_in_run" ]]; then
     printf "shell are busy now, existing\n"
+    printf "*****************************${date_full}********************************\n"
     exit 0
 fi
 touch ${shell_in_run}
