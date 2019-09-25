@@ -24,20 +24,6 @@ fi
 touch ${shell_in_run}
 
 
-
-busy_file=collect_inc_mom_data_busy
-busy=${dir}/${busy_file}
-rm ${busy}
-remote_busy="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer/"${busy_file}
-hadoop fs -get ${remote_busy} ${busy}
-if [[ -f "$busy" ]]; then
-    printf "spark cluster are busy now, existing\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-
-
-
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 end=part-*
 sample_list=(
@@ -163,7 +149,7 @@ do
     rm ${file_part1}
     rm ${file_part2}
 
-    printf "detected real-time file ${p00}\n"
+    #printf "detected real-time file ${p00}\n"
     all_data+=(${p00}${end})
 done
 
@@ -237,7 +223,7 @@ do
 
     is_new=${dir}/train_done_${curr_date}_${id}
     if [[ -f "$is_new" ]]; then
-        printf "done with ${p00}, continuing\n"
+        #printf "done with ${p00}, continuing\n"
         done_data+=(${p00}${end})
         all_data+=(${p00}${end})
         test_file=${p00}${end}
@@ -361,7 +347,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${remote_busy} ${des_dir} ${train_file} ${train_file_collect} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
+    ${randjar} ${des_dir} ${train_file} ${train_file_collect} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
