@@ -25,7 +25,7 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
 
-    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-23-16-07"
+    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
     // model
     model.loadLRmodel(modelPath)
     println("modelPath = " + modelPath)
@@ -57,12 +57,12 @@ object LRTest {
 
 
     // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
-    val mediaid=37
-    val planid=14531
-    val unitid=16320
-    val ideaid=37990
-    val slotid=443
-    val adclass=99
+    val mediaid=39
+    val planid=15409
+    val unitid=17374
+    val ideaid=40041
+    val slotid=452
+    val adclass=100
     val cityid=367
 
 
