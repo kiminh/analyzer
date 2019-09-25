@@ -111,7 +111,7 @@ object MakeAdListV4Samples {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + "bid-cpm-info-" + time_id
+    val bid_cpm_file = des_dir + "/" + curr_date + "-" + time_id + "-bid-cpm-weight-info"
     val weighted_file = des_dir + "/" + curr_date + "-" + time_id + "-weighted"
     if (delete_old == "true") {
       delete_hdfs_path(bid_cpm_file)
