@@ -312,6 +312,7 @@ printf "train_file:%s\n" ${train_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_latest:%s\n" ${train_file_latest}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+rm ${shell_in_run}
 exit 0
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
