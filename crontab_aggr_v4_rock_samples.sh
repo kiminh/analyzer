@@ -20,6 +20,15 @@ if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
 
+shell_in_run=${dir}/shell_in_busy
+if [[ -f "$shell_in_run" ]]; then
+    printf "shell are busy now, existing\n"
+    printf "*****************************${date_full}********************************\n"
+    exit 0
+fi
+touch ${shell_in_run}
+
+
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
 )
@@ -270,3 +279,4 @@ spark-submit --master yarn --queue ${queue} \
     ${randjar} ${des_dir} ${date_list} ${file_list}
 
 
+rm ${shell_in_run}
