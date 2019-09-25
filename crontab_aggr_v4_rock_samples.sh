@@ -230,7 +230,7 @@ do
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     echo "collected "${#valid_data[@]}" real-time training data file for ${curr_date}"
     train_file="$( IFS=$','; echo "${valid_data[*]}" )"
-    echo ${train_file}
+    #echo ${train_file}
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
     real_curr_date=`date --date='1 days ago' +%Y-%m-%d`
@@ -262,12 +262,12 @@ if [[ ${#collect_file[@]} -le 0 ]] ; then
     printf "no real-time training data file need to be aggr, existing...\n"
     exit 0
 fi
-exit 0
 
 date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
 file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
-echo "${date_list}"
 echo "${file_list}"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "${date_list}"
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
@@ -281,8 +281,8 @@ des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup"
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-aggr-samples" \
-    --driver-memory 4g --executor-memory 2g \
-    --num-executors 1000 --executor-cores 2 \
+    --driver-memory 4g --executor-memory 4g \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
