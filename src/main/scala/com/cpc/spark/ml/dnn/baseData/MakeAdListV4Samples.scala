@@ -78,15 +78,15 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 9) {
       System.err.println(
         """
-          |you have to input 8 parameters !!!
+          |you have to input 9 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, train_files_collect, train_files_sup, curr_date, time_id, history_files, delete_old) = args
+    val Array(busy_file, des_dir, train_files, train_files_collect, train_files_sup, curr_date, time_id, history_files, delete_old) = args
 
     println(args)
 
@@ -284,6 +284,9 @@ object MakeAdListV4Samples {
 
       s"hadoop fs -chmod -R 0777 $weighted_file_sup" !
 
+      if (exists_hdfs_path(busy_file)) {
+        delete_hdfs_path(busy_file)
+      }
     }
 
 
