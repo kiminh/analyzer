@@ -238,7 +238,7 @@ object MakeAdListV4Samples {
       println(s"weighted_rdd_count is : $weighted_rdd_count")
 
       val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
-      tf_df.repartition(1000).write.format("tfrecords").option("recordType", "Example").save(weighted_file)
+      tf_df.repartition(1200).write.format("tfrecords").option("recordType", "Example").save(weighted_file)
 
       //保存count文件
       val fileName = "count_" + Random.nextInt(100000)
