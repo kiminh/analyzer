@@ -110,8 +110,8 @@ if [[ ${#collect_file[@]} -le 0 ]] ; then
     exit 0
 fi
 
-date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
-file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
+date_list="$( IFS=$','; echo "${collect_date[*]}" )"
+file_list="$( IFS=$','; echo "${collect_file[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "${file_list}"
