@@ -267,19 +267,23 @@ do
     last_id=${id}
 done
 
-if [[ ${#all_data[@]} -le 0 ]] ; then
-    printf "no today real-time training data file detected, existing...\n"
+printf "got ${#inc_data[@]} today incremental real-time training data file\n"
+if [[ ${#inc_data[@]} -le 0 ]] ; then
+    printf "no today incremental real-time training data file detected, existing...\n"
     rm ${shell_in_run}
     exit 0
 fi
 
-printf "got ${#all_data[@]} today real-time training data file\n"
+printf "got ${#all_data[@]} today total real-time training data file\n"
+if [[ ${#all_data[@]} -le 0 ]] ; then
+    printf "no today total real-time training data file detected, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
 
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
-
 train_file=${train_file_last},${train_file_curr}
-
-train_file_latest="$( IFS=$','; echo "${all_data[*]}" )"
+train_file_latest=${train_file_curr}
 
 if [[ ${#all_data[@]} -gt 50 ]] ; then
     real_data=()
@@ -305,6 +309,7 @@ printf "train_file:%s\n" ${train_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_latest:%s\n" ${train_file_latest}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+exit 0
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
