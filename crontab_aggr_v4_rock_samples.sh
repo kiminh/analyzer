@@ -262,6 +262,7 @@ if [[ ${#collect_file[@]} -le 0 ]] ; then
     printf "no real-time training data file need to be aggr, existing...\n"
     exit 0
 fi
+exit 0
 
 date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
 file_list="$( IFS=$';'; echo "${collect_file[*]}" )"
