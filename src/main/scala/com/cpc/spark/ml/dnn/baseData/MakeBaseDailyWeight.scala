@@ -108,7 +108,7 @@ object MakeBaseDailyWeight {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-" + "-bid-cpm-weight-info"
+    val bid_cpm_file = des_dir + "/" + curr_date + "-bid-cpm-weight-info"
     val weighted_file_collect = des_dir + "/" + curr_date + "-21days-weight"
 
     if (delete_old == "true") {
