@@ -225,9 +225,9 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-    // todo
-    rawResult
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925a")
+//    // todo
+//    rawResult
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925a")
 
 
 
@@ -237,9 +237,9 @@ object OcpcLightBulb{
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
 
-    // todo
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925b")
+//    // todo
+//    result
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925b")
 
 
     val totalCnt = result.count()
@@ -251,9 +251,9 @@ object OcpcLightBulb{
       .select("unitid", "userid", "conversion_goal", "media", "test_flag")
       .distinct()
 
-    // todo
-    resultDF1raw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925c")
+//    // todo
+//    resultDF1raw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925c")
 
     val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
     val resultDF1CV3 = resultDF1raw
@@ -264,9 +264,9 @@ object OcpcLightBulb{
         .union(resultDF1notCV3)
         .distinct()
 
-    // todo
-    resultDF1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925d")
+//    // todo
+//    resultDF1
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925d")
 
 
 
