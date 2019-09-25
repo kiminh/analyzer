@@ -134,9 +134,9 @@ object MakeAdListV4Samples {
           val label_arr = rs.getSeq[Long](5)
           val dense = rs.getSeq[Long](6)
 
-          var label = 0L
+          var label = 0.0d
           if (label_arr.head == 1L) {
-            label = 1L
+            label = 1.0d
           }
 
           val bid = dense(10).toString
@@ -161,13 +161,11 @@ object MakeAdListV4Samples {
           (rs._1 + "\t" + rs._2, (rs._3, rs._4))
       }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
-          val key = rs._1
-          val key_list = key.split("\t")
+          val key_list = rs._1.split("\t")
           val bid_ori = key_list(1).toDouble
-          val value_pair = rs._2
-          val ctr = rs._2._1.toDouble / rs._2._2.toDouble
+          val ctr = rs._2._1/rs._2._2
           val cpm = ctr * bid_ori
-          (key_list(0), key_list(1), ctr, cpm, value_pair._1, value_pair._2)
+          (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
       })
 
       val total_cpm_map = info_rdd.map({
@@ -175,16 +173,16 @@ object MakeAdListV4Samples {
           ("placeholder", rs._4)
       }).reduceByKey(_ + _).collectAsMap()
 
-      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0d)
+      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0d).toDouble
       println("total_cpm=" + total_cpm)
 
       info_rdd.map({
         rs =>
-          val weight = rs._4.toDouble / total_cpm.toDouble
+          val weight = rs._4/total_cpm
           (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
         rs=>
-          rs._1 + "," + rs._2 + "," + rs._3 + "," + rs._4 + "," + rs._5 + "," + rs._6 + "," + rs._7 + "," + rs._8
+          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
       }).saveAsTextFile(bid_cpm_file)
 
 
