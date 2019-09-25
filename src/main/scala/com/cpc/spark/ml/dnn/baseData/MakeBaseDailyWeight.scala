@@ -197,9 +197,9 @@ object MakeBaseDailyWeight {
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
-      val weighted_train_file = des_dir + "/" + this_date + "-weight"
+      val weighted_train_file = des_dir + "/" + this_date + "-samples-weight"
 
-      if (delete_old == "true") {
+      if (delete_old == "true" && exists_hdfs_path(weighted_train_file)) {
         delete_hdfs_path(weighted_train_file)
       }
 
