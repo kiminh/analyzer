@@ -281,10 +281,10 @@ train_file=${train_file_last},${train_file_curr}
 
 train_file_latest="$( IFS=$','; echo "${all_data[*]}" )"
 
-if [[ ${#all_data[@]} -gt 8 ]] ; then
+if [[ ${#all_data[@]} -gt 50 ]] ; then
     real_data=()
     last=${#all_data[@]}
-    for (( idx=last-1 ; idx>=last-8 ; idx-- ));do
+    for (( idx=last-1 ; idx>=last-50 ; idx-- ));do
         #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
         p00="${all_data[$idx]}"
         id="${id_list[$idx]}"
