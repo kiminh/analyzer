@@ -188,7 +188,7 @@ object MakeAdListV4Samples {
 
       val sta_map = sc.textFile(bid_cpm_file).map({
         rs =>
-          val line_list = rs.split(",")
+          val line_list = rs.split("\t")
           val bid_hash = line_list(0)
           val bid_ori = line_list(1)
           val ctr = line_list(2)
