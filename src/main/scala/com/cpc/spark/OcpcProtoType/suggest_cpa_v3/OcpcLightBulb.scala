@@ -228,8 +228,9 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-//    rawResult
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+    // todo
+    rawResult
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
 
 
 
@@ -239,18 +240,38 @@ object OcpcLightBulb{
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
 
-//    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+    // todo
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
 
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 10
-    val resultDF1 = result
+    val resultDF1raw = result
       .orderBy(rand())
       .limit(cnt.toInt)
       .withColumn("test_flag", lit(1))
       .select("unitid", "userid", "conversion_goal", "media", "test_flag")
       .distinct()
+
+    // todo
+    resultDF1raw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918c")
+
+    val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
+    val resultDF1CV3 = resultDF1raw
+      .filter(s"conversion_goal = 3")
+      .limit(cv3Cnt.toInt)
+    val resultDF1notCV3 = resultDF1raw.filter(s"conversion_goal != 3")
+    val resultDF1 = resultDF1CV3
+        .union(resultDF1notCV3)
+        .distinct()
+
+    // todo
+    resultDF1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918d")
+
+
 
     println(s"totalCnt=$totalCnt, cnt=$cnt")
 
