@@ -13,7 +13,6 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable.ArrayBuffer
 import scala.sys.process._
 import scala.util.Random
-import org.apache.spark.util.DoubleAccumulator
 
 /**
   * 解析adlistv4tfrecord特征
@@ -134,9 +133,9 @@ object MakeAdListV4Samples {
           val label_arr = rs.getSeq[Long](5)
           val dense = rs.getSeq[Long](6)
 
-          var label = 0.0d
+          var label = 0.0
           if (label_arr.head == 1L) {
-            label = 1.0d
+            label = 1.0
           }
 
           val bid = dense(10).toString
@@ -154,7 +153,7 @@ object MakeAdListV4Samples {
           //output += idx_arr.map(_.toString).mkString(";")
 
           //(bid, bid_ori, label, 1L, output.mkString("\t"))
-          (bid, bid_ori, label, 1.0d)
+          (bid, bid_ori, label, 1.0)
         }
       ).map({
         rs =>
@@ -162,7 +161,7 @@ object MakeAdListV4Samples {
       }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val key_list = rs._1.split("\t")
-          val bid_ori = key_list(1).toDouble
+          val bid_ori = key_list(1).toFloat
           val ctr = rs._2._1/rs._2._2
           val cpm = ctr * bid_ori
           (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
@@ -173,7 +172,7 @@ object MakeAdListV4Samples {
           ("placeholder", rs._4)
       }).reduceByKey(_ + _).collectAsMap()
 
-      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0d).toDouble
+      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
       println("total_cpm=" + total_cpm)
 
       info_rdd.map({
@@ -205,7 +204,7 @@ object MakeAdListV4Samples {
       val schema_new = StructType(List(
         StructField("sample_idx", LongType, nullable = true),
         StructField("label", ArrayType(LongType, containsNull = true)),
-        StructField("weight", DoubleType, nullable = true),
+        StructField("weight", FloatType, nullable = true),
         StructField("dense", ArrayType(LongType, containsNull = true)),
         StructField("idx0", ArrayType(LongType, containsNull = true)),
         StructField("idx1", ArrayType(LongType, containsNull = true)),
@@ -230,7 +229,7 @@ object MakeAdListV4Samples {
           val dense = rs.getSeq[Long](6)
 
           val bid = dense(10).toString
-          val weight = sta_map.getOrElse(bid, "1e-5").toDouble
+          val weight = sta_map.getOrElse(bid, "1e-5").toFloat
 
           Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
         })
