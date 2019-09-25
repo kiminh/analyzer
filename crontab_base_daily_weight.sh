@@ -100,8 +100,8 @@ do
     if [[ ! -f ${file_count} ]]; then
         printf "no ${file_count}, continue...\n"
     fi
-    collect_date+=(${curr_date})
     collect_file+=("${aggr_path}/part-r-*")
+    collect_date+=(${curr_date})
 done
 
 if [[ ${#collect_file[@]} -le 0 ]] ; then
@@ -110,13 +110,16 @@ if [[ ${#collect_file[@]} -le 0 ]] ; then
     exit 0
 fi
 
-date_list="$( IFS=$','; echo "${collect_date[*]}" )"
 file_list="$( IFS=$','; echo "${collect_file[*]}" )"
+date_list="$( IFS=$';'; echo "${collect_date[*]}" )"
+train_list="$( IFS=$';'; echo "${collect_file[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "${file_list}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "${date_list}"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "${train_list}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 #rm ${shell_in_run}
@@ -144,7 +147,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeBaseDailyWeight\
-    ${randjar} ${des_dir} ${file_list} ${curr_date} ${delete_old}
+    ${randjar} ${des_dir} ${file_list} ${curr_date} ${delete_old} ${train_list} ${date_list}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 

@@ -76,15 +76,15 @@ object MakeBaseDailyWeight {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 4) {
+    if (args.length != 6) {
       System.err.println(
         """
-          |you have to input 4 parameters !!!
+          |you have to input 6 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, file_list, curr_date, delete_old) = args
+    val Array(des_dir, file_list, curr_date, delete_old, train_list, date_list) = args
 
     println(args)
 
@@ -108,13 +108,7 @@ object MakeBaseDailyWeight {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-bid-cpm-weight-info"
-    val weighted_file_collect = des_dir + "/" + curr_date + "-21days-weight"
-
-    if (delete_old == "true") {
-      delete_hdfs_path(bid_cpm_file)
-      delete_hdfs_path(weighted_file_collect)
-    }
+    val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(file_list)
@@ -147,7 +141,7 @@ object MakeBaseDailyWeight {
         rs =>
           val key_list = rs._1.split("\t")
           val bid_ori = key_list(1).toFloat
-          val ctr = rs._2._1/rs._2._2
+          val ctr = rs._2._1 / rs._2._2
           val cpm = ctr * bid_ori
           (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
       })
@@ -162,42 +156,56 @@ object MakeBaseDailyWeight {
 
       info_rdd.map({
         rs =>
-          val weight = rs._4/total_cpm
+          val weight = rs._4 / total_cpm
           (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
       }).repartition(1).sortBy(_._6 * -1).map({
-        rs=>
+        rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
       }).saveAsTextFile(bid_cpm_file)
+    }
 
+    val sta_map = sc.textFile(bid_cpm_file).map({
+      rs =>
+        val line_list = rs.split("\t")
+        val bid_hash = line_list(0)
+        val bid_ori = line_list(1)
+        val ctr = line_list(2)
+        val cpm = line_list(3)
+        val total_cpm = line_list(4)
+        val weight = line_list(5)
+        val click = line_list(6)
+        val imp = line_list(7)
+        (bid_hash, weight)
+    }).collectAsMap()
 
-      val sta_map = sc.textFile(bid_cpm_file).map({
-        rs =>
-          val line_list = rs.split("\t")
-          val bid_hash = line_list(0)
-          val bid_ori = line_list(1)
-          val ctr = line_list(2)
-          val cpm = line_list(3)
-          val total_cpm = line_list(4)
-          val weight = line_list(5)
-          val click = line_list(6)
-          val imp = line_list(7)
-          (bid_hash, weight)
-      }).collectAsMap()
+    println("sta_map.size=" + sta_map.size)
 
-      println("sta_map.size=" + sta_map.size)
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("weight", FloatType, nullable = true),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
 
-      val schema_new = StructType(List(
-        StructField("sample_idx", LongType, nullable = true),
-        StructField("label", ArrayType(LongType, containsNull = true)),
-        StructField("weight", FloatType, nullable = true),
-        StructField("dense", ArrayType(LongType, containsNull = true)),
-        StructField("idx0", ArrayType(LongType, containsNull = true)),
-        StructField("idx1", ArrayType(LongType, containsNull = true)),
-        StructField("idx2", ArrayType(LongType, containsNull = true)),
-        StructField("id_arr", ArrayType(LongType, containsNull = true))
-      ))
+    val train_date_list = date_list.split(";")
+    val train_file_list = train_list.split(";")
 
-      val weighted_rdd = df_train_files.rdd.map(
+    for (idx <- train_date_list.indices) {
+      val this_date = train_date_list(idx)
+      val this_file = train_file_list(idx)
+      val weighted_train_file = des_dir + "/" + this_date + "-weight"
+
+      if (delete_old == "true") {
+        delete_hdfs_path(weighted_train_file)
+      }
+
+      val df_train: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
+
+      val weighted_rdd = df_train.rdd.map(
         rs => {
           val idx2 = rs.getSeq[Long](0)
           val idx1 = rs.getSeq[Long](1)
@@ -215,17 +223,17 @@ object MakeBaseDailyWeight {
 
       val weighted_rdd_count = weighted_rdd.count()
       println(s"weighted_rdd_count is : $weighted_rdd_count")
-      println("DF file count:" + weighted_rdd_count.toString + " of file:" + file_list)
+      println("DF file count:" + weighted_rdd_count.toString + " of file:" + this_file)
 
       val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
-      tf_df.repartition(12000).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect)
+      tf_df.repartition(1200).write.format("tfrecords").option("recordType", "Example").save(weighted_train_file)
 
       //保存count文件
       var fileName = "count_" + Random.nextInt(100000)
       writeNum2File(fileName, weighted_rdd_count)
-      s"hadoop fs -put $fileName $weighted_file_collect/count" !
+      s"hadoop fs -put $fileName $weighted_train_file/count" !
 
-      s"hadoop fs -chmod -R 0777 $weighted_file_collect" !
+      s"hadoop fs -chmod -R 0777 $weighted_train_file" !
     }
   }
 }
