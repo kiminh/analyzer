@@ -114,7 +114,7 @@ do
 
     is_new=${dir}/train_done_${curr_date}_${id}
     if [[ -f "$is_new" ]]; then
-        printf "detected real-time file ${p00}\n"
+        #printf "detected real-time file ${p00}\n"
         all_data+=(${p00}${end})
         continue
     fi
