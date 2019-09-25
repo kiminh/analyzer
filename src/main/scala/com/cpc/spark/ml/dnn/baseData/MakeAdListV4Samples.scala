@@ -154,7 +154,7 @@ object MakeAdListV4Samples {
           //output += idx_arr.map(_.toString).mkString(";")
 
           //(bid, bid_ori, label, 1L, output.mkString("\t"))
-          (bid, bid_ori, label, 1L)
+          (bid, bid_ori, label, 1.0d)
         }
       ).map({
         rs =>
