@@ -122,7 +122,7 @@ object MakeAdListV4Samples {
 
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
-      println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
+      //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
       df_train_files.printSchema()
       df_train_files.show(3)
       val info_rdd = df_train_files.rdd.map(
@@ -216,7 +216,7 @@ object MakeAdListV4Samples {
 
 
       val df_train_files_collect: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect)
-      println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+      //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
       df_train_files_collect.printSchema()
       df_train_files_collect.show(3)
 
@@ -238,6 +238,7 @@ object MakeAdListV4Samples {
 
       val weighted_rdd_count = weighted_rdd.count()
       println(s"weighted_rdd_count is : $weighted_rdd_count")
+      println("DF file count:" + weighted_rdd_count.toString + " of file:" + train_files_collect)
 
       val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
       tf_df.repartition(1200).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect)
@@ -251,7 +252,7 @@ object MakeAdListV4Samples {
 
 
       val df_train_files_sup: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_sup)
-      println("DF file count:" + df_train_files_sup.count().toString + " of file:" + train_files_sup)
+      //println("DF file count:" + df_train_files_sup.count().toString + " of file:" + train_files_sup)
       df_train_files_sup.printSchema()
       df_train_files_sup.show(3)
 
@@ -273,6 +274,7 @@ object MakeAdListV4Samples {
 
       val sup_weighted_rdd_count = sup_weighted_rdd.count()
       println(s"sup_weighted_rdd_count is : $sup_weighted_rdd_count")
+      println("DF file count:" + sup_weighted_rdd_count.toString + " of file:" + train_files_sup)
 
       val sup_tf_df: DataFrame = spark.createDataFrame(sup_weighted_rdd, schema_new)
       sup_tf_df.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_sup)
