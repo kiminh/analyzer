@@ -36,20 +36,20 @@ object LRTest {
     var els = Seq[(Int, Double)]()
 
     els = els :+ (0, 1d)  //bias
-    els = els :+ (19, 1d) // hour
+    els = els :+ (22, 1d) // hour
     els = els :+ (25, 1d) // sex
     els = els :+ (34, 1d) // age
     els = els :+ (135, 1d) // os
-    els = els :+ (147, 1d) // isp
+    els = els :+ (144, 1d) // isp
     els = els :+ (165, 1d) // network
-    els = els :+ (537, 1d) // cityid
+    els = els :+ (174, 1d) // cityid
     els = els :+ (542, 1d) // mediaid
     els = els :+ (580, 1d) // slotid
     els = els :+ (1028, 1d) // phone_level
     els = els :+ (1034, 1d) // pagenum
     els = els :+ (1134, 1d) // bookid
     els = els :+ (1234, 1d) // adclass
-    els = els :+ (1335, 1d) // adtype
+    els = els :+ (1338, 1d) // adtype
     els = els :+ (1351, 1d) // adslot_type
     els = els :+ (1360, 1d) // planid
     els = els :+ (15892, 1d) // unitid
