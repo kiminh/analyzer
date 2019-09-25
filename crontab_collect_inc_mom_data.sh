@@ -76,81 +76,90 @@ sample_list=(
     "/23/1/"
 )
 
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+curr_date=`date --date='1 days ago' +%Y-%m-%d`
+printf "last_date is:${curr_date}\n"
+prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
+for idx in "${!sample_list[@]}";
+do
+    p00=${prefix}"${sample_list[$idx]}"
+    id="${id_list[$idx]}"
 
-#echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#last_date=`date --date='1 days ago' +%Y-%m-%d`
-#printf "last_date is:${last_date}\n"
-#prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${last_date}
-#for idx in "${!sample_list[@]}";
-#do
-#    p00=${prefix}"${sample_list[$idx]}"
-#    id="${id_list[$idx]}"
-#
-#    is_new=${dir}/train_done_${last_date}_${id}
-#    if [[ -f "$is_new" ]]; then
-#        continue
-#    fi
-#
-#    file_count=${dir}/${last_date}_${id}_count
-#    file_part=${dir}/${last_date}_${id}_part-10-0
-#
-#    if [[ ! -f ${file_count} ]]; then
-#        hadoop fs -get ${p00}count ${file_count} &
-#    fi
-#    if [[ ! -f ${file_part} ]]; then
-#        hadoop fs -get ${p00}part-10-0 ${file_part} &
-#    fi
-#done
-#printf "waiting for downloading real-time data in parallel...\n"
-#wait
-#printf "downloaded real-time data file in parallel...\n"
-#all_data=()
-#for idx in "${!sample_list[@]}";
-#do
-#    p00=${prefix}"${sample_list[$idx]}"
-#    id="${id_list[$idx]}"
-#
-#    is_new=${dir}/train_done_${last_date}_${id}
-#    if [[ -f "$is_new" ]]; then
-#        printf "detected real-time file ${p00}\n"
-#        all_data+=(${p00}${end})
-#        continue
-#    fi
-#
-#    file_count=${dir}/${last_date}_${id}_count
-#    file_part=${dir}/${last_date}_${id}_part-10-0
-#
-#    if [[ ! -f ${file_count} ]]; then
-#        printf "no ${file_count} file, continue...\n"
-#        continue
-#    fi
-#    if [[ ! -f ${file_part} ]]; then
-#        printf "no ${file_part} file, continue...\n"
-#        continue
-#    fi
-#
-#    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
-#    if [ ${file_size} -lt 1000 ]
-#    then
-#        printf "invalid ${file_part} file size:${file_size}, continue...\n"
-#        continue
-#    fi
-#
-#    touch ${is_new}
-#    rm ${file_count}
-#    rm ${file_part}
-#
-#    printf "detected real-time file ${p00}\n"
-#    all_data+=(${p00}${end})
-#done
-#
-#if [[ ${#all_data[@]} -le 0 ]] ; then
-#    printf "no history real-time training data file detected, existing...\n"
-#    rm ${shell_in_run}
-#    exit 0
-#fi
-#printf "got ${#all_data[@]} history real-time training data file\n"
-#test_file="$( IFS=$','; echo "${all_data[*]}" )"
+    is_new=${dir}/train_done_${curr_date}_${id}
+    if [[ -f "$is_new" ]]; then
+        continue
+    fi
+
+    file_part1=${dir}/${curr_date}_${id}_part-0-0
+    file_part2=${dir}/${curr_date}_${id}_part-99-0
+
+    if [[ ! -f ${file_part1} ]]; then
+        hadoop fs -get ${p00}part-0-0 ${file_part1} &
+    fi
+
+    if [[ ! -f ${file_part1} ]]; then
+        hadoop fs -get ${p00}part-99-0 ${file_part2} &
+    fi
+
+done
+printf "waiting for downloading real-time data in parallel...\n"
+wait
+printf "downloaded real-time data file in parallel...\n"
+all_data=()
+for idx in "${!sample_list[@]}";
+do
+    p00=${prefix}"${sample_list[$idx]}"
+    id="${id_list[$idx]}"
+
+    is_new=${dir}/train_done_${curr_date}_${id}
+    if [[ -f "$is_new" ]]; then
+        printf "detected real-time file ${p00}\n"
+        all_data+=(${p00}${end})
+        continue
+    fi
+
+    file_part1=${dir}/${curr_date}_${id}_part-0-0
+    file_part2=${dir}/${curr_date}_${id}_part-99-0
+
+    if [[ ! -f ${file_part1} ]]; then
+        printf "no ${file_part1} file, continue...\n"
+        continue
+    fi
+    if [[ ! -f ${file_part2} ]]; then
+        printf "no ${file_part2} file, continue...\n"
+        continue
+    fi
+
+    file_size=`ls -l ${file_part1} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 1000 ]
+    then
+        printf "invalid ${file_part1} file size:${file_size}, continue...\n"
+        continue
+    fi
+
+    file_size=`ls -l ${file_part2} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 1000 ]
+    then
+        printf "invalid ${file_part2} file size:${file_size}, continue...\n"
+        continue
+    fi
+
+    touch ${is_new}
+    rm ${file_part1}
+    rm ${file_part2}
+
+    printf "detected real-time file ${p00}\n"
+    all_data+=(${p00}${end})
+done
+
+if [[ ${#all_data[@]} -le 0 ]] ; then
+    printf "no history real-time training data file detected, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+
+printf "got ${#all_data[@]} history real-time training data file\n"
+train_file_last="$( IFS=$','; echo "${all_data[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
@@ -166,7 +175,7 @@ fi
 printf "now id is:%s\n" ${now_id}
 
 prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
-#now_id=0013
+now_id=0010
 for idx in "${!sample_list[@]}";
 do
     p00=${prefix}"${sample_list[$idx]}"
@@ -182,14 +191,15 @@ do
         continue
     fi
 
-    file_count=${dir}/${curr_date}_${id}_count
-    file_part=${dir}/${curr_date}_${id}_part-10-0
+    file_part1=${dir}/${curr_date}_${id}_part-0-0
+    file_part2=${dir}/${curr_date}_${id}_part-99-0
 
-    if [[ ! -f ${file_count} ]]; then
-        hadoop fs -get ${p00}count ${file_count} &
+    if [[ ! -f ${file_part1} ]]; then
+        hadoop fs -get ${p00}part-0-0 ${file_part1} &
     fi
-    if [[ ! -f ${file_part} ]]; then
-        hadoop fs -get ${p00}part-10-0 ${file_part} &
+
+    if [[ ! -f ${file_part1} ]]; then
+        hadoop fs -get ${p00}part-99-0 ${file_part2} &
     fi
 done
 
@@ -220,28 +230,35 @@ do
         continue
     fi
 
-    file_count=${dir}/${curr_date}_${id}_count
-    file_part=${dir}/${curr_date}_${id}_part-10-0
+    file_part1=${dir}/${curr_date}_${id}_part-0-0
+    file_part2=${dir}/${curr_date}_${id}_part-99-0
 
-    if [[ ! -f ${file_count} ]]; then
-        printf "no ${file_count} file, continue...\n"
+    if [[ ! -f ${file_part1} ]]; then
+        printf "no ${file_part1} file, continue...\n"
         continue
     fi
-    if [[ ! -f ${file_part} ]]; then
-        printf "no ${file_part} file, continue...\n"
+    if [[ ! -f ${file_part2} ]]; then
+        printf "no ${file_part2} file, continue...\n"
         continue
     fi
 
-    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+    file_size=`ls -l ${file_part1} | awk '{ print $5 }'`
     if [ ${file_size} -lt 1000 ]
     then
-        printf "invalid ${file_part} file size:${file_size}, continue...\n"
+        printf "invalid ${file_part1} file size:${file_size}, continue...\n"
+        continue
+    fi
+
+    file_size=`ls -l ${file_part2} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 1000 ]
+    then
+        printf "invalid ${file_part2} file size:${file_size}, continue...\n"
         continue
     fi
 
     touch ${is_new}
-    rm ${file_count}
-    rm ${file_part}
+    rm ${file_part1}
+    rm ${file_part2}
 
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
@@ -250,14 +267,18 @@ do
     last_id=${id}
 done
 
-#if [[ ${#inc_data[@]} -le 0 ]] ; then
-#    printf "no incremental real-time training data file detected, existing...\n"
-#    rm ${shell_in_run}
-#    exit 0
-#fi
-#
-#printf "got ${#inc_data[@]} new collect inc real-time training data file\n"
-train_file="$( IFS=$','; echo "${all_data[*]}" )"
+if [[ ${#all_data[@]} -le 0 ]] ; then
+    printf "no today real-time training data file detected, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+
+printf "got ${#all_data[@]} today real-time training data file\n"
+
+train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
+
+train_file=${train_file_last},${train_file_curr}
+
 train_file_latest="$( IFS=$','; echo "${all_data[*]}" )"
 
 if [[ ${#all_data[@]} -gt 8 ]] ; then
