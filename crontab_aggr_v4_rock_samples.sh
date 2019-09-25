@@ -248,6 +248,7 @@ done
 
 if [[ ${#collect_file[@]} -le 0 ]] ; then
     printf "no real-time training data file need to be aggr, existing...\n"
+    rm ${shell_in_run}
     exit 0
 fi
 
