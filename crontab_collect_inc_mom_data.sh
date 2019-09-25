@@ -339,8 +339,7 @@ spark-submit --master yarn --queue ${queue} \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
     ${randjar} ${des_dir} ${train_file} ${train_file_latest} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
-#chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-sampled"
-#hadoop fs -chmod -R 0777 ${chmod_des}
+#chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
 
 
