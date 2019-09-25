@@ -59,7 +59,7 @@ do
     echo ${aggr_path}
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
-    file_part=${dir}/${curr_date}_aggr_part-r-00099
+    #file_part=${dir}/${curr_date}_aggr_part-r-00099
 
     if [[ ! -f ${file_success} ]]; then
         hadoop fs -get ${aggr_path}/_SUCCESS ${file_success} &
@@ -67,9 +67,9 @@ do
     if [[ ! -f ${file_count} ]]; then
         hadoop fs -get ${aggr_path}/count ${file_count} &
     fi
-    if [[ ! -f ${file_part} ]]; then
-        hadoop fs -get ${aggr_path}/part-r-00099 ${file_part} &
-    fi
+    #if [[ ! -f ${file_part} ]]; then
+    #    hadoop fs -get ${aggr_path}/part-r-00099 ${file_part} &
+    #fi
 
     wait
 
@@ -83,19 +83,19 @@ do
         done_curr_date="false"
     fi
 
-    if [[ ! -f ${file_part} ]]; then
-        printf "no ${file_part}, continue to aggr ${curr_date}...\n"
-        done_curr_date="false"
-    fi
+    #if [[ ! -f ${file_part} ]]; then
+    #    printf "no ${file_part}, continue to aggr ${curr_date}...\n"
+    #    done_curr_date="false"
+    #fi
 
-    if [[ -f ${file_part} ]]; then
-        file_size=`ls -l ${file_part} | awk '{ print $5 }'`
-        if [ ${file_size} -lt 1000 ]
-        then
-            printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
-            done_curr_date="false"
-        fi
-    fi
+    #if [[ -f ${file_part} ]]; then
+    #    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+    #    if [ ${file_size} -lt 1000 ]
+    #    then
+    #        printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
+    #        done_curr_date="false"
+    #    fi
+    #fi
 
     if [ "${done_curr_date}" = "true" ];then
         printf "curr_date ${curr_date} has aggr file, continue...\n"
