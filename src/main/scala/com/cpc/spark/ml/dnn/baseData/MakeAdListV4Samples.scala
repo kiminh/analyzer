@@ -157,7 +157,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         if (click >= 100000) {
-          weight_new = weight / bid_1_weight
+          weight_new = weight / bid_1_weight.toFloat
         }
         (bid_hash, weight_new)
     }).collectAsMap()
