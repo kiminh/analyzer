@@ -25,7 +25,7 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
 
-    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
+    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-28"
     // model
     model.loadLRmodel(modelPath)
     println("modelPath = " + modelPath)
