@@ -39,6 +39,7 @@ object LRTrainPassBackTime {
 
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)
+    val appPathSep = getPathSeq("2019-09-09", "14", 100)
 
     println("dictPathSep = " + dictPathSep)
 
@@ -77,7 +78,11 @@ object LRTrainPassBackTime {
 
     println("queryRawDataFromUnionEvents = " + trainSql)
 
-    val trainDF = spark.sql(trainSql).cache()
+    val train1DF = spark.sql(trainSql)
+
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
+
+    val trainDF = getLeftJoinData(train1DF, userAppIdx).cache()
 
 
     val testSql =
@@ -111,7 +116,9 @@ object LRTrainPassBackTime {
 
     println("testSql = " + testSql)
 
-    val testDF = spark.sql(testSql).cache()
+    val test1DF = spark.sql(testSql)
+
+    val testDF = getLeftJoinData(test1DF, userAppIdx).cache()
 
     model.clearResult()
 
@@ -732,13 +739,13 @@ object LRTrainPassBackTime {
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-//    //user installed app
-//    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-//    if (appIdx != null) {
-//      val inxList = appIdx.map(p => (p + i, 1d))
-//      els = els ++ inxList
-//    }
-//    i += 1000 + 1
+    //user installed app
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    if (appIdx != null) {
+      val inxList = appIdx.map(p => (p + i, 1d))
+      els = els ++ inxList
+    }
+    i += 1000 + 1
 
 //    //phone_price
 //    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
