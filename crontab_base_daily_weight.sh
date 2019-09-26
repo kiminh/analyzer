@@ -14,7 +14,7 @@ if [ ${now_minutes} -ge 30 ];then
 fi
 printf "now id is:%s\n" ${now_id}
 
-dir=aggr_rock_samples
+dir=base_daily_weight
 if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
