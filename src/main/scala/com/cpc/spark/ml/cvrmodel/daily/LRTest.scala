@@ -25,7 +25,7 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
 
-    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-28"
+    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
     // model
     model.loadLRmodel(modelPath)
     println("modelPath = " + modelPath)
@@ -36,7 +36,7 @@ object LRTest {
     var els = Seq[(Int, Double)]()
 
     els = els :+ (0, 1d)  //bias
-    els = els :+ (22, 1d) // hour
+    els = els :+ (20, 1d) // hour
     els = els :+ (25, 1d) // sex
     els = els :+ (34, 1d) // age
     els = els :+ (135, 1d) // os
@@ -44,16 +44,16 @@ object LRTest {
     els = els :+ (165, 1d) // network
     els = els :+ (174, 1d) // cityid
     els = els :+ (542, 1d) // mediaid
-    els = els :+ (580, 1d) // slotid
-    els = els :+ (1028, 1d) // phone_level
-    els = els :+ (1034, 1d) // pagenum
-    els = els :+ (1134, 1d) // bookid
-    els = els :+ (1234, 1d) // adclass
-    els = els :+ (1338, 1d) // adtype
-    els = els :+ (1351, 1d) // adslot_type
-    els = els :+ (1360, 1d) // planid
-    els = els :+ (15892, 1d) // unitid
-    els = els :+ (32213, 1d) // ideaid
+    els = els :+ (582, 1d) // slotid
+    els = els :+ (1039, 1d) // phone_level
+    els = els :+ (1045, 1d) // pagenum
+    els = els :+ (1145, 1d) // bookid
+    els = els :+ (1245, 1d) // adclass
+    els = els :+ (1350, 1d) // adtype
+    els = els :+ (1363, 1d) // adslot_type
+    els = els :+ (1372, 1d) // planid
+    els = els :+ (16782, 1d) // unitid
+    els = els :+ (34157, 1d) // ideaid
 
 
     // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
