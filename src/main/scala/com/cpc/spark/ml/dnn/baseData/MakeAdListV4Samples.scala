@@ -191,9 +191,9 @@ object MakeAdListV4Samples {
         val dense = rs.getSeq[Long](6)
 
         val bid = dense(10).toString
-        val weight = weight_map.getOrElse(bid, 1.0f)
+        val weight = weight_map.getOrElse(bid, 1.0)
 
-        Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
+        Row(sample_idx, label_arr, weight.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
 
     val weighted_rdd_count = weighted_rdd.count()
