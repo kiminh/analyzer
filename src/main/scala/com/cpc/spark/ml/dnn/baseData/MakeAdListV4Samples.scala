@@ -120,6 +120,98 @@ object MakeAdListV4Samples {
       delete_hdfs_path(weighted_file_sup)
     }
 
+
+    val base_daily_bid_cpm_file = des_dir + "/2019-09-26-21days-weight-info"
+
+    val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
+      rs =>
+        val line_list = rs.split("\t")
+        val bid_hash = line_list(0)
+        val bid_ori = line_list(1)
+        val ctr = line_list(2)
+        val cpm = line_list(3)
+        val total_cpm = line_list(4)
+        val weight = line_list(5)
+        val click = line_list(6)
+        val imp = line_list(7)
+        (bid_hash, bid_ori, weight, click, imp)
+    })
+    println("sta_rdd.size=" + sta_rdd.count())
+
+    val bid_ori_map = sta_rdd.map({
+      rs =>
+        (rs._2, rs._3.toFloat)
+    }).collectAsMap()
+
+    val bid_1_weight = bid_ori_map.getOrElse("1", 0.0).toFloat
+    println("bid_1_weight:" + bid_1_weight)
+    if (bid_1_weight == 0.0) {
+      println("invalid bid_1_weight:" + bid_1_weight)
+      return
+    }
+
+    val weight_map = sta_rdd.map({
+      rs =>
+        val bid_hash = rs._1
+        val weight = rs._3.toFloat
+        var weight_new = 1.0
+        val click = rs._4.toFloat
+        if (click >= 100000) {
+          weight_new = weight / bid_1_weight
+        }
+        (bid_hash, weight_new)
+    }).collectAsMap()
+
+    println("weight_map.size=" + weight_map.size)
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("weight", FloatType, nullable = true),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+
+
+    val df_train_files_collect: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect.printSchema()
+    df_train_files_collect.show(3)
+
+    val weighted_rdd = df_train_files_collect.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val weight = weight_map.getOrElse(bid, 1.0)
+
+        Row(sample_idx, label_arr, weight, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val weighted_rdd_count = weighted_rdd.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count")
+    println("DF file count:" + weighted_rdd_count.toString + " of file:" + train_files_collect)
+
+    val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
+    tf_df.repartition(1200).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect)
+
+    //保存count文件
+    var fileName = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName, weighted_rdd_count)
+    s"hadoop fs -put $fileName $weighted_file_collect/count" !
+
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect" !
+
+
+    /**
     if (!exists_hdfs_path(bid_cpm_file)) {
       val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files)
       //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
@@ -285,7 +377,7 @@ object MakeAdListV4Samples {
       s"hadoop fs -put $fileName $weighted_file_sup/count" !
 
       s"hadoop fs -chmod -R 0777 $weighted_file_sup" !
-    }
+    }**/
 
 
 
