@@ -104,8 +104,8 @@ do
     collect_date+=(${curr_date})
 done
 
-if [[ ${#collect_file[@]} -le 0 ]] ; then
-    printf "no aggr training data file, existing...\n"
+if [[ ${#collect_file[@]} -lt 21 ]] ; then
+    printf "not 21 days' aggr file, existing...\n"
     rm ${shell_in_run}
     exit 0
 fi

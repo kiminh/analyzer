@@ -164,7 +164,7 @@ object MakeBaseDailyWeight {
       }).saveAsTextFile(bid_cpm_file)
     }
 
-    val sta_map = sc.textFile(bid_cpm_file).map({
+    /**val sta_map = sc.textFile(bid_cpm_file).map({
       rs =>
         val line_list = rs.split("\t")
         val bid_hash = line_list(0)
@@ -235,6 +235,7 @@ object MakeBaseDailyWeight {
 
       s"hadoop fs -chmod -R 0777 $weighted_train_file" !
     }
+      **/
   }
 }
 
