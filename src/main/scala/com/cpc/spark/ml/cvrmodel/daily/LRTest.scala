@@ -28,25 +28,25 @@ object LRTest {
     val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
     // model
     model.loadLRmodel(modelPath)
-    print("\nweights bias = "+ model.getLRmodel().weights.apply(0))
-    print("\nweights hour = "+ model.getLRmodel().weights.apply(20))
-    print("\nweights sex = "+ model.getLRmodel().weights.apply(25))
-    print("\nweights age = "+ model.getLRmodel().weights.apply(34))
-    print("\nweights os = "+ model.getLRmodel().weights.apply(135))
-    print("\nweights isp = "+ model.getLRmodel().weights.apply(144))
-    print("\nweights network = "+ model.getLRmodel().weights.apply(165))
-    print("\nweights cityid = "+ model.getLRmodel().weights.apply(174))
-    print("\nweights mediaid = "+ model.getLRmodel().weights.apply(542))
-    print("\nweights slotid = "+ model.getLRmodel().weights.apply(582))
-    print("\nweights phone_level = "+ model.getLRmodel().weights.apply(1039))
-    print("\nweights pagenum = "+ model.getLRmodel().weights.apply(1045))
-    print("\nweights bookid = "+ model.getLRmodel().weights.apply(1145))
-    print("\nweights adclass = "+ model.getLRmodel().weights.apply(1245))
-    print("\nweights adtype = "+ model.getLRmodel().weights.apply(1350))
-    print("\nweights adslot_type = "+ model.getLRmodel().weights.apply(1363))
-    print("\nweights planid = "+ model.getLRmodel().weights.apply(1372))
-    print("\nweights unitid = "+ model.getLRmodel().weights.apply(16782))
-    print("\nweights ideaid = "+ model.getLRmodel().weights.apply(34157))
+//    print("\nweights bias = "+ model.getLRmodel().weights.apply(0))
+//    print("\nweights hour = "+ model.getLRmodel().weights.apply(20))
+//    print("\nweights sex = "+ model.getLRmodel().weights.apply(25))
+//    print("\nweights age = "+ model.getLRmodel().weights.apply(34))
+//    print("\nweights os = "+ model.getLRmodel().weights.apply(135))
+//    print("\nweights isp = "+ model.getLRmodel().weights.apply(144))
+//    print("\nweights network = "+ model.getLRmodel().weights.apply(165))
+//    print("\nweights cityid = "+ model.getLRmodel().weights.apply(174))
+//    print("\nweights mediaid = "+ model.getLRmodel().weights.apply(542))
+//    print("\nweights slotid = "+ model.getLRmodel().weights.apply(582))
+//    print("\nweights phone_level = "+ model.getLRmodel().weights.apply(1039))
+//    print("\nweights pagenum = "+ model.getLRmodel().weights.apply(1045))
+//    print("\nweights bookid = "+ model.getLRmodel().weights.apply(1145))
+//    print("\nweights adclass = "+ model.getLRmodel().weights.apply(1245))
+//    print("\nweights adtype = "+ model.getLRmodel().weights.apply(1350))
+//    print("\nweights adslot_type = "+ model.getLRmodel().weights.apply(1363))
+//    print("\nweights planid = "+ model.getLRmodel().weights.apply(1372))
+//    print("\nweights unitid = "+ model.getLRmodel().weights.apply(16782))
+//    print("\nweights ideaid = "+ model.getLRmodel().weights.apply(34157))
 
 
     println("modelPath = " + modelPath)
@@ -57,7 +57,7 @@ object LRTest {
     var els = Seq[(Int, Double)]()
 
     els = els :+ (0, 1d)  //bias
-    els = els :+ (20, 1d) // hour
+    els = els :+ (17, 1d) // hour
     els = els :+ (25, 1d) // sex
     els = els :+ (34, 1d) // age
     els = els :+ (135, 1d) // os
