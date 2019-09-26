@@ -25,9 +25,10 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
 
-    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-23-16-07"
+    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
     // model
     model.loadLRmodel(modelPath)
+    print("weights = "+ model.getLRmodel().weights)
     println("modelPath = " + modelPath)
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50")
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
