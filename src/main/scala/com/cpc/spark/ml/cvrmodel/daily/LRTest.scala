@@ -28,7 +28,27 @@ object LRTest {
     val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/2019-09-24-23-31"
     // model
     model.loadLRmodel(modelPath)
-    print("weights = "+ model.getLRmodel().weights)
+    print("weights bias = "+ model.getLRmodel().weights.apply(0))
+    print("weights hour = "+ model.getLRmodel().weights.apply(20))
+    print("weights sex = "+ model.getLRmodel().weights.apply(25))
+    print("weights age = "+ model.getLRmodel().weights.apply(34))
+    print("weights os = "+ model.getLRmodel().weights.apply(135))
+    print("weights isp = "+ model.getLRmodel().weights.apply(144))
+    print("weights network = "+ model.getLRmodel().weights.apply(165))
+    print("weights cityid = "+ model.getLRmodel().weights.apply(174))
+    print("weights mediaid = "+ model.getLRmodel().weights.apply(542))
+    print("weights slotid = "+ model.getLRmodel().weights.apply(582))
+    print("weights phone_level = "+ model.getLRmodel().weights.apply(1039))
+    print("weights pagenum = "+ model.getLRmodel().weights.apply(1045))
+    print("weights bookid = "+ model.getLRmodel().weights.apply(1145))
+    print("weights adclass = "+ model.getLRmodel().weights.apply(1245))
+    print("weights adtype = "+ model.getLRmodel().weights.apply(1350))
+    print("weights adslot_type = "+ model.getLRmodel().weights.apply(1363))
+    print("weights planid = "+ model.getLRmodel().weights.apply(1372))
+    print("weights unitid = "+ model.getLRmodel().weights.apply(16782))
+    print("weights ideaid = "+ model.getLRmodel().weights.apply(34157))
+
+
     println("modelPath = " + modelPath)
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50")
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
