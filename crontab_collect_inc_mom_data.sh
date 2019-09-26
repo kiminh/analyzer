@@ -271,8 +271,8 @@ done
 printf "got ${#inc_data[@]} today incremental real-time training data file\n"
 if [[ ${#inc_data[@]} -le 0 ]] ; then
     printf "no today incremental real-time training data file detected, existing...\n"
-    #rm ${shell_in_run}
-    #exit 0
+    rm ${shell_in_run}
+    exit 0
 fi
 
 printf "got ${#all_data[@]} today total real-time training data file\n"
