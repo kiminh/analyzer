@@ -151,7 +151,7 @@ object MakeAdListV4Samples {
 
     val bid_1_weight = bid_ori_map.getOrElse("1", 0.0f)
     println("bid_1_weight:" + bid_1_weight)
-    if (bid_1_weight == 0.0) {
+    if (bid_1_weight <= 0.0) {
       println("invalid bid_1_weight:" + bid_1_weight)
       return
     }
@@ -196,7 +196,7 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 100000.0) {
+        if (click >= 100000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
         (bid_hash, weight_new)
