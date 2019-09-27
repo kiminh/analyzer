@@ -168,16 +168,22 @@ object MakeAdListV4Samples {
         (bid_hash, weight_new)
     }).collectAsMap()
 
+    //(bid_hash, bid_ori, weight, click, imp)
     sta_rdd.map({
       rs =>
         val bid_hash = rs._1
+        val bid_ori = rs._2
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
         if (click >= 100000.0) {
           weight_new = weight / bid_1_weight
         }
-        bid_hash + "\t" + weight_new
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click)
+        //bid_hash + "\t" + weight_new
+    }).repartition(1).sortBy(_._3 * -1).map({
+      rs =>
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
     }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map")
 
     val weight_map_reverse = sta_rdd.map({
@@ -191,17 +197,23 @@ object MakeAdListV4Samples {
         }
         (bid_hash, weight_new)
     }).collectAsMap()
+
     sta_rdd.map({
       rs =>
         val bid_hash = rs._1
+        val bid_ori = rs._2
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
         if (click >= 100000.0) {
           weight_new = bid_1_weight / weight
         }
-        bid_hash + "\t" + weight_new
-    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map-reverse")
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click)
+      //bid_hash + "\t" + weight_new
+    }).repartition(1).sortBy(_._3 * 1).map({
+      rs =>
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
+    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map")
 
     println("weight_map.size=" + weight_map.size)
     println("weight_map_reverse.size=" + weight_map_reverse.size)
