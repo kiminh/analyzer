@@ -169,6 +169,10 @@ object MakeAdListV4Samples {
     }).collectAsMap()
 
     //(bid_hash, bid_ori, weight, click, imp)
+    val weight_map_file = des_dir + "/" + curr_date + "-" + time_id + "-weight-map"
+    if (exists_hdfs_path(weight_map_file)) {
+      delete_hdfs_path(weight_map_file)
+    }
     sta_rdd.map({
       rs =>
         val bid_hash = rs._1
@@ -184,7 +188,7 @@ object MakeAdListV4Samples {
     }).repartition(1).sortBy(_._3 * -1).map({
       rs =>
         rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
-    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map")
+    }).saveAsTextFile(weight_map_file)
 
     val weight_map_reverse = sta_rdd.map({
       rs =>
@@ -198,6 +202,11 @@ object MakeAdListV4Samples {
         (bid_hash, weight_new)
     }).collectAsMap()
 
+
+    val weight_map_file_reverse = des_dir + "/" + curr_date + "-" + time_id + "-weight-map-reverse"
+    if (exists_hdfs_path(weight_map_file_reverse)) {
+      delete_hdfs_path(weight_map_file_reverse)
+    }
     sta_rdd.map({
       rs =>
         val bid_hash = rs._1
@@ -213,7 +222,7 @@ object MakeAdListV4Samples {
     }).repartition(1).sortBy(_._3 * 1).map({
       rs =>
         rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
-    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map-reverse")
+    }).saveAsTextFile(weight_map_file_reverse)
 
     println("weight_map.size=" + weight_map.size)
     println("weight_map_reverse.size=" + weight_map_reverse.size)
