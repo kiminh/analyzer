@@ -111,7 +111,7 @@ object MakeAdListV4Samples {
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     val bid_cpm_file = des_dir + "/" + curr_date + "-" + time_id + "-bid-cpm-weight-info"
-    val weighted_file_collect = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect"
+    val weighted_file_collect = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-8"
     val weighted_file_sup = des_dir + "/" + curr_date + "-" + time_id + "-weighted-sup"
 
     if (delete_old == "true") {
@@ -121,7 +121,7 @@ object MakeAdListV4Samples {
     }
 
 
-    val base_daily_bid_cpm_file = des_dir + "/2019-09-26-21days-weight-info"
+    val base_daily_bid_cpm_file = des_dir + "/2019-09-27-21days-weight-info"
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
@@ -162,11 +162,25 @@ object MakeAdListV4Samples {
         (bid_hash, weight_new)
     }).collectAsMap()
 
+    val weight_map_reverse = sta_rdd.map({
+      rs =>
+        val bid_hash = rs._1
+        val weight = rs._3.toFloat
+        var weight_new = 1.0
+        val click = rs._4.toFloat
+        if (click >= 100000.0) {
+          weight_new = bid_1_weight / weight
+        }
+        (bid_hash, weight_new)
+    }).collectAsMap()
+
     println("weight_map.size=" + weight_map.size)
+    println("weight_map_reverse.size=" + weight_map_reverse.size)
     val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
       StructField("weight", FloatType, nullable = true),
+      StructField("weight_reverse", FloatType, nullable = true),
       StructField("dense", ArrayType(LongType, containsNull = true)),
       StructField("idx0", ArrayType(LongType, containsNull = true)),
       StructField("idx1", ArrayType(LongType, containsNull = true)),
@@ -192,8 +206,9 @@ object MakeAdListV4Samples {
 
         val bid = dense(10).toString
         val weight = weight_map.getOrElse(bid, 1.0)
+        val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
 
-        Row(sample_idx, label_arr, weight.toFloat, dense, idx0, idx1, idx2, idx_arr)
+        Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
 
     val weighted_rdd_count = weighted_rdd.count()

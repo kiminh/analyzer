@@ -284,7 +284,7 @@ fi
 
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
 train_file=${train_file_last},${train_file_curr}
-train_file_collect=${train_file_curr}
+train_file_collect_8=${train_file_curr}
 
 if [[ ${#all_data[@]} -gt 8 ]] ; then
     real_data=()
@@ -297,7 +297,7 @@ if [[ ${#all_data[@]} -gt 8 ]] ; then
         printf "add real time file ${p00}, continue...\n"
     done
     printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
-    train_file_collect="$( IFS=$','; echo "${real_data[*]}" )"
+    train_file_collect_8="$( IFS=$','; echo "${real_data[*]}" )"
 fi
 
 
@@ -311,7 +311,7 @@ printf "test_file:%s\n" ${test_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file:%s\n" ${train_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-printf "train_file_collect:%s\n" ${train_file_collect}
+printf "train_file_collect_8:%s\n" ${train_file_collect_8}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 #rm ${shell_in_run}
 #exit 0
@@ -347,7 +347,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_file_collect} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
+    ${randjar} ${des_dir} ${train_file} ${train_file_collect_8} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
