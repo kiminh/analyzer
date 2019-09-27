@@ -78,15 +78,15 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 11) {
       System.err.println(
         """
-          |you have to input 8 parameters !!!
+          |you have to input 11 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, train_files_collect, train_files_sup, curr_date, time_id, history_files, delete_old) = args
+    val Array(des_dir, train_files, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, train_files_sup, curr_date, time_id, history_files, delete_old) = args
 
     println(args)
 
@@ -111,13 +111,19 @@ object MakeAdListV4Samples {
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     val bid_cpm_file = des_dir + "/" + curr_date + "-" + time_id + "-bid-cpm-weight-info"
-    val weighted_file_collect = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-8"
     val weighted_file_sup = des_dir + "/" + curr_date + "-" + time_id + "-weighted-sup"
+    val weighted_file_collect_8 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-8"
+    val weighted_file_collect_4 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-4"
+    val weighted_file_collect_2 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-2"
+    val weighted_file_collect_1 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-1"
 
     if (delete_old == "true") {
       delete_hdfs_path(bid_cpm_file)
-      delete_hdfs_path(weighted_file_collect)
       delete_hdfs_path(weighted_file_sup)
+      delete_hdfs_path(weighted_file_collect_8)
+      delete_hdfs_path(weighted_file_collect_4)
+      delete_hdfs_path(weighted_file_collect_2)
+      delete_hdfs_path(weighted_file_collect_1)
     }
 
 
@@ -189,12 +195,13 @@ object MakeAdListV4Samples {
     ))
 
 
-    val df_train_files_collect: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect)
+    /****************************************collect_8***************************************************/
+    val df_train_files_collect_8: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_8)
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
-    df_train_files_collect.printSchema()
-    df_train_files_collect.show(3)
+    df_train_files_collect_8.printSchema()
+    df_train_files_collect_8.show(3)
 
-    val weighted_rdd = df_train_files_collect.rdd.map(
+    val weighted_rdd_8 = df_train_files_collect_8.rdd.map(
       rs => {
         val idx2 = rs.getSeq[Long](0)
         val idx1 = rs.getSeq[Long](1)
@@ -211,20 +218,133 @@ object MakeAdListV4Samples {
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
 
-    val weighted_rdd_count = weighted_rdd.count()
-    println(s"weighted_rdd_count is : $weighted_rdd_count")
-    println("DF file count:" + weighted_rdd_count.toString + " of file:" + train_files_collect)
+    val weighted_rdd_count_8 = weighted_rdd_8.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count_8")
+    println("DF file count:" + weighted_rdd_count_8.toString + " of file:" + train_files_collect_8)
 
-    val tf_df: DataFrame = spark.createDataFrame(weighted_rdd, schema_new)
-    tf_df.repartition(1200).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect)
+    val tf_df_8: DataFrame = spark.createDataFrame(weighted_rdd_8, schema_new)
+    tf_df_8.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_8)
 
     //保存count文件
-    var fileName = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName, weighted_rdd_count)
-    s"hadoop fs -put $fileName $weighted_file_collect/count" !
+    val fileName_8 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_8, weighted_rdd_count_8)
+    s"hadoop fs -put $fileName_8 $weighted_file_collect_8/count" !
 
-    s"hadoop fs -chmod -R 0777 $weighted_file_collect" !
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_8" !
 
+
+    /****************************************collect_4***************************************************/
+    val df_train_files_collect_4: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_4)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect_4.printSchema()
+    df_train_files_collect_4.show(3)
+
+    val weighted_rdd_4 = df_train_files_collect_4.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val weight = weight_map.getOrElse(bid, 1.0)
+        val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
+
+        Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val weighted_rdd_count_4 = weighted_rdd_4.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count_4")
+    println("DF file count:" + weighted_rdd_count_4.toString + " of file:" + train_files_collect_4)
+
+    val tf_df_4: DataFrame = spark.createDataFrame(weighted_rdd_4, schema_new)
+    tf_df_4.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_4)
+
+    //保存count文件
+    val fileName_4 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_4, weighted_rdd_count_4)
+    s"hadoop fs -put $fileName_4 $weighted_file_collect_4/count" !
+
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_4" !
+
+
+    /****************************************collect_2***************************************************/
+    val df_train_files_collect_2: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_2)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect_2.printSchema()
+    df_train_files_collect_2.show(3)
+
+    val weighted_rdd_2 = df_train_files_collect_2.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val weight = weight_map.getOrElse(bid, 1.0)
+        val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
+
+        Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val weighted_rdd_count_2 = weighted_rdd_2.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count_2")
+    println("DF file count:" + weighted_rdd_count_2.toString + " of file:" + train_files_collect_2)
+
+    val tf_df_2: DataFrame = spark.createDataFrame(weighted_rdd_2, schema_new)
+    tf_df_2.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_2)
+
+    //保存count文件
+    val fileName_2 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_2, weighted_rdd_count_2)
+    s"hadoop fs -put $fileName_2 $weighted_file_collect_2/count" !
+
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_2" !
+
+
+    /****************************************collect_1***************************************************/
+    val df_train_files_collect_1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_1)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect_1.printSchema()
+    df_train_files_collect_1.show(3)
+
+    val weighted_rdd_1 = df_train_files_collect_1.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val weight = weight_map.getOrElse(bid, 1.0)
+        val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
+
+        Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val weighted_rdd_count_1 = weighted_rdd_1.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count_1")
+    println("DF file count:" + weighted_rdd_count_1.toString + " of file:" + train_files_collect_1)
+
+    val tf_df_1: DataFrame = spark.createDataFrame(weighted_rdd_1, schema_new)
+    tf_df_1.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_1)
+
+    //保存count文件
+    val fileName_1 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_1, weighted_rdd_count_1)
+    s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
+
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
 
     /**
     if (!exists_hdfs_path(bid_cpm_file)) {

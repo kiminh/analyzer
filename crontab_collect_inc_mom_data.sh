@@ -285,6 +285,9 @@ fi
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
 train_file=${train_file_last},${train_file_curr}
 train_file_collect_8=${train_file_curr}
+train_file_collect_4=${train_file_curr}
+train_file_collect_2=${train_file_curr}
+train_file_collect_1=${train_file_curr}
 
 if [[ ${#all_data[@]} -gt 8 ]] ; then
     real_data=()
@@ -300,6 +303,47 @@ if [[ ${#all_data[@]} -gt 8 ]] ; then
     train_file_collect_8="$( IFS=$','; echo "${real_data[*]}" )"
 fi
 
+if [[ ${#all_data[@]} -gt 4 ]] ; then
+    real_data=()
+    last=${#all_data[@]}
+    for (( idx=last-1 ; idx>=last-4 ; idx-- ));do
+        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
+        p00="${all_data[$idx]}"
+        id="${id_list[$idx]}"
+        real_data+=(${p00})
+        printf "add real time file ${p00}, continue...\n"
+    done
+    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
+    train_file_collect_4="$( IFS=$','; echo "${real_data[*]}" )"
+fi
+
+if [[ ${#all_data[@]} -gt 2 ]] ; then
+    real_data=()
+    last=${#all_data[@]}
+    for (( idx=last-1 ; idx>=last-2 ; idx-- ));do
+        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
+        p00="${all_data[$idx]}"
+        id="${id_list[$idx]}"
+        real_data+=(${p00})
+        printf "add real time file ${p00}, continue...\n"
+    done
+    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
+    train_file_collect_2="$( IFS=$','; echo "${real_data[*]}" )"
+fi
+
+if [[ ${#all_data[@]} -gt 1 ]] ; then
+    real_data=()
+    last=${#all_data[@]}
+    for (( idx=last-1 ; idx>=last-1 ; idx-- ));do
+        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
+        p00="${all_data[$idx]}"
+        id="${id_list[$idx]}"
+        real_data+=(${p00})
+        printf "add real time file ${p00}, continue...\n"
+    done
+    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
+    train_file_collect_1="$( IFS=$','; echo "${real_data[*]}" )"
+fi
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
@@ -312,6 +356,12 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 printf "train_file:%s\n" ${train_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_8:%s\n" ${train_file_collect_8}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+printf "train_file_collect_4:%s\n" ${train_file_collect_4}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+printf "train_file_collect_2:%s\n" ${train_file_collect_2}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+printf "train_file_collect_1:%s\n" ${train_file_collect_1}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 #rm ${shell_in_run}
 #exit 0
@@ -347,7 +397,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_file_collect_8} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
+    ${randjar} ${des_dir} ${train_file} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
