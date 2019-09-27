@@ -68,7 +68,7 @@ class LRIRModelReg {
     lbfgs.optimizer.setNumCorrections(10)
     */
     lbfgs.optimizer.setUpdater(new L1Updater())
-    lbfgs.optimizer.setRegParam(1.0)
+    lbfgs.optimizer.setRegParam(0.001)
     if (iterNum > 0) {
       lbfgs.optimizer.setNumIterations(iterNum)
     }

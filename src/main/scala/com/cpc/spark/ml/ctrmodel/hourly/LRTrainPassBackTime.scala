@@ -39,7 +39,7 @@ object LRTrainPassBackTime {
 
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)
-    val appPathSep = getPathSeq("2019-09-09", "14", 100)
+    val appPathSep = getPathSeq("2019-08-07", "14", 75)
 
     println("dictPathSep = " + dictPathSep)
 
