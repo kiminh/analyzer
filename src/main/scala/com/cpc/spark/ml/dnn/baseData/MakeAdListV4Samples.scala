@@ -213,7 +213,7 @@ object MakeAdListV4Samples {
     }).repartition(1).sortBy(_._3 * 1).map({
       rs =>
         rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
-    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map")
+    }).saveAsTextFile(des_dir + "/" + curr_date + "-" + time_id + "-weight-map-reverse")
 
     println("weight_map.size=" + weight_map.size)
     println("weight_map_reverse.size=" + weight_map_reverse.size)
