@@ -93,8 +93,6 @@ object OcpcCalculateAUC {
          |where $selectCondition1
          |and isclick = 1
          |and $mediaSelection
-         |and ideaid > 0 and adsrc = 1
-         |and userid > 0
          |and is_ocpc = 1
          |and conversion_goal > 0
        """.stripMargin

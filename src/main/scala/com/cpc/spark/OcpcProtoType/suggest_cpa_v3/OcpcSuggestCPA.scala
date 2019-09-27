@@ -75,8 +75,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -294,14 +294,6 @@ object OcpcSuggestCPA {
          |    $timeSelection
          |AND
          |    $mediaSelection
-         |AND
-         |    antispam = 0
-         |AND
-         |    adslot_type in (1,2,3)
-         |AND
-         |    adsrc = 1
-         |AND
-         |    (charge_type is null or charge_type = 1)
          |AND
          |    conversion_goal > 0
          |AND
