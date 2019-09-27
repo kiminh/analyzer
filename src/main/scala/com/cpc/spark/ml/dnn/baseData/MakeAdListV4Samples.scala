@@ -214,7 +214,7 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 100000.0) {
+        if (click >= 100000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
         (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click)
