@@ -183,11 +183,11 @@ object MakeAdListV4Samples {
         if (click >= 1000000.0) {
           weight_new = weight / bid_1_weight
         }
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._6)
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
         //bid_hash + "\t" + weight_new
     }).repartition(1).sortBy(_._3 * -1).map({
       rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7
     }).saveAsTextFile(weight_map_file)
 
     val weight_map_reverse = sta_rdd.map({
@@ -217,11 +217,11 @@ object MakeAdListV4Samples {
         if (click >= 1000000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._6)
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
       //bid_hash + "\t" + weight_new
     }).repartition(1).sortBy(_._3 * 1).map({
       rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7
     }).saveAsTextFile(weight_map_file_reverse)
 
     println("weight_map.size=" + weight_map.size)
