@@ -171,10 +171,10 @@ object MakeAdListV4Samples {
         ("max_weight_placeholder", weight_new)
     }).reduceByKey((x, y) => math.max(x, y)).collectAsMap()
 
-    val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0f)
+    val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0f).toFloat
     println("max_weight:" + max_weight)
     val max_weight_ = 1.1f
-    val factor = max_weight_ / max_weight.toFloat
+    val factor = max_weight_ / max_weight
 
     val weight_map = sta_rdd.map({
       rs =>
