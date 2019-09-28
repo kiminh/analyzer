@@ -174,7 +174,7 @@ object MakeAdListV4Samples {
     val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0f)
     println("max_weight:" + max_weight)
     val max_weight_ = 1.1f
-    val factor = max_weight_ / max_weight
+    val factor = max_weight_ / max_weight.toFloat
 
     val weight_map = sta_rdd.map({
       rs =>
