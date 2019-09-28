@@ -140,7 +140,7 @@ object MakeAdListV4Samples {
         val weight = line_list(5)
         val click = line_list(6)
         val imp = line_list(7)
-        (bid_hash, bid_ori, weight, click, imp)
+        (bid_hash, bid_ori, weight, click, imp, ctr)
     })
     println("sta_rdd.size=" + sta_rdd.count())
 
@@ -162,7 +162,7 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 100000.0) {
+        if (click >= 1000000.0) {
           weight_new = weight / bid_1_weight
         }
         (bid_hash, weight_new)
@@ -180,14 +180,14 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 100000.0) {
+        if (click >= 1000000.0) {
           weight_new = weight / bid_1_weight
         }
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click)
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._6)
         //bid_hash + "\t" + weight_new
     }).repartition(1).sortBy(_._3 * -1).map({
       rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6
     }).saveAsTextFile(weight_map_file)
 
     val weight_map_reverse = sta_rdd.map({
@@ -217,11 +217,11 @@ object MakeAdListV4Samples {
         if (click >= 1000000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click)
+        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._6)
       //bid_hash + "\t" + weight_new
     }).repartition(1).sortBy(_._3 * 1).map({
       rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6
     }).saveAsTextFile(weight_map_file_reverse)
 
     println("weight_map.size=" + weight_map.size)
