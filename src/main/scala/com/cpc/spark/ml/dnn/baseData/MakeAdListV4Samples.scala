@@ -165,6 +165,9 @@ object MakeAdListV4Samples {
         if (click >= 1000000.0) {
           weight_new = weight / bid_1_weight
         }
+        if (weight <= 0.0) {
+          weight_new = 1.0
+        }
         (bid_hash, weight_new)
     }).collectAsMap()
 
@@ -182,6 +185,9 @@ object MakeAdListV4Samples {
         val click = rs._4.toFloat
         if (click >= 1000000.0) {
           weight_new = weight / bid_1_weight
+        }
+        if (weight <= 0.0) {
+          weight_new = 1.0
         }
         (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
         //bid_hash + "\t" + weight_new
