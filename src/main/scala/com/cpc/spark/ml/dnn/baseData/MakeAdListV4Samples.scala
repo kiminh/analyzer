@@ -173,8 +173,9 @@ object MakeAdListV4Samples {
 
     val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight:" + max_weight)
-    val max_weight_ = 1.1f
-    val factor = max_weight_ / max_weight.toFloat
+    val max_weight_factor = 0.2f
+    val factor = max_weight_factor / (max_weight.toFloat - 1.0)
+    println("factor:" + factor)
 
     val weight_map = sta_rdd.map({
       rs =>
@@ -183,7 +184,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         if (click >= 1000000.0 && weight > bid_1_weight) {
-          weight_new = weight * factor / bid_1_weight
+          weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
         }
         if (weight <= 0.0) {
           weight_new = 1.0
@@ -204,7 +205,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         if (click >= 1000000.0 && weight > bid_1_weight) {
-          weight_new = weight * factor / bid_1_weight
+          weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
         }
         if (weight <= 0.0) {
           weight_new = 1.0
