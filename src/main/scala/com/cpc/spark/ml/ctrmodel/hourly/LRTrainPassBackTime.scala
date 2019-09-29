@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.train.LRIRModel
+import com.cpc.spark.ml.train.{LRIRModel, LRIRModelReg}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -22,7 +22,7 @@ import scala.util.Random
 object LRTrainPassBackTime {
 
   private var trainLog = Seq[String]()
-  private val model = new LRIRModel
+  private val model = new LRIRModelReg
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -82,7 +82,7 @@ object LRTrainPassBackTime {
 
     val userAppIdx = getUidApp(spark, appPathSep).cache()
 
-    println("app map = " + dictStr("appid"))
+//    println("app map = " + dictStr("appid"))
 
     val trainDF = getLeftJoinData(train1DF, userAppIdx).cache()
 
@@ -211,7 +211,7 @@ object LRTrainPassBackTime {
       .rdd
       .cache()
 
-    val ids = getTopApp(uidApp, 1000)
+    val ids = getTopApp(uidApp, 10000)
     dictStr.update("appid", ids)
 
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
