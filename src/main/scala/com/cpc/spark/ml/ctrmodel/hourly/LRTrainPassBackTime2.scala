@@ -19,7 +19,7 @@ import scala.util.Random
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190511).
   */
-object LRTrainPassBackTime {
+object LRTrainPassBackTime2 {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -39,7 +39,7 @@ object LRTrainPassBackTime {
 
     // 按分区取数据
     val dictPathSep = getPathSeq(date, hour, dictDays)
-    val appPathSep = getPathSeq("2019-08-07", "14", 75)
+    val appPathSep = getPathSeq("2019-09-09", "14", 100)
 
     println("dictPathSep = " + dictPathSep)
 
