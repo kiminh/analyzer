@@ -211,7 +211,7 @@ object LRTrainPassBackTime {
       .rdd
       .cache()
 
-    val ids = getTopApp(uidApp, 10000)
+    val ids = getTopApp(uidApp, 100000)
     dictStr.update("appid", ids)
 
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
@@ -747,7 +747,7 @@ object LRTrainPassBackTime {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 10000 + 1
+    i += 100000 + 1
 
 //    //phone_price
 //    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
