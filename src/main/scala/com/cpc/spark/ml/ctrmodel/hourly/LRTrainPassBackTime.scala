@@ -747,7 +747,7 @@ object LRTrainPassBackTime {
       val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
-    i += 1000 + 1
+    i += 10000 + 1
 
 //    //phone_price
 //    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
