@@ -49,24 +49,24 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
-    val lightUnits2 = getUnitidList(date, hour, spark)
-    lightUnits2
-      .select("unitid", "userid", "conversion_goal", "media")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
+//    val lightUnits2 = getUnitidList(date, hour, spark)
+//    lightUnits2
+//      .select("unitid", "userid", "conversion_goal", "media")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
-    val result = lightUnits1
-      .select("unitid", "ocpc_light", "current_cpa")
-      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
-      .withColumn("ocpc_light_old", col("ocpc_light"))
-      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
-      .na.fill(0.0, Seq("current_cpa"))
+//    val result = lightUnits1
+//      .select("unitid", "ocpc_light", "current_cpa")
+//      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
+//      .withColumn("ocpc_light_old", col("ocpc_light"))
+//      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
+//      .na.fill(0.0, Seq("current_cpa"))
 
 
     // 抽取adv的ocpc单元
@@ -90,8 +90,8 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
     // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def getUnitidList(date: String, hour: String, spark: SparkSession) = {
