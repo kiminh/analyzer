@@ -164,6 +164,8 @@ object MakeBaseDailyWeight {
       }).saveAsTextFile(bid_cpm_file)
     }
 
+    return
+
     val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
