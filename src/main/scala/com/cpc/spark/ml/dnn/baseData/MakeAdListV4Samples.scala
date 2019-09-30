@@ -144,15 +144,22 @@ object MakeAdListV4Samples {
     })
     println("sta_rdd.size=" + sta_rdd.count())
 
-    val bid_ori_map = sta_rdd.map({
+    val bid_weight_map = sta_rdd.map({
       rs =>
         (rs._2, rs._3.toFloat)
     }).collectAsMap()
+    val bid_ctr_map = sta_rdd.map({
+      rs =>
+        (rs._2, rs._6.toFloat)
+    }).collectAsMap()
 
-    val bid_1_weight = bid_ori_map.getOrElse("1", 0.0f)
+    val bid_1_weight = bid_weight_map.getOrElse("1", 0.0f)
+    val bid_1_ctr = bid_weight_map.getOrElse("1", 0.0f)
     println("bid_1_weight:" + bid_1_weight)
-    if (bid_1_weight <= 0.0) {
+    println("bid_1_ctr:" + bid_1_ctr)
+    if (bid_1_weight <= 0.0 || bid_1_ctr <= 0.0) {
       println("invalid bid_1_weight:" + bid_1_weight)
+      println("invalid bid_1_ctr:" + bid_1_ctr)
       return
     }
 
@@ -173,7 +180,7 @@ object MakeAdListV4Samples {
 
     val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight:" + max_weight)
-    val max_weight_factor = 0.2f
+    val max_weight_factor = 0.999f
     val factor = max_weight_factor / (max_weight.toFloat - 1.0)
     println("factor:" + factor)
 
@@ -183,8 +190,13 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight) {
-          weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
+        val ctr = rs._6.toFloat
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3 ) {
+          if (ctr >= bid_1_ctr) {
+            weight_new = weight / bid_1_weight
+          } else {
+            weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
+          }
         }
         if (weight <= 0.0) {
           weight_new = 1.0
@@ -205,8 +217,13 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight) {
-          weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
+        val ctr = rs._6.toFloat
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3) {
+          if (ctr >= bid_1_ctr) {
+            weight_new = weight / bid_1_weight
+          } else {
+            weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
+          }
         }
         if (weight <= 0.0) {
           weight_new = 1.0
