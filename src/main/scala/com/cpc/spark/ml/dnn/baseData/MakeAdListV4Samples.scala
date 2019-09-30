@@ -154,7 +154,7 @@ object MakeAdListV4Samples {
     }).collectAsMap()
 
     val bid_1_weight = bid_weight_map.getOrElse("1", 0.0f)
-    val bid_1_ctr = bid_weight_map.getOrElse("1", 0.0f)
+    val bid_1_ctr = bid_ctr_map.getOrElse("1", 0.0f)
     println("bid_1_weight:" + bid_1_weight)
     println("bid_1_ctr:" + bid_1_ctr)
     if (bid_1_weight <= 0.0 || bid_1_ctr <= 0.0) {
@@ -191,7 +191,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3 ) {
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3f ) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
