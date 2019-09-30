@@ -106,7 +106,16 @@ object OcpcUnionlog {
          |    ocpc_expand,
          |    expids,
          |    bsctr,
-         |    bscvr
+         |    bscvr,
+         |    raw_cvr,
+         |    deep_cvr,
+         |    raw_deep_cvr,
+         |    deep_cvr_model_name,
+         |    deep_ocpc_log,
+         |    is_deep_ocpc,
+         |    deep_conversion_goal,
+         |    deep_cpa,
+         |    cpa_check_priority
          |from
          |    base_data
        """.stripMargin
@@ -242,7 +251,16 @@ object OcpcUnionlog {
          |    final_cpm,
          |    ocpc_expand,
          |    ext_string['exp_ids'] as expids,
-         |    bsctr
+         |    bsctr,
+         |    raw_cvr,
+         |    deep_cvr,
+         |    raw_deep_cvr,
+         |    deep_cvr_model_name,
+         |    deep_ocpc_log,
+         |    is_deep_ocpc,
+         |    deep_conversion_goal,
+         |    deep_cpa,
+         |    cpa_check_priority
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
