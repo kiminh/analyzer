@@ -246,6 +246,30 @@ object MakeBaseDailyWeight {
             //weight_new = 1.0 / weight_new
             (bid_hash, weight_new)
         }).collectAsMap()
+        val weight_map_file = des_dir + "/" + curr_date + "-weight-map"
+        if (exists_hdfs_path(weight_map_file)) {
+          delete_hdfs_path(weight_map_file)
+        }
+        sta_rdd.map({
+          rs =>
+            val bid_hash = rs._1
+            val bid_ori = rs._2
+            val weight = rs._3.toFloat
+            var weight_new = 1.0
+            val click = rs._4.toFloat
+            if (click >= 1000000.0 && weight > bid_1_weight) {
+              weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor
+            }
+            if (weight <= 0.0) {
+              weight_new = 1.0
+            }
+            //weight_new = 1.0 / weight_new
+            (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
+          //bid_hash + "\t" + weight_new
+        }).repartition(1).sortBy(_._3 * -1).map({
+          rs =>
+            rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7
+        }).saveAsTextFile(weight_map_file)
 
 
 
