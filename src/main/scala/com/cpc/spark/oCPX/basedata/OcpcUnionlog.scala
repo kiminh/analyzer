@@ -47,6 +47,7 @@ object OcpcUnionlog {
     val baseData = data
         .filter(s"length(ocpc_log)>0")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+        .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -111,7 +112,7 @@ object OcpcUnionlog {
          |    deep_cvr,
          |    raw_deep_cvr,
          |    deep_cvr_model_name,
-         |    deep_ocpc_log,
+         |    deep_ocpc_log_dict,
          |    is_deep_ocpc,
          |    deep_conversion_goal,
          |    deep_cpa,

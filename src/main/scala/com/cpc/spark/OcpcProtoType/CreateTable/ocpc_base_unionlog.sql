@@ -70,7 +70,7 @@ alter table test.ocpc_base_unionlog add columns (raw_cvr bigint);
 alter table test.ocpc_base_unionlog add columns (deep_cvr bigint);
 alter table test.ocpc_base_unionlog add columns (raw_deep_cvr bigint);
 alter table test.ocpc_base_unionlog add columns (deep_cvr_model_name string);
-alter table test.ocpc_base_unionlog add columns (deep_ocpc_log bigint);
+alter table test.ocpc_base_unionlog add columns (deep_ocpc_log string);
 alter table test.ocpc_base_unionlog add columns (is_deep_ocpc int);
 alter table test.ocpc_base_unionlog add columns (deep_conversion_goal int);
 alter table test.ocpc_base_unionlog add columns (deep_cpa bigint);
