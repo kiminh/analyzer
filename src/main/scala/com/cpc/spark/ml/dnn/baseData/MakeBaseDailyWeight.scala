@@ -246,7 +246,7 @@ object MakeBaseDailyWeight {
             //weight_new = 1.0 / weight_new
             (bid_hash, weight_new)
         }).collectAsMap()
-        val weight_map_file = des_dir + "/" + this_date + "21days-weight-map"
+        val weight_map_file = des_dir + "/" + this_date + "-21days-weight-map"
         if (exists_hdfs_path(weight_map_file)) {
           delete_hdfs_path(weight_map_file)
         }
