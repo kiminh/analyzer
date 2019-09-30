@@ -191,7 +191,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3f ) {
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
@@ -218,7 +218,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.3f) {
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
