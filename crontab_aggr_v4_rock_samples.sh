@@ -64,11 +64,18 @@ do
     echo "curr_date:${curr_date}"
 
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
+    instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances"
+
     echo ${aggr_path}
+    echo ${instances_path}
+    file_success_instances=${dir}/${curr_date}_instances_success
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
     #file_part=${dir}/${curr_date}_aggr_part-r-00099
 
+    if [[ ! -f ${file_success_instances} ]]; then
+        hadoop fs -get ${instances_path}/_SUCCESS ${file_success_instances} &
+    fi
     if [[ ! -f ${file_success} ]]; then
         hadoop fs -get ${aggr_path}/_SUCCESS ${file_success} &
     fi
@@ -82,6 +89,10 @@ do
     wait
 
     done_curr_date="true"
+    if [[ ! -f ${file_success_instances} ]]; then
+        printf "no ${file_success_instances}, continue to instances ${curr_date}...\n"
+        done_curr_date="false"
+    fi
     if [[ ! -f ${file_success} ]]; then
         printf "no ${file_success}, continue to aggr ${curr_date}...\n"
         done_curr_date="false"
