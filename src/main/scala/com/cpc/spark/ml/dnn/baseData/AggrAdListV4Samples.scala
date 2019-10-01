@@ -122,11 +122,12 @@ object AggrAdListV4Samples {
       println(s"curr_date : $curr_date")
       println(s"curr_file : $curr_file")
 
+      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file)
+      //println("DF file count:" + importedDf.count().toString + " of train files")
+
       val file_des = des_dir + "/" + curr_date + "-aggr"
-      if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count") ) {
+      if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count")) {
         delete_hdfs_path(file_des)
-        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file)
-        //println("DF file count:" + importedDf.count().toString + " of train files")
         val text_train_rdd = importedDf.rdd.map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
@@ -171,6 +172,39 @@ object AggrAdListV4Samples {
         s"hadoop fs -put $fileName $file_des/count" !
 
         s"hadoop fs -chmod -R 0777 $file_des" !
+      }
+
+      val instances_file = des_dir + "/" + curr_date + "-instances"
+      if (!exists_hdfs_path(instances_file + "/_SUCCESS") || !exists_hdfs_path(instances_file + "/count")) {
+        importedDf.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+            for (idx <- dense.indices) {
+              output(idx) = dense(idx).toString
+            }
+            for (idx <- idx_arr.indices) {
+              output(idx + dense.length) = idx_arr(idx).toString
+            }
+            output.mkString("\t")
+          }
+        ).flatMap(
+          rs => {
+            val line = rs.split("\t")
+            for (elem <- line)
+              yield (elem, 1L)
+          }
+        ).reduceByKey(_ + _).sortByKey().map {
+          case (key, value) =>
+            key + "\t" + value.toString
+        }.repartition(1).saveAsTextFile(instances_file)
       }
     }
 
