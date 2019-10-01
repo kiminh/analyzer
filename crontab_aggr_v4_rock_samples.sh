@@ -127,6 +127,14 @@ do
     fi
 
 
+    if [ "${done_aggr}" = "true" ];then
+        printf "curr_date ${curr_date} has no instances file, add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${aggr_path}/part-*)
+        continue
+    fi
+
+
     id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
     #prefix=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}
     prefix=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/${curr_date}
@@ -258,6 +266,7 @@ do
     #echo ${train_file}
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
+
     real_curr_date=`date --date='1 days ago' +%Y-%m-%d`
 
     if [ "${curr_date}" != "${real_curr_date}" ];then
@@ -282,15 +291,6 @@ do
     fi
     printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=${#valid_data[@]}, add nothing and continue...\n"
 
-    if [ "${done_instance}" = "true" ];then
-        printf "curr_date ${curr_date} has instances file, add nothing and continue...\n"
-        continue
-    fi
-
-    printf "curr_date ${curr_date} has no instances file, add to collect and continue...\n"
-    collect_date+=(${curr_date})
-    collect_file+=(${aggr_path}/part-*)
-    continue
 done
 
 
