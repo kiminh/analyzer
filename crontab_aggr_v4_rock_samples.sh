@@ -31,6 +31,26 @@ touch ${shell_in_run}
 
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
+    `date --date='2 days ago' +%Y-%m-%d`
+    `date --date='3 days ago' +%Y-%m-%d`
+    `date --date='4 days ago' +%Y-%m-%d`
+    `date --date='5 days ago' +%Y-%m-%d`
+    `date --date='6 days ago' +%Y-%m-%d`
+    `date --date='7 days ago' +%Y-%m-%d`
+    `date --date='8 days ago' +%Y-%m-%d`
+    `date --date='9 days ago' +%Y-%m-%d`
+    `date --date='10 days ago' +%Y-%m-%d`
+    `date --date='11 days ago' +%Y-%m-%d`
+    `date --date='12 days ago' +%Y-%m-%d`
+    `date --date='13 days ago' +%Y-%m-%d`
+    `date --date='14 days ago' +%Y-%m-%d`
+    `date --date='15 days ago' +%Y-%m-%d`
+    `date --date='16 days ago' +%Y-%m-%d`
+    `date --date='17 days ago' +%Y-%m-%d`
+    `date --date='18 days ago' +%Y-%m-%d`
+    `date --date='19 days ago' +%Y-%m-%d`
+    `date --date='20 days ago' +%Y-%m-%d`
+    `date --date='21 days ago' +%Y-%m-%d`
 )
 
 
