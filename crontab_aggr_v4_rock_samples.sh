@@ -118,13 +118,6 @@ do
     #    fi
     #fi
 
-    if [ "${done_instance}" = "false" ];then
-        printf "curr_date ${curr_date} has no instances file, add to collect and continue...\n"
-        collect_date+=(${curr_date})
-        collect_file+=(${aggr_path}/part-*)
-        continue
-    fi
-
     if [ "${done_aggr}" = "true" ];then
         printf "curr_date ${curr_date} has aggr file, continue...\n"
         continue
@@ -285,6 +278,16 @@ do
         continue
     fi
     printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=${#valid_data[@]}, add nothing and continue...\n"
+
+    if [ "${done_instance}" = "true" ];then
+        printf "curr_date ${curr_date} has instances file, add nothing and continue...\n"
+        continue
+    fi
+
+    printf "curr_date ${curr_date} has no instances file, add to collect and continue...\n"
+    collect_date+=(${curr_date})
+    collect_file+=(${aggr_path}/part-*)
+    continue
 done
 
 
