@@ -88,23 +88,25 @@ do
 
     wait
 
-    done_curr_date="true"
+    done_aggr="true"
+    done_instance="true"
+
     if [[ ! -f ${file_success_instances} ]]; then
         printf "no ${file_success_instances}, continue to instances ${curr_date}...\n"
-        done_curr_date="false"
+        done_instance="false"
     fi
     if [[ ! -f ${file_success} ]]; then
         printf "no ${file_success}, continue to aggr ${curr_date}...\n"
-        done_curr_date="false"
+        done_aggr="false"
     fi
     if [[ ! -f ${file_count} ]]; then
         printf "no ${file_count}, continue to aggr ${curr_date}...\n"
-        done_curr_date="false"
+        done_aggr="false"
     fi
 
     #if [[ ! -f ${file_part} ]]; then
     #    printf "no ${file_part}, continue to aggr ${curr_date}...\n"
-    #    done_curr_date="false"
+    #    done_aggr="false"
     #fi
 
     #if [[ -f ${file_part} ]]; then
@@ -112,14 +114,22 @@ do
     #    if [ ${file_size} -lt 1000 ]
     #    then
     #        printf "invalid ${file_part} file size:${file_size}, continue to aggr ${curr_date}...\n"
-    #        done_curr_date="false"
+    #        done_aggr="false"
     #    fi
     #fi
 
-    if [ "${done_curr_date}" = "true" ];then
+    if [ "${done_instance}" = "false" ];then
+        printf "curr_date ${curr_date} has no instances file, add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${aggr_path}/part-*)
+        continue
+    fi
+
+    if [ "${done_aggr}" = "true" ];then
         printf "curr_date ${curr_date} has aggr file, continue...\n"
         continue
     fi
+
 
     id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
     #prefix=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}
@@ -276,6 +286,8 @@ do
     fi
     printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=${#valid_data[@]}, add nothing and continue...\n"
 done
+
+
 
 if [[ ${#collect_file[@]} -le 0 ]] ; then
     printf "no real-time training data file need to be aggr, existing...\n"
