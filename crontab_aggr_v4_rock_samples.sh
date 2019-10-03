@@ -292,6 +292,15 @@ echo "${file_list}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "${date_list}"
 
+date_last=`date --date='1 days ago' +%Y-%m-%d`
+instances_all_list=(
+    `date --date='3 days ago' +%Y-%m-%d`
+    `date --date='7 days ago' +%Y-%m-%d`
+    `date --date='14 days ago' +%Y-%m-%d`
+    `date --date='21 days ago' +%Y-%m-%d`
+)
+instances_begin_date_list="$( IFS=$';'; echo "${instances_all_list[*]}" )"
+
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
 queue=root.cpc.develop
@@ -311,7 +320,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.AggrAdListV4Samples\
-    ${randjar} ${des_dir} ${date_list} ${file_list}
+    ${randjar} ${des_dir} ${date_list} ${file_list} ${date_last} ${instances_begin_date_list}
 
 
 rm ${shell_in_run}

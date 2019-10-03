@@ -10,6 +10,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{StructField, _}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.util.LongAccumulator
 
 import scala.collection.mutable.ArrayBuffer
 import scala.sys.process._
@@ -66,28 +67,28 @@ object AggrAdListV4Samples {
     formatDate
   }
 
-  def GetDataRangeWithWeek(beginStr: String, endStr: String, format: String = "yyyy-MM-dd"): ArrayBuffer[String] = {
+  def GetDateRange(beginStr: String, endStr: String, format : String = "yyyy-MM-dd"): ArrayBuffer[String] = {
     val ranges = ArrayBuffer[String]()
     val sdf = new SimpleDateFormat(format)
     var dateBegin = sdf.parse(beginStr)
     val dateEnd = sdf.parse(endStr)
     while (dateBegin.compareTo(dateEnd) <= 0) {
-      ranges += sdf.format(dateBegin) + ";" + DateFormatUtils.format(dateBegin, "E")
+      ranges += sdf.format(dateBegin)
       dateBegin = DateUtils.addDays(dateBegin, 1)
     }
     ranges
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 3) {
+    if (args.length != 5) {
       System.err.println(
         """
-          |you have to input 3 parameters !!!
+          |you have to input 5 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, src_date_list, src_file_list) = args
+    val Array(des_dir, src_date_list, src_file_list, date_last, date_begin_strs) = args
 
     //println(args)
 
@@ -201,10 +202,50 @@ object AggrAdListV4Samples {
             for (elem <- line)
               yield (elem, 1L)
           }
-        ).reduceByKey(_ + _).sortByKey().map {
+        ).reduceByKey(_ + _).sortBy(_._2 * -1).map {
           case (key, value) =>
             key + "\t" + value.toString
         }.repartition(1).saveAsTextFile(instances_file)
+      }
+    }
+
+    val date_begin_list = date_begin_strs.split(";")
+    for (curr_begin_date <- date_begin_list) {
+      val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
+      val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
+      if (!exists_hdfs_path(instances_all + "/_SUCCESS") || !exists_hdfs_path(instances_map + "/_SUCCESS")) {
+        delete_hdfs_path(instances_all)
+        delete_hdfs_path(instances_map)
+        val instances_date_collect = GetDateRange(curr_begin_date, date_last)
+        val output = ArrayBuffer[String]()
+        for (curr_date <- instances_date_collect) {
+          val instances_file = des_dir + "/" + curr_date + "-instances"
+          if (exists_hdfs_path(instances_file + "/_SUCCESS")) {
+            output += instances_file + "/part-*"
+          }
+        }
+
+        sc.textFile(output.mkString(",")).map({
+          rs =>
+            val line_list = rs.split("\t")
+            (line_list(0), line_list(1).toLong)
+        }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({
+          case (key, value) =>
+            key + "\t" + value.toString
+        }).saveAsTextFile(instances_all)
+
+        val acc = new LongAccumulator
+        spark.sparkContext.register(acc)
+        sc.textFile(instances_all).coalesce(1, false).map{
+          rs => {
+            acc.add(1L)
+            val line = rs.split("\t")
+            val key = line(0)
+            (key, acc.count)
+          }
+        }.repartition(1).sortBy(_._2).map{
+          case (key, value) => key + "\t" + value.toString
+        }.saveAsTextFile(instances_map)
       }
     }
 
