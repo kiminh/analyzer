@@ -22,8 +22,8 @@ object DeepOcpcTools {
     val hour = args(1).toString
 
     // 测试两个抽取数据的程序
-    val data1 = getDeepData(24, date, hour, spark)
-    val data2 = getDeepDataDelay(24, date, hour, spark)
+    val data1 = getDeepData(6, date, hour, spark)
+    val data2 = getDeepDataDelay(6, date, hour, spark)
 
     data1
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191008a")
@@ -87,7 +87,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(deep_cvr as double) * 1.0 / 1000000 as exp_cvr,
+         |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -114,6 +114,8 @@ object DeepOcpcTools {
          |  isclick = 1
          |AND
          |  deep_cvr != 0
+         |AND
+         |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -175,7 +177,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(deep_cvr as double) * 1.0 / 1000000 as exp_cvr,
+         |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -202,6 +204,8 @@ object DeepOcpcTools {
          |  isclick = 1
          |AND
          |  deep_cvr != 0
+         |AND
+         |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
