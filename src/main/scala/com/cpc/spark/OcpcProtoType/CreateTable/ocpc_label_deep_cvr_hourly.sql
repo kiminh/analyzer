@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS test.ocpc_label_cvr_hourly
+CREATE TABLE IF NOT EXISTS test.ocpc_label_deep_cvr_hourly
 (
     searchid        string,
     ideaid          int,

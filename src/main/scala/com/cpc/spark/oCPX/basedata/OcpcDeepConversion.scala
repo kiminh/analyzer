@@ -17,9 +17,9 @@ object OcpcDeepConversion {
 
     val result = cv1.union(cv2).union(cv3).distinct()
     result
-      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_deep_cvr_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_deep_cvr_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_unit_label_cvr_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_deep_cvr_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_deep_cvr_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_label_deep_cvr_hourly")
   }
 
   def getLabel3(date: String, hour: String, spark: SparkSession) = {
