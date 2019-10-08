@@ -72,10 +72,15 @@ object OcpcGetPb_baseline {
     val resultDF = result
       .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
+//    resultDF
+//      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
+    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
 
 
   }
