@@ -22,7 +22,7 @@ object OcpcDeepConversion {
     println("successfully save data into table: dl_cpc.ocpc_label_deep_cvr_hourly")
   }
 
-  def getLabel3(date: String, hour: String, spark: SparkSession) = {
+  def getLabel2(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |select
@@ -45,7 +45,7 @@ object OcpcDeepConversion {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("deep_conversion_goal", lit(3))
+      .withColumn("deep_conversion_goal", lit(2))
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -53,7 +53,7 @@ object OcpcDeepConversion {
     resultDF
   }
 
-  def getLabel2(date: String, hour: String, spark: SparkSession) = {
+  def getLabel3(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |select
@@ -76,7 +76,7 @@ object OcpcDeepConversion {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("deep_conversion_goal", lit(2))
+      .withColumn("deep_conversion_goal", lit(3))
 
     resultDF.show(10)
     resultDF.printSchema()
