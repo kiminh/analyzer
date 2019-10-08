@@ -113,7 +113,7 @@ object DeepOcpcTools {
          |AND
          |  isclick = 1
          |AND
-         |  deep_cvr != 0
+         |  deep_cvr_model_name is not null
          |AND
          |  deep_cvr is not null
        """.stripMargin
@@ -203,7 +203,7 @@ object DeepOcpcTools {
          |AND
          |  isclick = 1
          |AND
-         |  deep_cvr != 0
+         |  deep_cvr_model_name is not null
          |AND
          |  deep_cvr is not null
        """.stripMargin
