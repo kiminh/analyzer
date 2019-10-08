@@ -164,6 +164,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  adslot_type,
          |  isshow,
          |  isclick,

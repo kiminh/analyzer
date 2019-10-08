@@ -21,11 +21,6 @@ object OcpcUnionlog {
 //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
-//    data
-//      .repartition(100)
-////      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_hourly")
-
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
 
@@ -35,11 +30,6 @@ object OcpcUnionlog {
 //      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
-//    ocpcData
-//      .repartition(50)
-////      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_hourly")
-
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
@@ -47,6 +37,7 @@ object OcpcUnionlog {
     val baseData = data
         .filter(s"length(ocpc_log)>0")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+        .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -106,7 +97,16 @@ object OcpcUnionlog {
          |    ocpc_expand,
          |    expids,
          |    bsctr,
-         |    bscvr
+         |    bscvr,
+         |    raw_cvr,
+         |    deep_cvr,
+         |    raw_deep_cvr,
+         |    deep_cvr_model_name,
+         |    deep_ocpc_log_dict,
+         |    is_deep_ocpc,
+         |    deep_conversion_goal,
+         |    deep_cpa,
+         |    cpa_check_priority
          |from
          |    base_data
        """.stripMargin
@@ -242,7 +242,16 @@ object OcpcUnionlog {
          |    final_cpm,
          |    ocpc_expand,
          |    ext_string['exp_ids'] as expids,
-         |    bsctr
+         |    bsctr,
+         |    raw_cvr,
+         |    deep_cvr,
+         |    raw_deep_cvr,
+         |    deep_cvr_model_name,
+         |    deep_ocpc_log,
+         |    is_deep_ocpc,
+         |    deep_conversion_goal,
+         |    deep_cpa,
+         |    cpa_check_priority
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

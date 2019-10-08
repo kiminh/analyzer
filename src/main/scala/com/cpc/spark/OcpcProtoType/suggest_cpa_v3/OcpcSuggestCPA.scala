@@ -295,14 +295,6 @@ object OcpcSuggestCPA {
          |AND
          |    $mediaSelection
          |AND
-         |    antispam = 0
-         |AND
-         |    adslot_type in (1,2,3)
-         |AND
-         |    adsrc = 1
-         |AND
-         |    (charge_type is null or charge_type = 1)
-         |AND
          |    conversion_goal > 0
          |AND
          |    is_ocpc = 1

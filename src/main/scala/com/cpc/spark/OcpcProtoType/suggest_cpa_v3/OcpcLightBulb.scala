@@ -49,24 +49,24 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
-    val lightUnits2 = getUnitidList(date, hour, spark)
-    lightUnits2
-      .select("unitid", "userid", "conversion_goal", "media")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+    val result = getUpdateTableV2(currentLight, date, hour, version, spark)
+//    val lightUnits2 = getUnitidList(date, hour, spark)
+//    lightUnits2
+//      .select("unitid", "userid", "conversion_goal", "media")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
-    val result = lightUnits1
-      .select("unitid", "ocpc_light", "current_cpa")
-      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
-      .withColumn("ocpc_light_old", col("ocpc_light"))
-      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
-      .na.fill(0.0, Seq("current_cpa"))
+//    val result = lightUnits1
+//      .select("unitid", "ocpc_light", "current_cpa")
+//      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
+//      .withColumn("ocpc_light_old", col("ocpc_light"))
+//      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
+//      .na.fill(0.0, Seq("current_cpa"))
 
 
     // 抽取adv的ocpc单元
@@ -90,8 +90,8 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
     // 存入redis
-    saveDataToRedis(version, date, hour, spark)
-    println(s"############## saving redis database ################")
+//    saveDataToRedis(version, date, hour, spark)
+//    println(s"############## saving redis database ################")
   }
 
   def getUnitidList(date: String, hour: String, spark: SparkSession) = {
@@ -185,6 +185,7 @@ object OcpcLightBulb{
       .option("dbtable", table)
       .load()
 
+
     val deadline = date + " " + hour + ":00:00"
 
     data.createOrReplaceTempView("base_data")
@@ -224,8 +225,11 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
+//    // todo
 //    rawResult
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918a")
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925a")
+
+
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
@@ -233,20 +237,53 @@ object OcpcLightBulb{
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
 
+//    // todo
 //    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190918b")
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925b")
 
 
     val totalCnt = result.count()
     val cnt = totalCnt.toFloat / 10
-    val resultDF = result
+    val resultDF1raw = result
       .orderBy(rand())
       .limit(cnt.toInt)
       .withColumn("test_flag", lit(1))
       .select("unitid", "userid", "conversion_goal", "media", "test_flag")
       .distinct()
 
+//    // todo
+//    resultDF1raw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925c")
+
+    val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
+    val resultDF1CV3 = resultDF1raw
+      .filter(s"conversion_goal = 3")
+      .limit(cv3Cnt.toInt)
+    val resultDF1notCV3 = resultDF1raw.filter(s"conversion_goal != 3")
+    val resultDF1 = resultDF1CV3
+        .union(resultDF1notCV3)
+        .distinct()
+
+//    // todo
+//    resultDF1
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925d")
+
+
+
     println(s"totalCnt=$totalCnt, cnt=$cnt")
+
+    val resultDF2 = rawResult
+      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"unit_white_flag = 1")
+      .withColumn("test_flag", lit(1))
+      .select("unitid", "userid", "conversion_goal", "media", "test_flag")
+      .distinct()
+
+
+    val resultDF = resultDF1
+      .union(resultDF2)
+      .distinct()
+
 
     resultDF.show(10)
     resultDF
