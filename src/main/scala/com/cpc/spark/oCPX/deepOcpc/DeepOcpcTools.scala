@@ -115,6 +115,8 @@ object DeepOcpcTools {
          |AND
          |  deep_cvr_model_name is not null
          |AND
+         |  deep_cvr > 0
+         |AND
          |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
@@ -204,6 +206,8 @@ object DeepOcpcTools {
          |  isclick = 1
          |AND
          |  deep_cvr_model_name is not null
+         |AND
+         |  deep_cvr > 0
          |AND
          |  deep_cvr is not null
        """.stripMargin
