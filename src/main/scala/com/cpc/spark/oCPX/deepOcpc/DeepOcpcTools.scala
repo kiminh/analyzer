@@ -87,7 +87,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(deep_cvr as double) * 1.0 / 1000000 as deep_cvr,
+         |  cast(deep_cvr as double) * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -96,7 +96,7 @@ object DeepOcpcTools {
          |      when adclass in (110110100, 125100100) then "wzcp"
          |      else "others"
          |  end) as industry,
-         |  deep_conversion_goal,
+         |  deep_conversion_goal as conversion_goal,
          |  expids,
          |  exptags,
          |  ocpc_expand,
@@ -126,7 +126,7 @@ object DeepOcpcTools {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  deep_conversion_goal
+         |  deep_conversion_goal as conversion_goal
          |FROM
          |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
@@ -138,7 +138,7 @@ object DeepOcpcTools {
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
@@ -175,7 +175,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(deep_cvr as double) * 1.0 / 1000000 as deep_cvr,
+         |  cast(deep_cvr as double) * 1.0 / 1000000 as exp_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -184,7 +184,7 @@ object DeepOcpcTools {
          |      when adclass in (110110100, 125100100) then "wzcp"
          |      else "others"
          |  end) as industry,
-         |  deep_conversion_goal,
+         |  deep_conversion_goal as conversion_goal,
          |  expids,
          |  exptags,
          |  ocpc_expand,
@@ -214,7 +214,7 @@ object DeepOcpcTools {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  deep_conversion_goal
+         |  deep_conversion_goal as conversion_goal
          |FROM
          |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
@@ -226,7 +226,7 @@ object DeepOcpcTools {
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
