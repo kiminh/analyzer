@@ -30,7 +30,7 @@ object OcpcGetPb_baseline {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
     dataRaw
