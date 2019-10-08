@@ -21,6 +21,16 @@ object DeepOcpcTools {
     val date = args(0).toString
     val hour = args(1).toString
 
+    // 测试两个抽取数据的程序
+    val data1 = getDeepData(24, date, hour, spark)
+    val data2 = getDeepDataDelay(24, date, hour, spark)
+
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191008a")
+
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191008b")
+
   }
 
   def getTimeRangeSqlDay(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -77,7 +87,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(deep_cvr as double) as exp_cvr,
+         |  cast(deep_cvr as double) * 1.0 / 1000000 as deep_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -86,7 +96,7 @@ object DeepOcpcTools {
          |      when adclass in (110110100, 125100100) then "wzcp"
          |      else "others"
          |  end) as industry,
-         |  conversion_goal,
+         |  deep_conversion_goal,
          |  expids,
          |  exptags,
          |  ocpc_expand,
@@ -102,11 +112,12 @@ object DeepOcpcTools {
          |  is_ocpc = 1
          |AND
          |  isclick = 1
+         |AND
+         |  deep_cvr != 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
@@ -115,19 +126,19 @@ object DeepOcpcTools {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  cvr_goal
+         |  deep_conversion_goal
          |FROM
-         |  dl_cpc.ocpc_label_cvr_hourly
+         |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
@@ -164,8 +175,7 @@ object DeepOcpcTools {
          |  isclick,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  cast(exp_cvr as double) as exp_cvr,
-         |  cast(exp_ctr as double) as exp_ctr,
+         |  cast(deep_cvr as double) * 1.0 / 1000000 as deep_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -174,7 +184,7 @@ object DeepOcpcTools {
          |      when adclass in (110110100, 125100100) then "wzcp"
          |      else "others"
          |  end) as industry,
-         |  conversion_goal,
+         |  deep_conversion_goal,
          |  expids,
          |  exptags,
          |  ocpc_expand,
@@ -190,11 +200,12 @@ object DeepOcpcTools {
          |  is_ocpc = 1
          |AND
          |  isclick = 1
+         |AND
+         |  deep_cvr != 0
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
@@ -203,19 +214,19 @@ object DeepOcpcTools {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  cvr_goal
+         |  deep_conversion_goal
          |FROM
-         |  dl_cpc.ocpc_label_cvr_hourly
+         |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
          |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
