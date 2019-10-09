@@ -49,8 +49,6 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
-    // todo
-    // prepare to restart the 0-threshold experiment
     val lightUnits1 = getUpdateTableV2(currentLight, date, hour, version, spark)
     val lightUnits2 = getUnitidList(date, hour, spark)
     lightUnits2
@@ -227,21 +225,12 @@ object OcpcLightBulb{
       .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
       .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
 
-//    // todo
-//    rawResult
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925a")
-
-
 
     val result = rawResult
       .filter(s"media in ('qtt', 'hottopic')")
       .filter(s"check_flag = 1")
 //      .filter(s"black_flag is null")
 //      .filter(s"cost_flag = 1")
-
-//    // todo
-//    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925b")
 
 
     val totalCnt = result.count()
@@ -253,10 +242,6 @@ object OcpcLightBulb{
       .select("unitid", "userid", "conversion_goal", "media", "test_flag")
       .distinct()
 
-//    // todo
-//    resultDF1raw
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925c")
-
     val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
     val resultDF1CV3 = resultDF1raw
       .filter(s"conversion_goal = 3")
@@ -265,12 +250,6 @@ object OcpcLightBulb{
     val resultDF1 = resultDF1CV3
         .union(resultDF1notCV3)
         .distinct()
-
-//    // todo
-//    resultDF1
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20190925d")
-
-
 
     println(s"totalCnt=$totalCnt, cnt=$cnt")
 
