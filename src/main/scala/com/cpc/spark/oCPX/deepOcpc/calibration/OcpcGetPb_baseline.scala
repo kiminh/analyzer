@@ -72,10 +72,6 @@ object OcpcGetPb_baseline {
     val resultDF = result
       .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
-//    resultDF
-//      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
     resultDF
       .repartition(1)
@@ -98,6 +94,7 @@ object OcpcGetPb_baseline {
       .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .withColumn("post_cvr", lit(0.0))
       .withColumn("smooth_factor", lit(0.3))
+      .withColumn("smooth_factor", udfSetSmoothFactor()(col("identifier"), col("smooth_factor")))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
@@ -106,6 +103,14 @@ object OcpcGetPb_baseline {
 
     data
   }
+
+  def udfSetSmoothFactor() = udf((identifier: String, smoothFactor: Double) => {
+    val result = (identifier, smoothFactor) match {
+      case ("2399667", _) => 0.7
+      case (_, v) => v
+    }
+    result
+  })
 
 
 
