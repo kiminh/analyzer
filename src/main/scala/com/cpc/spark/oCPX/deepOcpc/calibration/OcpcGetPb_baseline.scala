@@ -33,8 +33,8 @@ object OcpcGetPb_baseline {
     val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
-    dataRaw
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
+//    dataRaw
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
 
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
@@ -43,8 +43,8 @@ object OcpcGetPb_baseline {
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
       .cache()
     jfbData.show(10)
-    jfbData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
+//    jfbData
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
 
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
@@ -52,8 +52,8 @@ object OcpcGetPb_baseline {
       .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
-    pcocData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912f")
+//    pcocData
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912f")
 
     val data = assemblyData(jfbData, pcocData, spark).cache()
     data.show(10)
