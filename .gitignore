@@ -6,3 +6,8 @@ lib/hivemall-all-0.5.2-incubating.jar
 /log
 *.iml
 .DS_Store
+.metals
+.ensime_cache
+ensime-langserver.log
+pc.stdout.log
+.gitignore
