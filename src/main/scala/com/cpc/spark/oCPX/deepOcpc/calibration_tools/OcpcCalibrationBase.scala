@@ -42,7 +42,7 @@ object OcpcCalibrationBase {
      */
     val baseDataRaw = getDeepDataDelay(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-//      .filter(s"exptags like '%deepOcpcExpTag:Qtt%'")
+      .filter(s"exptags like '%deepOcpcExpTag:Qtt%'")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
     // 计算结果
@@ -63,7 +63,7 @@ object OcpcCalibrationBase {
      */
     val baseDataRaw = getDeepData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-//      .filter(s"exptags like '%deepOcpcExpTag:Qtt%'")
+      .filter(s"exptags like '%deepOcpcExpTag:Qtt%'")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
     // 计算结果
