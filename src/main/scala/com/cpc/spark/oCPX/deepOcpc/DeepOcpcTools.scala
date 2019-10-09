@@ -115,7 +115,9 @@ object DeepOcpcTools {
          |AND
          |  deep_cvr_model_name is not null
          |AND
-         |  deep_cvr >= 0
+         |  is_deep_ocpc = 1
+         |AND
+         |  deep_cvr > 0
          |AND
          |  deep_cvr is not null
        """.stripMargin
@@ -207,7 +209,9 @@ object DeepOcpcTools {
          |AND
          |  deep_cvr_model_name is not null
          |AND
-         |  deep_cvr >= 0
+         |  is_deep_ocpc = 1
+         |AND
+         |  deep_cvr > 0
          |AND
          |  deep_cvr is not null
        """.stripMargin
