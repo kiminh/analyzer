@@ -40,7 +40,7 @@ object OcpcConversionV3 {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'js_active_copywx'
+         |    array_contains(conversion_target, 'js_active_copywx')
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -105,7 +105,7 @@ object OcpcConversionV3 {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'js_active_js_form'
+         |    array_contains(conversion_target, 'js_active_js_form')
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -131,7 +131,7 @@ object OcpcConversionV3 {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'site_form'
+         |    array_contains(conversion_target, 'site_form')
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
