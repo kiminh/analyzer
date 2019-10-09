@@ -108,7 +108,7 @@ object OcpcSampleToPbFinal {
       val identifier = record.getAs[String]("identifier")
       val isHidden = record.getAs[Int]("is_hidden").toString
       val expTag = record.getAs[String]("exp_tag")
-      val key = expTag + "&" + identifier + "&" + isHidden
+      val key = expTag + "&" + identifier
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val cvrCalFactor = record.getAs[Double]("cali_value")
       val jfbFactor = record.getAs[Double]("jfb_factor")
