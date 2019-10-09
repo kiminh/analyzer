@@ -16,18 +16,23 @@ object OcpcConversion {
     val cv3 = getLabel3(date, hour, spark)
     val cv4 = getLabel4(date, hour, spark)
 
-    val result = cv1.union(cv2).union(cv3)
+    val result = cv1.union(cv2).union(cv3).union(cv4)
     result
-      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_unit_label_cvr_hourly")
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.ocpc_cvlog_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvlog_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_cvlog_hourly")
   }
 
   def getLabel4(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest1 =
+    val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
          |from
          |     dl_cpc.cpc_conversion
          |where
@@ -35,35 +40,21 @@ object OcpcConversion {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'sdk_site_wz')
-       """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1)
-
-    val sqlRequest2 =
-      s"""
-         |select
-         |    distinct searchid
-         |from
-         |     dl_cpc.cpc_conversion
-         |where
-         |    day='$date'
-         |and
-         |    `hour` = '$hour'
-         |and
+         |    (array_contains(conversion_target, 'sdk_site_wz')
+         |OR
          |    array_contains(conversion_target, 'js_active_copywx')
+         |OR
+         |    array_contains(conversion_target, 'sdk_banner_wz')
+         |OR
+         |    array_contains(conversion_target, 'sdk_popupwindow_wz'))
        """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2)
-
-    val resultDF = data1
-      .union(data2)
-      .distinct()
-      .select("searchid")
-      .withColumn("iscvr", lit(1))
-      .withColumn("conversion_goal", lit("cvr4"))
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(4))
+      .distinct()
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -72,10 +63,14 @@ object OcpcConversion {
   }
 
   def getLabel3(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest1 =
+    val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
          |from
          |     dl_cpc.cpc_conversion
          |where
@@ -83,54 +78,17 @@ object OcpcConversion {
          |and
          |    `hour` = '$hour'
          |and
-         |    array_contains(conversion_target, 'site_form')
+         |    (array_contains(conversion_target, 'js_active_js_form')
+         |OR
+         |    array_contains(conversion_target, 'site_form'))
        """.stripMargin
-    println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1)
-
-    val sqlRequest2 =
-      s"""
-         |select
-         |    distinct searchid
-         |from
-         |     dl_cpc.cpc_conversion
-         |where
-         |    day='$date'
-         |and
-         |    `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target, 'api')
-         |and
-         |    (adclass like '134%' or adclass like '107%')
-       """.stripMargin
-    println(sqlRequest2)
-    val data2 = spark.sql(sqlRequest2)
-
-    val sqlRequest3 =
-      s"""
-         |select
-         |    distinct searchid
-         |from
-         |     dl_cpc.cpc_conversion
-         |where
-         |    day='$date'
-         |and
-         |    `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target, 'js_active_js_form')
-       """.stripMargin
-    println(sqlRequest3)
-    val data3 = spark.sql(sqlRequest3)
-
-    val resultDF = data1
-      .union(data2)
-      .union(data3)
-      .distinct()
-      .select("searchid")
-      .withColumn("iscvr", lit(1))
-      .withColumn("conversion_goal", lit("cvr3"))
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(3))
+      .distinct()
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -142,7 +100,11 @@ object OcpcConversion {
     val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
          |from
          |     dl_cpc.cpc_conversion
          |where
@@ -155,11 +117,11 @@ object OcpcConversion {
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
-      .select("searchid")
-      .withColumn("iscvr", lit(1))
-      .withColumn("conversion_goal", lit("cvr2"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(2))
+      .distinct()
+
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -171,7 +133,11 @@ object OcpcConversion {
     val sqlRequest =
       s"""
          |select
-         |    distinct searchid
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
          |from
          |     dl_cpc.cpc_conversion
          |where
@@ -184,11 +150,10 @@ object OcpcConversion {
     println(sqlRequest)
     val resultDF = spark
         .sql(sqlRequest)
-        .select("searchid")
-        .withColumn("iscvr", lit(1))
-        .withColumn("conversion_goal", lit("cvr1"))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
+        .withColumn("conversion_goal", lit(1))
+        .distinct()
 
     resultDF.show(10)
     resultDF.printSchema()
