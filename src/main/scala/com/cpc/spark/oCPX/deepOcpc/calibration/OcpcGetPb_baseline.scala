@@ -88,11 +88,16 @@ object OcpcGetPb_baseline {
 
   def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
     // 组装数据
+    // set some default value
+    // post_cvr: 0.0
+    // smooth_factor: 0.3
+    // high_bid_factor: 1.0
+    // low_bid_factor: 1.0
     val data = pcocData
       .filter(s"cvr_factor is not null")
       .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .withColumn("post_cvr", lit(0.0))
-      .withColumn("smooth_factor", lit(1.0))
+      .withColumn("smooth_factor", lit(0.3))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
