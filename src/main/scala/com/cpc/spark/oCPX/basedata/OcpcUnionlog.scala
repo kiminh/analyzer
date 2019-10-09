@@ -18,8 +18,8 @@ object OcpcUnionlog {
 
     data
       .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -27,15 +27,18 @@ object OcpcUnionlog {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // todo
+    // 调整过滤条件：ocpc_Step
     val baseData = data
-        .filter(s"length(ocpc_log)>0")
+//        .filter(s"length(ocpc_log)>0")
+        .filter(s"ocpc_step = 2")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
         .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
@@ -125,59 +128,9 @@ object OcpcUnionlog {
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
-
-//    // 旧版基础数据抽取逻辑
-//    // 拿到基础数据
-//    var sqlRequest =
-//      s"""
-//         |select
-//         |    searchid,
-//         |    timestamp,
-//         |    network,
-//         |    exptags,
-//         |    media_type,
-//         |    media_appsid,
-//         |    adslotid,
-//         |    adslot_type,
-//         |    adtype,
-//         |    adsrc,
-//         |    interaction,
-//         |    bid,
-//         |    price,
-//         |    ideaid,
-//         |    unitid,
-//         |    planid,
-//         |    country,
-//         |    province,
-//         |    city,
-//         |    uid,
-//         |    ua,
-//         |    os,
-//         |    sex,
-//         |    age,
-//         |    isshow,
-//         |    isclick,
-//         |    duration,
-//         |    userid,
-//         |    ext_int['is_ocpc'] as is_ocpc,
-//         |    ext_string['ocpc_log'] as ocpc_log,
-//         |    ext_string['user_city'] as user_city,
-//         |    ext['city_level'].int_value as city_level,
-//         |    ext['adclass'].int_value as adclass,
-//         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
-//         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
-//         |    cast(ext["charge_type"].int_value as int) as charge_type,
-//         |    ext['antispam'].int_value as antispam,
-//         |    cast(ext['usertype'].int_value as bigint) as usertype
-//         |from dl_cpc.cpc_union_log
-//         |where $selectWhere
-//         |and (isshow>0 or isclick>0)
-//      """.stripMargin
-//    println(sqlRequest)
-//    val rawData = spark
-//      .sql(sqlRequest)
-
     // 新版基础数据抽取逻辑
+    // todo
+    // 调整ocpc_log的存在逻辑
     var sqlRequest =
       s"""
          |select
@@ -210,7 +163,7 @@ object OcpcUnionlog {
          |    0 as duration,
          |    userid,
          |    cast(is_ocpc as int) as is_ocpc,
-         |    ocpc_log,
+         |    (case when isclick=1 then ocpc_log else '' end) as ocpc_log,
          |    user_city,
          |    city_level,
          |    adclass,
