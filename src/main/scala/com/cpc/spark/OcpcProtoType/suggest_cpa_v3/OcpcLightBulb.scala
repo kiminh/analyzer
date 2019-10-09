@@ -49,6 +49,8 @@ object OcpcLightBulb{
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
+    // todo
+    // prepare to restart the 0-threshold experiment
     val result = getUpdateTableV2(currentLight, date, hour, version, spark)
 //    val lightUnits2 = getUnitidList(date, hour, spark)
 //    lightUnits2
