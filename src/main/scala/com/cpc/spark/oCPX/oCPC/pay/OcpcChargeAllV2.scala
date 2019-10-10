@@ -35,7 +35,7 @@ object OcpcChargeAllV2 {
     // 判断这批单元的赔付周期
     // 根据日期，获得一张表
     // 标记每个单元，当前已经进行过几轮赔付，标记是否需要继续赔付，当前赔付周期的起始日期, ocpc_charge_time
-    val paySchedule = getPaySchedule(date, spark)
+    val paySchedule = getPaySchedule(date, dayCnt, spark)
     paySchedule
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
