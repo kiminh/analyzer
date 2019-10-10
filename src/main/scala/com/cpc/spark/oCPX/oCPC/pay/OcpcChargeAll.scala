@@ -27,43 +27,43 @@ object OcpcChargeAll {
 
     val unitidList = getUnitList(date, version, dayCnt, spark).cache()
     unitidList.show(10)
-//
-//
-//    val clickData = getClickData(date, dayCnt, spark)
-//    val cvData = getCvData(date, dayCnt, spark)
-//    val cpcData = getCPCdata(date, dayCnt, spark)
-//
-//    val data = clickData
-//      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
-//      .na.fill(0, Seq("iscvr"))
-//      .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
-//      .withColumn("adslot_type", lit(0))
-//
-//    val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
-//    payData.show(10)
-//
-//    val resultDF1 = payData
-//      .join(unitidList, Seq("unitid"), "left_outer")
-//      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag", "ocpc_charge_time")
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit(version))
-//
-//    resultDF1.show(10)
-//
-//    resultDF1
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-////      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
-//
-//    val resultDF2 = unitidList
-//      .selectExpr("unitid", "pay_cnt", "pay_date")
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit(version))
-//
-//    resultDF2.show(10)
-//
-//    resultDF2
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-////      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+
+
+    val clickData = getClickData(date, dayCnt, spark)
+    val cvData = getCvData(date, dayCnt, spark)
+    val cpcData = getCPCdata(date, dayCnt, spark)
+
+    val data = clickData
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+      .join(unitidList.filter(s"flag == 1"), Seq("unitid"), "inner")
+      .withColumn("adslot_type", lit(0))
+
+    val payData = calculatePay(data, cpcData, date, dayCnt, spark).cache()
+    payData.show(10)
+
+    val resultDF1 = payData
+      .join(unitidList, Seq("unitid"), "left_outer")
+      .selectExpr("unitid", "adslot_type", "cast(pay as bigint) pay", "cost", "cpareal", "cpagiven", "cv", "start_date", "cpc_flag", "ocpc_charge_time")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+
+    resultDF1.show(10)
+
+    resultDF1
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+
+    val resultDF2 = unitidList
+      .selectExpr("unitid", "pay_cnt", "pay_date")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+
+    resultDF2.show(10)
+
+    resultDF2
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -201,9 +201,9 @@ object OcpcChargeAll {
       .select("searchid", "unitid", "media", "timestamp", "date", "hour")
       .distinct()
 
-    rawData
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010a")
+//    rawData
+//        .repartition(5)
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010a")
 
     rawData.createOrReplaceTempView("raw_data")
 
@@ -275,9 +275,9 @@ object OcpcChargeAll {
       .withColumn("pay_date", udfCalculatePayDate(date2)(col("prev_pay_cnt"), col("prev_pay_date"), col("flag")))
       .withColumn("pay_cnt", udfCalculateCnt()(col("prev_pay_cnt"), col("flag")))
 
-    data
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010b")
+//    data
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010b")
 
     data.show(10)
 
