@@ -266,11 +266,11 @@ object OcpcChargeAll {
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
-      .withColumn("ocpc_charge_time_old", col("ocpc_charge_time"))
-      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeTime)(col("prev_pay_cnt"), col("ocpc_charge_time_old")))
       .na.fill(ocpcChargeTime, Seq("ocpc_charge_time"))
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
+      .withColumn("ocpc_charge_time_old", col("ocpc_charge_time"))
+      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeTime)(col("prev_pay_cnt"), col("ocpc_charge_time")))
       .na.fill(1, Seq("flag"))
       .withColumn("pay_date", udfCalculatePayDate(date2)(col("prev_pay_cnt"), col("prev_pay_date"), col("flag")))
       .withColumn("pay_cnt", udfCalculateCnt()(col("prev_pay_cnt"), col("flag")))
