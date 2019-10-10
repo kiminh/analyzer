@@ -53,7 +53,7 @@ object OcpcChargeAllV2 {
     // 获取老版的单元周期数据
     val prevData = spark
       .table("dl_cpc.ocpc_pay_cnt_daily")
-      .where(s"`date` = '2019-10-09' and pay_date <= '$date'")
+      .where(s"`date` = '2019-10-09'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")
@@ -122,6 +122,7 @@ object OcpcChargeAllV2 {
       .select("unitid", "pay_cnt", "pay_date", "ocpc_charge_time")
       .na.fill(0, Seq("pay_cnt"))
       .na.fill(date, Seq("pay_date"))
+      .filter(s"pay_date <= '$date'")
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
       .na.fill(ocpcChargeDate, Seq("ocpc_charge_time"))
       .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeDate)(col("pay_cnt"), col("ocpc_charge_time")))
