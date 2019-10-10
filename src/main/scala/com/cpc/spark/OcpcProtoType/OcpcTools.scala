@@ -91,6 +91,7 @@ object OcpcTools {
       case "80000002" => "qtt"
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
+      case "80004948" => "hottopic"
       case _ => "novel"
     }
     result

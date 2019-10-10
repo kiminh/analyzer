@@ -135,7 +135,7 @@ object OcpcLightBulb{
          |  conversion_goal,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |      else 'novel'
          |  end) as media,
          |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
@@ -152,7 +152,7 @@ object OcpcLightBulb{
          |  conversion_goal,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |      else 'novel'
          |  end)
        """.stripMargin
@@ -299,6 +299,7 @@ object OcpcLightBulb{
       case "80000002" => "qtt"
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
+      case "80004948" => "hottopic"
       case "" => "qtt"
       case _ => "novel"
     }
@@ -529,7 +530,7 @@ object OcpcLightBulb{
          |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |        else 'novel'
          |    end) as media
          |FROM
@@ -572,7 +573,7 @@ object OcpcLightBulb{
          |  adclass,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |      else 'novel'
          |  end) as media
          |FROM
