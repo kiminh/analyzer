@@ -76,7 +76,7 @@ object LRGen {
          |  and ideaid > 0
          |  and unitid > 0)a
          |inner join
-         |(select clientid from dl_cpc.external_data_test_qizhi)b
+         |(select * from dl_cpc.external_data_test_qizhi)b
          |on a.md5uid=b.clientid
       """.stripMargin
     println("sql="+bs_sql)
