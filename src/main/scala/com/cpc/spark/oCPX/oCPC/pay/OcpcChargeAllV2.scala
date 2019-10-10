@@ -9,8 +9,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-@deprecated
-object OcpcChargeAll {
+object OcpcChargeAllV2 {
   def main(args: Array[String]): Unit = {
     /*
     v2版本赔付数据
@@ -28,7 +27,6 @@ object OcpcChargeAll {
 
     val unitidList = getUnitList(date, version, dayCnt, spark).cache()
     unitidList.show(10)
-
 
     val clickData = getClickData(date, dayCnt, spark)
     val cvData = getCvData(date, dayCnt, spark)
@@ -52,8 +50,8 @@ object OcpcChargeAll {
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -63,8 +61,8 @@ object OcpcChargeAll {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
