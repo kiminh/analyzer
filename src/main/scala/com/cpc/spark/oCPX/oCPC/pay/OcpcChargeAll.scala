@@ -51,8 +51,8 @@ object OcpcChargeAll {
     resultDF1.show(10)
 
     resultDF1
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_data_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily")
 
     val resultDF2 = unitidList
       .selectExpr("unitid", "pay_cnt", "pay_date")
@@ -62,8 +62,8 @@ object OcpcChargeAll {
     resultDF2.show(10)
 
     resultDF2
-//      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
+      .repartition(5).write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily")
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily")
 
   }
 
@@ -203,7 +203,7 @@ object OcpcChargeAll {
 
     rawData
         .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20190802a")
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010a")
 
     rawData.createOrReplaceTempView("raw_data")
 
@@ -266,6 +266,8 @@ object OcpcChargeAll {
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
+      .withColumn("ocpc_charge_time_old", col("ocpc_charge_time"))
+      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeTime)(col("prev_pay_cnt"), col("ocpc_charge_time")))
       .na.fill(ocpcChargeTime, Seq("ocpc_charge_time"))
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
@@ -275,7 +277,7 @@ object OcpcChargeAll {
 
     data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20190802b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010b")
 
     data.show(10)
 
@@ -285,6 +287,14 @@ object OcpcChargeAll {
     result
 
   }
+
+  def udfSetOcpcChargeTime(ocpcChargeDate: String) = udf((prevPayCnt: Int, ocpcChargeTime: String) => {
+    val result = prevPayCnt match {
+      case 0 => ocpcChargeTime
+      case _ => ocpcChargeDate
+    }
+    result
+  })
 
   def udfCalculateCnt() = udf((prevPayCnt: Int, flag: Int) => {
     var result = prevPayCnt
