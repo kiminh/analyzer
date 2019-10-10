@@ -9,7 +9,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcChargeAllV2 {
+object OcpcChargeAllTemp {
   def main(args: Array[String]): Unit = {
     /*
     按照七天周期计算赔付数据
@@ -22,12 +22,11 @@ object OcpcChargeAllV2 {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    val date = args(0).toString
-    val version = args(1).toString
-    val dayCnt = args(2).toInt
+    val date1 = args(0).toString
+    val date2 = args(1).toString
 
     // 计算当天数据
-    val baseData = getBaseData(date, spark)
+    val baseData = getBaseData(date1, date2, spark)
     baseData
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
@@ -243,7 +242,7 @@ object OcpcChargeAllV2 {
   })
 
 
-  def getBaseData(date: String, spark: SparkSession) = {
+  def getBaseData(date1: String, date2: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -258,19 +257,15 @@ object OcpcChargeAllV2 {
          |  conversion_goal,
          |  isclick,
          |  price,
-         |  (case
-         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
-         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
-         |      when adclass in (110110100, 125100100) then "wzcp"
-         |      else "others"
-         |  end) as industry,
+         |  adslot_type,
+         |  media_appsid,
+         |  adclass,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  `date` = '$date'
+         |  `date` between '$date1' and '$date2'
          |AND
          |  $mediaSelection
          |AND
@@ -283,6 +278,10 @@ object OcpcChargeAllV2 {
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .filter(s"is_hidden = 0")
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .filter(s"industry in ('feedapp', 'elds')")
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -294,7 +293,7 @@ object OcpcChargeAllV2 {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
