@@ -197,7 +197,7 @@ object OcpcChargeAllV2 {
     val result = clickData
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
-    result.createGlobalTempView("base_table")
+    result.createOrReplaceTempView("base_table")
 
     val sqlRequest3 =
       s"""
