@@ -69,6 +69,7 @@ object OcpcChargeAllV2 {
          |  userid,
          |  conversion_goal,
          |  adslot_type,
+         |  media_appsid,
          |  adclass,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
