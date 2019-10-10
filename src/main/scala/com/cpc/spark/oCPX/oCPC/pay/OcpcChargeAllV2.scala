@@ -50,9 +50,9 @@ object OcpcChargeAllV2 {
     // 赔付周期控制表
     val finalPaySchedule = paySchedule
       .withColumn("update_flag", when(col("pay_date") > date, 0).otherwise(1))
-      .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
-      .withColumn("pay_date", when(col("update_flag") === 1, col("update_date")).otherwise(col("pay_date")))
-      .select("unitid", "pay_cnt", "pay_date", "ocpc_charge_time", "update_flag", "update_date")
+      .withColumn("pay_cnt", when(col("update_flag") === 1 && col("flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
+      .withColumn("pay_date", when(col("update_flag") === 1 && col("flag") === 1, col("update_date")).otherwise(col("pay_date")))
+      .select("unitid", "pay_cnt", "pay_date", "ocpc_charge_time", "update_flag", "update_date", "flag")
 
     finalPaySchedule
 //      .select("unitid", "pay_cnt", "pay_date", "ocpc_charge_time")
@@ -222,6 +222,7 @@ object OcpcChargeAllV2 {
       .na.fill(date, Seq("pay_date"))
       .filter(s"pay_date <= '$date'")
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+      .withColumn("pay_cnt_old", col("pay_cnt"))
       .withColumn("pay_cnt", when(col("flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
       .na.fill(ocpcChargeDate, Seq("ocpc_charge_time"))
       .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeDate)(col("pay_cnt"), col("ocpc_charge_time")))
