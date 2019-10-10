@@ -228,6 +228,8 @@ object OcpcChargeAllV2 {
       .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeDate)(col("pay_cnt"), col("ocpc_charge_time")))
       .withColumn("update_date", lit(nextPayDate))
 
+
+    data.printSchema()
     data
   }
 
