@@ -109,7 +109,10 @@ object OcpcChargeSchedule {
          |SELECT
          |  searchid,
          |  unitid,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
+         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  media_appsid,
+         |  adslot_type,
+         |  adclass
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -125,6 +128,10 @@ object OcpcChargeSchedule {
     val newData = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+      .filter(s"industry in ('feedapp', 'elds')")
       .select("unitid")
       .distinct()
 
