@@ -31,7 +31,7 @@ object LinearRegressionOnQttCvrCalibration {
     val media = args(3)
 //    val model = args(4)
 //    val calimodel = args(5)
-    val k = args(6)
+//    val k = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
