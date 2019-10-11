@@ -53,19 +53,19 @@ object OcpcChargeSchedule {
 
   def updatePaySchedule(date: String, dayCnt: Int, baseData: DataFrame, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |  unitid,
          |  pay_cnt,
          |  pay_date,
          |  cast(date_add(pay_date, $dayCnt) as string) as end_date,
-         |  '$date' as current_date
+         |  '$date' as cur_date
          |FROM
          |  base_data
          |""".stripMargin
-    println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
     rawData
       .repartition(10)
@@ -79,7 +79,8 @@ object OcpcChargeSchedule {
          |  pay_cnt,
          |  pay_date,
          |  end_date,
-         |  (case when end_date <= current_date and pay_cnt < 4 then 1 else 0 end) as update_flag
+         |  cur_date,
+         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag
          |FROM
          |  raw_data
          |""".stripMargin
