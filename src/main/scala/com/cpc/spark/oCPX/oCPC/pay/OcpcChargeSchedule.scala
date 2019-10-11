@@ -88,6 +88,8 @@ object OcpcChargeSchedule {
     val data = spark
       .sql(sqlRequest2)
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+      .withColumn("pay_cnt_old", col("pay_cnt"))
+      .withColumn("pay_date_old", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
       .withColumn("pay_date", when(col("update_flag") === 1, lit(date)).otherwise(col("pay_date")))
 
