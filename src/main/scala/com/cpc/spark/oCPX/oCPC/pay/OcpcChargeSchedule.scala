@@ -127,27 +127,14 @@ object OcpcChargeSchedule {
       .filter(s"is_hidden = 0")
       .select("unitid")
       .distinct()
-//
-//    val newData = rawData
-//        .withColumn("new_flag", lit(1))
-//
-//    // 数据union
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, +dayCnt)
-//    val tomorrow = calendar.getTime
-//    val nextPayDate = dateConverter.format(tomorrow)
-//
+
     val data = prevData
       .join(newData, Seq("unitid"), "outer")
       .select("unitid", "pay_cnt", "pay_date")
-      .filter(s"pay_date <= '$date' or pay_date is null")
       .na.fill(0, Seq("pay_cnt"))
       .na.fill(date, Seq("pay_date"))
-//      .withColumn("pay_cnt", when(col("pay_cnt") < 5, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
+      .filter(s"pay_date <= '$date'")
+    //      .withColumn("pay_cnt", when(col("pay_cnt") < 5, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
 //      .withColumn("flag", when(col("pay_cnt") < 5, 1).otherwise(0))
 
     data.printSchema()
