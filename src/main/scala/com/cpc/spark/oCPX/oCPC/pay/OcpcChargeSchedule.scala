@@ -78,7 +78,7 @@ object OcpcChargeSchedule {
          |  pay_cnt,
          |  pay_date,
          |  end_date,
-         |  (case when end_date < '$date' then 1 else 0 end) as update_flag
+         |  (case when end_date < '$date' and pay_cnt < 4 then 1 else 0 end) as update_flag
          |FROM
          |  raw_data
          |""".stripMargin
@@ -142,9 +142,9 @@ object OcpcChargeSchedule {
 //    val nextPayDate = dateConverter.format(tomorrow)
 //
     val data = prevData
-      .filter(s"pay_date <= '$date'")
       .join(newData, Seq("unitid"), "outer")
       .select("unitid", "pay_cnt", "pay_date")
+      .filter(s"pay_date <= '$date' or pay_date is null")
       .na.fill(0, Seq("pay_cnt"))
       .na.fill(date, Seq("pay_date"))
 //      .withColumn("pay_cnt", when(col("pay_cnt") < 5, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
