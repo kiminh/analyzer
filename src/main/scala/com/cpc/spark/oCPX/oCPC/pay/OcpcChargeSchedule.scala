@@ -66,10 +66,29 @@ object OcpcChargeSchedule {
          |""".stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
+    rawData.createOrReplaceTempView("raw_data")
+    rawData
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
 
-    val data = rawData
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  pay_cnt,
+         |  pay_date,
+         |  end_date,
+         |  current_date,
+         |  (case when end_date < current_date then 1 else 0 end) as update_flag
+         |FROM
+         |  raw_data
+         |""".stripMargin
+    println(sqlRequest2)
+
+    val data = spark
+      .sql(sqlRequest2)
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
-      .withColumn("update_flag", when(col("end_date") < col("current_date"), 1).otherwise(0))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
       .withColumn("pay_date", when(col("update_flag") === 1, col("current_date")).otherwise("pay_date"))
 
