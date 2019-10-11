@@ -116,6 +116,7 @@ object MakeAdListV4Samples {
     val weighted_file_collect_4 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-4"
     val weighted_file_collect_2 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-2"
     val weighted_file_collect_1 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-1"
+    val ctr_file = des_dir + "/" + curr_date + "-" + time_id + "-ctr"
 
     if (delete_old == "true") {
       delete_hdfs_path(bid_cpm_file)
@@ -124,6 +125,7 @@ object MakeAdListV4Samples {
       delete_hdfs_path(weighted_file_collect_4)
       delete_hdfs_path(weighted_file_collect_2)
       delete_hdfs_path(weighted_file_collect_1)
+      delete_hdfs_path(ctr_file)
     }
 
     val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info"
@@ -306,6 +308,20 @@ object MakeAdListV4Samples {
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
+
+    df_train_files_collect_1.rdd.map(
+      rs => {
+        val label_arr = rs.getSeq[Long](5)
+        if (label_arr.head == 1L) {
+          ("ctr", (1.0, 1.0))
+        } else{
+          ("ctr", (0.0, 1.0))
+        }
+      }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+      rs =>
+        rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1/rs._2._2
+    }).saveAsTextFile(ctr_file)
+
 
     val weighted_rdd_count_1 = weighted_rdd_1.count()
     println(s"weighted_rdd_count is : $weighted_rdd_count_1")
