@@ -723,6 +723,8 @@ object LRTrainFloat {
 
     val floatColumnArray = floatColumns.split(",")
 
+    println("floatColumnArray nums = " + floatColumnArray.size)
+
     for(col <- floatColumnArray){
       els = els :+ (i, x.getAs[Double](col))
       i += 1
