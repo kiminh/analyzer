@@ -726,7 +726,12 @@ object LRTrainFloat {
     println("floatColumnArray nums = " + floatColumnArray.size)
 
     for(col <- floatColumnArray){
-      els = els :+ (i, x.getAs[Double](col))
+      try {
+        els = els :+ (i, x.getAs[Double](col))
+      } catch {
+        case ex: Exception =>
+          els = els :+ (i, 0d)
+      }
       i += 1
     }
 
