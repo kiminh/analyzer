@@ -320,7 +320,7 @@ object MakeAdListV4Samples {
       }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
       rs =>
         rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1/rs._2._2
-    }).saveAsTextFile(ctr_file)
+    }).repartition(1).saveAsTextFile(ctr_file)
 
 
     val weighted_rdd_count_1 = weighted_rdd_1.count()
