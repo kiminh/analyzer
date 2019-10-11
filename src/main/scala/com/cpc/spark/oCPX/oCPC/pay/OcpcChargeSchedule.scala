@@ -88,7 +88,7 @@ object OcpcChargeSchedule {
       .sql(sqlRequest2)
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
-      .withColumn("pay_date", when(col("update_flag") === 1, col("current_date")).otherwise("pay_date"))
+      .withColumn("pay_date", when(col("update_flag") === 1, lit(date)).otherwise(col("pay_date")))
 
     data
   }
