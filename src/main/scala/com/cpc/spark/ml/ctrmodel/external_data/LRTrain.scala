@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.dnn.Utils.DateUtils
 import com.cpc.spark.ml.train.LRIRModel
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -34,11 +35,13 @@ object LRTrain {
     val appDays = args(1).toInt
 
     val date = args(2)
+    val date3ago = DateUtils.getPrevDate(date,2)
     val hour = args(3)
     var parserArg = "ctrparser4"
     if (args.length >= 5){
       parserArg = args(4)
     }
+    val tomorrow = DateUtils.getPrevDate(date, -1)
 
     // 按分区取数据
     val appPathSep = getPathSeq(date, hour, appDays)
@@ -53,61 +56,33 @@ object LRTrain {
     val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
-    val queryRawDataFromUnionEvents =
+    val trainSql =
       s"""
-         |select
-         |  searchid
-         |  , isclick as label
-         |  , sex
-         |  , age
-         |  , os
-         |  , isp
-         |  , network
-         |  , city
-         |  , media_appsid
-         |  , phone_level
-         |  , `timestamp`
-         |  , adtype
-         |  , planid
-         |  , unitid
-         |  , ideaid
-         |  , adclass
-         |  , adslot_id as adslotid -- bottom-up compatibility.
-         |  , adslot_type
-         |  , interact_pagenum as pagenum -- bottom-up compatibility.
-         |  , interact_bookid as bookid -- bottom-up compatibility.
-         |  , brand_title
-         |  , user_req_num
-         |  , uid
-         |  , click_count as user_click_num
-         |  , click_unit_count as user_click_unit_num
-         |  , long_click_count as user_long_click_count
-         |  , phone_price
-         |  , province
-         |  , city_level
-         |  , media_type
-         |  , channel
-         |  , dtu_id
-         |  , interaction
-         |  , userid
-         |  , is_new_ad
-         |  , hour
-         |from dl_cpc.cpc_basedata_union_events
-         |where %s
-         |  and media_appsid in ('80000001','80000002')
-         |  and adslot_type in (1, 2)
-         |  and isshow = 1
-         |  and ideaid > 0
-         |  and unitid > 0
+         |select * from dl_cpc.external_data_sample_test_qizhi where dt='${date}'
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 24))
 
 
-    println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+    println("trainSql = " + trainSql)
 
-    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
+    val trainRawDF = spark.sql(trainSql)
 
-    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+    val trainDF = getLeftJoinData(trainRawDF, userAppIdx).cache()
+
+
+    // fym 190512: to replace getData().
+    val testSql =
+      s"""
+         |select * from dl_cpc.external_data_sample_test_qizhi where dt='${tomorrow}'
+       """.stripMargin
+
+
+    println("testSql = " + testSql)
+
+    val testRawDF = spark.sql(testSql)
+
+    val testDF = getLeftJoinData(testRawDF, userAppIdx).cache()
+
+
 
     model.clearResult()
 
@@ -128,7 +103,8 @@ object LRTrain {
       spark,
       parser,
       parserName,
-      qttAll,
+      trainDF,
+      testDF,
       parserDestFile,
       4e8
     )
@@ -148,7 +124,6 @@ object LRTrain {
         )
       )
 
-    qttAll.unpersist()
     userAppIdx.unpersist()
   }
 
@@ -250,15 +225,15 @@ object LRTrain {
     data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, trainDF: DataFrame, testDF: DataFrame, destfile: String, n: Double): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
     trainLog :+= "destfile = %s".format(destfile)
 
-    val num = ulog.count().toDouble
-    println("sample num", num)
-    trainLog :+= "total size %.0f".format(num)
+    val num = trainDF.count().toDouble
+    println("train num", num)
+    trainLog :+= "train total size %.0f".format(num)
 
     // 最多n条训练数据
     var trainRate = 0.9
@@ -272,13 +247,8 @@ object LRTrain {
       testRate = 1e7 / num
     }
 
-    val Array(train, test, tmp) = ulog
-      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
-    ulog.unpersist()
-
-
-    val tnum = train.count().toDouble
-    val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
+    val tnum = trainDF.count().toDouble
+    val pnum = trainDF.filter(_.getAs[Int]("label") > 0).count().toDouble
     val nnum = tnum - pnum
 
     //保证训练数据正负比例 1:9
@@ -286,8 +256,8 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
-    val sampleTest = formatSample(spark, parser, test)
+    val sampleTrain = formatSample(spark, parser, trainDF.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
+    val sampleTest = formatSample(spark, parser, testDF)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
     model.run(sampleTrain, 200, 1e-8)
@@ -345,15 +315,15 @@ object LRTrain {
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
 
-    // backup on hdfs.
-    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
-    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
-
-    // backup on local machine.
-    model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
-
-    // for go-live.
-    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
+//    // backup on hdfs.
+//    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
+//    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
+//
+//    // backup on local machine.
+//    model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
+//
+//    // for go-live.
+//    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
