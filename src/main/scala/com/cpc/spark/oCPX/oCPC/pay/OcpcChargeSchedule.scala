@@ -59,7 +59,8 @@ object OcpcChargeSchedule {
          |  unitid,
          |  pay_cnt,
          |  pay_date,
-         |  cast(date_add(pay_date, $dayCnt) as string) as end_date
+         |  cast(date_add(pay_date, $dayCnt) as string) as end_date,
+         |  '$date' as current_date
          |FROM
          |  base_data
          |""".stripMargin
@@ -78,7 +79,7 @@ object OcpcChargeSchedule {
          |  pay_cnt,
          |  pay_date,
          |  end_date,
-         |  (case when end_date <= '$date' and pay_cnt < 4 then 1 else 0 end) as update_flag
+         |  (case when end_date <= current_date and pay_cnt < 4 then 1 else 0 end) as update_flag
          |FROM
          |  raw_data
          |""".stripMargin
