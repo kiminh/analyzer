@@ -126,8 +126,8 @@ object MakeAdListV4Samples {
       delete_hdfs_path(weighted_file_collect_1)
     }
 
-
-    val base_daily_bid_cpm_file = des_dir + "/2019-09-27-21days-weight-info"
+    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info"
+    println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
