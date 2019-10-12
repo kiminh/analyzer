@@ -95,7 +95,7 @@ object LinearRegressionOnQttCvrCalibration {
       .join(data,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid")
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label")
 
 //    val f1 = new StringIndexer().setInputCol("ideaid").setOutputCol("ideaidIndex").fit(log).transform(log)
 //    val f2 = new StringIndexer().setInputCol("adclass").setOutputCol("adclassIndex").fit(f1).transform(f1)
