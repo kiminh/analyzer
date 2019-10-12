@@ -118,7 +118,7 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
-      .withColumn("cali_value_old", col("cali_value_old"))
+      .withColumn("cali_value_old", col("cali_value"))
       .withColumn("cali_value", udfCheckCali(0.5, 2.0)(col("cali_value")))
       .cache()
 
