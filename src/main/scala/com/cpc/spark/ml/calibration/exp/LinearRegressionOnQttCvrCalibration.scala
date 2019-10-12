@@ -71,7 +71,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |  and antispam_score = 10000
                       |  )a
                       |  join
-                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id，exp_cvr
+                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
                       |  from
                       |  dl_cpc.cpc_basedata_adx_event
                       |  where  $selectCondition2
