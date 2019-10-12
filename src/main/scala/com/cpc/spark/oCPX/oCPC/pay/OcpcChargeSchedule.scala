@@ -36,9 +36,9 @@ object OcpcChargeSchedule {
     // 兼容逻辑：兼容老版本的逻辑
     // 抽取基本数据
     val scheduleData = getPaySchedule(date, spark)
-    scheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
+//    scheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
 
     // 更新pay_cnt，pay_date
     val updateScheduleData = updatePaySchedule(date, dayCnt, scheduleData, spark)

@@ -74,8 +74,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -118,15 +118,26 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .withColumn("cali_value_old", col("cali_value_old"))
+      .withColumn("cali_value", udfCheckCali(0.5, 2.0)(col("cali_value")))
       .cache()
 
     data.show(10)
-//    data
-//      .repartition(10)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+    data
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
 
     data
   }
+
+  def udfCheckCali(minValue: Double, maxValue: Double) = udf((caliValue: Double) => {
+    val result = caliValue match {
+      case _ > maxValue => maxValue
+      case _ < minValue => minValue
+      case x => x
+    }
+    result
+  })
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
     val sqlRequest =
