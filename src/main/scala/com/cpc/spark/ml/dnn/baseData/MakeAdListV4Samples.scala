@@ -234,7 +234,7 @@ object MakeAdListV4Samples {
           weight_new = 1.0 + (weight_new - 1.0) * factor_second
         }
 
-        if (weight < 1.0) {
+        if (weight <= 0.0) {
           weight_new = 1.0
         }
         weight_new = 1.0 / weight_new
@@ -266,7 +266,7 @@ object MakeAdListV4Samples {
           weight_new = 1.0 + (weight_new - 1.0) * factor_second
         }
 
-        if (weight < 1.0) {
+        if (weight <= 0.0) {
           weight_new = 1.0
         }
         weight_new = 1.0 / weight_new
