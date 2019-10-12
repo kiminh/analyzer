@@ -39,7 +39,6 @@ object LinearRegressionOnQttCvrCalibration {
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
-
     val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
 
@@ -72,7 +71,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |  and antispam_score = 10000
                       |  )a
                       |  join
-                      |  (select searchid,ideaid,user_show_ad_num
+                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id，exp_cvr
                       |  from
                       |  dl_cpc.cpc_basedata_adx_event
                       |  where  $selectCondition2
