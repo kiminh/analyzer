@@ -43,6 +43,6 @@ object CalibrationClickLog {
     println(s"sql:\n$sql")
     val sample = spark.sql(sql)
     sample.show()
-    sample.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_sample_2019-10-10")
+    sample.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_sample_2019_10_10")
   }
 }

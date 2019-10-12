@@ -122,7 +122,18 @@ object LinearRegressionOnQttCvrCalibration {
     val trainingDF = pipelineModel.transform(dataDF)
     trainingDF.show(10)
 
-    val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019-10-11")
+//    val wgold = trainingDF.rdd.map{
+//      x =>
+//        val key = x.getAs[Int]("coin_origin").toString
+//        val coin_index=x.getAs[WrappedArray[Double]]("coin").toArray.toList.indexOf(1.0f)
+//        val Wgold = lrModel.coefficients.toArray(9+coin_index)
+//        (key,Wgold*1e6*1e6)
+//    }.distinct().toDF("key","value")
+//    wgold.show
+
+
+    val testdata = spark.sql("select * from dl_cpc.wy_calibration_sample_2019-10-11")
+    val testDF = pipelineModel.transform(testdata)
 
     //test
 
