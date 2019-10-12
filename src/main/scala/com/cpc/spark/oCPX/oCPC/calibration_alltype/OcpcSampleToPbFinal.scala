@@ -131,10 +131,12 @@ object OcpcSampleToPbFinal {
   }
 
   def udfCheckCali(minValue: Double, maxValue: Double) = udf((caliValue: Double) => {
-    val result = caliValue match {
-      case _ > maxValue => maxValue
-      case _ < minValue => minValue
-      case x => x
+    var result = caliValue
+    if (result < minValue) {
+      result = minValue
+    }
+    if (result > maxValue) {
+      result = maxValue
     }
     result
   })
