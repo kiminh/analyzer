@@ -92,9 +92,9 @@ object LinearRegressionOnQttCvrCalibration {
 
     val dataDF = data.groupBy("ideaid").count()
       .withColumn("tag",when(col("count")>60,1).otherwise(0))
-      .withColumn("label",col("iscvr"))
       .join(data,Seq("ideaid"),"left")
-      .withColumn("ideaid",when(col("label")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("label",col("iscvr"))
+      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid")
 
 //    val f1 = new StringIndexer().setInputCol("ideaid").setOutputCol("ideaidIndex").fit(log).transform(log)
