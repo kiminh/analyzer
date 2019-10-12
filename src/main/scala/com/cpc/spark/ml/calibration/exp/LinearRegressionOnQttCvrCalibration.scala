@@ -97,15 +97,6 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label")
 
-//    val f1 = new StringIndexer().setInputCol("ideaid").setOutputCol("ideaidIndex").fit(log).transform(log)
-//    val f2 = new StringIndexer().setInputCol("adclass").setOutputCol("adclassIndex").fit(f1).transform(f1)
-//    val f3 = new StringIndexer().setInputCol("adslotid").setOutputCol("adslotidIndex").fit(f2).transform(f2)
-//
-//    val one1 = new OneHotEncoder().setInputCol("ideaidIndex").setOutputCol("ideaidVec").setDropLast(false).transform(f3)
-//    val one2 = new OneHotEncoder().setInputCol("adclassIndex").setOutputCol("adclassVec").setDropLast(false).transform(one1)
-//    val one3 = new OneHotEncoder().setInputCol("adslotidIndex").setOutputCol("adslotidVec").setDropLast(false).transform(one2)
-
-
     val categoricalColumns = Array("ideaid","adclass","adslotid")
 
     val stagesArray = new ListBuffer[PipelineStage]()
@@ -135,7 +126,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
-    val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction","ideaid")
+    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","ideaid")
       predictions.show(5)
 
     println("coefficients:" +lrModel.coefficients)
