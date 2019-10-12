@@ -133,7 +133,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val Array(trainingDF, testDF) = dataset.randomSplit(Array(0.6, 0.4), seed = 12345)
     println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
-    val lrModel = new LinearRegression().setFeaturesCol("feature")
+    val lrModel = new LinearRegression().setFeaturesCol("features")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(testDF).select("label", "features","rawPrediction", "probability", "prediction","ideaid")
       predictions.show(5)
