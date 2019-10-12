@@ -171,7 +171,8 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight) {
+        val ctr = rs._6.toFloat
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.035f) {
           weight_new = weight / bid_1_weight
         }
         if (weight <= 0.0) {
@@ -182,7 +183,7 @@ object MakeAdListV4Samples {
 
     val max_weight = max_map.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight:" + max_weight)
-    val max_weight_factor = 0.999f
+    val max_weight_factor = 0.1f
     val factor = max_weight_factor / (max_weight.toFloat - 1.0)
     println("factor:" + factor)
 
@@ -193,7 +194,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
+        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.035f ) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
