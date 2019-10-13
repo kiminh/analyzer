@@ -7,7 +7,6 @@ import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
 import com.cpc.spark.common.Utils
 
 import scala.collection.mutable.{ListBuffer, WrappedArray}
-import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.ml.regression.LinearRegression
@@ -20,11 +19,13 @@ import java.time.format.DateTimeFormatter
 
 import scala.collection.mutable.ListBuffer
 import com.cpc.spark.common.Utils
+import com.cpc.spark.tools.CalcMetrics
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.linalg.SparseVector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.DoubleType
 
 import scala.collection.mutable
 
@@ -96,16 +97,28 @@ object LinearRegressionOnQttCvrCalibration {
 //       """.stripMargin
 //
 //    println(s"sql:\n$sql")
-    val data= spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_10")
+    val data = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_10")
     data.show(10)
 
-    val dataDF = data.groupBy("ideaid").count()
+    val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("tag",when(col("count")>60,1).otherwise(0))
+      .filter("tag=1")
+
+    val df1 = defaultideaid
       .join(data,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr")
-    dataDF.show(10)
+      .withColumn("sample",lit("train"))
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight")
+    df1.show(10)
+
+    val df2 = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
+      .join(defaultideaid,Seq("ideaid"),"left")
+      .withColumn("sample",lit("test"))
+      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight")
+
+    val dataDF = df1.union(df2)
 
     val categoricalColumns = Array("ideaid","adclass","adslotid")
 
@@ -170,8 +183,9 @@ object LinearRegressionOnQttCvrCalibration {
 //    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
-    val Array(trainingDF, testDF) = dataset.randomSplit(Array(0.8, 0.2), seed = 12345)
-    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
+    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.8, 0.2), seed = 12345)
+    val validationDF = dataset.filter("sample='test'")
+    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()},,validationDF size=${validationDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
@@ -192,7 +206,16 @@ object LinearRegressionOnQttCvrCalibration {
     //模型均方根误差
     println("r-squared:" + trainingSummary.rootMeanSquaredError)
 
-    val result = lrModel.transform(testDF).rdd.map{
+    val result1 = lrModel.transform(testDF).rdd.map{
+      x =>
+        val exp_cvr = x.getAs[Double]("prediction")
+        val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
+        val unitid = x.getAs[Int]("unitid")
+        val iscvr = x.getAs[Int]("label")
+        (exp_cvr,iscvr,raw_cvr,unitid)
+    }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
+
+    val result2 = lrModel.transform(validationDF).rdd.map{
       x =>
         val exp_cvr = x.getAs[Double]("prediction")
         val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
@@ -203,23 +226,64 @@ object LinearRegressionOnQttCvrCalibration {
 
 
         //   lr calibration
-//    calculateAuc(result,"lr",spark)
+    val lrData = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    calculateAuc(lrData,"lr",spark)
     //    raw data
-    val modelData = result.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
     calculateAuc(modelData,"original",spark)
 
 //    online calibration
-    val calibData = result.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    val calibData = result2.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(calibData,"online",spark)
 
   }
 
- def SparseFeature(profile_num: Int)
-  = udf {
-    els: Seq[Row] =>
-      val new_els: Seq[(Int, Double)] = els.map(x => {
-        (x.getInt(0), x.getDouble(1))
-      })
-      Vectors.sparse(profile_num, new_els)
+  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
+    val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
+    val auc = CalcMetrics.getAuc(spark,testData)
+    println("%s auc:%f".format(cate,auc))
+    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")/1e6d).alias("ectr"))
+    val ctr = p1.first().getAs[Double]("ctr")
+    val ectr = p1.first().getAs[Double]("ectr")
+    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
+
+    testData.createOrReplaceTempView("data")
+    val abs_error_sql =
+      s"""
+         |select
+         |sum(if(click>0,
+         |if(sum_exp_ctr/click/1000000>1,sum_exp_ctr/click/1000000,click*1000000/sum_exp_ctr),1)*imp)/sum(imp) abs_error
+         |from
+         |(
+         |    select round(score/1000,0) as label,sum(score) sum_exp_ctr,sum(label) click,count(*) as imp
+         |    from data
+         |    group by round(score/1000,0)
+         |    )
+       """.stripMargin
+    val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
+    println("abs_error is %f".format(abs_error))
+
+    val p2 = data.groupBy("unitid")
+      .agg(
+        avg(col("label")).alias("ctr"),
+        avg(col("prediction")/1e6d).alias("ectr"),
+        count(col("label")).cast(DoubleType).alias("ctrnum")
+      )
+      .withColumn("pcoc",col("ectr")/col("ctr"))
+    println("unitid sum:%d".format(p2.count()))
+    p2.createOrReplaceTempView("unit")
+    val sql =
+      s"""
+         |select unitid,ctr,ectr,ctrnum,pcoc,ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
+         |from unit
+       """.stripMargin
+    val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
+    p3.show(10)
+    val ctr2 = p2.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
+    val ectr2 = p2.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
+    val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
+    val allnum = p3.count().toDouble
+    val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count().toDouble
+    println("%s calibration by unitid: avgctr:%f,avgectr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.1 error:%f".format(cate, ctr2, ectr2, pcoc,allnum,rightnum,rightnum/allnum))
   }
 }
