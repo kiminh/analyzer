@@ -127,49 +127,50 @@ object LinearRegressionOnQttCvrCalibration {
     /**fit() 根据需要计算特征统计信息*/
     val pipelineModel = pipeline.fit(dataDF)
     /**transform() 真实转换特征*/
-    val trainingDF = pipelineModel.transform(dataDF)
-    trainingDF.show(10)
-    trainingDF.printSchema()
+    val dataset = pipelineModel.transform(dataDF)
+    dataset.show(10)
+    dataset.printSchema()
 
-    val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec").toDense)).collect()
-      .toMap
-    val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec").toDense)).collect()
-      .toMap
-    val adclassArray: Map[String, SparseVector] = trainingDF.select("adclass","adclassclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec").toDense)).collect()
-      .toMap
-
-    val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
-        .rdd.map {
-      r =>
-        val label = r.getAs[Long]("iscvr").toInt
-        val raw_cvr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
-        val adslotid = r.getAs[String]("adslotid")
-        val adclass = r.getAs[String]("adclass")
-        val ideaid = r.getAs[Int]("ideaid")
-        val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
-        var adslotidclassVec = adslotidArray.get("9999999").toVector
-        if(adslotidArray.contains(adslotid)){
-          adslotidclassVec = adslotidArray.get(adslotid).toVector
-        }
-        var ideaidclassVec = ideaidArray.get(9999999).toVector
-        if(ideaidArray.contains(ideaid)){
-          ideaidclassVec = ideaidArray.get(ideaid).toVector
-        }
-        var adclassclassVec = adclassArray.get("9999999").toVector
-        if(adclassArray.contains(adclass)){
-          adclassclassVec = adclassArray.get(adclass).toVector
-        }
-        (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
-    }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
-    testData.printSchema()
-
-
-    val testDF: DataFrame = assembler.transform(testData)
+//    val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
+//      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec").toDense)).collect()
+//      .toMap
+//    val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
+//      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec").toDense)).collect()
+//      .toMap
+//    val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
+//      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec").toDense)).collect()
+//      .toMap
+//
+//    val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
+//        .rdd.map {
+//      r =>
+//        val label = r.getAs[Long]("iscvr").toInt
+//        val raw_cvr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
+//        val adslotid = r.getAs[String]("adslotid")
+//        val adclass = r.getAs[String]("adclass")
+//        val ideaid = r.getAs[Int]("ideaid")
+//        val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
+//        var adslotidclassVec = adslotidArray.get("9999999").toVector
+//        if(adslotidArray.contains(adslotid)){
+//          adslotidclassVec = adslotidArray.get(adslotid).toVector
+//        }
+//        var ideaidclassVec = ideaidArray.get(9999999).toVector
+//        if(ideaidArray.contains(ideaid)){
+//          ideaidclassVec = ideaidArray.get(ideaid).toVector
+//        }
+//        var adclassclassVec = adclassArray.get("9999999").toVector
+//        if(adclassArray.contains(adclass)){
+//          adclassclassVec = adclassArray.get(adclass).toVector
+//        }
+//        (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
+//    }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
+//    testData.printSchema()
+//
+//
+//    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
+    val Array(trainingDF, testDF) = dataset.randomSplit(Array(0.8, 0.2), seed = 12345)
     println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
@@ -198,7 +199,7 @@ object LinearRegressionOnQttCvrCalibration {
         val unitid = x.getAs[String]("unitid")
         val iscvr = x(0).toString.toInt
         (exp_cvr,iscvr,raw_cvr,unitid)
-    }.toDF("exp_cvr","isclick","raw_cvr","coin_origin")
+    }.toDF("exp_cvr","isclick","raw_cvr","unitid")
 
 
         //   lr calibration
