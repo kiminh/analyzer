@@ -131,7 +131,7 @@ object LinearRegressionOnQttCvrCalibration {
     dataset.show(10)
     dataset.printSchema()
 
-//    val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
+//    val adslotidArray = dataset.select("adslotid","adslotidclassVec").distinct()
 //      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec").toDense)).collect()
 //      .toMap
 //    val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
@@ -203,7 +203,7 @@ object LinearRegressionOnQttCvrCalibration {
 
 
         //   lr calibration
-    calculateAuc(result,"lr",spark)
+//    calculateAuc(result,"lr",spark)
     //    raw data
     val modelData = result.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
     calculateAuc(modelData,"original",spark)
