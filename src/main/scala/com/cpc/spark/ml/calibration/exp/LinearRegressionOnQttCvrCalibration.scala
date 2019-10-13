@@ -127,13 +127,13 @@ object LinearRegressionOnQttCvrCalibration {
     trainingDF.printSchema()
 
     val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[WrappedArray[Int]]("adslotidclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec"))).collect()
       .toMap
     val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[WrappedArray[Int]]("ideaidclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec"))).collect()
       .toMap
     val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec"))).collect()
       .toMap
 
     val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
@@ -145,9 +145,9 @@ object LinearRegressionOnQttCvrCalibration {
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
         val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
-        var adslotidclassVec = adslotidArray.get("9999999").toList
+        var adslotidclassVec = adslotidArray.get("9999999")
         if(adslotidArray.contains(adslotid)){
-          adslotidclassVec = adslotidArray.get(adslotid).toList
+          adslotidclassVec = adslotidArray.get(adslotid)
         }
         var ideaidclassVec = ideaidArray.get(9999999)
         if(ideaidArray.contains(ideaid)){
