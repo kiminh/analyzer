@@ -113,6 +113,7 @@ object LinearRegressionOnQttCvrCalibration {
     df1.show(10)
 
     val df2 = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
+      .withColumn("label",col("iscvr"))
       .join(defaultideaid,Seq("ideaid"),"left")
       .withColumn("sample",lit("test"))
       .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
