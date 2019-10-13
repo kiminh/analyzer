@@ -127,7 +127,7 @@ object LinearRegressionOnQttCvrCalibration {
       .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[WrappedArray[Int]]("adslotidclassVec"))).collect()
       .toMap
     val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[int]("ideaid"),x.getAs[WrappedArray[Int]]("ideaidclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[WrappedArray[Int]]("ideaidclassVec"))).collect()
       .toMap
     val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
       .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
