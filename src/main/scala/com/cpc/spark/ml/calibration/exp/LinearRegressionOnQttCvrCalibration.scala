@@ -139,7 +139,7 @@ object LinearRegressionOnQttCvrCalibration {
         .rdd.map {
       r =>
         val label = r.getAs[Long]("iscvr").toInt
-        val raw_ctr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
+        val raw_cvr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
         val adslotid = r.getAs[String]("adslotid")
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
@@ -156,8 +156,8 @@ object LinearRegressionOnQttCvrCalibration {
         if(adclassArray.contains(adclass)){
           adclassclassVec = adclassArray.get(adclass)
         }
-        (label, raw_ctr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
-    }.toDF("label","raw_ctr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
+        (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
+    }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
 
 
     val testDF: DataFrame = assembler.transform(testData)
