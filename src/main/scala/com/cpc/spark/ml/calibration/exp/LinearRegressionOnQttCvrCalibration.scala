@@ -91,7 +91,8 @@ object LinearRegressionOnQttCvrCalibration {
 //       """.stripMargin
 //
 //    println(s"sql:\n$sql")
-    val data= spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_10")
+    val data= spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_10")
+    data.show(10)
 
     val dataDF = data.groupBy("ideaid").count()
       .withColumn("tag",when(col("count")>60,1).otherwise(0))
@@ -99,6 +100,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr")
+    dataDF.show(10)
 
     val categoricalColumns = Array("ideaid","adclass","adslotid")
 
@@ -133,11 +135,11 @@ object LinearRegressionOnQttCvrCalibration {
       .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
       .toMap
 
-    val testData = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
+    val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
         .rdd.map {
       r =>
-        val label = r.getAs[Long]("isclick").toInt
-        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+        val label = r.getAs[Long]("iscvr").toInt
+        val raw_ctr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
         val adslotid = r.getAs[String]("adslotid")
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
