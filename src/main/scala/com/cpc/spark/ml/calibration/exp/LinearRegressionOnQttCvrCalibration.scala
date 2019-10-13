@@ -2,8 +2,10 @@ package com.cpc.spark.ml.calibration.exp
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
 import com.cpc.spark.common.Utils
+
 import scala.collection.mutable.{ListBuffer, WrappedArray}
 import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import com.cpc.spark.ocpc.OcpcUtils._
@@ -12,11 +14,14 @@ import org.apache.spark.ml.regression.LinearRegression
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import java.time.LocalDateTime
+
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import java.time.format.DateTimeFormatter
+
 import scala.collection.mutable.ListBuffer
 import com.cpc.spark.common.Utils
 import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.linalg.SparseVector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.functions._
@@ -132,7 +137,7 @@ object LinearRegressionOnQttCvrCalibration {
     val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
       .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec"))).collect()
       .toMap
-    val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
+    val adclassArray: Map[String, SparseVector] = trainingDF.select("adclass","adclassclassVec").distinct()
       .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec"))).collect()
       .toMap
 
