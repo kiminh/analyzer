@@ -227,15 +227,18 @@ object LinearRegressionOnQttCvrCalibration {
 
 
         //   lr calibration
-    val lrData = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-    calculateAuc(lrData,"lr",spark)
+    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    calculateAuc(lrData1,"lr original",spark)
+
+    val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    calculateAuc(lrData2,"lr calibration",spark)
     //    raw data
     val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(modelData,"original",spark)
+    calculateAuc(modelData,"test original",spark)
 
 //    online calibration
     val calibData = result2.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-    calculateAuc(calibData,"online",spark)
+    calculateAuc(calibData,"test calibration",spark)
 
   }
 
