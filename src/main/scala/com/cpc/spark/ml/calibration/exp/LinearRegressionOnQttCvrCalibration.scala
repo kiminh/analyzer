@@ -218,7 +218,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val result2 = lrModel.transform(validationDF).rdd.map{
       x =>
-        val exp_cvr = x.getAs[Double]("prediction")
+        val exp_cvr = x.getAs[Double]("prediction")*1e6d
         val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
@@ -227,7 +227,7 @@ object LinearRegressionOnQttCvrCalibration {
 
 
         //   lr calibration
-    val lrData = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    val lrData = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(lrData,"lr",spark)
     //    raw data
     val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
@@ -243,20 +243,20 @@ object LinearRegressionOnQttCvrCalibration {
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val auc = CalcMetrics.getAuc(spark,testData)
     println("%s auc:%f".format(cate,auc))
-    val p1= data.groupBy().agg(avg(col("label")).alias("ctr"),avg(col("prediction")/1e6d).alias("ectr"))
-    val ctr = p1.first().getAs[Double]("ctr")
-    val ectr = p1.first().getAs[Double]("ectr")
-    println("%s calibration: ctr:%f,ectr:%f,ectr/ctr:%f".format(cate, ctr, ectr, ectr/ctr))
+    val p1= data.groupBy().agg(avg(col("label")).alias("cvr"),avg(col("prediction")/1e6d).alias("ecvr"))
+    val cvr = p1.first().getAs[Double]("cvr")
+    val ecvr = p1.first().getAs[Double]("ecvr")
+    println("%s calibration: cvr:%f,ecvr:%f,ecvr/cvr:%f".format(cate, cvr, ecvr, ecvr/cvr))
 
     testData.createOrReplaceTempView("data")
     val abs_error_sql =
       s"""
          |select
-         |sum(if(click>0,
-         |if(sum_exp_ctr/click/1000000>1,sum_exp_ctr/click/1000000,click*1000000/sum_exp_ctr),1)*imp)/sum(imp) abs_error
+         |sum(if(iscvr>0,
+         |if(sum_exp_cvr/iscvr/1000000>1,sum_exp_cvr/iscvr/1000000,iscvr*1000000/sum_exp_cvr),1)*imp)/sum(imp) abs_error
          |from
          |(
-         |    select round(score/1000,0) as label,sum(score) sum_exp_ctr,sum(label) click,count(*) as imp
+         |    select round(score/1000,0) as label,sum(score) sum_exp_cvr,sum(label) iscvr,count(*) as imp
          |    from data
          |    group by round(score/1000,0)
          |    )
@@ -266,25 +266,25 @@ object LinearRegressionOnQttCvrCalibration {
 
     val p2 = data.groupBy("unitid")
       .agg(
-        avg(col("label")).alias("ctr"),
-        avg(col("prediction")/1e6d).alias("ectr"),
-        count(col("label")).cast(DoubleType).alias("ctrnum")
+        avg(col("label")).alias("cvr"),
+        avg(col("prediction")/1e6d).alias("ecvr"),
+        count(col("label")).cast(DoubleType).alias("cvrnum")
       )
-      .withColumn("pcoc",col("ectr")/col("ctr"))
+      .withColumn("pcoc",col("ecvr")/col("cvr"))
     println("unitid sum:%d".format(p2.count()))
     p2.createOrReplaceTempView("unit")
     val sql =
       s"""
-         |select unitid,ctr,ectr,ctrnum,pcoc,ROW_NUMBER() OVER (ORDER BY ctrnum DESC) rank
+         |select unitid,cvr,ecvr,cvrnum,pcoc,ROW_NUMBER() OVER (ORDER BY cvrnum DESC) rank
          |from unit
        """.stripMargin
     val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
     p3.show(10)
-    val ctr2 = p2.groupBy().agg(avg(col("ctr")).alias("ctr2")).first().getAs[Double]("ctr2")
-    val ectr2 = p2.groupBy().agg(avg(col("ectr")).alias("ectr2")).first().getAs[Double]("ectr2")
+    val cvr2 = p2.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
+    val ecvr2 = p2.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
     val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count().toDouble
-    println("%s calibration by unitid: avgctr:%f,avgectr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.1 error:%f".format(cate, ctr2, ectr2, pcoc,allnum,rightnum,rightnum/allnum))
+    println("%s calibration by unitid: avgcvr:%f,avgecvr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 10% deviation:%f".format(cate, cvr2, ecvr2, pcoc,allnum,rightnum,rightnum/allnum))
   }
 }
