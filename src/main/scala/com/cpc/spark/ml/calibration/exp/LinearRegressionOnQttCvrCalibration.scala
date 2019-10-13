@@ -142,7 +142,7 @@ object LinearRegressionOnQttCvrCalibration {
         val label = r.getAs[Long]("isclick").toInt
         val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
         val adslotid = r.getAs[String]("adslotid")
-        val ideaid = r.getAs[Long]("ideaid")
+        val ideaid = r.getAs[Int]("ideaid")
         val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
         val hour = r.getAs[String]("hour").toDouble
         var adslotidclassVec = adslotidArray.get("9999999")
@@ -150,7 +150,7 @@ object LinearRegressionOnQttCvrCalibration {
           adslotidclassVec = adslotidArray.get(adslotid)
         }
         var ideaidclassVec = adslotidArray.get("9999999")
-        if(ideaidArray.contains(adslotid)){
+        if(ideaidArray.contains(ideaid)){
           adslotidclassVec = adslotidArray.get(adslotid)
         }
         (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
@@ -167,10 +167,10 @@ object LinearRegressionOnQttCvrCalibration {
 
     //test
 
-    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
-    val lrModel = new LinearRegression().setFeaturesCol("features")
-//        .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
+//    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
+//    val lrModel = new LinearRegression().setFeaturesCol("features")
+////        .setWeightCol("hourweight")
+//        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
 //    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
 //      predictions.show(5)
 //
@@ -187,7 +187,7 @@ object LinearRegressionOnQttCvrCalibration {
 //    println("mse:" + trainingSummary.meanSquaredError)
 //    //模型均方根误差
 //    println("r-squared:" + trainingSummary.rootMeanSquaredError)
-
+//
 //    lrModel.transform(testDF).rdd.map{
 //      x =>
 //        val exp_ctr = x.getAs[Double]("prediction")
@@ -196,9 +196,9 @@ object LinearRegressionOnQttCvrCalibration {
 //        val isclick = x(0).toString.toInt
 //        (exp_ctr,isclick,raw_ctr,coin_origin)
 //    }.toDF("exp_ctr","isclick","raw_ctr","coin_origin").createOrReplaceTempView("result")
-
-
-
+//
+//
+//
 
 
     //    //   lr calibration
