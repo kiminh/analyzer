@@ -171,22 +171,22 @@ object LinearRegressionOnQttCvrCalibration {
     val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
-    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
-      predictions.show(5)
-
-    println("coefficients:" +lrModel.coefficients)
-    println("intercept:" +lrModel.intercept)
-
-    // 输出逻辑回归的系数和截距
-    //    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
-    //获取训练模型的相关信息
-    val trainingSummary = lrModel.summary
-    //模型残差
-    trainingSummary.residuals.show()
-    //模型均方差
-    println("mse:" + trainingSummary.meanSquaredError)
-    //模型均方根误差
-    println("r-squared:" + trainingSummary.rootMeanSquaredError)
+//    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
+//      predictions.show(5)
+//
+//    println("coefficients:" +lrModel.coefficients)
+//    println("intercept:" +lrModel.intercept)
+//
+//    // 输出逻辑回归的系数和截距
+//    //    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+//    //获取训练模型的相关信息
+//    val trainingSummary = lrModel.summary
+//    //模型残差
+//    trainingSummary.residuals.show()
+//    //模型均方差
+//    println("mse:" + trainingSummary.meanSquaredError)
+//    //模型均方根误差
+//    println("r-squared:" + trainingSummary.rootMeanSquaredError)
 
 //    lrModel.transform(testDF).rdd.map{
 //      x =>
