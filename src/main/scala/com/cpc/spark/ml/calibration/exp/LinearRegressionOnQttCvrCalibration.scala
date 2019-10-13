@@ -199,7 +199,7 @@ object LinearRegressionOnQttCvrCalibration {
         val unitid = x.getAs[String]("unitid")
         val iscvr = x(0).toString.toInt
         (exp_cvr,iscvr,raw_cvr,unitid)
-    }.toDF("exp_cvr","isclick","raw_cvr","unitid")
+    }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
 
         //   lr calibration
