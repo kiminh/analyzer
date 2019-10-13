@@ -143,8 +143,7 @@ object LinearRegressionOnQttCvrCalibration {
         val adslotid = r.getAs[String]("adslotid")
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
-        val user_req_ad_num = r.getAs[Long]("user_req_ad_num")
-        val hour = r.getAs[String]("hour").toDouble
+        val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
         var adslotidclassVec = adslotidArray.get("9999999")
         if(adslotidArray.contains(adslotid)){
           adslotidclassVec = adslotidArray.get(adslotid)
@@ -155,10 +154,10 @@ object LinearRegressionOnQttCvrCalibration {
         }
         var adclassclassVec = adclassArray.get("9999999")
         if(adclassArray.contains(adclass)){
-          ideaidclassVec = ideaidArray.get(ideaid)
+          adclassclassVec = adclassArray.get(adclass)
         }
-        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
-    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
+        (label, raw_ctr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
+    }.toDF("label","raw_ctr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
 
 
     val testDF: DataFrame = assembler.transform(testData)
