@@ -133,6 +133,8 @@ object LinearRegressionOnQttCvrCalibration {
       .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
       .toMap
 
+    var indices = List[String]("ideaidvalue","adslotidvalue","raw_ctr", "user_req_ad_num","hour")
+
 
     val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
         .rdd.map {
@@ -186,14 +188,14 @@ object LinearRegressionOnQttCvrCalibration {
     //模型均方根误差
     println("r-squared:" + trainingSummary.rootMeanSquaredError)
 
-    lrModel.transform(testDF).rdd.map{
-      x =>
-        val exp_ctr = x.getAs[Double]("prediction")
-        val raw_ctr = x(2).toString.toDouble
-        val coin_origin = x(3).toString.toInt
-        val isclick = x(0).toString.toInt
-        (exp_ctr,isclick,raw_ctr,coin_origin)
-    }.toDF("exp_ctr","isclick","raw_ctr","coin_origin").createOrReplaceTempView("result")
+//    lrModel.transform(testDF).rdd.map{
+//      x =>
+//        val exp_ctr = x.getAs[Double]("prediction")
+//        val raw_ctr = x(2).toString.toDouble
+//        val coin_origin = x(3).toString.toInt
+//        val isclick = x(0).toString.toInt
+//        (exp_ctr,isclick,raw_ctr,coin_origin)
+//    }.toDF("exp_ctr","isclick","raw_ctr","coin_origin").createOrReplaceTempView("result")
 
 
 
