@@ -149,9 +149,9 @@ object LinearRegressionOnQttCvrCalibration {
         if(adslotidArray.contains(adslotid)){
           adslotidclassVec = adslotidArray.get(adslotid)
         }
-        var ideaidclassVec = adslotidArray.get("9999999")
+        var ideaidclassVec = ideaidArray.get(9999999)
         if(ideaidArray.contains(ideaid)){
-          adslotidclassVec = adslotidArray.get(adslotid)
+          ideaidclassVec = ideaidArray.get(ideaid)
         }
         (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
     }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
