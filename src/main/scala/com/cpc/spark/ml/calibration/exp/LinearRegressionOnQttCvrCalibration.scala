@@ -164,6 +164,7 @@ object LinearRegressionOnQttCvrCalibration {
         }
         (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
     }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
+    testData.printSchema()
 
 
     val testDF: DataFrame = assembler.transform(testData)
