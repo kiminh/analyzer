@@ -124,6 +124,7 @@ object LinearRegressionOnQttCvrCalibration {
     /**transform() 真实转换特征*/
     val trainingDF = pipelineModel.transform(dataDF)
     trainingDF.show(10)
+    trainingDF.printSchema()
 
     val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
       .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[WrappedArray[Int]]("adslotidclassVec"))).collect()
@@ -144,9 +145,9 @@ object LinearRegressionOnQttCvrCalibration {
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
         val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
-        var adslotidclassVec = adslotidArray.get("9999999")
+        var adslotidclassVec = adslotidArray.get("9999999").toList
         if(adslotidArray.contains(adslotid)){
-          adslotidclassVec = adslotidArray.get(adslotid)
+          adslotidclassVec = adslotidArray.get(adslotid).toList
         }
         var ideaidclassVec = ideaidArray.get(9999999)
         if(ideaidArray.contains(ideaid)){
