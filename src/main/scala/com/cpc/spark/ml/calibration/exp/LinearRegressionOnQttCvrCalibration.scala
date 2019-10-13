@@ -145,17 +145,17 @@ object LinearRegressionOnQttCvrCalibration {
         val adclass = r.getAs[String]("adclass")
         val ideaid = r.getAs[Int]("ideaid")
         val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
-        var adslotidclassVec = adslotidArray.get("9999999")
+        var adslotidclassVec = adslotidArray.get("9999999").toVector
         if(adslotidArray.contains(adslotid)){
-          adslotidclassVec = adslotidArray.get(adslotid)
+          adslotidclassVec = adslotidArray.get(adslotid).toVector
         }
-        var ideaidclassVec = ideaidArray.get(9999999)
+        var ideaidclassVec = ideaidArray.get(9999999).toVector
         if(ideaidArray.contains(ideaid)){
-          ideaidclassVec = ideaidArray.get(ideaid)
+          ideaidclassVec = ideaidArray.get(ideaid).toVector
         }
-        var adclassclassVec = adclassArray.get("9999999")
+        var adclassclassVec = adclassArray.get("9999999").toVector
         if(adclassArray.contains(adclass)){
-          adclassclassVec = adclassArray.get(adclass)
+          adclassclassVec = adclassArray.get(adclass).toVector
         }
         (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
     }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
