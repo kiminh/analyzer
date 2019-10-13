@@ -132,13 +132,13 @@ object LinearRegressionOnQttCvrCalibration {
     trainingDF.printSchema()
 
     val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec").toSparse)).collect()
       .toMap
     val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
-      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec").toSparse)).collect()
       .toMap
     val adclassArray: Map[String, SparseVector] = trainingDF.select("adclass","adclassclassVec").distinct()
-      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec"))).collect()
+      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec").toSparse)).collect()
       .toMap
 
     val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
