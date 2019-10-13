@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
 import com.cpc.spark.common.Utils
+import scala.collection.mutable.{ListBuffer, WrappedArray}
 import com.cpc.spark.ml.calibration.exp.LrCalibrationOnQtt.calculateAuc
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.typesafe.config.ConfigFactory
@@ -90,7 +91,7 @@ object LinearRegressionOnQttCvrCalibration {
 //       """.stripMargin
 //
 //    println(s"sql:\n$sql")
-    val data= spark.sql("select * from dl_cpc.wy_calibration_sample_2019-10-10")
+    val data= spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_10")
 
     val dataDF = data.groupBy("ideaid").count()
       .withColumn("tag",when(col("count")>60,1).otherwise(0))
@@ -122,18 +123,45 @@ object LinearRegressionOnQttCvrCalibration {
     val trainingDF = pipelineModel.transform(dataDF)
     trainingDF.show(10)
 
-//    val wgold = trainingDF.rdd.map{
-//      x =>
-//        val key = x.getAs[Int]("coin_origin").toString
-//        val coin_index=x.getAs[WrappedArray[Double]]("coin").toArray.toList.indexOf(1.0f)
-//        val Wgold = lrModel.coefficients.toArray(9+coin_index)
-//        (key,Wgold*1e6*1e6)
-//    }.distinct().toDF("key","value")
-//    wgold.show
+    val adslotidArray = trainingDF.select("adslotid","adslotidclassVec").distinct()
+      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[WrappedArray[Int]]("adslotidclassVec"))).collect()
+      .toMap
+    val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
+      .rdd.map(x=>(x.getAs[int]("ideaid"),x.getAs[WrappedArray[Int]]("ideaidclassVec"))).collect()
+      .toMap
+    val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
+      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
+      .toMap
 
 
-    val testdata = spark.sql("select * from dl_cpc.wy_calibration_sample_2019-10-11")
-    val testDF = pipelineModel.transform(testdata)
+    val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
+        .rdd.map {
+      r =>
+        val label = r.getAs[Long]("isclick").toInt
+        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+        val adslotid = r.getAs[String]("adslotid")
+        val ideaid = r.getAs[Long]("ideaid")
+        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+        val hour = r.getAs[String]("hour").toDouble
+        var adslotidclassVec = adslotidArray.get("9999999")
+        if(adslotidArray.contains(adslotid)){
+          adslotidclassVec = adslotidArray.get(adslotid)
+        }
+        var ideaidclassVec = adslotidArray.get("9999999")
+        if(ideaidArray.contains(adslotid)){
+          adslotidclassVec = adslotidArray.get(adslotid)
+        }
+        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
+    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
+      .withColumn("feature",concat_ws(" ", indices.map(col): _*))
+      .withColumn("label",when(col("label")===1,1).otherwise(0))
+      .rdd.map{
+      r=>
+        val label= r.getAs[Int]("label").toDouble
+        val features= r.getAs[String]("feature")
+        LabeledPoint(label,Vectors.dense(features.split(' ').map(_.toDouble)))
+    }
+
 
     //test
 
