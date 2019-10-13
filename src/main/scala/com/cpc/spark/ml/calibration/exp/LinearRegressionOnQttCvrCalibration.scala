@@ -133,83 +133,75 @@ object LinearRegressionOnQttCvrCalibration {
       .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[WrappedArray[Int]]("adclassclassVec"))).collect()
       .toMap
 
-    var indices = List[String]("ideaidvalue","adslotidvalue","raw_ctr", "user_req_ad_num","hour")
+    val testData = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
+        .rdd.map {
+      r =>
+        val label = r.getAs[Long]("isclick").toInt
+        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+        val adslotid = r.getAs[String]("adslotid")
+        val adclass = r.getAs[String]("adclass")
+        val ideaid = r.getAs[Int]("ideaid")
+        val user_req_ad_num = r.getAs[Long]("user_req_ad_num")
+        val hour = r.getAs[String]("hour").toDouble
+        var adslotidclassVec = adslotidArray.get("9999999")
+        if(adslotidArray.contains(adslotid)){
+          adslotidclassVec = adslotidArray.get(adslotid)
+        }
+        var ideaidclassVec = ideaidArray.get(9999999)
+        if(ideaidArray.contains(ideaid)){
+          ideaidclassVec = ideaidArray.get(ideaid)
+        }
+        var adclassclassVec = adclassArray.get("9999999")
+        if(adclassArray.contains(adclass)){
+          ideaidclassVec = ideaidArray.get(ideaid)
+        }
+        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
+    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
 
 
-//    val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
-//        .rdd.map {
-//      r =>
-//        val label = r.getAs[Long]("isclick").toInt
-//        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
-//        val adslotid = r.getAs[String]("adslotid")
-//        val ideaid = r.getAs[Int]("ideaid")
-//        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-//        val hour = r.getAs[String]("hour").toDouble
-//        var adslotidclassVec = adslotidArray.get("9999999")
-//        if(adslotidArray.contains(adslotid)){
-//          adslotidclassVec = adslotidArray.get(adslotid)
-//        }
-//        var ideaidclassVec = ideaidArray.get(9999999)
-//        if(ideaidArray.contains(ideaid)){
-//          ideaidclassVec = ideaidArray.get(ideaid)
-//        }
-//        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
-//    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
-//      .withColumn("feature",concat_ws(" ", indices.map(col): _*))
-//      .withColumn("label",when(col("label")===1,1).otherwise(0))
-//      .rdd.map{
-//      r=>
-//        val label= r.getAs[Int]("label").toDouble
-//        val features= r.getAs[String]("feature")
-//        LabeledPoint(label,Vectors.dense(features.split(' ').map(_.toDouble)))
-//    }
+    val testDF: DataFrame = assembler.transform(testData)
+//    test
+
+    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
+    val lrModel = new LinearRegression().setFeaturesCol("features")
+//        .setWeightCol("hourweight")
+        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
+    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
+      predictions.show(5)
+
+    println("coefficients:" +lrModel.coefficients)
+    println("intercept:" +lrModel.intercept)
+
+    // 输出逻辑回归的系数和截距
+    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+    //获取训练模型的相关信息
+    val trainingSummary = lrModel.summary
+    //模型残差
+    trainingSummary.residuals.show()
+    //模型均方差
+    println("mse:" + trainingSummary.meanSquaredError)
+    //模型均方根误差
+    println("r-squared:" + trainingSummary.rootMeanSquaredError)
+
+    val result = lrModel.transform(testDF).rdd.map{
+      x =>
+        val exp_cvr = x.getAs[Double]("prediction")
+        val raw_cvr = x.getAs[Double]("raw_cvr").toDouble
+        val unitid = x.getAs[String]("unitid")
+        val iscvr = x(0).toString.toInt
+        (exp_cvr,iscvr,raw_cvr,unitid)
+    }.toDF("exp_ctr","isclick","raw_ctr","coin_origin")
 
 
-    //test
+        //   lr calibration
+    calculateAuc(result,"lr",spark)
+    //    raw data
+    val modelData = result.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    calculateAuc(modelData,"original",spark)
 
-//    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()}")
-//    val lrModel = new LinearRegression().setFeaturesCol("features")
-////        .setWeightCol("hourweight")
-//        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
-//    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
-//      predictions.show(5)
-//
-//    println("coefficients:" +lrModel.coefficients)
-//    println("intercept:" +lrModel.intercept)
-//
-//    // 输出逻辑回归的系数和截距
-//    //    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
-//    //获取训练模型的相关信息
-//    val trainingSummary = lrModel.summary
-//    //模型残差
-//    trainingSummary.residuals.show()
-//    //模型均方差
-//    println("mse:" + trainingSummary.meanSquaredError)
-//    //模型均方根误差
-//    println("r-squared:" + trainingSummary.rootMeanSquaredError)
-//
-//    lrModel.transform(testDF).rdd.map{
-//      x =>
-//        val exp_ctr = x.getAs[Double]("prediction")
-//        val raw_ctr = x(2).toString.toDouble
-//        val coin_origin = x(3).toString.toInt
-//        val isclick = x(0).toString.toInt
-//        (exp_ctr,isclick,raw_ctr,coin_origin)
-//    }.toDF("exp_ctr","isclick","raw_ctr","coin_origin").createOrReplaceTempView("result")
-//
-//
-//
-
-
-    //    //   lr calibration
-//    calculateAuc(result2,"lr",spark)
-//    //    raw data
-//    val modelData = testsample.selectExpr("cast(isclick as Int) label","cast(raw_ctr as Int) prediction","ideaid")
-//    calculateAuc(modelData,"original",spark)
-//
-////    online calibration
-//    val calibData = testsample.selectExpr("cast(isclick as Int) label","cast(exp_ctr as Int) prediction","ideaid")
-//    calculateAuc(calibData,"online",spark)
+//    online calibration
+    val calibData = result.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    calculateAuc(calibData,"online",spark)
 
   }
 
