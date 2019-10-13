@@ -229,7 +229,7 @@ object LrCalibrationOnQtt {
     val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
     println("abs_error is %f".format(abs_error))
 
-    val p2 = data.groupBy(cate)
+    val p2 = data.groupBy("$cate")
       .agg(
         avg(col("label")).alias("ctr"),
         avg(col("prediction")/1e6d).alias("ectr"),
