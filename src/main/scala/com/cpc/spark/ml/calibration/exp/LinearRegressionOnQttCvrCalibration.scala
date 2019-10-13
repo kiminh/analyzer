@@ -136,33 +136,33 @@ object LinearRegressionOnQttCvrCalibration {
     var indices = List[String]("ideaidvalue","adslotidvalue","raw_ctr", "user_req_ad_num","hour")
 
 
-    val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
-        .rdd.map {
-      r =>
-        val label = r.getAs[Long]("isclick").toInt
-        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
-        val adslotid = r.getAs[String]("adslotid")
-        val ideaid = r.getAs[Int]("ideaid")
-        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
-        val hour = r.getAs[String]("hour").toDouble
-        var adslotidclassVec = adslotidArray.get("9999999")
-        if(adslotidArray.contains(adslotid)){
-          adslotidclassVec = adslotidArray.get(adslotid)
-        }
-        var ideaidclassVec = ideaidArray.get(9999999)
-        if(ideaidArray.contains(ideaid)){
-          ideaidclassVec = ideaidArray.get(ideaid)
-        }
-        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
-    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
-      .withColumn("feature",concat_ws(" ", indices.map(col): _*))
-      .withColumn("label",when(col("label")===1,1).otherwise(0))
-      .rdd.map{
-      r=>
-        val label= r.getAs[Int]("label").toDouble
-        val features= r.getAs[String]("feature")
-        LabeledPoint(label,Vectors.dense(features.split(' ').map(_.toDouble)))
-    }
+//    val testDF = spark.sql("select * from dl_cpc.wy_calibration_sample_2019_10_11")
+//        .rdd.map {
+//      r =>
+//        val label = r.getAs[Long]("isclick").toInt
+//        val raw_ctr = r.getAs[Long]("raw_ctr").toDouble / 1e6d
+//        val adslotid = r.getAs[String]("adslotid")
+//        val ideaid = r.getAs[Int]("ideaid")
+//        val user_req_ad_num = r.getAs[Long]("user_req_ad_num").toDouble
+//        val hour = r.getAs[String]("hour").toDouble
+//        var adslotidclassVec = adslotidArray.get("9999999")
+//        if(adslotidArray.contains(adslotid)){
+//          adslotidclassVec = adslotidArray.get(adslotid)
+//        }
+//        var ideaidclassVec = ideaidArray.get(9999999)
+//        if(ideaidArray.contains(ideaid)){
+//          ideaidclassVec = ideaidArray.get(ideaid)
+//        }
+//        (label, raw_ctr, user_req_ad_num, hour, adslotidclassVec, ideaidclassVec, ideaid)
+//    }.toDF("label","raw_ctr","user_req_ad_num","hour","adslotidvalue","ideaidvalue","ideaid")
+//      .withColumn("feature",concat_ws(" ", indices.map(col): _*))
+//      .withColumn("label",when(col("label")===1,1).otherwise(0))
+//      .rdd.map{
+//      r=>
+//        val label= r.getAs[Int]("label").toDouble
+//        val features= r.getAs[String]("feature")
+//        LabeledPoint(label,Vectors.dense(features.split(' ').map(_.toDouble)))
+//    }
 
 
     //test
