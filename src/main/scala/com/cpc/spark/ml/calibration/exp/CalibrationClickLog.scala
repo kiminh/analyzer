@@ -13,7 +13,7 @@ object CalibrationClickLog {
     val sql = s"""
                  |select a.searchid, cast(b.raw_cvr as bigint) as rawcvr, substring(a.adclass,1,6) as adclass,
                  |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-                 |unitid,userid,click_count,click_unit_count,b.conversion_goal,
+                 |unitid,userid,click_count,click_unit_count,b.conversion_goal,a.hour,
                  |if(c.iscvr is not null,1,0) iscvr,if(hour>$endHour,hour-$endHour,hour+24-$endHour) hourweight
                  |from
                  |(select searchid,ideaid,unitid,userid,adclass,hour
