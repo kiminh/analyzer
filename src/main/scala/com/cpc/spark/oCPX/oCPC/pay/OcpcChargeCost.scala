@@ -30,7 +30,8 @@ object OcpcChargeCost {
     val baseData = getBaseData(date, spark)
     baseData
       .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
+      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
 
 
   }
