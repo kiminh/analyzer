@@ -135,7 +135,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
       .filter("unitidtag=1")
     val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
+      .withColumn("useridtag",when(col("count")>10,1).otherwise(0))
       .filter("useridtag=1")
 
     val df1 = data
