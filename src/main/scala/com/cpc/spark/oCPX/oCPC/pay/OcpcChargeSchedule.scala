@@ -51,8 +51,8 @@ object OcpcChargeSchedule {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
 
 
 
