@@ -318,7 +318,7 @@ object LinearRegressionOnQttCvrCalibration {
         sum(col("label")).cast(DoubleType).alias("cvrnum")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
-      .filter("cvrnum > 10")
+      .filter("cvrnum > 20")
 
     p2.createOrReplaceTempView("unit")
     val sql =
