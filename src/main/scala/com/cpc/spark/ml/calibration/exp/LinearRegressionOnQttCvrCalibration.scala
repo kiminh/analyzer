@@ -129,7 +129,7 @@ object LinearRegressionOnQttCvrCalibration {
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("ideaidtag",when(col("count")>10,1).otherwise(0))
+      .withColumn("ideaidtag",when(col("count")>60,1).otherwise(0))
       .filter("ideaidtag=1")
     val defaultunitid = data.groupBy("unitid").count()
       .withColumn("unitidtag",when(col("count")>60,1).otherwise(0))
@@ -165,7 +165,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val dataDF = df1.union(df2)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
