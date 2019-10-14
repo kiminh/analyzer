@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.basedata
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
-object OcpcConversion {
+object OcpcConversionV3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -19,13 +19,39 @@ object OcpcConversion {
     val result = cv1.union(cv2).union(cv3).union(cv4)
     result
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_cvlog_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvlog_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_cvlog_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_cvr_log_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_cvr_log_hourly")
   }
 
   def getLabel4(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
+    val sqlRequest1 =
+      s"""
+         |select
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'js_active_copywx')
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(4))
+      .withColumn("conversion_from", lit(4))
+      .distinct()
+
+    val sqlRequest2 =
       s"""
          |select
          |    searchid,
@@ -42,19 +68,20 @@ object OcpcConversion {
          |and
          |    (array_contains(conversion_target, 'sdk_site_wz')
          |OR
-         |    array_contains(conversion_target, 'js_active_copywx')
-         |OR
          |    array_contains(conversion_target, 'sdk_banner_wz')
          |OR
          |    array_contains(conversion_target, 'sdk_popupwindow_wz'))
        """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark
-      .sql(sqlRequest)
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("conversion_goal", lit(4))
+      .withColumn("conversion_from", lit(3))
       .distinct()
+
+    val resultDF = data1.union(data2).distinct()
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -63,7 +90,7 @@ object OcpcConversion {
   }
 
   def getLabel3(date: String, hour: String, spark: SparkSession) = {
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |select
          |    searchid,
@@ -78,17 +105,45 @@ object OcpcConversion {
          |and
          |    `hour` = '$hour'
          |and
-         |    (array_contains(conversion_target, 'js_active_js_form')
-         |OR
-         |    array_contains(conversion_target, 'site_form'))
+         |    array_contains(conversion_target, 'js_active_js_form')
        """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark
-      .sql(sqlRequest)
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("conversion_goal", lit(3))
+      .withColumn("conversion_from", lit(4))
       .distinct()
+
+    val sqlRequest2 =
+      s"""
+         |select
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'site_form')
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(3))
+      .withColumn("conversion_from", lit(2))
+      .distinct()
+
+
+    val resultDF = data1.union(data2).distinct()
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -120,6 +175,7 @@ object OcpcConversion {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("conversion_goal", lit(2))
+      .withColumn("conversion_from", lit(1))
       .distinct()
 
 
@@ -153,6 +209,7 @@ object OcpcConversion {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("conversion_goal", lit(1))
+        .withColumn("conversion_from", lit(3))
         .distinct()
 
     resultDF.show(10)

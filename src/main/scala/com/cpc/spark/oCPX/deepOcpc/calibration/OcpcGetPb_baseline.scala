@@ -33,8 +33,8 @@ object OcpcGetPb_baseline {
     val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
-    dataRaw
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
+//    dataRaw
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912a")
 
 
     val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
@@ -43,8 +43,8 @@ object OcpcGetPb_baseline {
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
       .cache()
     jfbData.show(10)
-    jfbData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
+//    jfbData
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912b")
 
     val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
@@ -52,8 +52,8 @@ object OcpcGetPb_baseline {
       .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
-    pcocData
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912f")
+//    pcocData
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_data20190912f")
 
     val data = assemblyData(jfbData, pcocData, spark).cache()
     data.show(10)
@@ -72,10 +72,6 @@ object OcpcGetPb_baseline {
     val resultDF = result
       .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
-//    resultDF
-//      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
     resultDF
       .repartition(1)
@@ -98,6 +94,7 @@ object OcpcGetPb_baseline {
       .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .withColumn("post_cvr", lit(0.0))
       .withColumn("smooth_factor", lit(0.3))
+      .withColumn("smooth_factor", udfSetSmoothFactor()(col("identifier"), col("smooth_factor")))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
@@ -106,6 +103,14 @@ object OcpcGetPb_baseline {
 
     data
   }
+
+  def udfSetSmoothFactor() = udf((identifier: String, smoothFactor: Double) => {
+    val result = (identifier, smoothFactor) match {
+      case ("2399667", _) => 0.7
+      case (_, v) => v
+    }
+    result
+  })
 
 
 

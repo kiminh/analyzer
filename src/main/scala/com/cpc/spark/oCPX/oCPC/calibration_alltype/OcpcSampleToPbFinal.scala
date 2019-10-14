@@ -118,6 +118,8 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCheckCali(0.5, 2.0)(col("cali_value")))
       .cache()
 
     data.show(10)
@@ -127,6 +129,17 @@ object OcpcSampleToPbFinal {
 
     data
   }
+
+  def udfCheckCali(minValue: Double, maxValue: Double) = udf((caliValue: Double) => {
+    var result = caliValue
+    if (result < minValue) {
+      result = minValue
+    }
+    if (result > maxValue) {
+      result = maxValue
+    }
+    result
+  })
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
     val sqlRequest =

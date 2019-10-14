@@ -273,7 +273,7 @@ object OcpcSuggestCPA24 {
          |    bid_discounted_by_ad_slot as bid,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    (case

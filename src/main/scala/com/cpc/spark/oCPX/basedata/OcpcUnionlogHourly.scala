@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlog {
+object OcpcUnionlogHourly {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -18,23 +18,22 @@ object OcpcUnionlog {
 
     data
       .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_hourly")
 
-    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
+    println("successfully save data into table: dl_cpc.ocpc_base_unionlog_hourly")
 
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_hourly")
 
-    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
+    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_hourly")
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    // DONE 调整过滤条件：ocpc_Step
     val baseData = data
         .filter(s"ocpc_step = 2")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
@@ -46,16 +45,12 @@ object OcpcUnionlog {
       s"""
          |select
          |    searchid,
-         |    timestamp,
-         |    network,
          |    exptags,
          |    media_type,
          |    media_appsid,
          |    adslotid,
          |    adslot_type,
          |    adtype,
-         |    adsrc,
-         |    interaction,
          |    bid,
          |    price,
          |    ideaid,
@@ -65,41 +60,27 @@ object OcpcUnionlog {
          |    province,
          |    city,
          |    uid,
-         |    ua,
          |    os,
-         |    sex,
-         |    age,
          |    isshow,
          |    isclick,
          |    duration,
          |    userid,
          |    is_ocpc,
+         |    ocpc_log_dict,
          |    user_city,
          |    city_level,
          |    adclass,
-         |    ocpc_log_dict,
          |    exp_ctr,
          |    exp_cvr,
-         |    antispam,
+         |    raw_cvr,
+         |    usertype,
          |    conversion_goal,
-         |    charge_type,
          |    conversion_from,
          |    is_api_callback,
-         |    siteid,
          |    cvr_model_name,
-         |    user_req_ad_num,
-         |    user_req_num,
-         |    is_new_ad,
-         |    is_auto_coin,
          |    bid_discounted_by_ad_slot,
-         |    second_cpm,
-         |    final_cpm,
-         |    exp_cpm,
-         |    ocpc_expand,
-         |    expids,
-         |    bsctr,
          |    bscvr,
-         |    raw_cvr,
+         |    ocpc_expand,
          |    deep_cvr,
          |    raw_deep_cvr,
          |    deep_cvr_model_name,
@@ -107,8 +88,7 @@ object OcpcUnionlog {
          |    is_deep_ocpc,
          |    deep_conversion_goal,
          |    deep_cpa,
-         |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    cpa_check_priority
          |from
          |    base_data
        """.stripMargin
@@ -126,23 +106,18 @@ object OcpcUnionlog {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"(`day`='$date' and hour = '$hour')"
+    val selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
-    // done 调整ocpc_log的存在逻辑
-    var sqlRequest =
+    val sqlRequest =
       s"""
          |select
          |    searchid,
-         |    timestamp,
-         |    network,
          |    concat_ws(',', exptags) as exptags,
          |    media_type,
          |    media_appsid,
          |    adslot_id as adslotid,
          |    adslot_type,
          |    adtype,
-         |    adsrc,
-         |    interaction,
          |    bid,
          |    price,
          |    ideaid,
@@ -152,10 +127,7 @@ object OcpcUnionlog {
          |    province,
          |    city,
          |    uid,
-         |    ua,
          |    os,
-         |    sex,
-         |    age,
          |    isshow,
          |    isclick,
          |    0 as duration,
@@ -167,34 +139,18 @@ object OcpcUnionlog {
          |    adclass,
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
-         |    charge_type,
-         |    0 as antispam,
+         |    raw_cvr,
          |    usertype,
          |    conversion_goal,
          |    conversion_from,
          |    is_api_callback,
-         |    siteid,
          |    cvr_model_name,
-         |    user_req_ad_num,
-         |    user_req_num,
-         |    is_new_ad,
-         |    is_auto_coin,
          |    bid_discounted_by_ad_slot,
-         |    discount,
-         |    exp_cpm,
-         |    cvr_threshold,
-         |    dsp_cpm,
-         |    new_user_days,
          |    ocpc_step,
-         |    previous_id,
          |    ocpc_status,
          |    bscvr,
-         |    second_cpm,
-         |    final_cpm,
          |    ocpc_expand,
          |    ext_string['exp_ids'] as expids,
-         |    bsctr,
-         |    raw_cvr,
          |    deep_cvr,
          |    raw_deep_cvr,
          |    deep_cvr_model_name,
@@ -202,8 +158,7 @@ object OcpcUnionlog {
          |    is_deep_ocpc,
          |    deep_conversion_goal,
          |    deep_cpa,
-         |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    cpa_check_priority
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
