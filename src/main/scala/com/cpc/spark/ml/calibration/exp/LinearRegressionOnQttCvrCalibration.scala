@@ -129,7 +129,7 @@ object LinearRegressionOnQttCvrCalibration {
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("ideaidtag",when(col("count")>60,1).otherwise(0))
+      .withColumn("ideaidtag",when(col("count")>20,1).otherwise(0))
       .filter("ideaidtag=1")
     val defaultunitid = data.groupBy("unitid").count()
       .withColumn("unitidtag",when(col("count")>60,1).otherwise(0))
