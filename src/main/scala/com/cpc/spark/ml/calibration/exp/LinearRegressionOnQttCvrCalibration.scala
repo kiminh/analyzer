@@ -251,7 +251,7 @@ object LinearRegressionOnQttCvrCalibration {
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
     val auc = CalcMetrics.getAuc(spark,testData)
-    println("%s auc:%f".format(cate,auc))
+    println("###      %s auc:%f".format(cate,auc))
     val p1= data.groupBy().agg(avg(col("label")).alias("cvr"),avg(col("prediction")/1e6d).alias("ecvr"))
     val cvr = p1.first().getAs[Double]("cvr")
     val ecvr = p1.first().getAs[Double]("ecvr")
@@ -280,7 +280,6 @@ object LinearRegressionOnQttCvrCalibration {
         count(col("label")).cast(DoubleType).alias("cvrnum")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
-    println("unitid sum:%d".format(p2.count()))
     p2.createOrReplaceTempView("unit")
     val sql =
       s"""
@@ -295,6 +294,6 @@ object LinearRegressionOnQttCvrCalibration {
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count()
     val greaternum = p3.filter("pcoc>1.1").count()
-    println("%s by unitid: avgcvr:%f,avgecvr:%f,avgpcoc:%f,all:%f,right:%d,exceed 1.1:%d,ratio of pcoc in (0.9,1,1):%f,ratio of pcoc>1.1:%f".format(cate, cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
+    println("%s by unitid:unitid sum:%d,avgcvr:%f,avgecvr:%f,avgpcoc:%f,all:%f,right:%d,exceed 1.1:%d,ratio of pcoc in (0.9,1,1):%f,ratio of pcoc>1.1:%f".format(cate, p2.count(),cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
   }
 }
