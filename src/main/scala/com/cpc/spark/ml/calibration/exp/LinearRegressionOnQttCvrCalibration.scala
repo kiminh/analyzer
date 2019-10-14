@@ -129,13 +129,23 @@ object LinearRegressionOnQttCvrCalibration {
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("tag",when(col("count")>60,1).otherwise(0))
-      .filter("tag=1")
+      .withColumn("ideaidtag",when(col("count")>60,1).otherwise(0))
+      .filter("ideaidtag=1")
+    val defaultunitid = data.groupBy("unitid").count()
+      .withColumn("unitidtag",when(col("count")>60,1).otherwise(0))
+      .filter("unitidtag=1")
+    val defaultuserid = data.groupBy("userid").count()
+      .withColumn("useridtag",when(col("count")>60,1).otherwise(0))
+      .filter("useridtag=1")
 
-    val df1 = defaultideaid
-      .join(data,Seq("ideaid"),"left")
+    val df1 = data
+      .join(defaultideaid,Seq("ideaid"),"left")
+      .join(defaultunitid,Seq("unitid"),"left")
+      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
-      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
@@ -144,8 +154,12 @@ object LinearRegressionOnQttCvrCalibration {
     val df2 = spark.sql(sql2)
       .withColumn("label",col("iscvr"))
       .join(defaultideaid,Seq("ideaid"),"left")
+      .join(defaultunitid,Seq("unitid"),"left")
+      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("sample",lit(0))
-      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
 
@@ -173,6 +187,7 @@ object LinearRegressionOnQttCvrCalibration {
     /**transform() 真实转换特征*/
     val dataset = pipelineModel.transform(dataDF)
     dataset.show(10)
+    dataset.select("label","feature").show(10)
     dataset.printSchema()
 
 //    val adslotidArray = dataset.select("adslotid","adslotidclassVec").distinct()
