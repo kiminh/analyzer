@@ -94,13 +94,13 @@ object OcpcChargeUpdate {
          |SELECT
          |  *,
          |  (case when restart_flag = 1 then current_click
-         |        else prev_click + prev_click end) as click,
+         |        else prev_click + current_click end) as click,
          |  (case when restart_flag = 1 then current_cv
-         |        else prev_cv + prev_cv end) as cv,
+         |        else prev_cv + current_cv end) as cv,
          |  (case when restart_flag = 1 then current_cost
          |        else prev_cost + current_cost end) as cost,
          |  (case when restart_flag = 1 then current_cpagiven
-         |        else (prev_cpagiven * prev_click + current_cpagiven * currrent_click) * 1.0 / (prev_click + current_clic) end) as cpagiven,
+         |        else (prev_cpagiven * prev_click + current_cpagiven * current_click) * 1.0 / (prev_click + current_click) end) as cpagiven,
          |  (case when restart_flag = 1 then current_ocpc_charge_time
          |        else prev_ocpc_charge_time end) as ocpc_charge_time
          |FROM
