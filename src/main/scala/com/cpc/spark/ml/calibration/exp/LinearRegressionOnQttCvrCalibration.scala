@@ -110,7 +110,7 @@ object LinearRegressionOnQttCvrCalibration {
        |    when user_show_ad_num = 2 then '2'
        |    when user_show_ad_num in (3,4) then '4'
        |    when user_show_ad_num in (5,6,7) then '7'
-       |    else '8' end as user_show_ad_num
+       |    else '8' end as show_num
        |    from dl_cpc.wy_calibration_sample_2019_10_10
        """.stripMargin
 
@@ -122,7 +122,7 @@ object LinearRegressionOnQttCvrCalibration {
          |    when user_show_ad_num = 2 then '2'
          |    when user_show_ad_num in (3,4) then '4'
          |    when user_show_ad_num in (5,6,7) then '7'
-         |    else '8' end as user_show_ad_num
+         |    else '8' end as show_num
          |    from dl_cpc.wy_calibration_sample_2019_10_11
        """.stripMargin
     val data = spark.sql(sql1)
@@ -138,7 +138,7 @@ object LinearRegressionOnQttCvrCalibration {
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count")
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
     df1.show(10)
 
     val df2 = spark.sql(sql2)
@@ -147,7 +147,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("sample",lit(0))
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count")
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
 
     val dataDF = df1.union(df2)
 
