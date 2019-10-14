@@ -440,6 +440,14 @@ object LRTrainHive {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
+    val tnum_test = testDF.count().toDouble
+    val pnum_test = testDF.filter(_.getAs[Int]("label") > 0).count().toDouble
+    val nnum_test = tnum_test - pnum_test
+
+    val rate_test = (pnum_test * 9 / nnum_test * 1000).toInt
+    println("test total positive negative", tnum_test, pnum_test, nnum_test, rate_test)
+    trainLog :+= "test size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum_test, pnum_test, nnum_test, rate_test)
+
     val sampleTrain = formatSample(spark, parser, trainDF.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
     val sampleTest = formatSample(spark, parser, testDF)
 
