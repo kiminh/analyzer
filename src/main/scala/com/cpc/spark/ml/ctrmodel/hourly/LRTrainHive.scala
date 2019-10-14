@@ -58,7 +58,7 @@ object LRTrainHive {
     // fym 190512: to replace getData().
     val trainSql =
       s"""
-         |select searchid
+         |select a.searchid
          |  , label
          |  , sex
          |  , age
