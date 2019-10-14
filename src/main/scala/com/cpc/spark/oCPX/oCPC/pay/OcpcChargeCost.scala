@@ -32,8 +32,8 @@ object OcpcChargeCost {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(10)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
       .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
 
 
   }
@@ -100,15 +100,13 @@ object OcpcChargeCost {
       s"""
          |SELECT
          |  unitid,
-         |  userid,
-         |  conversion_goal,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_table
-         |GROUP BY unitid, userid, conversion_goal
+         |GROUP BY unitid
          |""".stripMargin
     println(sqlRequest3)
     val costData = spark.sql(sqlRequest3)
@@ -134,7 +132,7 @@ object OcpcChargeCost {
 
     val resultDF = costData
         .join(ocpcChargeData, Seq("unitid"), "left_outer")
-        .select("unitid", "userid", "conversion_goal", "click", "cv", "cost", "cpagiven", "ocpc_charge_time")
+        .select("unitid", "click", "cv", "cost", "cpagiven", "ocpc_charge_time")
 
     resultDF
   }
