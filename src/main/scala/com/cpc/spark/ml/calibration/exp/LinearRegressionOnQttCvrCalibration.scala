@@ -184,13 +184,14 @@ object LinearRegressionOnQttCvrCalibration {
 //    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
-    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.8, 0.2), seed = 12345)
+//    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.8, 0.2), seed = 12345)
+    val trainingDF= dataset.filter("sample='train'")
     val validationDF = dataset.filter("sample='test'")
-    println(s"trainingDF size=${trainingDF.count()},testDF size=${testDF.count()},,validationDF size=${validationDF.count()}")
+    println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
-    val predictions = lrModel.transform(testDF).select("label", "features", "prediction","unitid")
+    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
     println("coefficients:" +lrModel.coefficients)
@@ -207,7 +208,7 @@ object LinearRegressionOnQttCvrCalibration {
     //模型均方根误差
     println("r-squared:" + trainingSummary.rootMeanSquaredError)
 
-    val result1 = lrModel.transform(testDF).rdd.map{
+    val result1 = lrModel.transform(trainingDF).rdd.map{
       x =>
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
         val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
