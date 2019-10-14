@@ -135,7 +135,7 @@ object LinearRegressionOnQttCvrCalibration {
     val df1 = defaultideaid
       .join(data,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
-//      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
@@ -145,7 +145,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("label",col("iscvr"))
       .join(defaultideaid,Seq("ideaid"),"left")
       .withColumn("sample",lit(0))
-//      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num")
 
@@ -254,15 +254,15 @@ object LinearRegressionOnQttCvrCalibration {
     }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
 
-        //   lr calibration
-    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(lrData1,"train original",spark)
+//        //   lr calibration
+//    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+//    calculateAuc(lrData1,"train original",spark)
 
     val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(lrData2,"train calibration",spark)
     //    raw data
-    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(modelData,"test original",spark)
+//    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+//    calculateAuc(modelData,"test original",spark)
 
 //    online calibration
     val calibData = result2.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
