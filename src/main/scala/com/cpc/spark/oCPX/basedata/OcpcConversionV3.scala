@@ -368,7 +368,7 @@ object OcpcConversionV3 {
          |    ideaid,
          |    unitid,
          |    userid,
-         |    concat_ws(',', collect_set(conversion_target)) as conversion_targets
+         |    concat_ws(',', conversion_target) as conversion_targets
          |   FROM
          |    dl_cpc.cpc_conversion
          |   WHERE
@@ -438,7 +438,7 @@ object OcpcConversionV3 {
          |    ideaid,
          |    unitid,
          |    userid,
-         |    concat_ws(',', collect_set(conversion_target)) as conversion_targets
+         |    concat_ws(',', conversion_target) as conversion_targets
          |   FROM
          |    dl_cpc.cpc_conversion
          |   WHERE
