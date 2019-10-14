@@ -132,10 +132,10 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("ideaidtag",when(col("count")>20,1).otherwise(0))
       .filter("ideaidtag=1")
     val defaultunitid = data.groupBy("unitid").count()
-      .withColumn("unitidtag",when(col("count")>60,1).otherwise(0))
+      .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
       .filter("unitidtag=1")
     val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>60,1).otherwise(0))
+      .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
       .filter("useridtag=1")
 
     val df1 = data
@@ -144,11 +144,11 @@ object LinearRegressionOnQttCvrCalibration {
       .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-//      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
     df1.show(10)
 
     val df2 = spark.sql(sql2)
@@ -158,14 +158,14 @@ object LinearRegressionOnQttCvrCalibration {
       .join(defaultuserid,Seq("userid"),"left")
       .withColumn("sample",lit(0))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-//      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
 
     val dataDF = df1.union(df2)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid0","userid","conversion_from","click_unit_count")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
