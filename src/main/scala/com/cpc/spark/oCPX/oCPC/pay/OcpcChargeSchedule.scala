@@ -52,6 +52,7 @@ object OcpcChargeSchedule {
       .withColumn("version", lit(version))
       .repartition(1)
       .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
 
 
 
@@ -108,7 +109,7 @@ object OcpcChargeSchedule {
     // 获取老版的单元周期数据
     val prevData = spark
       .table("dl_cpc.ocpc_pay_cnt_daily")
-      .where(s"`date` = '2019-10-10'")
+      .where(s"`date` = '2019-10-12'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")

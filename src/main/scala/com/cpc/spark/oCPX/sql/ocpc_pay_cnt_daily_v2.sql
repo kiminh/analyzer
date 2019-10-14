@@ -1,4 +1,4 @@
-create table if not exists test.ocpc_pay_cnt_daily(
+create table if not exists test.ocpc_pay_cnt_daily_v2(
     unitid                  int,
     pay_cnt                 int,
     pay_date                string,
