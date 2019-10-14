@@ -165,7 +165,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val dataDF = df1.union(df2)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
@@ -270,14 +270,14 @@ object LinearRegressionOnQttCvrCalibration {
 
 
         //   lr calibration
-    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(lrData1,"train original",spark)
+//    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+//    calculateAuc(lrData1,"train original",spark)
 
     val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(lrData2,"train calibration",spark)
     //    raw data
-    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(modelData,"test original",spark)
+//    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+//    calculateAuc(modelData,"test original",spark)
 
 //    online calibration
     val calibData = result2.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
