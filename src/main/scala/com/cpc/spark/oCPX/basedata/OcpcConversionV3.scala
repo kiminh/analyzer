@@ -34,8 +34,8 @@ object OcpcConversionV3 {
 
     result
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_cvr_log_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_cvr_log_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
     println("successfully save data into table: dl_cpc.ocpc_cvr_log_hourly")
   }
 
