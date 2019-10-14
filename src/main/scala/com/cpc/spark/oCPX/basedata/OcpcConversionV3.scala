@@ -372,7 +372,7 @@ object OcpcConversionV3 {
          |   FROM
          |    dl_cpc.cpc_conversion
          |   WHERE
-         |    `date` = '$date'
+         |    day = '$date'
          |   AND
          |    `hour` = '$hour'
          |   AND
@@ -442,7 +442,7 @@ object OcpcConversionV3 {
          |   FROM
          |    dl_cpc.cpc_conversion
          |   WHERE
-         |    `date` = '$date'
+         |    day = '$date'
          |   AND
          |    `hour` = '$hour'
          |   AND
