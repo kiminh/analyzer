@@ -13,7 +13,7 @@ object CalibrationClickLog {
     val sql = s"""
                  |select a.searchid, cast(b.raw_cvr as bigint) as rawcvr, substring(a.adclass,1,6) as adclass,
                  |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-                 |unitid,userid,click_count,click_unit_count,b.conversion_goal,a.hour,
+                 |unitid,userid,click_count,click_unit_count,b.conversion_goal,a.hour,conversion_from
                  |if(c.iscvr is not null,1,0) iscvr,if(hour>$endHour,hour-$endHour,hour+24-$endHour) hourweight
                  |from
                  |(select searchid,ideaid,unitid,userid,adclass,hour
@@ -24,7 +24,7 @@ object CalibrationClickLog {
                  |  and antispam_score = 10000
                  |  )a
                  |  join
-                 |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
+                 |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr,conversion_from
                  |  ,click_count,click_unit_count
                  |  from
                  |  dl_cpc.cpc_basedata_adx_event
