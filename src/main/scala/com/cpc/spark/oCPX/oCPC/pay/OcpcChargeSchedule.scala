@@ -46,6 +46,13 @@ object OcpcChargeSchedule {
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
 
+    updateScheduleData
+      .select("unitid", "pay_cnt", "pay_date", "flag", "update_flag", "prev_pay_cnt", "prev_pay_date")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+
 
 
   }
@@ -89,8 +96,8 @@ object OcpcChargeSchedule {
     val data = spark
       .sql(sqlRequest2)
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
-      .withColumn("pay_cnt_old", col("pay_cnt"))
-      .withColumn("pay_date_old", col("pay_date"))
+      .withColumn("prev_pay_cnt", col("pay_cnt"))
+      .withColumn("prev_pay_date", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
       .withColumn("pay_date", when(col("update_flag") === 1, lit(date)).otherwise(col("pay_date")))
 
