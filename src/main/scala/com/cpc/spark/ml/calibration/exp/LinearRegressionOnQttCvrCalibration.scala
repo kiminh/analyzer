@@ -113,14 +113,14 @@ object LinearRegressionOnQttCvrCalibration {
       .join(data,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
-      .withColumn("sample",lit("train"))
+      .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight","conversion_goal")
     df1.show(10)
 
     val df2 = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
       .withColumn("label",col("iscvr"))
       .join(defaultideaid,Seq("ideaid"),"left")
-      .withColumn("sample",lit("test"))
+      .withColumn("sample",lit(0))
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight","conversion_goal")
 
@@ -189,9 +189,9 @@ object LinearRegressionOnQttCvrCalibration {
 //    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
-    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.5, 0.5), seed = 12345)
-//    val trainingDF= dataset.filter("sample='train'")
-    val validationDF = dataset.filter("sample='test'")
+//    val Array(trainingDF, testDF) = dataset.filter("sample = 1").randomSplit(Array(0.8, 0.2), seed = 12345)
+    val trainingDF= dataset.filter("sample='train'")
+    val validationDF = dataset.filter("sample = 0")
     println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
