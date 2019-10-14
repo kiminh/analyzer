@@ -42,9 +42,9 @@ object OcpcChargeSchedule {
 
     // 更新pay_cnt，pay_date
     val updateScheduleData = updatePaySchedule(date, dayCnt, scheduleData, spark)
-    updateScheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
+//    updateScheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
 
     updateScheduleData
       .select("unitid", "pay_cnt", "pay_date", "flag", "update_flag", "prev_pay_cnt", "prev_pay_date")
@@ -75,9 +75,9 @@ object OcpcChargeSchedule {
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
-    rawData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
+//    rawData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
 
 
     val sqlRequest2 =
