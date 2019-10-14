@@ -59,7 +59,12 @@ object LinearRegressionOnQttCvrCalibration {
     val calimodel ="qtt-cvr-dnn-rawid-v1wzjf-aibox"
 
     // build spark session
-    val spark = Utils.buildSparkSession("hourlyCalibration")
+    val spark = SparkSession.builder()
+      .appName("[trident] extract as event")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .enableHiveSupport()
+      .getOrCreate()
+
     val selectCondition1 = getTimeRangeSql(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     import spark.implicits._
@@ -184,7 +189,7 @@ object LinearRegressionOnQttCvrCalibration {
 //    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
-    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.8, 0.2), seed = 12345)
+    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.5, 0.5), seed = 12345)
 //    val trainingDF= dataset.filter("sample='train'")
     val validationDF = dataset.filter("sample='test'")
     println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
