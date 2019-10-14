@@ -255,7 +255,7 @@ object LinearRegressionOnQttCvrCalibration {
     val p1= data.groupBy().agg(avg(col("label")).alias("cvr"),avg(col("prediction")/1e6d).alias("ecvr"))
     val cvr = p1.first().getAs[Double]("cvr")
     val ecvr = p1.first().getAs[Double]("ecvr")
-    println("%s calibration: cvr:%f,ecvr:%f,ecvr/cvr:%f".format(cate, cvr, ecvr, ecvr/cvr))
+    println("%s: cvr:%f,ecvr:%f,ecvr/cvr:%f".format(cate, cvr, ecvr, ecvr/cvr))
 
     testData.createOrReplaceTempView("data")
     val abs_error_sql =
