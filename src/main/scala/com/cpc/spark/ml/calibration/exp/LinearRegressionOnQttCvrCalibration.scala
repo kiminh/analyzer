@@ -187,7 +187,7 @@ object LinearRegressionOnQttCvrCalibration {
     /**transform() 真实转换特征*/
     val dataset = pipelineModel.transform(dataDF)
     dataset.show(10)
-    dataset.select("label","feature").show(10)
+    dataset.select("label","features").show(10)
     dataset.printSchema()
 
 //    val adslotidArray = dataset.select("adslotid","adslotidclassVec").distinct()
