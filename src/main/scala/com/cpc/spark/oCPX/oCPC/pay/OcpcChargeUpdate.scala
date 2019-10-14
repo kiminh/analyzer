@@ -54,7 +54,8 @@ object OcpcChargeUpdate {
     // 数据落表
     val resultDF = finalPayData
       .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(date + " 00:00:00")(col("pay_cnt"), col("ocpc_charge_time")))
-      .select("unitid", "click", "cv", "cost", "cpagiven", "ocpc_charge_time", "pay_cnt", "pay_date", "restart_flag")
+      .withColumn("pay", udfCalculatePay()(col("cv"), col("cost"), col("cpagiven")))
+      .select("unitid", "click", "cv", "cost", "cpagiven", "pay", "ocpc_charge_time", "pay_cnt", "pay_date", "restart_flag")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
@@ -63,6 +64,14 @@ object OcpcChargeUpdate {
       .write.mode("overwrite").insertInto("test.ocpc_pay_data_daily_v2")
 
   }
+
+  def udfCalculatePay() = udf((cv: Long, cost: Double, cpagiven: Double) => {
+    var result = cost - 1.2 * cv.toDouble * cpagiven
+    if (result <= 0) {
+      result = 0
+    }
+    result
+  })
 
   def updatePay(prevDataRaw: DataFrame, scheduleData: DataFrame, baseDataRaw: DataFrame, date: String, spark: SparkSession) = {
     val flagData = scheduleData
