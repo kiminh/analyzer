@@ -109,7 +109,7 @@ object OcpcChargeSchedule {
     // 获取老版的单元周期数据
     val prevData = spark
       .table("dl_cpc.ocpc_pay_cnt_daily")
-      .where(s"`date` = '2019-10-12'")
+      .where(s"`date` = '2019-10-13'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")

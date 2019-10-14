@@ -24,16 +24,17 @@ object OcpcChargeCost {
     // 计算日期周期
     val date = args(0).toString
     val version = args(1).toString
-    val dayCnt = args(2).toInt
 
     // 计算当天数据
     val baseData = getBaseData(date, spark)
     val resultDF = baseData
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
+
+    resultDF
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
 
 
   }
