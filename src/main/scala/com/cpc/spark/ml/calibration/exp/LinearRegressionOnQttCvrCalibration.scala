@@ -184,8 +184,8 @@ object LinearRegressionOnQttCvrCalibration {
 //    val testDF: DataFrame = assembler.transform(testData)
 //    test
 
-//    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.8, 0.2), seed = 12345)
-    val trainingDF= dataset.filter("sample='train'")
+    val Array(trainingDF, testDF) = dataset.filter("sample='train'").randomSplit(Array(0.9, 0.1), seed = 12345)
+//    val trainingDF= dataset.filter("sample='train'")
     val validationDF = dataset.filter("sample='test'")
     println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
