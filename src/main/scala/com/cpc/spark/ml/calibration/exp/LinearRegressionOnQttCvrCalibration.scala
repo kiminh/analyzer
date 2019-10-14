@@ -288,7 +288,7 @@ object LinearRegressionOnQttCvrCalibration {
          |from unit
        """.stripMargin
     val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
-    p3.show(10)
+//    p3.show(10)
     val cvr2 = p2.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
     val ecvr2 = p2.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
     val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
