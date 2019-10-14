@@ -294,6 +294,6 @@ object LinearRegressionOnQttCvrCalibration {
     val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p3.count().toDouble
     val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count().toDouble
-    println("%s calibration by unitid: avgcvr:%f,avgecvr:%f,avgpcoc:%f,all:%f,right:%f,ratio of 0.1 deviation:%f".format(cate, cvr2, ecvr2, pcoc,allnum,rightnum,rightnum/allnum))
+    println("%s calibration by unitid: avgcvr:%f,avgecvr:%f,avgpcoc:%f,all:%f,right:%f,ratio of exceed 0.1 deviation:%f".format(cate, cvr2, ecvr2, pcoc,allnum,rightnum,1-rightnum/allnum))
   }
 }
