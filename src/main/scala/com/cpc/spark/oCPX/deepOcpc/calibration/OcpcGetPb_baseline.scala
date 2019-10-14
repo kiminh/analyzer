@@ -75,8 +75,8 @@ object OcpcGetPb_baseline {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
 
 
   }
