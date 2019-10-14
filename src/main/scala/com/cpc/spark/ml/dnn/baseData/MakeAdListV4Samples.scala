@@ -131,6 +131,11 @@ object MakeAdListV4Samples {
     val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info"
     println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
+    if (!exists_hdfs_path(base_daily_bid_cpm_file)) {
+      println("no base daily bid cpm file, exiting...")
+      return
+    }
+
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
         val line_list = rs.split("\t")
