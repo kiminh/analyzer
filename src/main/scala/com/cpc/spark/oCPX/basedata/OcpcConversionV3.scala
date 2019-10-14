@@ -378,7 +378,7 @@ object OcpcConversionV3 {
          |   AND
          |    array_contains(conversion_target, 'api')) as t
          |WHERE
-         |  t.conversion_target not like '%api_%'
+         |  t.conversion_targets not like '%api_%'
          |""".stripMargin
     println(sqlRequest4)
     val data4 = spark
@@ -448,7 +448,7 @@ object OcpcConversionV3 {
          |   AND
          |    array_contains(conversion_target, 'api')) as t
          |WHERE
-         |  t.conversion_target not like '%api_%'
+         |  t.conversion_targets not like '%api_%'
          |""".stripMargin
     println(sqlRequest2)
     val data2 = spark
