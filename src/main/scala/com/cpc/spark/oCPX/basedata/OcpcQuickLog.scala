@@ -23,13 +23,13 @@ object OcpcQuickLog {
     val hour = args(1).toString
 
     // 点击数据
-    val clickData = getClickLog(date, hour, spark)
-    clickData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+//    val clickData = getClickLog(date, hour, spark)
+//    clickData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(10)
+////      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
@@ -93,14 +93,29 @@ object OcpcQuickLog {
 
   def getCvLog(date: String, hour: String, spark: SparkSession) = {
     // 抽取cv数据
-    // todo 数据调研
     spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-      var result = 0
+      var result = -1
       if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
         result = 1
-      } else if (traceType == "active_third") {
+      } else if (traceType == "active_third" && traceOp2 == "") {
+        result = 0
+      } else if (traceType == "active_third" && traceOp2 == "0") {
         result = 2
-      } else if (traceType == "active15" || traceType == "ctsite_active15") {
+      } else if (traceType == "active_third" && traceOp2 == "1") {
+        result = 5
+      } else if (traceType == "active_third" && traceOp2 == "2") {
+        result = 7
+      } else if (traceType == "active_third" && traceOp2 == "5") {
+        result = 11
+      } else if (traceType == "active_third" && traceOp2 == "6") {
+        result = 6
+      } else if (traceType == "active_third" && traceOp2 == "26") {
+        result = 3
+      } else if (traceType == "active_third" && traceOp2 == "27") {
+        result = 12
+      } else if (traceType == "active15" && traceOp2 == "site_form") {
+        result = 3
+      } else if (traceType == "ctsite_active15" && traceOp2 == "ct_site_form") {
         result = 3
       } else if (traceType == "js_active" && traceOp2 == "js_form") {
         result = 3
@@ -108,8 +123,12 @@ object OcpcQuickLog {
         result = 4
       } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
         result = 4
+      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "ON_BANNER") {
+        result = 4
+      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "CLICK_POPUPWINDOW_ADDWX") {
+        result = 4
       } else {
-        result = 0
+        result = -1
       }
       result
     })
@@ -132,11 +151,16 @@ object OcpcQuickLog {
     val cvData1 = spark.sql(sqlRequest)
 
     val cvData2 = cvData1
-      .filter(s"conversion_goal = 2")
+      .filter(s"conversion_goal = 0")
+      .withColumn("conversion_goal", lit(2))
+
+    val cvData3 = cvData1
+      .filter(s"conversion_goal = 0")
       .withColumn("conversion_goal", lit(3))
 
     val cvData = cvData1
       .union(cvData2)
+      .union(cvData3)
       .filter(s"conversion_goal > 0")
       .select("searchid", "conversion_goal")
       .distinct()
