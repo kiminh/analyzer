@@ -35,7 +35,7 @@ object OcpcChargeSchedule {
 
     // 兼容逻辑：兼容老版本的逻辑
     // 抽取基本数据
-    val scheduleData = getPaySchedule(date, spark)
+    val scheduleData = getPaySchedule(date, version, spark)
 //    scheduleData
 //      .repartition(10)
 //      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
@@ -105,8 +105,23 @@ object OcpcChargeSchedule {
     data
   }
 
-  def getPaySchedule(date: String, spark: SparkSession) = {
+  def getPaySchedule(date: String, version: String, spark: SparkSession) = {
     // 获取老版的单元周期数据
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+//    val prevData = spark
+//      .table("dl_cpc.ocpc_pay_cnt_daily_v2")
+//      .where(s"`date` = '$date1' and version = '$version'")
+//      .select("unitid", "pay_cnt", "pay_date")
+//      .distinct()
+
     val prevData = spark
       .table("dl_cpc.ocpc_pay_cnt_daily")
       .where(s"`date` = '2019-10-13'")
@@ -152,7 +167,7 @@ object OcpcChargeSchedule {
       .select("unitid", "pay_cnt", "pay_date")
       .na.fill(0, Seq("pay_cnt"))
       .na.fill(date, Seq("pay_date"))
-      .filter(s"pay_date <= '$date'")
+//      .filter(s"pay_date <= '$date'")
 
     data.printSchema()
     data
