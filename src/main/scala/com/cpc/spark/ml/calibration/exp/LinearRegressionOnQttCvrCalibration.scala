@@ -124,7 +124,7 @@ object LinearRegressionOnQttCvrCalibration {
          |    when user_show_ad_num in (5,6,7) then '7'
          |    else '8' end as show_num
          |    from dl_cpc.wy_calibration_sample_2019_10_11
-         |    where hour = '01'
+         |    --where hour = '01'
        """.stripMargin
     val data = spark.sql(sql1)
     data.show(10)
@@ -318,7 +318,7 @@ object LinearRegressionOnQttCvrCalibration {
         sum(col("label")).cast(DoubleType).alias("cvrnum")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
-      .filter("cvrnum > 50")
+      .filter("cvrnum > 10")
 
     p2.createOrReplaceTempView("unit")
     val sql =
