@@ -124,6 +124,7 @@ object LinearRegressionOnQttCvrCalibration {
          |    when user_show_ad_num in (5,6,7) then '7'
          |    else '8' end as show_num
          |    from dl_cpc.wy_calibration_sample_2019_10_11
+         |    where hour = '01'
        """.stripMargin
     val data = spark.sql(sql1)
     data.show(10)
@@ -135,7 +136,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
       .filter("unitidtag=1")
     val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>10,1).otherwise(0))
+      .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
       .filter("useridtag=1")
 
     val df1 = data
