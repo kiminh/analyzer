@@ -28,7 +28,9 @@ object OcpcChargeCost {
 
     // 计算当天数据
     val baseData = getBaseData(date, spark)
-    baseData
+    val resultDF = baseData
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
       .repartition(10)
 //      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
       .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
