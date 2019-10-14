@@ -102,7 +102,30 @@ object LinearRegressionOnQttCvrCalibration {
 //       """.stripMargin
 //
 //    println(s"sql:\n$sql")
-    val data = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_10")
+    val sql1 =
+    s"""
+       |select *,rawcvr as raw_cvr,case
+       |    when user_show_ad_num = 0 then '0'
+       |    when user_show_ad_num = 1 then '1'
+       |    when user_show_ad_num = 2 then '2'
+       |    when user_show_ad_num in (3,4) then '4'
+       |    when user_show_ad_num in (5,6,7) then '7'
+       |    else '8' end as user_show_ad_num
+       |    from dl_cpc.wy_calibration_sample_2019_10_10
+       """.stripMargin
+
+    val sql2 =
+      s"""
+         |select *,rawcvr as raw_cvr,case
+         |    when user_show_ad_num = 0 then '0'
+         |    when user_show_ad_num = 1 then '1'
+         |    when user_show_ad_num = 2 then '2'
+         |    when user_show_ad_num in (3,4) then '4'
+         |    when user_show_ad_num in (5,6,7) then '7'
+         |    else '8' end as user_show_ad_num
+         |    from dl_cpc.wy_calibration_sample_2019_10_11
+       """.stripMargin
+    val data = spark.sql(sql1)
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
@@ -114,19 +137,21 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("label",col("iscvr"))
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
       .withColumn("sample",lit(1))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight","userid")
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count")
     df1.show(10)
 
-    val df2 = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
+    val df2 = spark.sql(sql2)
       .withColumn("label",col("iscvr"))
       .join(defaultideaid,Seq("ideaid"),"left")
       .withColumn("sample",lit(0))
 //      .withColumn("ideaid",when(col("tag")===1,col("ideaid")).otherwise(9999999))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr","exp_cvr","sample","hourweight","userid")
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count")
 
     val dataDF = df1.union(df2)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
@@ -135,7 +160,7 @@ object LinearRegressionOnQttCvrCalibration {
       stagesArray.append(indexer,encoder)
     }
 
-    val numericCols = Array("user_show_ad_num","raw_cvr")
+    val numericCols = Array("raw_cvr")
     val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
     /**使用VectorAssembler将所有特征转换为一个向量*/
     val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
@@ -198,9 +223,6 @@ object LinearRegressionOnQttCvrCalibration {
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
-
-    println("coefficients:" +lrModel.coefficients)
-    println("intercept:" +lrModel.intercept)
 
     // 输出逻辑回归的系数和截距
     println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
