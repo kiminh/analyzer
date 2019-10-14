@@ -165,7 +165,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val dataDF = df1.union(df2)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count","show_num")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
@@ -174,7 +174,7 @@ object LinearRegressionOnQttCvrCalibration {
       stagesArray.append(indexer,encoder)
     }
 
-    val numericCols = Array("raw_cvr","user_show_ad_num")
+    val numericCols = Array("raw_cvr")
     val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
     /**使用VectorAssembler将所有特征转换为一个向量*/
     val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
