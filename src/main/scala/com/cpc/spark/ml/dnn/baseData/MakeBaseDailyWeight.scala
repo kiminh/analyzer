@@ -112,13 +112,13 @@ object MakeBaseDailyWeight {
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
-      val bid_cpm_file_curr = des_dir + "/" + this_date + "-weight-info"
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       if (!exists_hdfs_path(bid_cpm_file_curr)) {
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
         df_train_files.show(3)
-        val info_rdd = df_train_files.rdd.map(
+        df_train_files.rdd.map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
             val idx1 = rs.getSeq[Long](1)
@@ -135,17 +135,21 @@ object MakeBaseDailyWeight {
 
             val bid = dense(10).toString
             val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-            (bid, bid_ori, label, 1.0)
-          }
-        ).map({
-          rs =>
-            (rs._1 + "\t" + rs._2, (rs._3, rs._4))
+            (bid + "\t" + bid_ori, (label, 1.0))
         }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
           rs =>
-            val key_list = rs._1.split("\t")
-            (key_list(0), key_list(1), rs._2._1, rs._2._2)
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+      }
+    }
+
+
+    val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
+    for (idx <- train_date_list.indices) {
+      val this_date = train_date_list(idx)
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
+      if (exists_hdfs_path(bid_cpm_file_curr)) {
+        cpm_file_buffer += bid_cpm_file_curr
       }
     }
 
@@ -154,33 +158,13 @@ object MakeBaseDailyWeight {
     val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
 
     if (!exists_hdfs_path(bid_cpm_file)) {
-      val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(file_list)
-      //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
-      df_train_files.printSchema()
-      df_train_files.show(3)
-      val info_rdd = df_train_files.rdd.map(
+
+      val info_rdd = sc.textFile(cpm_file_buffer.mkString(",")).map(
         rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-
-          var label = 0.0
-          if (label_arr.head == 1L) {
-            label = 1.0
-          }
-
-          val bid = dense(10).toString
-          val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-          (bid, bid_ori, label, 1.0)
+          val rs_list = rs.split("\t")
+          (rs_list(0) + "\t" + rs_list(1), (rs_list(2).toDouble, rs_list(3).toDouble))
         }
-      ).map({
-        rs =>
-          (rs._1 + "\t" + rs._2, (rs._3, rs._4))
-      }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val key_list = rs._1.split("\t")
           val bid_ori = key_list(1).toFloat
@@ -206,9 +190,6 @@ object MakeBaseDailyWeight {
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
       }).saveAsTextFile(bid_cpm_file)
     }
-
-
-
 
     //val schema_new = StructType(List(
     //  StructField("sample_idx", LongType, nullable = true),
