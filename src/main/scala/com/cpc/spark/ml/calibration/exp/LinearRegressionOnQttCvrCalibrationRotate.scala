@@ -27,7 +27,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
     val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 23){
+    for (i <- 0 until 22){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(Math.max(24 - i, 0))
@@ -70,7 +70,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num
            |    from dl_cpc.wy_calibration_sample
-           |    where day =$testDate and hour=$testHour
+           |    where day ='$testDate' and hour='$testHour'
        """.stripMargin
       println(s"$sql2")
       val data = spark.sql(sql1)
