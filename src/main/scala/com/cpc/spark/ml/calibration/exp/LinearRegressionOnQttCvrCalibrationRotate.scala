@@ -88,12 +88,12 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val df1 = data
         .join(defaultideaid,Seq("ideaid"),"left")
-        .join(defaultunitid,Seq("unitid"),"left")
-        .join(defaultuserid,Seq("userid"),"left")
+//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("label",col("iscvr"))
-        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
+//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
@@ -102,12 +102,12 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val df2 = spark.sql(sql2)
         .withColumn("label",col("iscvr"))
         .join(defaultideaid,Seq("ideaid"),"left")
-        .join(defaultunitid,Seq("unitid"),"left")
-        .join(defaultuserid,Seq("userid"),"left")
+//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("sample",lit(0))
         .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
+//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
 
