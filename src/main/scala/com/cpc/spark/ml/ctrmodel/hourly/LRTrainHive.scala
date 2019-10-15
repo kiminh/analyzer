@@ -138,7 +138,7 @@ object LRTrainHive {
          |  and unitid in (2411411, 2424481, 2426812, 2427591)
          |  and isclick = 1
          |  and isshow = 1
-         |  and day>='2019-10-11' and day<='2019-10-12'
+         |  and day>='2019-10-11' and day<='2019-10-13'
          |)a
          |left outer join
          |(select
@@ -244,7 +244,7 @@ object LRTrainHive {
          |  and unitid in (2411411, 2424481, 2426812, 2427591)
          |  and isclick = 1
          |  and isshow = 1
-         |  and day>='2019-10-13'
+         |  and day='2019-10-14'
          |)a
          |left outer join
          |(select
