@@ -114,6 +114,7 @@ object MakeBaseDailyWeight {
       val this_file = train_file_list(idx)
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
+        println("collect samples info of " + bid_cpm_file_curr)
         delete_hdfs_path(bid_cpm_file_curr)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
