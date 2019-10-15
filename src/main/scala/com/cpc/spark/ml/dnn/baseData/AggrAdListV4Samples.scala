@@ -165,7 +165,7 @@ object AggrAdListV4Samples {
         println(s"text_train_rdd_count is : $text_train_rdd_count")
 
         val tf_df: DataFrame = spark.createDataFrame(text_train_rdd, schema_new)
-        tf_df.repartition(100).write.format("tfrecords").option("recordType", "Example").save(file_des)
+        tf_df.repartition(2000).write.format("tfrecords").option("recordType", "Example").save(file_des)
 
         //保存count文件
         val fileName = "count_" + Random.nextInt(100000)
