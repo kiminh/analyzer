@@ -58,7 +58,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    from dl_cpc.wy_calibration_sample
            |    where $selectCondition
        """.stripMargin
-      println("sql1")
+      println(s"$sql1")
 
       val sql2 =
         s"""
@@ -72,7 +72,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    from dl_cpc.wy_calibration_sample
            |    where day =$testDate and hour=$testHour
        """.stripMargin
-      println("sql2")
+      println(s"$sql2")
       val data = spark.sql(sql1)
       data.show(10)
 
