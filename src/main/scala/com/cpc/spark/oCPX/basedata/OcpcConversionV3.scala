@@ -459,7 +459,36 @@ object OcpcConversionV3 {
       .withColumn("conversion_from", lit(1))
       .distinct()
 
-    val resultDF = data1.union(data2).distinct()
+    val sqlRequest3 =
+      s"""
+         |select
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    userid,
+         |    1 as label
+         |from
+         |     dl_cpc.cpc_conversion
+         |where
+         |    day='$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    array_contains(conversion_target, 'api')
+         |and
+         |    unitid in (2307520, 2442238, 2439788, 2445703)
+       """.stripMargin
+    println(sqlRequest3)
+    val data3 = spark
+      .sql(sqlRequest3)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("conversion_goal", lit(2))
+      .withColumn("conversion_from", lit(1))
+      .distinct()
+
+
+    val resultDF = data1.union(data2).union(data3).distinct()
 
 
     resultDF.show(10)
