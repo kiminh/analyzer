@@ -97,6 +97,7 @@ object OcpcChargeSchedule {
     val data = spark
       .sql(sqlRequest2)
       .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+      .withColumn("flag", when(col("pay_date") > date, 0).otherwise(col("flag")))
       .withColumn("prev_pay_cnt", col("pay_cnt"))
       .withColumn("prev_pay_date", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
@@ -116,15 +117,15 @@ object OcpcChargeSchedule {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
-    val prevData = spark
-      .table("dl_cpc.ocpc_pay_cnt_daily_v2")
-      .where(s"`date` = '$date1' and version = '$version'")
-      .select("unitid", "pay_cnt", "pay_date")
-      .distinct()
-
 //    val prevData = spark
-//      .table("dl_cpc.ocpc_pay_cnt_daily")
-//      .where(s"`date` = '2019-10-14'")
+//      .table("dl_cpc.ocpc_pay_cnt_daily_v2")
+//      .where(s"`date` = '$date1' and version = '$version'")
+//      .select("unitid", "pay_cnt", "pay_date")
+//      .distinct()
+
+    val prevData = spark
+      .table("dl_cpc.ocpc_pay_cnt_daily")
+      .where(s"`date` = '2019-10-14'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")
