@@ -23,13 +23,13 @@ object OcpcQuickLog {
     val hour = args(1).toString
 
     // 点击数据
-//    val clickData = getClickLog(date, hour, spark)
-//    clickData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(10)
-////      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+    val clickData = getClickLog(date, hour, spark)
+    clickData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(10)
+//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
