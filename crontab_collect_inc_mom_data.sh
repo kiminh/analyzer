@@ -165,6 +165,7 @@ if [[ ${#all_data[@]} -le 0 ]] ; then
 fi
 
 printf "got ${#all_data[@]} history real-time training data file\n"
+date_last=`date --date='1 days ago' +%Y-%m-%d`
 train_file_last="$( IFS=$','; echo "${all_data[*]}" )"
 train_ids_last="$( IFS=$','; echo "${all_ids[*]}" )"
 
@@ -412,7 +413,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_ids} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
+    ${randjar} ${des_dir} ${train_file} ${train_ids} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${train_file_last} ${date_last} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
