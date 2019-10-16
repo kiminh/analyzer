@@ -201,6 +201,7 @@ do
 
     file_part1=${dir}/${curr_date}_${id}_part-0-0
     file_part2=${dir}/${curr_date}_${id}_part-99-0
+    file_count=${dir}/${curr_date}_${id}_count
 
     if [[ ! -f ${file_part1} ]]; then
         hadoop fs -get ${p00}part-0-0 ${file_part1} &
@@ -208,6 +209,10 @@ do
 
     if [[ ! -f ${file_part1} ]]; then
         hadoop fs -get ${p00}part-99-0 ${file_part2} &
+    fi
+
+    if [[ ! -f ${file_count} ]]; then
+        hadoop fs -get ${p00}count ${file_count} &
     fi
 done
 
@@ -242,6 +247,7 @@ do
 
     file_part1=${dir}/${curr_date}_${id}_part-0-0
     file_part2=${dir}/${curr_date}_${id}_part-99-0
+    file_count=${dir}/${curr_date}_${id}_count
 
     if [[ ! -f ${file_part1} ]]; then
         printf "no ${file_part1} file, continue...\n"
@@ -249,6 +255,10 @@ do
     fi
     if [[ ! -f ${file_part2} ]]; then
         printf "no ${file_part2} file, continue...\n"
+        continue
+    fi
+    if [[ ! -f ${file_count} ]]; then
+        printf "no ${file_count} file, continue...\n"
         continue
     fi
 
@@ -269,6 +279,7 @@ do
     touch ${is_new}
     rm ${file_part1}
     rm ${file_part2}
+    rm ${file_count}
 
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
