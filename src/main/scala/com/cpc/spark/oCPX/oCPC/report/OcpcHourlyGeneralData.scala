@@ -110,7 +110,7 @@ object OcpcHourlyGeneralData {
          |  media,
          |  cost as cost_yesterday
          |FROM
-         |  dl_cpc.ocpc_general_data_industry
+         |  test.ocpc_general_data_industry_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
@@ -119,7 +119,6 @@ object OcpcHourlyGeneralData {
 
     data
   }
-
 
   def getOCPCstats(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
