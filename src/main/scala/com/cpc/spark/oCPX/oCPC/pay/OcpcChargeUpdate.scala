@@ -45,6 +45,7 @@ object OcpcChargeUpdate {
     // 如果当前为周期第一天，则重新落表，否则，叠加上前一天的历史数
     // 获取前一天数据
     val prevData = getPrevData(date, version, spark)
+    prevData.show(10)
     // 根据date是否等于pay_date来判断是否重新落表
     val finalPayData = updatePay(prevData, scheduleData, baseData, date, spark)
 //    finalPayData
@@ -144,7 +145,7 @@ object OcpcChargeUpdate {
          |  cpagiven as prev_cpagiven,
          |  ocpc_charge_time as prev_ocpc_charge_time
          |FROM
-         |  test.ocpc_pay_data_daily_v2
+         |  dl_cpc.ocpc_pay_data_daily_v2
          |WHERE
          |  `date` = '$date1'
          |AND
