@@ -13,22 +13,6 @@ import org.apache.spark.sql.functions._
 object OcpcHourlyGeneralData {
   def main(args: Array[String]): Unit = {
     /*
-    新版报表程序
-    CREATE TABLE `report_ocpc_general_data` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `industry` varchar(255) NOT NULL DEFAULT '',
-      `cost` double(11,6) NOT NULL DEFAULT '0.00000' COMMENT 'oCPC总消费',
-      `cost_cmp` double(11,6) NOT NULL DEFAULT '0.00000' COMMENT 'oCPC消费环比',
-      `cost_ratio` double(11,6) NOT NULL DEFAULT '0.00000' COMMENT 'oCPC消费占比',
-      `cost_low` double(11,6) NOT NULL DEFAULT '0.00000' COMMENT 'oCPC正常消费',
-      `cost_high` double(11,6) NOT NULL DEFAULT '0.00000' COMMENT 'oCPC超成本消费',
-      `unitid_cnt` int(11) NOT NULL DEFAULT '0' COMMENT 'oCPC投放单元数',
-      `userid_cnt` int(11) NOT NULL DEFAULT '0' COMMENT 'oCPC投放账户数',
-      `date` date NOT NULL,
-      `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`id`) USING BTREE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
     1. 从base表抽取数据，按照行业过滤数据
     2. 统计各项指标
      */
@@ -79,7 +63,7 @@ object OcpcHourlyGeneralData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-//      .cache()
+      .cache()
 
     resultDF.show(10)
 
