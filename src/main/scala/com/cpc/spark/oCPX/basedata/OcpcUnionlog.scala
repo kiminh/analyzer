@@ -18,8 +18,8 @@ object OcpcUnionlog {
 
     data
       .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -27,8 +27,8 @@ object OcpcUnionlog {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -203,7 +203,10 @@ object OcpcUnionlog {
          |    deep_conversion_goal,
          |    deep_cpa,
          |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    ocpc_expand_tag,
+         |    ori_cvr,
+         |    uid_mc_show0,
+         |    uid_mc_click0
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
