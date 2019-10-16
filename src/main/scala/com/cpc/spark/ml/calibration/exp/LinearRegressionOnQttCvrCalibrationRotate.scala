@@ -56,7 +56,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num = 2 then '2'
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
-           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
+           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/8.1 + 1) hourweight0
            |    from dl_cpc.wy_calibration_sample
            |    where $selectCondition
        """.stripMargin
