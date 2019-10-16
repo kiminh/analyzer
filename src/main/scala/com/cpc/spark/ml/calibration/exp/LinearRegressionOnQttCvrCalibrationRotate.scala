@@ -30,7 +30,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     for (i <- 0 until 22){
 
       val endTime = T0.plusHours(i)
-      val startTime = endTime.minusHours(Math.max(24 - i, 0))
+      val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
@@ -43,6 +43,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println(s"endHour=$endHour")
       println(s"startDate=$startDate")
       println(s"startHour=$startHour")
+      println(s"testDate=$testDate")
+      println(s"testHour=$testHour")
 
       val selectCondition = getTimeRangeSql4(startDate, startHour, endDate, endHour)
 
@@ -136,8 +138,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**transform() 真实转换特征*/
       val dataset = pipelineModel.transform(dataDF)
       dataset.show(10)
-      dataset.select("label","features").show(10)
-      dataset.printSchema()
+//      dataset.select("label","features").show(10)
+//      dataset.printSchema()
 
       val trainingDF= dataset.filter("sample=1")
       val validationDF = dataset.filter("sample = 0")
