@@ -98,39 +98,6 @@ object MakeAdListV4Samples {
     val sc = spark.sparkContext
 
 
-    val train_ids_list = train_ids.split(",")
-    val train_files_list = train_files.split(",")
-
-    if (train_ids_list.length != train_files_list.length) {
-      println("invalid ids and files length:" + train_ids_list.length + "<->" + train_files_list.length)
-      return
-    }
-
-    for (idx <- train_ids_list.indices) {
-      val this_id = train_ids_list(idx)
-      val this_file = train_files_list(idx)
-      val ctr_file = des_dir + "/" + this_id + "-ctr"
-      if (!exists_hdfs_path(ctr_file + "/_SUCCESS")) {
-        println("collect ctr of " + this_file)
-        delete_hdfs_path(ctr_file)
-        val ctr_df: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
-        ctr_df.rdd.map(
-          rs => {
-            val label_arr = rs.getSeq[Long](5)
-            if (label_arr.head == 1L) {
-              ("ctr", (1.0, 1.0))
-            } else{
-              ("ctr", (0.0, 1.0))
-            }
-          }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
-          rs =>
-            rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1/rs._2._2
-        }).repartition(1).saveAsTextFile(ctr_file)
-      }
-    }
-
-
-
     val bid_mmh_map_file = des_dir + "/" + "bid_mmh_map.txt"
 
     val bid_mmh_map = sc.textFile(bid_mmh_map_file).map({
@@ -427,6 +394,36 @@ object MakeAdListV4Samples {
     s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
 
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
+
+
+    val train_ids_list = train_ids.split(",")
+    val train_files_list = train_files.split(",")
+    if (train_ids_list.length != train_files_list.length) {
+      println("invalid ids and files length:" + train_ids_list.length + "<->" + train_files_list.length)
+      return
+    }
+    for (idx <- train_ids_list.indices) {
+      val this_id = train_ids_list(idx)
+      val this_file = train_files_list(idx)
+      val ctr_file = des_dir + "/" + this_id + "-ctr"
+      if (!exists_hdfs_path(ctr_file + "/_SUCCESS")) {
+        println("collect ctr of " + this_file)
+        delete_hdfs_path(ctr_file)
+        val ctr_df: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
+        ctr_df.rdd.map(
+          rs => {
+            val label_arr = rs.getSeq[Long](5)
+            if (label_arr.head == 1L) {
+              ("ctr", (1.0, 1.0))
+            } else{
+              ("ctr", (0.0, 1.0))
+            }
+          }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+          rs =>
+            rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1/rs._2._2
+        }).repartition(1).saveAsTextFile(ctr_file)
+      }
+    }
 
     /****************************************collect_2***************************************************/
     val df_train_files_collect_2: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_2)
