@@ -1,8 +1,9 @@
 package com.cpc.spark.oCPX.oCPC.report
 
-import com.cpc.spark.OcpcProtoType.report.OcpcHourlyGeneralData._
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.oCPX.OcpcTools.{udfConcatStringInt, udfDetermineIndustry, udfDetermineMedia}
-import com.cpc.spark.tools.OperateMySQL
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -41,33 +42,18 @@ object OcpcHourlyGeneralData {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val media = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"date=$date, hour=$hour, version=$version")
 
-
-//    val clickCpcData = getCpcClickData(media, date, hour, spark)
-//    val clickOcpcData = getOcpcClickData(media, date, hour, spark)
-//    val cvData1 = getConversionData("cvr1", date, hour, spark)
-//    val cvData2 = getConversionData("cvr2", date, hour, spark)
-//    val cvData3 = getConversionData("cvr3", date, hour, spark)
-//
-//    val rawData = clickOcpcData
-//      .join(cvData1, Seq("searchid"), "left_outer")
-//      .join(cvData2, Seq("searchid"), "left_outer")
-//      .join(cvData3, Seq("searchid"), "left_outer")
-//      .select("searchid", "unitid", "userid", "isshow", "isclick", "price", "conversion_goal", "cpagiven", "is_api_callback", "industry", "iscvr1", "iscvr2", "iscvr3")
-//      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-
-    val ocpcData = getOcpcData(date, hour, spark)
-    val cpcData = getCpcData(date, hour, spark)
+    val ocpcRawData = getOcpcData(date, hour, spark)
+    val cpcRawData = getCpcData(date, hour, spark)
 
     // 统计汇总数据
-    val cpcData = getCPCstats(cpcData, date, hour, spark)
-    val ocpcData = getOCPCstats(ocpcData, date, hour, spark)
+    val cpcData = getCPCstats(cpcRawData, date, hour, spark)
+    val ocpcData = getOCPCstats(ocpcRawData, date, hour, spark)
 
     val joinData = ocpcData
-      .join(cpcData, Seq("industry"), "inner")
+      .join(cpcData, Seq("industry", "conversion_goal", "media"), "inner")
 
     // 计算前一天数据
     val result1 = joinData
@@ -80,7 +66,7 @@ object OcpcHourlyGeneralData {
 
     val prevData = getPrevData(date, hour, spark)
     val result2 = result1
-        .join(prevData, Seq("industry"), "left_outer")
+        .join(prevData, Seq("industry", "conversion_goal", "media"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
         .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("ocpc_cost") * 0.01 - col("cost_yesterday")) / col("cost_yesterday")))
     val result = result2
@@ -89,7 +75,7 @@ object OcpcHourlyGeneralData {
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost") * 0.01)
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given", "conversion_goal", "media")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -98,13 +84,42 @@ object OcpcHourlyGeneralData {
     resultDF.show(10)
 
     resultDF
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "date", "hour", "version")
-//      .repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423")
-      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "conversion_goal", "media", "date", "hour", "version")
+      .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
+//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
 
-//    saveDataToMysql(resultDF, date, hour, spark)
 
   }
+
+  def getPrevData(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = 'qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  industry,
+         |  conversion_goal,
+         |  media,
+         |  cost as cost_yesterday
+         |FROM
+         |  dl_cpc.ocpc_general_data_industry
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
+  }
+
 
   def getOCPCstats(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
@@ -112,6 +127,8 @@ object OcpcHourlyGeneralData {
       s"""
          |SELECT
          |  industry,
+         |  conversion_goal,
+         |  media,
          |  unitid,
          |  userid,
          |  sum(case when isclick=1 then price else 0 end) as ocpc_cost,
@@ -119,7 +136,7 @@ object OcpcHourlyGeneralData {
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  raw_data
-         |GROUP BY industry, unitid, userid
+         |GROUP BY industry, conversion_goal, media, unitid, userid
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -129,13 +146,15 @@ object OcpcHourlyGeneralData {
       .withColumn("high_cost", col("ocpc_cost") -  col("pred_cost") * 1.2)
       .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
 
-    //    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20190423a")
+    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20191016a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
       s"""
          |SELECT
          |  industry,
+         |  conversion_goal,
+         |  media,
          |  sum(ocpc_cost) as ocpc_cost,
          |  sum(high_cost) as high_cost,
          |  sum(case when high_cost = 0.0 then 1 else 0 end) as low_unitid_cnt,
@@ -143,7 +162,7 @@ object OcpcHourlyGeneralData {
          |  count(distinct userid) as userid_cnt
          |FROM
          |  base_data
-         |GROUP BY industry
+         |GROUP BY industry, conversion_goal, media
        """.stripMargin
     println(sqlRequest2)
     val result1 = spark
@@ -154,17 +173,19 @@ object OcpcHourlyGeneralData {
       s"""
          |SELECT
          |  industry,
+         |  conversion_goal,
+         |  media,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real
          |FROM
          |  raw_data
-         |GROUP BY industry
+         |GROUP BY industry, conversion_goal, media
        """.stripMargin
     println(sqlRequest3)
     val result2 = spark.sql(sqlRequest3)
 
     val result = result1
-      .join(result2, Seq("industry"), "inner")
+      .join(result2, Seq("industry", "conversion_goal", "media"), "inner")
 
     result
 
