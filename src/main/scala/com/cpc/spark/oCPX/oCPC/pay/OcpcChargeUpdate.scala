@@ -54,7 +54,7 @@ object OcpcChargeUpdate {
 
     // 数据落表
     val resultDF = finalPayData
-      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(date + " 00:00:00")(col("pay_cnt"), col("ocpc_charge_time")))
+      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime()(col("pay_cnt"), col("ocpc_charge_time"), col("pay_date")))
       .withColumn("pay", udfCalculatePay()(col("cv"), col("cost"), col("cpagiven")))
       .select("unitid", "click", "cv", "cost", "cpagiven", "pay", "ocpc_charge_time", "pay_cnt", "pay_date", "restart_flag")
       .withColumn("date", lit(date))
@@ -157,7 +157,8 @@ object OcpcChargeUpdate {
     result
   }
 
-  def udfSetOcpcChargeTime(ocpcChargeDate: String) = udf((prevPayCnt: Int, ocpcChargeTime: String) => {
+  def udfSetOcpcChargeTime() = udf((prevPayCnt: Int, ocpcChargeTime: String, payDate: String) => {
+    val ocpcChargeDate = payDate + " 00:00:00"
     val result = prevPayCnt match {
       case 0 => ocpcChargeTime
       case _ => ocpcChargeDate
