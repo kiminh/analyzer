@@ -75,9 +75,9 @@ object OcpcChargeSchedule {
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
-    rawData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
+//    rawData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
 
 
     val sqlRequest2 =
@@ -118,15 +118,15 @@ object OcpcChargeSchedule {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
-//    val prevData = spark
-//      .table("dl_cpc.ocpc_pay_cnt_daily_v2")
-//      .where(s"`date` = '$date1' and version = '$version'")
-//      .select("unitid", "pay_cnt", "pay_date")
-//      .distinct()
-
     val prevData = spark
-      .table("dl_cpc.ocpc_pay_cnt_daily")
-      .where(s"`date` = '2019-10-14'")
+      .table("dl_cpc.ocpc_pay_cnt_daily_v2")
+      .where(s"`date` = '$date1' and version = '$version'")
+      .select("unitid", "pay_cnt", "pay_date")
+      .distinct()
+
+//    val prevData = spark
+//      .table("dl_cpc.ocpc_pay_cnt_daily")
+//      .where(s"`date` = '2019-10-14'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")
