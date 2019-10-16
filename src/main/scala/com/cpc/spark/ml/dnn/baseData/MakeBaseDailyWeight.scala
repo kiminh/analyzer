@@ -106,7 +106,7 @@ object MakeBaseDailyWeight {
     println("bid_mmh_map.size=" + bid_mmh_map.size)
 
 
-    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    /**println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
 
@@ -162,10 +162,9 @@ object MakeBaseDailyWeight {
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
       }).saveAsTextFile(bid_cpm_file)
-    }
+    }**/
 
-
-    /**val train_date_list = date_list.split(";")
+    val train_date_list = date_list.split(";")
     val train_file_list = train_list.split(";")
 
     for (idx <- train_date_list.indices) {
@@ -173,7 +172,7 @@ object MakeBaseDailyWeight {
       val this_file = train_file_list(idx)
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
-        println("collect samples info of " + bid_cpm_file_curr)
+        println("collect samples info of " + this_file)
         delete_hdfs_path(bid_cpm_file_curr)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
@@ -250,7 +249,7 @@ object MakeBaseDailyWeight {
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
       }).saveAsTextFile(bid_cpm_file)
-    }**/
+    }
 
     //val schema_new = StructType(List(
     //  StructField("sample_idx", LongType, nullable = true),
