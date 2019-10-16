@@ -223,6 +223,7 @@ object MakeAdListV4Samples {
     val weight_map = sta_rdd.map({
       rs =>
         val bid_hash = rs._1
+        val bid_ori = rs._2
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
@@ -241,6 +242,9 @@ object MakeAdListV4Samples {
 
         if (weight <= 0.0) {
           weight_new = 1.0
+        }
+        if (bid_ori == "1") {
+          weight_new = 1.0000001
         }
         //weight_new = 1.0 / weight_new
         (bid_hash, weight_new)
@@ -273,6 +277,9 @@ object MakeAdListV4Samples {
 
         if (weight <= 0.0) {
           weight_new = 1.0
+        }
+        if (bid_ori == "1") {
+          weight_new = 1.0000001
         }
         //weight_new = 1.0 / weight_new
         (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
