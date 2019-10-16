@@ -10,7 +10,7 @@ ml_ver=v4refult
 date_full=`date`
 #printf "*****************************${date_full}********************************\n"
 
-dir=collect_inc_mom
+dir=collect_ctr
 if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
@@ -109,7 +109,7 @@ printf "waiting for downloading real-time data in parallel...\n"
 wait
 printf "downloaded real-time data file in parallel...\n"
 all_data=()
-all_ids=()
+all_id=()
 for idx in "${!sample_list[@]}";
 do
     p00=${prefix}"${sample_list[$idx]}"
@@ -119,7 +119,7 @@ do
     if [[ -f "$is_new" ]]; then
         #printf "detected real-time file ${p00}\n"
         all_data+=(${p00}${end})
-        all_ids+=("${curr_date}-${id}")
+        all_id+=(${id})
         continue
     fi
 
@@ -155,7 +155,7 @@ do
 
     #printf "detected real-time file ${p00}\n"
     all_data+=(${p00}${end})
-    all_ids+=("${curr_date}-${id}")
+    all_id+=(${id})
 done
 
 if [[ ${#all_data[@]} -le 0 ]] ; then
@@ -166,7 +166,7 @@ fi
 
 printf "got ${#all_data[@]} history real-time training data file\n"
 train_file_last="$( IFS=$','; echo "${all_data[*]}" )"
-train_ids_last="$( IFS=$','; echo "${all_ids[*]}" )"
+train_ids_last="$( IFS=$','; echo "${all_id[*]}" )"
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
@@ -214,10 +214,8 @@ printf "waiting for downloading real-time data in parallel...\n"
 wait
 printf "downloaded real-time data file in parallel...\n"
 
-inc_data=()
-done_data=()
 all_data=()
-all_ids=()
+all_id=()
 for idx in "${!sample_list[@]}";
 do
     p00=${prefix}"${sample_list[$idx]}"
@@ -231,12 +229,8 @@ do
     is_new=${dir}/train_done_${curr_date}_${id}
     if [[ -f "$is_new" ]]; then
         #printf "done with ${p00}, continuing\n"
-        done_data+=(${p00}${end})
         all_data+=(${p00}${end})
-        all_ids+=("${curr_date}-${id}")
-        test_file=${p00}${end}
-        last_id=${id}
-        continue
+        all_id+=(${id})
     fi
 
     file_part1=${dir}/${curr_date}_${id}_part-0-0
@@ -270,11 +264,8 @@ do
     rm ${file_part2}
 
     printf "new inc real-time file ${p00}\n"
-    inc_data+=(${p00}${end})
     all_data+=(${p00}${end})
-    all_ids+=("${curr_date}-${id}")
-    test_file=${p00}${end}
-    last_id=${id}
+    all_id+=(${id})
 done
 
 printf "got ${#inc_data[@]} today incremental real-time training data file\n"
@@ -292,10 +283,7 @@ if [[ ${#all_data[@]} -le 0 ]] ; then
 fi
 
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
-train_ids_curr="$( IFS=$','; echo "${all_ids[*]}" )"
-
 train_file=${train_file_last},${train_file_curr}
-train_ids=${train_ids_last},${train_ids_curr}
 
 train_file_collect_8=${train_file_curr}
 train_file_collect_4=${train_file_curr}
@@ -368,8 +356,6 @@ printf "test_file:%s\n" ${test_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file:%s\n" ${train_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-printf "train_ids:%s\n" ${train_ids}
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_8:%s\n" ${train_file_collect_8}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_4:%s\n" ${train_file_collect_4}
@@ -412,7 +398,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_ids} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
+    ${randjar} ${des_dir} ${train_file} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${history_file} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
