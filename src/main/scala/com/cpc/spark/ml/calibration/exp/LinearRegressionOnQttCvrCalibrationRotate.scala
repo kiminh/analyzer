@@ -56,7 +56,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num = 2 then '2'
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
-           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/8 + 1) hourweight0
+           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
            |    from dl_cpc.wy_calibration_sample
            |    where $selectCondition
        """.stripMargin
@@ -99,7 +99,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
+          "exp_cvr","sample","hourweight0","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
       df1.show(10)
 
       val df2 = spark.sql(sql2)
@@ -112,7 +112,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
+          "exp_cvr","sample","hourweight0","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
 
       val dataDF = df1.union(df2)
 
@@ -145,7 +145,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val validationDF = dataset.filter("sample = 0")
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
-        //        .setWeightCol("hourweight")
+                .setWeightCol("hourweight0")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
@@ -228,7 +228,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
          |select unitid,cvr,ecvr,cvrnum,pcoc,ROW_NUMBER() OVER (ORDER BY cvrnum DESC) rank
          |from unit
        """.stripMargin
-    val p3 = spark.sql(sql).filter(s"rank<${p2.count()*0.8}")
+    val p3 = spark.sql(sql)
 //    p3.show(10)
     val cvr2 = p2.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
     val ecvr2 = p2.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
