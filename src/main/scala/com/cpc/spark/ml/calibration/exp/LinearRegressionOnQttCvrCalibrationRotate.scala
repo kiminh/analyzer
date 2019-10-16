@@ -56,7 +56,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num = 2 then '2'
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
-           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/8.1 + 1) hourweight0
+           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
            |    from dl_cpc.wy_calibration_sample
            |    where $selectCondition
        """.stripMargin
@@ -90,11 +90,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
-        .join(defaultideaid,Seq("ideaid"),"left")
+//        .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("label",col("iscvr"))
-        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
@@ -104,11 +104,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val df2 = spark.sql(sql2)
         .withColumn("label",col("iscvr"))
-        .join(defaultideaid,Seq("ideaid"),"left")
+//        .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("sample",lit(0))
-        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
