@@ -353,7 +353,6 @@ object MakeAdListV4Samples {
         if (weight <= 1.0f) {
           weight = 0.0f
         }
-
         //if (label_arr.head != 1L) {
         //  weight = 1.0f
         //}
@@ -409,9 +408,12 @@ object MakeAdListV4Samples {
         var weight = weight_map.getOrElse(bid, 1.0)
         val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
 
-        if (label_arr.head != 1L) {
-          weight = 1.0f
+        if (weight <= 1.0f) {
+          weight = 0.0f
         }
+        //if (label_arr.head != 1L) {
+        //  weight = 1.0f
+        //}
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
@@ -450,9 +452,12 @@ object MakeAdListV4Samples {
         var weight = weight_map.getOrElse(bid, 1.0)
         val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
 
-        if (label_arr.head != 1L) {
-          weight = 1.0f
+        if (weight <= 1.0f) {
+          weight = 0.0f
         }
+        //if (label_arr.head != 1L) {
+        //  weight = 1.0f
+        //}
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
@@ -491,9 +496,12 @@ object MakeAdListV4Samples {
         var weight = weight_map.getOrElse(bid, 1.0)
         val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
 
-        if (label_arr.head != 1L) {
-          weight = 1.0f
+        if (weight <= 1.0f) {
+          weight = 0.0f
         }
+        //if (label_arr.head != 1L) {
+        //  weight = 1.0f
+        //}
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
