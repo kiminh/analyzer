@@ -85,8 +85,8 @@ object OcpcHourlyGeneralData {
 
     resultDF
       .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "conversion_goal", "media", "date", "hour", "version")
-      .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
+//      .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
 
 
   }
@@ -110,7 +110,7 @@ object OcpcHourlyGeneralData {
          |  media,
          |  cost as cost_yesterday
          |FROM
-         |  test.ocpc_general_data_industry_hourly
+         |  dl_cpc.ocpc_general_data_industry_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
@@ -145,7 +145,7 @@ object OcpcHourlyGeneralData {
       .withColumn("high_cost", col("ocpc_cost") -  col("pred_cost") * 1.2)
       .withColumn("high_cost", when(col("high_cost") <= 0, 0.0).otherwise(col("high_cost")))
 
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20191016a")
+//    baseData.write.mode("overwrite").saveAsTable("test.ocpc_general_data_industry20191016a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest2 =
