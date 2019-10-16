@@ -159,7 +159,7 @@ object OcpcChargeUpdate {
 
   def udfSetOcpcChargeTime(ocpcChargeDate: String) = udf((prevPayCnt: Int, ocpcChargeTime: String) => {
     val result = prevPayCnt match {
-      case 1 => ocpcChargeTime
+      case 0 => ocpcChargeTime
       case _ => ocpcChargeDate
     }
     result
