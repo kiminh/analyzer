@@ -10,7 +10,7 @@ import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer, VectorAssemble
 import org.apache.spark.ml.regression.LinearRegression
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.DoubleType
+import org.apache.spark.sql.types.{DoubleType,IntegerType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable.ListBuffer
@@ -90,11 +90,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
-//        .join(defaultideaid,Seq("ideaid"),"left")
+        .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("label",col("iscvr"))
-//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
@@ -104,11 +104,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val df2 = spark.sql(sql2)
         .withColumn("label",col("iscvr"))
-//        .join(defaultideaid,Seq("ideaid"),"left")
+        .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("sample",lit(0))
-//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
@@ -220,22 +220,25 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         sum(col("label")).cast(DoubleType).alias("cvrnum")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
-      .filter("cvrnum > 20")
 
-    p2.createOrReplaceTempView("unit")
+    p2.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_unit_analysis")
+
+      val p3 = p2.filter("cvrnum > 20")
+
+    p3.createOrReplaceTempView("unit")
     val sql =
       s"""
          |select unitid,cvr,ecvr,cvrnum,pcoc,ROW_NUMBER() OVER (ORDER BY cvrnum DESC) rank
          |from unit
        """.stripMargin
-    val p3 = spark.sql(sql)
-//    p3.show(10)
-    val cvr2 = p2.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
-    val ecvr2 = p2.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
-    val pcoc = p2.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
-    val allnum = p3.count().toDouble
-    val rightnum = p3.filter("pcoc<1.1 and pcoc>0.9").count()
-    val greaternum = p3.filter("pcoc>1.1").count()
+    val p4 = spark.sql(sql)
+
+    val cvr2 = p3.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
+    val ecvr2 = p3.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
+    val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
+    val allnum = p4.count().toDouble
+    val rightnum = p4.filter("pcoc<1.1 and pcoc>0.9").count()
+    val greaternum = p4.filter("pcoc>1.1").count()
     println("%s by unitid:unitid sum:%d,avgcvr:%.4f,avgecvr:%.4f,avgpcoc:%.3f,all:%.0f,right:%d,pcoc>1.1:%d,ratio of pcoc in (0.9,1,1):%.3f,ratio of pcoc>1.1:%.3f".format(cate, p2.count(),cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
   }
 }
