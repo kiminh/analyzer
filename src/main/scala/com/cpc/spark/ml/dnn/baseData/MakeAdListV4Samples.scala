@@ -177,7 +177,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f) {
           weight_new = weight / bid_1_weight
         }
         if (weight <= 0.0) {
@@ -188,7 +188,7 @@ object MakeAdListV4Samples {
 
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
-    val max_weight_factor_first = 2.0f
+    val max_weight_factor_first = 1.0f
     val factor_first = max_weight_factor_first / (max_weight_first.toFloat - 1.0)
     println("factor_first:" + factor_first)
 
@@ -199,7 +199,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
@@ -215,7 +215,7 @@ object MakeAdListV4Samples {
 
     val max_weight_second = max_map_second.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_second:" + max_weight_second)
-    val max_weight_factor_second = 2.0f
+    val max_weight_factor_second = 1.0f
     val factor_second = max_weight_factor_second / (max_weight_second.toFloat - 1.0)
     println("factor_second:" + factor_second)
 
@@ -228,7 +228,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
@@ -236,7 +236,7 @@ object MakeAdListV4Samples {
           }
         }
 
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
           weight_new = 1.0 + (weight_new - 1.0) * factor_second
         }
 
@@ -263,7 +263,7 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._4.toFloat
         val ctr = rs._6.toFloat
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f) {
           if (ctr >= bid_1_ctr) {
             weight_new = weight / bid_1_weight
           } else {
@@ -271,7 +271,7 @@ object MakeAdListV4Samples {
           }
         }
 
-        if (click >= 1000000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
+        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
           weight_new = 1.0 + (weight_new - 1.0) * factor_second
         }
 
@@ -295,7 +295,7 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 1000000.0 && weight > 0.0) {
+        if (click >= 500000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
         (bid_hash, weight_new)
@@ -313,7 +313,7 @@ object MakeAdListV4Samples {
         val weight = rs._3.toFloat
         var weight_new = 1.0
         val click = rs._4.toFloat
-        if (click >= 1000000.0 && weight > 0.0) {
+        if (click >= 500000.0 && weight > 0.0) {
           weight_new = bid_1_weight / weight
         }
         (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
