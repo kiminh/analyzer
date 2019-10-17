@@ -136,7 +136,7 @@ object MakeAdListV4Samples {
       return
     }
 
-    val minus_clk_cnt = 500000.0
+    val minus_clk_cnt = 200000.0
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
