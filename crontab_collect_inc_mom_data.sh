@@ -25,6 +25,21 @@ fi
 touch ${shell_in_run}
 printf "*****************************${date_full}********************************\n"
 
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
+base_daily_bid_cpm_file=${des_dir}/${curr_date}-21days-weight-info
+file_success=${dir}/${curr_date}_21days_weight_info_success
+if [[ ! -f ${file_success} ]]; then
+    hadoop fs -get ${base_daily_bid_cpm_file}/_SUCCESS ${file_success}
+fi
+
+if [[ ! -f ${file_success} ]]; then
+    printf "no 21days-weight-info file, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+
+
 
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 end=part-*
@@ -201,6 +216,7 @@ do
 
     file_part1=${dir}/${curr_date}_${id}_part-0-0
     file_part2=${dir}/${curr_date}_${id}_part-99-0
+    file_count=${dir}/${curr_date}_${id}_count
 
     if [[ ! -f ${file_part1} ]]; then
         hadoop fs -get ${p00}part-0-0 ${file_part1} &
@@ -208,6 +224,10 @@ do
 
     if [[ ! -f ${file_part1} ]]; then
         hadoop fs -get ${p00}part-99-0 ${file_part2} &
+    fi
+
+    if [[ ! -f ${file_count} ]]; then
+        hadoop fs -get ${p00}count ${file_count} &
     fi
 done
 
@@ -242,6 +262,7 @@ do
 
     file_part1=${dir}/${curr_date}_${id}_part-0-0
     file_part2=${dir}/${curr_date}_${id}_part-99-0
+    file_count=${dir}/${curr_date}_${id}_count
 
     if [[ ! -f ${file_part1} ]]; then
         printf "no ${file_part1} file, continue...\n"
@@ -249,6 +270,10 @@ do
     fi
     if [[ ! -f ${file_part2} ]]; then
         printf "no ${file_part2} file, continue...\n"
+        continue
+    fi
+    if [[ ! -f ${file_count} ]]; then
+        printf "no ${file_count} file, continue...\n"
         continue
     fi
 
@@ -269,6 +294,7 @@ do
     touch ${is_new}
     rm ${file_part1}
     rm ${file_part2}
+    rm ${file_count}
 
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
@@ -389,8 +415,6 @@ jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
-
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 
 
 p00="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/2019-09-21-aggr/part-*"
