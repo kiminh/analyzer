@@ -100,7 +100,7 @@ object OcpcQuickLog {
     val tmpDate = tmpData.split(" ")
     val date1 = tmpDate(0)
     val hour1 = tmpDate(1)
-    val selectCondition2 = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSqlDay(date1, hour1, date, hour)
 
 
     val sqlRequest2 =
