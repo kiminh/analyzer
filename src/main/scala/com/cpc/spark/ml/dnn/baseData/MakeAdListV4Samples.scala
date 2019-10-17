@@ -141,7 +141,7 @@ object MakeAdListV4Samples {
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
         val line_list = rs.split("\t")
-        val ideal_id = line_list(0)
+        val ideal_id = line_list(0).toLong
         val bid_hash = line_list(1)
         val bid_ori = line_list(2)
         val ctr = line_list(3)
@@ -185,8 +185,6 @@ object MakeAdListV4Samples {
     //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
     val max_map_first = sta_rdd.map({
       rs =>
-        val ideal_id = rs._1
-        val bid_hash = rs._2
         val weight = rs._4.toDouble
         var weight_new = 1.0
         val click = rs._5.toDouble
@@ -221,12 +219,12 @@ object MakeAdListV4Samples {
           weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
-        (ideal_id, bid_hash, weight_new_norm)
+        (ideal_id.toLong, bid_hash, weight_new_norm)
     })
 
     val weight_map = weight_map_rdd.map({
       rs =>
-        (rs._1 + rs._2, rs._3)
+        (rs._1 + "\t" + rs._2, rs._3)
     }).collectAsMap()
     val weight_map_ori = weight_map_rdd.map({
       rs =>
@@ -295,7 +293,7 @@ object MakeAdListV4Samples {
         val dense = rs.getSeq[Long](6)
 
         val bid = dense(10).toString
-        val ideal_id = dense(11).toString
+        val ideal_id = dense(11)
 
         var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
         if (weight == 0.0) {
@@ -387,7 +385,7 @@ object MakeAdListV4Samples {
           val dense = rs.getSeq[Long](6)
 
           val bid = dense(10).toString
-          val ideal_id = dense(11).toString
+          val ideal_id = dense(11)
 
           var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
           if (weight == 0.0) {
