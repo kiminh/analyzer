@@ -340,9 +340,8 @@ object MakeAdListV4Samples {
 
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
 
-
     /****************************************ctr_file***************************************************/
-    val train_ids_list = train_ids.split(",")
+    /**val train_ids_list = train_ids.split(",")
     val train_files_list = train_files.split(",")
     if (train_ids_list.length != train_files_list.length) {
       println("invalid ids and files length:" + train_ids_list.length + "<->" + train_files_list.length)
@@ -369,10 +368,10 @@ object MakeAdListV4Samples {
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1/rs._2._2
         }).repartition(1).saveAsTextFile(ctr_file)
       }
-    }
+    }**/
 
     /****************************************last_weight***************************************************/
-    /**val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
+    val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
     if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
       delete_hdfs_path(last_weight_examples)
       val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_last)
@@ -419,7 +418,7 @@ object MakeAdListV4Samples {
       s"hadoop fs -put $fileName_1 $last_weight_examples/count" !
 
       s"hadoop fs -chmod -R 0777 $last_weight_examples" !
-    }**/
+    }
 
     /**
     /****************************************collect_2***************************************************/
