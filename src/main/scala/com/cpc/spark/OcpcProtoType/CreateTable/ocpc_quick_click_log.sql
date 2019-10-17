@@ -18,4 +18,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_quick_click_log add columns (price int);
 --alter table dl_cpc.ocpc_quick_click_log add columns (adtype int);
 --alter table dl_cpc.ocpc_quick_click_log add columns (media_appsid string);
-alter table test.ocpc_quick_click_log add columns (ocpc_log string)
+alter table dl_cpc.ocpc_quick_click_log add columns (ocpc_log string)
