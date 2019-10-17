@@ -167,8 +167,10 @@ object LinearRegressionOnQttCvrCalibrationRotate {
           val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
           val unitid = x.getAs[Int]("unitid")
           val iscvr = x.getAs[Int]("label")
-          (exp_cvr,iscvr,raw_cvr,unitid)
-      }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
+          val hour = x.getAs[Int]("hour")
+          val searchid = x.getAs[String]("searchid")
+          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
+      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
 
       if(i == 0){
         result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
