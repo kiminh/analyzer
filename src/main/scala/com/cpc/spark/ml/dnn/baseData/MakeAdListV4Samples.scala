@@ -136,7 +136,7 @@ object MakeAdListV4Samples {
       return
     }
 
-    val minus_clk_cnt = 200000.0
+    val minus_clk_cnt = 500000.0
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
@@ -163,7 +163,7 @@ object MakeAdListV4Samples {
         }
     ).map({
       rs =>
-        ("min", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7, rs._4))
+        ("min", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7, rs._4.toDouble))
     }).reduceByKey((x, y) => if (x._2 <= y._2) (x._1, x._2) else (y._1, y._2)).map({
       rs =>
         (rs._1, rs._2._1 + "\t" + rs._2._2)
@@ -202,7 +202,7 @@ object MakeAdListV4Samples {
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
     val max_weight_factor_first = 1.0
-    val factor_first = max_weight_factor_first / (max_weight_first.toFloat - 1.0)
+    val factor_first = max_weight_factor_first / (max_weight_first.toDouble - 1.0)
     println("factor_first:" + factor_first)
 
     //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
@@ -211,11 +211,11 @@ object MakeAdListV4Samples {
         val ideal_id = rs._1
         val bid_hash = rs._2
         val bid_ori = rs._3
-        val weight = rs._4.toFloat
+        val weight = rs._4.toDouble
         var weight_new_ori = 1.0
         var weight_new_norm = 1.0
-        val click = rs._5.toFloat
-        val ctr = rs._7.toFloat
+        val click = rs._5.toDouble
+        val ctr = rs._7.toDouble
         if (click >= minus_clk_cnt) {
           weight_new_ori = weight / min_weight
           weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
@@ -246,9 +246,9 @@ object MakeAdListV4Samples {
         val weight = rs._4.toDouble
         var weight_new_ori = 1.0
         var weight_new_norm = 1.0
-        val click = rs._5.toFloat
+        val click = rs._5.toDouble
         val imp = rs._6
-        val ctr = rs._7.toFloat
+        val ctr = rs._7.toDouble
 
         if (click >= minus_clk_cnt) {
           weight_new_ori = weight / min_weight
