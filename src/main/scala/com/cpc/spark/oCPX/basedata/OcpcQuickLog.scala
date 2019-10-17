@@ -28,8 +28,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
@@ -48,9 +48,9 @@ object OcpcQuickLog {
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
-    val selectCondition = s"day = '$date' and hour = '$hour'"
+    val selectCondition1 = s"day = '$date' and hour = '$hour'"
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |  searchid,
@@ -69,7 +69,7 @@ object OcpcQuickLog {
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
-         |  $selectCondition
+         |  $selectCondition1
          |AND
          |  $mediaSelection
          |AND
@@ -81,12 +81,48 @@ object OcpcQuickLog {
          |AND
          |  antispam_score = 10000
        """.stripMargin
-    println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
+
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid")
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val today = dateConverter.parse(date + " " + hour)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -3)
+    val yesterday = calendar.getTime
+    val tmpData = dateConverter.format(yesterday)
+    val tmpDate = tmpData.split(" ")
+    val date1 = tmpDate(0)
+    val hour1 = tmpDate(1)
+    val selectCondition2 = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ocpc_log
+         |FROM
+         |  dl_cpc.cpc_basedata_click_event
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  $mediaSelection
+         |AND
+         |  ocpc_step in (1, 2)
+         |AND
+         |  adslot_type != 7
+         |""".stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    val clickData = data1.join(data2, Seq("searchid"), "left_outer")
 
     clickData
   }
