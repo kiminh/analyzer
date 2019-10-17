@@ -170,7 +170,7 @@ object MakeBaseDailyWeight {
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
-      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info-ref"
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
         println("collect samples info of " + this_file)
         delete_hdfs_path(bid_cpm_file_curr)
@@ -193,9 +193,10 @@ object MakeBaseDailyWeight {
               label = 1.0
             }
 
+            val ideal_id = dense(11).toString
             val bid = dense(10).toString
             val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-            (bid + "\t" + bid_ori, (label, 1.0))
+            (ideal_id + "\t" + bid + "\t" + bid_ori, (label, 1.0))
         }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
           rs =>
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
@@ -207,7 +208,7 @@ object MakeBaseDailyWeight {
     val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
-      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info-ref"
       if (exists_hdfs_path(bid_cpm_file_curr)) {
         cpm_file_buffer += bid_cpm_file_curr
       }
@@ -215,27 +216,29 @@ object MakeBaseDailyWeight {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
+    val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info-ref"
 
     if (!exists_hdfs_path(bid_cpm_file)) {
 
       val info_rdd = sc.textFile(cpm_file_buffer.mkString(",")).map(
         rs => {
           val rs_list = rs.split("\t")
-          (rs_list(0) + "\t" + rs_list(1), (rs_list(2).toDouble, rs_list(3).toDouble))
+          (rs_list(0) + "\t" + rs_list(1) + "\t" + rs_list(2), (rs_list(3).toDouble, rs_list(4).toDouble))
         }
       ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val key_list = rs._1.split("\t")
-          val bid_ori = key_list(1).toFloat
+          val ideal_id = key_list(0).toFloat
+          val bid_hash = key_list(1).toFloat
+          val bid_ori = key_list(2).toFloat
           val ctr = rs._2._1 / rs._2._2
           val cpm = ctr * bid_ori
-          (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
+          (ideal_id, bid_hash, bid_ori, ctr, cpm, rs._2._1, rs._2._2)
       })
 
       val total_cpm_map = info_rdd.map({
         rs =>
-          ("placeholder", rs._4)
+          ("placeholder", rs._5)
       }).reduceByKey(_ + _).collectAsMap()
 
       val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
@@ -243,11 +246,11 @@ object MakeBaseDailyWeight {
 
       info_rdd.map({
         rs =>
-          val weight = rs._4 / total_cpm
-          (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
-      }).repartition(1).sortBy(_._6 * -1).map({
+          val weight = rs._5 / total_cpm
+          (rs._1, rs._2, rs._3, rs._4, rs._5, total_cpm, weight, rs._6, rs._7)
+      }).repartition(1).sortBy(_._7 * -1).map({
         rs =>
-          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
+          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
       }).saveAsTextFile(bid_cpm_file)
     }
 
