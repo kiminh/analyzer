@@ -236,6 +236,13 @@ object MakeBaseDailyWeight {
           (ideal_id, bid_hash, bid_ori, ctr, cpm, rs._2._1, rs._2._2)
       })
 
+      val total_ideal_id_map = info_rdd.map({
+        rs =>
+          (rs._1, 1)
+      }).reduceByKey(_ + _).collectAsMap()
+      val total_ideal_id = total_ideal_id_map.size
+      println("total_deal_id=" + total_ideal_id)
+
       val total_cpm_map = info_rdd.map({
         rs =>
           ("placeholder", rs._5)
@@ -248,7 +255,7 @@ object MakeBaseDailyWeight {
         rs =>
           val weight = rs._5 / total_cpm
           (rs._1, rs._2, rs._3, rs._4, rs._5, total_cpm, weight, rs._6, rs._7)
-      }).repartition(1).sortBy(_._7 * -1).map({
+      }).repartition(1).sortBy(_._8 * -1).map({
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
       }).saveAsTextFile(bid_cpm_file)
