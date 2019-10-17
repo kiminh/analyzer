@@ -128,7 +128,7 @@ object MakeAdListV4Samples {
       delete_hdfs_path(ctr_file)
     }
 
-    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info"
+    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info-ref"
     println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
     if (!exists_hdfs_path(base_daily_bid_cpm_file)) {
@@ -136,51 +136,64 @@ object MakeAdListV4Samples {
       return
     }
 
+    val minus_clk_cnt = 200000.0
+
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
         val line_list = rs.split("\t")
-        val bid_hash = line_list(0)
-        val bid_ori = line_list(1)
-        val ctr = line_list(2)
-        val cpm = line_list(3)
-        val total_cpm = line_list(4)
-        val weight = line_list(5)
-        val click = line_list(6)
-        val imp = line_list(7)
-        (bid_hash, bid_ori, weight, click, imp, ctr)
+        val ideal_id = line_list(0)
+        val bid_hash = line_list(1)
+        val bid_ori = line_list(2)
+        val ctr = line_list(3)
+        val cpm = line_list(4)
+        val total_cpm = line_list(5)
+        val weight = line_list(6)
+        val click = line_list(7)
+        val imp = line_list(8)
+        (ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
     })
     println("sta_rdd.size=" + sta_rdd.count())
 
-    val bid_weight_map = sta_rdd.map({
+    val bid_weight_map = sta_rdd.filter(
       rs =>
-        (rs._2, rs._3.toFloat)
-    }).collectAsMap()
-    val bid_ctr_map = sta_rdd.map({
+        if (rs._5.toDouble >= minus_clk_cnt) {
+          true
+        } else {
+          false
+        }
+    ).map({
       rs =>
-        (rs._2, rs._6.toFloat)
+        ("min", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7, rs._4))
+    }).reduceByKey((x, y) => if (x._2 <= y._2) (x._1, x._2) else (y._1, y._2)).map({
+      rs =>
+        (rs._1, rs._2._1 + "\t" + rs._2._2)
     }).collectAsMap()
 
-    val bid_1_weight = bid_weight_map.getOrElse("1", 0.0f)
-    val bid_1_ctr = bid_ctr_map.getOrElse("1", 0.0f)
-    println("bid_1_weight:" + bid_1_weight)
-    println("bid_1_ctr:" + bid_1_ctr)
-    if (bid_1_weight <= 0.0 || bid_1_ctr <= 0.0) {
-      println("invalid bid_1_weight:" + bid_1_weight)
-      println("invalid bid_1_ctr:" + bid_1_ctr)
+    val min_info = bid_weight_map.getOrElse("min", "0\t0\t0\t0\t0")
+    println("min_info_list=" + min_info)
+    val min_info_list = min_info.split("\t")
+
+    val min_weight = min_info_list(4).toDouble
+    val min_ctr = min_info_list(3).toDouble
+
+    if (min_weight <= 0.0 || min_ctr <= 0.0) {
+      println("invalid min_weight:" + min_weight)
+      println("invalid min_ctr:" + min_ctr)
       return
     }
 
+    //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
     val max_map_first = sta_rdd.map({
       rs =>
-        val bid_hash = rs._1
-        val weight = rs._3.toFloat
+        val ideal_id = rs._1
+        val bid_hash = rs._2
+        val weight = rs._4.toDouble
         var weight_new = 1.0
-        val click = rs._4.toFloat
-        val ctr = rs._6.toFloat
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f) {
-          weight_new = weight / bid_1_weight
-        }
-        if (weight <= 0.0) {
+        val click = rs._5.toDouble
+        val ctr = rs._7.toDouble
+        if (click >= minus_clk_cnt) {
+          weight_new = weight / min_weight
+        } else {
           weight_new = 1.0
         }
         ("max_weight_placeholder", weight_new)
@@ -188,143 +201,70 @@ object MakeAdListV4Samples {
 
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
-    val max_weight_factor_first = 1.0f
+    val max_weight_factor_first = 1.0
     val factor_first = max_weight_factor_first / (max_weight_first.toFloat - 1.0)
     println("factor_first:" + factor_first)
 
-    val max_map_second = sta_rdd.map({
+    //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
+    val weight_map_rdd = sta_rdd.map({
       rs =>
-        val bid_hash = rs._1
-        val weight = rs._3.toFloat
-        var weight_new = 1.0
-        val click = rs._4.toFloat
-        val ctr = rs._6.toFloat
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
-          if (ctr >= bid_1_ctr) {
-            weight_new = weight / bid_1_weight
-          } else {
-            weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor_first
-          }
-        }
-        if (weight <= 0.0) {
-          weight_new = 1.0
+        val ideal_id = rs._1
+        val bid_hash = rs._2
+        val bid_ori = rs._3
+        val weight = rs._4.toFloat
+        var weight_new_ori = 1.0
+        var weight_new_norm = 1.0
+        val click = rs._5.toFloat
+        val ctr = rs._7.toFloat
+        if (click >= minus_clk_cnt) {
+          weight_new_ori = weight / min_weight
+          weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
-        ("max_weight_placeholder", weight_new)
-    }).reduceByKey((x, y) => math.max(x, y)).collectAsMap()
+        (ideal_id, bid_hash, weight_new_norm)
+    })
 
-    val max_weight_second = max_map_second.getOrElse("max_weight_placeholder", 1.0)
-    println("max_weight_second:" + max_weight_second)
-    val max_weight_factor_second = 1.0f
-    val factor_second = max_weight_factor_second / (max_weight_second.toFloat - 1.0)
-    println("factor_second:" + factor_second)
-
-
-    val weight_map = sta_rdd.map({
+    val weight_map = weight_map_rdd.map({
       rs =>
-        val bid_hash = rs._1
-        val bid_ori = rs._2
-        val weight = rs._3.toFloat
-        var weight_new = 1.0
-        val click = rs._4.toFloat
-        val ctr = rs._6.toFloat
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
-          if (ctr >= bid_1_ctr) {
-            weight_new = weight / bid_1_weight
-          } else {
-            weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor_first
-          }
-        }
-
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
-          weight_new = 1.0 + (weight_new - 1.0) * factor_second
-        }
-
-        if (weight <= 0.0) {
-          weight_new = 1.0
-        }
-        if (bid_ori == "1") {
-          weight_new = 1.0000001
-        }
-        //weight_new = 1.0 / weight_new
-        (bid_hash, weight_new)
+        (rs._1 + rs._2, rs._3)
+    }).collectAsMap()
+    val weight_map_ori = weight_map_rdd.map({
+      rs =>
+        (rs._1, rs._3)
     }).collectAsMap()
 
-    //(bid_hash, bid_ori, weight, click, imp)
+    //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
     val weight_map_file = des_dir + "/" + curr_date + "-" + time_id + "-weight-map"
     if (exists_hdfs_path(weight_map_file)) {
       delete_hdfs_path(weight_map_file)
     }
     sta_rdd.map({
       rs =>
-        val bid_hash = rs._1
-        val bid_ori = rs._2
-        val weight = rs._3.toFloat
-        var weight_new = 1.0
-        val click = rs._4.toFloat
-        val ctr = rs._6.toFloat
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f) {
-          if (ctr >= bid_1_ctr) {
-            weight_new = weight / bid_1_weight
-          } else {
-            weight_new = 1.0 + (weight / bid_1_weight - 1.0) * factor_first
+        val ideal_id = rs._1
+        val bid_hash = rs._2
+        val bid_ori = rs._3
+        val weight = rs._4.toDouble
+        var weight_new_ori = 1.0
+        var weight_new_norm = 1.0
+        val click = rs._5.toFloat
+        val imp = rs._6
+        val ctr = rs._7.toFloat
+
+        if (click >= minus_clk_cnt) {
+          weight_new_ori = weight / min_weight
+          weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
+          if (weight == min_weight) {
+            weight_new_ori = 1.0000001
+            weight_new_norm = 1.0000001
           }
         }
-
-        if (click >= 500000.0 && weight > bid_1_weight && ctr >= 0.03f ) {
-          weight_new = 1.0 + (weight_new - 1.0) * factor_second
-        }
-
-        if (weight <= 0.0) {
-          weight_new = 1.0
-        }
-        if (bid_ori == "1") {
-          weight_new = 1.0000001
-        }
-        //weight_new = 1.0 / weight_new
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
-        //bid_hash + "\t" + weight_new
-    }).repartition(1).sortBy(_._3 * -1).map({
+        (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
+    }).repartition(1).sortBy(_._4 * -1).map({
       rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7
+        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
     }).saveAsTextFile(weight_map_file)
 
-    val weight_map_reverse = sta_rdd.map({
-      rs =>
-        val bid_hash = rs._1
-        val weight = rs._3.toFloat
-        var weight_new = 1.0
-        val click = rs._4.toFloat
-        if (click >= 500000.0 && weight > 0.0) {
-          weight_new = bid_1_weight / weight
-        }
-        (bid_hash, weight_new)
-    }).collectAsMap()
-
-
-    val weight_map_file_reverse = des_dir + "/" + curr_date + "-" + time_id + "-weight-map-reverse"
-    if (exists_hdfs_path(weight_map_file_reverse)) {
-      delete_hdfs_path(weight_map_file_reverse)
-    }
-    sta_rdd.map({
-      rs =>
-        val bid_hash = rs._1
-        val bid_ori = rs._2
-        val weight = rs._3.toFloat
-        var weight_new = 1.0
-        val click = rs._4.toFloat
-        if (click >= 500000.0 && weight > 0.0) {
-          weight_new = bid_1_weight / weight
-        }
-        (bid_hash, bid_ori, weight_new.toFloat, weight.toFloat, click, rs._5, rs._6)
-      //bid_hash + "\t" + weight_new
-    }).repartition(1).sortBy(_._3 * 1).map({
-      rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7
-    }).saveAsTextFile(weight_map_file_reverse)
-
     println("weight_map.size=" + weight_map.size)
-    println("weight_map_reverse.size=" + weight_map_reverse.size)
     val schema_new = StructType(List(
       StructField("sample_idx", LongType, nullable = true),
       StructField("label", ArrayType(LongType, containsNull = true)),
@@ -355,9 +295,13 @@ object MakeAdListV4Samples {
         val dense = rs.getSeq[Long](6)
 
         val bid = dense(10).toString
-        var weight = weight_map.getOrElse(bid, 1.0)
-        val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
+        val ideal_id = dense(11).toString
 
+        var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+        if (weight == 0.0) {
+          weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+        }
+        val weight_reverse = 1.0
         //if (weight <= 1.0f) {
         //  weight = 0.0f
         //}
@@ -428,7 +372,7 @@ object MakeAdListV4Samples {
     }
 
     /****************************************last_weight***************************************************/
-    val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
+    /**val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
     if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
       delete_hdfs_path(last_weight_examples)
       val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_last)
@@ -444,8 +388,13 @@ object MakeAdListV4Samples {
           val dense = rs.getSeq[Long](6)
 
           val bid = dense(10).toString
-          var weight = weight_map.getOrElse(bid, 1.0)
-          val weight_reverse = weight_map_reverse.getOrElse(bid, 1.0)
+          val ideal_id = dense(11).toString
+
+          var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+          if (weight == 0.0) {
+            weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+          }
+          val weight_reverse = 1.0
 
           //if (weight <= 1.0f) {
           //  weight = 0.0f
@@ -470,7 +419,7 @@ object MakeAdListV4Samples {
       s"hadoop fs -put $fileName_1 $last_weight_examples/count" !
 
       s"hadoop fs -chmod -R 0777 $last_weight_examples" !
-    }
+    }**/
 
     /**
     /****************************************collect_2***************************************************/

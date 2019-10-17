@@ -27,7 +27,7 @@ printf "*****************************${date_full}*******************************
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
-base_daily_bid_cpm_file=${des_dir}/${curr_date}-21days-weight-info
+base_daily_bid_cpm_file=${des_dir}/${curr_date}-21days-weight-info-ref
 file_success=${dir}/${curr_date}_21days_weight_info_success
 if [[ ! -f ${file_success} ]]; then
     hadoop fs -get ${base_daily_bid_cpm_file}/_SUCCESS ${file_success}
