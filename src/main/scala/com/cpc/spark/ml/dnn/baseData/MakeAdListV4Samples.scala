@@ -385,7 +385,7 @@ object MakeAdListV4Samples {
           val dense = rs.getSeq[Long](6)
 
           val bid = dense(10).toString
-          val ideal_id = dense(11)
+          val ideal_id = dense(11).toString
 
           var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
           if (weight == 0.0) {
