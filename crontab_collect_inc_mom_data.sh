@@ -272,10 +272,10 @@ do
         printf "no ${file_part2} file, continue...\n"
         continue
     fi
-    if [[ ! -f ${file_count} ]]; then
-        printf "no ${file_count} file, continue...\n"
-        continue
-    fi
+    #if [[ ! -f ${file_count} ]]; then
+    #    printf "no ${file_count} file, continue...\n"
+    #    continue
+    #fi
 
     file_size=`ls -l ${file_part1} | awk '{ print $5 }'`
     if [ ${file_size} -lt 1000 ]
@@ -294,7 +294,7 @@ do
     touch ${is_new}
     rm ${file_part1}
     rm ${file_part2}
-    rm ${file_count}
+    #rm ${file_count}
 
     printf "new inc real-time file ${p00}\n"
     inc_data+=(${p00}${end})
