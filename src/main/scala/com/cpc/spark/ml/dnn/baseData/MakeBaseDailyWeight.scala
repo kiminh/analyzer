@@ -228,11 +228,11 @@ object MakeBaseDailyWeight {
       ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val key_list = rs._1.split("\t")
-          val ideal_id = key_list(0).toFloat
-          val bid_hash = key_list(1).toFloat
-          val bid_ori = key_list(2).toFloat
+          val ideal_id = key_list(0)
+          val bid_hash = key_list(1)
+          val bid_ori = key_list(2)
           val ctr = rs._2._1 / rs._2._2
-          val cpm = ctr * bid_ori
+          val cpm = ctr * bid_ori.toFloat
           (ideal_id, bid_hash, bid_ori, ctr, cpm, rs._2._1, rs._2._2)
       })
 
