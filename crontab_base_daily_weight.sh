@@ -141,7 +141,7 @@ curr_date=`date --date='0 days ago' +%Y-%m-%d`
 spark-submit --master yarn --queue ${queue} \
     --name "make-base-daily-samples" \
     --driver-memory 2g --executor-memory 2g \
-    --num-executors 10 --executor-cores 3 \
+    --num-executors 10 --executor-cores 2 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
