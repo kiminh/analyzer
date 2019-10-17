@@ -94,7 +94,7 @@ object OcpcQuickLog {
     val today = dateConverter.parse(date + " " + hour)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -12)
+    calendar.add(Calendar.HOUR, -3)
     val yesterday = calendar.getTime
     val tmpData = dateConverter.format(yesterday)
     val tmpDate = tmpData.split(" ")
