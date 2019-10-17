@@ -109,13 +109,13 @@ object OcpcQuickLog {
          |  searchid,
          |  ocpc_log
          |FROM
-         |  dl_cpc.cpc_basedata_click_event
+         |  dl_cpc.cpc_basedata_adx_event
          |WHERE
          |  $selectCondition2
          |AND
          |  $mediaSelection
          |AND
-         |  ocpc_step in (1, 2)
+         |  is_ocpc = 1
          |AND
          |  adslot_type != 7
          |""".stripMargin
