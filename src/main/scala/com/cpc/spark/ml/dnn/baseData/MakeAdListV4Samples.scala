@@ -213,7 +213,7 @@ object MakeAdListV4Samples {
           weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
-        (ideal_id, bid_hash, weight_new_norm)
+        (ideal_id, bid_hash, weight_new_ori)
     })
 
     val weight_map = weight_map_rdd.map({
