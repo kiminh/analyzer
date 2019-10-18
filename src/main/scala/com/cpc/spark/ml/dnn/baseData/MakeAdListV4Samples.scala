@@ -136,7 +136,7 @@ object MakeAdListV4Samples {
       return
     }
 
-    val minus_clk_cnt = 200000.0
+    val minus_clk_cnt = 100000.0
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
@@ -154,31 +154,25 @@ object MakeAdListV4Samples {
     })
     println("sta_rdd.size=" + sta_rdd.count())
 
-    val bid_weight_map = sta_rdd.filter(
+    val bid_weight_map = sta_rdd.map({
       rs =>
-        if (rs._5.toDouble >= minus_clk_cnt) {
-          true
-        } else {
-          false
-        }
-    ).map({
-      rs =>
-        ("min", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7, rs._4.toDouble))
-    }).reduceByKey((x, y) => if (x._2 <= y._2) (x._1, x._2) else (y._1, y._2)).map({
+        ("max", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7 + "\t" + rs._4, rs._5.toDouble))
+    }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
       rs =>
         (rs._1, rs._2._1 + "\t" + rs._2._2)
     }).collectAsMap()
 
-    val min_info = bid_weight_map.getOrElse("min", "0\t0\t0\t0\t0")
-    println("min_info_list=" + min_info)
-    val min_info_list = min_info.split("\t")
+    val max_info = bid_weight_map.getOrElse("max", "0\t0\t0\t0\t0\t0")
+    println("max_info_list=" + max_info)
+    val max_info_list = max_info.split("\t")
 
-    val min_weight = min_info_list(4).toDouble
-    val min_ctr = min_info_list(3).toDouble
+    val max_clk = max_info_list(5).toDouble
+    val max_weight = max_info_list(4).toDouble
+    val max_ctr = max_info_list(3).toDouble
 
-    if (min_weight <= 0.0 || min_ctr <= 0.0) {
-      println("invalid min_weight:" + min_weight)
-      println("invalid min_ctr:" + min_ctr)
+    if (max_weight <= 0.0 || max_ctr <= 0.0) {
+      println("invalid max_weight:" + max_weight)
+      println("invalid max_ctr:" + max_ctr)
       return
     }
 
@@ -189,8 +183,8 @@ object MakeAdListV4Samples {
         var weight_new = 1.0
         val click = rs._5.toDouble
         val ctr = rs._7.toDouble
-        if (click >= minus_clk_cnt) {
-          weight_new = weight / min_weight
+        if (click >= minus_clk_cnt && weight >= max_weight) {
+          weight_new = weight / max_weight
         } else {
           weight_new = 1.0
         }
@@ -214,9 +208,9 @@ object MakeAdListV4Samples {
         var weight_new_norm = 1.0
         val click = rs._5.toDouble
         val ctr = rs._7.toDouble
-        if (click >= minus_clk_cnt) {
-          weight_new_ori = weight / min_weight
-          weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
+        if (click >= minus_clk_cnt && weight >= max_weight) {
+          weight_new_ori = weight / max_weight
+          weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
         (ideal_id, bid_hash, weight_new_norm)
@@ -248,10 +242,10 @@ object MakeAdListV4Samples {
         val imp = rs._6
         val ctr = rs._7.toDouble
 
-        if (click >= minus_clk_cnt) {
-          weight_new_ori = weight / min_weight
-          weight_new_norm = 1.0 + (weight / min_weight - 1.0) * factor_first
-          if (weight == min_weight) {
+        if (click >= minus_clk_cnt && weight >= max_weight) {
+          weight_new_ori = weight / max_weight
+          weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
+          if (weight == max_weight) {
             weight_new_ori = 1.0000001
             weight_new_norm = 1.0000001
           }
