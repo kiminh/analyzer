@@ -20,9 +20,8 @@ object OcpcUnionlogQuickFix {
 
     data
       .repartition(100)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191018")
-      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -30,8 +29,8 @@ object OcpcUnionlogQuickFix {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
