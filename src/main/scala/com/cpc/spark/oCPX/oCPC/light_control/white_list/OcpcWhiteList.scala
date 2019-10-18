@@ -57,7 +57,7 @@ object OcpcWhiteList {
 //      .repartition(1)
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
     filterUnit
-      .select("unitid", "userid", "conversion_goal", "ocpc_status")
+      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status")
       .withColumn("ocpc_light", lit(1))
       .withColumn("ocpc_suggest_price", lit(0.0))
       .withColumn("date", lit(date))
