@@ -180,7 +180,7 @@ object OcpcUnionlogQuickFix {
          |    user_req_num,
          |    is_new_ad,
          |    is_auto_coin,
-         |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'BidDiscountedByAdSlot:(.*?),', 1) else bid_discounted_by_ad_slot end) as bid_discounted_by_ad_slot_new,
+         |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'BidDiscountedByAdSlot:(.*?)', 1) else bid_discounted_by_ad_slot end) as bid_discounted_by_ad_slot_new,
          |    bid_discounted_by_ad_slot,
          |    discount,
          |    exp_cpm,
