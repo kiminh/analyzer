@@ -193,7 +193,7 @@ object MakeAdListV4Samples {
 
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
-    val max_weight_factor_first = 1.0
+    val max_weight_factor_first = 9.0
     val factor_first = max_weight_factor_first / (max_weight_first.toDouble - 1.0)
     println("factor_first:" + factor_first)
 
