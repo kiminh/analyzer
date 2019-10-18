@@ -18,17 +18,18 @@ object OcpcUnionlogQuickFix {
 
     data
       .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191018")
 //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
 
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(50)
+//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+//    ocpcData
+//      .repartition(50)
 //      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -126,46 +127,6 @@ object OcpcUnionlogQuickFix {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-      var result = -1
-      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
-        result = 1
-      } else if (traceType == "active_third" && traceOp2 == "") {
-        result = 0
-      } else if (traceType == "active_third" && traceOp2 == "0") {
-        result = 2
-      } else if (traceType == "active_third" && traceOp2 == "1") {
-        result = 5
-      } else if (traceType == "active_third" && traceOp2 == "2") {
-        result = 7
-      } else if (traceType == "active_third" && traceOp2 == "5") {
-        result = 11
-      } else if (traceType == "active_third" && traceOp2 == "6") {
-        result = 6
-      } else if (traceType == "active_third" && traceOp2 == "26") {
-        result = 3
-      } else if (traceType == "active_third" && traceOp2 == "27") {
-        result = 12
-      } else if (traceType == "active15" && traceOp2 == "site_form") {
-        result = 3
-      } else if (traceType == "ctsite_active15" && traceOp2 == "ct_site_form") {
-        result = 3
-      } else if (traceType == "js_active" && traceOp2 == "js_form") {
-        result = 3
-      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
-        result = 4
-      } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
-        result = 4
-      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "ON_BANNER") {
-        result = 4
-      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "CLICK_POPUPWINDOW_ADDWX") {
-        result = 4
-      } else {
-        result = -1
-      }
-      result
-    })
-
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
     // done 调整ocpc_log的存在逻辑
@@ -219,6 +180,7 @@ object OcpcUnionlogQuickFix {
          |    user_req_num,
          |    is_new_ad,
          |    is_auto_coin,
+         |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'BidDiscountedByAdSlot:(.*?),', 1) else 0 end) as bid_discounted_by_ad_slot_new,
          |    bid_discounted_by_ad_slot,
          |    discount,
          |    exp_cpm,
