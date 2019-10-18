@@ -32,9 +32,20 @@ object OcpcWhiteList {
     // 获取ocpc行业白名单
     val conf = ConfigFactory.load("ocpc")
     val adclassList = conf.getIntList("ocpc_light_white_list.v1.adclass")
-    val adclassStringList = adclassList.toString
-    println(adclassList.get(0))
+    val adclassStringList = adclassList
+        .toString
+        .replace("[", "")
+        .replace("]", "")
+//    println(adclassList.get(0))
     println(adclassStringList)
+    adclassList
+
+    // 数据关联
+    val adclassSetString = "(" + adclassStringList + ")"
+    println(adclassSetString)
+
+
+
   }
 
   def getUserData(spark: SparkSession) = {
