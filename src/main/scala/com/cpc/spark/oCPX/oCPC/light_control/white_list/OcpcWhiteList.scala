@@ -60,6 +60,7 @@ object OcpcWhiteList {
       .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "media")
       .withColumn("ocpc_light", lit(1))
       .withColumn("ocpc_suggest_price", lit(0.0))
+      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "ocpc_light", "ocpc_suggest_price", "media")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
