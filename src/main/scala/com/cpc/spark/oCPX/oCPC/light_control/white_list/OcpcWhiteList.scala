@@ -19,6 +19,7 @@ object OcpcWhiteList {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val version = args(2).toString
 
     // 获取广告主
     // userid, category
@@ -31,7 +32,7 @@ object OcpcWhiteList {
 
     // 获取ocpc行业白名单
     val conf = ConfigFactory.load("ocpc")
-    val adclassList = conf.getIntList("ocpc_light_white_list.v1.adclass")
+    val adclassList = conf.getIntList(s"ocpc_light_white_list.$version.adclass")
     val adclassStringList = adclassList
         .toString
         .replace("[", "")
@@ -44,17 +45,26 @@ object OcpcWhiteList {
     val adclassSelection = "adclass in (" + adclassStringList + ")"
     println(adclassSelection)
 
-    val filterUser = user.filter(adclassSelection)
+    val filterUser = user.filter(adclassSelection).distinct()
     val filterUnit = unit
       .join(filterUser, Seq("userid"), "inner")
 
-    filterUser
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018a")
-
+//    filterUser
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018a")
+//
+//    filterUnit
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
     filterUnit
+      .select("unitid", "userid", "conversion_goal", "ocpc_status")
+      .withColumn("ocpc_light", lit(1))
+      .withColumn("ocpc_suggest_price", lit(0.0))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
+      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
 
   }
 
