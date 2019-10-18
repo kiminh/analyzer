@@ -10,4 +10,4 @@ create table if not exists test.ocpc_light_control_white_units_hourly(
 partitioned by (`date` string, `hour` string, version string)
 stored as parquet;
 
-alter table test.ocpc_light_control_white_units_hourly add columns (media string)
+alter table dl_cpc.ocpc_light_control_white_units_hourly add columns (media string)
