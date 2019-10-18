@@ -203,7 +203,10 @@ object OcpcUnionlog {
          |    deep_conversion_goal,
          |    deep_cpa,
          |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    ocpc_expand_tag,
+         |    ori_cvr,
+         |    uid_mc_show0,
+         |    uid_mc_click0
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

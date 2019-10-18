@@ -42,9 +42,9 @@ object OcpcChargeSchedule {
 
     // 更新pay_cnt，pay_date
     val updateScheduleData = updatePaySchedule(date, dayCnt, scheduleData, spark)
-    updateScheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
+//    updateScheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
 
     updateScheduleData
       .select("unitid", "pay_cnt", "pay_date", "flag", "update_flag", "prev_pay_cnt", "prev_pay_date")
@@ -75,9 +75,9 @@ object OcpcChargeSchedule {
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
-    rawData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
+//    rawData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
 
 
     val sqlRequest2 =
@@ -88,7 +88,8 @@ object OcpcChargeSchedule {
          |  pay_date,
          |  end_date,
          |  cur_date,
-         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag
+         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag,
+         |  (case when pay_cnt < 4 and pay_date <= cur_date then 1 else 0 end) as flag
          |FROM
          |  raw_data
          |""".stripMargin
@@ -96,7 +97,8 @@ object OcpcChargeSchedule {
 
     val data = spark
       .sql(sqlRequest2)
-      .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+//      .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+//      .withColumn("flag", when(col("pay_date") > date, 0).otherwise(col("flag")))
       .withColumn("prev_pay_cnt", col("pay_cnt"))
       .withColumn("prev_pay_date", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
@@ -124,7 +126,7 @@ object OcpcChargeSchedule {
 
 //    val prevData = spark
 //      .table("dl_cpc.ocpc_pay_cnt_daily")
-//      .where(s"`date` = '2019-10-13'")
+//      .where(s"`date` = '2019-10-14'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")
