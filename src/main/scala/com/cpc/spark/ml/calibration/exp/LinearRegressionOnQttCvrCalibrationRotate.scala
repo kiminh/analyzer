@@ -79,13 +79,13 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       data.show(10)
 
       val defaultideaid = data.groupBy("ideaid").count()
-        .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
+        .withColumn("ideaidtag",when(col("count")>20,1).otherwise(0))
         .filter("ideaidtag=1")
       val defaultunitid = data.groupBy("unitid").count()
-        .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
+        .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
         .filter("unitidtag=1")
       val defaultuserid = data.groupBy("userid").count()
-        .withColumn("useridtag",when(col("count")>40,1).otherwise(0))
+        .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
         .filter("useridtag=1")
 
       val df1 = data
