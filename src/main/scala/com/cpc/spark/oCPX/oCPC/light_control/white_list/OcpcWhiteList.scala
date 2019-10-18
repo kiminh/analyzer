@@ -141,7 +141,7 @@ object OcpcWhiteList {
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
-      .filter(s"median in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic')")
       .distinct()
 
 
