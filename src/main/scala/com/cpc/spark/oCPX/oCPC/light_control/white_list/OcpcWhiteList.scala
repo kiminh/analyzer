@@ -24,6 +24,17 @@ object OcpcWhiteList {
     // userid, category
     val user = getUserData(spark)
     user.printSchema()
+
+    // 获取广告单元
+    val unit = getUnitData(spark)
+    unit.printSchema()
+
+    // 获取ocpc行业白名单
+    val conf = ConfigFactory.load("ocpc")
+    val adclassList = conf.getIntList("ocpc_light_white_list.v1.adclass")
+    val adclassStringList = adclassList.toString
+    println(adclassList.get(0))
+    println(adclassStringList)
   }
 
   def getUserData(spark: SparkSession) = {
