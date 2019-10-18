@@ -5,6 +5,8 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+import scala.collection.mutable
+
 object OcpcUnionlogQuickFix {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -127,6 +129,22 @@ object OcpcUnionlogQuickFix {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
+    spark.udf.register("calculateBid", (valueLog: String, bid: Long) => {
+      var resultBid = bid
+      if (valueLog != null && valueLog != "") {
+        val logs = valueLog.split(",")
+        for (log <- logs) {
+          val splits = log.split(":")
+          val key = splits(0)
+          val value = splits(1)
+          if (key == "BidDiscountedByAdSlot") {
+            resultBid = value.toLong
+          }
+        }
+      }
+      resultBid
+    })
+
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
     // done 调整ocpc_log的存在逻辑
@@ -180,7 +198,7 @@ object OcpcUnionlogQuickFix {
          |    user_req_num,
          |    is_new_ad,
          |    is_auto_coin,
-         |    (case when is_ocpc = 1 and ocpc_log != "" then regexp_extract(ocpc_log, 'BidDiscountedByAdSlot:(.*?)', 1) else bid_discounted_by_ad_slot end) as bid_discounted_by_ad_slot_new,
+         |    calculateBid(ocpc_log, bid_discounted_by_ad_slot) as bid_discounted_by_ad_slot_new,
          |    bid_discounted_by_ad_slot,
          |    discount,
          |    exp_cpm,
