@@ -41,10 +41,20 @@ object OcpcWhiteList {
     adclassList
 
     // 数据关联
-    val adclassSetString = "(" + adclassStringList + ")"
-    println(adclassSetString)
+    val adclassSelection = "adclass in (" + adclassStringList + ")"
+    println(adclassSelection)
 
+    val filterUser = user.filter(adclassSelection)
+    val filterUnit = unit
+      .join(filterUser, Seq("userid"), "inner")
 
+    filterUser
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018a")
+
+    filterUnit
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
 
   }
 
