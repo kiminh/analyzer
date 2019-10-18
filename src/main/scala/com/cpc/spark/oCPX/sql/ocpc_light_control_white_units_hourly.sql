@@ -9,4 +9,3 @@ create table if not exists test.ocpc_light_control_white_units_hourly(
 )
 partitioned by (`date` string, `hour` string, version string)
 stored as parquet;
-

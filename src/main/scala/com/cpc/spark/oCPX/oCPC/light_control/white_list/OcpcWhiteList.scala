@@ -64,8 +64,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
 
   }
 
