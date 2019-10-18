@@ -297,9 +297,9 @@ object MakeAdListV4Samples {
         //if (weight <= 1.0f) {
         //  weight = 0.0f
         //}
-        if (label_arr.head != 1L) {
-          weight = 1.0f
-        }
+        //if (label_arr.head != 1L) {
+        //  weight = 1.0f
+        //}
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
       })
@@ -390,9 +390,9 @@ object MakeAdListV4Samples {
           //if (weight <= 1.0f) {
           //  weight = 0.0f
           //}
-          if (label_arr.head != 1L) {
-            weight = 1.0f
-          }
+          //if (label_arr.head != 1L) {
+          //  weight = 1.0f
+          //}
 
           Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
         })
