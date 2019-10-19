@@ -331,10 +331,10 @@ object MakeAdListV4Samples {
 
     val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
     if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
-      println(s"now time_id $time_id now in low_time_list and count $weighted_rdd_count_1 less than 5 millions, exit")
+      println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_1 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/invalid_count" !
       return
     }
-
 
     s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
 
