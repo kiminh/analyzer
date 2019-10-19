@@ -328,6 +328,14 @@ object MakeAdListV4Samples {
     //保存count文件
     val fileName_1 = "count_" + Random.nextInt(100000)
     writeNum2File(fileName_1, weighted_rdd_count_1)
+
+    val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
+    if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
+      println(s"now time_id $time_id now in low_time_list and count $weighted_rdd_count_1 less than 5 millions, exit")
+      return
+    }
+
+
     s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
 
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
