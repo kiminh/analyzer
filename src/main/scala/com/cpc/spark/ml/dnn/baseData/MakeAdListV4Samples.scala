@@ -333,10 +333,10 @@ object MakeAdListV4Samples {
     if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
       println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_1 less than 5 millions, invalid count")
       s"hadoop fs -put $fileName_1 $weighted_file_collect_1/invalid_count" !
-      return
+    } else {
+      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
     }
 
-    s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
 
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
 
