@@ -170,7 +170,7 @@ object MakeBaseDailyWeight {
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
-      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info-ref"
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
         println("collect samples info of " + this_file)
         delete_hdfs_path(bid_cpm_file_curr)
@@ -204,11 +204,10 @@ object MakeBaseDailyWeight {
       }
     }
 
-
     val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
-      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info-ref"
+      val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       if (exists_hdfs_path(bid_cpm_file_curr)) {
         cpm_file_buffer += bid_cpm_file_curr
       }
@@ -216,7 +215,7 @@ object MakeBaseDailyWeight {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info-ref"
+    val bid_cpm_file = des_dir + "/" + curr_date + "-14days-weight-info"
 
     if (!exists_hdfs_path(bid_cpm_file)) {
 

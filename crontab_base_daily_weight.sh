@@ -30,14 +30,19 @@ touch ${shell_in_run}
 
 last_date=`date --date='1 days ago' +%Y-%m-%d`
 aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${last_date}-aggr"
+aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
 file_success=${dir}/${last_date}_aggr_success
 file_count=${dir}/${last_date}_aggr_count
+file_part=${dir}/${last_date}_aggr_part_r_00999
 
 if [[ ! -f ${file_success} ]]; then
     hadoop fs -get ${aggr_path}/_SUCCESS ${file_success} &
 fi
 if [[ ! -f ${file_count} ]]; then
     hadoop fs -get ${aggr_path}/count ${file_count} &
+fi
+if [[ ! -f ${file_part} ]]; then
+    hadoop fs -get ${aggr_path}/part-r-00999 ${file_part} &
 fi
 wait
 if [[ ! -f ${file_success} ]]; then
@@ -47,6 +52,19 @@ if [[ ! -f ${file_success} ]]; then
 fi
 if [[ ! -f ${file_count} ]]; then
     printf "no ${file_count}, exiting...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+if [[ ! -f ${file_part} ]]; then
+    printf "no ${file_part}, exiting...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+
+file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+if [ ${file_size} -lt 10000000 ]
+then
+    printf "invalid ${file_part} file size:${file_size}, exit...\n"
     rm ${shell_in_run}
     exit 0
 fi
@@ -70,9 +88,6 @@ sample_list=(
     `date --date='16 days ago' +%Y-%m-%d`
     `date --date='17 days ago' +%Y-%m-%d`
     `date --date='18 days ago' +%Y-%m-%d`
-    `date --date='19 days ago' +%Y-%m-%d`
-    `date --date='20 days ago' +%Y-%m-%d`
-    `date --date='21 days ago' +%Y-%m-%d`
 )
 
 
@@ -84,28 +99,51 @@ do
     curr_date="${sample_list[$idx]}"
     echo "curr_date:${curr_date}"
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
+    aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
     echo ${aggr_path}
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
+    file_part=${dir}/${last_date}_aggr_part_r_00999
     if [[ ! -f ${file_success} ]]; then
         hadoop fs -get ${aggr_path}/_SUCCESS ${file_success} &
     fi
     if [[ ! -f ${file_count} ]]; then
         hadoop fs -get ${aggr_path}/count ${file_count} &
     fi
+    if [[ ! -f ${file_part} ]]; then
+        hadoop fs -get ${aggr_path}/part-r-00999 ${file_part} &
+    fi
     wait
     if [[ ! -f ${file_success} ]]; then
         printf "no ${file_success}, continue...\n"
+        continue
     fi
     if [[ ! -f ${file_count} ]]; then
         printf "no ${file_count}, continue...\n"
+        continue
     fi
+    if [[ ! -f ${file_part} ]]; then
+        printf "no ${file_part}, exiting...\n"
+        continue
+    fi
+
+    file_size=`ls -l ${file_part} | awk '{ print $5 }'`
+    if [ ${file_size} -lt 10000000 ]
+    then
+        printf "invalid ${file_part} file size:${file_size}, exit...\n"
+        continue
+    fi
+
     collect_file+=("${aggr_path}/part-r-*")
     collect_date+=(${curr_date})
+    if [[ ${#collect_file[@]} -eq 14 ]] ; then
+        printf "got 14 days' aggr file, break...\n"
+        break
+    fi
 done
 
-if [[ ${#collect_file[@]} -lt 21 ]] ; then
-    printf "not 21 days' aggr file, existing...\n"
+if [[ ${#collect_file[@]} -lt 14 ]] ; then
+    printf "not 14 days' aggr file, existing...\n"
     rm ${shell_in_run}
     exit 0
 fi
@@ -133,7 +171,7 @@ jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 
 delete_old=true
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
@@ -141,7 +179,7 @@ curr_date=`date --date='0 days ago' +%Y-%m-%d`
 spark-submit --master yarn --queue ${queue} \
     --name "make-base-daily-samples" \
     --driver-memory 4g --executor-memory 2g \
-    --num-executors 500 --executor-cores 2 \
+    --num-executors 1000 --executor-cores 2 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
