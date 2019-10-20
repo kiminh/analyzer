@@ -27,8 +27,37 @@ if [[ -f "$shell_in_run" ]]; then
 fi
 touch ${shell_in_run}
 
-
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 last_date=`date --date='1 days ago' +%Y-%m-%d`
+des_file=${des_dir}/${last_date}-weight-aggr
+file_success=${dir}/${last_date}_weight_success
+file_count=${dir}/${last_date}_weight_count
+
+if [[ ! -f ${file_success} ]]; then
+    hadoop fs -get ${des_file}/_SUCCESS ${file_success} &
+fi
+if [[ ! -f ${file_count} ]]; then
+    hadoop fs -get ${des_file}/count ${file_count} &
+fi
+wait
+run=false
+if [[ ! -f ${file_success} ]]; then
+    printf "no ${file_success}...\n"
+    run=true
+fi
+if [[ ! -f ${file_count} ]]; then
+    printf "no ${file_count}...\n"
+    run=true
+fi
+
+if [ "${run}" = "false"  ];then
+    echo "make ${last_date} weight file done, exit..."
+    rm ${shell_in_run}
+    exit 0
+fi
+
+
+
 aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${last_date}-aggr"
 aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
 file_success=${dir}/${last_date}_aggr_success
@@ -171,7 +200,6 @@ jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 
 delete_old=true
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
