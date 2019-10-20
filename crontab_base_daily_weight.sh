@@ -99,7 +99,7 @@ do
     curr_date="${sample_list[$idx]}"
     echo "curr_date:${curr_date}"
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
-    aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
+    aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${curr_date}"
     echo ${aggr_path}
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
