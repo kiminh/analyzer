@@ -467,6 +467,14 @@ object MakeBaseDailyWeight {
       s"hadoop fs -chmod -R 0777 $last_weight_examples" !
     }
 
+    val hour_mmh_map_file = des_dir + "/" + "hour_mmh_map.txt"
+    val hour_mmh_map = sc.textFile(hour_mmh_map_file).map({
+      rs =>
+        val line_list = rs.split("\t")
+        (line_list(0), line_list(1))
+    }).collectAsMap()
+    println("hour_mmh_map.size=" + hour_mmh_map.size)
+
     val last_ctr_file = des_dir + "/" + last_date + "-ctr"
     if (!exists_hdfs_path(last_ctr_file + "/_SUCCESS")) {
       delete_hdfs_path(last_ctr_file)
@@ -477,12 +485,15 @@ object MakeBaseDailyWeight {
           val dense = rs.getSeq[Long](6)
 
           val hour = dense(27).toString
+          val hour_ori = hour_mmh_map.getOrElse(hour, "-1")
 
           var label = 0.0
           if (label_arr.head == 1L) {
             label = 1.0
           }
-          (hour, (label, 1.0))
+
+
+          (hour + "\t" + hour_ori, (label, 1.0))
         }
       ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).repartition(1).map({
         rs =>
@@ -490,7 +501,6 @@ object MakeBaseDailyWeight {
 
       }).saveAsTextFile(last_ctr_file)
     }
-
 
 
 
