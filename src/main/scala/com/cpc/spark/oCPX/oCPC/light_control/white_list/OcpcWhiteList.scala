@@ -57,16 +57,17 @@ object OcpcWhiteList {
 //      .repartition(1)
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
     filterUnit
-      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status")
+      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "media")
       .withColumn("ocpc_light", lit(1))
       .withColumn("ocpc_suggest_price", lit(0.0))
+      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "ocpc_light", "ocpc_suggest_price", "media")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
-
+//
   }
 
   def getUserData(spark: SparkSession) = {
@@ -103,7 +104,7 @@ object OcpcWhiteList {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -113,15 +114,55 @@ object OcpcWhiteList {
       .option("dbtable", table)
       .load()
 
-    val resultDF = data
+    val rawData = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "is_ocpc", "ocpc_status")
+      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "is_ocpc", "ocpc_status", "target_medias")
       .distinct()
+
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    userid,
+         |    conversion_goal,
+         |    is_ocpc,
+         |    ocpc_status,
+         |    target_medias,
+         |    cast(a as string) as media_appsid
+         |from
+         |    raw_data
+         |lateral view explode(split(target_medias, ',')) b as a
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .na.fill("", Seq("media_appsid"))
+      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
+      .filter(s"media in ('qtt', 'hottopic')")
+      .distinct()
+
 
     resultDF.show(10)
     resultDF
   }
+
+  def udfDetermineMediaNew() = udf((mediaId: String) => {
+    var result = mediaId match {
+      case "80000001" => "qtt"
+      case "80000002" => "qtt"
+      case "80002819" => "hottopic"
+      case "80004944" => "hottopic"
+      case "80004948" => "hottopic"
+      case "" => "qtt"
+      case _ => "novel"
+    }
+    result
+  })
+
 
 
 }

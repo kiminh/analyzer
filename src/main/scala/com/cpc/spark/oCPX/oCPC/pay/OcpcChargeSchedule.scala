@@ -154,15 +154,24 @@ object OcpcChargeSchedule {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val newData = spark
+    val newDataRaw = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"industry in ('feedapp', 'elds')")
+      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass")))
+
+//    newDataRaw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
+
+    val newData = newDataRaw
+      .filter(s"industry in ('feedapp', 'elds', 'pay_industry')")
       .select("unitid")
       .distinct()
+
+//    newData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021b")
+
 
     val data = prevData
       .join(newData, Seq("unitid"), "outer")
@@ -174,6 +183,27 @@ object OcpcChargeSchedule {
     data.printSchema()
     data
   }
+
+  def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int) => {
+    val adclassString = adclass.toString
+    val adclass3 = adclassString.substring(0, 3)
+    var result = "others"
+    if (adclass3 == "134" || adclass3 == "107") {
+      result = "elds"
+    } else if (adclass3 == "100" && adslotType != 7) {
+      result = "feedapp"
+    } else if (adclass3 == "100" && adslotType == 7) {
+      result = "yysc"
+    } else if (adclass == 110110100 || adclass == 125100100) {
+      result = "wzcp"
+    } else if (adclass == 103100100 || adclass == 111100100 || adclass == 104100100) {
+      result = "pay_industry"
+    } else {
+      result = "others"
+    }
+    result
+
+  })
 
 
 }
