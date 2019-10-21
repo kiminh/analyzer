@@ -171,8 +171,8 @@ object LinearRegressionOnQttCvrCalibration {
         (exp_cvr,iscvr,raw_cvr,unitid)
     }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
-    val feature = trainingDF.select("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
-      .map()
+//    val feature = trainingDF.select("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+//      .map()
 
 
         //   lr calibration
