@@ -418,6 +418,31 @@ object MakeBaseDailyWeight {
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
 
+    val last_ctr_file = des_dir + "/" + last_date + "-ctr"
+    if (!exists_hdfs_path(last_ctr_file + "/_SUCCESS")) {
+      delete_hdfs_path(last_ctr_file)
+      val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
+      df_train_files_last.rdd.map(
+        rs => {
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
+
+          val hour = dense(27).toString
+
+          var label = 0.0
+          if (label_arr.head == 1L) {
+            label = 1.0
+          }
+          (hour, (label, 1.0))
+        }
+      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).repartition(1).map({
+        rs =>
+          rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1 / rs._2._2
+
+      }).saveAsTextFile(last_ctr_file)
+    }
+
+
     val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
     if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
       delete_hdfs_path(last_weight_examples)
