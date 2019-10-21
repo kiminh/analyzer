@@ -2,6 +2,7 @@ package com.cpc.spark.oCPX.basedata
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+
 import sys.process._
 
 object OcpcConversionV3 {
@@ -39,8 +40,8 @@ object OcpcConversionV3 {
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
 
     val okfile = s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/ocpc/okdir/ocpc_cvr_log_hourly-$date-$hour.ok"
-    okfile !
     println(okfile)
+    okfile.!
     println("successfully save data into table: dl_cpc.ocpc_cvr_log_hourly")
   }
 
