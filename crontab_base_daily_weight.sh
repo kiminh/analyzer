@@ -30,7 +30,7 @@ touch ${shell_in_run}
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 last_date=`date --date='1 days ago' +%Y-%m-%d`
 des_file=${des_dir}/${last_date}-weight-aggr
-ctr_file=${des_dir}/${last_date}-00-ctr
+ctr_file=${des_dir}/${last_date}-23-ctr
 des_file_success=${dir}/${last_date}_weight_success
 des_file_count=${dir}/${last_date}_weight_count
 ctr_file_success=${dir}/${last_date}_ctr_success
