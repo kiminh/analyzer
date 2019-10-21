@@ -1,10 +1,12 @@
 package com.cpc.spark.ml.calibration.exp
 
+import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
 import com.cpc.spark.common.Utils
+import mlmodel.mlmodel.{CalibrationConfig, CalibrationFeature, CalibrationModel}
 
 import scala.collection.mutable.{ListBuffer, WrappedArray}
 import com.cpc.spark.ocpc.OcpcUtils._
@@ -19,6 +21,7 @@ import java.time.format.DateTimeFormatter
 
 import scala.collection.mutable.ListBuffer
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.HourlyCalibration.localDir
 import com.cpc.spark.tools.CalcMetrics
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.linalg.SparseVector
@@ -119,6 +122,8 @@ object LinearRegressionOnQttCvrCalibration {
     dataDF.show(10)
 
     val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+    val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslotid" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
+      "click_unit_count" -> 35)
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
@@ -171,17 +176,76 @@ object LinearRegressionOnQttCvrCalibration {
         (exp_cvr,iscvr,raw_cvr,unitid)
     }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
-//    val feature = trainingDF.select("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
-//      .map()
+    var dimension = 1
+    var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
+    var featuremap = scala.collection.mutable.Map[String,Double]()
+    for (cate <- categoricalColumns ){
+      val featureid = CalibrationFeature(
+        asIdx = sampleidx.get(cate).getOrElse(-1),
+        prefix = "ideaid#",
+        types = 1
+      )
+      featuregroup += featureid
+
+      val featurevalue = cate + "_value"
+      val feature = trainingDF
+        .select(cate)
+        .distinct()
+        .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(s"$cate")))
+        .select(cate,featurevalue)
+        .rdd.map{
+        x =>
+          val cateid = x.getAs[String](cate)
+          val value = x.getAs[Double](featurevalue)
+          val key = s"$cate" + "#" + cateid
+          featuremap += ((key,value))
+      }
+      dimension += feature.count()
+    }
+
+    val w_rawvalue = lrModel.coefficients.toArray(0)
+
+    val output = CalibrationModel(
+      feature = featuregroup,
+      featuremap = featuremap.toMap,
+      wRawvalue = w_rawvalue,
+      intercept = lrModel.intercept
+    )
+
+    val localPath = saveProtoToLocal(calimodel, output)
+    saveFlatTextFileForDebug(calimodel, output)
 
 
-        //   lr calibration
+
+    //   lr calibration
     val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
     calculateAuc(lrData1,"train original",spark)
 
     val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(lrData2,"train calibration",spark)
 
+  }
+
+  def output(coefficients:org.apache.spark.ml.linalg.Vector, dimension: Int)
+  = udf((value: org.apache.spark.ml.linalg.SparseVector) => {
+    coefficients.toArray(dimension + value.toDense.toArray.indexOf(1.0f))
+  })
+
+  def saveProtoToLocal(modelName: String, config: CalibrationModel): String = {
+    val filename = s"LR-calibration-$modelName.mlm"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    config.writeTo(new FileOutputStream(localPath))
+    return localPath
+  }
+
+  def saveFlatTextFileForDebug(modelName: String, config: CalibrationModel): Unit = {
+    val filename = s"LR-calibration-flat-$modelName.txt"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    new PrintWriter(localPath) { write(config.toString); close() }
   }
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={

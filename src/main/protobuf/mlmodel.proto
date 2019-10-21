@@ -203,7 +203,7 @@ message Feature {
 message CalibrationFeature {
     int32 as_idx = 1; //特征对应的as idx
     string prefix = 2; //特征前缀   e.g.ideaid#,unitid#
-    int32 type = 3; //type:0 数值特征，type:1分类特征
+    int32 types = 3; //type:0 数值特征，type:1分类特征
 }
 
 message CalibrationModel {
