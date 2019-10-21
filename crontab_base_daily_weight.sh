@@ -35,6 +35,10 @@ des_file_success=${dir}/${last_date}_weight_success
 des_file_count=${dir}/${last_date}_weight_count
 ctr_file_success=${dir}/${last_date}_ctr_success
 
+rm ${ctr_file_success}
+rm ${des_file_success}
+rm ${des_file_count}
+
 if [[ ! -f ${ctr_file_success} ]]; then
     hadoop fs -get ${ctr_file}/_SUCCESS ${ctr_file_success} &
 fi
