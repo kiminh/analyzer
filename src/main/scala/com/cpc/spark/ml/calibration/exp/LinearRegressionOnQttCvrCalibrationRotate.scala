@@ -50,7 +50,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val sql1 =
         s"""
-           |select *,rawcvr/100000.0 as raw_cvr,case
+           |select *,cast(rawcvr/100000 as double) as raw_cvr,case
            |    when user_show_ad_num = 0 then '0'
            |    when user_show_ad_num = 1 then '1'
            |    when user_show_ad_num = 2 then '2'
@@ -64,7 +64,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val sql2 =
         s"""
-           |select *,rawcvr/100000.0 as raw_cvr,case
+           |select *,cast(rawcvr/100000 as double) as raw_cvr,case
            |    when user_show_ad_num = 0 then '0'
            |    when user_show_ad_num = 1 then '1'
            |    when user_show_ad_num = 2 then '2'
