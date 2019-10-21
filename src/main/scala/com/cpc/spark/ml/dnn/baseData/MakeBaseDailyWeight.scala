@@ -496,7 +496,7 @@ object MakeBaseDailyWeight {
       ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val line_list = rs._1.split("\t")
-          (line_list(0), line_list(1).toDouble, rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
+          (line_list(0), line_list(1).toInt, rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
       }).repartition(1).sortBy(_._2).map({
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
