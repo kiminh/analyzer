@@ -106,63 +106,63 @@ object MakeBaseDailyWeight {
     println("bid_mmh_map.size=" + bid_mmh_map.size)
 
 
-    /**println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-    val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
-
-    if (!exists_hdfs_path(bid_cpm_file)) {
-      val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(file_list)
-      //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
-      df_train_files.printSchema()
-      df_train_files.show(3)
-      val info_rdd = df_train_files.rdd.map(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-
-          var label = 0.0
-          if (label_arr.head == 1L) {
-            label = 1.0
-          }
-
-          val bid = dense(10).toString
-          val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-          (bid, bid_ori, label, 1.0)
-        }
-      ).map({
-        rs =>
-          (rs._1 + "\t" + rs._2, (rs._3, rs._4))
-      }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
-        rs =>
-          val key_list = rs._1.split("\t")
-          val bid_ori = key_list(1).toFloat
-          val ctr = rs._2._1 / rs._2._2
-          val cpm = ctr * bid_ori
-          (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
-      })
-
-      val total_cpm_map = info_rdd.map({
-        rs =>
-          ("placeholder", rs._4)
-      }).reduceByKey(_ + _).collectAsMap()
-
-      val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
-      println("total_cpm=" + total_cpm)
-
-      info_rdd.map({
-        rs =>
-          val weight = rs._4 / total_cpm
-          (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
-      }).repartition(1).sortBy(_._6 * -1).map({
-        rs =>
-          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
-      }).saveAsTextFile(bid_cpm_file)
-    }**/
+    /** println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+      **
+      *val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
+      **
+      *if (!exists_hdfs_path(bid_cpm_file)) {
+      * val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(file_list)
+      * //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
+      * df_train_files.printSchema()
+      * df_train_files.show(3)
+      * val info_rdd = df_train_files.rdd.map(
+      * rs => {
+      * val idx2 = rs.getSeq[Long](0)
+      * val idx1 = rs.getSeq[Long](1)
+      * val idx_arr = rs.getSeq[Long](2)
+      * val idx0 = rs.getSeq[Long](3)
+      * val sample_idx = rs.getLong(4)
+      * val label_arr = rs.getSeq[Long](5)
+      * val dense = rs.getSeq[Long](6)
+      **
+      *var label = 0.0
+      * if (label_arr.head == 1L) {
+      * label = 1.0
+      * }
+      **
+      *val bid = dense(10).toString
+      * val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
+      * (bid, bid_ori, label, 1.0)
+      * }
+      * ).map({
+      * rs =>
+      * (rs._1 + "\t" + rs._2, (rs._3, rs._4))
+      * }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+      * rs =>
+      * val key_list = rs._1.split("\t")
+      * val bid_ori = key_list(1).toFloat
+      * val ctr = rs._2._1 / rs._2._2
+      * val cpm = ctr * bid_ori
+      * (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
+      * })
+      **
+      *val total_cpm_map = info_rdd.map({
+      * rs =>
+      * ("placeholder", rs._4)
+      * }).reduceByKey(_ + _).collectAsMap()
+      **
+      *val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
+      * println("total_cpm=" + total_cpm)
+      **
+    *info_rdd.map({
+      * rs =>
+      * val weight = rs._4 / total_cpm
+      * (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
+      * }).repartition(1).sortBy(_._6 * -1).map({
+      * rs =>
+      *rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
+      * }).saveAsTextFile(bid_cpm_file)
+      * } **/
 
     val train_date_list = date_list.split(";")
     val train_file_list = train_list.split(";")
@@ -197,7 +197,7 @@ object MakeBaseDailyWeight {
             val bid = dense(10).toString
             val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
             (ideal_id + "\t" + bid + "\t" + bid_ori, (label, 1.0))
-        }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+          }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
           rs =>
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
@@ -467,32 +467,33 @@ object MakeBaseDailyWeight {
       s"hadoop fs -chmod -R 0777 $last_weight_examples" !
     }
 
-  }
+    val last_ctr_file = des_dir + "/" + last_date + "-ctr"
+    if (!exists_hdfs_path(last_ctr_file + "/_SUCCESS")) {
+      delete_hdfs_path(last_ctr_file)
+      val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
+      df_train_files_last.rdd.map(
+        rs => {
+          val label_arr = rs.getSeq[Long](5)
+          val dense = rs.getSeq[Long](6)
 
-  val last_ctr_file = des_dir + "/" + last_date + "-ctr"
-  if (!exists_hdfs_path(last_ctr_file + "/_SUCCESS")) {
-    delete_hdfs_path(last_ctr_file)
-    val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
-    df_train_files_last.rdd.map(
-      rs => {
-        val label_arr = rs.getSeq[Long](5)
-        val dense = rs.getSeq[Long](6)
+          val hour = dense(27).toString
 
-        val hour = dense(27).toString
-
-        var label = 0.0
-        if (label_arr.head == 1L) {
-          label = 1.0
+          var label = 0.0
+          if (label_arr.head == 1L) {
+            label = 1.0
+          }
+          (hour, (label, 1.0))
         }
-        (hour, (label, 1.0))
-      }
-    ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).repartition(1).map({
-      rs =>
-        rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1 / rs._2._2
+      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).repartition(1).map({
+        rs =>
+          rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1 / rs._2._2
 
-    }).saveAsTextFile(last_ctr_file)
+      }).saveAsTextFile(last_ctr_file)
+    }
+
+
+
+
   }
-
-
 }
 
