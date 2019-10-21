@@ -376,34 +376,34 @@ object MakeBaseDailyWeight {
 
     //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
     val weight_map_file = des_dir + "/" + curr_date + "-weight-map"
-    if (exists_hdfs_path(weight_map_file)) {
+    if (!exists_hdfs_path(weight_map_file + "_SUCCESS")) {
       delete_hdfs_path(weight_map_file)
-    }
-    sta_rdd.map({
-      rs =>
-        val ideal_id = rs._1
-        val bid_hash = rs._2
-        val bid_ori = rs._3
-        val weight = rs._4.toDouble
-        var weight_new_ori = 1.0
-        var weight_new_norm = 1.0
-        val click = rs._5.toDouble
-        val imp = rs._6
-        val ctr = rs._7.toDouble
+      sta_rdd.map({
+        rs =>
+          val ideal_id = rs._1
+          val bid_hash = rs._2
+          val bid_ori = rs._3
+          val weight = rs._4.toDouble
+          var weight_new_ori = 1.0
+          var weight_new_norm = 1.0
+          val click = rs._5.toDouble
+          val imp = rs._6
+          val ctr = rs._7.toDouble
 
-        if (click >= minus_clk_cnt && weight >= max_weight) {
-          weight_new_ori = weight / max_weight
-          weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
-          if (weight == max_weight) {
-            weight_new_ori = 1.0000001
-            weight_new_norm = 1.0000001
+          if (click >= minus_clk_cnt && weight >= max_weight) {
+            weight_new_ori = weight / max_weight
+            weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
+            if (weight == max_weight) {
+              weight_new_ori = 1.0000001
+              weight_new_norm = 1.0000001
+            }
           }
-        }
-        (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
-    }).repartition(1).sortBy(_._4 * -1).map({
-      rs =>
-        rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
-    }).saveAsTextFile(weight_map_file)
+          (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
+      }).repartition(1).sortBy(_._4 * -1).map({
+        rs =>
+          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
+      }).saveAsTextFile(weight_map_file)
+    }
 
     println("weight_map.size=" + weight_map.size)
     val schema_new = StructType(List(
@@ -496,7 +496,7 @@ object MakeBaseDailyWeight {
       ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
           val line_list = rs._1.split("\t")
-          (line_list(0), line_list(1).toInt, rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
+          (line_list(0), line_list(1), rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
       }).repartition(1).sortBy(_._2).map({
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
