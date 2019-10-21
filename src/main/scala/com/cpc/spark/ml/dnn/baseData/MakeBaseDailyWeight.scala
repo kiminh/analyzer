@@ -471,38 +471,125 @@ object MakeBaseDailyWeight {
     val hour_mmh_map = sc.textFile(hour_mmh_map_file).map({
       rs =>
         val line_list = rs.split("\t")
+        (line_list(1), line_list(0))
+    }).collectAsMap()
+    val hour_mmh_map_reverse = sc.textFile(hour_mmh_map_file).map({
+      rs =>
+        val line_list = rs.split("\t")
         (line_list(0), line_list(1))
     }).collectAsMap()
     println("hour_mmh_map.size=" + hour_mmh_map.size)
 
-    val last_ctr_file = des_dir + "/" + last_date + "-ctr"
-    if (!exists_hdfs_path(last_ctr_file + "/_SUCCESS")) {
-      delete_hdfs_path(last_ctr_file)
-      val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
-      df_train_files_last.rdd.map(
-        rs => {
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
 
-          val hour = dense(27).toString
-          val hour_ori = hour_mmh_map.getOrElse(hour, "-1")
+    val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
+    val hour_str = "00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23"
+    val hour_list = hour_str.split(";")
 
-          var label = 0.0
-          if (label_arr.head == 1L) {
-            label = 1.0
+    for (idx <- hour_list.indices) {
+      val this_hour = hour_list(idx)
+      val this_hour_hash = hour_mmh_map.getOrElse(this_hour, "-1")
+      val hour_example_file = des_dir + "/" + last_date + "-" + this_hour
+      val hour_ctr_file = des_dir + "/" + last_date + "-" + this_hour + "-ctr"
+      if (!exists_hdfs_path(hour_example_file + "/_SUCCESS") || !exists_hdfs_path(hour_ctr_file + "/_SUCCESS")) {
+        delete_hdfs_path(hour_example_file)
+        delete_hdfs_path(hour_ctr_file)
+
+        df_train_files_last.rdd.map(
+          rs => {
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            val hour = dense(27).toString
+            val hour_ori = hour_mmh_map_reverse.getOrElse(hour, "-1")
+
+            var label = 0.0
+            if (label_arr.head == 1L) {
+              label = 1.0
+            }
+            (hour + "\t" + hour_ori, (label, 1.0))
           }
-          (hour + "\t" + hour_ori, (label, 1.0))
-        }
-      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
-        rs =>
-          val line_list = rs._1.split("\t")
-          (line_list(0), line_list(1), rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
-      }).repartition(1).sortBy(_._2).map({
-        rs =>
-          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
+        ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+          rs =>
+            val line_list = rs._1.split("\t")
+            (line_list(0), line_list(1), rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
+        }).filter({
+          rs =>
+            if (rs._2 == this_hour) {
+              true
+            } else {
+              false
+            }
+        }).repartition(1).map({
+          rs =>
+            rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
 
-      }).saveAsTextFile(last_ctr_file)
+        }).saveAsTextFile(hour_ctr_file)
+
+
+        val weighted_rdd_hour = df_train_files_last.rdd.filter({
+          rs =>
+            val dense = rs.getSeq[Long](6)
+            val hour = dense(27).toString
+            if (hour == this_hour_hash) {
+              true
+            } else {
+              false
+            }
+        }).map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            val bid = dense(10).toString
+            val ideal_id = dense(11).toString
+
+            var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+            if (weight == 0.0) {
+              weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+            }
+            val weight_reverse = 1.0
+
+            //if (weight <= 1.0f) {
+            //  weight = 0.0f
+            //}
+            //if (label_arr.head != 1L) {
+            //  weight = 1.0f
+            //}
+
+            Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+          })
+
+        val weighted_rdd_count_hour = weighted_rdd_hour.count()
+        println(s"weighted_rdd_count is : $weighted_rdd_count_hour")
+        println("DF file count:" + weighted_rdd_count_hour.toString + " of file:" + hour_example_file)
+
+        val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_hour, schema_new)
+        tf_df_last.repartition(3000).write.format("tfrecords").option("recordType", "Example").save(hour_example_file)
+
+        //保存count文件
+        val fileName_1 = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName_1, weighted_rdd_count_hour)
+        s"hadoop fs -put $fileName_1 $hour_example_file/count" !
+
+        s"hadoop fs -chmod -R 0777 $hour_example_file" !
+
+
+
+
+
+
+
+
+
+      }
     }
+
+
 
   }
 }
