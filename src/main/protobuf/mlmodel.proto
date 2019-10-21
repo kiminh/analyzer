@@ -199,3 +199,16 @@ message Feature {
 
  repeated int64 int64_list = 6;
 }
+
+message CalibrationFeature {
+    int32 as_idx = 1; //特征对应的as idx
+    string prefix = 2; //特征前缀   e.g.ideaid#,unitid#
+    int32 type = 3; //type:0 数值特征，type:1分类特征
+}
+
+message CalibrationModel {
+    repeated CalibrationFeature feature = 1; //使用特征类型
+    map<string,double> featuremap = 2; //特征值
+    double w_rawvalue = 3; //rawcvr的参数
+    double intercept = 4; //模型截距
+}

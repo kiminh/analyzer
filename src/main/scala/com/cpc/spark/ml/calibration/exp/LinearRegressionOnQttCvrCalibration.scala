@@ -70,103 +70,55 @@ object LinearRegressionOnQttCvrCalibration {
     import spark.implicits._
 
     // get union log
-//    val sql = s"""
-//                      |select a.searchid, cast(b.raw_cvr as bigint) as rawcvr, substring(a.adclass,1,6) as adclass,
-//                      |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-//                      |unitid,userid,click_count,click_unit_count,
-//                      |if(c.iscvr is not null,1,0) iscvr,if(hour>$endHour,hour-$endHour,hour+24-$endHour) hourweight
-//                      |from
-//                      |(select searchid,ideaid,unitid,userid,adclass,hour
-//                      |  from dl_cpc.cpc_basedata_click_event
-//                      |  where $selectCondition2
-//                      |  and $mediaSelection and isclick = 1
-//                      |  and adsrc in (1,28)
-//                      |  and antispam_score = 10000
-//                      |  )a
-//                      |  join
-//                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
-//                      |  ,click_count,click_unit_count
-//                      |  from
-//                      |  dl_cpc.cpc_basedata_adx_event
-//                      |  where  $selectCondition2
-//                      |  and $mediaSelection
-//                      |  and cvr_model_name in ('$calimodel','$model')
-//                      |  AND bid_mode = 0
-//                      |  and conversion_goal>0) b
-//                      |    on a.searchid = b.searchid and a.ideaid = b.ideaid
-//                      | left join
-//                      | (select distinct searchid,conversion_goal,1 as iscvr
-//                      |  from dl_cpc.ocpc_quick_cv_log
-//                      |  where  $selectCondition1) c
-//                      |  on a.searchid = c.searchid and b.conversion_goal=c.conversion_goal
-//       """.stripMargin
-//
-//    println(s"sql:\n$sql")
-    val sql1 =
-    s"""
-       |select *,rawcvr as raw_cvr,case
-       |    when user_show_ad_num = 0 then '0'
-       |    when user_show_ad_num = 1 then '1'
-       |    when user_show_ad_num = 2 then '2'
-       |    when user_show_ad_num in (3,4) then '4'
-       |    when user_show_ad_num in (5,6,7) then '7'
-       |    else '8' end as show_num
-       |    from dl_cpc.wy_calibration_sample_2019_10_10
+    val sql = s"""
+                      |select a.searchid, cast(b.raw_cvr as bigint) as rawcvr, substring(a.adclass,1,6) as adclass,
+                      |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
+                      |unitid,userid,click_count,click_unit_count,
+                      |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
+                      |from
+                      |(select searchid,ideaid,unitid,userid,adclass,hour
+                      |  from dl_cpc.cpc_basedata_click_event
+                      |  where $selectCondition2
+                      |  and $mediaSelection and isclick = 1
+                      |  and adsrc in (1,28)
+                      |  and antispam_score = 10000
+                      |  )a
+                      |  join
+                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
+                      |  ,click_count,click_unit_count
+                      |  from
+                      |  dl_cpc.cpc_basedata_adx_event
+                      |  where  $selectCondition2
+                      |  and $mediaSelection
+                      |  and cvr_model_name in ('$calimodel','$model')
+                      |  AND bid_mode = 0
+                      |  and conversion_goal>0) b
+                      |    on a.searchid = b.searchid and a.ideaid = b.ideaid
+                      | left join
+                      | (select distinct searchid,conversion_goal,1 as iscvr
+                      |  from dl_cpc.ocpc_quick_cv_log
+                      |  where  $selectCondition1) c
+                      |  on a.searchid = c.searchid and b.conversion_goal=c.conversion_goal
        """.stripMargin
 
-    val sql2 =
-      s"""
-         |select *,rawcvr as raw_cvr,case
-         |    when user_show_ad_num = 0 then '0'
-         |    when user_show_ad_num = 1 then '1'
-         |    when user_show_ad_num = 2 then '2'
-         |    when user_show_ad_num in (3,4) then '4'
-         |    when user_show_ad_num in (5,6,7) then '7'
-         |    else '8' end as show_num
-         |    from dl_cpc.wy_calibration_sample_2019_10_11
-         |    --where hour = '01'
-       """.stripMargin
-    val data = spark.sql(sql1)
+    println(s"sql:\n$sql")
+    val data = spark.sql(sql)
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("ideaidtag",when(col("count")>20,1).otherwise(0))
+      .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
       .filter("ideaidtag=1")
-    val defaultunitid = data.groupBy("unitid").count()
-      .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
-      .filter("unitidtag=1")
-    val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
-      .filter("useridtag=1")
 
-    val df1 = data
+    val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
-      .join(defaultunitid,Seq("unitid"),"left")
-      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
-      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
+      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
-    df1.show(10)
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+    dataDF.show(10)
 
-    val df2 = spark.sql(sql2)
-      .withColumn("label",col("iscvr"))
-      .join(defaultideaid,Seq("ideaid"),"left")
-      .join(defaultunitid,Seq("unitid"),"left")
-      .join(defaultuserid,Seq("userid"),"left")
-      .withColumn("sample",lit(0))
-      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour","unitid0")
-
-    val dataDF = df1.union(df2)
-
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid0","userid","conversion_from","click_unit_count")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
 
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
@@ -176,7 +128,7 @@ object LinearRegressionOnQttCvrCalibration {
     }
 
     val numericCols = Array("raw_cvr")
-    val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
+    val assemblerInputs = numericCols ++ categoricalColumns.map(_ + "classVec")
     /**使用VectorAssembler将所有特征转换为一个向量*/
     val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
     stagesArray.append(assembler)
@@ -191,51 +143,10 @@ object LinearRegressionOnQttCvrCalibration {
     dataset.select("label","features").show(10)
     dataset.printSchema()
 
-//    val adslotidArray = dataset.select("adslotid","adslotidclassVec").distinct()
-//      .rdd.map(x=>(x.getAs[String]("adslotid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adslotidclassVec").toDense)).collect()
-//      .toMap
-//    val ideaidArray = trainingDF.select("ideaid","ideaidclassVec").distinct()
-//      .rdd.map(x=>(x.getAs[Int]("ideaid"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("ideaidclassVec").toDense)).collect()
-//      .toMap
-//    val adclassArray = trainingDF.select("adclass","adclassclassVec").distinct()
-//      .rdd.map(x=>(x.getAs[String]("adclass"),x.getAs[org.apache.spark.ml.linalg.SparseVector]("adclassclassVec").toDense)).collect()
-//      .toMap
-//
-//    val testData = spark.sql("select *,rawcvr as raw_cvr from dl_cpc.wy_calibration_sample_2019_10_11")
-//        .rdd.map {
-//      r =>
-//        val label = r.getAs[Long]("iscvr").toInt
-//        val raw_cvr = r.getAs[Long]("raw_cvr").toDouble / 1e6d
-//        val adslotid = r.getAs[String]("adslotid")
-//        val adclass = r.getAs[String]("adclass")
-//        val ideaid = r.getAs[Int]("ideaid")
-//        val user_show_ad_num = r.getAs[Long]("user_show_ad_num")
-//        var adslotidclassVec = adslotidArray.get("9999999").toVector
-//        if(adslotidArray.contains(adslotid)){
-//          adslotidclassVec = adslotidArray.get(adslotid).toVector
-//        }
-//        var ideaidclassVec = ideaidArray.get(9999999).toVector
-//        if(ideaidArray.contains(ideaid)){
-//          ideaidclassVec = ideaidArray.get(ideaid).toVector
-//        }
-//        var adclassclassVec = adclassArray.get("9999999").toVector
-//        if(adclassArray.contains(adclass)){
-//          adclassclassVec = adclassArray.get(adclass).toVector
-//        }
-//        (label, raw_cvr, user_show_ad_num, adslotidclassVec, ideaidclassVec,adclassclassVec, ideaid)
-//    }.toDF("label","raw_cvr","user_show_ad_num","adslotidclassVec", "ideaidclassVec","adclassclassVec","ideaid")
-//    testData.printSchema()
-//
-//
-//    val testDF: DataFrame = assembler.transform(testData)
-//    test
-
-//    val Array(trainingDF, testDF) = dataset.filter("sample = 1").randomSplit(Array(0.8, 0.2), seed = 12345)
-    val trainingDF= dataset.filter("sample=1")
-    val validationDF = dataset.filter("sample = 0")
-    println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
+    val trainingDF= dataset
+    println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
-//        .setWeightCol("hourweight")
+        .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
@@ -260,14 +171,8 @@ object LinearRegressionOnQttCvrCalibration {
         (exp_cvr,iscvr,raw_cvr,unitid)
     }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
-    val result2 = lrModel.transform(validationDF).rdd.map{
-      x =>
-        val exp_cvr = x.getAs[Double]("prediction")*1e6d
-        val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
-        val unitid = x.getAs[Int]("unitid")
-        val iscvr = x.getAs[Int]("label")
-        (exp_cvr,iscvr,raw_cvr,unitid)
-    }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
+    val feature = trainingDF.select("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+      .map()
 
 
         //   lr calibration
@@ -276,13 +181,6 @@ object LinearRegressionOnQttCvrCalibration {
 
     val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(lrData2,"train calibration",spark)
-    //    raw data
-    val modelData = result2.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-    calculateAuc(modelData,"test original",spark)
-
-//    online calibration
-    val calibData = result2.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-    calculateAuc(calibData,"test calibration",spark)
 
   }
 

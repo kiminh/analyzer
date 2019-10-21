@@ -50,7 +50,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val sql1 =
         s"""
-           |select *,cast(rawcvr/100000 as double) as raw_cvr,case
+           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
            |    when user_show_ad_num = 0 then '0'
            |    when user_show_ad_num = 1 then '1'
            |    when user_show_ad_num = 2 then '2'
@@ -64,7 +64,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val sql2 =
         s"""
-           |select *,cast(rawcvr/100000 as double) as raw_cvr,case
+           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
            |    when user_show_ad_num = 0 then '0'
            |    when user_show_ad_num = 1 then '1'
            |    when user_show_ad_num = 2 then '2'
@@ -181,11 +181,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
     //    raw data
-    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*100000 as Int) prediction","unitid")
+    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
     calculateAuc(modelData,"test original",spark)
 
 //    online calibration
-    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr*100000 as Int) prediction","unitid")
+    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(calibData,"test calibration",spark)
 
   }
