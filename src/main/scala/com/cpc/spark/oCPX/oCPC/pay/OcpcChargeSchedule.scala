@@ -51,8 +51,8 @@ object OcpcChargeSchedule {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
 
 
 
@@ -162,10 +162,17 @@ object OcpcChargeSchedule {
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass")))
 
+    newDataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
+
     val newData = newDataRaw
       .filter(s"industry in ('feedapp', 'elds', 'pay_industry')")
       .select("unitid")
       .distinct()
+
+    newData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021b")
+
 
     val data = prevData
       .join(newData, Seq("unitid"), "outer")
