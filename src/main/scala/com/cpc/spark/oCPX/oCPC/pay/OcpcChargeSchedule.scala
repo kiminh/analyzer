@@ -133,7 +133,6 @@ object OcpcChargeSchedule {
     val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
 
-    // todo 增加赔付行业
     val sqlRequest =
       s"""
          |SELECT
