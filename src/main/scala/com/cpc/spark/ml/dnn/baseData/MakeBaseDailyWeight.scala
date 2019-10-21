@@ -569,7 +569,7 @@ object MakeBaseDailyWeight {
         println("DF file count:" + weighted_rdd_count_hour.toString + " of file:" + hour_example_file)
 
         val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_hour, schema_new)
-        tf_df_last.repartition(3000).write.format("tfrecords").option("recordType", "Example").save(hour_example_file)
+        tf_df_last.repartition(600).write.format("tfrecords").option("recordType", "Example").save(hour_example_file)
 
         //保存count文件
         val fileName_1 = "count_" + Random.nextInt(100000)
