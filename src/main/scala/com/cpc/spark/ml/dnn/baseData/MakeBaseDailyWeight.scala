@@ -491,18 +491,18 @@ object MakeBaseDailyWeight {
           if (label_arr.head == 1L) {
             label = 1.0
           }
-
-
           (hour + "\t" + hour_ori, (label, 1.0))
         }
-      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).repartition(1).map({
+      ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
         rs =>
-          rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2 + "\t" + rs._2._1 / rs._2._2
+          val line_list = rs._1.split("\t")
+          (line_list(0), line_list(1).toDouble, rs._2._1, rs._2._2, rs._2._1 / rs._2._2)
+      }).repartition(1).sortBy(_._2).map({
+        rs =>
+          rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5
 
       }).saveAsTextFile(last_ctr_file)
     }
-
-
 
   }
 }
