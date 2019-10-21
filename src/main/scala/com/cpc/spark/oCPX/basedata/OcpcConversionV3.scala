@@ -36,8 +36,8 @@ object OcpcConversionV3 {
 
     result
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_cvr_log_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_cvr_log_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_cvr_log_hourly")
 
     val okfile = s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/ocpc/okdir/ocpc_cvr_log_hourly-$date-$hour.ok"
     println(okfile)
