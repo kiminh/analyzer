@@ -200,7 +200,7 @@ object LinearRegressionOnQttCvrCalibration {
           val key = s"$cate" + "#" + cateid
           featuremap += ((key,value))
       }
-      dimension += feature.count()
+      dimension += feature.count().toInt
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)
