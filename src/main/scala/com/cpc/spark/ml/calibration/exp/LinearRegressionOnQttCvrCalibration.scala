@@ -128,7 +128,7 @@ object LinearRegressionOnQttCvrCalibration {
     val stagesArray = new ListBuffer[PipelineStage]()
     for (cate <- categoricalColumns) {
       val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
-      val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec")
+      val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
       stagesArray.append(indexer,encoder)
     }
 
