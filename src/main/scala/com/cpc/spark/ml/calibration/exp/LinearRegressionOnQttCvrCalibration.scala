@@ -191,7 +191,7 @@ object LinearRegressionOnQttCvrCalibration {
         .select(col(cate),col(cate + "classVec"))
         .distinct()
         .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(cate + "classVec")))
-        .selectExpr(s"select cast($cate as string),$featurevalue")
+        .selectExpr(s"cast($cate as string) $cate",s"$featurevalue")
         .rdd.map{
         x =>
           val cateid = x.getAs[String](cate)
