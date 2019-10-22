@@ -189,7 +189,7 @@ object LinearRegressionOnQttCvrCalibration {
 
       val featurevalue = cate + "value"
       val feature = trainingDF
-        .select(cate)
+        .select(col(cate + "classVec"))
         .distinct()
         .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(cate + "classVec")))
         .select(cate,featurevalue)
