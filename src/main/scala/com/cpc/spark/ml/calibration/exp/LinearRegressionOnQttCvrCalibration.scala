@@ -226,11 +226,11 @@ object LinearRegressionOnQttCvrCalibration {
   }
 
   def output(coefficients:org.apache.spark.ml.linalg.DenseVector, dimension: Int)
-  = udf((value: org.apache.spark.ml.linalg.DenseVector) => {
+  = udf { value: org.apache.spark.ml.linalg.DenseVector =>
     val a = dimension + value.toDense.toArray.indexOf(1.0f)
     println(a)
     coefficients.toArray(dimension + value.toDense.toArray.indexOf(1.0f))
-  })
+  }
 
   def saveProtoToLocal(modelName: String, config: CalibrationModel): String = {
     val filename = s"LR-calibration-$modelName.mlm"
