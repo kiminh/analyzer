@@ -48,7 +48,7 @@ object OcpcHourlyGeneralData {
       .withColumn("low_unit_percent", col("low_unitid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("pay_percent", col("high_cost") * 1.0 / col("ocpc_cost"))
 
-    val prevData = getPrevData(date, hour, spark)
+    val prevData = getPrevData(date, hour, version, spark)
     val result2 = result1
         .join(prevData, Seq("industry", "conversion_goal", "media"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
@@ -75,7 +75,7 @@ object OcpcHourlyGeneralData {
 
   }
 
-  def getPrevData(date: String, hour: String, spark: SparkSession) = {
+  def getPrevData(date: String, hour: String, version: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -84,7 +84,7 @@ object OcpcHourlyGeneralData {
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = 'ocpcv1'"
+    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = '$version'"
 
     val sqlRequest =
       s"""
