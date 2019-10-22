@@ -225,8 +225,10 @@ object LinearRegressionOnQttCvrCalibration {
 
   }
 
-  def output(coefficients:org.apache.spark.ml.linalg.Vector, dimension: Int)
-  = udf((value: org.apache.spark.ml.linalg.SparseVector) => {
+  def output(coefficients:org.apache.spark.ml.linalg.DenseVector, dimension: Int)
+  = udf((value: org.apache.spark.ml.linalg.DenseVector) => {
+    val a = dimension + value.toDense.toArray.indexOf(1.0f)
+    println(a)
     coefficients.toArray(dimension + value.toDense.toArray.indexOf(1.0f))
   })
 
