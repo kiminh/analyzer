@@ -282,7 +282,7 @@ object OcpcHourlyGeneralData {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  date = '$date'
+         |  date >= '$date'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
