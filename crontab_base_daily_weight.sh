@@ -28,7 +28,7 @@ fi
 touch ${shell_in_run}
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
-last_date=`date --date='1 days ago' +%Y-%m-%d`
+last_date=`date --date='2 days ago' +%Y-%m-%d`
 des_file=${des_dir}/${last_date}-weight-aggr
 ctr_file=${des_dir}/${last_date}-23-ctr
 des_file_success=${dir}/${last_date}_weight_success
@@ -111,7 +111,6 @@ then
 fi
 
 sample_list=(
-    `date --date='1 days ago' +%Y-%m-%d`
     `date --date='2 days ago' +%Y-%m-%d`
     `date --date='3 days ago' +%Y-%m-%d`
     `date --date='4 days ago' +%Y-%m-%d`
@@ -214,7 +213,7 @@ hadoop fs -get ${jarLib} ${randjar}
 
 
 delete_old=true
-curr_date=`date --date='0 days ago' +%Y-%m-%d`
+curr_date=`date --date='1 days ago' +%Y-%m-%d`
 
 spark-submit --master yarn --queue ${queue} \
     --name "make-base-daily-samples" \

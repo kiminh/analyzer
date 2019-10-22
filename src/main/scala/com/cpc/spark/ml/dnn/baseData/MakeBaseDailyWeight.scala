@@ -418,53 +418,58 @@ object MakeBaseDailyWeight {
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
 
-    val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
-    if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
-      delete_hdfs_path(last_weight_examples)
-      val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(last_file)
+    for (idx <- train_date_list.indices) {
+      val this_date = train_date_list(idx)
+      val this_file = train_file_list(idx)
+      println("now make weight examples of " + this_file)
+      val last_weight_examples = des_dir + "/" + this_date + "-weight-aggr"
+      if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
+        delete_hdfs_path(last_weight_examples)
+        val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
 
-      val weighted_rdd_last = df_train_files_last.rdd.map(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
+        val weighted_rdd_last = df_train_files_last.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
 
-          val bid = dense(10).toString
-          val ideal_id = dense(11).toString
+            val bid = dense(10).toString
+            val ideal_id = dense(11).toString
 
-          var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
-          if (weight == 0.0) {
-            weight = weight_map_ori.getOrElse(ideal_id, 1.0)
-          }
-          val weight_reverse = 1.0
+            var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+            if (weight == 0.0) {
+              weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+            }
+            val weight_reverse = 1.0
 
-          //if (weight <= 1.0f) {
-          //  weight = 0.0f
-          //}
-          //if (label_arr.head != 1L) {
-          //  weight = 1.0f
-          //}
+            //if (weight <= 1.0f) {
+            //  weight = 0.0f
+            //}
+            //if (label_arr.head != 1L) {
+            //  weight = 1.0f
+            //}
 
-          Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
-        })
+            Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+          })
 
-      val weighted_rdd_count_last = weighted_rdd_last.count()
-      println(s"weighted_rdd_count is : $weighted_rdd_count_last")
-      println("DF file count:" + weighted_rdd_count_last.toString + " of file:" + last_file)
+        val weighted_rdd_count_last = weighted_rdd_last.count()
+        println(s"weighted_rdd_count is : $weighted_rdd_count_last")
+        println("DF file count:" + weighted_rdd_count_last.toString + " of file:" + last_file)
 
-      val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_last, schema_new)
-      tf_df_last.repartition(3000).write.format("tfrecords").option("recordType", "Example").save(last_weight_examples)
+        val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_last, schema_new)
+        tf_df_last.repartition(3000).write.format("tfrecords").option("recordType", "Example").save(last_weight_examples)
 
-      //保存count文件
-      val fileName_1 = "count_" + Random.nextInt(100000)
-      writeNum2File(fileName_1, weighted_rdd_count_last)
-      s"hadoop fs -put $fileName_1 $last_weight_examples/count" !
+        //保存count文件
+        val fileName_1 = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName_1, weighted_rdd_count_last)
+        s"hadoop fs -put $fileName_1 $last_weight_examples/count" !
 
-      s"hadoop fs -chmod -R 0777 $last_weight_examples" !
+        s"hadoop fs -chmod -R 0777 $last_weight_examples" !
+      }
     }
 
     val hour_mmh_map_file = des_dir + "/" + "hour_mmh_map.txt"
