@@ -193,9 +193,9 @@ object LinearRegressionOnQttCvrCalibration {
         .distinct()
         .withColumn("dense",col(cate + "classVec"))
         .rdd.map{x=>
-          val cate = x.getAs[String](s"$cate")
-          val featurevec = x.getAs[org.apache.spark.ml.linalg.SparseVector](s"$featurevec").toArray
-        (cate,featurevec)
+          val cateid = x.getAs[String](cate)
+          val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
+        (cateid,featurevecid)
         }.toDF()
       feature.show(10)
 //        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
