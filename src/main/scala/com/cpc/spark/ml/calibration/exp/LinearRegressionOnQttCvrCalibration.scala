@@ -196,20 +196,20 @@ object LinearRegressionOnQttCvrCalibration {
         .rdd.map{
         x =>
           val cateid = x.getAs[String](cate)
-          val value = x.getAs[Double](featurevalue)
+          val value = x.getAs[Double](featurevalue)*1e6d
           val key = s"$cate" + "#" + cateid
           featuremap += ((key,value))
       }
       dimension += feature.count().toInt
     }
 
-    val w_rawvalue = lrModel.coefficients.toArray(0)
+    val w_rawvalue = lrModel.coefficients.toArray(0)*1e6d
 
     val LRoutput = CalibrationModel(
       feature = featuregroup,
       featuremap = featuremap.toMap,
       wRawvalue = w_rawvalue,
-      intercept = lrModel.intercept
+      intercept = lrModel.intercept*1e6d
     )
 
     val localPath = saveProtoToLocal(calimodel, LRoutput)
