@@ -118,7 +118,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("sample",lit(1))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
 
     val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
