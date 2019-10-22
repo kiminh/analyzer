@@ -190,7 +190,7 @@ object LinearRegressionOnQttCvrCalibration {
       val feature = trainingDF
         .select(col(cate),col(cate + "classVec"))
         .distinct()
-        .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(cate + "classVec")))
+        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
         .selectExpr(s"cast($cate as string) $cate",s"$featurevalue")
         .rdd.map{
         x =>
