@@ -7,7 +7,7 @@ object CalibrationClickLog {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     // parse and process input
-    val date = "2019-10-11"
+    val date = args(0)
     val endHour = 23
     // get union log
     val sql = s"""
@@ -30,7 +30,7 @@ object CalibrationClickLog {
                  |  dl_cpc.cpc_basedata_adx_event
                  |  where  day = '$date'
                  |  and media_appsid in ('80000001','80000002')
-                 |  and cvr_model_name = "qtt-cvr-dnn-rawid-v1wzjf-aibox"
+                 |  and cvr_model_name = "qtt-cvr-dnn-rawid-v5conv5"
                  |  AND bid_mode = 0
                  |  and conversion_goal>0) b
                  |    on a.searchid = b.searchid and a.ideaid = b.ideaid
@@ -43,7 +43,7 @@ object CalibrationClickLog {
     println(s"sql:\n$sql")
     val sample = spark.sql(sql)
     sample.show()
-    sample.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_sample_2019_10_11")
+    sample.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_sample_v5conv5")
 
   }
 }

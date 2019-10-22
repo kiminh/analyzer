@@ -87,6 +87,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val defaultuserid = data.groupBy("userid").count()
         .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
         .filter("useridtag=1")
+      val defaultclick_unit_count = data.groupBy("click_unit_count").max("click_unit_count")
+      defaultclick_unit_count.show(5)
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
