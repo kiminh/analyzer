@@ -182,16 +182,16 @@ object LinearRegressionOnQttCvrCalibration {
     for (cate <- categoricalColumns ){
       val featureid = CalibrationFeature(
         asIdx = sampleidx.get(cate).getOrElse(-1),
-        prefix = "ideaid#",
+        prefix = cate + "#",
         types = 1
       )
       featuregroup += featureid
 
-      val featurevalue = cate + "_value"
+      val featurevalue = cate + "value"
       val feature = trainingDF
         .select(cate)
         .distinct()
-        .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(s"$cate")))
+        .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(cate + "classVec")))
         .select(cate,featurevalue)
         .rdd.map{
         x =>
