@@ -76,7 +76,7 @@ object LinearRegressionOnQttCvrCalibration {
     val sql = s"""
                       |select a.searchid, b.raw_cvr, substring(a.adclass,1,6) as adclass,
                       |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-                      |unitid,userid,click_count,click_unit_count,conversion_from,
+                      |unitid,userid,click_count,click_unit_count,conversion_from,hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
                       |from
                       |(select searchid,ideaid,unitid,userid,adclass,hour
