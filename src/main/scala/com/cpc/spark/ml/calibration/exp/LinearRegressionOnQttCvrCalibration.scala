@@ -146,7 +146,6 @@ object LinearRegressionOnQttCvrCalibration {
     val dataset = pipelineModel.transform(dataDF)
     dataset.show(10)
     dataset.select("label","features").show(10)
-    dataset.printSchema()
 
     val trainingDF= dataset
     println(s"trainingDF size=${trainingDF.count()}")
@@ -192,7 +191,7 @@ object LinearRegressionOnQttCvrCalibration {
         .select(col(cate),col(cate + "classVec"))
         .distinct()
         .withColumn(featurevalue,output(lrModel.coefficients, dimension)(col(cate + "classVec")))
-        .select(cate,featurevalue)
+        .selectExpr(s"select cast($cate as string),$featurevalue")
         .rdd.map{
         x =>
           val cateid = x.getAs[String](cate)
