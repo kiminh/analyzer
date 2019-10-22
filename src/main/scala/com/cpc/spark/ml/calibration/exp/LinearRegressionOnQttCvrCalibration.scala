@@ -187,9 +187,16 @@ object LinearRegressionOnQttCvrCalibration {
       featuregroup += featureid
 
       val featurevalue = cate + "value"
+      val featurevec = cate + "classVec"
       val feature = trainingDF
-        .select(col(cate),col(cate + "classVec"))
+        .selectExpr(s"cast($cate as string) $cate",s"$featurevec")
         .distinct()
+        .withColumn("dense",col(cate + "classVec"))
+        .rdd.map{x=>
+          val cate = x.getAs[String]("cate")
+          val featurevec = x.getAs[org.apache.spark.ml.linalg.SparseVector]("featurevec").toArray
+        (cate,featurevec)
+        }.toDF()
       feature.show(10)
 //        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
 //        .selectExpr(s"cast($cate as string) $cate",s"$featurevalue")
@@ -201,7 +208,7 @@ object LinearRegressionOnQttCvrCalibration {
 //          featuremap += ((key,value))
 //      }
 //      dimension += feature.count().toInt
-    }
+//    }
 //
 //    val w_rawvalue = lrModel.coefficients.toArray(0)*1e6d
 //
