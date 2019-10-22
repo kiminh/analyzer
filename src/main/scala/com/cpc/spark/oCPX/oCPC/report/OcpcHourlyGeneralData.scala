@@ -84,7 +84,7 @@ object OcpcHourlyGeneralData {
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = 'qtt_demo'"
+    val selectCondition = s"`date` = '$date1' and `hour` = '$hour' and version = 'ocpcv1'"
 
     val sqlRequest =
       s"""
