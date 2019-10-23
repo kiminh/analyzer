@@ -306,10 +306,10 @@ object MakeUserIdStatistics {
     println("userIdOldCnt = " + userIdOldCnt)
 
 
-    println("idealIdMapToday new rate:" + idealIdOldCnt / idealIdMapToday.size)
-    println("unitIdMapToday new rate:" + unitIdOldCnt / unitIdMapToday.size)
-    println("planIdMapToday new rate:" + planIdOldCnt / planIdMapToday.size)
-    println("userIdMapToday new rate:" + userIdOldCnt / userIdMapToday.size)
+    println("idealIdMapToday old rate:" + idealIdOldCnt / idealIdMapToday.size)
+    println("unitIdMapToday old rate:" + unitIdOldCnt / unitIdMapToday.size)
+    println("planIdMapToday old rate:" + planIdOldCnt / planIdMapToday.size)
+    println("userIdMapToday old rate:" + userIdOldCnt / userIdMapToday.size)
 
 
   }
