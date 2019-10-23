@@ -78,15 +78,15 @@ object MakeAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 13) {
+    if (args.length != 14) {
       System.err.println(
         """
-          |you have to input 13 parameters !!!
+          |you have to input 14 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files, train_ids, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, train_files_sup, curr_date, time_id, train_files_last, last_date, delete_old) = args
+    val Array(des_dir, des_dir_ori, train_files, train_ids, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, train_files_sup, curr_date, time_id, train_files_last, last_date, delete_old) = args
 
     println(args)
 
@@ -110,8 +110,6 @@ object MakeAdListV4Samples {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-" + time_id + "-bid-cpm-weight-info"
-    val weighted_file_sup = des_dir + "/" + curr_date + "-" + time_id + "-weighted-sup"
     val weighted_file_collect_8 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-8"
     val weighted_file_collect_4 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-4"
     val weighted_file_collect_2 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-2"
@@ -119,8 +117,6 @@ object MakeAdListV4Samples {
     val ctr_file = des_dir + "/" + curr_date + "-" + time_id + "-ctr"
 
     if (delete_old == "true") {
-      delete_hdfs_path(bid_cpm_file)
-      delete_hdfs_path(weighted_file_sup)
       delete_hdfs_path(weighted_file_collect_8)
       delete_hdfs_path(weighted_file_collect_4)
       delete_hdfs_path(weighted_file_collect_2)
@@ -128,7 +124,8 @@ object MakeAdListV4Samples {
       delete_hdfs_path(ctr_file)
     }
 
-    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info-ref"
+    var base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info-ref"
+    base_daily_bid_cpm_file = des_dir_ori + s"/$curr_date-14days-weight-info"
     println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
     if (!exists_hdfs_path(base_daily_bid_cpm_file)) {
@@ -371,7 +368,7 @@ object MakeAdListV4Samples {
     }**/
 
     /****************************************last_weight***************************************************/
-    val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
+    /**val last_weight_examples = des_dir + "/" + last_date + "-weight-aggr"
     if (!exists_hdfs_path(last_weight_examples + "/_SUCCESS")) {
       delete_hdfs_path(last_weight_examples)
       val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_last)
@@ -418,7 +415,7 @@ object MakeAdListV4Samples {
       s"hadoop fs -put $fileName_1 $last_weight_examples/count" !
 
       s"hadoop fs -chmod -R 0777 $last_weight_examples" !
-    }
+    }**/
 
     /**
     /****************************************collect_2***************************************************/

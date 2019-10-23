@@ -25,20 +25,21 @@ fi
 touch ${shell_in_run}
 printf "*****************************${date_full}********************************\n"
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+des_dir_ori="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
-base_daily_bid_cpm_file=${des_dir}/${curr_date}-21days-weight-info-ref
-file_success=${dir}/${curr_date}_21days_weight_info_success
+base_daily_bid_cpm_file=${des_dir_rock}/${curr_date}-14days-weight-info-ref
+base_daily_bid_cpm_file=${des_dir_ori}/${curr_date}-14days-weight-info
+file_success=${dir}/${curr_date}_14days_weight_info_success
 if [[ ! -f ${file_success} ]]; then
     hadoop fs -get ${base_daily_bid_cpm_file}/_SUCCESS ${file_success}
 fi
 
 if [[ ! -f ${file_success} ]]; then
-    printf "no 21days-weight-info file, existing...\n"
+    printf "no 14days-weight-info file, existing...\n"
     rm ${shell_in_run}
     exit 0
 fi
-
 
 
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
@@ -437,7 +438,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.MakeAdListV4Samples\
-    ${randjar} ${des_dir} ${train_file} ${train_ids} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${train_file_last} ${date_last} ${delete_old}
+    ${randjar} ${des_dir_rock} ${des_dir_ori} ${train_file} ${train_ids} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${train_file_last} ${date_last} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
