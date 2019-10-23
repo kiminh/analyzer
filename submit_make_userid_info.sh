@@ -26,7 +26,7 @@ one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,s
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-tf-make-userid-statistics" \
     --driver-memory 4g --executor-memory 4g \
-    --num-executors 100 --executor-cores 4 \
+    --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
