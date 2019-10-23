@@ -125,7 +125,7 @@ object MakeAdListV4Samples {
     }
 
     var base_daily_bid_cpm_file = des_dir + s"/$curr_date-21days-weight-info-ref"
-    base_daily_bid_cpm_file = des_dir_ori + s"/$curr_date-14days-weight-info"
+    base_daily_bid_cpm_file = des_dir_ori + "/2019-10-23-14days-weight-info"
     println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
     if (!exists_hdfs_path(base_daily_bid_cpm_file)) {
@@ -133,7 +133,7 @@ object MakeAdListV4Samples {
       return
     }
 
-    val minus_clk_cnt = 100000.0
+    val minus_clk_cnt = 60000.0
 
     val sta_rdd = sc.textFile(base_daily_bid_cpm_file).map({
       rs =>
@@ -190,7 +190,7 @@ object MakeAdListV4Samples {
 
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
-    val max_weight_factor_first = 9.0
+    val max_weight_factor_first = 2.0
     val factor_first = max_weight_factor_first / (max_weight_first.toDouble - 1.0)
     println("factor_first:" + factor_first)
 
@@ -210,7 +210,8 @@ object MakeAdListV4Samples {
           weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
-        (ideal_id, bid_hash, weight_new_ori)
+        //(ideal_id, bid_hash, weight_new_ori)
+        (ideal_id, bid_hash, weight_new_norm)
     })
 
     val weight_map = weight_map_rdd.map({
@@ -243,8 +244,8 @@ object MakeAdListV4Samples {
           weight_new_ori = weight / max_weight
           weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
           if (weight == max_weight) {
-            weight_new_ori = 1.0000001
-            weight_new_norm = 1.0000001
+            weight_new_ori = 1.0000000001
+            weight_new_norm = 1.0000000001
           }
         }
         (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
@@ -290,7 +291,10 @@ object MakeAdListV4Samples {
         if (weight == 0.0) {
           weight = weight_map_ori.getOrElse(ideal_id, 1.0)
         }
-        val weight_reverse = 1.0
+        if (weight < 1.0) {
+          weight = 1.0
+        }
+        val weight_reverse = 1.0/weight
         //if (weight <= 1.0f) {
         //  weight = 0.0f
         //}

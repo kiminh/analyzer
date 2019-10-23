@@ -27,8 +27,8 @@ printf "*****************************${date_full}*******************************
 
 des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 des_dir_ori="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
-curr_date=`date --date='0 days ago' +%Y-%m-%d`
-base_daily_bid_cpm_file=${des_dir_rock}/${curr_date}-14days-weight-info-ref
+#base_daily_bid_cpm_file=${des_dir_rock}/${curr_date}-14days-weight-info-ref
+curr_date=`date --date='1 days ago' +%Y-%m-%d`
 base_daily_bid_cpm_file=${des_dir_ori}/${curr_date}-14days-weight-info
 file_success=${dir}/${curr_date}_14days_weight_info_success
 if [[ ! -f ${file_success} ]]; then
