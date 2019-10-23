@@ -16,7 +16,7 @@ object CalibrationClickLog {
                  |unitid,userid,click_count,click_unit_count,b.conversion_goal,a.hour,conversion_from,
                  |if(c.iscvr is not null,1,0) iscvr,if(hour>$endHour,hour-$endHour,hour+24-$endHour) hourweight,a.day
                  |from
-                 |(select searchid,ideaid,unitid,userid,adclass,hour
+                 |(select searchid,ideaid,unitid,userid,adclass,hour,day
                  |  from dl_cpc.cpc_basedata_click_event
                  |  where day = '$date'
                  |  and media_appsid in ('80000001','80000002') and isclick = 1
