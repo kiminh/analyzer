@@ -132,7 +132,7 @@ object OcpcSuggestCpaRecord {
          |        when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
          |        else 'novel'
          |    end) as media,
-         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    conversion_goal,
          |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
