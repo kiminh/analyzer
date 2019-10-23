@@ -34,9 +34,13 @@ object OcpcSuggestCpaRecordV2 {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
+    suggestCPA
+      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023a")
 
     // 读取前一小时的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
+    prevData
+      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023b")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
     val result = updateCPAsuggest(suggestCPA, prevData, spark)
@@ -218,11 +222,15 @@ object OcpcSuggestCpaRecordV2 {
      newData: "identifier", "cpa_suggest", "kvalue", "conversion_goal"
      prevData: "identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration"
      */
-    val suggestData = suggestDataRaw
+//    val suggestData = suggestDataRaw
+    val suggestData = spark
+      .table("test.ocpc_suggest_cpa20191023a")
       .withColumn("new_cpa", col("cpa_suggest"))
       .select("unitid", "media", "conversion_goal", "new_cpa")
 
-    val prevData = prevDataRaw
+//    val prevData = prevDataRaw
+    val prevData = spark
+      .table("test.ocpc_suggest_cpa20191023b")
       .withColumn("prev_cpa", col("cpa_suggest"))
       .select("unitid", "media", "conversion_goal", "prev_cpa")
 
