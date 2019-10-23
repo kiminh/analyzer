@@ -151,6 +151,7 @@ object OcpcSuggestCpaRecord {
       .sql(sqlRequest)
       .filter(s"is_hidden is null or is_hidden = 0")
       .select("unitid", "media", "conversion_goal")
+      .distinct()
 //      .groupBy("unitid", "media", "conversion_goal")
 //      .agg(
 //        sum(col("isclick")).alias("click")
