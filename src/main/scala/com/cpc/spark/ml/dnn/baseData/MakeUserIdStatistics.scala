@@ -171,75 +171,53 @@ object MakeUserIdStatistics {
     //}
 
     //,ideaid,unitid,planid,userid
-    val idealIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val unitIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val planIdMap = scala.collection.mutable.HashMap.empty[String, Int]
-    val userIdMap = scala.collection.mutable.HashMap.empty[String, Int]
+    //val idealIdMap = scala.collection.mutable.HashMap.empty[String, Int]
+    //val unitIdMap = scala.collection.mutable.HashMap.empty[String, Int]
+    //val planIdMap = scala.collection.mutable.HashMap.empty[String, Int]
+    //val userIdMap = scala.collection.mutable.HashMap.empty[String, Int]
 
-    val idealIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
-    val unitIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
-    val planIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
-    val userIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
+    //val idealIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
+    //val unitIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
+    //val planIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
+    //val userIdMapToday = scala.collection.mutable.HashMap.empty[String, Int]
 
-    val idealIdMapBC = sc.broadcast(idealIdMap)
-    val unitIdMapBC = sc.broadcast(unitIdMap)
-    val planIdMapBC = sc.broadcast(planIdMap)
-    val userIdMapBC = sc.broadcast(userIdMap)
-
-    val idealIdMapTodayBC = sc.broadcast(idealIdMapToday)
-    val unitIdMapTodayBC = sc.broadcast(unitIdMapToday)
-    val planIdMapTodayBC = sc.broadcast(planIdMapToday)
-    val userIdMapTodayBC = sc.broadcast(userIdMapToday)
-
-    val staInfo = scala.collection.mutable.HashMap.empty[String, scala.collection.mutable.HashMap[String, Int]]
-    val staInfoBC = sc.broadcast(staInfo)
-
-    var data = sc.parallelize(Array[(String, Long)]())
-
+    val output = ArrayBuffer[String]()
     for (date_idx <- src_date_list.indices) {
       val src_date = src_date_list(date_idx)
       val tf_text = des_dir + "/" + src_date + "-text"
-      val user_ideal_file = des_dir + "/" + src_date + "-user-ideal"
       if (exists_hdfs_path(tf_text)) {
-        delete_hdfs_path(user_ideal_file)
-        println("now " + tf_text)
-        val data_tmp = sc.textFile(tf_text).map(
-          rs => {
-            val line_list = rs.split("\t")
-
-            val idealId = line_list(0)
-            val unitId = line_list(1)
-            val planId = line_list(2)
-            val userId = line_list(3)
-
-            if (idealIdMapBC.value.contains(idealId)) {
-              idealIdMapBC.value(idealId) = idealIdMapBC.value(idealId) + 1
-            } else {
-              idealIdMapBC.value(idealId) = 1
-            }
-
-            if (unitIdMapBC.value.contains(unitId)) {
-              unitIdMapBC.value(unitId) = unitIdMapBC.value(unitId) + 1
-            } else {
-              unitIdMapBC.value(unitId) = 1
-            }
-
-            if (planIdMapBC.value.contains(planId)) {
-              planIdMapBC.value(planId) = planIdMapBC.value(planId) + 1
-            } else {
-              planIdMapBC.value(planId) = 1
-            }
-
-            if (userIdMapBC.value.contains(userId)) {
-              userIdMapBC.value(userId) = userIdMapBC.value(userId) + 1
-            } else {
-              userIdMapBC.value(userId) = 1
-            }
-            (userId + "_" + idealId, 1L)
-          }
-        ).reduceByKey(_ + _).repartition(1).saveAsTextFile(user_ideal_file)
+        output += tf_text
       }
     }
+
+    val base_rdd = sc.textFile(output.mkString(",")).map(
+      rs => {
+        val line_list = rs.split("\t")
+        val idealId = line_list(0)
+        val unitId = line_list(1)
+        val planId = line_list(2)
+        val userId = line_list(3)
+        (idealId, unitId, planId, userId)
+      }
+    )
+
+    val idealIdMap = base_rdd.map({
+      rs =>
+        (rs._1, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val unitIdMap = base_rdd.map({
+      rs =>
+        (rs._2, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val planIdMap = base_rdd.map({
+      rs =>
+        (rs._3, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val userIdMap = base_rdd.map({
+      rs =>
+        (rs._4, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+
     println("Done.......")
 
     //val user_ideal_info = des_dir + "/" + "user-ideal-info"
@@ -249,92 +227,83 @@ object MakeUserIdStatistics {
     //}.saveAsTextFile(user_ideal_info)
 
 
-    println("idealIdMap Size:" + idealIdMapBC.value.size)
-    println("unitIdMap Size:" + unitIdMapBC.value.size)
-    println("planIdMap Size:" + planIdMapBC.value.size)
-    println("userIdMap Size:" + userIdMapBC.value.size)
+    println("idealIdMap Size:" + idealIdMap.size)
+    println("unitIdMap Size:" + unitIdMap.size)
+    println("planIdMap Size:" + planIdMap.size)
+    println("userIdMap Size:" + userIdMap.size)
+
+    val tf_text_today = des_dir + "/" + today_date + "-text"
+    val today_rdd = sc.textFile(tf_text_today).map(
+      rs => {
+        val line_list = rs.split("\t")
+        val idealId = line_list(0)
+        val unitId = line_list(1)
+        val planId = line_list(2)
+        val userId = line_list(3)
+        (idealId, unitId, planId, userId)
+      }
+    )
+
+    val idealIdMapToday = today_rdd.map({
+      rs =>
+        (rs._1, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val unitIdMapToday = today_rdd.map({
+      rs =>
+        (rs._2, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val planIdMapToday = today_rdd.map({
+      rs =>
+        (rs._3, 1)
+    }).reduceByKey(_ + _).collectAsMap()
+    val userIdMapToday = today_rdd.map({
+      rs =>
+        (rs._4, 1)
+    }).reduceByKey(_ + _).collectAsMap()
 
 
-    val tf_text = des_dir + "/" + today_date + "-text"
-    if (exists_hdfs_path(tf_text)) {
-      sc.textFile(tf_text).map(
-        rs => {
-          val line_list = rs.split("\t")
-
-          val idealId = line_list(0)
-          val unitId = line_list(1)
-          val planId = line_list(2)
-          val userId = line_list(3)
-
-          if (idealIdMapTodayBC.value.contains(idealId)) {
-            idealIdMapTodayBC.value(idealId) = idealIdMapTodayBC.value(idealId) + 1
-          } else {
-            idealIdMapTodayBC.value(idealId) = 1
-          }
-
-          if (unitIdMapTodayBC.value.contains(unitId)) {
-            unitIdMapTodayBC.value(unitId) = unitIdMapTodayBC.value(unitId) + 1
-          } else {
-            unitIdMapTodayBC.value(unitId) = 1
-          }
-
-          if (planIdMapTodayBC.value.contains(planId)) {
-            planIdMapTodayBC.value(planId) = planIdMapTodayBC.value(planId) + 1
-          } else {
-            planIdMapTodayBC.value(planId) = 1
-          }
-
-          if (userIdMapTodayBC.value.contains(userId)) {
-            userIdMapTodayBC.value(userId) = userIdMapTodayBC.value(userId) + 1
-          } else {
-            userIdMapTodayBC.value(userId) = 1
-          }
-        }
-      )
-    }
-
-    println("idealIdMapToday Size:" + idealIdMapTodayBC.value.size)
-    println("unitIdMapToday Size:" + unitIdMapTodayBC.value.size)
-    println("planIdMapToday Size:" + planIdMapTodayBC.value.size)
-    println("userIdMapToday Size:" + userIdMapTodayBC.value.size)
+    println("idealIdMapToday Size:" + idealIdMapToday.size)
+    println("unitIdMapToday Size:" + unitIdMapToday.size)
+    println("planIdMapToday Size:" + planIdMapToday.size)
+    println("userIdMapToday Size:" + userIdMapToday.size)
 
     var idealIdOldCnt = 0
     var unitIdOldCnt = 0
     var planIdOldCnt = 0
     var userIdOldCnt = 0
 
-    idealIdMapTodayBC.value.foreach{
+    idealIdMapToday.foreach{
       case (e,i) =>
-        if (idealIdMapBC.value.contains(e)) {
+        if (idealIdMap.contains(e)) {
           idealIdOldCnt += 1
         }
     }
 
-    unitIdMapTodayBC.value.foreach{
+    unitIdMapToday.foreach{
       case (e,i) =>
-        if (unitIdMapBC.value.contains(e)) {
+        if (unitIdMap.contains(e)) {
           unitIdOldCnt += 1
         }
     }
 
-    planIdMapTodayBC.value.foreach{
+    planIdMapToday.foreach{
       case (e,i) =>
-        if (planIdMapBC.value.contains(e)) {
+        if (planIdMap.contains(e)) {
           planIdOldCnt += 1
         }
     }
 
-    userIdMapTodayBC.value.foreach{
+    userIdMapToday.foreach{
       case (e,i) =>
-        if (userIdMapBC.value.contains(e)) {
+        if (userIdMap.contains(e)) {
           userIdOldCnt += 1
         }
     }
 
-    println("idealIdMapToday new rate:" + idealIdOldCnt / idealIdMapBC.value.size)
-    println("unitIdMapToday new rate:" + unitIdOldCnt / unitIdMapBC.value.size)
-    println("planIdMapToday new rate:" + planIdOldCnt / planIdMapBC.value.size)
-    println("userIdMapToday new rate:" + userIdOldCnt / userIdMapBC.value.size)
+    println("idealIdMapToday new rate:" + idealIdOldCnt / idealIdMap.size)
+    println("unitIdMapToday new rate:" + unitIdOldCnt / unitIdMap.size)
+    println("planIdMapToday new rate:" + planIdOldCnt / planIdMap.size)
+    println("userIdMapToday new rate:" + userIdOldCnt / userIdMap.size)
 
 
   }
