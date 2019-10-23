@@ -80,6 +80,7 @@ object OcpcSuggestCpaRecordV2 {
     val data = spark
         .sql(sqlRequest)
         .filter(s"cpa_suggest is not null")
+        .cache()
 
     data.show(10)
     data
@@ -199,6 +200,9 @@ object OcpcSuggestCpaRecordV2 {
     val resultDF = data
         .filter(s"is_recommend = 1")
         .select("unitid", "media", "conversion_goal", "cpa_suggest")
+        .cache()
+
+    resultDF.show(10)
 
     resultDF
   }
