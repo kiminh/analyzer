@@ -56,11 +56,11 @@ object OcpcSuggestCpaRecord {
 
 
     resultDF
-      .repartition(10)
+      .repartition(50)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
-      .repartition(10)
+      .repartition(50)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
