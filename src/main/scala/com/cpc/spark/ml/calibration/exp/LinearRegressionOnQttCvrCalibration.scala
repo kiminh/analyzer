@@ -169,7 +169,7 @@ object LinearRegressionOnQttCvrCalibration {
     val result1 = lrModel.transform(trainingDF).rdd.map{
       x =>
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
-        val raw_cvr = x.getAs[Long]("raw_cvr").toDouble
+        val raw_cvr = x.getAs[Int]("raw_cvr").toDouble
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
         (exp_cvr,iscvr,raw_cvr,unitid)
@@ -214,8 +214,6 @@ object LinearRegressionOnQttCvrCalibration {
 
     val localPath = saveProtoToLocal(calimodel, LRoutput)
     saveFlatTextFileForDebug(calimodel, LRoutput)
-
-
 
     //   lr calibration
     val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
