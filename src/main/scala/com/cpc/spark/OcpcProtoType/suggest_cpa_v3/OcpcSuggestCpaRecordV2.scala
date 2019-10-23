@@ -227,7 +227,7 @@ object OcpcSuggestCpaRecordV2 {
     val result = suggestData
       .join(prevData, Seq("unitid", "media", "conversion_goal"), "outer")
       .select("unitid", "media", "conversion_goal", "new_cpa", "prev_cpa")
-      .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
+      .withColumn("is_update", when(col("prev_cpa").isNotNull, 0).otherwise(1))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
 
 
