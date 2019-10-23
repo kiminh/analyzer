@@ -95,8 +95,8 @@ object OcpcSuggestCpaRecord {
   def getCleanData(suggestCPA: DataFrame, ocpcFlag: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val joinData = suggestCPA
       .join(ocpcFlag, Seq("unitid", "media", "conversion_goal"), "left_outer")
-      .select("unitid", "media", "conversion_goal", "cpa_suggest", "flag")
-//      .select("unitid", "media", "conversion_goal", "cpa_suggest", "click", "flag")
+//      .select("unitid", "media", "conversion_goal", "cpa_suggest", "flag")
+      .select("unitid", "media", "conversion_goal", "cpa_suggest", "click", "flag")
 
     val result = joinData
       .filter(s"flag is null")
@@ -150,16 +150,16 @@ object OcpcSuggestCpaRecord {
     val resultDF = spark
       .sql(sqlRequest)
       .filter(s"is_hidden is null or is_hidden = 0")
-      .select("unitid", "media", "conversion_goal")
-      .distinct()
-//      .groupBy("unitid", "media", "conversion_goal")
-//      .agg(
-//        sum(col("isclick")).alias("click")
-//      )
+//      .select("unitid", "media", "conversion_goal")
+//      .distinct()
+      .groupBy("unitid", "media", "conversion_goal")
+      .agg(
+        sum(col("isclick")).alias("click")
+      )
       .withColumn("flag", lit(1))
-      .select("unitid", "media", "conversion_goal", "flag")
-//      .select("unitid", "media", "conversion_goal", "click", "flag")
-//      .filter(s"click>0")
+//      .select("unitid", "media", "conversion_goal", "flag")
+      .select("unitid", "media", "conversion_goal", "click", "flag")
+      .filter(s"click>0")
     resultDF
   }
 
