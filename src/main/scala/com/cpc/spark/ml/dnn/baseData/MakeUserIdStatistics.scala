@@ -267,10 +267,10 @@ object MakeUserIdStatistics {
     println("planIdMapToday Size:" + planIdMapToday.size)
     println("userIdMapToday Size:" + userIdMapToday.size)
 
-    var idealIdOldCnt = 0
-    var unitIdOldCnt = 0
-    var planIdOldCnt = 0
-    var userIdOldCnt = 0
+    var idealIdOldCnt = 0.0
+    var unitIdOldCnt = 0.0
+    var planIdOldCnt = 0.0
+    var userIdOldCnt = 0.0
 
     idealIdMapToday.foreach{
       case (e,i) =>
@@ -299,6 +299,12 @@ object MakeUserIdStatistics {
           userIdOldCnt += 1
         }
     }
+
+    println("idealIdOldCnt = " + idealIdOldCnt)
+    println("unitIdOldCnt = " + unitIdOldCnt)
+    println("planIdOldCnt = " + planIdOldCnt)
+    println("userIdOldCnt = " + userIdOldCnt)
+
 
     println("idealIdMapToday new rate:" + idealIdOldCnt / idealIdMap.size)
     println("unitIdMapToday new rate:" + unitIdOldCnt / unitIdMap.size)
