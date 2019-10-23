@@ -342,7 +342,7 @@ object MakeBaseDailyWeight {
 
     val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
     println("max_weight_first:" + max_weight_first)
-    val max_weight_factor_first = 9.0
+    val max_weight_factor_first = 2.0
     val factor_first = max_weight_factor_first / (max_weight_first.toDouble - 1.0)
     println("factor_first:" + factor_first)
 
@@ -362,7 +362,8 @@ object MakeBaseDailyWeight {
           weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
         }
         //weight_new = 1.0 / weight_new
-        (ideal_id, bid_hash, weight_new_ori)
+        //(ideal_id, bid_hash, weight_new_ori)
+        (ideal_id, bid_hash, weight_new_norm)
     })
 
     val weight_map = weight_map_rdd.map({
@@ -394,8 +395,8 @@ object MakeBaseDailyWeight {
             weight_new_ori = weight / max_weight
             weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
             if (weight == max_weight) {
-              weight_new_ori = 1.0000001
-              weight_new_norm = 1.0000001
+              weight_new_ori = 1.0000000001
+              weight_new_norm = 1.0000000001
             }
           }
           (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
@@ -444,7 +445,10 @@ object MakeBaseDailyWeight {
             if (weight == 0.0) {
               weight = weight_map_ori.getOrElse(ideal_id, 1.0)
             }
-            val weight_reverse = 1.0
+            if (weight < 1.0) {
+              weight = 1.0
+            }
+            val weight_reverse = 1.0/weight
 
             //if (weight <= 1.0f) {
             //  weight = 0.0f
@@ -461,7 +465,7 @@ object MakeBaseDailyWeight {
         println("DF file count:" + weighted_rdd_count_last.toString + " of file:" + last_file)
 
         val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_last, schema_new)
-        tf_df_last.repartition(3000).write.format("tfrecords").option("recordType", "Example").save(last_weight_examples)
+        tf_df_last.repartition(600).write.format("tfrecords").option("recordType", "Example").save(last_weight_examples)
 
         //保存count文件
         val fileName_1 = "count_" + Random.nextInt(100000)
