@@ -87,8 +87,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val defaultuserid = data.groupBy("userid").count()
         .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
         .filter("useridtag=1")
-      val defaultclick_unit_count = data.groupBy("click_unit_count").max("click_unit_count")
-      defaultclick_unit_count.show(5)
+      val default_click_unit_count = data.groupBy().max("click_unit_count")
+        .first().getAs[Int]("max(click_unit_count)")
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
@@ -109,6 +109,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
+        .withColumn("click_unit_count",when(col("click_unit_count")>default_click_unit_count
+          ,default_click_unit_count).otherwise(col("click_unit_count")))
         .withColumn("sample",lit(0))
         .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
