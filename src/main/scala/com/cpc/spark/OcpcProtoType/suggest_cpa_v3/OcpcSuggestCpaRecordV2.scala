@@ -50,18 +50,20 @@ object OcpcSuggestCpaRecordV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .repartition(50)
-      .cache()
-
-    resultDF.show(10)
-
+//      .repartition(50)
+//      .cache()
+//
+//    resultDF.show(10)
 
     resultDF
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
-    resultDF
-      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023c")
+
+//    resultDF
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+//    resultDF
+//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
