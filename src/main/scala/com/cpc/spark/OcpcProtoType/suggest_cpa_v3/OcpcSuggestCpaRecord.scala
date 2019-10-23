@@ -86,6 +86,10 @@ object OcpcSuggestCpaRecord {
     val data = spark
         .sql(sqlRequest)
         .filter(s"cpa_suggest is not null")
+        .groupBy("unitid", "media", "conversion_goal")
+        .agg(
+          avg(col("cpa_suggest")).alias("cpa_suggest")
+        )
 
     data.show(10)
     data
