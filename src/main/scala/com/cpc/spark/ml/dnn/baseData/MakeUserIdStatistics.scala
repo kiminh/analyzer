@@ -144,7 +144,7 @@ object MakeUserIdStatistics {
 
             //11,12,13,14
             //,ideaid,unitid,planid,userid
-            (dense(11).toString, dense(12).toString, dense(13).toString, dense(14).toString)
+            //(dense(11).toString, dense(12).toString, dense(13).toString, dense(14).toString)
 
             val output = scala.collection.mutable.ArrayBuffer[String]()
             output += dense(11).toString
