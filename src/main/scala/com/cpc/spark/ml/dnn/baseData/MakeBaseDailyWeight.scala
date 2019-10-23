@@ -472,7 +472,7 @@ object MakeBaseDailyWeight {
       }
     }
 
-    val hour_mmh_map_file = des_dir + "/" + "hour_mmh_map.txt"
+    /**val hour_mmh_map_file = des_dir + "/" + "hour_mmh_map.txt"
     val hour_mmh_map = sc.textFile(hour_mmh_map_file).map({
       rs =>
         val line_list = rs.split("\t")
@@ -592,7 +592,7 @@ object MakeBaseDailyWeight {
 
 
       }
-    }
+    }**/
 
 
 
