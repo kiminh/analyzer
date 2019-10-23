@@ -123,7 +123,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
         val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
-        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec")
+        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
         stagesArray.append(indexer,encoder)
       }
 
@@ -140,8 +140,6 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**transform() 真实转换特征*/
       val dataset = pipelineModel.transform(dataDF)
       dataset.show(10)
-//      dataset.select("label","features").show(10)
-//      dataset.printSchema()
 
       val trainingDF= dataset.filter("sample=1")
       val validationDF = dataset.filter("sample = 0")
