@@ -30,18 +30,18 @@ touch ${shell_in_run}
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 last_date=`date --date='1 days ago' +%Y-%m-%d`
 des_file=${des_dir}/${last_date}-weight-aggr
-ctr_file=${des_dir}/${last_date}-23-ctr
+#ctr_file=${des_dir}/${last_date}-23-ctr
 des_file_success=${dir}/${last_date}_weight_success
 des_file_count=${dir}/${last_date}_weight_count
-ctr_file_success=${dir}/${last_date}_ctr_success
+#ctr_file_success=${dir}/${last_date}_ctr_success
 
-rm ${ctr_file_success}
+#rm ${ctr_file_success}
 rm ${des_file_success}
 rm ${des_file_count}
 
-if [[ ! -f ${ctr_file_success} ]]; then
-    hadoop fs -get ${ctr_file}/_SUCCESS ${ctr_file_success} &
-fi
+#if [[ ! -f ${ctr_file_success} ]]; then
+#    hadoop fs -get ${ctr_file}/_SUCCESS ${ctr_file_success} &
+#fi
 if [[ ! -f ${des_file_success} ]]; then
     hadoop fs -get ${des_file}/_SUCCESS ${des_file_success} &
 fi
@@ -50,10 +50,10 @@ if [[ ! -f ${des_file_count} ]]; then
 fi
 wait
 run=false
-if [[ ! -f ${ctr_file_success} ]]; then
-    printf "no ${ctr_file_success}...\n"
-    run=true
-fi
+#if [[ ! -f ${ctr_file_success} ]]; then
+#    printf "no ${ctr_file_success}...\n"
+#    run=true
+#fi
 if [[ ! -f ${des_file_success} ]]; then
     printf "no ${des_file_success}...\n"
     run=true
