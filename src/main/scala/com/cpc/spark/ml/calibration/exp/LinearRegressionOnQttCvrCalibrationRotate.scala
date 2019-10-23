@@ -25,7 +25,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-10-06-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
     for (i <- 0 until 22){
 
@@ -57,7 +57,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
-           |    from dl_cpc.wy_calibration_sample
+           |    from dl_cpc.wy_calibration_sample_v5conv5
            |    where $selectCondition
        """.stripMargin
       println(s"$sql1")
@@ -71,7 +71,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num
-           |    from dl_cpc.wy_calibration_sample
+           |    from dl_cpc.wy_calibration_sample_v5conv5
            |    where day ='$testDate' and hour='$testHour'
        """.stripMargin
       println(s"$sql2")
@@ -175,13 +175,13 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
 
       if(i == 0){
-        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
+        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_v5conv5")
       } else {
-        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
+        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction_v5conv5")
       }
     }
 
-  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
+  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_v5conv5")
     //    raw data
     val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
     calculateAuc(modelData,"test original",spark)
