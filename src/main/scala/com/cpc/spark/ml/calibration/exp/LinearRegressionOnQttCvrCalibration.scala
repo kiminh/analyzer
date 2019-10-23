@@ -194,42 +194,35 @@ object LinearRegressionOnQttCvrCalibration {
         .rdd.map{x=>
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-          val featurecoe= lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
-        (cateid,featurevecid,featurecoe)
+          val featurecoe= lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))*1e6d
+          val key = s"$cate" + "#" + cateid
+        featuremap += ((key,featurecoe))
+        (key,featurecoe)
         }.toDF()
-      feature.show(10)
-//        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
-//        .selectExpr(s"$cate",s"$featurevalue")
-//        .rdd.map{
-//        x =>
-//          val cateid = x.getAs[String](cate)
-//          val value = x.getAs[Double](featurevalue)*1e6d
-//          val key = s"$cate" + "#" + cateid
-//          featuremap += ((key,value))
-//      }
+      feature.show(5)
       dimension += feature.count().toInt
     }
 
-//    val w_rawvalue = lrModel.coefficients.toArray(0)*1e6d
-//
-//    val LRoutput = CalibrationModel(
-//      feature = featuregroup,
-//      featuremap = featuremap.toMap,
-//      wRawvalue = w_rawvalue,
-//      intercept = lrModel.intercept*1e6d
-//    )
-//
-//    val localPath = saveProtoToLocal(calimodel, LRoutput)
-//    saveFlatTextFileForDebug(calimodel, LRoutput)
-//
-//
-//
-//    //   lr calibration
-//    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
-//    calculateAuc(lrData1,"train original",spark)
-//
-//    val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-//    calculateAuc(lrData2,"train calibration",spark)
+    val w_rawvalue = lrModel.coefficients.toArray(0)*1e6d
+
+    val LRoutput = CalibrationModel(
+      feature = featuregroup,
+      featuremap = featuremap.toMap,
+      wRawvalue = w_rawvalue,
+      intercept = lrModel.intercept*1e6d
+    )
+
+    val localPath = saveProtoToLocal(calimodel, LRoutput)
+    saveFlatTextFileForDebug(calimodel, LRoutput)
+
+
+
+    //   lr calibration
+    val lrData1 = result1.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid")
+    calculateAuc(lrData1,"train original",spark)
+
+    val lrData2 = result1.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    calculateAuc(lrData2,"train calibration",spark)
 
   }
 
