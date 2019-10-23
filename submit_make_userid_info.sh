@@ -11,13 +11,13 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-date_begin=`date --date='22 days ago' +%Y-%m-%d`
+date_begin=`date --date='10 days ago' +%Y-%m-%d`
 date_end=`date --date='3 days ago' +%Y-%m-%d`
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-userid-info"
-sta_date_begin="2019-08-28"
-sta_date_end="2019-08-28"
+sta_date_begin="2019-10-21"
+sta_date_end="2019-10-21"
 
-today="2019-08-28"
+today="2019-10-22"
 
 
 one_hot_feature_list="media_type,mediaid,channel,sdk_type,adslot_type,adslotid,sex,dtu_id,adtype,interaction,bid,ideaid,unitid,planid,userid,is_new_ad,adclass,site_id,os,network,phone_price,brand,province,city,city_level,uid,age,hour"
