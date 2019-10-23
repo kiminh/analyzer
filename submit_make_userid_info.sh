@@ -12,7 +12,7 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
 src_dir="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4"
-date_begin=`date --date='2 days ago' +%Y-%m-%d`
+date_begin=`date --date='9 days ago' +%Y-%m-%d`
 date_end=`date --date='2 days ago' +%Y-%m-%d`
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-userid-info"
 sta_date_begin="2019-10-21"
