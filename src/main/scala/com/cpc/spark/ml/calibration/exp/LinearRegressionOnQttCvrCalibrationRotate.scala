@@ -25,9 +25,9 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-10-05-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-10-17-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 10){
+    for (i <- 0 until 22){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
@@ -89,6 +89,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         .filter("useridtag=1")
       val default_click_unit_count = data.groupBy().max("click_unit_count")
         .first().getAs[Int]("max(click_unit_count)")
+      println(s"default_click_count:$default_click_unit_count")
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
@@ -175,13 +176,13 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
 
       if(i == 0){
-        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_v5conv5")
+        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_v5conv5_18")
       } else {
-        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction_v5conv5")
+        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction_v5conv5_18")
       }
     }
 
-  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_v5conv5")
+  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_v5conv5_18")
     //    raw data
     val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
     calculateAuc(modelData,"test original",spark)

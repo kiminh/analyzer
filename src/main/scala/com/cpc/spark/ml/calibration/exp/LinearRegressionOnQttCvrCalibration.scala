@@ -111,12 +111,16 @@ object LinearRegressionOnQttCvrCalibration {
     val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
       .filter("ideaidtag=1")
+    val default_click_unit_count = data.groupBy().max("click_unit_count")
+      .first().getAs[Int]("max(click_unit_count)")
 
     val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("sample",lit(1))
+      .withColumn("click_unit_count",when(col("click_unit_count")<default_click_unit_count
+        ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
