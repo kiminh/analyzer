@@ -191,21 +191,22 @@ object LinearRegressionOnQttCvrCalibration {
       val feature = trainingDF
         .selectExpr(s"cast($cate as string) $cate",s"$featurevec")
         .distinct()
-//        .rdd.map{x=>
-//          val cateid = x.getAs[String](cate)
-//          val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-//        (cateid,featurevecid)
-//        }.toDF()
-//      feature.show(10)
-        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
-        .selectExpr(s"$cate",s"$featurevalue")
-        .rdd.map{
-        x =>
+        .rdd.map{x=>
           val cateid = x.getAs[String](cate)
-          val value = x.getAs[Double](featurevalue)*1e6d
-          val key = s"$cate" + "#" + cateid
-          featuremap += ((key,value))
-      }
+          val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
+          val featurecoe= lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
+        (cateid,featurevecid,featurecoe)
+        }.toDF()
+      feature.show(10)
+//        .withColumn(featurevalue,output(lrModel.coefficients.toDense, dimension)(col(cate + "classVec")))
+//        .selectExpr(s"$cate",s"$featurevalue")
+//        .rdd.map{
+//        x =>
+//          val cateid = x.getAs[String](cate)
+//          val value = x.getAs[Double](featurevalue)*1e6d
+//          val key = s"$cate" + "#" + cateid
+//          featuremap += ((key,value))
+//      }
       dimension += feature.count().toInt
     }
 
