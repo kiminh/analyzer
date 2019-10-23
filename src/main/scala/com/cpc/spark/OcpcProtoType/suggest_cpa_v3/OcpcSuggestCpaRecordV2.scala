@@ -88,7 +88,7 @@ object OcpcSuggestCpaRecordV2 {
         .filter(s"cpa_suggest is not null")
         .groupBy("unitid", "media", "conversion_goal")
         .agg(
-          avg(col("suggest_cpa")).alias("suggest_cpa")
+          avg(col("cpa_suggest")).alias("cpa_suggest")
         )
         .cache()
 
