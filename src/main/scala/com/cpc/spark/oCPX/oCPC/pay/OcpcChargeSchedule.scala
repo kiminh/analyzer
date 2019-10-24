@@ -42,9 +42,9 @@ object OcpcChargeSchedule {
 
     // 更新pay_cnt，pay_date
     val updateScheduleData = updatePaySchedule(date, dayCnt, scheduleData, spark)
-    updateScheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
+//    updateScheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
 
     updateScheduleData
       .select("unitid", "pay_cnt", "pay_date", "flag", "update_flag", "prev_pay_cnt", "prev_pay_date")
@@ -75,9 +75,9 @@ object OcpcChargeSchedule {
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_data")
-    rawData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
+//    rawData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010c")
 
 
     val sqlRequest2 =
@@ -88,7 +88,8 @@ object OcpcChargeSchedule {
          |  pay_date,
          |  end_date,
          |  cur_date,
-         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag
+         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag,
+         |  (case when pay_cnt < 4 and pay_date <= cur_date then 1 else 0 end) as flag
          |FROM
          |  raw_data
          |""".stripMargin
@@ -96,7 +97,8 @@ object OcpcChargeSchedule {
 
     val data = spark
       .sql(sqlRequest2)
-      .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+//      .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+//      .withColumn("flag", when(col("pay_date") > date, 0).otherwise(col("flag")))
       .withColumn("prev_pay_cnt", col("pay_cnt"))
       .withColumn("prev_pay_date", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
@@ -124,7 +126,7 @@ object OcpcChargeSchedule {
 
 //    val prevData = spark
 //      .table("dl_cpc.ocpc_pay_cnt_daily")
-//      .where(s"`date` = '2019-10-13'")
+//      .where(s"`date` = '2019-10-14'")
 
     // 抽取媒体id，获取当天的数据
     val conf = ConfigFactory.load("ocpc")
@@ -152,15 +154,24 @@ object OcpcChargeSchedule {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val newData = spark
+    val newDataRaw = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"industry in ('feedapp', 'elds')")
+      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass")))
+
+//    newDataRaw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
+
+    val newData = newDataRaw
+      .filter(s"industry in ('feedapp', 'elds', 'pay_industry')")
       .select("unitid")
       .distinct()
+
+//    newData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021b")
+
 
     val data = prevData
       .join(newData, Seq("unitid"), "outer")
@@ -172,6 +183,27 @@ object OcpcChargeSchedule {
     data.printSchema()
     data
   }
+
+  def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int) => {
+    val adclassString = adclass.toString
+    val adclass3 = adclassString.substring(0, 3)
+    var result = "others"
+    if (adclass3 == "134" || adclass3 == "107") {
+      result = "elds"
+    } else if (adclass3 == "100" && adslotType != 7) {
+      result = "feedapp"
+    } else if (adclass3 == "100" && adslotType == 7) {
+      result = "yysc"
+    } else if (adclass == 110110100 || adclass == 125100100) {
+      result = "wzcp"
+    } else if (adclass == 103100100 || adclass == 111100100 || adclass == 104100100) {
+      result = "pay_industry"
+    } else {
+      result = "others"
+    }
+    result
+
+  })
 
 
 }

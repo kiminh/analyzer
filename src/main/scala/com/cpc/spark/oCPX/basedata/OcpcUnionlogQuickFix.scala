@@ -5,7 +5,9 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlog {
+import scala.collection.mutable
+
+object OcpcUnionlogQuickFix {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -126,6 +128,22 @@ object OcpcUnionlog {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
+    spark.udf.register("calculateBid", (valueLog: String, bid: Long) => {
+      var resultBid = bid
+      if (valueLog != null && valueLog != "") {
+        val logs = valueLog.split(",")
+        for (log <- logs) {
+          val splits = log.split(":")
+          val key = splits(0)
+          val value = splits(1)
+          if (key == "BidDiscountedByAdSlot") {
+            resultBid = value.toLong
+          }
+        }
+      }
+      resultBid
+    })
+
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
     // done 调整ocpc_log的存在逻辑
@@ -179,7 +197,7 @@ object OcpcUnionlog {
          |    user_req_num,
          |    is_new_ad,
          |    is_auto_coin,
-         |    bid_discounted_by_ad_slot,
+         |    calculateBid(ocpc_log, bid_discounted_by_ad_slot) as bid_discounted_by_ad_slot,
          |    discount,
          |    exp_cpm,
          |    cvr_threshold,
@@ -216,7 +234,6 @@ object OcpcUnionlog {
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-
 
     val resultDF = rawData
       .withColumn("date", lit(date))

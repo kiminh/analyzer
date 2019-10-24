@@ -41,7 +41,7 @@ object OcpcJFBfactor {
   }
 
   def OcpcJFBfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw: DataFrame, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
-    val minCV = 10
+    val minCV = 1
 
     val data1 = selectDataByHourInt(dataRaw, date, hour, hourInt1, expTag, minCV, spark)
 

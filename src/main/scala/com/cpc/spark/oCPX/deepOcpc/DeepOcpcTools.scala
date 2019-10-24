@@ -22,8 +22,8 @@ object DeepOcpcTools {
     val hour = args(1).toString
 
     // 测试两个抽取数据的程序
-    val data1 = getDeepData(6, date, hour, spark)
-    val data2 = getDeepDataDelay(6, date, hour, spark)
+    val data1 = getDeepData(23, date, hour, spark)
+    val data2 = getDeepDataDelay(23, date, hour, spark)
 
     data1
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191008a")
