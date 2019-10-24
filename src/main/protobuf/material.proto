@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package material;
+
+// 广告风格
+enum AdStyle {
+    UNKNOWN = 0; //未知
+    ICON_TEXT = 1; // 图文
+    IMAGE = 2; // 图片
+    THREE_ICON_TEXT = 3; //三图
+    VIDEO = 4; // 视频
+    GIF = 5; // 智能创意
+    TEXT = 6; // 文本
+    INTERACT = 7; //交互广告
+    SPLASH = 8; //开屏广告
+    BANNER = 9; //横幅广告
+    MOTIVATE = 10; //激励广告
+    VERTICAL_VIDEO = 11; //竖版视频广告
+    INSPIRE_VIDEO = 12; //激励视频广告
+    INSPIRE_VIDEO_NEW = 15; //激励视频广告优化版
+}
+
+// 图片素材
+message Image {
+    string url = 1; // 地址
+    int32 width = 2; // 宽度
+    int32 height = 3; // 高度
+}
+
+// 应用信息
+message App {
+    string name = 1; // 名称
+    string package_name = 2; // 包名
+    Image logo = 3; // 图标
+    int64 package_size = 4; // 包大小,单位字节
+    string version = 5; // 版本
+    string md5 = 6; // md5码
+}
+
+message Character {
+    int32 id = 1; // 字典包id
+    int32 dict_id = 2; // 关联字典id
+    string dict_name = 3; // 关联字典name
+    string ext = 4; // 字典项存储值 json 对象
+}
+message Video {
+    string src = 1; //视频地址
+    uint32 duration = 2; // 视频时长
+}
+// 物料
+message Material {
+    int32 ideaid = 1; // 创意id
+    AdStyle type = 2; // 物料类型
+    string title = 3; // 标题
+    string description = 4; // 描述
+    repeated Image image = 5; // 图片
+    App app = 6; // 应用
+    string long_description = 7; // 长描述
+    string click_url = 8; //落地页点击地址
+    repeated string impression_url = 9; //展示监控
+    repeated string click_monitor_url = 10; //点击监控
+    repeated int32 sub_cate = 11; // 细分类
+    repeated string sub_cate_value = 12; //细分类详情
+    string qqqr_url = 13; // qq二维码加人/群 地址
+    string btn_text = 14; //点击按钮文案
+    repeated Character characters = 15; // 当前选中的自定义字典包
+    Video video = 16;
+    int32 StyleId = 17; //广告样式类型id
+    int32 motivate_style_id = 18; //激励广告类型
+    string motivate_style_description = 19; //激励广告描述
+    string deeplink_url = 20;
+    string h5_url = 21;//h5目标地址(下载类使用)
+    string second_title = 22;//副标题(品牌，视频广告)
+    string source_mark = 23; //来源标识
+    string landing_page_url = 24; //落地页Path
+    repeated Image card_images = 25; // 卡片封面图
+    string wx_name_site = 26;//建站微信号
+    int32 inspire_video_type1 = 27; // 激励视频动作类型 0 默认,1 观看,2 安装
+    string base_template = 28; //默认系统模板值
+    int32 site_id = 29; // 建站id
+    repeated string split_titles = 30; //创意标题切词
+    uint64 wildcard = 31; //创意切词中的通配符
+}
+
+// 客户
+message UserInfo {
+    int32 userid = 1; // 客户id
+    string source_mark = 2; //来源标识
+}
+
