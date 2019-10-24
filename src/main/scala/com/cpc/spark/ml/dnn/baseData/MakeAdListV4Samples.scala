@@ -266,6 +266,66 @@ object MakeAdListV4Samples {
       StructField("idx2", ArrayType(LongType, containsNull = true)),
       StructField("id_arr", ArrayType(LongType, containsNull = true))
     ))
+    val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
+
+    /****************************************collect_2***************************************************/
+    val df_train_files_collect_2: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_2)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect_2.printSchema()
+    df_train_files_collect_2.show(3)
+
+    val weighted_rdd_2 = df_train_files_collect_2.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+
+        val bid = dense(10).toString
+        val ideal_id = dense(11).toString
+
+        var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+        if (weight == 0.0) {
+          weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+        }
+        if (weight < 1.0) {
+          weight = 1.0
+        }
+        val weight_reverse = 1.0/weight
+        //if (weight <= 1.0f) {
+        //  weight = 0.0f
+        //}
+        //if (label_arr.head != 1L) {
+        //  weight = 1.0f
+        //}
+
+        Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+
+    val weighted_rdd_count_2 = weighted_rdd_2.count()
+    println(s"weighted_rdd_count is : $weighted_rdd_count_2")
+    println("DF file count:" + weighted_rdd_count_2.toString + " of file:" + train_files_collect_2)
+
+    val tf_df_2: DataFrame = spark.createDataFrame(weighted_rdd_2, schema_new)
+    tf_df_2.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_2)
+
+    //保存count文件
+    val fileName_2 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_2, weighted_rdd_count_2)
+
+
+    if (!low_time_list.contains(time_id) && weighted_rdd_count_2 <= 5000000) {
+      println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_2 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_2 $weighted_file_collect_2/invalid_count" !
+    } else {
+      s"hadoop fs -put $fileName_2 $weighted_file_collect_2/count" !
+    }
+
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_2" !
 
 
     /****************************************collect_1***************************************************/
@@ -330,7 +390,6 @@ object MakeAdListV4Samples {
     val fileName_1 = "count_" + Random.nextInt(100000)
     writeNum2File(fileName_1, weighted_rdd_count_1)
 
-    val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
     if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
       println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_1 less than 5 millions, invalid count")
       s"hadoop fs -put $fileName_1 $weighted_file_collect_1/invalid_count" !
