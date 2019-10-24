@@ -203,7 +203,7 @@ object LinearRegressionOnQttCvrCalibration {
           val key = s"$cate" + "#" + cateid
           println(s"$key coefficient:$featurecoe")
           featuremap += ((key, featurecoe))
-        }}.collect()
+        }}.toLocalIterator
       dimension = featuremap.size + 1
     }
 
