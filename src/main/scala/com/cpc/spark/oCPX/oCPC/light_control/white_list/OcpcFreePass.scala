@@ -43,7 +43,8 @@ object OcpcFreePass {
         .na.fill(0, Seq("cost_flag"))
         .withColumn("flag_ratio", udfCalculateRatio()(col("conversion_goal"), col("industry"), col("media"), col("cost_flag")))
         .withColumn("random_value", udfGetRandom()())
-        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
+        .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value")))
+//        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
 
 
     user
@@ -77,6 +78,14 @@ object OcpcFreePass {
 ////
   }
 
+  def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int) => {
+    if (flagRatio > randomValue) {
+      1
+    } else {
+      0
+    }
+  })
+
   def udfGetRandom() = udf(() => {
     val r = scala.util.Random
     val result = r.nextInt(100)
@@ -84,7 +93,7 @@ object OcpcFreePass {
   })
 
   def udfCalculateRatio() = udf((conversionGoal: Int, industry: String, media: String, costFlag: Int) => {
-    var result = (conversionGoal, industry, media, costFlag) match {
+    val result = (conversionGoal, industry, media, costFlag) match {
       case (1, "app", "hottopic", _) => 50
       case (2, "app", "qtt", _) => 50
       case (2, "app", "novel", _) => 50
