@@ -45,7 +45,7 @@ object OcpcFreePass {
 
     // 数据关联
     val joinData = unit
-        .filter(s"time_flag = 1")
+//        .filter(s"time_flag = 1")
         .join(user, Seq("userid"), "inner")
         .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "time_flag")
         .join(historyData, Seq("userid", "conversion_goal", "media"), "left_outer")
