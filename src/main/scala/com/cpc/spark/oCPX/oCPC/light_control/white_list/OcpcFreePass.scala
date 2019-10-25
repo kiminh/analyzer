@@ -40,6 +40,7 @@ object OcpcFreePass {
         .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry")
         .join(historyData, Seq("userid", "conversion_goal", "media"), "left_outer")
         .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "cost_flag")
+        .na.fill(0, Seq("cost_flag"))
         .withColumn("flag_ratio", udfCalculateRatio()(col("conversion_goal"), col("industry"), col("media"), col("cost_flag")))
         .withColumn("random_value", udfGetRandom()())
         .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
@@ -53,9 +54,13 @@ object OcpcFreePass {
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025b")
 
-    joinData
+    historyData
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025c")
+
+    joinData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025d")
 
 
     //    joinData
@@ -171,7 +176,7 @@ object OcpcFreePass {
     val rawData = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "is_ocpc", "ocpc_status", "target_medias")
+      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "cast(is_ocpc as int) is_ocpc", "ocpc_status", "target_medias")
       .distinct()
 
     rawData.createOrReplaceTempView("raw_data")
