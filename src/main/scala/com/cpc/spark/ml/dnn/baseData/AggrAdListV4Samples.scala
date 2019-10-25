@@ -225,32 +225,30 @@ object AggrAdListV4Samples {
           }
         }
 
-        if (instances_date_collect.size != output.size) {
-          println("existing instances file count not equal date range collect size, return")
-          return
+        if (instances_date_collect.size == output.size) {
+          sc.textFile(output.mkString(",")).map({
+            rs =>
+              val line_list = rs.split("\t")
+              (line_list(0), line_list(1).toLong)
+          }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({
+            case (key, value) =>
+              key + "\t" + value.toString
+          }).saveAsTextFile(instances_all)
+
+          val acc = new LongAccumulator
+          spark.sparkContext.register(acc)
+          sc.textFile(instances_all).coalesce(1, false).map{
+            rs => {
+              acc.add(1L)
+              val line = rs.split("\t")
+              val key = line(0)
+              (key, acc.count)
+            }
+          }.repartition(1).sortBy(_._2).map{
+            case (key, value) => key + "\t" + value.toString
+          }.saveAsTextFile(instances_map)
         }
 
-        sc.textFile(output.mkString(",")).map({
-          rs =>
-            val line_list = rs.split("\t")
-            (line_list(0), line_list(1).toLong)
-        }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({
-          case (key, value) =>
-            key + "\t" + value.toString
-        }).saveAsTextFile(instances_all)
-
-        val acc = new LongAccumulator
-        spark.sparkContext.register(acc)
-        sc.textFile(instances_all).coalesce(1, false).map{
-          rs => {
-            acc.add(1L)
-            val line = rs.split("\t")
-            val key = line(0)
-            (key, acc.count)
-          }
-        }.repartition(1).sortBy(_._2).map{
-          case (key, value) => key + "\t" + value.toString
-        }.saveAsTextFile(instances_map)
       }
     }
 
