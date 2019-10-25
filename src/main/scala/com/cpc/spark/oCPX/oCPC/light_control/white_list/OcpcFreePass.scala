@@ -28,7 +28,7 @@ object OcpcFreePass {
     user.printSchema()
 
     // 获取广告单元
-    val unit = getUnitData(spark)
+    val unit = getUnitData(date, hour, spark)
     unit.printSchema()
 
     // 获取同账户是否有历史数据
