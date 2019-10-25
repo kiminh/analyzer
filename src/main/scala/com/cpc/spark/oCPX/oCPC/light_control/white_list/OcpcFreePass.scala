@@ -57,7 +57,7 @@ object OcpcFreePass {
         .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
-        .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag")))
+        .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
     //        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
 
 
@@ -104,7 +104,7 @@ object OcpcFreePass {
 ////
   }
 
-  def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int) => {
+  def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int, timeFlag: Int) => {
     var cmpValue = 1
     if (flagRatio > randomValue) {
       cmpValue = 1
@@ -112,13 +112,14 @@ object OcpcFreePass {
       cmpValue = 0
     }
 
-    val result = (unitWhiteFlag, userBlackFlag, userCostFlag, cmpValue) match {
-      case (1, _, _, _) => 1
-      case (0, 1, _, _) => 0
-      case (0, 0, 0, _) => 0
-      case (0, 0, 1, 1) => 1
-      case (0, 0, 1, 0) => 0
-      case (_, _, _, _) => -1
+    val result = (unitWhiteFlag, timeFlag, userBlackFlag, userCostFlag, cmpValue) match {
+      case (1, _, _, _, _) => 1
+      case (0, 0, _, _, _) => 0
+      case (0, 1, 1, _, _) => 0
+      case (0, 1, 0, 0, _) => 0
+      case (0, 1, 0, 1, 1) => 1
+      case (0, 1, 0, 1, 0) => 0
+      case (_, _, _, _, _) => -1
     }
 
     result
