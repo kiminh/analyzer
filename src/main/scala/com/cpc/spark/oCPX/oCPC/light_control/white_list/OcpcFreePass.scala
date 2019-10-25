@@ -87,6 +87,7 @@ object OcpcFreePass {
       case (_, "elds", _, _) => 0
       case (_, _, _, _) => 10
     }
+    result
   })
 
   def getHistoryData(date: String, spark: SparkSession) = {
