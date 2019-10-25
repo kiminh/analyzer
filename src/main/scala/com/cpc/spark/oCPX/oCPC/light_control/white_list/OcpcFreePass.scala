@@ -84,7 +84,8 @@ object OcpcFreePass {
       case (2, "app", "qtt", _) => 50
       case (2, "app", "novel", _) => 50
       case (_, "yihu", "qtt", 1) => 50
-      case (_, _, _, _) => 0
+      case (_, "elds", _, _) => 0
+      case (_, _, _, _) => 10
     }
   })
 
