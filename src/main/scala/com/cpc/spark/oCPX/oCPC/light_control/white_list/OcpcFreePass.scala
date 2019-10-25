@@ -42,7 +42,7 @@ object OcpcFreePass {
         .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "cost_flag")
         .withColumn("flag_ratio", udfCalculateRatio()(col("conversion_goal"), col("industry"), col("media"), col("cost_flag")))
         .withColumn("random_value", udfGetRandom()())
-        .withColumn("flag", when(col("flag") < col("flag_ratio"), 1).otherwise(0))
+        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
 
 
     user
