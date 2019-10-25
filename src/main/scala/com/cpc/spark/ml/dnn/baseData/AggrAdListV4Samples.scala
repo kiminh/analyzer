@@ -225,6 +225,11 @@ object AggrAdListV4Samples {
           }
         }
 
+        if (instances_date_collect.size != output.size) {
+          println("existing instances file count not equal date range collect size, return")
+          return
+        }
+
         sc.textFile(output.mkString(",")).map({
           rs =>
             val line_list = rs.split("\t")
