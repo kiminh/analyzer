@@ -58,50 +58,55 @@ object OcpcFreePass {
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
-    //        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
 
 
-    user
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025a")
+//    user
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025a")
+//
+//    unit
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025b")
+//
+//    historyData
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025c")
+//
+//    blackList
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025d")
+//
+//    userCost
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025e")
+//
+//    whiteList
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025f")
+//
+//    joinData
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025g")
 
-    unit
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025b")
-
-    historyData
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025c")
-
-    blackList
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025d")
-
-    userCost
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025e")
-
-    whiteList
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025f")
 
     joinData
+      .select("unitid", "userid", "conversion_goal", "media")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025g")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+
+    joinData
+      .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
-    //    joinData
-//      .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "cost_flag")
-//      .withColumn("ocpc_light", lit(1))
-//      .withColumn("ocpc_suggest_price", lit(0.0))
-//      .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "ocpc_light", "ocpc_suggest_price", "media")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .repartition(1)
-////      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
-////
   }
 
   def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int, timeFlag: Int) => {
