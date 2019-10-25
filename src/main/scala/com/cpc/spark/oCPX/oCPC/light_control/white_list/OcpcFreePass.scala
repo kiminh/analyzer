@@ -90,6 +90,7 @@ object OcpcFreePass {
 
 
     joinData
+      .filter(s"flag = 1")
       .select("unitid", "userid", "conversion_goal", "media")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
