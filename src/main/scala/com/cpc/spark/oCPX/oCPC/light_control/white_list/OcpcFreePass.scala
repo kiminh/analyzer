@@ -34,17 +34,31 @@ object OcpcFreePass {
     // 获取同账户是否有历史数据
     val historyData = getHistoryData(date, spark)
 
+    // 获取黑名单账户
+    val blackList = getBlackList(spark)
+
+    // 获取前一天ocpc消耗突破1000块的账户id
+    val userCost = getUserCost(date, spark)
+
+    // 获取白名单
+    val whiteList = getWhiteList(spark)
+
     // 数据关联
     val joinData = unit
+        .filter(s"time_flag = 1")
         .join(user, Seq("userid"), "inner")
-        .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry")
+        .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "time_flag")
         .join(historyData, Seq("userid", "conversion_goal", "media"), "left_outer")
-        .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "cost_flag")
+        .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "cost_flag", "time_flag")
         .na.fill(0, Seq("cost_flag"))
         .withColumn("flag_ratio", udfCalculateRatio()(col("conversion_goal"), col("industry"), col("media"), col("cost_flag")))
         .withColumn("random_value", udfGetRandom()())
-        .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value")))
-//        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
+        .join(blackList, Seq("userid"), "left_outer")
+        .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
+        .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
+        .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
+        .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag")))
+    //        .withColumn("flag", when(col("random_value") < col("flag_ratio"), 1).otherwise(0))
 
 
     user
@@ -59,9 +73,21 @@ object OcpcFreePass {
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025c")
 
-    joinData
+    blackList
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025d")
+
+    userCost
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025e")
+
+    whiteList
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025f")
+
+    joinData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025g")
 
 
     //    joinData
@@ -78,12 +104,24 @@ object OcpcFreePass {
 ////
   }
 
-  def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int) => {
+  def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int) => {
+    var cmpValue = 1
     if (flagRatio > randomValue) {
-      1
+      cmpValue = 1
     } else {
-      0
+      cmpValue = 0
     }
+
+    val result = (unitWhiteFlag, userBlackFlag, userCostFlag, cmpValue) match {
+      case (1, _, _, _) => 1
+      case (0, 1, _, _) => 0
+      case (0, 0, 0, _) => 0
+      case (0, 0, 1, 1) => 1
+      case (0, 0, 1, 0) => 0
+      case (_, _, _, _) => -1
+    }
+
+    result
   })
 
   def udfGetRandom() = udf(() => {
@@ -103,6 +141,90 @@ object OcpcFreePass {
     }
     result
   })
+
+  def getWhiteList(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    // 增加单元层级白名单
+    val ocpcWhiteUnits = conf.getString("ocpc_all.light_control.ocpc_unit_whitelist")
+    val ocpcWhiteUnitList= spark
+      .read
+      .format("json")
+      .json(ocpcWhiteUnits)
+      .select("unitid", "userid", "media")
+      .withColumn("unit_white_flag", lit(1))
+      .distinct()
+    println("ocpc unit white list for testing ocpc light:")
+    ocpcWhiteUnitList.show(10)
+
+    ocpcWhiteUnitList
+  }
+
+  def getUserCost(date: String, spark: SparkSession) = {
+    // 按照前24小时的消费，过滤掉不能参与测试的单元（账户前一天oCPC日耗低于1000元）
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` = '$date1'"
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  userid,
+         |  conversion_goal,
+         |  (case
+         |      when media_appsid in ('80000001', '80000002') then 'qtt'
+         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |      else 'novel'
+         |  end) as media,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  conversion_goal > 0
+         |GROUP BY
+         |  userid,
+         |  conversion_goal,
+         |  (case
+         |      when media_appsid in ('80000001', '80000002') then 'qtt'
+         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |      else 'novel'
+         |  end)
+       """.stripMargin
+    println(sqlRequest1)
+    val userCost = spark
+      .sql(sqlRequest1)
+      .withColumn("user_cost_flag", when(col("cost") >= 1000.0, lit(1)).otherwise(0))
+      .select("userid", "conversion_goal", "media", "cost", "user_cost_flag")
+      .distinct()
+
+    userCost
+  }
+
+  def getBlackList(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val ocpcBlackListConf = conf.getString("ocpc_all.light_control.ocpc_black_list")
+    val ocpcBlacklist = spark
+      .read
+      .format("json")
+      .json(ocpcBlackListConf)
+      .select("userid")
+      .withColumn("user_black_flag", lit(1))
+      .distinct()
+    println("ocpc blacklist for testing ocpc light:")
+    ocpcBlacklist.show(10)
+
+    ocpcBlacklist
+
+  }
 
   def getHistoryData(date: String, spark: SparkSession) = {
     /*
@@ -165,14 +287,14 @@ object OcpcFreePass {
     resultDF
   }
 
-  def getUnitData(spark: SparkSession) = {
+  def getUnitData(date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
 
     val url = conf.getString("adv_read_mysql.new_deploy.url")
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status, create_time from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -190,6 +312,8 @@ object OcpcFreePass {
 
     rawData.createOrReplaceTempView("raw_data")
 
+    val deadline = date + " " + hour + ":00:00"
+
     val sqlRequest =
       s"""
          |SELECT
@@ -199,7 +323,10 @@ object OcpcFreePass {
          |    is_ocpc,
          |    ocpc_status,
          |    target_medias,
-         |    cast(a as string) as media_appsid
+         |    cast(a as string) as media_appsid,
+         |    (case when create_time >= '$deadline' then 1 else 0 end) as time_flag,
+         |    create_time,
+         |    '$deadline' as deadline
          |from
          |    raw_data
          |lateral view explode(split(target_medias, ',')) b as a
@@ -209,7 +336,7 @@ object OcpcFreePass {
       .sql(sqlRequest)
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
-      .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
+      .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "time_flag", "create_time", "deadline")
       .distinct()
 
 
