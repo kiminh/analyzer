@@ -29,11 +29,20 @@ object ConditionedUVDaily {
     val appType = args(1)
 
     val conf = ConfigFactory.load()
+
     val redis = new RedisClient(
       conf.getString("touched_uv.redis.host"),
       conf.getInt("touched_uv.redis.port")
     )
+
     redis.select(3)
+
+    val redisNew = new RedisClient(
+      conf.getString("touched_uv_new_redis.redis.host"),
+      conf.getInt("touched_uv_new_redis.redis.port"),
+      9,
+      Some(conf.getString("touched_uv_new_redis.redis.secret"))
+    )
 
     val spark = SparkSession
       .builder()
@@ -108,6 +117,7 @@ object ConditionedUVDaily {
     val keyToGo = "%stouched_uv_total".format(if (appType == "qtt") "" else "miRead_")
     println(keyToGo)
     redis.set(keyToGo, "%s".format(uv))
+    redisNew.set(keyToGo, "%s".format(uv))
 
     // calculate conditioned uv for each column.
     conditions
@@ -118,7 +128,8 @@ object ConditionedUVDaily {
           x, // condition
           rawDataFromUnionEvents,
           spark,
-          redis
+          redis,
+          redisNew
         )
       }
     )
@@ -129,7 +140,8 @@ object ConditionedUVDaily {
                                      condition: String,
                                      df: DataFrame,
                                      spark: SparkSession,
-                                     redis: RedisClient
+                                     redis: RedisClient,
+                                     redisNew: RedisClient
                                      ) : Unit = {
     val filteredUidWithCondition = df
       .filter(_.getAs[Int](condition) > 0) // coin -> coin.
@@ -190,12 +202,14 @@ object ConditionedUVDaily {
         .foreach(x => {
           n = n + x._2
           printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, n, redis)
+          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, n, redisNew)
         }
       )
     } else { // simply print them.
       percentageUidWithCondition
         .foreach(x => {
           printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, x._2, redis)
+          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, x._2, redisNew)
         }
       )
     }
