@@ -307,7 +307,7 @@ object OcpcFreePass {
     val rawData = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "cast(is_ocpc as int) is_ocpc", "ocpc_status", "target_medias")
+      .selectExpr("unitid",  "userid", "cast(conversion_goal as int) conversion_goal", "cast(is_ocpc as int) is_ocpc", "ocpc_status", "target_medias", "create_time")
       .distinct()
 
     rawData.createOrReplaceTempView("raw_data")
