@@ -27,7 +27,8 @@ object OcpcFreePass {
     val user = getUserData(spark)
 
     // 获取广告单元
-    val unit = getUnitData(date, hour, spark)
+    val unit = getUnitData(date, hour, spark).cache()
+    unit.show(10)
 
     // 获取同账户是否有历史数据
     val historyData = getHistoryData(date, spark)
@@ -71,8 +72,8 @@ object OcpcFreePass {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
   }
