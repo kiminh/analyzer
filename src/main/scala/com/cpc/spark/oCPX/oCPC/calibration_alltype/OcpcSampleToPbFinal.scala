@@ -1,7 +1,10 @@
 package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -109,6 +112,9 @@ object OcpcSampleToPbFinal {
       )
       .select("exp_tag", "conversion_goal", "weight")
 
+    // determine the maximum and minimum value
+    val valueRange = getRangeValue(date, hour, spark)
+
 
     val data = baseData
       .join(confData, Seq("exp_tag", "identifier"), "left_outer")
@@ -126,6 +132,47 @@ object OcpcSampleToPbFinal {
 //    data
 //      .repartition(10)
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+
+    data
+  }
+
+  def getRangeValue(date: String, hour: String, spark: SparkSession) = {
+    val tableName = "dl_cpc.cpc_basedata_union_events"
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  site_type
+         |FROM
+         |  $tableName
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |GROUP BY unitid, conversion_goal, site_type
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "site_type")
+      .withColumn("max_cali", lit(2.0))
+      .withColumn("min_cali", when(col("site_type") === 1, 0.3).otherwise(0.5))
 
     data
   }
