@@ -4,7 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, getTimeRangeSqlDay}
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -151,7 +151,7 @@ object OcpcSampleToPbFinal {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDay(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
