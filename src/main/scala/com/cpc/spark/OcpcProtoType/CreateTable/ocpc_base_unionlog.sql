@@ -79,5 +79,5 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (ori_cvr bigint);
 --alter table dl_cpc.ocpc_base_unionlog add columns (uid_mc_show0 bigint);
 --alter table dl_cpc.ocpc_base_unionlog add columns (uid_mc_click0 bigint);
-alter table test.ocpc_base_unionlog add columns (site_type tinyint);
+alter table dl_cpc.ocpc_base_unionlog add columns (site_type tinyint);
 
