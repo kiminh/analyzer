@@ -10,7 +10,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcSuggestCpaRecord {
+object OcpcSuggestCpaRecordV2 {
   def main(args: Array[String]): Unit = {
     /*
     identifier维度下的累积最新版的kvalue和cpa_suggest
@@ -34,18 +34,16 @@ object OcpcSuggestCpaRecord {
 
     // 从当天的dl_cpc.ocpc_suggest_cpa_recommend_hourly表中抽取cpa
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
-
-    // 读取最近72小时是否有ocpc广告记录，并加上flag
-    val ocpcFlag = getOcpcFlag(date, hour, spark)
-
-    // 过滤出最近72小时没有ocpc广告记录的cpa与kvalue
-    val newData = getCleanData(suggestCPA, ocpcFlag, date, hour, spark)
+    suggestCPA
+      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023a")
 
     // 读取前一小时的时间分区中的所有cpa与kvalue
     val prevData = getPrevData(version, date, hour, spark)
+    prevData
+      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023b")
 
     // 数据关联，并更新字段cpa，kvalue以及day_cnt字段
-    val result = updateCPAsuggest(newData, prevData, spark)
+    val result = updateCPAsuggest(suggestCPA, prevData, spark)
 
     val resultDF = result
       .select("unitid", "media", "conversion_goal", "cpa_suggest")
@@ -57,13 +55,15 @@ object OcpcSuggestCpaRecord {
 
     resultDF.show(10)
 
+//    resultDF
+//      .write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa20191023c")
 
     resultDF
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
-//      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
+      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
 
   }
@@ -90,6 +90,7 @@ object OcpcSuggestCpaRecord {
         .agg(
           avg(col("cpa_suggest")).alias("cpa_suggest")
         )
+        .cache()
 
     data.show(10)
     data
@@ -209,11 +210,14 @@ object OcpcSuggestCpaRecord {
     val resultDF = data
         .filter(s"is_recommend = 1")
         .select("unitid", "media", "conversion_goal", "cpa_suggest")
+        .cache()
+
+    resultDF.show(10)
 
     resultDF
   }
 
-  def updateCPAsuggest(newDataRaw: DataFrame, prevDataRaw: DataFrame, spark: SparkSession) = {
+  def updateCPAsuggest(suggestDataRaw: DataFrame, prevDataRaw: DataFrame, spark: SparkSession) = {
     /*
     数据关联，并更新字段cpa，kvalue以及day_cnt字段
     1. 数据关联
@@ -224,20 +228,24 @@ object OcpcSuggestCpaRecord {
      newData: "identifier", "cpa_suggest", "kvalue", "conversion_goal"
      prevData: "identifier", "cpa_suggest", "kvalue", "conversion_goal", "duration"
      */
-    val newData = newDataRaw
+//    val suggestData = suggestDataRaw
+    val suggestData = spark
+      .table("test.ocpc_suggest_cpa20191023a")
       .withColumn("new_cpa", col("cpa_suggest"))
       .select("unitid", "media", "conversion_goal", "new_cpa")
 
-    val prevData = prevDataRaw
+//    val prevData = prevDataRaw
+    val prevData = spark
+      .table("test.ocpc_suggest_cpa20191023b")
       .withColumn("prev_cpa", col("cpa_suggest"))
       .select("unitid", "media", "conversion_goal", "prev_cpa")
 
 
     // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
-    val result = newData
+    val result = suggestData
       .join(prevData, Seq("unitid", "media", "conversion_goal"), "outer")
       .select("unitid", "media", "conversion_goal", "new_cpa", "prev_cpa")
-      .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
+      .withColumn("is_update", when(col("prev_cpa").isNotNull, 0).otherwise(1))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
 
 
