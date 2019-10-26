@@ -77,8 +77,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -124,14 +124,17 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
+      .na.fill(2.0, Seq("max_cali"))
+      .na.fill(0.5, Seq("min_cali"))
       .withColumn("cali_value_old", col("cali_value"))
-      .withColumn("cali_value", udfCheckCali(0.5, 2.0)(col("cali_value")))
+      .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
       .cache()
 
     data.show(10)
-//    data
-//      .repartition(10)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+    data
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
 
     data
   }
@@ -178,7 +181,7 @@ object OcpcSampleToPbFinal {
     data
   }
 
-  def udfCheckCali(minValue: Double, maxValue: Double) = udf((caliValue: Double) => {
+  def udfCheckCali() = udf((caliValue: Double, maxValue: Double, minValue: Double) => {
     var result = caliValue
     if (result < minValue) {
       result = minValue
