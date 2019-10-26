@@ -58,6 +58,20 @@ object OcpcFreePass {
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
 
     joinData
+      .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+
+
+    val resultDF = spark
+      .table("dl_cpc.ocpc_auto_second_stage_light")
+      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version'")
+
+    resultDF
       .filter(s"flag = 1")
       .select("unitid", "userid", "conversion_goal", "media")
       .withColumn("date", lit(date))
@@ -66,14 +80,6 @@ object OcpcFreePass {
 //      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
-    joinData
-      .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
   }
