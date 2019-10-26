@@ -157,20 +157,20 @@ object OcpcSampleToPbFinal {
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal
+         |  conversion_goal,
+         |  site_type,
+         |  row_number() over(partition by unitid, conversion_goal, site_type order by timestamp desc) as seq
          |FROM
          |  $tableName
          |WHERE
          |  $selectCondition
          |AND
          |  is_ocpc = 1
-         |AND
-         |  site_typte = 1
-         |GROUP BY unitid, conversion_goal
          |""".stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
+      .filter(s"seq = 1 and site_type = 1")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal")
       .withColumn("max_cali", lit(2.0))
       .withColumn("min_cali", lit(0.3))
