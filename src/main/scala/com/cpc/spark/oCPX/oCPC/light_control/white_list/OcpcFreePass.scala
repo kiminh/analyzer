@@ -59,36 +59,6 @@ object OcpcFreePass {
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
 
-
-//    user
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025a")
-//
-//    unit
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025b")
-//
-//    historyData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025c")
-//
-//    blackList
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025d")
-//
-//    userCost
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025e")
-//
-//    whiteList
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025f")
-//
-//    joinData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191025g")
-
-
     joinData
       .filter(s"flag = 1")
       .select("unitid", "userid", "conversion_goal", "media")
