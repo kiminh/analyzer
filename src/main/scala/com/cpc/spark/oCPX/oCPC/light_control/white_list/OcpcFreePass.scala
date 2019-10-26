@@ -57,10 +57,6 @@ object OcpcFreePass {
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
 
     joinData
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191026")
-
-    joinData
       .filter(s"flag = 1")
       .select("unitid", "userid", "conversion_goal", "media")
       .withColumn("date", lit(date))
