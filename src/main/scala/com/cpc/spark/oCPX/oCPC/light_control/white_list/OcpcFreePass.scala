@@ -28,9 +28,6 @@ object OcpcFreePass {
 
     // 获取广告单元
     val unit = getUnitData(date, hour, spark)
-    unit
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_permit_data20191026a")
 
     // 获取同账户是否有历史数据
     val historyData = getHistoryData(date, spark)
@@ -46,7 +43,6 @@ object OcpcFreePass {
 
     // 数据关联
     val joinData = unit
-//        .filter(s"time_flag = 1")
         .join(user, Seq("userid"), "inner")
         .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "adclass", "industry", "time_flag")
         .join(historyData, Seq("userid", "conversion_goal", "media"), "left_outer")
@@ -59,6 +55,10 @@ object OcpcFreePass {
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
+
+    joinData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191026")
 
     joinData
       .filter(s"flag = 1")
