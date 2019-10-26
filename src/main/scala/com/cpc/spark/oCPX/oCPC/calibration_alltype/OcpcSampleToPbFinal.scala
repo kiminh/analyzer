@@ -113,7 +113,7 @@ object OcpcSampleToPbFinal {
       .select("exp_tag", "conversion_goal", "weight")
 
     // determine the maximum and minimum value
-    val valueRange = getRangeValue(date, hour, spark)
+    val valueRange = getRangeValue(date, hour, 24, spark)
 
 
     val data = baseData
