@@ -136,7 +136,7 @@ object OcpcSampleToPbFinal {
     data
   }
 
-  def getRangeValue(date: String, hour: String, spark: SparkSession) = {
+  def getRangeValue(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val tableName = "dl_cpc.cpc_basedata_union_events"
 
     // 取历史数据
@@ -145,7 +145,7 @@ object OcpcSampleToPbFinal {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
+    calendar.add(Calendar.HOUR, -hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")

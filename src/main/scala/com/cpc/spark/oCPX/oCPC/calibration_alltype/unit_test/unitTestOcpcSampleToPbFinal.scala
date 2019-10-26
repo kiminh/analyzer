@@ -13,8 +13,9 @@ object unitTestOcpcSampleToPbFinal {
     // bash: 2019-01-02 12 qtt_demo 1
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = args(2).toInt
 
-    val data = getRangeValue(date, hour, spark)
+    val data = getRangeValue(date, hour, hourInt, spark)
     data
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data_unit_test20191026")
