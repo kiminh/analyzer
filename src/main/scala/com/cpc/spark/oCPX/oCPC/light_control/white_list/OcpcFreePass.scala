@@ -25,11 +25,12 @@ object OcpcFreePass {
     // 获取广告主
     // userid, category
     val user = getUserData(spark)
-    user.printSchema()
 
     // 获取广告单元
     val unit = getUnitData(date, hour, spark)
-    unit.printSchema()
+    unit
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_permit_data20191026a")
 
     // 获取同账户是否有历史数据
     val historyData = getHistoryData(date, spark)
