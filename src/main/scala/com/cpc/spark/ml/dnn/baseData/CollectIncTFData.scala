@@ -135,7 +135,7 @@ object MakeAdListV4Samples {
     }).reduceByKey((x, y) => if (x < y) x else y).collectAsMap()
     val min = min_map.getOrElse("min", -1)
     println("min idx of base instances file =" + min)
-    val incremental_idx = min.toLong - 1
+    val incremental_idx = min - 1
 
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
     val instances_file = des_dir + "/" + curr_date + "-" + time_id +  "-instances-all"
