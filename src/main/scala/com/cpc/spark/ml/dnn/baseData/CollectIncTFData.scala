@@ -136,8 +136,6 @@ object CollectIncTFData{
     println("min idx of base instances file =" + min)
     val incremental_idx = min - 1
 
-    val base_map = base_rdd.collectAsMap()
-
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
     val instances_file = des_dir + "/" + curr_date + "-inc-" + time_id +  "-instances-all"
     if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
@@ -170,16 +168,9 @@ object CollectIncTFData{
       ).reduceByKey(_ + _).map ({
       case (key, value) =>
         (key, incremental_idx)
-      }).filter(
-        rs =>
-          if (base_map.contains(rs._1)) {
-            false
-          } else {
-            true
-          }
-      )
+      })
 
-      base_rdd.union(incremental_rdd).sortBy(_._2 * -1).map {
+      base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) x else y).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.repartition(1).saveAsTextFile(instances_file)
