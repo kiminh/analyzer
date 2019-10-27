@@ -311,6 +311,7 @@ randjar="fhb_start"`date +%s%N`".jar"
 hadoop fs -get ${jarLib} ${randjar}
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup"
+date_curr=`date --date='0 days ago' +%Y-%m-%d`
 
 spark-submit --master yarn --queue ${queue} \
     --name "adlist-v4-aggr-samples" \
@@ -321,7 +322,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.AggrAdListV4Samples\
-    ${randjar} ${des_dir} ${date_list} ${file_list} ${date_last} ${instances_begin_date_list}
+    ${randjar} ${des_dir} ${date_list} ${file_list} ${date_last} ${date_curr} ${instances_begin_date_list}
 
 
 rm ${shell_in_run}

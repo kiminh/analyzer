@@ -80,15 +80,15 @@ object AggrAdListV4Samples {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 5) {
+    if (args.length != 6) {
       System.err.println(
         """
-          |you have to input 5 parameters !!!
+          |you have to input 6 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, src_date_list, src_file_list, date_last, date_begin_strs) = args
+    val Array(des_dir, src_date_list, src_file_list, date_last, date_curr, date_begin_strs) = args
 
     //println(args)
 
@@ -209,7 +209,44 @@ object AggrAdListV4Samples {
       }
     }
 
-    val date_begin_list = date_begin_strs.split(";")
+    val instances_file = des_dir + "/" + date_curr + "-instances"
+    val base_map_file = des_dir + "/" + date_last + "-base-map-all"
+    if (exists_hdfs_path(base_map_file + "/_SUCCESS") && exists_hdfs_path(instances_file + "/_SUCCESS")) {
+      val base_rdd = sc.textFile(base_map_file).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), line_list(1).toLong)
+      })
+
+      val max_map = base_rdd.map({
+        rs =>
+          ("max", rs._2)
+      }).reduceByKey((x, y) => if (x < y) y else x).collectAsMap()
+      val max = max_map("max")
+      println("max idx of base map file =" + max)
+      val incremental_idx = max + 1
+
+      val map_file = des_dir + "/" + date_curr + "-base-map-all"
+      if (!exists_hdfs_path(map_file + "/_SUCCESS")) {
+        delete_hdfs_path(map_file)
+        val incremental_rdd = sc.textFile(instances_file).map({
+          rs =>
+            val line_list = rs.split("\t")
+            (line_list(0), line_list(1).toLong)
+        }).reduceByKey(_ + _).map ({
+          case (key, _) =>
+            (key, incremental_idx)
+        })
+
+        base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
+          case (key, value) =>
+            key + "\t" + value.toString
+        }.saveAsTextFile(map_file)
+      }
+    }
+
+
+    /**val date_begin_list = date_begin_strs.split(";")
     for (curr_begin_date <- date_begin_list) {
       val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
       val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
@@ -250,7 +287,7 @@ object AggrAdListV4Samples {
         }
 
       }
-    }
+    }**/
 
   }
 }
