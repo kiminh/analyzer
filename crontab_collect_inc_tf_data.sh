@@ -290,8 +290,8 @@ printf "train_file_collect_2:%s\n" ${train_file_collect_2}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_1:%s\n" ${train_file_collect_1}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-rm ${shell_in_run}
-exit 0
+#rm ${shell_in_run}
+#exit 0
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
