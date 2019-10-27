@@ -78,15 +78,15 @@ object CollectIncTFData{
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 10) {
+    if (args.length != 11) {
       System.err.println(
         """
-          |you have to input 10 parameters !!!
+          |you have to input 11 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files_collect_0, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, test_file, curr_date, time_id, delete_old) = args
+    val Array(des_dir, train_ids_collect_0, train_files_collect_0, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, test_file, curr_date, time_id, delete_old) = args
 
     println(args)
 
@@ -121,6 +121,58 @@ object CollectIncTFData{
       delete_hdfs_path(ctr_file)
     }
 
+    val ids_list = train_ids_collect_0.split(",")
+    val files_list = train_files_collect_0.split(",")
+    if (ids_list.size != files_list.size) {
+      println("mismatch size of ids and files, existing...")
+      return
+    }
+
+    for (idx <- ids_list.indices) {
+      val this_id = ids_list(idx)
+      val this_file = files_list(idx)
+      val instances_file = des_dir + "/" + curr_date + "-instances-half-hour/" + this_id
+      if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
+        delete_hdfs_path(instances_file)
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
+        importedDf.rdd.map(
+          rs => {
+            val idx_arr = rs.getSeq[Long](2)
+            val dense = rs.getSeq[Long](6)
+
+            val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+            for (idx <- dense.indices) {
+              output(idx) = dense(idx).toString
+            }
+            for (idx <- idx_arr.indices) {
+              output(idx + dense.length) = idx_arr(idx).toString
+            }
+            output.mkString("\t")
+          }
+        ).flatMap(
+          rs => {
+            val line = rs.split("\t")
+            for (elem <- line)
+              yield (elem, 1L)
+          }
+        ).reduceByKey(_ + _).map {
+          case (key, value) =>
+            key + "\t" + value.toString
+        }.repartition(1).saveAsTextFile(instances_file)
+      }
+    }
+
+
+
+
+    val output = ArrayBuffer[String]()
+    for (idx <- ids_list.indices) {
+      val this_id = ids_list(idx)
+      val instances_file = des_dir + "/" + curr_date + "-instances-half-hour/" + this_id
+      if (exists_hdfs_path(instances_file + "/_SUCCESS")) {
+        output += instances_file
+      }
+    }
 
     val base_rdd = sc.textFile(base_map_file).map({
       rs =>
@@ -136,37 +188,16 @@ object CollectIncTFData{
     println("max idx of base map file =" + max)
     val incremental_idx = max + 1
 
-    val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
     val map_file = des_dir + "/" + curr_date + "-inc-" + time_id +  "-map-all"
     if (!exists_hdfs_path(map_file + "/_SUCCESS")) {
       delete_hdfs_path(map_file)
 
-      val incremental_rdd = importedDf.rdd.map(
-        rs => {
-          val idx2 = rs.getSeq[Long](0)
-          val idx1 = rs.getSeq[Long](1)
-          val idx_arr = rs.getSeq[Long](2)
-          val idx0 = rs.getSeq[Long](3)
-          val sample_idx = rs.getLong(4)
-          val label_arr = rs.getSeq[Long](5)
-          val dense = rs.getSeq[Long](6)
-
-          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-          for (idx <- dense.indices) {
-            output(idx) = dense(idx).toString
-          }
-          for (idx <- idx_arr.indices) {
-            output(idx + dense.length) = idx_arr(idx).toString
-          }
-          output.mkString("\t")
-      }).flatMap(
-        rs => {
-          val line = rs.split("\t")
-          for (elem <- line)
-            yield (elem, 1L)
-        }
-      ).reduceByKey(_ + _).map ({
-      case (key, value) =>
+      val incremental_rdd = sc.textFile(output.mkString(",")).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), line_list(1).toLong)
+      }).reduceByKey(_ + _).map ({
+      case (key, _) =>
         (key, incremental_idx)
       })
 

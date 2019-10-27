@@ -212,6 +212,7 @@ fi
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
 train_ids_curr="$( IFS=$','; echo "${all_ids[*]}" )"
 
+train_ids_collect_0=${train_ids_curr}
 train_file_collect_0=${train_file_curr}
 train_file_collect_8=${train_file_curr}
 train_file_collect_4=${train_file_curr}
@@ -280,6 +281,8 @@ printf "last_id:%s\n" ${last_id}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "test_file:%s\n" ${test_file}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+printf "train_ids_collect_0:%s\n" ${train_ids_collect_0}
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_0:%s\n" ${train_file_collect_0}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_8:%s\n" ${train_file_collect_8}
@@ -306,6 +309,7 @@ delete_old=true
 
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
 des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup"
+hadoop fs -mkdir ${des_dir_rock}/${curr_date}-instances-half-hour
 
 spark-submit --master yarn --queue ${queue} \
     --name "collect-inc-tf" \
@@ -316,7 +320,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncTFData\
-    ${randjar} ${des_dir_rock} ${train_file_collect_0} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${delete_old}
+    ${randjar} ${des_dir_rock} ${train_ids_collect_0} ${train_file_collect_0} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${test_file} ${curr_date} ${last_id} ${delete_old}
 
 #chmod_des="hdfs://emr-cluster/user/cpc/fenghuabin/adli}
 
