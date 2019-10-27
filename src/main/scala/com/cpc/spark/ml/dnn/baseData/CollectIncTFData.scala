@@ -22,7 +22,7 @@ import scala.util.Random
   *
   */
 
-object MakeAdListV4Samples {
+object CollectIncTFData{
 
 
   def delete_hdfs_path(path: String): Unit = {
