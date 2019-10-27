@@ -170,7 +170,7 @@ object CollectIncTFData{
         (key, incremental_idx)
       })
 
-      base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) x else y).repartition(1).sortBy(_._2 * -1).map {
+      base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.saveAsTextFile(map_file)
