@@ -133,7 +133,7 @@ object MakeAdListV4Samples {
       rs =>
         ("min", rs._2)
     }).reduceByKey((x, y) => if (x < y) x else y).collectAsMap()
-    val min = min_map.getOrElse("min", -1)
+    val min = min_map("min")
     println("min idx of base instances file =" + min)
     val incremental_idx = min - 1
 
