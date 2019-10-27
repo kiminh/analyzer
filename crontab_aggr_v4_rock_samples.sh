@@ -102,7 +102,7 @@ do
         if [ "${done_instance}" = "true" ];then
             printf "curr_date ${curr_date} has aggr file, continue...\n"
             printf "curr_date ${curr_date} has instances file, continue...\n"
-            #continue
+            continue
         fi
     fi
 
