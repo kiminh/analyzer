@@ -209,7 +209,7 @@ object AggrAdListV4Samples {
       }
     }
 
-    val instances_file = des_dir + "/" + date_curr + "-instances"
+    val instances_file = des_dir + "/" + date_last + "-instances"
     val base_map_file = des_dir + "/" + date_last + "-base-map-all"
     if (exists_hdfs_path(base_map_file + "/_SUCCESS") && exists_hdfs_path(instances_file + "/_SUCCESS")) {
       val base_rdd = sc.textFile(base_map_file).map({
