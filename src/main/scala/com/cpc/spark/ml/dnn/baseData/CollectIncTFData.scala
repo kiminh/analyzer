@@ -167,7 +167,7 @@ object CollectIncTFData{
             for (elem <- line)
               yield (elem, 1L)
           }
-        ).reduceByKey(_ + _).sortBy(_._2 * -1).map {
+        ).reduceByKey(_ + _).map {
         case (key, value) =>
           (key, incremental_idx)
         }
