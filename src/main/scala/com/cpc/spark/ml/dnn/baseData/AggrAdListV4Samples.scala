@@ -176,7 +176,7 @@ object AggrAdListV4Samples {
       }
 
       val instances_file = des_dir + "/" + curr_date + "-instances"
-      if (!exists_hdfs_path(instances_file + "/_SUCCESS") || !exists_hdfs_path(instances_file + "/count")) {
+      if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
         importedDf.rdd.map(
           rs => {
             val idx2 = rs.getSeq[Long](0)
