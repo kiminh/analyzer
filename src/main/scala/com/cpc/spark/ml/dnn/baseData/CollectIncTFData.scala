@@ -99,9 +99,9 @@ object CollectIncTFData{
 
 
 
-    val base_instances_file = des_dir + "/" + curr_date + "-base-instances-all"
-    if (!exists_hdfs_path(base_instances_file + "/_SUCCESS")) {
-      println("no base instances file:" + base_instances_file + ", existing...")
+    val base_map_file = des_dir + "/" + curr_date + "-base-map-all"
+    if (!exists_hdfs_path(base_map_file + "/_SUCCESS")) {
+      println("no base map file:" + base_map_file + ", existing...")
       return
     }
 
@@ -122,24 +122,24 @@ object CollectIncTFData{
     }
 
 
-    val base_rdd = sc.textFile(base_instances_file).map({
+    val base_rdd = sc.textFile(base_map_file).map({
       rs =>
         val line_list = rs.split("\t")
         (line_list(0), line_list(1).toLong)
     })
 
-    val min_map = base_rdd.map({
+    val max_map = base_rdd.map({
       rs =>
-        ("min", rs._2)
-    }).reduceByKey((x, y) => if (x < y) x else y).collectAsMap()
-    val min = min_map("min")
-    println("min idx of base instances file =" + min)
-    val incremental_idx = min - 1
+        ("max", rs._2)
+    }).reduceByKey((x, y) => if (x < y) y else x).collectAsMap()
+    val max = max_map("max")
+    println("max idx of base map file =" + max)
+    val incremental_idx = max + 1
 
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
-    val instances_file = des_dir + "/" + curr_date + "-inc-" + time_id +  "-instances-all"
-    if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
-      delete_hdfs_path(instances_file)
+    val map_file = des_dir + "/" + curr_date + "-inc-" + time_id +  "-map-all"
+    if (!exists_hdfs_path(map_file + "/_SUCCESS")) {
+      delete_hdfs_path(map_file)
 
       val incremental_rdd = importedDf.rdd.map(
         rs => {
@@ -173,7 +173,7 @@ object CollectIncTFData{
       base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) x else y).repartition(1).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
-      }.saveAsTextFile(instances_file)
+      }.saveAsTextFile(map_file)
 
     }
   }
