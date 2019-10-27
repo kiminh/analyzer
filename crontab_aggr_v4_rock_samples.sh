@@ -303,8 +303,8 @@ instances_all_list=(
 instances_begin_date_list="$( IFS=$';'; echo "${instances_all_list[*]}" )"
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
-queue=root.cpc.bigdata
 queue=root.cpc.develop
+queue=root.cpc.bigdata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
