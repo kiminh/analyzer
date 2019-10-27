@@ -121,15 +121,14 @@ object CollectIncTFData{
       delete_hdfs_path(ctr_file)
     }
 
-    var all_instances_rdd = sc.parallelize(Array[(String, Long)]())
 
-    all_instances_rdd = all_instances_rdd.union(sc.textFile(base_instances_file).map({
+    val base_rdd = sc.textFile(base_instances_file).map({
       rs =>
         val line_list = rs.split("\t")
         (line_list(0), line_list(1).toLong)
-    }))
+    })
 
-    val min_map = all_instances_rdd.map({
+    val min_map = base_rdd.map({
       rs =>
         ("min", rs._2)
     }).reduceByKey((x, y) => if (x < y) x else y).collectAsMap()
@@ -137,13 +136,14 @@ object CollectIncTFData{
     println("min idx of base instances file =" + min)
     val incremental_idx = min - 1
 
+    val base_map = base_rdd.collectAsMap()
+
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
     val instances_file = des_dir + "/" + curr_date + "-" + time_id +  "-instances-all"
     if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
       delete_hdfs_path(instances_file)
 
-      all_instances_rdd = all_instances_rdd.union(
-        importedDf.rdd.map(
+      val incremental_rdd = importedDf.rdd.map(
         rs => {
           val idx2 = rs.getSeq[Long](0)
           val idx1 = rs.getSeq[Long](1)
@@ -161,19 +161,25 @@ object CollectIncTFData{
             output(idx + dense.length) = idx_arr(idx).toString
           }
           output.mkString("\t")
-        }).flatMap(
-          rs => {
-            val line = rs.split("\t")
-            for (elem <- line)
-              yield (elem, 1L)
-          }
-        ).reduceByKey(_ + _).map {
-        case (key, value) =>
-          (key, incremental_idx)
+      }).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
         }
+      ).reduceByKey(_ + _).map ({
+      case (key, value) =>
+        (key, incremental_idx)
+      }).filter(
+        rs =>
+          if (base_map.contains(rs._1)) {
+            false
+          } else {
+            true
+          }
       )
 
-      all_instances_rdd.reduceByKey((x, y) => if (x >= y) x else y).sortBy(_._2 * -1).map {
+      base_rdd.union(incremental_rdd).sortBy(_._2 * -1).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.repartition(1).saveAsTextFile(instances_file)
