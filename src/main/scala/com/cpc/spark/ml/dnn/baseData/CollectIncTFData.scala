@@ -139,7 +139,7 @@ object CollectIncTFData{
     val base_map = base_rdd.collectAsMap()
 
     val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_0)
-    val instances_file = des_dir + "/" + curr_date + "-" + time_id +  "-instances-all"
+    val instances_file = des_dir + "/" + curr_date + "-inc-" + time_id +  "-instances-all"
     if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
       delete_hdfs_path(instances_file)
 
