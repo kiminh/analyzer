@@ -192,16 +192,23 @@ object CollectIncTFData{
     if (!exists_hdfs_path(map_file + "/_SUCCESS")) {
       delete_hdfs_path(map_file)
 
-      val incremental_rdd = sc.textFile(output.mkString(",")).map({
+      val incremental_file = des_dir + "/" + curr_date + "-instances-half-hour/" + time_id + "-ever"
+      delete_hdfs_path(incremental_file)
+      sc.textFile(output.mkString(",")).map({
         rs =>
           val line_list = rs.split("\t")
           (line_list(0), line_list(1).toLong)
       }).reduceByKey(_ + _).map ({
       case (key, _) =>
         (key, incremental_idx)
-      })
+      }).saveAsTextFile(incremental_file)
 
-      base_rdd.union(incremental_rdd).reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
+      sc.textFile(incremental_file + "," + base_map_file).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), line_list(1).toLong)
+      }).
+        reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
         case (key, value) =>
           key + "\t" + value.toString
       }.saveAsTextFile(map_file)
