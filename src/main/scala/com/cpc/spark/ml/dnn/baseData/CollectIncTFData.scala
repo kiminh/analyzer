@@ -200,7 +200,7 @@ object CollectIncTFData{
           (line_list(0), line_list(1).toLong)
       }).reduceByKey(_ + _).map ({
       case (key, _) =>
-        (key, incremental_idx)
+        key + "\t" + incremental_idx
       }).saveAsTextFile(incremental_file)
 
       sc.textFile(incremental_file + "," + base_map_file).map({
