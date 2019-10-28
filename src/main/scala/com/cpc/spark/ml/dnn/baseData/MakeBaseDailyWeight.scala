@@ -116,6 +116,7 @@ object MakeBaseDailyWeight {
       println("collect samples info of " + this_file)
 
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
+      println("bid_cpm_file_curr:" + bid_cpm_file_curr)
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
         delete_hdfs_path(bid_cpm_file_curr)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
@@ -148,6 +149,7 @@ object MakeBaseDailyWeight {
       }
 
       val bid_cpm_file = des_dir + "/" + this_date + "-weight-info"
+      println("bid_cpm_file:" + bid_cpm_file)
       if (!exists_hdfs_path(bid_cpm_file + "/_SUCCESS")) {
         delete_hdfs_path(bid_cpm_file)
         val info_rdd = sc.textFile(bid_cpm_file_curr).map(
@@ -199,10 +201,10 @@ object MakeBaseDailyWeight {
         }).saveAsTextFile(bid_cpm_file)
       }
 
-      if (!exists_hdfs_path(bid_cpm_file)) {
-        println("no daily bid cpm file:" + bid_cpm_file + ", existing...")
-        return
-      }
+      //if (!exists_hdfs_path(bid_cpm_file)) {
+      //  println("no daily bid cpm file:" + bid_cpm_file + ", existing...")
+      //  return
+      //}
 
       val minus_clk_cnt = 10000.0
 
