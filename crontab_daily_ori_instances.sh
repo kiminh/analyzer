@@ -135,8 +135,10 @@ if [[ ${#valid_data[@]} -le 0 ]] ; then
     exit 0
 fi
 
-date_list="$( IFS=$';'; echo "${valid_date[*]}" )"
-file_list="$( IFS=$';'; echo "${valid_data[*]}" )"
+test_file=hdfs://emr-cluster2ns2/user/cpc_tensorflow_example_half/2019-10-25/00/0/part-*
+
+date_list="$( IFS=$','; echo "${valid_date[*]}" )"
+file_list="$( IFS=$','; echo "${valid_data[*]}" )"
 
 echo "${file_list}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -149,7 +151,7 @@ instances_all_list=(
     `date --date='7 days ago' +%Y-%m-%d`
     `date --date='14 days ago' +%Y-%m-%d`
 )
-instances_begin_date_list="$( IFS=$';'; echo "${instances_all_list[*]}" )"
+instances_begin_date_list="$( IFS=$','; echo "${instances_all_list[*]}" )"
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata

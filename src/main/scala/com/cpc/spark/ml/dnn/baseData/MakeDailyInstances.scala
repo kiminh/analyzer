@@ -109,8 +109,8 @@ object MakeDailyInstances {
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("Aggr Examples")
 
-    val date_list = src_date_list.split(";")
-    val file_list = src_file_list.split(";")
+    val date_list = src_date_list.split(",")
+    val file_list = src_file_list.split(",")
 
     for (list_idx <- date_list.indices) {
 
@@ -157,7 +157,7 @@ object MakeDailyInstances {
       }
     }
 
-    val date_begin_list = date_begin_str.split(";")
+    val date_begin_list = date_begin_str.split(",")
     for (curr_begin_date <- date_begin_list) {
       val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
       val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
