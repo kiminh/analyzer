@@ -113,7 +113,7 @@ object OcpcSampleToPbFinal {
       .select("exp_tag", "conversion_goal", "weight")
 
     // determine the maximum and minimum value
-    val valueRange = getRangeValue(date, hour, 6, spark)
+    val valueRange = getRangeValue(date, hour, 24, spark)
 
 
     val data = baseData
@@ -140,7 +140,7 @@ object OcpcSampleToPbFinal {
   }
 
   def getRangeValue(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
-    val tableName = "dl_cpc.cpc_basedata_union_events"
+    val tableName = "dl_cpc.ocpc_base_unionlog"
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
