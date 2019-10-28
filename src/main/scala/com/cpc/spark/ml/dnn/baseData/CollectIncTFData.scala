@@ -203,15 +203,15 @@ object CollectIncTFData{
         key + "\t" + incremental_idx
       }).saveAsTextFile(incremental_file)
 
-      sc.textFile(incremental_file + "," + base_map_file).map({
-        rs =>
-          val line_list = rs.split("\t")
-          (line_list(0), line_list(1).toLong)
-      }).
-        reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
-        case (key, value) =>
-          key + "\t" + value.toString
-      }.saveAsTextFile(map_file)
+      //sc.textFile(incremental_file + "," + base_map_file).map({
+      //  rs =>
+      //    val line_list = rs.split("\t")
+      //    (line_list(0), line_list(1).toLong)
+      //}).
+      //  reduceByKey((x, y) => if (x >= y) y else x).repartition(1).sortBy(_._2).map {
+      //  case (key, value) =>
+      //    key + "\t" + value.toString
+      //}.saveAsTextFile(map_file)
 
     }
   }
