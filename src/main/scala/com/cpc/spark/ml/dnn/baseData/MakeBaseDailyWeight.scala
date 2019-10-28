@@ -295,7 +295,7 @@ object MakeBaseDailyWeight {
       }).collectAsMap()
 
       //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
-      val weight_map_file = des_dir + "/" + curr_date + "-weight-map"
+      val weight_map_file = des_dir + "/" + this_date + "-weight-map"
       if (!exists_hdfs_path(weight_map_file + "_SUCCESS")) {
         delete_hdfs_path(weight_map_file)
         sta_rdd.map({
