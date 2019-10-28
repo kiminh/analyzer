@@ -147,7 +147,7 @@ object MakeBaseDailyWeight {
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
       }
 
-      val bid_cpm_file = des_dir + "/" + this_date + "weight-info"
+      val bid_cpm_file = des_dir + "/" + this_date + "-weight-info"
       if (!exists_hdfs_path(bid_cpm_file + "/_SUCCESS")) {
         delete_hdfs_path(bid_cpm_file)
         val info_rdd = sc.textFile(bid_cpm_file_curr).map(
