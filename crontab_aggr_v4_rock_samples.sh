@@ -4,7 +4,7 @@
 source /etc/profile
 
 date_full=`date`
-printf "*****************************${date_full}********************************\n"
+#printf "*****************************${date_full}********************************\n"
 
 now_hour=$(date "+%H")
 now_minutes=$(date "+%M")
