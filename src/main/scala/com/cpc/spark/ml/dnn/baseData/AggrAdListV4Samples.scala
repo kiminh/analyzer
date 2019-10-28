@@ -209,9 +209,12 @@ object AggrAdListV4Samples {
       }
     }
 
+    val map_file = des_dir + "/" + date_curr + "-base-map-all"
     val instances_file = des_dir + "/" + date_last + "-instances"
     val base_map_file = des_dir + "/" + date_last + "-base-map-all"
-    if (exists_hdfs_path(base_map_file + "/_SUCCESS") && exists_hdfs_path(instances_file + "/_SUCCESS")) {
+    if (exists_hdfs_path(base_map_file + "/_SUCCESS")
+      && exists_hdfs_path(instances_file + "/_SUCCESS")
+      && !exists_hdfs_path(map_file + "/_SUCCESS")) {
       val base_rdd = sc.textFile(base_map_file).map({
         rs =>
           val line_list = rs.split("\t")
@@ -226,7 +229,6 @@ object AggrAdListV4Samples {
       println("max idx of base map file =" + max)
       val incremental_idx = max + 1
 
-      val map_file = des_dir + "/" + date_curr + "-base-map-all"
       if (!exists_hdfs_path(map_file + "/_SUCCESS")) {
         delete_hdfs_path(map_file)
         val incremental_rdd = sc.textFile(instances_file).map({
@@ -246,7 +248,7 @@ object AggrAdListV4Samples {
     }
 
 
-    /**val date_begin_list = date_begin_strs.split(";")
+    val date_begin_list = date_begin_strs.split(";")
     for (curr_begin_date <- date_begin_list) {
       val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
       val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
@@ -287,7 +289,7 @@ object AggrAdListV4Samples {
         }
 
       }
-    }**/
+    }
 
   }
 }
