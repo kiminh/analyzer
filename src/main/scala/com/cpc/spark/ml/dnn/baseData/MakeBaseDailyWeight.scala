@@ -198,6 +198,198 @@ object MakeBaseDailyWeight {
             rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9 + "\t" + rs._10
         }).saveAsTextFile(bid_cpm_file)
       }
+
+      if (!exists_hdfs_path(bid_cpm_file)) {
+        println("no daily bid cpm file:" + bid_cpm_file + ", existing...")
+        return
+      }
+
+      val minus_clk_cnt = 10000.0
+
+      val sta_rdd = sc.textFile(bid_cpm_file).map({
+        rs =>
+          val line_list = rs.split("\t")
+          val ideal_id = line_list(0)
+          val bid_hash = line_list(1)
+          val bid_ori = line_list(2)
+          val ctr = line_list(3)
+          val cpm = line_list(4)
+          val total_cpm = line_list(5)
+          val weight = line_list(6)
+          val click = line_list(7)
+          val imp = line_list(8)
+          (ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
+      })
+      println("sta_rdd.size=" + sta_rdd.count())
+
+      val bid_weight_map = sta_rdd.map({
+        rs =>
+          ("max", (rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._7 + "\t" + rs._4, rs._5.toDouble))
+      }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+        rs =>
+          (rs._1, rs._2._1 + "\t" + rs._2._2)
+      }).collectAsMap()
+
+      val max_info = bid_weight_map.getOrElse("max", "0\t0\t0\t0\t0\t0")
+      println("max_info_list=" + max_info)
+      val max_info_list = max_info.split("\t")
+
+      val max_clk = max_info_list(5).toDouble
+      val max_weight = max_info_list(4).toDouble
+      val max_ctr = max_info_list(3).toDouble
+
+      if (max_weight <= 0.0 || max_ctr <= 0.0) {
+        println("invalid max_weight:" + max_weight)
+        println("invalid max_ctr:" + max_ctr)
+        return
+      }
+
+      //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
+      val max_map_first = sta_rdd.map({
+        rs =>
+          val weight = rs._4.toDouble
+          var weight_new = 1.0
+          val click = rs._5.toDouble
+          val ctr = rs._7.toDouble
+          if (click >= minus_clk_cnt && weight >= max_weight) {
+            weight_new = weight / max_weight
+          } else {
+            weight_new = 1.0
+          }
+          ("max_weight_placeholder", weight_new)
+      }).reduceByKey((x, y) => math.max(x, y)).collectAsMap()
+
+      val max_weight_first = max_map_first.getOrElse("max_weight_placeholder", 1.0)
+      println("max_weight_first:" + max_weight_first)
+      val max_weight_factor_first = 2.0
+      val factor_first = max_weight_factor_first / (max_weight_first.toDouble - 1.0)
+      println("factor_first:" + factor_first)
+
+      //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
+      val weight_map_rdd = sta_rdd.map({
+        rs =>
+          val ideal_id = rs._1
+          val bid_hash = rs._2
+          val bid_ori = rs._3
+          val weight = rs._4.toDouble
+          var weight_new_ori = 1.0
+          var weight_new_norm = 1.0
+          val click = rs._5.toDouble
+          val ctr = rs._7.toDouble
+          if (click >= minus_clk_cnt && weight >= max_weight) {
+            weight_new_ori = weight / max_weight
+            weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
+          }
+          //weight_new = 1.0 / weight_new
+          //(ideal_id, bid_hash, weight_new_ori)
+          (ideal_id, bid_hash, weight_new_norm)
+      })
+
+      val weight_map = weight_map_rdd.map({
+        rs =>
+          (rs._1 + "\t" + rs._2, rs._3)
+      }).collectAsMap()
+      val weight_map_ori = weight_map_rdd.map({
+        rs =>
+          (rs._1, rs._3)
+      }).collectAsMap()
+
+      //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
+      val weight_map_file = des_dir + "/" + curr_date + "-weight-map"
+      if (!exists_hdfs_path(weight_map_file + "_SUCCESS")) {
+        delete_hdfs_path(weight_map_file)
+        sta_rdd.map({
+          rs =>
+            val ideal_id = rs._1
+            val bid_hash = rs._2
+            val bid_ori = rs._3
+            val weight = rs._4.toDouble
+            var weight_new_ori = 1.0
+            var weight_new_norm = 1.0
+            val click = rs._5.toDouble
+            val imp = rs._6
+            val ctr = rs._7.toDouble
+
+            if (click >= minus_clk_cnt && weight >= max_weight) {
+              weight_new_ori = weight / max_weight
+              weight_new_norm = 1.0 + (weight / max_weight - 1.0) * factor_first
+              if (weight == max_weight) {
+                weight_new_ori = 1.000000000
+                weight_new_norm = 1.000000000
+              }
+            }
+            (ideal_id, bid_hash, bid_ori, weight_new_norm, weight_new_ori, weight, ctr, click, imp)
+        }).repartition(1).sortBy(_._4 * -1).map({
+          rs =>
+            rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9
+        }).saveAsTextFile(weight_map_file)
+      }
+
+      println("weight_map.size=" + weight_map.size)
+      val schema_new = StructType(List(
+        StructField("sample_idx", LongType, nullable = true),
+        StructField("label", ArrayType(LongType, containsNull = true)),
+        StructField("weight", FloatType, nullable = true),
+        StructField("weight_reverse", FloatType, nullable = true),
+        StructField("dense", ArrayType(LongType, containsNull = true)),
+        StructField("idx0", ArrayType(LongType, containsNull = true)),
+        StructField("idx1", ArrayType(LongType, containsNull = true)),
+        StructField("idx2", ArrayType(LongType, containsNull = true)),
+        StructField("id_arr", ArrayType(LongType, containsNull = true))
+      ))
+
+      println("now make weight examples of " + this_file)
+      val this_weight_examples = des_dir + "/" + this_date + "-weight-aggr"
+      if (!exists_hdfs_path(this_weight_examples + "/_SUCCESS")) {
+        delete_hdfs_path(this_weight_examples)
+        val df_train_files_last: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
+
+        val weighted_rdd_last = df_train_files_last.rdd.map(
+          rs => {
+            val idx2 = rs.getSeq[Long](0)
+            val idx1 = rs.getSeq[Long](1)
+            val idx_arr = rs.getSeq[Long](2)
+            val idx0 = rs.getSeq[Long](3)
+            val sample_idx = rs.getLong(4)
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            val bid = dense(10).toString
+            val ideal_id = dense(11).toString
+
+            var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
+            if (weight == 0.0) {
+              weight = weight_map_ori.getOrElse(ideal_id, 1.0)
+            }
+            if (weight < 1.0) {
+              weight = 1.0
+            }
+            val weight_reverse = 1.0/weight
+
+            //if (weight <= 1.0f) {
+            //  weight = 0.0f
+            //}
+            //if (label_arr.head != 1L) {
+            //  weight = 1.0f
+            //}
+
+            Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
+          })
+
+        val weighted_rdd_count_last = weighted_rdd_last.count()
+        println(s"weighted_rdd_count is : $weighted_rdd_count_last")
+        println("DF file count:" + weighted_rdd_count_last.toString + " of file:" + this_file)
+
+        val tf_df_last: DataFrame = spark.createDataFrame(weighted_rdd_last, schema_new)
+        tf_df_last.repartition(600).write.format("tfrecords").option("recordType", "Example").save(this_weight_examples)
+
+        //保存count文件
+        val fileName_1 = "count_" + Random.nextInt(100000)
+        writeNum2File(fileName_1, weighted_rdd_count_last)
+        s"hadoop fs -put $fileName_1 $this_weight_examples/count" !
+
+        s"hadoop fs -chmod -R 0777 $this_weight_examples" !
+      }
     }
 
     /*val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
