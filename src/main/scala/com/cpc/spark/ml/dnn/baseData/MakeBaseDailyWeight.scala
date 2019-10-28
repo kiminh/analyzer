@@ -106,64 +106,6 @@ object MakeBaseDailyWeight {
     println("bid_mmh_map.size=" + bid_mmh_map.size)
 
 
-    /** println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-      **
-      *val bid_cpm_file = des_dir + "/" + curr_date + "-21days-weight-info"
-      **
-      *if (!exists_hdfs_path(bid_cpm_file)) {
-      * val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(file_list)
-      * //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
-      * df_train_files.printSchema()
-      * df_train_files.show(3)
-      * val info_rdd = df_train_files.rdd.map(
-      * rs => {
-      * val idx2 = rs.getSeq[Long](0)
-      * val idx1 = rs.getSeq[Long](1)
-      * val idx_arr = rs.getSeq[Long](2)
-      * val idx0 = rs.getSeq[Long](3)
-      * val sample_idx = rs.getLong(4)
-      * val label_arr = rs.getSeq[Long](5)
-      * val dense = rs.getSeq[Long](6)
-      **
-      *var label = 0.0
-      * if (label_arr.head == 1L) {
-      * label = 1.0
-      * }
-      **
-      *val bid = dense(10).toString
-      * val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-      * (bid, bid_ori, label, 1.0)
-      * }
-      * ).map({
-      * rs =>
-      * (rs._1 + "\t" + rs._2, (rs._3, rs._4))
-      * }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
-      * rs =>
-      * val key_list = rs._1.split("\t")
-      * val bid_ori = key_list(1).toFloat
-      * val ctr = rs._2._1 / rs._2._2
-      * val cpm = ctr * bid_ori
-      * (key_list(0), key_list(1), ctr, cpm, rs._2._1, rs._2._2)
-      * })
-      **
-      *val total_cpm_map = info_rdd.map({
-      * rs =>
-      * ("placeholder", rs._4)
-      * }).reduceByKey(_ + _).collectAsMap()
-      **
-      *val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
-      * println("total_cpm=" + total_cpm)
-      **
-    *info_rdd.map({
-      * rs =>
-      * val weight = rs._4 / total_cpm
-      * (rs._1, rs._2, rs._3, rs._4, total_cpm, weight, rs._5, rs._6)
-      * }).repartition(1).sortBy(_._6 * -1).map({
-      * rs =>
-      *rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8
-      * }).saveAsTextFile(bid_cpm_file)
-      * } **/
-
     val train_date_list = date_list.split(";")
     val train_file_list = train_list.split(";")
 
@@ -215,7 +157,7 @@ object MakeBaseDailyWeight {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val bid_cpm_file = des_dir + "/" + curr_date + "-14days-weight-info"
+    val bid_cpm_file = des_dir + "/" + curr_date + "-4days-weight-info"
 
     if (!exists_hdfs_path(bid_cpm_file)) {
 
@@ -269,7 +211,7 @@ object MakeBaseDailyWeight {
     }
 
 
-    val last_file = train_file_list(0)
+    /**val last_file = train_file_list(0)
     val last_date = train_date_list(0)
 
     println("curr_date:" + curr_date)
@@ -277,7 +219,7 @@ object MakeBaseDailyWeight {
     println("last_date:" + last_date)
 
 
-    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-14days-weight-info"
+    val base_daily_bid_cpm_file = des_dir + s"/$curr_date-4days-weight-info"
     println("base_daily_bid_cpm_file=" + base_daily_bid_cpm_file)
 
     if (!exists_hdfs_path(base_daily_bid_cpm_file)) {
@@ -474,7 +416,7 @@ object MakeBaseDailyWeight {
 
         s"hadoop fs -chmod -R 0777 $last_weight_examples" !
       }
-    }
+    }**/
 
     /**val hour_mmh_map_file = des_dir + "/" + "hour_mmh_map.txt"
     val hour_mmh_map = sc.textFile(hour_mmh_map_file).map({

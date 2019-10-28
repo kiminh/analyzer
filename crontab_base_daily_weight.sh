@@ -27,9 +27,9 @@ if [[ -f "$shell_in_run" ]]; then
 fi
 touch ${shell_in_run}
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup"
 last_date=`date --date='1 days ago' +%Y-%m-%d`
-des_file=${des_dir}/${last_date}-weight-aggr
+des_file=${des_dir}/${last_date}-aggr-weight
 #ctr_file=${des_dir}/${last_date}-23-ctr
 des_file_success=${dir}/${last_date}_weight_success
 des_file_count=${dir}/${last_date}_weight_count
@@ -70,8 +70,8 @@ if [ "${run}" = "false"  ];then
 fi
 
 
-aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${last_date}-aggr"
 aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
+aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${last_date}-aggr"
 file_success=${dir}/${last_date}_aggr_success
 file_count=${dir}/${last_date}_aggr_count
 file_part=${dir}/${last_date}_aggr_part_r_00999
@@ -115,20 +115,6 @@ sample_list=(
     `date --date='2 days ago' +%Y-%m-%d`
     `date --date='3 days ago' +%Y-%m-%d`
     `date --date='4 days ago' +%Y-%m-%d`
-    `date --date='5 days ago' +%Y-%m-%d`
-    `date --date='6 days ago' +%Y-%m-%d`
-    `date --date='7 days ago' +%Y-%m-%d`
-    `date --date='8 days ago' +%Y-%m-%d`
-    `date --date='9 days ago' +%Y-%m-%d`
-    `date --date='10 days ago' +%Y-%m-%d`
-    `date --date='11 days ago' +%Y-%m-%d`
-    `date --date='12 days ago' +%Y-%m-%d`
-    `date --date='13 days ago' +%Y-%m-%d`
-    `date --date='14 days ago' +%Y-%m-%d`
-    `date --date='15 days ago' +%Y-%m-%d`
-    `date --date='16 days ago' +%Y-%m-%d`
-    `date --date='17 days ago' +%Y-%m-%d`
-    `date --date='18 days ago' +%Y-%m-%d`
 )
 
 
@@ -139,8 +125,8 @@ do
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     curr_date="${sample_list[$idx]}"
     echo "curr_date:${curr_date}"
-    aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
     aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${curr_date}"
+    aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
     echo ${aggr_path}
     file_success=${dir}/${curr_date}_aggr_success
     file_count=${dir}/${curr_date}_aggr_count
@@ -177,13 +163,13 @@ do
 
     collect_file+=("${aggr_path}/part-r-*")
     collect_date+=(${curr_date})
-    if [[ ${#collect_file[@]} -eq 14 ]] ; then
-        printf "got 14 days' aggr file, break...\n"
+    if [[ ${#collect_file[@]} -eq 4 ]] ; then
+        printf "got 4 days' aggr file, break...\n"
         break
     fi
 done
 
-if [[ ${#collect_file[@]} -lt 14 ]] ; then
+if [[ ${#collect_file[@]} -lt 4 ]] ; then
     printf "not 14 days' aggr file, existing...\n"
     rm ${shell_in_run}
     exit 0
