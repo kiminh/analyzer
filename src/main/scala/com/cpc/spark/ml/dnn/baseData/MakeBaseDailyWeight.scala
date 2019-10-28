@@ -112,13 +112,12 @@ object MakeBaseDailyWeight {
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
+      println("++++++++++++++++++++++++++++++")
+      println("collect samples info of " + this_file)
+
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
-      val bid_cpm_file = des_dir + "/" + this_date + "weight-info"
-      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS") || !exists_hdfs_path(bid_cpm_file + "/_SUCCESS")) {
-        println("++++++++++++++++++++++++++++++")
-        println("collect samples info of " + this_file)
+      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
         delete_hdfs_path(bid_cpm_file_curr)
-        delete_hdfs_path(bid_cpm_file)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
@@ -146,8 +145,11 @@ object MakeBaseDailyWeight {
           rs =>
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+      }
 
-
+      val bid_cpm_file = des_dir + "/" + this_date + "weight-info"
+      if (!exists_hdfs_path(bid_cpm_file + "/_SUCCESS")) {
+        delete_hdfs_path(bid_cpm_file)
         val info_rdd = sc.textFile(bid_cpm_file_curr).map(
           rs => {
             val rs_list = rs.split("\t")
