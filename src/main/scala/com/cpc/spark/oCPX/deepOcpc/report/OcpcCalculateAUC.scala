@@ -1,6 +1,7 @@
 package com.cpc.spark.oCPX.deepOcpc.report
 
 import com.cpc.spark.oCPX.deepOcpc.DeepOcpcTools._
+import com.cpc.spark.ocpcV3.utils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -22,19 +23,14 @@ object OcpcCalculateAUC {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val result1 = OcpcCalibrationBaseDelayMain(date, hour, hourInt, spark)
-    val result2 = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
+    val result1 = OcpcCalculateAUCmain(date, hour, hourInt, spark)
 
     result1
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20191008a")
-
-    result2
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20191008b")
-
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_deep_ocpc_auc20191028")
 
   }
 
-  def OcpcCalibrationBaseDelayMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcCalculateAUCmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
@@ -42,55 +38,39 @@ object OcpcCalculateAUC {
      */
     val baseDataRaw = getDeepDataDelay(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .filter(s"exptags like '%deepOcpcExpTag%'")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
     // 计算结果
-    val result = calculateParameter(baseData, spark)
+    val result = calculateAUC(baseData, spark)
 
     val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
+      .select("identifier", "auc", "date")
 
 
     resultDF
   }
 
-  def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
-    /*
-    动态计算alpha平滑系数
-    1. 基于原始pcoc，计算预测cvr的量纲系数
-    2. 二分搜索查找到合适的平滑系数
-     */
-    val baseDataRaw = getDeepData(hourInt, date, hour, spark)
-    val baseData = baseDataRaw
-      .filter(s"exptags like '%deepOcpcExpTag:Qtt%'")
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+  def calculateAUC(data: DataFrame, spark: SparkSession) = {
+    import spark.implicits._
 
-    // 计算结果
-    val result = calculateParameter(baseData, spark)
+    val newData = data
+      .withColumn("key", concat_ws("-", col("identifier"), col("date")))
+      .withColumn("score", col("exp_cvr") * 1000000)
+      .withColumn("label", col("iscvr"))
+      .selectExpr("key", "cast(score as int) score", "label")
+      .coalesce(400)
 
-    val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
-
-
+    val result = utils.getGauc(spark, newData, "key")
+    val resultRDD = result.rdd.map(row => {
+      val id = row.getAs[String]("name")
+      val identifierList = id.trim.split("-")
+      val identifier = identifierList(0)
+      val date = identifierList(1)
+      val auc = row.getAs[Double]("auc")
+      (identifier, auc, date)
+    })
+    val resultDF = resultRDD.toDF("identifier", "auc", "date")
     resultDF
-  }
-
-
-  def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
-    val data  =rawData
-      .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
-      .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv"),
-        sum(col("bid")).alias("total_bid"),
-        sum(col("price")).alias("total_price"),
-        sum(col("exp_cvr")).alias("total_pre_cvr")
-      )
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
-
-    data
   }
 
 }
