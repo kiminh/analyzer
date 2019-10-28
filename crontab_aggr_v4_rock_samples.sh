@@ -12,7 +12,7 @@ now_id="00"${now_hour}
 if [ ${now_minutes} -ge 30 ];then
     now_id="30"${now_hour}
 fi
-printf "now id is:%s\n" ${now_id}
+#printf "now id is:%s\n" ${now_id}
 
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
 dir=aggr_rock_samples
@@ -22,8 +22,8 @@ fi
 
 shell_in_run=${dir}/shell_in_busy
 if [[ -f "$shell_in_run" ]]; then
-    printf "shell are busy now, existing\n"
-    printf "*****************************${date_full}********************************\n"
+    #printf "shell are busy now, existing\n"
+    #printf "*****************************${date_full}********************************\n"
     exit 0
 fi
 touch ${shell_in_run}
