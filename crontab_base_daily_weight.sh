@@ -27,7 +27,7 @@ if [[ -f "$shell_in_run" ]]; then
 fi
 touch ${shell_in_run}
 
-des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup"
+des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
 last_date=`date --date='1 days ago' +%Y-%m-%d`
 des_file=${des_dir}/${last_date}-aggr-weight
 #ctr_file=${des_dir}/${last_date}-23-ctr
