@@ -113,9 +113,12 @@ object MakeBaseDailyWeight {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
-      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
+      val bid_cpm_file = des_dir + "/" + this_date + "weight-info"
+      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS") || !exists_hdfs_path(bid_cpm_file + "/_SUCCESS")) {
+        println("++++++++++++++++++++++++++++++")
         println("collect samples info of " + this_file)
         delete_hdfs_path(bid_cpm_file_curr)
+        delete_hdfs_path(bid_cpm_file)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
@@ -143,10 +146,59 @@ object MakeBaseDailyWeight {
           rs =>
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+
+
+        val info_rdd = sc.textFile(bid_cpm_file_curr).map(
+          rs => {
+            val rs_list = rs.split("\t")
+            (rs_list(0) + "\t" + rs_list(1) + "\t" + rs_list(2), (rs_list(3).toDouble, rs_list(4).toDouble))
+          }
+        ).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+          rs =>
+            val key_list = rs._1.split("\t")
+            val ideal_id = key_list(0)
+            val bid_hash = key_list(1)
+            val bid_ori = key_list(2)
+            val ctr = rs._2._1 / rs._2._2
+            val cpm = ctr * bid_ori.toFloat
+            (ideal_id, bid_hash, bid_ori, ctr, cpm, rs._2._1, rs._2._2)
+        })
+
+        val total_clk_map = info_rdd.map({
+          rs =>
+            ("placeholder", rs._6.toDouble)
+        }).reduceByKey(_ + _).collectAsMap()
+        val total_clk = total_clk_map.getOrElse("placeholder", 1.0).toFloat
+        println("total_clk=" + total_clk)
+
+        val total_ideal_id_map = info_rdd.map({
+          rs =>
+            (rs._1, 1)
+        }).reduceByKey(_ + _).collectAsMap()
+        val total_ideal_id = total_ideal_id_map.size
+        println("total_deal_id=" + total_ideal_id)
+
+        val total_cpm_map = info_rdd.map({
+          rs =>
+            ("placeholder", rs._5)
+        }).reduceByKey(_ + _).collectAsMap()
+
+        val total_cpm = total_cpm_map.getOrElse("placeholder", 0.0).toFloat
+        println("total_cpm=" + total_cpm)
+
+        info_rdd.map({
+          rs =>
+            val weight = rs._5 / total_cpm
+            val clk_percentage = rs._6.toDouble / total_clk
+            (rs._1, rs._2, rs._3, rs._4, rs._5, total_cpm, weight, rs._6, rs._7, clk_percentage)
+        }).repartition(1).sortBy(_._8 * -1).map({
+          rs =>
+            rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9 + "\t" + rs._10
+        }).saveAsTextFile(bid_cpm_file)
       }
     }
 
-    val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
+    /*val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
@@ -208,7 +260,7 @@ object MakeBaseDailyWeight {
         rs =>
           rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9 + "\t" + rs._10
       }).saveAsTextFile(bid_cpm_file)
-    }
+    }**/
 
 
     /**val last_file = train_file_list(0)
