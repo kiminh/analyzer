@@ -54,7 +54,7 @@ object OcpcCalculateAUC {
     import spark.implicits._
 
     val newData = data
-      .withColumn("key", concat_ws("-", col("identifier"), col("date")))
+      .withColumn("key", concat_ws("&", col("identifier"), col("date")))
       .withColumn("score", col("exp_cvr") * 1000000)
       .withColumn("label", col("iscvr"))
       .selectExpr("key", "cast(score as int) score", "label")
@@ -63,7 +63,7 @@ object OcpcCalculateAUC {
     val result = utils.getGauc(spark, newData, "key")
     val resultRDD = result.rdd.map(row => {
       val id = row.getAs[String]("name")
-      val identifierList = id.trim.split("-")
+      val identifierList = id.trim.split("&")
       val identifier = identifierList(0)
       val date = identifierList(1)
       val auc = row.getAs[Double]("auc")
