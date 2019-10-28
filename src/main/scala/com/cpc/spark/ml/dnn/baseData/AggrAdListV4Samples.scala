@@ -123,90 +123,93 @@ object AggrAdListV4Samples {
       println(s"curr_date : $curr_date")
       println(s"curr_file : $curr_file")
 
-      val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file)
-      //println("DF file count:" + importedDf.count().toString + " of train files")
-
       val file_des = des_dir + "/" + curr_date + "-aggr"
-      if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count")) {
-        delete_hdfs_path(file_des)
-        val text_train_rdd = importedDf.rdd.map(
-          rs => {
-            val idx2 = rs.getSeq[Long](0)
-            val idx1 = rs.getSeq[Long](1)
-            val idx_arr = rs.getSeq[Long](2)
-            val idx0 = rs.getSeq[Long](3)
-            val sample_idx = rs.getLong(4)
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
-
-            val output = scala.collection.mutable.ArrayBuffer[String]()
-            output += sample_idx.toString
-            output += label_arr.map(_.toString).mkString(";")
-            output += dense.map(_.toString).mkString(";")
-            output += idx0.map(_.toString).mkString(";")
-            output += idx1.map(_.toString).mkString(";")
-            output += idx2.map(_.toString).mkString(";")
-            output += idx_arr.map(_.toString).mkString(";")
-            output
-          }
-        ).map({
-          rs =>
-            val sample_idx = rs(0).toLong
-            val label_arr = rs(1).split(";").map(_.toLong).toSeq
-            val dense = rs(2).split(";").map(_.toLong).toSeq
-            val idx0 = rs(3).split(";").map(_.toLong).toSeq
-            val idx1 = rs(4).split(";").map(_.toLong).toSeq
-            val idx2 = rs(5).split(";").map(_.toLong).toSeq
-            val idx_arr = rs(6).split(";").map(_.toLong).toSeq
-            Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
-        })
-
-        val text_train_rdd_count = text_train_rdd.count
-        println(s"text_train_rdd_count is : $text_train_rdd_count")
-
-        val tf_df: DataFrame = spark.createDataFrame(text_train_rdd, schema_new)
-        tf_df.repartition(2000).write.format("tfrecords").option("recordType", "Example").save(file_des)
-
-        //保存count文件
-        val fileName = "count_" + Random.nextInt(100000)
-        writeNum2File(fileName, text_train_rdd_count)
-        s"hadoop fs -put $fileName $file_des/count" !
-
-        s"hadoop fs -chmod -R 0777 $file_des" !
-      }
-
       val instances_file = des_dir + "/" + curr_date + "-instances"
-      if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
-        importedDf.rdd.map(
-          rs => {
-            val idx2 = rs.getSeq[Long](0)
-            val idx1 = rs.getSeq[Long](1)
-            val idx_arr = rs.getSeq[Long](2)
-            val idx0 = rs.getSeq[Long](3)
-            val sample_idx = rs.getLong(4)
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
 
-            val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-            for (idx <- dense.indices) {
-              output(idx) = dense(idx).toString
+      if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count") || !exists_hdfs_path(instances_file + "/_SUCCESS")) {
+        val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file)
+        //println("DF file count:" + importedDf.count().toString + " of train files")
+        if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count")) {
+          delete_hdfs_path(file_des)
+          val text_train_rdd = importedDf.rdd.map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              val output = scala.collection.mutable.ArrayBuffer[String]()
+              output += sample_idx.toString
+              output += label_arr.map(_.toString).mkString(";")
+              output += dense.map(_.toString).mkString(";")
+              output += idx0.map(_.toString).mkString(";")
+              output += idx1.map(_.toString).mkString(";")
+              output += idx2.map(_.toString).mkString(";")
+              output += idx_arr.map(_.toString).mkString(";")
+              output
             }
-            for (idx <- idx_arr.indices) {
-              output(idx + dense.length) = idx_arr(idx).toString
+          ).map({
+            rs =>
+              val sample_idx = rs(0).toLong
+              val label_arr = rs(1).split(";").map(_.toLong).toSeq
+              val dense = rs(2).split(";").map(_.toLong).toSeq
+              val idx0 = rs(3).split(";").map(_.toLong).toSeq
+              val idx1 = rs(4).split(";").map(_.toLong).toSeq
+              val idx2 = rs(5).split(";").map(_.toLong).toSeq
+              val idx_arr = rs(6).split(";").map(_.toLong).toSeq
+              Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
+          })
+
+          val text_train_rdd_count = text_train_rdd.count
+          println(s"text_train_rdd_count is : $text_train_rdd_count")
+
+          val tf_df: DataFrame = spark.createDataFrame(text_train_rdd, schema_new)
+          tf_df.repartition(2000).write.format("tfrecords").option("recordType", "Example").save(file_des)
+
+          //保存count文件
+          val fileName = "count_" + Random.nextInt(100000)
+          writeNum2File(fileName, text_train_rdd_count)
+          s"hadoop fs -put $fileName $file_des/count" !
+
+          s"hadoop fs -chmod -R 0777 $file_des" !
+        }
+
+        if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
+          importedDf.rdd.map(
+            rs => {
+              val idx2 = rs.getSeq[Long](0)
+              val idx1 = rs.getSeq[Long](1)
+              val idx_arr = rs.getSeq[Long](2)
+              val idx0 = rs.getSeq[Long](3)
+              val sample_idx = rs.getLong(4)
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+              for (idx <- dense.indices) {
+                output(idx) = dense(idx).toString
+              }
+              for (idx <- idx_arr.indices) {
+                output(idx + dense.length) = idx_arr(idx).toString
+              }
+              output.mkString("\t")
             }
-            output.mkString("\t")
-          }
-        ).flatMap(
-          rs => {
-            val line = rs.split("\t")
-            for (elem <- line)
-              yield (elem, 1L)
-          }
-        ).reduceByKey(_ + _).sortBy(_._2 * -1).map {
-          case (key, value) =>
-            key + "\t" + value.toString
-        }.repartition(1).saveAsTextFile(instances_file)
+          ).flatMap(
+            rs => {
+              val line = rs.split("\t")
+              for (elem <- line)
+                yield (elem, 1L)
+            }
+          ).reduceByKey(_ + _).sortBy(_._2 * -1).map {
+            case (key, value) =>
+              key + "\t" + value.toString
+          }.repartition(1).saveAsTextFile(instances_file)
+        }
       }
+
     }
 
     val map_file = des_dir + "/" + date_curr + "-base-map-all"
