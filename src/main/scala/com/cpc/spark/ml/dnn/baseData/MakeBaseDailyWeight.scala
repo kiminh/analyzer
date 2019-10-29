@@ -479,10 +479,10 @@ object MakeBaseDailyWeight {
       }).map({
         rs =>
           (rs._1, (rs._2, rs._3))
-      }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+      }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).repartition(1).sortByKey().map({
         rs =>
           rs._1 + "\t" + rs._2._1
-      }).repartition(1).saveAsTextFile(userid_most_freq_ideal_id_freq)
+      }).saveAsTextFile(userid_most_freq_ideal_id_freq)
 
 
       //}).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
