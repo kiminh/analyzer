@@ -99,6 +99,7 @@ object OcpcRetentionFactor {
 
     val data = data1
       .join(data2, Seq("searchid"), "left_outer")
+      .withColumn("media", udfMediaName()(col("media")))
       .groupBy("unitid", "media")
       .agg(
         sum(col("iscvr1")).alias("cv1"),
