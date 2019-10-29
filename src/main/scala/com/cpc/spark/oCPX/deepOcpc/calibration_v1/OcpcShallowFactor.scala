@@ -55,8 +55,7 @@ object OcpcShallowFactor {
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .withColumn("min_cv", lit(minCV))
-      .filter(s"cv > 0")
+      .filter(s"cv > $minCV")
 
     resultDF.show(10)
 
