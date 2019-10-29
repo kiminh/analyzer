@@ -169,7 +169,7 @@ object CollectIncWeightData {
         if (weight_map_ori.contains(ideal_id)) {
           (ideal_id, false)
         } else {
-          (ideal_id, false)
+          (ideal_id, true)
         }
       }).filter(rs => rs._2).map({rs => (rs._1, 1.0)}).reduceByKey(_ + _).collectAsMap()
     println("collect_2")
@@ -242,7 +242,7 @@ object CollectIncWeightData {
         if (weight_map_ori.contains(ideal_id)) {
           (ideal_id, false)
         } else {
-          (ideal_id, false)
+          (ideal_id, true)
         }
       }).filter(rs => rs._2).map({rs => (rs._1, 1.0)}).reduceByKey(_ + _).collectAsMap()
     println("collect_1")
@@ -327,7 +327,7 @@ object CollectIncWeightData {
         if (weight_map_ori.contains(ideal_id)) {
           (ideal_id, false)
         } else {
-          (ideal_id, false)
+          (ideal_id, true)
         }
       }).filter(rs => rs._2).map({rs => (rs._1, 1.0)}).reduceByKey(_ + _).collectAsMap()
     println("collect_4")
