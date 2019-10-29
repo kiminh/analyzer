@@ -2,7 +2,8 @@ package com.cpc.spark.ml.calibration.exp
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import breeze.linalg._
+import breeze.numerics._
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.tools.CalcMetrics
 import com.typesafe.config.ConfigFactory
@@ -142,7 +143,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**fit() 根据需要计算特征统计信息*/
       val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
       /**transform() 真实转换特征*/
-      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",col("unitidclassVec")*col("raw_cvr")))
+      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",col("unitidclassVec"):*col("raw_cvr")))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
@@ -193,6 +194,11 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
     calculateAuc(calibData,"test calibration",spark)
 
+  }
+
+  def output(p: Double)
+  = udf { value: org.apache.spark.ml.linalg.DenseVector =>
+    value :* p
   }
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
