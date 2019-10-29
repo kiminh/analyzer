@@ -25,7 +25,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-10-17-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
     for (i <- 0 until 22){
 
@@ -57,7 +57,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
-           |    from dl_cpc.wy_calibration_sample_v5conv5
+           |    from dl_cpc.wy_calibration_sample
            |    where $selectCondition
        """.stripMargin
       println(s"$sql1")
@@ -71,7 +71,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (3,4) then '4'
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num
-           |    from dl_cpc.wy_calibration_sample_v5conv5
+           |    from dl_cpc.wy_calibration_sample
            |    where day ='$testDate' and hour='$testHour'
        """.stripMargin
       println(s"$sql2")
@@ -142,13 +142,15 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val pipelineModel = pipeline.fit(dataDF)
       /**transform() 真实转换特征*/
       val dataset = pipelineModel.transform(dataDF)
+          .withColumn("unitidXp",col("unitid")*col("p"))
+          .withColumn("crossfeatures",concat(col("features"),col("untidXp")))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
       val validationDF = dataset.filter("sample = 0")
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
-      val lrModel = new LinearRegression().setFeaturesCol("features")
-                .setWeightCol("hourweight")
+      val lrModel = new LinearRegression().setFeaturesCol("crossfeatures")
+        .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
@@ -182,7 +184,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }
     }
 
-  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_v5conv5_18")
+//    dl_cpc.wy_calibration_prediction_v5conv5_18
+  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
     //    raw data
     val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
     calculateAuc(modelData,"test original",spark)

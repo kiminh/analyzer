@@ -95,6 +95,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |  and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')
                       |  AND bid_mode = 0
+                      |  and charge_type = 1
                       |  and conversion_goal>0) b
                       |    on a.searchid = b.searchid and a.ideaid = b.ideaid
                       | left join
