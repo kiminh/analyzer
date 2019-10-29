@@ -49,7 +49,7 @@ if [[ ! -f ${des_file_count} ]]; then
     hadoop fs -get ${des_file}/count ${des_file_count} &
 fi
 wait
-run=false
+run=true
 #if [[ ! -f ${ctr_file_success} ]]; then
 #    printf "no ${ctr_file_success}...\n"
 #    run=true
@@ -191,8 +191,8 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #exit 0
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
-queue=root.cpc.bigdata
 queue=root.cpc.develop
+queue=root.cpc.bigdata
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
