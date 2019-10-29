@@ -313,8 +313,8 @@ last_date=`date --date='1 days ago' +%Y-%m-%d`
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
-queue=root.cpc.develop
 queue=root.cpc.bigdata
+queue=root.cpc.develop
 jars=("/home/cpc/anal/lib/spark-tensorflow-connector_2.11-1.10.0.jar" )
 
 randjar="fhb_start"`date +%s%N`".jar"
