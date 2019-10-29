@@ -40,7 +40,7 @@ object OcpcShallowFactor {
 
     val resultDF = baseData
       .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media")
+      .groupBy("unitid", "conversion_goal", "media")
       .agg(
         sum(col("click")).alias("click"),
         sum(col("cv")).alias("cv"),
@@ -48,7 +48,7 @@ object OcpcShallowFactor {
         sum(col("total_price")).alias("total_price"),
         sum(col("exp_cvr")).alias("total_pre_cvr")
       )
-      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
       .na.fill(0, Seq("cv"))
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
