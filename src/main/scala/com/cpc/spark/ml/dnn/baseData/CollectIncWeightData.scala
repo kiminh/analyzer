@@ -166,9 +166,8 @@ object CollectIncWeightData {
       rs => {
         val dense = rs.getSeq[Long](6)
         val ideal_id = dense(11).toString
-        val weight = weight_map_ori.getOrElse(ideal_id, 0.0)
-        if (weight <= 0.0) {
-          (ideal_id, true)
+        if (weight_map_ori.contains(ideal_id)) {
+          (ideal_id, false)
         } else {
           (ideal_id, false)
         }
@@ -191,13 +190,18 @@ object CollectIncWeightData {
         val bid = dense(10).toString
         val ideal_id = dense(11).toString
 
-        var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
-        if (weight <= 0.0) {
-          weight = weight_map_ori.getOrElse(ideal_id, 0.0)
+        var weight = 1.0
+
+        if (weight_map.contains(ideal_id + "\t" + bid)) {
+          weight = weight_map(ideal_id + "\t" + bid)
+        } else {
+          if (weight_map_ori.contains(ideal_id)) {
+            weight = weight_map_ori(ideal_id)
+          } else {
+            weight = 3.0
+          }
         }
-        if (weight <= 0.0) {
-          weight = 3.0
-        }
+
         val weight_reverse = 1.0/weight
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
@@ -260,13 +264,18 @@ object CollectIncWeightData {
         val bid = dense(10).toString
         val ideal_id = dense(11).toString
 
-        var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
-        if (weight <= 0.0) {
-          weight = weight_map_ori.getOrElse(ideal_id, 0.0)
+        var weight = 1.0
+
+        if (weight_map.contains(ideal_id + "\t" + bid)) {
+          weight = weight_map(ideal_id + "\t" + bid)
+        } else {
+          if (weight_map_ori.contains(ideal_id)) {
+            weight = weight_map_ori(ideal_id)
+          } else {
+            weight = 3.0
+          }
         }
-        if (weight <= 0.0) {
-          weight = 3.0
-        }
+
         val weight_reverse = 1.0/weight
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
@@ -341,13 +350,18 @@ object CollectIncWeightData {
         val bid = dense(10).toString
         val ideal_id = dense(11).toString
 
-        var weight = weight_map.getOrElse(ideal_id + "\t" + bid, 0.0)
-        if (weight <= 0.0) {
-          weight = weight_map_ori.getOrElse(ideal_id, 0.0)
+        var weight = 1.0
+
+        if (weight_map.contains(ideal_id + "\t" + bid)) {
+          weight = weight_map(ideal_id + "\t" + bid)
+        } else {
+          if (weight_map_ori.contains(ideal_id)) {
+            weight = weight_map_ori(ideal_id)
+          } else {
+            weight = 3.0
+          }
         }
-        if (weight <= 0.0) {
-          weight = 3.0
-        }
+
         val weight_reverse = 1.0/weight
 
         Row(sample_idx, label_arr, weight.toFloat, weight_reverse.toFloat, dense, idx0, idx1, idx2, idx_arr)
