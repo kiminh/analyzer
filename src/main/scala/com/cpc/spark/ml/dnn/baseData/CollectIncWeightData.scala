@@ -239,9 +239,8 @@ object CollectIncWeightData {
       rs => {
         val dense = rs.getSeq[Long](6)
         val ideal_id = dense(11).toString
-        val weight = weight_map_ori.getOrElse(ideal_id, 0.0)
-        if (weight <= 0.0) {
-          (ideal_id, true)
+        if (weight_map_ori.contains(ideal_id)) {
+          (ideal_id, false)
         } else {
           (ideal_id, false)
         }
@@ -325,9 +324,8 @@ object CollectIncWeightData {
       rs => {
         val dense = rs.getSeq[Long](6)
         val ideal_id = dense(11).toString
-        val weight = weight_map_ori.getOrElse(ideal_id, 0.0)
-        if (weight <= 0.0) {
-          (ideal_id, true)
+        if (weight_map_ori.contains(ideal_id)) {
+          (ideal_id, false)
         } else {
           (ideal_id, false)
         }
