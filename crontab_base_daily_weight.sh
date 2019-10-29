@@ -112,6 +112,9 @@ fi
 
 sample_list=(
     `date --date='1 days ago' +%Y-%m-%d`
+    `date --date='2 days ago' +%Y-%m-%d`
+    `date --date='3 days ago' +%Y-%m-%d`
+    `date --date='4 days ago' +%Y-%m-%d`
 )
 
 
