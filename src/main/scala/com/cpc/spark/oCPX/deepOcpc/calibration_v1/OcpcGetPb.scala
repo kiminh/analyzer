@@ -37,13 +37,22 @@ object OcpcGetPb {
     val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV, spark)
 
     // 计算自然天激活次留率
-    val data2 = OcpcRetentionFactorMain(date, expTag, minCV, spark)
+    val data2 = OcpcRetentionFactorMain(date, expTag,5, spark)
 
     // 计算cvr校准系数
+    val data = calculateCalibrationValue(data1, data2, spark)
 
     // 数据组装
 
     // 输出到结果表 dl_cpc.ocpc_deep_pb_data_hourly
+
+  }
+
+  def calculateCalibrationValue(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
+    val data1 = dataRaw1.filter(s"deep_conversion_goal = 3")
+    val data = data1
+      .join(dataRaw2, Seq("unitid", "media"), "inner")
+
   }
 
 }

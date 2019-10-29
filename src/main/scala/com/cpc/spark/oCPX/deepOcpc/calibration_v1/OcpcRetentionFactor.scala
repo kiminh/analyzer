@@ -96,12 +96,12 @@ object OcpcRetentionFactor {
 
     val data = data1
       .join(data2, Seq("searchid"), "left_outer")
-      .groupBy("unitid")
+      .groupBy("unitid", "media")
       .agg(
         sum(col("iscvr1")).alias("cv1"),
         sum(col("iscvr2")).alias("cv2")
       )
-      .select("unitid", "cv1", "cv2")
+      .select("unitid", "media", "cv1", "cv2")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
     data

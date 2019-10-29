@@ -62,8 +62,8 @@ object OcpcChargeUpdate {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pay_data_daily_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_pay_data_daily_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_data_daily_v2")
 
   }
 
@@ -87,7 +87,6 @@ object OcpcChargeUpdate {
 
     val rawData = flagData
       .filter("flag = 1 and pay_cnt < 4")
-//      .filter("flag = 1")
       .select("unitid", "pay_date", "pay_cnt", "restart_flag")
       .distinct()
       .join(prevDataRaw, Seq("unitid"), "left_outer")
