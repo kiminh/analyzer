@@ -143,7 +143,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**transform() 真实转换特征*/
       val dataset = pipelineModel.transform(dataDF)
           .withColumn("unitidXp",col("unitid")*col("raw_cvr"))
-          .withColumn("crossfeatures",concat(col("features"),col("untidXp")))
+          .withColumn("crossfeatures",concat(col("features"),col("unitidXp")))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
