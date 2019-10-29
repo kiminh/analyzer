@@ -2,8 +2,6 @@ package com.cpc.spark.ml.calibration.exp
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import breeze.linalg._
-import breeze.numerics._
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.tools.CalcMetrics
 import com.typesafe.config.ConfigFactory
