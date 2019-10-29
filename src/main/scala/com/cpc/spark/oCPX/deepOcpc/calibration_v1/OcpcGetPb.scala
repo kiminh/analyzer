@@ -6,6 +6,7 @@ import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcJFBfactor._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.oCPX.OcpcTools._
 
 
 object OcpcGetPb {
@@ -44,6 +45,20 @@ object OcpcGetPb {
   }
 
   def getData1(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    // 计算计费比系数、后验激活转化率、先验点击次留率
+    val rawData = getBaseData(hourInt, date, hour, spark)
+
+    val data  =rawData
+      .filter(s"isclick=1 and is_deep_ocpc = 1")
+      .groupBy("identifier", "conversion_goal", "media", "date", "hour")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        sum(col("bid")).alias("total_bid"),
+        sum(col("price")).alias("total_price")
+      )
+      .select("identifier", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "date", "hour")
+
 
   }
 
