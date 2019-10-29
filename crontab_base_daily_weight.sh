@@ -142,13 +142,13 @@ do
 
     collect_file+=("${aggr_path}/part-r-*")
     collect_date+=(${curr_date})
-    if [[ ${#collect_file[@]} -eq 4 ]] ; then
+    if [[ ${#collect_file[@]} -eq 5 ]] ; then
         printf "got 4 days' aggr file, break...\n"
         break
     fi
 done
 
-if [[ ${#collect_file[@]} -lt 4 ]] ; then
+if [[ ${#collect_file[@]} -lt 5 ]] ; then
     printf "not 14 days' aggr file, existing...\n"
     rm ${shell_in_run}
     exit 0
