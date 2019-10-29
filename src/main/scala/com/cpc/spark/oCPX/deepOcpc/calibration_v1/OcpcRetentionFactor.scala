@@ -107,7 +107,7 @@ object OcpcRetentionFactor {
       )
       .select("unitid", "media", "cv1", "cv2")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
-      .filter(s"cv2 >= $minCV")
+      .withColumn("min_cv", lit(minCV))
 
     data
   }
