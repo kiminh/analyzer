@@ -118,20 +118,18 @@ object MakeBaseDailyWeight {
       println("this_file:" + this_file)
 
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
+      val userid_file_curr = des_dir + "/" + this_date + "-samples-info-userid"
       println("bid_cpm_file_curr:" + bid_cpm_file_curr)
-      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
+      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS") || !exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
         delete_hdfs_path(bid_cpm_file_curr)
+        delete_hdfs_path(userid_file_curr)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
         df_train_files.show(3)
+
         df_train_files.rdd.map(
           rs => {
-            val idx2 = rs.getSeq[Long](0)
-            val idx1 = rs.getSeq[Long](1)
-            val idx_arr = rs.getSeq[Long](2)
-            val idx0 = rs.getSeq[Long](3)
-            val sample_idx = rs.getLong(4)
             val label_arr = rs.getSeq[Long](5)
             val dense = rs.getSeq[Long](6)
 
@@ -148,6 +146,24 @@ object MakeBaseDailyWeight {
           rs =>
             rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
         }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+
+        df_train_files.rdd.map(
+          rs => {
+            val label_arr = rs.getSeq[Long](5)
+            val dense = rs.getSeq[Long](6)
+
+            var label = 0.0
+            if (label_arr.head == 1L) {
+              label = 1.0
+            }
+
+            val user_id = dense(14).toString
+            val ideal_id = dense(11).toString
+            (user_id, ArrayBuffer[String](ideal_id))
+          }).reduceByKey(_ ++ _).map({
+          rs =>
+            rs._1 + "\t" + rs._2.mkString(",")
+        }).repartition(1).saveAsTextFile(userid_file_curr)
       }
 
       val bid_cpm_file = des_dir + "/" + this_date + "-weight-info"
