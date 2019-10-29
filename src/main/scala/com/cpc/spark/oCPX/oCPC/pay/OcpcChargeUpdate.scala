@@ -86,7 +86,8 @@ object OcpcChargeUpdate {
 
 
     val rawData = flagData
-      .filter("flag = 1 and pay_cnt < 4")
+//      .filter("flag = 1 and pay_cnt < 4")
+      .filter("flag = 1")
       .select("unitid", "pay_date", "pay_cnt", "restart_flag")
       .distinct()
       .join(prevDataRaw, Seq("unitid"), "left_outer")
