@@ -240,7 +240,6 @@ object MakeBaseDailyWeight {
       if (max_weight <= 0.0 || max_ctr <= 0.0) {
         println("invalid max_weight:" + max_weight)
         println("invalid max_ctr:" + max_ctr)
-        return
       }
 
       //(ideal_id, bid_hash, bid_ori, weight, click, imp, ctr)
@@ -390,6 +389,8 @@ object MakeBaseDailyWeight {
         s"hadoop fs -chmod -R 0777 $this_weight_examples" !
       }
     }
+  }
+}
 
     /*val cpm_file_buffer = scala.collection.mutable.ArrayBuffer[String]()
     for (idx <- train_date_list.indices) {
@@ -787,6 +788,4 @@ object MakeBaseDailyWeight {
 
 
 
-  }
-}
 
