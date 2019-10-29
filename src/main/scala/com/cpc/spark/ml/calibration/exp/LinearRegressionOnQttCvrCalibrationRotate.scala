@@ -131,19 +131,19 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }
 
       val numericCols = Array("raw_cvr")
+      val crossCols = Array("unitidXp")
       val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
       /**使用VectorAssembler将所有特征转换为一个向量*/
       val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
-      stagesArray.append(assembler)
+//      stagesArray.append(assembler)
 
       val pipeline = new Pipeline()
       pipeline.setStages(stagesArray.toArray)
       /**fit() 根据需要计算特征统计信息*/
-      val pipelineModel = pipeline.fit(dataDF)
+      val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
       /**transform() 真实转换特征*/
-      val dataset = pipelineModel.transform(dataDF)
+      val dataset = assembler.transform(pipelineModel)
           .withColumn("unitidXp",col("unitid")*col("raw_cvr"))
-          .withColumn("crossfeatures",concat(col("features"),col("unitidXp")))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
