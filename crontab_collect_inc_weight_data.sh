@@ -37,17 +37,28 @@ printf "*****************************${date_full}*******************************
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
 hadoop fs -mkdir "hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer/"${curr_date}-weight-collect-inc
 
-#base_daily_bid_cpm_file=${des_dir_rock}/${curr_date}-14days-weight-info-ref
-#des_dir_ori="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+userid_idealid_last_5days=${des_dir_rock}/${curr_date}-userid-idealid-last-5days
+file_success_1=${dir}/${curr_date}_5days_success
+
 curr_date=`date --date='1 days ago' +%Y-%m-%d`
 base_daily_weight_map_file=${des_dir_rock}/${curr_date}-weight-map
-file_success=${dir}/${curr_date}_weight_map_success
-if [[ ! -f ${file_success} ]]; then
-    hadoop fs -get ${base_daily_weight_map_file}/_SUCCESS ${file_success}
+file_success_2=${dir}/${curr_date}_weight_map_success
+
+if [[ ! -f ${file_success_1} ]]; then
+    hadoop fs -get ${userid_idealid_last_5days}/_SUCCESS ${file_success_1}
+fi
+if [[ ! -f ${file_success_2} ]]; then
+    hadoop fs -get ${base_daily_weight_map_file}/_SUCCESS ${file_success_2}
 fi
 
-if [[ ! -f ${file_success} ]]; then
+if [[ ! -f ${file_success_1} ]]; then
+    printf "no today's userid idealid last 5days file, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+
+if [[ ! -f ${file_success_2} ]]; then
     printf "no last day's weight-map file, existing...\n"
     rm ${shell_in_run}
     exit 0
