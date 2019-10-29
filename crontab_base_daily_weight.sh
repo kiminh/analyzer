@@ -65,8 +65,8 @@ fi
 
 if [ "${run}" = "false"  ];then
     echo "make ${last_date} weight file done, exit..."
-    rm ${shell_in_run}
-    exit 0
+    #rm ${shell_in_run}
+    #exit 0
 fi
 
 
