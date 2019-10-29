@@ -107,7 +107,7 @@ object OcpcShallowFactor {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  deep_cvr as exp_cvr,
+         |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  date,
          |  hour
          |FROM
