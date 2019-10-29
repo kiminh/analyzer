@@ -30,7 +30,7 @@ object OcpcGetPb {
     val expTag = args(3).toString
     val hourInt = args(4).toInt
     val minCV1 = args(5).toInt
-    val minCV2 = args(5).toInt
+    val minCV2 = args(6).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
