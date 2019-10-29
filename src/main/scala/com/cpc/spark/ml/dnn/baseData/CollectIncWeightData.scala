@@ -267,8 +267,9 @@ object CollectIncWeightData {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("collect_1 size:" + weighted_rdd_count_1)
-    println("last_1_new_cnt_1:" + last_1_new_cnt_1 + ", rate:" + last_1_new_cnt_1/weighted_rdd_count_1)
-    println("last_5_new_cnt_1:" + last_5_new_cnt_1 + ", rate:" + last_5_new_cnt_1/weighted_rdd_count_1)
+    println("last_1_new_cnt_1:" + last_1_new_cnt_1 + ", rate:" + last_1_new_cnt_1.toDouble/weighted_rdd_count_1)
+    println("last_5_new_cnt_1:" + last_5_new_cnt_1 + ", rate:" + last_5_new_cnt_1.toDouble/weighted_rdd_count_1)
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 
     /****************************************collect_4***************************************************/
@@ -351,8 +352,9 @@ object CollectIncWeightData {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     println("collect_4 size:" + weighted_rdd_count_4)
-    println("last_1_new_cnt_4:" + last_1_new_cnt_4 + ", rate:" + last_1_new_cnt_4/weighted_rdd_count_4)
-    println("last_5_new_cnt_4:" + last_5_new_cnt_4 + ", rate:" + last_5_new_cnt_4/weighted_rdd_count_4)
+    println("last_1_new_cnt_4:" + last_1_new_cnt_4 + ", rate:" + last_1_new_cnt_4.toDouble/weighted_rdd_count_4)
+    println("last_5_new_cnt_4:" + last_5_new_cnt_4 + ", rate:" + last_5_new_cnt_4.toDouble/weighted_rdd_count_4)
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     /****************************************collect_2***************************************************/
     val df_train_files_collect_2: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_2)

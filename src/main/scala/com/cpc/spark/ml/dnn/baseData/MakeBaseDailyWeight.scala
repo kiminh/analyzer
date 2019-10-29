@@ -458,17 +458,35 @@ object MakeBaseDailyWeight {
     //(user_id + "\t" + ideal_id, 1L)
     //}).reduceByKey(_ + _).repartition(1).sortByKey().map({
     val userid_most_freq_ideal_id = des_dir + "/" + curr_date + "-userid-idealid-last-5days"
+    val userid_most_freq_ideal_id_freq = des_dir + "/" + curr_date + "-userid-idealid-last-5days-freq"
+    if (!exists_hdfs_path(userid_most_freq_ideal_id) || !exists_hdfs_path(userid_most_freq_ideal_id_freq)) {
+      delete_hdfs_path(userid_most_freq_ideal_id)
+      delete_hdfs_path(userid_most_freq_ideal_id_freq)
 
-    sc.textFile(output.mkString(",")).map({
-      rs =>
-        val line_list = rs.split("\t")
-        (line_list(0) + "\t" + line_list(1), line_list(2).toLong)
-    }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).sortByKey().map({
-      rs =>
-        rs._1 + "\t" + rs._2
-    }).saveAsTextFile(userid_most_freq_ideal_id)
+      sc.textFile(output.mkString(",")).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0) + "\t" + line_list(1), line_list(2).toLong)
+      }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).sortByKey().map({
+        rs =>
+          rs._1 + "\t" + rs._2
+      }).saveAsTextFile(userid_most_freq_ideal_id)
 
-    //}).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+      sc.textFile(userid_most_freq_ideal_id).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), line_list(1), line_list(2).toLong)
+      }).map({
+        rs =>
+          (rs._1, (rs._2, rs._3))
+      }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+        rs =>
+          rs._1 + "\t" + rs._2._1
+      }).saveAsTextFile(userid_most_freq_ideal_id_freq)
+
+
+      //}).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+    }
 
   }
 }
