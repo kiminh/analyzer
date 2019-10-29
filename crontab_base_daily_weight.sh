@@ -49,7 +49,7 @@ if [[ ! -f ${des_file_count} ]]; then
     hadoop fs -get ${des_file}/count ${des_file_count} &
 fi
 wait
-run=true
+run=false
 #if [[ ! -f ${ctr_file_success} ]]; then
 #    printf "no ${ctr_file_success}...\n"
 #    run=true
