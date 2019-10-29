@@ -42,10 +42,10 @@ object OcpcShallowFactor {
       .filter(s"isclick=1")
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
-        sum(col("click")).alias("click"),
-        sum(col("cv")).alias("cv"),
-        sum(col("total_bid")).alias("total_bid"),
-        sum(col("total_price")).alias("total_price"),
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        sum(col("bid")).alias("total_bid"),
+        sum(col("price")).alias("total_price"),
         sum(col("exp_cvr")).alias("total_pre_cvr")
       )
       .select("unitid", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
