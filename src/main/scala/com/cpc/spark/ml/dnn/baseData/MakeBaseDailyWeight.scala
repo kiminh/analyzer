@@ -109,6 +109,7 @@ object MakeBaseDailyWeight {
     val train_date_list = date_list.split(";")
     val train_file_list = train_list.split(";")
 
+
     for (idx <- train_date_list.indices) {
       val this_date = train_date_list(idx)
       val this_file = train_file_list(idx)
@@ -165,16 +166,16 @@ object MakeBaseDailyWeight {
 
               val user_id = dense(14).toString
               val ideal_id = dense(11).toString
-              (user_id + "\t" + ideal_id, 1.0)
-            }).reduceByKey(_ + _).map({
+              (user_id + "\t" + ideal_id, 1L)
+            }).reduceByKey(_ + _).repartition(1).sortByKey().map({
             rs =>
-              val line_list = rs._1.split("\t")
-              (line_list(0), ArrayBuffer[String](line_list(1)))
+              rs._1 + "\t" + rs._2
+          }).saveAsTextFile(userid_file_curr)
           //}).repartition(1).sortBy(_._8 * -1).map({
-          }).reduceByKey(_ ++ _).repartition(1).sortBy(_._2.size * -1).map({
-            rs =>
-              rs._1 + "\t" + rs._2.mkString(",")
-          }).repartition(1).saveAsTextFile(userid_file_curr)
+          //}).reduceByKey(_ ++ _).repartition(1).sortBy(_._2.size * -1).map({
+          //  rs =>
+          //    rs._1 + "\t" + rs._2.mkString(",")
+          //}).repartition(1).saveAsTextFile(userid_file_curr)
         }
 
         if (!exists_hdfs_path(idealid_file_curr + "/_SUCCESS")) {
@@ -443,6 +444,32 @@ object MakeBaseDailyWeight {
         s"hadoop fs -chmod -R 0777 $this_weight_examples" !
       }
     }
+
+
+
+    val output = ArrayBuffer[String]()
+    for (idx <- train_date_list.indices) {
+      val this_date = train_date_list(idx)
+      val userid_file_curr = des_dir + "/" + this_date + "-samples-info-userid"
+      if (exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
+        output += userid_file_curr
+      }
+    }
+    //(user_id + "\t" + ideal_id, 1L)
+    //}).reduceByKey(_ + _).repartition(1).sortByKey().map({
+    val userid_most_freq_ideal_id = des_dir + "/" + curr_date + "-userid-idealid-last-5days"
+
+    sc.textFile(output.mkString(",")).map({
+      rs =>
+        val line_list = rs.split("\t")
+        (line_list(0) + "\t" + line_list(1), line_list(2).toLong)
+    }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).sortByKey().map({
+      rs =>
+        rs._1 + "\t" + rs._2
+    }).saveAsTextFile(userid_most_freq_ideal_id)
+
+    //}).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+
   }
 }
 
