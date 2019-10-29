@@ -114,7 +114,7 @@ object CollectIncWeightData {
     val weighted_file_collect_4 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-4"
     val weighted_file_collect_2 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-2"
     val weighted_file_collect_1 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-1"
-    val ctr_file = des_dir + "/" + curr_date + "-" + time_id + "-ctr"
+    val ctr_file = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-ctr"
 
     if (delete_old == "true") {
       delete_hdfs_path(weighted_file_collect_8)
