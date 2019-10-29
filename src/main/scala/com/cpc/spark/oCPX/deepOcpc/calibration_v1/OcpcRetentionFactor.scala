@@ -31,7 +31,7 @@ object OcpcRetentionFactor {
     val result = OcpcRetentionFactorMain(date, expTag, minCV, spark).cache()
 
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029a")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029b")
   }
 
   def OcpcRetentionFactorMain(date: String, expTag: String, minCV: Int, spark: SparkSession) = {

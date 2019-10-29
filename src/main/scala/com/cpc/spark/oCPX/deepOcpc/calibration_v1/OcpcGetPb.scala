@@ -29,18 +29,19 @@ object OcpcGetPb {
     val version = args(2).toString
     val expTag = args(3).toString
     val hourInt = args(4).toInt
-    val minCV = args(5).toInt
+    val minCV1 = args(5).toInt
+    val minCV2 = args(5).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
-    val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV, spark)
+    val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV1, spark)
     data1
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191029a")
 
     // 计算自然天激活次留率
-    val data2 = OcpcRetentionFactorMain(date, expTag,5, spark)
+    val data2 = OcpcRetentionFactorMain(date, expTag,minCV2, spark)
     data2
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191029b")
 
