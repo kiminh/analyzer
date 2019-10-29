@@ -143,7 +143,7 @@ do
     collect_file+=("${aggr_path}/part-r-*")
     collect_date+=(${curr_date})
     if [[ ${#collect_file[@]} -eq 5 ]] ; then
-        printf "got 4 days' aggr file, break...\n"
+        printf "got 5 days' aggr file, break...\n"
         break
     fi
 done
