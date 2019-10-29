@@ -91,7 +91,7 @@ object OcpcRetentionFactorMain {
          |  array_contains(conversion_target, 'api_app_retention')
          |""".stripMargin
     println(sqlRequest2)
-    val data2 =
+//    val data2 =
 
   }
 
