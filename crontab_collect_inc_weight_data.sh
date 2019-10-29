@@ -10,14 +10,14 @@ ml_ver=v4refult
 date_full=`date`
 #printf "*****************************${date_full}********************************\n"
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
-printf "now curr_date is:${curr_date}\n"
+#printf "now curr_date is:${curr_date}\n"
 now_hour=$(date "+%H")
 now_minutes=$(date "+%M")
 now_id="00"${now_hour}
 if [ ${now_minutes} -ge 30 ];then
     now_id="30"${now_hour}
 fi
-printf "now id is:%s\n" ${now_id}
+#printf "now id is:%s\n" ${now_id}
 
 dir=collect_inc_weight
 if [[ ! -d "${dir}" ]]; then
