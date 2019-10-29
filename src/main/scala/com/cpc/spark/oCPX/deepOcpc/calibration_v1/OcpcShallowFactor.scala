@@ -135,7 +135,7 @@ object OcpcShallowFactor {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  converion_goal
+         |  conversion_goal
          |FROM
          |  dl_cpc.ocpc_cvr_log_hourly
          |WHERE
