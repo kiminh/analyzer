@@ -121,14 +121,13 @@ object MakeBaseDailyWeight {
       val userid_file_curr = des_dir + "/" + this_date + "-samples-info-userid"
       println("bid_cpm_file_curr:" + bid_cpm_file_curr)
       if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS") || !exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
-        delete_hdfs_path(bid_cpm_file_curr)
-        delete_hdfs_path(userid_file_curr)
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
         df_train_files.show(3)
 
         if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
+          delete_hdfs_path(bid_cpm_file_curr)
           df_train_files.rdd.map(
             rs => {
               val label_arr = rs.getSeq[Long](5)
@@ -150,6 +149,7 @@ object MakeBaseDailyWeight {
         }
 
         if (!exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
+          delete_hdfs_path(userid_file_curr)
           df_train_files.rdd.map(
             rs => {
               val label_arr = rs.getSeq[Long](5)
