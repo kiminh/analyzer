@@ -141,7 +141,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**fit() 根据需要计算特征统计信息*/
       val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
       /**transform() 真实转换特征*/
-      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",col("unitidclassVec").multiply(col("raw_cvr"))))
+      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr"))))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
@@ -194,10 +194,16 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
   }
 
-//  def output(p: Double)
-//  = udf { value: org.apache.spark.ml.linalg.DenseVector =>
-//    value:*(p)
+//  def output
+//  = udf {(value: org.apache.spark.ml.linalg.DenseVector,p:Double) =>
+//    value.toArray.map()
 //  }
+
+  def output2
+  = udf((value: org.apache.spark.ml.linalg.DenseVector,p:Double) => {
+    val result = value.toArray.map(x => x * p)
+    result.toVector
+  })
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
