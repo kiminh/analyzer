@@ -96,7 +96,7 @@ object OcpcGetPb {
 
 
   def calculateCalibrationValue(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
-    val data1 = dataRaw1.filter(s"deep_conversion_goal = 3")
+    val data1 = dataRaw1.filter(s"deep_conversion_goal = 2")
     val data = data1
       .join(dataRaw2, Seq("unitid", "media"), "inner")
       .select("unitid", "deep_conversion_goal", "media", "exp_tag", "jfb", "pre_cvr", "post_cvr", "deep_cvr")
