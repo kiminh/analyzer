@@ -1,113 +1,113 @@
-package com.cpc.spark.oCPX.deepOcpc.calibration_v1
-
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCVRfactor._
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCalibrationBase._
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcJFBfactor._
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
-
-
-object OcpcGetPb {
-  /*
-  采用基于后验激活率的复合校准策略
-  jfb_factor：正常计算
-  cvr_factor：
-  cvr_factor = (deep_cvr * post_cvr1) / pre_cvr1
-  smooth_factor = 0.3
-   */
-  def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    Logger.getRootLogger.setLevel(Level.WARN)
-
-    val date = args(0).toString
-    val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
-
-    // 主校准回溯时间长度
-    val hourInt = args(5).toInt
-
-    println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
-
-    // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, spark).cache()
-    dataRaw.show(10)
-
-    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, spark)
-    val jfbData = jfbDataRaw
-      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
-      .cache()
-    jfbData.show(10)
-
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, spark)
-    val pcocData = pcocDataRaw
-      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
-      .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
-      .cache()
-    pcocData.show(10)
-
-    val data = assemblyData(jfbData, pcocData, spark).cache()
-    data.show(10)
-
-    dataRaw.unpersist()
-
-    // 明投单元
-    val result = data
-      .withColumn("cpagiven", lit(1.0))
-      .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-    val resultDF = result
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-
-    resultDF
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
-
-
-  }
-
-
-  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
-    // 组装数据
-    // set some default value
-    // post_cvr: 0.0
-    // smooth_factor: 0.3
-    // high_bid_factor: 1.0
-    // low_bid_factor: 1.0
-    val data = pcocData
-      .filter(s"cvr_factor is not null")
-      .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
-      .withColumn("post_cvr", lit(0.0))
-      .withColumn("smooth_factor", lit(0.3))
-      .withColumn("smooth_factor", udfSetSmoothFactor()(col("identifier"), col("smooth_factor")))
-      .withColumn("high_bid_factor", lit(1.0))
-      .withColumn("low_bid_factor", lit(1.0))
-      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
-      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
-
-    data
-  }
-
-  def udfSetSmoothFactor() = udf((identifier: String, smoothFactor: Double) => {
-    val result = (identifier, smoothFactor) match {
-      case ("2399667", _) => 0.7
-      case (_, v) => v
-    }
-    result
-  })
-
-
-
-}
-
-
+//package com.cpc.spark.oCPX.deepOcpc.calibration_v1
+//
+//import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCVRfactor._
+//import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCalibrationBase._
+//import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcJFBfactor._
+//import org.apache.log4j.{Level, Logger}
+//import org.apache.spark.sql.functions._
+//import org.apache.spark.sql.{DataFrame, SparkSession}
+//
+//
+//object OcpcGetPb {
+//  /*
+//  采用基于后验激活率的复合校准策略
+//  jfb_factor：正常计算
+//  cvr_factor：
+//  cvr_factor = (deep_cvr * post_cvr1) / pre_cvr1
+//  smooth_factor = 0.3
+//   */
+//  def main(args: Array[String]): Unit = {
+//    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+//    Logger.getRootLogger.setLevel(Level.WARN)
+//
+//    val date = args(0).toString
+//    val hour = args(1).toString
+//    val version = args(2).toString
+//    val expTag = args(3).toString
+//
+//    // 主校准回溯时间长度
+//    val hourInt = args(5).toInt
+//
+//    println("parameters:")
+//    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
+//
+//    // 计算jfb_factor,cvr_factor,post_cvr
+//    val dataRaw = OcpcCalibrationBaseDelayMain(date, hour, spark).cache()
+//    dataRaw.show(10)
+//
+//    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw, spark)
+//    val jfbData = jfbDataRaw
+//      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
+//      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
+//      .cache()
+//    jfbData.show(10)
+//
+//    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, spark)
+//    val pcocData = pcocDataRaw
+//      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
+//      .select("identifier", "conversion_goal", "exp_tag", "cvr_factor")
+//      .cache()
+//    pcocData.show(10)
+//
+//    val data = assemblyData(jfbData, pcocData, spark).cache()
+//    data.show(10)
+//
+//    dataRaw.unpersist()
+//
+//    // 明投单元
+//    val result = data
+//      .withColumn("cpagiven", lit(1.0))
+//      .withColumn("is_hidden", lit(0))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//    val resultDF = result
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//
+//    resultDF
+//      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
+//
+//
+//  }
+//
+//
+//  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
+//    // 组装数据
+//    // set some default value
+//    // post_cvr: 0.0
+//    // smooth_factor: 0.3
+//    // high_bid_factor: 1.0
+//    // low_bid_factor: 1.0
+//    val data = pcocData
+//      .filter(s"cvr_factor is not null")
+//      .join(jfbData, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
+//      .withColumn("post_cvr", lit(0.0))
+//      .withColumn("smooth_factor", lit(0.3))
+//      .withColumn("smooth_factor", udfSetSmoothFactor()(col("identifier"), col("smooth_factor")))
+//      .withColumn("high_bid_factor", lit(1.0))
+//      .withColumn("low_bid_factor", lit(1.0))
+//      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+//      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
+//      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+//
+//    data
+//  }
+//
+//  def udfSetSmoothFactor() = udf((identifier: String, smoothFactor: Double) => {
+//    val result = (identifier, smoothFactor) match {
+//      case ("2399667", _) => 0.7
+//      case (_, v) => v
+//    }
+//    result
+//  })
+//
+//
+//
+//}
+//
+//
