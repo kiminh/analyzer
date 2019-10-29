@@ -119,8 +119,11 @@ object MakeBaseDailyWeight {
 
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       val userid_file_curr = des_dir + "/" + this_date + "-samples-info-userid"
+      val idealid_file_curr = des_dir + "/" + this_date + "-samples-info-idealid"
       println("bid_cpm_file_curr:" + bid_cpm_file_curr)
-      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS") || !exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
+      if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")
+        || !exists_hdfs_path(userid_file_curr + "/_SUCCESS")
+        || !exists_hdfs_path(idealid_file_curr + "/_SUCCESS")) {
         val df_train_files: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(this_file)
         //println("DF file count:" + df_train_files.count().toString + " of file:" + train_files)
         df_train_files.printSchema()
@@ -172,6 +175,32 @@ object MakeBaseDailyWeight {
             rs =>
               rs._1 + "\t" + rs._2.mkString(",")
           }).repartition(1).saveAsTextFile(userid_file_curr)
+        }
+
+        if (!exists_hdfs_path(idealid_file_curr + "/_SUCCESS")) {
+          delete_hdfs_path(idealid_file_curr)
+          df_train_files.rdd.map(
+            rs => {
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
+
+              var label = 0.0
+              if (label_arr.head == 1L) {
+                label = 1.0
+              }
+
+              val user_id = dense(14).toString
+              val ideal_id = dense(11).toString
+              (user_id + "\t" + ideal_id, 1.0)
+            }).reduceByKey(_ + _).map({
+            rs =>
+              val line_list = rs._1.split("\t")
+              (line_list(1), ArrayBuffer[String](line_list(0)))
+            //}).repartition(1).sortBy(_._8 * -1).map({
+          }).reduceByKey(_ ++ _).repartition(1).sortBy(_._2.size * -1).map({
+            rs =>
+              rs._1 + "\t" + rs._2.mkString(",")
+          }).repartition(1).saveAsTextFile(idealid_file_curr)
         }
       }
 
