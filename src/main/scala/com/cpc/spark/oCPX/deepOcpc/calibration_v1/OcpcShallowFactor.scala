@@ -23,12 +23,13 @@ object OcpcShallowFactor {
     val hour = args(1).toString
     val expTag = args(2).toString
     val hourInt = args(3).toInt
+    val minCV = args(4).toInt
 
     // 实验数据
     println("parameters:")
     println(s"date=$date, hour=$hour, expTag=$expTag, hourInt=$hourInt")
 
-    val result = OcpcShallowFactorMain(date, hour, hourInt, expTag, spark).cache()
+    val result = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV, spark).cache()
 
     result
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029a")
