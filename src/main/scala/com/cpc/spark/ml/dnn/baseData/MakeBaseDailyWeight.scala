@@ -128,42 +128,51 @@ object MakeBaseDailyWeight {
         df_train_files.printSchema()
         df_train_files.show(3)
 
-        df_train_files.rdd.map(
-          rs => {
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
+        if (!exists_hdfs_path(bid_cpm_file_curr + "/_SUCCESS")) {
+          df_train_files.rdd.map(
+            rs => {
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
 
-            var label = 0.0
-            if (label_arr.head == 1L) {
-              label = 1.0
-            }
+              var label = 0.0
+              if (label_arr.head == 1L) {
+                label = 1.0
+              }
 
-            val ideal_id = dense(11).toString
-            val bid = dense(10).toString
-            val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
-            (ideal_id + "\t" + bid + "\t" + bid_ori, (label, 1.0))
-          }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
-          rs =>
-            rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
-        }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+              val ideal_id = dense(11).toString
+              val bid = dense(10).toString
+              val bid_ori = bid_mmh_map.getOrElse(bid, "-1")
+              (ideal_id + "\t" + bid + "\t" + bid_ori, (label, 1.0))
+            }).reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)).map({
+            rs =>
+              rs._1 + "\t" + rs._2._1 + "\t" + rs._2._2
+          }).repartition(1).saveAsTextFile(bid_cpm_file_curr)
+        }
 
-        df_train_files.rdd.map(
-          rs => {
-            val label_arr = rs.getSeq[Long](5)
-            val dense = rs.getSeq[Long](6)
+        if (!exists_hdfs_path(userid_file_curr + "/_SUCCESS")) {
+          df_train_files.rdd.map(
+            rs => {
+              val label_arr = rs.getSeq[Long](5)
+              val dense = rs.getSeq[Long](6)
 
-            var label = 0.0
-            if (label_arr.head == 1L) {
-              label = 1.0
-            }
+              var label = 0.0
+              if (label_arr.head == 1L) {
+                label = 1.0
+              }
 
-            val user_id = dense(14).toString
-            val ideal_id = dense(11).toString
-            (user_id, ArrayBuffer[String](ideal_id))
-          }).reduceByKey(_ ++ _).map({
-          rs =>
-            rs._1 + "\t" + rs._2.mkString(",")
-        }).repartition(1).saveAsTextFile(userid_file_curr)
+              val user_id = dense(14).toString
+              val ideal_id = dense(11).toString
+              (user_id + "\t" + ideal_id, 1.0)
+            }).reduceByKey(_ + _).map({
+            rs =>
+              val line_list = rs._1.split("\t")
+              (line_list(0), ArrayBuffer[String](line_list(1)))
+          //}).repartition(1).sortBy(_._8 * -1).map({
+          }).reduceByKey(_ ++ _).repartition(1).sortBy(_._2.size * -1).map({
+            rs =>
+              rs._1 + "\t" + rs._2.mkString(",")
+          }).repartition(1).saveAsTextFile(userid_file_curr)
+        }
       }
 
       val bid_cpm_file = des_dir + "/" + this_date + "-weight-info"
