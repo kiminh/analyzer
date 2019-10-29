@@ -4,7 +4,7 @@
 source /etc/profile
 
 date_full=`date`
-printf "*****************************${date_full}********************************\n"
+#printf "*****************************${date_full}********************************\n"
 
 now_hour=$(date "+%H")
 now_minutes=$(date "+%M")
@@ -12,7 +12,7 @@ now_id="00"${now_hour}
 if [ ${now_minutes} -ge 30 ];then
     now_id="30"${now_hour}
 fi
-printf "now id is:%s\n" ${now_id}
+#printf "now id is:%s\n" ${now_id}
 
 dir=base_daily_weight
 if [[ ! -d "${dir}" ]]; then
@@ -21,8 +21,8 @@ fi
 
 shell_in_run=${dir}/shell_in_busy
 if [[ -f "$shell_in_run" ]]; then
-    printf "shell are busy now, existing\n"
-    printf "*****************************${date_full}********************************\n"
+    #printf "shell are busy now, existing\n"
+    #printf "*****************************${date_full}********************************\n"
     exit 0
 fi
 touch ${shell_in_run}
