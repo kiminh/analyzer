@@ -196,10 +196,10 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
   }
 
-  def output(p: Double)
-  = udf { value: org.apache.spark.ml.linalg.DenseVector =>
-    value:*(p)
-  }
+//  def output(p: Double)
+//  = udf { value: org.apache.spark.ml.linalg.DenseVector =>
+//    value:*(p)
+//  }
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
     val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
