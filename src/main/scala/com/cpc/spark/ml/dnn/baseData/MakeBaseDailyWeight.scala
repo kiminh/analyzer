@@ -114,6 +114,8 @@ object MakeBaseDailyWeight {
       val this_file = train_file_list(idx)
       println("++++++++++++++++++++++++++++++")
       println("collect samples info of " + this_file)
+      println("this_date:" + this_date)
+      println("this_file:" + this_file)
 
       val bid_cpm_file_curr = des_dir + "/" + this_date + "-samples-info"
       println("bid_cpm_file_curr:" + bid_cpm_file_curr)
@@ -200,11 +202,6 @@ object MakeBaseDailyWeight {
             rs._1 + "\t" + rs._2 + "\t" + rs._3 + "\t" + rs._4 + "\t" + rs._5 + "\t" + rs._6 + "\t" + rs._7 + "\t" + rs._8 + "\t" + rs._9 + "\t" + rs._10
         }).saveAsTextFile(bid_cpm_file)
       }
-
-      //if (!exists_hdfs_path(bid_cpm_file)) {
-      //  println("no daily bid cpm file:" + bid_cpm_file + ", existing...")
-      //  return
-      //}
 
       val minus_clk_cnt = 10000.0
 
