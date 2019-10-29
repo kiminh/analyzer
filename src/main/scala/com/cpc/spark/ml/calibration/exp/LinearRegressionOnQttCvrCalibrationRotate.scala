@@ -142,14 +142,13 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       /**fit() 根据需要计算特征统计信息*/
       val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
       /**transform() 真实转换特征*/
-      val dataset = assembler.transform(pipelineModel)
-          .withColumn("unitidXp",col("unitid")*col("raw_cvr"))
+      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",col("unitid")*col("raw_cvr")))
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample=1")
       val validationDF = dataset.filter("sample = 0")
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
-      val lrModel = new LinearRegression().setFeaturesCol("crossfeatures")
+      val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
