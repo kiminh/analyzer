@@ -34,6 +34,9 @@ fi
 touch ${shell_in_run}
 printf "*****************************${date_full}********************************\n"
 
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
+hadoop fs -mkdir "hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer/"${curr_date}-weight-collect-inc
+
 #base_daily_bid_cpm_file=${des_dir_rock}/${curr_date}-14days-weight-info-ref
 #des_dir_ori="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-ori-trans"
 des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"

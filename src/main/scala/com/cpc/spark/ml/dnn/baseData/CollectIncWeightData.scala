@@ -110,10 +110,10 @@ object CollectIncWeightData {
 
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-    val weighted_file_collect_8 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-8"
-    val weighted_file_collect_4 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-4"
-    val weighted_file_collect_2 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-2"
-    val weighted_file_collect_1 = des_dir + "/" + curr_date + "-" + time_id + "-weighted-collect-1"
+    val weighted_file_collect_8 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-8"
+    val weighted_file_collect_4 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-4"
+    val weighted_file_collect_2 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-2"
+    val weighted_file_collect_1 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-1"
     val ctr_file = des_dir + "/" + curr_date + "-" + time_id + "-ctr"
 
     if (delete_old == "true") {
@@ -141,6 +141,26 @@ object CollectIncWeightData {
         (rs._1, rs._3)
     }).collectAsMap()
 
+    val userid_idealid_last_5days = des_dir + "/" + curr_date + "-userid-idealid-last-5days"
+
+    val userid_info_rdd = sc.textFile(userid_idealid_last_5days).map({
+      rs =>
+        val line_list = rs.split("\t")
+        (line_list(0), line_list(1), line_list(2).toLong)
+    })
+
+    val idealid_map = userid_info_rdd.map({
+      rs =>
+        (rs._2, rs._3)
+    }).reduceByKey(_ + _).collectAsMap()
+
+    val freq_idealid_map = userid_info_rdd.map({
+      rs =>
+        (rs._1, (rs._2, rs._3))
+    }).reduceByKey((x, y) => if (x._2 >= y._2) (x._1, x._2) else (y._1, y._2)).map({
+      rs =>
+        (rs._1, rs._2._1)
+    }).collectAsMap()
 
     println("weight_map.size=" + weight_map.size)
     val schema_new = StructType(List(
@@ -161,21 +181,6 @@ object CollectIncWeightData {
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
     df_train_files_collect_1.printSchema()
     df_train_files_collect_1.show(3)
-
-    val new_ideal_id_map_1 = df_train_files_collect_1.rdd.map(
-      rs => {
-        val dense = rs.getSeq[Long](6)
-        val ideal_id = dense(11).toString
-        if (weight_map_ori.contains(ideal_id)) {
-          (ideal_id, false)
-        } else {
-          (ideal_id, true)
-        }
-      }).filter(rs => rs._2).map({rs => (rs._1, 1.0)}).reduceByKey(_ + _).collectAsMap()
-    println("collect_1")
-    println("last date ideal id count:" + weight_map.size)
-    println("new ideal id count:" + new_ideal_id_map_1.size)
-    println("new rate:" + (new_ideal_id_map_1.size + 0.0) / weight_map.size)
 
     val weighted_rdd_1 = df_train_files_collect_1.rdd.map(
       rs => {
@@ -237,30 +242,40 @@ object CollectIncWeightData {
     } else {
       s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
     }
-
-
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
+
+    /*******************/
+    val new_ideal_id_map_1 = df_train_files_collect_1.rdd.map(
+      rs => {
+        val dense = rs.getSeq[Long](6)
+        val ideal_id = dense(11).toString
+        val user_id = dense(14).toString
+        var is_last_1_new = true
+        if (weight_map_ori.contains(ideal_id)) {
+          is_last_1_new = false
+        }
+
+        var is_last_5_new = true
+        if (idealid_map.contains(ideal_id)) {
+          is_last_5_new = false
+        }
+        (ideal_id, user_id, is_last_1_new, is_last_5_new)
+      })
+
+    val last_1_new_cnt_1 = new_ideal_id_map_1.filter(rs => rs._3).count()
+    val last_5_new_cnt_1 = new_ideal_id_map_1.filter(rs => rs._4).count()
+
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println("collect_1 size:" + weighted_rdd_count_1)
+    println("last_1_new_cnt_1:" + last_1_new_cnt_1 + ", rate:" + last_1_new_cnt_1/weighted_rdd_count_1)
+    println("last_5_new_cnt_1:" + last_5_new_cnt_1 + ", rate:" + last_5_new_cnt_1/weighted_rdd_count_1)
+
 
     /****************************************collect_4***************************************************/
     val df_train_files_collect_4: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_4)
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
     df_train_files_collect_4.printSchema()
     df_train_files_collect_4.show(3)
-
-    val new_ideal_id_map_4 = df_train_files_collect_4.rdd.map(
-      rs => {
-        val dense = rs.getSeq[Long](6)
-        val ideal_id = dense(11).toString
-        if (weight_map_ori.contains(ideal_id)) {
-          (ideal_id, false)
-        } else {
-          (ideal_id, true)
-        }
-      }).filter(rs => rs._2).map({rs => (rs._1, 1.0)}).reduceByKey(_ + _).collectAsMap()
-    println("collect_4")
-    println("last date ideal id count:" + weight_map.size)
-    println("new ideal id count:" + new_ideal_id_map_4.size)
-    println("new rate:" + (new_ideal_id_map_4.size + 0.0) / weight_map.size)
 
     val weighted_rdd_4 = df_train_files_collect_4.rdd.map(
       rs => {
@@ -312,6 +327,32 @@ object CollectIncWeightData {
     }
 
     s"hadoop fs -chmod -R 0777 $weighted_file_collect_4" !
+
+    /*******************/
+    val new_ideal_id_map_4 = df_train_files_collect_4.rdd.map(
+      rs => {
+        val dense = rs.getSeq[Long](6)
+        val ideal_id = dense(11).toString
+        val user_id = dense(14).toString
+        var is_last_1_new = true
+        if (weight_map_ori.contains(ideal_id)) {
+          is_last_1_new = false
+        }
+
+        var is_last_5_new = true
+        if (idealid_map.contains(ideal_id)) {
+          is_last_5_new = false
+        }
+        (ideal_id, user_id, is_last_1_new, is_last_5_new)
+      })
+
+    val last_1_new_cnt_4 = new_ideal_id_map_4.filter(rs => rs._3).count()
+    val last_5_new_cnt_4 = new_ideal_id_map_4.filter(rs => rs._4).count()
+
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    println("collect_4 size:" + weighted_rdd_count_4)
+    println("last_1_new_cnt_4:" + last_1_new_cnt_4 + ", rate:" + last_1_new_cnt_4/weighted_rdd_count_4)
+    println("last_5_new_cnt_4:" + last_5_new_cnt_4 + ", rate:" + last_5_new_cnt_4/weighted_rdd_count_4)
 
     /****************************************collect_2***************************************************/
     val df_train_files_collect_2: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_2)
