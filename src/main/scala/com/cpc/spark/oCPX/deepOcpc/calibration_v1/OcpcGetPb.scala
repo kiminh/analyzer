@@ -8,6 +8,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.deepOcpc.calibration_v1.OcpcShallowFactor._
+import com.cpc.spark.oCPX.deepOcpc.calibration_v1.OcpcRetentionFactor._
 
 
 object OcpcGetPb {
@@ -36,7 +37,7 @@ object OcpcGetPb {
     val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV, spark)
 
     // 计算自然天激活次留率
-//    val data2 = OcpcRetensionFactorMain(date, expTag, minCV, spark)
+    val data2 = OcpcRetentionFactorMain(date, expTag, minCV, spark)
 
     // 计算cvr校准系数
 

@@ -10,7 +10,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 
-object OcpcRetentionFactorMain {
+object OcpcRetentionFactor {
   def main(args: Array[String]): Unit = {
     /*
     计算计费比
@@ -28,17 +28,13 @@ object OcpcRetentionFactorMain {
     println("parameters:")
     println(s"date=$date, hour=$hour, expTag=$expTag, hourInt=$hourInt")
 
-//    val result = OcpcRetentionFactorMain(date, expTag, minCV, spark).cache()
-//
-//    result
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029a")
+    val result = OcpcRetentionFactorMain(date, expTag, minCV, spark).cache()
+
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029a")
   }
 
   def OcpcRetentionFactorMain(date: String, expTag: String, minCV: Int, spark: SparkSession) = {
-    val rawData = getBaseData(date, spark)
-  }
-
-  def getBaseData(date: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -73,7 +69,10 @@ object OcpcRetentionFactorMain {
          |  array_contains(conversion_target, 'api_app_active')
          |""".stripMargin
     println(sqlRequest1)
-    val data1 = spark.sql(sqlRequest1).distinct()
+    val data1 = spark
+      .sql(sqlRequest1)
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .distinct()
 
     // 次留数据
     val sqlRequest2 =
@@ -91,8 +90,21 @@ object OcpcRetentionFactorMain {
          |  array_contains(conversion_target, 'api_app_retention')
          |""".stripMargin
     println(sqlRequest2)
-//    val data2 =
+    val data2 = spark
+      .sql(sqlRequest2)
+      .distinct()
 
+    val data = data1
+      .join(data2, Seq("searchid"), "left_outer")
+      .groupBy("unitid")
+      .agg(
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2")
+      )
+      .select("unitid", "cv1", "cv2")
+      .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
+
+    data
   }
 
 }
