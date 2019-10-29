@@ -117,8 +117,6 @@ object OcpcShallowFactor {
          |AND
          |  $mediaSelection
          |AND
-         |  exptags like '%deepOcpcExpTag%'
-         |AND
          |  is_deep_ocpc = 1
          |AND
          |  is_ocpc = 1
