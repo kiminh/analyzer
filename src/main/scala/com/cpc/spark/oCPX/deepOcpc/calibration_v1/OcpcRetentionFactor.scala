@@ -41,13 +41,16 @@ object OcpcRetentionFactor {
     val mediaSelection = conf.getString(conf_key)
 
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
+    val date1String = calendar.getTime
+    val date1 = dateConverter.format(date1String)
+    calendar.add(Calendar.DATE, -1)
+    val date2String = calendar.getTime
+    val date2 = dateConverter.format(date2String)
 
     // 激活数据
     val sqlRequest1 =
@@ -62,7 +65,7 @@ object OcpcRetentionFactor {
          |FROM
          |  dl_cpc.cpc_conversion
          |WHERE
-         |  day = '$date1'
+         |  day = '$date2'
          |AND
          |  $mediaSelection
          |AND
@@ -83,7 +86,7 @@ object OcpcRetentionFactor {
          |FROM
          |  dl_cpc.cpc_conversion
          |WHERE
-         |  day = '$date'
+         |  day = '$date1'
          |AND
          |  $mediaSelection
          |AND
