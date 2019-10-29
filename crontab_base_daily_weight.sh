@@ -28,48 +28,27 @@ fi
 touch ${shell_in_run}
 
 des_dir="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
-last_date=`date --date='1 days ago' +%Y-%m-%d`
-des_file=${des_dir}/${last_date}-weight-aggr
-#ctr_file=${des_dir}/${last_date}-23-ctr
-des_file_success=${dir}/${last_date}_weight_success
-des_file_count=${dir}/${last_date}_weight_count
-#ctr_file_success=${dir}/${last_date}_ctr_success
-
-#rm ${ctr_file_success}
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
+des_file=${des_dir}/${curr_date}-userid-idealid-last-5days
+des_file_success=${dir}/${curr_date}_userid_idealid_last_5days_success
 rm ${des_file_success}
-rm ${des_file_count}
-
-#if [[ ! -f ${ctr_file_success} ]]; then
-#    hadoop fs -get ${ctr_file}/_SUCCESS ${ctr_file_success} &
-#fi
 if [[ ! -f ${des_file_success} ]]; then
-    hadoop fs -get ${des_file}/_SUCCESS ${des_file_success} &
+    hadoop fs -get ${des_file}/_SUCCESS ${des_file_success}
 fi
-if [[ ! -f ${des_file_count} ]]; then
-    hadoop fs -get ${des_file}/count ${des_file_count} &
-fi
-wait
 run=false
-#if [[ ! -f ${ctr_file_success} ]]; then
-#    printf "no ${ctr_file_success}...\n"
-#    run=true
-#fi
 if [[ ! -f ${des_file_success} ]]; then
     printf "no ${des_file_success}...\n"
     run=true
 fi
-if [[ ! -f ${des_file_count} ]]; then
-    printf "no ${des_file_count}...\n"
-    run=true
-fi
 
 if [ "${run}" = "false"  ];then
-    echo "make ${last_date} weight file done, exit..."
+    echo "make ${curr_date} userid idealid last 5days file done, exit..."
     rm ${shell_in_run}
     exit 0
 fi
 
 
+last_date=`date --date='1 days ago' +%Y-%m-%d`
 aggr_path="hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/adlist-v4/${last_date}"
 aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${last_date}-aggr"
 file_success=${dir}/${last_date}_aggr_success
@@ -117,7 +96,6 @@ sample_list=(
     `date --date='4 days ago' +%Y-%m-%d`
     `date --date='5 days ago' +%Y-%m-%d`
 )
-
 
 collect_file=()
 collect_date=()
