@@ -37,19 +37,19 @@ object OcpcGetPb {
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
     val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV1, spark)
-    data1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+//    data1
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计算自然天激活次留率
     val data2 = OcpcRetentionFactorMain(date, expTag,minCV2, spark)
-    data2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
+//    data2
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
 
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(data1, data2, spark)
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
 
 
     // 数据组装
@@ -71,8 +71,8 @@ object OcpcGetPb {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
   }
 
   def assemblyData(rawData: DataFrame, spark: SparkSession) = {
