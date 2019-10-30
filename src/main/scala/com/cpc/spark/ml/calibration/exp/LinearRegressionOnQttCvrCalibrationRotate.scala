@@ -131,7 +131,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val numericCols = Array("raw_cvr")
       val crossCols = Array("unitidXp")
-      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
+      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols + crossCols
       /**使用VectorAssembler将所有特征转换为一个向量*/
       val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
 //      stagesArray.append(assembler)
@@ -176,21 +176,21 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
 
       if(i == 0){
-        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_v5conv5_18")
+        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
       } else {
-        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction_v5conv5_18")
+        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
       }
     }
 
 //    dl_cpc.wy_calibration_prediction_v5conv5_18
-//  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
-//    //    raw data
-//    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
-//    calculateAuc(modelData,"test original",spark)
-//
-////    online calibration
-//    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-//    calculateAuc(calibData,"test calibration",spark)
+  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
+    //    raw data
+    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
+    calculateAuc(modelData,"test original",spark)
+
+//    online calibration
+    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    calculateAuc(calibData,"test calibration",spark)
 
   }
 
