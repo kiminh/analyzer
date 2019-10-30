@@ -37,19 +37,19 @@ object OcpcGetPb {
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
     val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV1, spark)
-//    data1
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计算自然天激活次留率
     val data2 = OcpcRetentionFactorMain(date, expTag,minCV2, spark)
-//    data2
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
 
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(data1, data2, spark)
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
 
 
     // 数据组装
@@ -71,8 +71,8 @@ object OcpcGetPb {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
   }
 
   def assemblyData(rawData: DataFrame, spark: SparkSession) = {
@@ -98,14 +98,15 @@ object OcpcGetPb {
 
 
   def calculateCalibrationValue(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
-    val data1 = dataRaw1.filter(s"deep_conversion_goal = 2 and cv >= min_cv")
+    val data1 = dataRaw1.filter(s"cv >= min_cv")
     val data2 = dataRaw2.filter(s"cv2 >= min_cv")
     val data = data1
       .join(data2, Seq("unitid", "media"), "inner")
       .select("unitid", "deep_conversion_goal", "media", "exp_tag", "jfb", "pre_cvr", "post_cvr", "deep_cvr")
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .withColumn("cvr", col("deep_cvr") * col("post_cvr"))
-      .withColumn("cvr_factor", col("cvr") * 1.0 / col("pre_cvr"))
+      .withColumn("cvr_factor1", col("post_cvr") * 1.0 / col("pre_cvr"))
+      .withColumn("cvr_factor2", (col("pre_cvr1") * col("deep_cvr")) * 1.0 / col("pre_cvr2"))
+      .withColumn("cvr_factor", col("cvr_factor1") * col("cvr_factor2"))
       .withColumn("conversion_goal", col("deep_conversion_goal"))
       .cache()
 

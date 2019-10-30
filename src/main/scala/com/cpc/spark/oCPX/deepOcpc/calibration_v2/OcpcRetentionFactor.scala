@@ -35,6 +35,74 @@ object OcpcRetentionFactor {
   }
 
   def OcpcRetentionFactorMain(date: String, expTag: String, minCV: Int, spark: SparkSession) = {
+    val postCvrData = getDeepCvr(date, expTag, spark)
+    val preCvrData = getPreCvrData(date, expTag, spark)
+
+    val data = preCvrData
+      .join(postCvrData, Seq("unitid", "media"), "inner")
+      .withColumn("media", udfMediaName()(col("media")))
+      .select("unitid", "media", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "deep_cvr")
+      .withColumn("min_cv", lit(minCV))
+
+    data
+  }
+
+  def getPreCvrData(date: String, expTag: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -2)
+    val date1String = calendar.getTime
+    val date1 = dateConverter.format(date1String)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  conversion_goal,
+         |  deep_conversion_goal,
+         |  exp_cvr,
+         |  deep_cvr * 1.0 / 1000000 as retention_cvr,
+         |  isclick,
+         |  media_appsid
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  date = '$date1'
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  is_deep_ocpc = 1
+         |AND
+         |  isclick=1
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .filter(s"deep_conversion_goal = 2")
+      .groupBy("unitid", "media")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("exp_cvr")).alias("total_pre_cvr1"),
+        sum(col("retention_cvr")).alias("total_pre_cvr2")
+      )
+      .withColumn("pre_cvr1", col("total_pre_cvr1") * 1.0 / col("click"))
+      .withColumn("pre_cvr2", col("total_pre_cvr2") * 1.0 / col("click"))
+
+    data
+  }
+
+  def getDeepCvr(date: String, expTag: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -99,7 +167,6 @@ object OcpcRetentionFactor {
 
     val data = data1
       .join(data2, Seq("searchid"), "left_outer")
-      .withColumn("media", udfMediaName()(col("media")))
       .groupBy("unitid", "media")
       .agg(
         sum(col("iscvr1")).alias("cv1"),
@@ -107,7 +174,6 @@ object OcpcRetentionFactor {
       )
       .select("unitid", "media", "cv1", "cv2")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
-      .withColumn("min_cv", lit(minCV))
 
     data
   }

@@ -50,6 +50,7 @@ object OcpcShallowFactor {
       )
       .select("unitid", "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
       .na.fill(0, Seq("cv"))
+      .filter(s"deep_conversion_goal = 2")
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
