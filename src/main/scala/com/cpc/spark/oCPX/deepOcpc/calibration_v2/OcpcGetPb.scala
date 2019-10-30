@@ -98,8 +98,8 @@ object OcpcGetPb {
 
 
   def calculateCalibrationValue(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
-    val data1 = dataRaw1.filter(s"cv >= min_cv")
-    val data2 = dataRaw2.filter(s"cv2 >= min_cv")
+    val data1 = dataRaw1.filter(s"cv >= min_cv1")
+    val data2 = dataRaw2.filter(s"cv2 >= min_cv2")
     val data = data1
       .join(data2, Seq("unitid", "media"), "inner")
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))

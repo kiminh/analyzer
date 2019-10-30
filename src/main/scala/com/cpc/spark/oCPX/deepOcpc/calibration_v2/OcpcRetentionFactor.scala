@@ -42,7 +42,7 @@ object OcpcRetentionFactor {
       .join(postCvrData, Seq("unitid", "media"), "inner")
       .withColumn("media", udfMediaName()(col("media")))
       .select("unitid", "media", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "deep_cvr")
-      .withColumn("min_cv", lit(minCV))
+      .withColumn("min_cv2", lit(minCV))
 
     data
   }
