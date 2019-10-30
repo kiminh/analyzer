@@ -234,17 +234,6 @@ object CollectIncWeightData {
     val tf_df_1: DataFrame = spark.createDataFrame(weighted_rdd_1, schema_new)
     tf_df_1.repartition(600).write.format("tfrecords").option("recordType", "Example").save(weighted_file_collect_1)
 
-    //保存count文件
-    val fileName_1 = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName_1, weighted_rdd_count_1)
-
-    if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
-      println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_1 less than 5 millions, invalid count")
-      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/invalid_count" !
-    } else {
-      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
-    }
-    s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
 
     /*******************/
     val new_ideal_id_map_1 = df_train_files_collect_1.rdd.map(
@@ -283,6 +272,17 @@ object CollectIncWeightData {
         (rs._1 + "\t" + rs._2 + "\t" + rs._5, 1L)
     }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({rs => rs._1 + "\t" + rs._2}).saveAsTextFile(transfer_file)
 
+    //保存count文件
+    val fileName_1 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_1, weighted_rdd_count_1)
+
+    if (!low_time_list.contains(time_id) && weighted_rdd_count_1 <= 5000000) {
+      println(s"time_id $time_id not in low_time_list but count $weighted_rdd_count_1 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/invalid_count" !
+    } else {
+      s"hadoop fs -put $fileName_1 $weighted_file_collect_1/count" !
+    }
+    s"hadoop fs -chmod -R 0777 $weighted_file_collect_1" !
 
     /****************************************collect_4***************************************************/
     val df_train_files_collect_4: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_4)
