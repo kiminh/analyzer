@@ -50,7 +50,7 @@ object LRTrainDuanZi {
     initFeatureDict(spark, dictPathSep)
     initStrFeatureDict(spark, dictPathSep)
 
-//    val userAppIdx = getUidApp(spark, appPathSep).cache()
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
@@ -105,11 +105,9 @@ object LRTrainDuanZi {
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-//    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
-//
-//    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
 
-    val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
+    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
 
     model.clearResult()
 
@@ -151,6 +149,7 @@ object LRTrainDuanZi {
       )
 
     qttAll.unpersist()
+    userAppIdx.unpersist()
   }
 
 
@@ -346,15 +345,16 @@ object LRTrainDuanZi {
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
 
-    // backup on hdfs.
-    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/duanzi_lrmodeldata/%s".format(date))
-    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/duanzi_irmodeldata/%s".format(date))
 
     // backup on local machine.
     model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     // for go-live.
     model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
+
+    // backup on hdfs.
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/duanzi_lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/duanzi_irmodeldata/%s".format(date))
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
@@ -630,8 +630,6 @@ object LRTrainDuanZi {
       els = els ++ inxList
     }
     i += 1000 + 1*/
-
-    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)

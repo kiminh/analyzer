@@ -50,7 +50,7 @@ object LRTrainMiRead {
     initFeatureDict(spark, dictPathSep)
     initStrFeatureDict(spark, dictPathSep)
 
-//    val userAppIdx = getUidApp(spark, appPathSep).cache()
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
@@ -104,11 +104,11 @@ object LRTrainMiRead {
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-//    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
-//
-//    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
 
-    val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
+    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+
+//    val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
 
     model.clearResult()
 
@@ -150,6 +150,7 @@ object LRTrainMiRead {
       )
 
     qttAll.unpersist()
+    userAppIdx.unpersist()
   }
 
 
@@ -345,15 +346,15 @@ object LRTrainMiRead {
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
 
-    // backup on hdfs.
-    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_lrmodeldata/%s".format(date))
-    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_irmodeldata/%s".format(date))
-
     // backup on local machine.
     model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     // for go-live.
     model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
+
+    // backup on hdfs.
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_irmodeldata/%s".format(date))
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
