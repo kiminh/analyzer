@@ -24,163 +24,163 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-//    val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
-//
-//    for (i <- 0 until 22){
-//
-//      val endTime = T0.plusHours(i)
-//      val startTime = endTime.minusHours(24)
-//      val testTime = T0.plusHours(i + 2)
-//      val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-//      val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
-//      val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-//      val endHour = endTime.format(DateTimeFormatter.ofPattern("HH"))
-//      val testDate = testTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-//      val testHour = testTime.format(DateTimeFormatter.ofPattern("HH"))
-//
-//      println(s"endDate=$endDate")
-//      println(s"endHour=$endHour")
-//      println(s"startDate=$startDate")
-//      println(s"startHour=$startHour")
-//      println(s"testDate=$testDate")
-//      println(s"testHour=$testHour")
-//
-//      val selectCondition = getTimeRangeSql4(startDate, startHour, endDate, endHour)
-//
-//      val sql1 =
-//        s"""
-//           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
-//           |    when user_show_ad_num = 0 then '0'
-//           |    when user_show_ad_num = 1 then '1'
-//           |    when user_show_ad_num = 2 then '2'
-//           |    when user_show_ad_num in (3,4) then '4'
-//           |    when user_show_ad_num in (5,6,7) then '7'
-//           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
-//           |    from dl_cpc.wy_calibration_sample
-//           |    where $selectCondition
-//       """.stripMargin
-//      println(s"$sql1")
-//
-//      val sql2 =
-//        s"""
-//           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
-//           |    when user_show_ad_num = 0 then '0'
-//           |    when user_show_ad_num = 1 then '1'
-//           |    when user_show_ad_num = 2 then '2'
-//           |    when user_show_ad_num in (3,4) then '4'
-//           |    when user_show_ad_num in (5,6,7) then '7'
-//           |    else '8' end as show_num
-//           |    from dl_cpc.wy_calibration_sample
-//           |    where day ='$testDate' and hour='$testHour'
-//       """.stripMargin
-//      println(s"$sql2")
-//      val data = spark.sql(sql1)
-//      data.show(10)
-//
-//      val defaultideaid = data.groupBy("ideaid").count()
-//        .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
-//        .filter("ideaidtag=1")
-//      val defaultunitid = data.groupBy("unitid").count()
-//        .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
-//        .filter("unitidtag=1")
-//      val defaultuserid = data.groupBy("userid").count()
-//        .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
-//        .filter("useridtag=1")
-//      val default_click_unit_count = data.groupBy().max("click_unit_count")
-//        .first().getAs[Int]("max(click_unit_count)")
-//      println(s"default_click_count:$default_click_unit_count")
-//
-//      val df1 = data
-//          .withColumn("hourweight",col("hourweight0"))
-//        .join(defaultideaid,Seq("ideaid"),"left")
-////        .join(defaultunitid,Seq("unitid"),"left")
-////        .join(defaultuserid,Seq("userid"),"left")
-//        .withColumn("label",col("iscvr"))
-//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-////        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-////        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
-//        .withColumn("sample",lit(1))
-//        .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-//          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
-//      df1.show(10)
-//
-//      val df2 = spark.sql(sql2)
-//        .withColumn("label",col("iscvr"))
-//        .join(defaultideaid,Seq("ideaid"),"left")
-////        .join(defaultunitid,Seq("unitid"),"left")
-////        .join(defaultuserid,Seq("userid"),"left")
-//        .withColumn("click_unit_count",when(col("click_unit_count")>default_click_unit_count
-//          ,default_click_unit_count).otherwise(col("click_unit_count")))
-//        .withColumn("sample",lit(0))
-//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-////        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-////        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
-//        .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-//          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
-//
-//      val dataDF = df1.union(df2)
-//
-//      val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
-//
-//      val stagesArray = new ListBuffer[PipelineStage]()
-//      for (cate <- categoricalColumns) {
-//        val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
-//        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
-//        stagesArray.append(indexer,encoder)
-//      }
-//
-//      val numericCols = Array("raw_cvr")
-//      val crossCols = Array("unitidXp")
-//      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols ++ crossCols
-//      /**使用VectorAssembler将所有特征转换为一个向量*/
-//      val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
-////      stagesArray.append(assembler)
-//
-//      val pipeline = new Pipeline()
-//      pipeline.setStages(stagesArray.toArray)
-//      /**fit() 根据需要计算特征统计信息*/
-//      val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
-//      /**transform() 真实转换特征*/
-//      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr"))))
-//      dataset.show(10)
-//
-//      val trainingDF= dataset.filter("sample=1")
-//      val validationDF = dataset.filter("sample = 0")
-//      println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
-//      val lrModel = new LinearRegression().setFeaturesCol("features")
-//        .setWeightCol("hourweight")
-//        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
-//      val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
-//      predictions.show(5)
-//
-//      // 输出逻辑回归的系数和截距
-////      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
-//      //获取训练模型的相关信息
-//      val trainingSummary = lrModel.summary
-//      //模型残差
-//      trainingSummary.residuals.show()
-//      //模型均方差
-//      println("mse:" + trainingSummary.meanSquaredError)
-//      //模型均方根误差
-//      println("r-squared:" + trainingSummary.rootMeanSquaredError)
-//
-//      val result = lrModel.transform(validationDF).rdd.map{
-//        x =>
-//          val exp_cvr = x.getAs[Double]("prediction")*1e6d
-//          val raw_cvr = x.getAs[Double]("raw_cvr")
-//          val unitid = x.getAs[Int]("unitid")
-//          val iscvr = x.getAs[Int]("label")
-//          val hour = x.getAs[String]("hour")
-//          val searchid = x.getAs[String]("searchid")
-//          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
-//      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
-//
-//      if(i == 0){
-//        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
-//      } else {
-//        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
-//      }
-//    }
+    val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+
+    for (i <- 0 until 0){
+
+      val endTime = T0.plusHours(i)
+      val startTime = endTime.minusHours(24)
+      val testTime = T0.plusHours(i + 2)
+      val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+      val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
+      val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+      val endHour = endTime.format(DateTimeFormatter.ofPattern("HH"))
+      val testDate = testTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+      val testHour = testTime.format(DateTimeFormatter.ofPattern("HH"))
+
+      println(s"endDate=$endDate")
+      println(s"endHour=$endHour")
+      println(s"startDate=$startDate")
+      println(s"startHour=$startHour")
+      println(s"testDate=$testDate")
+      println(s"testHour=$testHour")
+
+      val selectCondition = getTimeRangeSql4(startDate, startHour, endDate, endHour)
+
+      val sql1 =
+        s"""
+           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
+           |    when user_show_ad_num = 0 then '0'
+           |    when user_show_ad_num = 1 then '1'
+           |    when user_show_ad_num = 2 then '2'
+           |    when user_show_ad_num in (3,4) then '4'
+           |    when user_show_ad_num in (5,6,7) then '7'
+           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
+           |    from dl_cpc.wy_calibration_sample
+           |    where $selectCondition
+       """.stripMargin
+      println(s"$sql1")
+
+      val sql2 =
+        s"""
+           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
+           |    when user_show_ad_num = 0 then '0'
+           |    when user_show_ad_num = 1 then '1'
+           |    when user_show_ad_num = 2 then '2'
+           |    when user_show_ad_num in (3,4) then '4'
+           |    when user_show_ad_num in (5,6,7) then '7'
+           |    else '8' end as show_num
+           |    from dl_cpc.wy_calibration_sample
+           |    where day ='$testDate'
+       """.stripMargin
+      println(s"$sql2")
+      val data = spark.sql(sql1)
+      data.show(10)
+
+      val defaultideaid = data.groupBy("ideaid").count()
+        .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
+        .filter("ideaidtag=1")
+      val defaultunitid = data.groupBy("unitid").count()
+        .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
+        .filter("unitidtag=1")
+      val defaultuserid = data.groupBy("userid").count()
+        .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
+        .filter("useridtag=1")
+      val default_click_unit_count = data.groupBy().max("click_unit_count")
+        .first().getAs[Int]("max(click_unit_count)")
+      println(s"default_click_count:$default_click_unit_count")
+
+      val df1 = data
+          .withColumn("hourweight",col("hourweight0"))
+        .join(defaultideaid,Seq("ideaid"),"left")
+//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultuserid,Seq("userid"),"left")
+        .withColumn("label",col("iscvr"))
+        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
+        .withColumn("sample",lit(1))
+        .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+      df1.show(10)
+
+      val df2 = spark.sql(sql2)
+        .withColumn("label",col("iscvr"))
+        .join(defaultideaid,Seq("ideaid"),"left")
+//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultuserid,Seq("userid"),"left")
+        .withColumn("click_unit_count",when(col("click_unit_count")>default_click_unit_count
+          ,default_click_unit_count).otherwise(col("click_unit_count")))
+        .withColumn("sample",lit(0))
+        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
+        .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+
+      val dataDF = df1.union(df2)
+
+      val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+
+      val stagesArray = new ListBuffer[PipelineStage]()
+      for (cate <- categoricalColumns) {
+        val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
+        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
+        stagesArray.append(indexer,encoder)
+      }
+
+      val numericCols = Array("raw_cvr")
+      val crossCols = Array("unitidXp")
+      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
+      /**使用VectorAssembler将所有特征转换为一个向量*/
+      val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
+//      stagesArray.append(assembler)
+
+      val pipeline = new Pipeline()
+      pipeline.setStages(stagesArray.toArray)
+      /**fit() 根据需要计算特征统计信息*/
+      val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
+      /**transform() 真实转换特征*/
+      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr"))))
+      dataset.show(10)
+
+      val trainingDF= dataset.filter("sample=1")
+      val validationDF = dataset.filter("sample = 0")
+      println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
+      val lrModel = new LinearRegression().setFeaturesCol("features")
+        .setWeightCol("hourweight")
+        .setLabelCol("label").setRegParam(1e-5).setElasticNetParam(0.1).fit(trainingDF)
+      val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
+      predictions.show(5)
+
+      // 输出逻辑回归的系数和截距
+//      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+      //获取训练模型的相关信息
+      val trainingSummary = lrModel.summary
+      //模型残差
+      trainingSummary.residuals.show()
+      //模型均方差
+      println("mse:" + trainingSummary.meanSquaredError)
+      //模型均方根误差
+      println("r-squared:" + trainingSummary.rootMeanSquaredError)
+
+      val result = lrModel.transform(validationDF).rdd.map{
+        x =>
+          val exp_cvr = x.getAs[Double]("prediction")*1e6d
+          val raw_cvr = x.getAs[Double]("raw_cvr")
+          val unitid = x.getAs[Int]("unitid")
+          val iscvr = x.getAs[Int]("label")
+          val hour = x.getAs[String]("hour")
+          val searchid = x.getAs[String]("searchid")
+          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
+      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
+
+      if(i == 0){
+        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
+      } else {
+        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
+      }
+    }
 
 //    dl_cpc.wy_calibration_prediction_v5conv5_18
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
