@@ -28,7 +28,7 @@ object LRTrainDuanZi {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model
-      .initSpark("[cpc-model] linear regression")
+      .initSpark("duanzi [cpc-model] linear regression")
 
     val dictDays = args(0).toInt
     val appDays = args(1).toInt
