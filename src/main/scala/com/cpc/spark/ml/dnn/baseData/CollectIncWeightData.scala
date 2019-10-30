@@ -281,7 +281,7 @@ object CollectIncWeightData {
     new_ideal_id_map_1.filter(rs => rs._4).map({
       rs =>
         (rs._1 + "\t" + rs._2 + "\t" + rs._5, 1L)
-    }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({rs => rs._1 + "\t" + rs._2})saveAsTextFile(transfer_file)
+    }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({rs => rs._1 + "\t" + rs._2}).saveAsTextFile(transfer_file)
 
 
     /****************************************collect_4***************************************************/
