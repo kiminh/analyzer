@@ -29,7 +29,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     for (i <- 0 until 22){
 
       val endTime = T0.plusHours(i)
-      val startTime = endTime.minusHours(2)
+      val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
@@ -202,7 +202,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
   def output2
   = udf((value: org.apache.spark.ml.linalg.SparseVector,p:Double) => {
     val result = value.toDense.toArray.map(x => x * p)
-    Vectors.dense(result)
+    Vectors.dense(result).toSparse
   })
 
   def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
