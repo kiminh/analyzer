@@ -26,7 +26,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
     val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 0){
+    for (i <- 0 until 1){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
