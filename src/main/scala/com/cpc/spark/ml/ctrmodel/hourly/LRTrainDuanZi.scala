@@ -100,7 +100,7 @@ object LRTrainDuanZi {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 24*7))
+        .format(getSelectedHoursBefore(date, hour, 24*dictDays))
 
 
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
