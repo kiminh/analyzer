@@ -115,6 +115,7 @@ object CollectIncWeightData {
     val weighted_file_collect_2 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-2"
     val weighted_file_collect_1 = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-weighted-collect-1"
     val ctr_file = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-ctr"
+    val transfer_file = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-transfer-pairs"
 
     if (delete_old == "true") {
       delete_hdfs_path(weighted_file_collect_8)
@@ -122,6 +123,7 @@ object CollectIncWeightData {
       delete_hdfs_path(weighted_file_collect_2)
       delete_hdfs_path(weighted_file_collect_1)
       delete_hdfs_path(ctr_file)
+      delete_hdfs_path(transfer_file)
     }
 
     val base_daily_weight_map_file = des_dir + s"/$last_date-weight-map"
@@ -255,11 +257,17 @@ object CollectIncWeightData {
           is_last_1_new = false
         }
 
+        var freq_idealid = ideal_id
         var is_last_5_new = true
         if (idealid_map.contains(ideal_id)) {
           is_last_5_new = false
+        } else {
+          if (freq_idealid_map.contains(user_id)) {
+            freq_idealid = freq_idealid_map(user_id)
+          }
         }
-        (ideal_id, user_id, is_last_1_new, is_last_5_new)
+
+        (ideal_id, user_id, is_last_1_new, is_last_5_new, freq_idealid)
       })
 
     val last_1_new_cnt_1 = new_ideal_id_map_1.filter(rs => rs._3).count()
@@ -270,6 +278,10 @@ object CollectIncWeightData {
     println("last_1_new_cnt_1:" + last_1_new_cnt_1 + ", rate:" + last_1_new_cnt_1.toDouble/weighted_rdd_count_1)
     println("last_5_new_cnt_1:" + last_5_new_cnt_1 + ", rate:" + last_5_new_cnt_1.toDouble/weighted_rdd_count_1)
     println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    new_ideal_id_map_1.filter(rs => rs._4).map({
+      rs =>
+        rs._1 + "\t" + rs._2 + "\t" + rs._5
+    }).repartition(1).saveAsTextFile(transfer_file)
 
 
     /****************************************collect_4***************************************************/
