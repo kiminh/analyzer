@@ -102,7 +102,6 @@ object OcpcGetPb {
     val data2 = dataRaw2.filter(s"cv2 >= min_cv")
     val data = data1
       .join(data2, Seq("unitid", "media"), "inner")
-      .select("unitid", "deep_conversion_goal", "media", "exp_tag", "jfb", "pre_cvr", "post_cvr", "deep_cvr")
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .withColumn("cvr_factor1", col("post_cvr") * 1.0 / col("pre_cvr"))
       .withColumn("cvr_factor2", (col("pre_cvr1") * col("deep_cvr")) * 1.0 / col("pre_cvr2"))
