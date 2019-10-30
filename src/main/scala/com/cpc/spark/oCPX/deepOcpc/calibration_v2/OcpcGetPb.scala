@@ -8,8 +8,8 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.deepOcpc.calibration.OcpcGetPb_daily.udfSetSmoothFactor
-import com.cpc.spark.oCPX.deepOcpc.calibration_v1.OcpcShallowFactor._
-import com.cpc.spark.oCPX.deepOcpc.calibration_v1.OcpcRetentionFactor._
+import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
+import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 
 
 object OcpcGetPb {
