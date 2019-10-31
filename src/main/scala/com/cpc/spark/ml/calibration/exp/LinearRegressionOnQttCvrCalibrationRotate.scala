@@ -26,7 +26,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
     val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 1){
+    for (i <- 0 until 22){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
@@ -163,17 +163,17 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println("mse:" + trainingSummary.meanSquaredError)
       //模型均方根误差
       println("r-squared:" + trainingSummary.rootMeanSquaredError)
-      lrModel.transform(trainingDF).rdd.map{
-        x =>
-          val exp_cvr = x.getAs[Double]("prediction")*1e6d
-          val raw_cvr = x.getAs[Double]("raw_cvr")
-          val unitid = x.getAs[Int]("unitid")
-          val iscvr = x.getAs[Int]("label")
-          val hour = x.getAs[String]("hour")
-          val searchid = x.getAs[String]("searchid")
-          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
-      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid").write.mode("overwrite")
-        .saveAsTable("dl_cpc.wy_calibration_prediction_train")
+//      lrModel.transform(trainingDF).rdd.map{
+//        x =>
+//          val exp_cvr = x.getAs[Double]("prediction")*1e6d
+//          val raw_cvr = x.getAs[Double]("raw_cvr")
+//          val unitid = x.getAs[Int]("unitid")
+//          val iscvr = x.getAs[Int]("label")
+//          val hour = x.getAs[String]("hour")
+//          val searchid = x.getAs[String]("searchid")
+//          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
+//      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid").write.mode("overwrite")
+//        .saveAsTable("dl_cpc.wy_calibration_prediction_train")
 
       val result = lrModel.transform(validationDF).rdd.map{
         x =>
@@ -193,12 +193,12 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }
     }
 
-    val train = spark.sql("select * from dl_cpc.wy_calibration_prediction_train")
-    val modeltrain = train.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
-    calculateAuc(modeltrain,"train original",spark)
-
-    val calibtrain = train.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-    calculateAuc(calibtrain,"train calibration",spark)
+//    val train = spark.sql("select * from dl_cpc.wy_calibration_prediction_train")
+//    val modeltrain = train.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
+//    calculateAuc(modeltrain,"train original",spark)
+//
+//    val calibtrain = train.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+//    calculateAuc(calibtrain,"train calibration",spark)
 
 //    dl_cpc.wy_calibration_prediction_v5conv5_18
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
