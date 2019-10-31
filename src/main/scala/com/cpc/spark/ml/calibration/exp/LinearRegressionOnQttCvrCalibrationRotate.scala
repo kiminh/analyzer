@@ -131,7 +131,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val numericCols = Array("raw_cvr")
       val crossCols = Array("unitidXp")
-      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
+      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols ++ crossCols
       /**使用VectorAssembler将所有特征转换为一个向量*/
       val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
 //      stagesArray.append(assembler)
