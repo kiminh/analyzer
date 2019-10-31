@@ -1,13 +1,8 @@
 package com.cpc.spark.oCPX.deepOcpc.calibration_v2
 
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCVRfactor._
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCalibrationBase._
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcJFBfactor._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.deepOcpc.calibration.OcpcGetPb_daily.udfSetSmoothFactor
 import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 
