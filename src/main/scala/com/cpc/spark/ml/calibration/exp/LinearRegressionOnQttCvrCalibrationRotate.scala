@@ -71,7 +71,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
            |    when user_show_ad_num in (5,6,7) then '7'
            |    else '8' end as show_num
            |    from dl_cpc.wy_calibration_sample
-           |    where day ='$testDate'
+           |    where day ='$testDate' and hour = '$testHour'
        """.stripMargin
       println(s"$sql2")
       val data = spark.sql(sql1)
