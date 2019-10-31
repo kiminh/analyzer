@@ -27,7 +27,7 @@ object TopApps {
       .appName("save user installed apps " + date)
       .enableHiveSupport().getOrCreate()
 
-    val inpath = "/user/cpc/userInstalledApp/%s".format(date)
+    val inpath = "hdfs://emr-cluster/user/cpc/userInstalledApp/%s".format(date)
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
@@ -44,12 +44,12 @@ object TopApps {
     allApps.toDF("pkg", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/dl_cpc.db/top_apps/%s".format(date))
+      .parquet("hdfs://emr-cluster/warehouse/dl_cpc.db/top_apps/%s".format(date))
 
     spark.sql(
       """
         |ALTER TABLE dl_cpc.top_apps add if not exists PARTITION(`date` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
+        | LOCATION  'hdfs://emr-cluster/warehouse/dl_cpc.db/top_apps/%s'
       """.stripMargin.format(date, date))
     println("all Apps count: " + allApps.count())
 
@@ -60,12 +60,12 @@ object TopApps {
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("dongwei@aiclk.com",
       "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
       "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
-      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
-    //val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhanghongyang@aiclk.com"))
+      "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
+//    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
     if (!b) {
       println("发送邮件失败")
     }
@@ -87,12 +87,12 @@ object TopApps {
       qtt_txt = qtt_txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("dongwei@aiclk.com",
       "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
       "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
-      "yuyao02@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net"))
-    //val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com"))
+      "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
+//    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
     if (!qtt) {
       println("发送邮件失败")
     }
