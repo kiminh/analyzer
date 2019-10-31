@@ -30,16 +30,27 @@ object LRTrainMiRead {
     val spark: SparkSession = model
       .initSpark("miread [cpc-model] linear regression")
 
-    // 按分区取数据
-    val days = args(0).toInt
+    val dictDays = args(0).toInt
+    val appDays = args(1).toInt
 
     val date = args(2)
     val hour = args(3)
-    val ctrPathSep = getPathSeq(date, hour, days)
+    var parserArg = "ctrparser4"
+    if (args.length >= 5){
+      parserArg = args(4)
+    }
 
-    initFeatureDict(spark, ctrPathSep)
+    // 按分区取数据
+    val appPathSep = getPathSeq(date, hour, appDays)
+    val dictPathSep = getPathSeq(date, hour, dictDays)
 
-//    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    println("appPathSep = " + appPathSep)
+    println("dictPathSep = " + dictPathSep)
+
+    initFeatureDict(spark, dictPathSep)
+    initStrFeatureDict(spark, dictPathSep)
+
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
@@ -71,6 +82,16 @@ object LRTrainMiRead {
          |  , click_count as user_click_num
          |  , click_unit_count as user_click_unit_num
          |  , long_click_count as user_long_click_count
+         |  , phone_price
+         |  , province
+         |  , city_level
+         |  , media_type
+         |  , channel
+         |  , dtu_id
+         |  , interaction
+         |  , userid
+         |  , is_new_ad
+         |  , hour
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and media_appsid in ('80001011','80001098','80001292','80001539','80002480','80004786','80004787')
@@ -78,27 +99,45 @@ object LRTrainMiRead {
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 24*days))
+        .format(getSelectedHoursBefore(date, hour, 24*dictDays))
 
-    val mireadAll = spark
-      .sql(queryRawDataFromUnionEvents)
 
-    //miread-all-parser3-hourly
+    println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+
+    val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
+
+    val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
+
+//    val qttAll = spark.sql(queryRawDataFromUnionEvents).cache()
+
     model.clearResult()
+
+    var parser=""
+    var parserName=""
+    var parserDestFile=""
+    if ("ctrparser8".equals(parserArg)){
+      parser = "ctrparser8"
+      parserName = "miread-bs-ctrparser8-daily"
+      parserDestFile = "miread-bs-ctrparser8-daily.lrm"
+    }else{
+      parser = "ctrparser4"
+      parserName = "miread-bs-ctrparser4-daily"
+      parserDestFile = "miread-bs-ctrparser4-daily.lrm"
+    }
 
     train(
       spark,
-      "ctrparser4",
-      "miread-bs-ctrparser4-daily",
-       mireadAll,
-      "miread-bs-ctrparser4-daily.lrm",
+      parser,
+      parserName,
+      qttAll,
+      parserDestFile,
       4e8
     )
 
     Utils
       .sendMail(
         trainLog.mkString("\n"),
-        "[cpc-bs-q] miread-bs-ctrparser4-daily 训练复盘",
+        s"[cpc-bs-q] ${parserName} 训练复盘",
         Seq(
           "fanyiming@qutoutiao.net",
           "xiongyao@qutoutiao.net",
@@ -110,8 +149,8 @@ object LRTrainMiRead {
         )
       )
 
-
-    mireadAll.unpersist()
+    qttAll.unpersist()
+    userAppIdx.unpersist()
   }
 
 
@@ -269,24 +308,56 @@ object LRTrainMiRead {
     model.runIr(binNum.toInt, 0.95)
     trainLog :+= model.binsLog.mkString("\n")
 
+    var dictLength = mutable.Map[String, Int]()
+
+    dictLength.update("bias",1)
+    dictLength.update("hour",24)
+    dictLength.update("sex",9)
+    dictLength.update("age",100)
+    dictLength.update("os",10)
+    dictLength.update("isp",20)
+    dictLength.update("net",10)
+    dictLength.update("cityid",dict("cityid").size + 1)
+    dictLength.update("mediaid",dict("mediaid").size + 1)
+    dictLength.update("slotid",dict("slotid").size + 1)
+    dictLength.update("phone_level",10)
+    dictLength.update("pagenum",100)
+    dictLength.update("bookid",100)
+    dictLength.update("adclass",dict("adclass").size + 1)
+    dictLength.update("adtype",16)
+    dictLength.update("adslot_type",10)
+    dictLength.update("planid",dict("planid").size + 1)
+    dictLength.update("unitid",dict("unitid").size + 1)
+    dictLength.update("ideaid",dict("ideaid").size + 1)
+    dictLength.update("appIdx",1001)
+    dictLength.update("phone_price",1)
+    dictLength.update("userid",dict("userid").size + 1)
+    dictLength.update("brand",dictStr("brand").size + 1)
+    dictLength.update("channel",dictStr("channel").size + 1)
+    dictLength.update("dtu_id",dictStr("dtu_id").size + 1)
+    dictLength.update("media_type",5)
+    dictLength.update("province",40)
+    dictLength.update("city_level",10)
+    dictLength.update("interaction",5)
+    dictLength.update("is_new_ad",2)
+
+
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
 
-    // backup on hdfs.
-    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
-    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
-
     // backup on local machine.
-    model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
+    model.savePbPackNew(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, dictLength.toMap)
 
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap)
+
+    // backup on hdfs.
+    model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_lrmodeldata/%s".format(date))
+    model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_irmodeldata/%s".format(date))
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-
-
 
     /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
@@ -297,26 +368,21 @@ object LRTrainMiRead {
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
+    val BcDictStr = spark.sparkContext.broadcast(dictStr)
 
     ulog.rdd
       .mapPartitions {
         p =>
           dict = BcDict.value
+          dictStr = BcDictStr.value
+
           p.map {
             u =>
               val vec = parser match {
-                case "parser1" =>
-                  getVectorParser1(u)
-                case "parser2" =>
-                  getVectorParser2(u)
-                case "parser3" =>
-                  getVectorParser3(u)
-                case "ctrparser2" =>
-                  getCtrVectorParser2(u)
-                case "ctrparser3" =>
-                  getCtrVectorParser3(u)
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
+                case "ctrparser8" =>
+                  getCtrVectorParser8(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
@@ -324,6 +390,8 @@ object LRTrainMiRead {
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
+  var dictStr = mutable.Map[String, Map[String, Int]]()
+
   val dictNames = Seq(
     "mediaid",
     "planid",
@@ -331,12 +399,18 @@ object LRTrainMiRead {
     "ideaid",
     "slotid",
     "adclass",
-    "cityid"
+    "cityid",
+    "userid"
   )
-  var dictStr = mutable.Map[String, Map[String, Int]]()
+
+
+  val dictStrNames = Seq(
+    "brand",
+    "channel",
+    "dtu_id"
+  )
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
-
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
       val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
@@ -361,6 +435,32 @@ object LRTrainMiRead {
     }
   }
 
+  def initStrFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
+
+    trainLog :+= "\n------dict size------"
+    for (name <- dictStrNames) {
+      val pathTpl = "hdfs://emr-cluster/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
+      var n = 0
+      val ids = mutable.Map[String, Int]()
+      println(pathTpl.format(name, pathSep.keys.mkString(",")))
+      spark.read
+        .parquet(pathTpl.format(name, pathSep.keys.mkString(",")))
+        .rdd
+        .map(x => x.getString(0))
+        .distinct()
+        .sortBy(x => x)
+        .toLocalIterator
+        .foreach {
+          id =>
+            n += 1
+            ids.update(id, n)
+        }
+      dictStr.update(name, ids.toMap)
+      println("dict", name, ids.size)
+      trainLog :+= "%s=%d".format(name, ids.size)
+    }
+  }
+
   def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     trainLog :+= "\n-------get ulog data------"
 
@@ -377,693 +477,6 @@ object LRTrainMiRead {
     }
 
     spark.read.parquet(path: _*).coalesce(600)
-  }
-
-  def getVectorParser1(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    //els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    //i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-  def getVectorParser2(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //user_req_ad_num
-    var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12 + 1
-
-    //user_req_num
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1
-
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-
-  def getVectorParser3(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    //1
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //2
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //3
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //4
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //5
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //6
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //7
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    //8
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //9
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //10
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //11
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //12
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //13
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //14
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //15
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //16
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //17
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //18
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //19
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //20
-    /*var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12
-
-    //21
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1*/
-
-    //22
-    /*if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
-      els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
-    }
-    i += 2 * 6 + 1*/
-
-    //23
-    /*val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null) {
-      val inxList = appIdx.map(p => (p + i, 1d))
-      els = els ++ inxList
-    }
-    i += 1000 + 1*/
-
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-
-  def getCtrVectorParser2(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //user_req_ad_num
-    var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12 + 1
-
-    //user_req_num
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1
-
-    var user_click = x.getAs[Int]("user_click_num")
-    if (user_click >= 5) {
-      user_click = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    var user_click_unit = x.getAs[Int]("user_click_unit_num")
-    if (user_click_unit >= 5) {
-      user_click_unit = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-  def getCtrVectorParser3(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //user_req_ad_num
-    var uran_idx = 0
-    val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10) {
-      uran_idx = uran
-    }
-    if (uran > 10) {
-      uran_idx = 11
-    }
-    els = els :+ (uran_idx + i, 1d)
-    i += 12 + 1
-
-    //user_req_num
-    var urn_idx = 0
-    val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10) {
-      urn_idx = 1
-    } else if (urn > 10 && urn <= 100) {
-      urn_idx = 2
-    } else if (urn > 100 && urn <= 1000) {
-      urn_idx = 3
-    } else if (urn > 1000) {
-      urn_idx = 4
-    }
-    els = els :+ (urn_idx + i, 1d)
-    i += 5 + 1
-
-    var user_click = x.getAs[Int]("user_click_num")
-    if (user_click >= 5) {
-      user_click = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    var user_click_unit = x.getAs[Int]("user_click_unit_num")
-    if (user_click_unit >= 5) {
-      user_click_unit = 5
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 6
-
-    //sex - age
-    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
-      els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
-    }
-    i += 2 * 6 + 1
-
-    //user installed app
-    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null) {
-      val inxList = appIdx.map(p => (p + i, 1d))
-      els = els ++ inxList
-    }
-    i += 1000 + 1
-
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
   }
 
   def getCtrVectorParser4(x: Row): Vector = {
@@ -1217,6 +630,166 @@ object LRTrainMiRead {
       els = els ++ inxList
     }
     i += 1000 + 1*/
+
+    println("Vectors size = " + i)
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+
+  def getCtrVectorParser8(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    //bias
+    els = els :+ (0, 1d)
+    i += 1
+
+    //hour
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    //cityid
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //mediaid
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //adslotid
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //phone_level 0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //adclass
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 16
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    //user installed app
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    if (appIdx != null) {
+      val inxList = appIdx.map(p => (p + i, 1d))
+      els = els ++ inxList
+    }
+    i += 1000 + 1
+
+//    //phone_price
+//    els = els :+ (i , x.getAs[Int]("phone_price").toDouble)
+//    i += 1
+//
+//    //userid
+//    els = els :+ (dict("userid").getOrElse(x.getAs[Int]("userid"), 0) + i, 1d)
+//    i += dict("userid").size + 1
+//
+//    //brand_title
+//    els = els :+ (dictStr("brand").getOrElse(x.getAs[String]("brand_title"), 0) + i, 1d)
+//    i += dictStr("brand").size + 1
+//
+//    //channel
+//    els = els :+ (dictStr("channel").getOrElse(x.getAs[String]("channel"), 0) + i, 1d)
+//    i += dictStr("channel").size + 1
+//
+//    //dtu_id
+//    els = els :+ (dictStr("dtu_id").getOrElse(x.getAs[String]("dtu_id"), 0) + i, 1d)
+//    i += dictStr("dtu_id").size + 1
+//
+//
+//    //media_type 0，1，3只有3个
+//    els = els :+ (x.getAs[Int]("media_type") + i, 1d)
+//    i += 5
+//
+//    //province 0~34总共35个
+//    els = els :+ (x.getAs[Int]("province") + i, 1d)
+//    i += 40
+//
+//    //city_level 1~6总共6
+//    els = els :+ (x.getAs[Int]("city_level") + i, 1d)
+//    i += 10
+//
+//    //interaction 1~2总共2
+//    els = els :+ (x.getAs[Int]("interaction") + i, 1d)
+//    i += 5
+//
+//    //is_new_ad 0~1总共2
+//    els = els :+ (x.getAs[Int]("is_new_ad") + i, 1d)
+//    i += 2
 
     println("Vectors size = " + i)
 
