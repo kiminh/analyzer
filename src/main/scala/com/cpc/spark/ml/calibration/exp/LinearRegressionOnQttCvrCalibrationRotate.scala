@@ -131,7 +131,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val numericCols = Array("raw_cvr")
       val crossCols = Array("unitidXp")
-      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols ++ crossCols
+      val assemblerInputs = categoricalColumns.map(_ + "classVec") ++ numericCols
       /**使用VectorAssembler将所有特征转换为一个向量*/
       val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
 //      stagesArray.append(assembler)
@@ -149,7 +149,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.01).setElasticNetParam(0.1).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.1).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
