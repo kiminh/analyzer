@@ -74,7 +74,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     // get union log
     val sql = s"""
-                      |select a.searchid, b.raw_cvr, substring(a.adclass,1,6) as adclass,
+                      |select a.searchid, cast(b.raw_cvr/10000 as double) as raw_cvr, substring(a.adclass,1,6) as adclass,
                       |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
                       |unitid,userid,click_count,click_unit_count,conversion_from,hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
@@ -173,7 +173,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     val result1 = lrModel.transform(trainingDF).rdd.map{
       x =>
-        val exp_cvr = x.getAs[Double]("prediction")*1e6d
+        val exp_cvr = x.getAs[Double]("prediction")*1e2d
         val raw_cvr = x.getAs[Int]("raw_cvr").toDouble
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
