@@ -126,7 +126,7 @@ object LinearRegressionOnQttCvrCalibration {
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","conversion_from","click_unit_count")
+    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","click_unit_count")
     val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslotid" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
       "click_unit_count" -> 35)
 
@@ -156,7 +156,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(1e-7).setElasticNetParam(0.1).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
@@ -220,7 +220,8 @@ object LinearRegressionOnQttCvrCalibration {
       feature = featuregroup,
       featuremap = featuremap.toMap,
       wRawvalue = w_rawvalue,
-      intercept = lrModel.intercept*1e6d
+      intercept = lrModel.intercept*1e6d,
+      min = 1.0
     )
 
     val localPath = saveProtoToLocal(calimodel, LRoutput)
