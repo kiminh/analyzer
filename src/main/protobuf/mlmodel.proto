@@ -211,4 +211,5 @@ message CalibrationModel {
     map<string,double> featuremap = 2; //特征值
     double w_rawvalue = 3; //rawcvr的参数
     double intercept = 4; //模型截距
+    double min = 5; //模型下限
 }
