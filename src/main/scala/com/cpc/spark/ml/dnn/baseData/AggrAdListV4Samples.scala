@@ -212,7 +212,7 @@ object AggrAdListV4Samples {
 
     }
 
-    val map_file = des_dir + "/" + date_curr + "-base-map-all"
+    /**val map_file = des_dir + "/" + date_curr + "-base-map-all"
     val instances_file = des_dir + "/" + date_last + "-instances"
     val base_map_file = des_dir + "/" + date_last + "-base-map-all"
     if (exists_hdfs_path(base_map_file + "/_SUCCESS")
@@ -248,7 +248,7 @@ object AggrAdListV4Samples {
             key + "\t" + value.toString
         }.saveAsTextFile(map_file)
       }
-    }
+    }**/
 
 
     val date_begin_list = date_begin_strs.split(";")
