@@ -294,6 +294,8 @@ echo "${date_list}"
 
 date_last=`date --date='1 days ago' +%Y-%m-%d`
 instances_all_list=(
+    `date --date='8 days ago' +%Y-%m-%d`
+    `date --date='7 days ago' +%Y-%m-%d`
     `date --date='4 days ago' +%Y-%m-%d`
     `date --date='1 days ago' +%Y-%m-%d`
     `date --date='3 days ago' +%Y-%m-%d`
