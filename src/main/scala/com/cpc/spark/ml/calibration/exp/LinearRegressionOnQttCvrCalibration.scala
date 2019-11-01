@@ -223,7 +223,7 @@ object LinearRegressionOnQttCvrCalibration {
       dimension = featuremap.size + 1
     }
 
-    val w_rawvalue = lrModel.coefficients.toArray(0)*1e6d
+    val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
 
     val LRoutput = CalibrationModel(
       feature = featuregroup,
