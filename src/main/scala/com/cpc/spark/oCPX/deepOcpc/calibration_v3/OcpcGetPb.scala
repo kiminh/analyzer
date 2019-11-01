@@ -22,10 +22,9 @@ object OcpcGetPb {
     val hour = args(1).toString
     val version = args(2).toString
     val expTag = args(3).toString
-    val hourInt = args(4).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag")
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
     val result = getData(date, hour, version, expTag, spark)
