@@ -56,17 +56,12 @@ object OcpcGetPb_pay {
       .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
 
-    resultDF
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly")
-
 
     resultDF
       .withColumn("deep_conversion_goal", lit(3))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
   }
 
