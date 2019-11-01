@@ -215,7 +215,10 @@ object LinearRegressionOnQttCvrCalibration {
               (key,(featurecoe,count))
           }
       if (!featuremap.keySet.contains(s"$cate" + "#default")) {
-        featuremap += ((s"$cate" + "#default", f1.map(x => x._2._1 * x._2._2).sum /f1.map(_._2._2).sum))
+        val key = s"$cate" + "#default"
+        val featurecoe = f1.map(x => x._2._1 * x._2._2).sum /f1.map(_._2._2).sum
+        println(s"$key coefficient:$featurecoe")
+        featuremap += ((key, featurecoe))
       }
       dimension = featuremap.size + 1
     }
