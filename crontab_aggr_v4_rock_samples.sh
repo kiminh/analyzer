@@ -274,6 +274,14 @@ do
         collect_file+=(${train_file})
         continue
     fi
+
+    if [[ -f ${dir}/train_done_${curr_date}_3023 ]]; then
+        printf "detected ${dir}/train_done_${curr_date}_3023, curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size!=48, add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${train_file})
+        continue
+    fi
+
     printf "curr_date ${curr_date} is really today ${real_curr_date}, and now_id=${now_id}, but valid_data.size=${#valid_data[@]}, add nothing and continue...\n"
 
 done

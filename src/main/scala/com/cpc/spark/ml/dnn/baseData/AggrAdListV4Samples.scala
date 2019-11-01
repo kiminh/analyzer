@@ -203,7 +203,7 @@ object AggrAdListV4Samples {
               for (elem <- line)
                 yield (elem, 1L)
             }
-          ).reduceByKey(_ + _).sortBy(_._2 * -1).map {
+          ).reduceByKey(_ + _).map {
             case (key, value) =>
               key + "\t" + value.toString
           }.repartition(1).saveAsTextFile(instances_file)
@@ -215,10 +215,11 @@ object AggrAdListV4Samples {
     val date_begin_list = date_begin_strs.split(";")
     for (curr_begin_date <- date_begin_list) {
       val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
-      val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
-      if (!exists_hdfs_path(instances_all + "/_SUCCESS") || !exists_hdfs_path(instances_map + "/_SUCCESS")) {
+      //val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
+      //if (!exists_hdfs_path(instances_all + "/_SUCCESS") || !exists_hdfs_path(instances_map + "/_SUCCESS")) {
+      if (!exists_hdfs_path(instances_all + "/_SUCCESS")) {
+        //delete_hdfs_path(instances_map)
         delete_hdfs_path(instances_all)
-        delete_hdfs_path(instances_map)
         val instances_date_collect = GetDateRange(curr_begin_date, date_last)
         val output = ArrayBuffer[String]()
         for (curr_date <- instances_date_collect) {
@@ -238,24 +239,24 @@ object AggrAdListV4Samples {
               key + "\t" + value.toString
           }).saveAsTextFile(instances_all)
 
-          val acc = new LongAccumulator
-          spark.sparkContext.register(acc)
-          sc.textFile(instances_all).coalesce(1, false).map{
-            rs => {
-              acc.add(1L)
-              val line = rs.split("\t")
-              val key = line(0)
-              (key, acc.count)
-            }
-          }.repartition(1).sortBy(_._2).map{
-            case (key, value) => key + "\t" + value.toString
-          }.saveAsTextFile(instances_map)
+          //val acc = new LongAccumulator
+          //spark.sparkContext.register(acc)
+          //sc.textFile(instances_all).coalesce(1, false).map{
+          //  rs => {
+          //    acc.add(1L)
+          //    val line = rs.split("\t")
+          //    val key = line(0)
+          //    (key, acc.count)
+          //  }
+          //}.repartition(1).sortBy(_._2).map{
+          //  case (key, value) => key + "\t" + value.toString
+          //}.saveAsTextFile(instances_map)
         }
 
       }
     }
 
-    val map_file = des_dir + "/" + date_curr + "-base-map-all"
+    /**val map_file = des_dir + "/" + date_curr + "-base-map-all"
     val instances_file = des_dir + "/" + date_last + "-instances"
     val base_map_file = des_dir + "/" + date_last + "-base-map-all"
     if (exists_hdfs_path(base_map_file + "/_SUCCESS")
@@ -291,7 +292,7 @@ object AggrAdListV4Samples {
             key + "\t" + value.toString
         }.saveAsTextFile(map_file)
       }
-    }
+    }**/
 
   }
 }
