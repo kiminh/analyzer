@@ -97,19 +97,6 @@ object CollectIncData {
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
-
-    val bid_mmh_map_file = des_dir + "/" + "bid_mmh_map.txt"
-
-    val bid_mmh_map = sc.textFile(bid_mmh_map_file).map({
-      rs =>
-        val line_list = rs.split("\t")
-        (line_list(0), line_list(1))
-    }).collectAsMap()
-    println("bid_mmh_map.size=" + bid_mmh_map.size)
-
-
-    println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
     val file_collect_8 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-8"
     val file_collect_4 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-4"
     val file_collect_2 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-2"
