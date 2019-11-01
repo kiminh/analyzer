@@ -94,7 +94,7 @@ object OcpcGetPb_pay {
 
   def calculateCalibrationValue(dataRaw: DataFrame, spark: SparkSession) = {
     val data = dataRaw
-      .filter(s"cv >= min_cv1")
+      .filter(s"cv >= min_cv")
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .withColumn("cvr_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
       .withColumn("conversion_goal", col("deep_conversion_goal"))
