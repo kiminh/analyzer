@@ -38,32 +38,6 @@ curr_date=`date --date='0 days ago' +%Y-%m-%d`
 hadoop fs -mkdir "hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer/"${curr_date}-collect-inc
 
 des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
-userid_idealid_last_5days=${des_dir_rock}/${curr_date}-userid-idealid-last-5days
-file_success_1=${dir}/${curr_date}_5days_success
-
-curr_date=`date --date='1 days ago' +%Y-%m-%d`
-base_daily_weight_map_file=${des_dir_rock}/${curr_date}-weight-map
-file_success_2=${dir}/${curr_date}_weight_map_success
-
-if [[ ! -f ${file_success_1} ]]; then
-    hadoop fs -get ${userid_idealid_last_5days}/_SUCCESS ${file_success_1}
-fi
-if [[ ! -f ${file_success_2} ]]; then
-    hadoop fs -get ${base_daily_weight_map_file}/_SUCCESS ${file_success_2}
-fi
-
-if [[ ! -f ${file_success_1} ]]; then
-    printf "no today's userid idealid last 5days file, existing...\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-
-if [[ ! -f ${file_success_2} ]]; then
-    printf "no last day's weight-map file, existing...\n"
-    rm ${shell_in_run}
-    exit 0
-fi
-
 
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 end=part-*
