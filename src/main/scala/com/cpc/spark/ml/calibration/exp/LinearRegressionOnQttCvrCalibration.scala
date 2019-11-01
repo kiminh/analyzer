@@ -193,24 +193,30 @@ object LinearRegressionOnQttCvrCalibration {
 
       val featurevalue = cate + "value"
       val featurevec = cate + "classVec"
-        trainingDF
-        .selectExpr(s"cast($cate as string) $cate",s"$featurevec")
-        .distinct()
+      val f1= trainingDF.groupBy(s"$cate",s"$featurevec")
+        .count()
+        .selectExpr(s"cast($cate as string) $cate",s"$featurevec",s"count")
         .rdd.map { x =>
         {
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
           val featurecoe = lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f)) * 1e6d
           val key = s"$cate" + "#" + cateid
-          (key, featurecoe)
-        }}.toLocalIterator.toMap[String,Double]
+          val count = x.getAs[Long]("count")
+          (key, (featurecoe, count))
+        }}.toLocalIterator.toMap[String,(Double,Long)]
           .map{
             x =>
-              val key: String = x._1
-              val featurecoe = x._2
+              val key= x._1
+              val featurecoe = x._2._1
+              val count = x._2._2
               println(s"$key coefficient:$featurecoe")
               featuremap += ((key, featurecoe))
+              (key,(featurecoe,count))
           }
+      if (!featuremap.keySet.contains(s"$cate" + "#default")) {
+        featuremap += ((s"$cate" + "#default", f1.map(x => x._2._1 * x._2._2).sum /f1.map(_._2._2).sum))
+      }
       dimension = featuremap.size + 1
     }
 
