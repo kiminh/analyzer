@@ -30,13 +30,13 @@ object OcpcGetPb_pay {
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
     val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
-    rawData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+//    rawData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(rawData, spark)
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
 
 
     // 数据组装

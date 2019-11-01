@@ -42,6 +42,10 @@ object OcpcGetPb {
   }
 
   def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
+    val qttExpTag = expTag + "Qtt"
+    val miduExpTag = expTag + "MiDu"
+    val hottopicExpTag = expTag + "HT66"
+    val selectCondition = s"exp_tag in ('$qttExpTag', '$miduExpTag', '$hottopicExpTag')"
     val sqlRequest =
       s"""
          |SELECT
@@ -55,7 +59,7 @@ object OcpcGetPb {
          |AND
          |  version = '$version'
          |AND
-         |  exp_tag = '$expTag'
+         |  $selectCondition
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
