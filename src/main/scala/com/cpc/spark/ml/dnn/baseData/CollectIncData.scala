@@ -78,17 +78,29 @@ object CollectIncData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 12) {
+    if (args.length != 13) {
       System.err.println(
         """
-          |you have to input 12 parameters !!!
+          |you have to input 13 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(model_path, last_model_instances, last_daily_instances, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(curr_base_model_path, model_path, last_model_instances, last_daily_instances, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
-    println(args)
+    println(args(0))
+    println(args(1))
+    println(args(2))
+    println(args(3))
+    println(args(4))
+    println(args(5))
+    println(args(6))
+    println(args(7))
+    println(args(8))
+    println(args(9))
+    println(args(10))
+    println(args(11))
+    println(args(12))
 
     Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -127,19 +139,40 @@ object CollectIncData {
             (key, value_left, false)
           }
       }).filter(rs => rs._3).
-        map({rs => rs._1 + "\t" + rs._2}).
+        map({ rs => rs._1 + "\t" + rs._2 }).
         repartition(1).
         saveAsTextFile(today_daily_inc_instances)
     }
+
+    var curr_base_instances_rdd = sc.parallelize(Array[(String, Long)]())
+    var curr_base = curr_base_model_path + "/non_existing_file.data"
+    if (exists_hdfs_path(curr_base_model_path + "/map_instances.data")) {
+      curr_base = curr_base_model_path + "/map_instances.data"
+    }
+    if (exists_hdfs_path(curr_base_model_path + "-inc/map_instances.data")) {
+      curr_base = curr_base_model_path + "-inc/map_instances.data"
+    }
+
+    if (exists_hdfs_path(curr_base)) {
+      println("detected curr base file:" + curr_base)
+      curr_base_instances_rdd = curr_base_instances_rdd.union(
+        sc.textFile(curr_base_model_path + "/map_instances.data").map({
+          rs =>
+            val line_list = rs.split("\t")
+            (line_list(0), line_list(1).toLong)
+        })
+      )
+    }
+
 
     val file_collect_8 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-8"
     val file_collect_4 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-4"
     val file_collect_2 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-2"
     val file_collect_1 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-1"
-    val instances_8 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-instances-8"
-    val instances_4 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-instances-4"
-    val instances_2 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-instances-2"
-    val instances_1 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-instances-1"
+    val instances_8 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-incr-instances-8"
+    val instances_4 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-incr-instances-4"
+    val instances_2 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-incr-instances-2"
+    val instances_1 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-incr-instances-1"
     val ctr_file = des_dir + "/" + curr_date + "-weight-collect-inc/" + curr_date + "-" + time_id + "-ctr"
 
     if (delete_old == "true") {
@@ -171,30 +204,43 @@ object CollectIncData {
     df_train_files_collect_1.printSchema()
     df_train_files_collect_1.show(3)
 
-    df_train_files_collect_1.rdd.map(
-      rs => {
-        val idx_arr = rs.getSeq[Long](2)
-        val dense = rs.getSeq[Long](6)
+    if (exists_hdfs_path(curr_base)) {
+      val instances_rdd_1 = df_train_files_collect_1.rdd.map(
+        rs => {
+          val idx_arr = rs.getSeq[Long](2)
+          val dense = rs.getSeq[Long](6)
 
-        val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-        for (idx <- dense.indices) {
-          output(idx) = dense(idx).toString
+          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+          for (idx <- dense.indices) {
+            output(idx) = dense(idx).toString
+          }
+          for (idx <- idx_arr.indices) {
+            output(idx + dense.length) = idx_arr(idx).toString
+          }
+          output.mkString("\t")
         }
-        for (idx <- idx_arr.indices) {
-          output(idx + dense.length) = idx_arr(idx).toString
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
         }
-        output.mkString("\t")
-      }
-    ).flatMap(
-      rs => {
-        val line = rs.split("\t")
-        for (elem <- line)
-          yield (elem, 1L)
-      }
-    ).reduceByKey(_ + _).map {
-      case (key, value) =>
-        key + "\t" + value.toString
-    }.repartition(1).saveAsTextFile(instances_1)
+      ).reduceByKey(_ + _)
+      curr_base_instances_rdd.leftOuterJoin(instances_rdd_1).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
+          } else {
+            (key, value_left, false)
+          }
+      }).filter(rs => rs._3).
+        map({ rs => rs._1 + "\t" + rs._2 }).
+        repartition(1).
+        saveAsTextFile(instances_1)
+    }
 
     df_train_files_collect_1.rdd.map(
       rs => {
@@ -246,30 +292,43 @@ object CollectIncData {
     df_train_files_collect_4.printSchema()
     df_train_files_collect_4.show(3)
 
-    df_train_files_collect_4.rdd.map(
-      rs => {
-        val idx_arr = rs.getSeq[Long](2)
-        val dense = rs.getSeq[Long](6)
+    if (exists_hdfs_path(curr_base)) {
+      val instances_rdd_4 = df_train_files_collect_4.rdd.map(
+        rs => {
+          val idx_arr = rs.getSeq[Long](2)
+          val dense = rs.getSeq[Long](6)
 
-        val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-        for (idx <- dense.indices) {
-          output(idx) = dense(idx).toString
+          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+          for (idx <- dense.indices) {
+            output(idx) = dense(idx).toString
+          }
+          for (idx <- idx_arr.indices) {
+            output(idx + dense.length) = idx_arr(idx).toString
+          }
+          output.mkString("\t")
         }
-        for (idx <- idx_arr.indices) {
-          output(idx + dense.length) = idx_arr(idx).toString
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
         }
-        output.mkString("\t")
-      }
-    ).flatMap(
-      rs => {
-        val line = rs.split("\t")
-        for (elem <- line)
-          yield (elem, 1L)
-      }
-    ).reduceByKey(_ + _).map {
-      case (key, value) =>
-        key + "\t" + value.toString
-    }.repartition(1).saveAsTextFile(instances_4)
+      ).reduceByKey(_ + _)
+      curr_base_instances_rdd.leftOuterJoin(instances_rdd_4).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
+          } else {
+            (key, value_left, false)
+          }
+      }).filter(rs => rs._3).
+        map({ rs => rs._1 + "\t" + rs._2 }).
+        repartition(1).
+        saveAsTextFile(instances_4)
+    }
 
     val rdd_4 = df_train_files_collect_4.rdd.map(
       rs => {
@@ -308,30 +367,43 @@ object CollectIncData {
     df_train_files_collect_2.printSchema()
     df_train_files_collect_2.show(3)
 
-    df_train_files_collect_2.rdd.map(
-      rs => {
-        val idx_arr = rs.getSeq[Long](2)
-        val dense = rs.getSeq[Long](6)
+    if (exists_hdfs_path(curr_base)) {
+      val instances_rdd_2 = df_train_files_collect_2.rdd.map(
+        rs => {
+          val idx_arr = rs.getSeq[Long](2)
+          val dense = rs.getSeq[Long](6)
 
-        val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-        for (idx <- dense.indices) {
-          output(idx) = dense(idx).toString
+          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+          for (idx <- dense.indices) {
+            output(idx) = dense(idx).toString
+          }
+          for (idx <- idx_arr.indices) {
+            output(idx + dense.length) = idx_arr(idx).toString
+          }
+          output.mkString("\t")
         }
-        for (idx <- idx_arr.indices) {
-          output(idx + dense.length) = idx_arr(idx).toString
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
         }
-        output.mkString("\t")
-      }
-    ).flatMap(
-      rs => {
-        val line = rs.split("\t")
-        for (elem <- line)
-          yield (elem, 1L)
-      }
-    ).reduceByKey(_ + _).map {
-      case (key, value) =>
-        key + "\t" + value.toString
-    }.repartition(1).saveAsTextFile(instances_2)
+      ).reduceByKey(_ + _)
+      curr_base_instances_rdd.leftOuterJoin(instances_rdd_2).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
+          } else {
+            (key, value_left, false)
+          }
+      }).filter(rs => rs._3).
+        map({ rs => rs._1 + "\t" + rs._2 }).
+        repartition(1).
+        saveAsTextFile(instances_2)
+    }
 
     val rdd_2 = df_train_files_collect_2.rdd.map(
       rs => {
@@ -370,30 +442,43 @@ object CollectIncData {
     df_train_files_collect_8.printSchema()
     df_train_files_collect_8.show(3)
 
-    df_train_files_collect_8.rdd.map(
-      rs => {
-        val idx_arr = rs.getSeq[Long](2)
-        val dense = rs.getSeq[Long](6)
+    if (exists_hdfs_path(curr_base)) {
+      val instances_rdd_8 = df_train_files_collect_8.rdd.map(
+        rs => {
+          val idx_arr = rs.getSeq[Long](2)
+          val dense = rs.getSeq[Long](6)
 
-        val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-        for (idx <- dense.indices) {
-          output(idx) = dense(idx).toString
+          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+          for (idx <- dense.indices) {
+            output(idx) = dense(idx).toString
+          }
+          for (idx <- idx_arr.indices) {
+            output(idx + dense.length) = idx_arr(idx).toString
+          }
+          output.mkString("\t")
         }
-        for (idx <- idx_arr.indices) {
-          output(idx + dense.length) = idx_arr(idx).toString
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
         }
-        output.mkString("\t")
-      }
-    ).flatMap(
-      rs => {
-        val line = rs.split("\t")
-        for (elem <- line)
-          yield (elem, 1L)
-      }
-    ).reduceByKey(_ + _).map {
-      case (key, value) =>
-        key + "\t" + value.toString
-    }.repartition(1).saveAsTextFile(instances_8)
+      ).reduceByKey(_ + _)
+      curr_base_instances_rdd.leftOuterJoin(instances_rdd_8).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
+          } else {
+            (key, value_left, false)
+          }
+      }).filter(rs => rs._3).
+        map({ rs => rs._1 + "\t" + rs._2 }).
+        repartition(1).
+        saveAsTextFile(instances_8)
+    }
 
     val rdd_8 = df_train_files_collect_8.rdd.map(
       rs => {
