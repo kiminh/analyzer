@@ -225,8 +225,7 @@ object CollectIncData {
           for (elem <- line)
             yield (elem, 1L)
         }
-      ).reduceByKey(_ + _)
-      curr_base_instances_rdd.leftOuterJoin(instances_rdd_1).map({
+      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
         rs =>
           val key = rs._1
           val value_left = rs._2._1
@@ -313,8 +312,7 @@ object CollectIncData {
           for (elem <- line)
             yield (elem, 1L)
         }
-      ).reduceByKey(_ + _)
-      curr_base_instances_rdd.leftOuterJoin(instances_rdd_4).map({
+      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
         rs =>
           val key = rs._1
           val value_left = rs._2._1
@@ -388,8 +386,7 @@ object CollectIncData {
           for (elem <- line)
             yield (elem, 1L)
         }
-      ).reduceByKey(_ + _)
-      curr_base_instances_rdd.leftOuterJoin(instances_rdd_2).map({
+      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
         rs =>
           val key = rs._1
           val value_left = rs._2._1
@@ -463,8 +460,7 @@ object CollectIncData {
           for (elem <- line)
             yield (elem, 1L)
         }
-      ).reduceByKey(_ + _)
-      curr_base_instances_rdd.leftOuterJoin(instances_rdd_8).map({
+      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
         rs =>
           val key = rs._1
           val value_left = rs._2._1
