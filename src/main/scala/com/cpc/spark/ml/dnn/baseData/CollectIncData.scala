@@ -105,22 +105,27 @@ object CollectIncData {
       && !exists_hdfs_path(today_daily_inc_instances + "/_SUCCESS")) {
       delete_hdfs_path(today_daily_inc_instances)
 
-      val base_map = sc.textFile(last_model_instances).map({
+      val base_map_rdd = sc.textFile(last_model_instances).map({
         rs =>
           val line_list = rs.split("\t")
           (line_list(0), line_list(1).toLong)
-      }).collectAsMap()
+      })
 
       sc.textFile(last_daily_instances).map({
         rs =>
           val line_list = rs.split("\t")
+          (line_list(0), line_list(1).toLong)
 
-          if (base_map.contains(line_list(0))) {
-            (line_list(0), line_list(1).toLong, false)
+      }).leftOuterJoin(base_map_rdd).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
           } else {
-            (line_list(0), line_list(1).toLong, true)
+            (key, value_left, false)
           }
-
       }).filter(rs => rs._3).
         map({rs => rs._1 + "\t" + rs._2}).
         repartition(1).
