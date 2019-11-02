@@ -78,15 +78,15 @@ object CollectIncData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 9) {
+    if (args.length != 12) {
       System.err.println(
         """
-          |you have to input 9 parameters !!!
+          |you have to input 12 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(model_path, last_model_instances, last_daily_instances, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
     println(args)
 
@@ -96,6 +96,36 @@ object CollectIncData {
     sparkConf.set("spark.driver.maxResultSize", "5g")
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
+
+
+    val today_daily_inc_instances = model_path + "/" + curr_date + "-tf-base-incr-map-instances"
+
+    if (exists_hdfs_path(last_model_instances)
+      && exists_hdfs_path(last_daily_instances)
+      && !exists_hdfs_path(today_daily_inc_instances + "/_SUCCESS")) {
+      delete_hdfs_path(today_daily_inc_instances)
+
+      val base_map = sc.textFile(last_model_instances).map({
+        rs =>
+          val line_list = rs.split("\t")
+          (line_list(0), line_list(1).toLong)
+      }).collectAsMap()
+
+      sc.textFile(last_daily_instances).map({
+        rs =>
+          val line_list = rs.split("\t")
+
+          if (base_map.contains(line_list(0))) {
+            (line_list(0), line_list(1).toLong, false)
+          } else {
+            (line_list(0), line_list(1).toLong, true)
+          }
+
+      }).filter(rs => rs._3).
+        map({rs => rs._1 + "\t" + rs._2}).
+        repartition(1).
+        saveAsTextFile(today_daily_inc_instances)
+    }
 
     val file_collect_8 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-8"
     val file_collect_4 = des_dir + "/" + curr_date + "-collect-inc/" + curr_date + "-" + time_id + "-collect-4"

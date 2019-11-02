@@ -32,12 +32,40 @@ if [[ -f "$shell_in_run" ]]; then
     exit 0
 fi
 touch ${shell_in_run}
-printf "*****************************${date_full}********************************\n"
+
 
 curr_date=`date --date='0 days ago' +%Y-%m-%d`
-hadoop fs -mkdir "hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer/"${curr_date}-collect-inc
+last_date=`date --date='1 days ago' +%Y-%m-%d`
+des_dir=hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer
+hdfs_path_data=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup
+hdfs_path_model=hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-dnn-rawid_${ml_ver}
+hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
 
-des_dir_rock="hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer"
+last_model=${last_date}-tf-base-mom-8days-6eps
+last_model_instances=${hdfs_path_model}/${last_model}/map_instances.data
+last_daily_instances=${hdfs_path_data}/${last_date}-instances/part-00000
+
+map_base=${dir}/${last_date}_base_instances
+map_incr=${dir}/${last_date}_incr_instances
+
+if [[ ! -f ${map_base} ]]; then
+    hadoop fs -get ${last_model_instances} ${map_base} &
+fi
+if [[ ! -f ${map_incr} ]]; then
+    hadoop fs -get ${last_daily_instances} ${map_incr} &
+fi
+wait
+
+if [[ ! -f ${map_base} ]]; then
+    printf "no yesterday's base model map instances file, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
+if [[ ! -f ${map_incr} ]]; then
+    printf "no yesterday's incr daily map instances file, existing...\n"
+    rm ${shell_in_run}
+    exit 0
+fi
 
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 end=part-*
@@ -297,7 +325,6 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #rm ${shell_in_run}
 #exit 0
 
-last_date=`date --date='1 days ago' +%Y-%m-%d`
 
 jarLib=hdfs://emr-cluster/warehouse/azkaban/lib/fhb_start_v1.jar
 queue=root.cpc.bigdata
@@ -319,6 +346,6 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncData\
-    ${randjar} ${des_dir_rock} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
+    ${randjar} ${hdfs_path_model} ${last_model_instances} ${last_daily_instances} ${des_dir} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
 
 rm ${shell_in_run}
