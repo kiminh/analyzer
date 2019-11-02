@@ -78,15 +78,15 @@ object CollectIncData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 13) {
+    if (args.length != 10) {
       System.err.println(
         """
-          |you have to input 13 parameters !!!
+          |you have to input 10 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(curr_base_model_path, model_path, last_model_instances, last_daily_instances, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(curr_base_model_path, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
     println(args(0))
     println(args(1))
@@ -98,9 +98,6 @@ object CollectIncData {
     println(args(7))
     println(args(8))
     println(args(9))
-    println(args(10))
-    println(args(11))
-    println(args(12))
 
     Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -108,41 +105,6 @@ object CollectIncData {
     sparkConf.set("spark.driver.maxResultSize", "5g")
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
-
-
-    val today_daily_inc_instances = model_path + "/" + curr_date + "-tf-base-incr-map-instances"
-
-    if (exists_hdfs_path(last_model_instances)
-      && exists_hdfs_path(last_daily_instances)
-      && !exists_hdfs_path(today_daily_inc_instances + "/_SUCCESS")) {
-      delete_hdfs_path(today_daily_inc_instances)
-
-      val base_map_rdd = sc.textFile(last_model_instances).map({
-        rs =>
-          val line_list = rs.split("\t")
-          (line_list(0), line_list(1).toLong)
-      })
-
-      sc.textFile(last_daily_instances).map({
-        rs =>
-          val line_list = rs.split("\t")
-          (line_list(0), line_list(1).toLong)
-
-      }).leftOuterJoin(base_map_rdd).map({
-        rs =>
-          val key = rs._1
-          val value_left = rs._2._1
-          val value_right = rs._2._2
-          if (value_right.isEmpty) {
-            (key, value_left, true)
-          } else {
-            (key, value_left, false)
-          }
-      }).filter(rs => rs._3).
-        map({ rs => rs._1 + "\t" + rs._2 }).
-        repartition(1).
-        saveAsTextFile(today_daily_inc_instances)
-    }
 
     var curr_base_instances_rdd = sc.parallelize(Array[(String, Long)]())
     var curr_base = curr_base_model_path + "/non_existing_file.data"
