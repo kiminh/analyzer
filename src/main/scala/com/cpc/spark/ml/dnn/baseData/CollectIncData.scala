@@ -198,6 +198,80 @@ object CollectIncData {
     ))
     val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
 
+    /****************************************collect_8***************************************************/
+    val df_train_files_collect_8: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_8)
+    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
+    df_train_files_collect_8.printSchema()
+    df_train_files_collect_8.show(3)
+
+    if (exists_hdfs_path(curr_base)) {
+      val instances_rdd_8 = df_train_files_collect_8.rdd.map(
+        rs => {
+          val idx_arr = rs.getSeq[Long](2)
+          val dense = rs.getSeq[Long](6)
+
+          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+          for (idx <- dense.indices) {
+            output(idx) = dense(idx).toString
+          }
+          for (idx <- idx_arr.indices) {
+            output(idx + dense.length) = idx_arr(idx).toString
+          }
+          output.mkString("\t")
+        }
+      ).flatMap(
+        rs => {
+          val line = rs.split("\t")
+          for (elem <- line)
+            yield (elem, 1L)
+        }
+      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
+        rs =>
+          val key = rs._1
+          val value_left = rs._2._1
+          val value_right = rs._2._2
+          if (value_right.isEmpty) {
+            (key, value_left, true)
+          } else {
+            (key, value_left, false)
+          }
+      }).filter(rs => rs._3).
+        map({ rs => rs._1 + "\t" + rs._2 }).
+        repartition(1).
+        saveAsTextFile(instances_8)
+    }
+
+    val rdd_8 = df_train_files_collect_8.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+        Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val rdd_count_8 = rdd_8.count()
+    println(s"rdd_count is : $rdd_count_8")
+    println("DF file count:" + rdd_count_8.toString + " of file:" + train_files_collect_8)
+
+    val tf_df_8: DataFrame = spark.createDataFrame(rdd_8, schema_new)
+    tf_df_8.repartition(600).write.format("tfrecords").option("recordType", "Example").save(file_collect_8)
+
+    //保存count文件
+    val fileName_8 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_8, rdd_count_8)
+
+    if (!low_time_list.contains(time_id) && rdd_count_8 <= 5000000) {
+      println(s"time_id $time_id not in low_time_list but count $rdd_count_8 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_8 $file_collect_8/invalid_count" !
+    } else {
+      s"hadoop fs -put $fileName_8 $file_collect_8/count" !
+    }
+    s"hadoop fs -chmod -R 0777 $file_collect_8" !
+
     /****************************************collect_1***************************************************/
     val df_train_files_collect_1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_1)
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
@@ -432,80 +506,6 @@ object CollectIncData {
       s"hadoop fs -put $fileName_2 $file_collect_2/count" !
     }
     s"hadoop fs -chmod -R 0777 $file_collect_2" !
-
-    /****************************************collect_8***************************************************/
-    val df_train_files_collect_8: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_8)
-    //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
-    df_train_files_collect_8.printSchema()
-    df_train_files_collect_8.show(3)
-
-    if (exists_hdfs_path(curr_base)) {
-      val instances_rdd_8 = df_train_files_collect_8.rdd.map(
-        rs => {
-          val idx_arr = rs.getSeq[Long](2)
-          val dense = rs.getSeq[Long](6)
-
-          val output: Array[String] = new Array[String](dense.length + idx_arr.length)
-          for (idx <- dense.indices) {
-            output(idx) = dense(idx).toString
-          }
-          for (idx <- idx_arr.indices) {
-            output(idx + dense.length) = idx_arr(idx).toString
-          }
-          output.mkString("\t")
-        }
-      ).flatMap(
-        rs => {
-          val line = rs.split("\t")
-          for (elem <- line)
-            yield (elem, 1L)
-        }
-      ).reduceByKey(_ + _).leftOuterJoin(curr_base_instances_rdd).map({
-        rs =>
-          val key = rs._1
-          val value_left = rs._2._1
-          val value_right = rs._2._2
-          if (value_right.isEmpty) {
-            (key, value_left, true)
-          } else {
-            (key, value_left, false)
-          }
-      }).filter(rs => rs._3).
-        map({ rs => rs._1 + "\t" + rs._2 }).
-        repartition(1).
-        saveAsTextFile(instances_8)
-    }
-
-    val rdd_8 = df_train_files_collect_8.rdd.map(
-      rs => {
-        val idx2 = rs.getSeq[Long](0)
-        val idx1 = rs.getSeq[Long](1)
-        val idx_arr = rs.getSeq[Long](2)
-        val idx0 = rs.getSeq[Long](3)
-        val sample_idx = rs.getLong(4)
-        val label_arr = rs.getSeq[Long](5)
-        val dense = rs.getSeq[Long](6)
-        Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
-      })
-
-    val rdd_count_8 = rdd_8.count()
-    println(s"rdd_count is : $rdd_count_8")
-    println("DF file count:" + rdd_count_8.toString + " of file:" + train_files_collect_8)
-
-    val tf_df_8: DataFrame = spark.createDataFrame(rdd_8, schema_new)
-    tf_df_8.repartition(600).write.format("tfrecords").option("recordType", "Example").save(file_collect_8)
-
-    //保存count文件
-    val fileName_8 = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName_8, rdd_count_8)
-
-    if (!low_time_list.contains(time_id) && rdd_count_8 <= 5000000) {
-      println(s"time_id $time_id not in low_time_list but count $rdd_count_8 less than 5 millions, invalid count")
-      s"hadoop fs -put $fileName_8 $file_collect_8/invalid_count" !
-    } else {
-      s"hadoop fs -put $fileName_8 $file_collect_8/count" !
-    }
-    s"hadoop fs -chmod -R 0777 $file_collect_8" !
 
   }
 }
