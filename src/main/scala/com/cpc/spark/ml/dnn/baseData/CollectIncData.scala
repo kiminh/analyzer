@@ -156,7 +156,7 @@ object CollectIncData {
     if (exists_hdfs_path(curr_base)) {
       println("detected curr base file:" + curr_base)
       curr_base_instances_rdd = curr_base_instances_rdd.union(
-        sc.textFile(curr_base_model_path + "/map_instances.data").map({
+        sc.textFile(curr_base).map({
           rs =>
             val line_list = rs.split("\t")
             (line_list(0), line_list(1).toLong)
