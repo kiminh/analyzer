@@ -117,7 +117,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.dnn.baseData.CollectIncData\
+    --class com.cpc.spark.ml.dnn.baseData.BaseIncrMapInstances\
     ${randjar} ${hdfs_path_model} ${last_model_instances} ${last_daily_instances} ${curr_date}
 
 rm ${shell_in_run}
