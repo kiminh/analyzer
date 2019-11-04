@@ -64,26 +64,10 @@ object LinearRegressionOnQttCvrCalibration {
                       |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
                       |unitid,userid,click_count,click_unit_count,conversion_from,hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
-                      |from
-                      |(select searchid,ideaid,unitid,userid,adclass,hour
-                      |  from dl_cpc.cpc_basedata_click_event
+                      |from dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
-                      |  and $mediaSelection and isclick = 1
-                      |  and adsrc in (1,28)
-                      |  and antispam_score = 10000
-                      |  )a
-                      |  join
-                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
-                      |  ,click_count,click_unit_count,conversion_from
-                      |  from
-                      |  dl_cpc.cpc_basedata_adx_event
-                      |  where  $selectCondition2
                       |  and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')
-                      |  AND bid_mode = 0
-                      |  and charge_type = 1
-                      |  and conversion_goal>0) b
-                      |    on a.searchid = b.searchid and a.ideaid = b.ideaid
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
                       |  from dl_cpc.ocpc_cvr_log_hourly

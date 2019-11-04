@@ -43,15 +43,15 @@ object SampleOnQttCvrCalibration {
          |from dl_cpc.cpc_basedata_click_event a
          |join dl_cpc.cpc_basedata_adx_event b
          |   on a.searchid = b.searchid and a.ideaid = b.ideaid
-         |   and day = '$day' and hour = '$hour'
-         |   and bid_mode = 0
-         |   and charge_type = 1
-         |   and conversion_goal>0
+         |   and b.day = '$day' and b.hour = '$hour'
+         |   and b.bid_mode = 0
+         |   and b.charge_type = 1
+         |   and b.conversion_goal>0
          |where
-         |  day = '$day' and hour = '$hour'
-         |  and isclick = 1
-         |  and adsrc in (1,28)
-         |  and antispam_score = 10000
+         |  a.day = '$day' and a.hour = '$hour'
+         |  and a.isclick = 1
+         |  and a.adsrc in (1,28)
+         |  and a.antispam_score = 10000
        """.stripMargin
 
     println(s"sql:\n$sql")
