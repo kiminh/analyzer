@@ -156,7 +156,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.1).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.00001).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
@@ -173,12 +173,14 @@ object LinearRegressionOnQttCvrCalibration {
 
     val result1 = lrModel.transform(trainingDF).rdd.map{
       x =>
+        val searchid = x.getAs[String]("searchid")
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
         val raw_cvr = x.getAs[Int]("raw_cvr").toDouble
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
-        (exp_cvr,iscvr,raw_cvr,unitid)
-    }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
+        (searchid,exp_cvr,iscvr,raw_cvr,unitid)
+    }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
+
 
     var dimension = 1
     var defaultnum = 0
