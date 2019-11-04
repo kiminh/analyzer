@@ -24,6 +24,13 @@ if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
 fi
 
+last_incr_error=${dir}/last_incr_error
+if [[ -f "$last_incr_error" ]]; then
+    printf "detected last incr error, exiting\n"
+    exit 0
+fi
+
+
 shell_in_run=${dir}/shell_in_busy
 if [[ -f "$shell_in_run" ]]; then
     #printf "shell are busy now, existing\n"
@@ -50,12 +57,12 @@ else
     hadoop fs -mkdir ${collect_path}
 fi
 
-curr_incr_model_instances=${hdfs_path_model}/${curr_date}-tf-base-mom-8days-6eps-inc/map_instances.data
-hadoop fs -test -s ${curr_incr_model_instances}
+curr_incr_base_model_instances=${hdfs_path_model}/${curr_date}-tf-base-mom-8days-6eps-inc/map_instances.data
+hadoop fs -test -s ${curr_incr_base_model_instances}
 if [ $? -eq 0 ] ;then
-	echo 'exist and more than zero bytes:'${curr_incr_model_instances}
+	echo 'exist and more than zero bytes:'${curr_incr_base_model_instances}
 else
-	echo 'non exist or less than zero bytes:'${curr_incr_model_instances}
+	echo 'non exist or less than zero bytes:'${curr_incr_base_model_instances}
 	rm ${shell_in_run}
 	exit 0
 fi
@@ -66,8 +73,8 @@ if [ $? -eq 0 ] ;then
 	echo 'exist and more than zero bytes:'${curr_collect_base}
 else
 	echo 'non exist or less than zero bytes:'${curr_collect_base}
-	echo 'now copy from incr model instances:'${curr_incr_model_instances}
-	hadoop fs -cp ${curr_incr_model_instances} ${curr_collect_base}
+	echo 'now copy from incr model instances:'${curr_incr_base_model_instances}
+	hadoop fs -cp ${curr_incr_base_model_instances} ${curr_collect_base}
 fi
 
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
@@ -299,5 +306,29 @@ spark-submit --master yarn --queue ${queue} \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncHourlyData\
     ${randjar} ${collect_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
+
+
+curr_collect_incr=${collect_path}/${curr_date}-${last_id}-incr-instances/part-00000
+hadoop fs -test -s ${curr_collect_incr}
+if [ $? -eq 0 ] ;then
+	echo 'exist and more than zero bytes:'${curr_collect_incr}
+    map_base_local=${dir}/base_map_instances.data
+    rm ${map_base_local}
+    hadoop fs -get ${curr_collect_base} ${map_base_local}
+
+    map_incr_local=${dir}/incr_map_instances.data
+    rm ${map_incr_local}
+    hadoop fs -get ${curr_collect_incr} ${map_incr_local}
+
+    map_new_local=${dir}/new_map_instances.data
+    scp ${map_base_local} ${map_new_local}
+    cat ${map_incr_local} >> ${map_new_local}
+    hadoop fs -put -f ${map_new_local} ${collect_path}/${curr_date}-${last_id}-new-instances.data
+    hadoop fs -put -f ${map_new_local} ${curr_collect_base}
+else
+	echo 'non exist or less than zero bytes:'${curr_collect_incr}
+	echo 'now touch error file:'
+	touch ${last_incr_error}
+fi
 
 rm ${shell_in_run}
