@@ -236,6 +236,7 @@ do
     all_ids+=("${curr_date}-${id}")
     test_file=${p00}${end}
     last_id=${id}
+    break
 done
 
 printf "got ${#inc_data[@]} today incremental real-time training data file\n"
