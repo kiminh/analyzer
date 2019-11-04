@@ -181,6 +181,7 @@ object LinearRegressionOnQttCvrCalibration {
     }.toDF("exp_cvr","iscvr","raw_cvr","unitid")
 
     var dimension = 1
+    var defaultnum = 0
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
     var featuremap = scala.collection.mutable.Map[String,Double]()
     for (cate <- categoricalColumns ){
@@ -216,11 +217,12 @@ object LinearRegressionOnQttCvrCalibration {
           }
       if (!featuremap.keySet.contains(s"$cate" + "#default")) {
         val key = s"$cate" + "#default"
+        defaultnum += 1
         val featurecoe = f1.map(x => x._2._1 * x._2._2).sum /f1.map(_._2._2).sum
         println(s"$key coefficient:$featurecoe")
         featuremap += ((key, featurecoe))
       }
-      dimension = featuremap.size + 1
+      dimension = featuremap.size + 1 - defaultnum
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
