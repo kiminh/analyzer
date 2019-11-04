@@ -1,7 +1,10 @@
 package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, getTimeRangeSqlDay}
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -109,6 +112,9 @@ object OcpcSampleToPbFinal {
       )
       .select("exp_tag", "conversion_goal", "weight")
 
+    // determine the maximum and minimum value
+    val valueRange = getRangeValue(date, hour, 24, spark)
+
 
     val data = baseData
       .join(confData, Seq("exp_tag", "identifier"), "left_outer")
@@ -118,8 +124,11 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
+      .na.fill(2.0, Seq("max_cali"))
+      .na.fill(0.5, Seq("min_cali"))
       .withColumn("cali_value_old", col("cali_value"))
-      .withColumn("cali_value", udfCheckCali(0.5, 2.0)(col("cali_value")))
+      .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
       .cache()
 
     data.show(10)
@@ -130,7 +139,49 @@ object OcpcSampleToPbFinal {
     data
   }
 
-  def udfCheckCali(minValue: Double, maxValue: Double) = udf((caliValue: Double) => {
+  def getRangeValue(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val tableName = "dl_cpc.ocpc_base_unionlog"
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal
+         |FROM
+         |  $tableName
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  site_type = 1
+         |GROUP BY unitid, conversion_goal
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal")
+      .withColumn("max_cali", lit(2.0))
+      .withColumn("min_cali", lit(0.3))
+
+    data
+  }
+
+  def udfCheckCali() = udf((caliValue: Double, maxValue: Double, minValue: Double) => {
     var result = caliValue
     if (result < minValue) {
       result = minValue
