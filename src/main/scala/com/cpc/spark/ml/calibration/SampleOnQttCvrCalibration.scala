@@ -57,7 +57,7 @@ object SampleOnQttCvrCalibration {
     println(s"sql:\n$sql")
     val data = spark.sql(sql)
     data.show(10)
-    data.write.mode("overwrite").saveAsTable("dl_cpc.cvr_calibration_sample_all")
+    data.repartition(1).write.mode("overwrite").saveAsTable("dl_cpc.cvr_calibration_sample_all")
 
   }
 }
