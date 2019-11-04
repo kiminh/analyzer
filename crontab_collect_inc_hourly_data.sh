@@ -326,6 +326,8 @@ if [ $? -eq 0 ] ;then
     cat ${map_incr_local} >> ${map_new_local}
     hadoop fs -put -f ${map_new_local} ${collect_path}/${curr_date}-${last_id}-new-instances.data
     hadoop fs -put -f ${map_new_local} ${curr_collect_base}
+    hadoop fs -chmod -R 0777 ${collect_path}/${curr_date}-${last_id}-new-instances.data
+    hadoop fs -chmod -R 0777 ${curr_collect_base}
 else
 	echo 'non exist or less than zero bytes:'${curr_collect_incr}
 	echo 'now touch error file:'
