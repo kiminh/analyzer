@@ -78,15 +78,15 @@ object CollectIncHourlyData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 10) {
+    if (args.length != 7) {
       System.err.println(
         """
-          |you have to input 10 parameters !!!
+          |you have to input 7 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(curr_base_model_path, des_dir, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(collect_path, des_dir, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
     println(args(0))
     println(args(1))

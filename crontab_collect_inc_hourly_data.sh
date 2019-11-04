@@ -298,6 +298,6 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncHourlyData\
-    ${randjar} ${curr_base_model_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
+    ${randjar} ${collect_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
 
 rm ${shell_in_run}
