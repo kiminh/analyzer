@@ -112,12 +112,12 @@ object OcpcFreePass {
 
   def udfCalculateRatio() = udf((conversionGoal: Int, industry: String, media: String, costFlag: Int) => {
     val result = (conversionGoal, industry, media, costFlag) match {
-      case (1, "app", "hottopic", _) => 50
-      case (2, "app", "qtt", _) => 50
-      case (2, "app", "novel", _) => 50
+      case (1, "app", "hottopic", _) => 5
+      case (2, "app", "qtt", _) => 5
+      case (2, "app", "novel", _) => 5
       case (_, "yihu", "qtt", 1) => 50
       case (_, "elds", _, _) => 0
-      case (_, _, _, _) => 10
+      case (_, _, _, _) => 5
     }
     result
   })
