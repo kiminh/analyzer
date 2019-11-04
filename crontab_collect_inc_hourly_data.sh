@@ -40,18 +40,17 @@ des_dir=hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer
 hdfs_path_data=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup
 hdfs_path_model=hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-dnn-rawid_${ml_ver}
 
-hadoop fs -test -e ${des_dir}/${curr_date}-collect-inc
+collect_path=${des_dir}/${curr_date}-collect-inc-hourly
+hadoop fs -test -e ${collect_path}
 if [ $? -eq 0 ] ;then
-	echo 'exist directory:'${des_dir}/${curr_date}-collect-inc
+	echo 'exist directory:'${collect_path}
 else
-	echo 'non exist directory:'${des_dir}/${curr_date}-collect-inc
-    hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
+	echo 'non exist directory:'${collect_path}
+	echo 'now make dir:'${collect_path}
+    hadoop fs -mkdir ${collect_path}
 fi
 
-curr_model_incr=${curr_date}-tf-base-mom-8days-6eps-inc
-curr_incr_model_instances=${hdfs_path_model}/${curr_model_incr}/map_instances.data
-map_incr=${dir}/${curr_date}_incr_instances
-
+curr_incr_model_instances=${hdfs_path_model}/${curr_date}-tf-base-mom-8days-6eps-inc/map_instances.data
 hadoop fs -test -s ${curr_incr_model_instances}
 if [ $? -eq 0 ] ;then
 	echo 'exist and more than zero bytes:'${curr_incr_model_instances}
@@ -61,31 +60,16 @@ else
 	exit 0
 fi
 
-curr_hourly_collect=${hdfs_path_model}/${curr_date}-hour-inc-collect
-hadoop fs -test -e ${curr_hourly_collect}
+curr_collect_base=${collect_path}/hourly_curr_map_instances.data
+hadoop fs -test -s ${curr_collect_base}
 if [ $? -eq 0 ] ;then
-	echo 'exist:'${curr_hourly_collect}
+	echo 'exist and more than zero bytes:'${curr_collect_base}
 else
-	echo 'non exist:'${curr_hourly_collect}
-	echo 'now make dir:'${curr_hourly_collect}
-	hadoop fs -mkdir ${curr_hourly_collect}
-fi
-
-curr_hourly_collect_base=${hdfs_path_model}/${curr_date}-hour-inc-collect/base_map_instances.data
-hadoop fs -test -s ${curr_hourly_collect_base}
-if [ $? -eq 0 ] ;then
-	echo 'exist and more than zero bytes:'${curr_hourly_collect_base}
-else
-	echo 'non exist or less than zero bytes:'${curr_hourly_collect_base}
+	echo 'non exist or less than zero bytes:'${curr_collect_base}
 	echo 'now copy from incr model instances:'${curr_incr_model_instances}
-	hadoop fs -cp ${curr_incr_model_instances} ${curr_hourly_collect_base}
+	hadoop fs -cp ${curr_incr_model_instances} ${curr_collect_base}
 fi
 
-
-
-
-rm ${shell_in_run}
-exit 0
 id_list=( "0000" "3000" "0001" "3001" "0002" "3002" "0003" "3003" "0004" "3004" "0005" "3005" "0006" "3006" "0007" "3007" "0008" "3008" "0009" "3009" "0010" "3010" "0011" "3011" "0012" "3012" "0013" "3013" "0014" "3014" "0015" "3015" "0016" "3016" "0017" "3017" "0018" "3018" "0019" "3019" "0020" "3020" "0021" "3021" "0022" "3022" "0023" "3023" )
 end=part-*
 sample_list=(
@@ -264,52 +248,7 @@ fi
 train_file_curr="$( IFS=$','; echo "${all_data[*]}" )"
 train_ids_curr="$( IFS=$','; echo "${all_ids[*]}" )"
 
-train_file_collect_8=${train_file_curr}
-train_file_collect_4=${train_file_curr}
-train_file_collect_2=${train_file_curr}
 train_file_collect_1=${train_file_curr}
-
-if [[ ${#all_data[@]} -gt 8 ]] ; then
-    real_data=()
-    last=${#all_data[@]}
-    for (( idx=last-1 ; idx>=last-8 ; idx-- ));do
-        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
-        p00="${all_data[$idx]}"
-        id="${id_list[$idx]}"
-        real_data+=(${p00})
-        printf "add real time file ${p00}, continue...\n"
-    done
-    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
-    train_file_collect_8="$( IFS=$','; echo "${real_data[*]}" )"
-fi
-
-if [[ ${#all_data[@]} -gt 4 ]] ; then
-    real_data=()
-    last=${#all_data[@]}
-    for (( idx=last-1 ; idx>=last-4 ; idx-- ));do
-        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
-        p00="${all_data[$idx]}"
-        id="${id_list[$idx]}"
-        real_data+=(${p00})
-        printf "add real time file ${p00}, continue...\n"
-    done
-    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
-    train_file_collect_4="$( IFS=$','; echo "${real_data[*]}" )"
-fi
-
-if [[ ${#all_data[@]} -gt 2 ]] ; then
-    real_data=()
-    last=${#all_data[@]}
-    for (( idx=last-1 ; idx>=last-2 ; idx-- ));do
-        #printf "%s<------->%s\n" "${id_list[i]}" "${sample_list[i]}"
-        p00="${all_data[$idx]}"
-        id="${id_list[$idx]}"
-        real_data+=(${p00})
-        printf "add real time file ${p00}, continue...\n"
-    done
-    printf "got ${#real_data[@]} latest collect inc real-time training data file\n"
-    train_file_collect_2="$( IFS=$','; echo "${real_data[*]}" )"
-fi
 
 if [[ ${#all_data[@]} -gt 1 ]] ; then
     real_data=()
@@ -332,12 +271,6 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 printf "last_id:%s\n" ${last_id}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "test_file:%s\n" ${test_file}
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-printf "train_file_collect_8:%s\n" ${train_file_collect_8}
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-printf "train_file_collect_4:%s\n" ${train_file_collect_4}
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-printf "train_file_collect_2:%s\n" ${train_file_collect_2}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 printf "train_file_collect_1:%s\n" ${train_file_collect_1}
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -365,6 +298,6 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncHourlyData\
-    ${randjar} ${curr_base_model_path} ${des_dir} ${train_file_collect_8} ${train_file_collect_4} ${train_file_collect_2} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
+    ${randjar} ${curr_base_model_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
 
 rm ${shell_in_run}

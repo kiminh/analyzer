@@ -86,7 +86,7 @@ object CollectIncHourlyData {
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(curr_base_model_path, des_dir, train_files_collect_8, train_files_collect_4, train_files_collect_2, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(curr_base_model_path, des_dir, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
     println(args(0))
     println(args(1))
