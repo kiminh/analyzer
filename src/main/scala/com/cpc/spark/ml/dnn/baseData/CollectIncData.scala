@@ -236,7 +236,7 @@ object CollectIncData {
 
 
     /****************************************collect_8***************************************************/
-    val df_train_files_collect_8: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_8)
+    /**val df_train_files_collect_8: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_8)
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
     df_train_files_collect_8.printSchema()
     df_train_files_collect_8.show(3)
@@ -469,7 +469,7 @@ object CollectIncData {
         map({ rs => rs._1 + "\t" + rs._2 }).
         repartition(1).
         saveAsTextFile(instances_2)
-    }
+    }**/
 
 
   }
