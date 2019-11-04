@@ -45,18 +45,14 @@ curr_model_incr=${curr_date}-tf-base-mom-8days-6eps-inc
 curr_incr_model_instances=${hdfs_path_model}/${curr_model_incr}/map_instances.data
 map_incr=${dir}/${curr_date}_incr_instances
 
-if [[ ! -f ${map_incr} ]]; then
-    hadoop fs -get ${curr_incr_model_instances} ${map_incr} &
-fi
-wait
-if [[ ! -f ${map_incr} ]]; then
-    printf "no today's incr model map instances file, exiting...\n"
-    rm ${shell_in_run}
-    exit 0
+hadoop fs -test -s ${curr_incr_model_instances}
+if [ $? -eq 0 ] ;then
+	echo 'exist and more than zero bytes:'${curr_incr_model_instances}
+else
+	echo 'non exist or less than zero bytes:'${curr_incr_model_instances}
 fi
 
 
-curr_base_model_path=${hdfs_path_model}/${curr_model_incr}
 curr_hourly_collect=${hdfs_path_model}/${curr_date}-hour-inc-collect
 hadoop fs -test -e ${curr_hourly_collect}
 if [ $? -eq 0 ] ;then
