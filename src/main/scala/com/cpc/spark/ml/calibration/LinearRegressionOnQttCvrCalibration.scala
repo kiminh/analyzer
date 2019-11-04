@@ -60,9 +60,8 @@ object LinearRegressionOnQttCvrCalibration {
 
     // get union log
     val sql = s"""
-                      |select a.searchid, cast(b.raw_cvr/10000 as double) as raw_cvr, substring(a.adclass,1,6) as adclass,
-                      |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-                      |unitid,userid,click_count,click_unit_count,conversion_from,hour,
+                      |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+                      |cvr_model_name, adslot_id a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
                       |from
                       |  (select * from
@@ -94,12 +93,12 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<default_click_unit_count
         ,col("click_unit_count")).otherwise("default"))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+      .select("searchid","ideaid","user_show_ad_num","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","click_unit_count")
-    val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslotid" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
+    val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count")
+    val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslot_id" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
       "click_unit_count" -> 35)
 
     val stagesArray = new ListBuffer[PipelineStage]()

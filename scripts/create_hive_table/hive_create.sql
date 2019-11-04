@@ -364,4 +364,23 @@ num double
 PARTITIONED by (dt STRING,label int)
 STORED as PARQUET;
 
+create table if not exists  dl_cpc.cvr_calibration_sample_all (
+searchid string,
+ideaid int,
+unitid int,
+userid int,
+adclass int,
+raw_cvr int,
+exp_cvr int,
+cvr_model_name string,
+user_show_ad_num int,
+adslot_id string,
+click_count int,
+click_unit_count int,
+conversion_from int
+)
+PARTITIONED BY (day string, hour string)
+STORED AS PARQUET;
+
+
 
