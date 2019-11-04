@@ -64,15 +64,17 @@ object LinearRegressionOnQttCvrCalibration {
                       |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
                       |unitid,userid,click_count,click_unit_count,conversion_from,hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
-                      |from dl_cpc.cvr_calibration_sample_all
+                      |from
+                      |  (select * from
+                      |  dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
                       |  and $mediaSelection
-                      |  and cvr_model_name in ('$calimodel','$model')
+                      |  and cvr_model_name in ('$calimodel','$model')) a
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
                       |  from dl_cpc.ocpc_cvr_log_hourly
                       |  where  $selectCondition1) c
-                      |  on a.searchid = c.searchid and b.conversion_goal=c.conversion_goal
+                      |  on a.searchid = c.searchid and a.conversion_goal=c.conversion_goal
        """.stripMargin
 
     println(s"sql:\n$sql")
