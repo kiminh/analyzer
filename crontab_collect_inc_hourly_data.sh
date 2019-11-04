@@ -39,7 +39,14 @@ last_date=`date --date='1 days ago' +%Y-%m-%d`
 des_dir=hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer
 hdfs_path_data=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup
 hdfs_path_model=hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-dnn-rawid_${ml_ver}
-hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
+
+hadoop fs -test -e ${des_dir}/${curr_date}-collect-inc}
+if [ $? -eq 0 ] ;then
+	echo 'exist directory:'${des_dir}/${curr_date}-collect-inc}
+else
+	echo 'non exist directory:'${des_dir}/${curr_date}-collect-inc}
+    hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
+fi
 
 curr_model_incr=${curr_date}-tf-base-mom-8days-6eps-inc
 curr_incr_model_instances=${hdfs_path_model}/${curr_model_incr}/map_instances.data
@@ -52,13 +59,14 @@ else
 	echo 'non exist or less than zero bytes:'${curr_incr_model_instances}
 fi
 
-
 curr_hourly_collect=${hdfs_path_model}/${curr_date}-hour-inc-collect
 hadoop fs -test -e ${curr_hourly_collect}
 if [ $? -eq 0 ] ;then
 	echo 'exist:'${curr_hourly_collect}
 else
 	echo 'non exist:'${curr_hourly_collect}
+	echo 'now make dir:'${curr_hourly_collect}
+	hadoop fs -mkdir ${curr_hourly_collect}
 fi
 
 rm ${shell_in_run}
