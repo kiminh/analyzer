@@ -175,7 +175,7 @@ object LinearRegressionOnQttCvrCalibration {
       x =>
         val searchid = x.getAs[String]("searchid")
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
-        val raw_cvr = x.getAs[Int]("raw_cvr").toDouble
+        val raw_cvr = x.getAs[Double]("raw_cvr").toDouble
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
         (searchid,exp_cvr,iscvr,raw_cvr,unitid)
