@@ -40,11 +40,11 @@ des_dir=hdfs://emr-cluster/user/cpc/fenghuabin/adlist-v4-transformer
 hdfs_path_data=hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup
 hdfs_path_model=hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-dnn-rawid_${ml_ver}
 
-hadoop fs -test -e ${des_dir}/${curr_date}-collect-inc}
+hadoop fs -test -e ${des_dir}/${curr_date}-collect-inc
 if [ $? -eq 0 ] ;then
-	echo 'exist directory:'${des_dir}/${curr_date}-collect-inc}
+	echo 'exist directory:'${des_dir}/${curr_date}-collect-inc
 else
-	echo 'non exist directory:'${des_dir}/${curr_date}-collect-inc}
+	echo 'non exist directory:'${des_dir}/${curr_date}-collect-inc
     hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
 fi
 
