@@ -298,8 +298,8 @@ delete_old=true
 
 spark-submit --master yarn --queue ${queue} \
     --name "collect-inc-data" \
-    --driver-memory 8g --executor-memory 4g \
-    --num-executors 1000 --executor-cores 4 \
+    --driver-memory 8g --executor-memory 2g \
+    --num-executors 200 --executor-cores 2 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
     --conf "spark.yarn.executor.memoryOverhead=4g" \
     --conf "spark.sql.shuffle.partitions=500" \
