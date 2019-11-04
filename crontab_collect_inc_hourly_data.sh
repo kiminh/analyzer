@@ -57,6 +57,8 @@ if [ $? -eq 0 ] ;then
 	echo 'exist and more than zero bytes:'${curr_incr_model_instances}
 else
 	echo 'non exist or less than zero bytes:'${curr_incr_model_instances}
+	rm ${shell_in_run}
+	exit 0
 fi
 
 curr_hourly_collect=${hdfs_path_model}/${curr_date}-hour-inc-collect
@@ -75,6 +77,8 @@ if [ $? -eq 0 ] ;then
 	echo 'exist and more than zero bytes:'${curr_hourly_collect_base}
 else
 	echo 'non exist or less than zero bytes:'${curr_hourly_collect_base}
+	echo 'now copy from incr model instances:'${curr_incr_model_instances}
+	hadoop fs -cp ${curr_incr_model_instances} ${curr_hourly_collect_base}
 fi
 
 
