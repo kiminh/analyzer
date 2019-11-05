@@ -19,6 +19,39 @@ if [ ${now_minutes} -ge 30 ];then
 fi
 #printf "now id is:%s\n" ${now_id}
 
+declare -A next_hour_map=()
+next_hour_map["00"]="01"
+next_hour_map["01"]="02"
+next_hour_map["02"]="03"
+next_hour_map["03"]="04"
+next_hour_map["04"]="05"
+next_hour_map["05"]="06"
+next_hour_map["06"]="07"
+next_hour_map["07"]="08"
+next_hour_map["08"]="09"
+next_hour_map["09"]="10"
+next_hour_map["10"]="11"
+next_hour_map["11"]="12"
+next_hour_map["12"]="13"
+next_hour_map["13"]="14"
+next_hour_map["14"]="15"
+next_hour_map["15"]="16"
+next_hour_map["16"]="17"
+next_hour_map["17"]="18"
+next_hour_map["18"]="19"
+next_hour_map["19"]="20"
+next_hour_map["20"]="21"
+next_hour_map["21"]="22"
+next_hour_map["22"]="23"
+next_hour_map["23"]="00"
+
+echo ${next_hour_map["00"]}
+echo ${next_hour_map["01"]}
+echo ${next_hour_map["10"]}
+echo ${next_hour_map["23"]}
+exit 0
+
+
 dir=collect_inc_hourly
 if [[ ! -d "${dir}" ]]; then
     mkdir ${dir}
