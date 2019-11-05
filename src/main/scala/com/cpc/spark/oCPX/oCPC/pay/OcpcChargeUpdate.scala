@@ -48,9 +48,9 @@ object OcpcChargeUpdate {
     prevData.show(10)
     // 根据date是否等于pay_date来判断是否重新落表
     val finalPayData = updatePay(prevData, scheduleData, baseData, date, spark)
-//    finalPayData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191014b")
+    finalPayData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191014b")
 
     // 数据落表
     val resultDF = finalPayData
@@ -79,14 +79,14 @@ object OcpcChargeUpdate {
     val flagData = scheduleData
       .withColumn("restart_flag", when(col("pay_date") === lit(date), 1).otherwise(0))
 
-//    flagData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191014a")
+    flagData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191014a")
 
 
 
     val rawData = flagData
-      .filter("flag = 1")
+      .filter("flag = 1 and pay_cnt < 4")
       .select("unitid", "pay_date", "pay_cnt", "restart_flag")
       .distinct()
       .join(prevDataRaw, Seq("unitid"), "left_outer")
