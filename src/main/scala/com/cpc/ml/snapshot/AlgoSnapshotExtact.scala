@@ -46,7 +46,7 @@ object AlgoSnapshotExtact {
          | feature_int_list,
          | feature_float_offset,
          | feature_float_list,
-         | feature_int64_offset.
+         | feature_int64_offset,
          | feature_int64_list,
          | day,
          | hour,
