@@ -136,7 +136,6 @@ object OcpcChargeSchedule {
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
          |  unitid,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  media_appsid,
@@ -161,6 +160,7 @@ object OcpcChargeSchedule {
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
+      .distinct()
 
     newDataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
