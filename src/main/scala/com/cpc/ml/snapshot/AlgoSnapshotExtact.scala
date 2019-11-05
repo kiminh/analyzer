@@ -107,7 +107,7 @@ object AlgoSnapshotExtact {
          |  , adslotid
          |  , adslot_type
          |  , content
-         |  , featureStr
+         |  , feature_str
          |  , feature_int32
          |  , feature_int64
          |  , val_rec as val_rec
