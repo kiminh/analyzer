@@ -58,7 +58,7 @@ object AlgoSnapshotExtact {
          |where day = '2019-11-05'
          |and hour = '16'
          |and minute = '00'
-         |limit 10
+         |limit 100
       """.stripMargin
 
     val rawDataFromSnapshotLog = spark.sql(sql).rdd.map(
@@ -74,7 +74,7 @@ object AlgoSnapshotExtact {
         val ideaid = x.getAs[Int]("ideaid")
         val feature_int64_list = x.getAs[Seq[Long]]("feature_int64_list").toArray
         val feature_int_list = x.getAs[Seq[Int]]("feature_int_list").toArray
-        val feature_type = x.getAs[Int]("feature_type")
+        val feature_type = x.getAs[Seq[Int]]("feature_type")
         val uid = x.getAs[String]("uid")
         val feature_float_offset = x.getAs[Seq[Int]]("feature_float_offset").toArray
         val modeltype = x.getAs[Int]("modeltype")
