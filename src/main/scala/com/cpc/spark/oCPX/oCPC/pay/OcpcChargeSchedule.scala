@@ -186,19 +186,6 @@ object OcpcChargeSchedule {
   }
 
   def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int, conversionGoal: Int) => {
-//    医美：130112100
-//    招商加盟：123100100
-//    医护：130104100,//保健类
-//    118106100,//减肥瘦身
-//    118109100,//丰胸
-//    110111100,//微商
-//    118102100,//美发护肤
-//    118105100,//功能化妆品
-//    113102100,//美容美发
-//    130102100,//健康护理
-//    135101100,//功能化妆品（品牌）
-//    135102100,//保健品（品牌）
-//    135103100,//健康护理（品牌
     val adclassString = adclass.toString
     val adclass3 = adclassString.substring(0, 3)
     val siteformPayAdclass = Array(130112100, 123100100, 130104100, 118106100, 118109100, 110111100, 118102100, 118105100, 113102100, 130102100, 135101100, 135102100, 135103100)
@@ -213,7 +200,7 @@ object OcpcChargeSchedule {
       result = "wzcp"
     } else if (adclass == 103100100 || adclass == 111100100 || adclass == 104100100) {
       result = "pay_industry"
-    } else if (siteformPayAdclass.contains(adclass) && conversionGoal == 3) {
+    } else if (siteformPayAdclass.contains(adclass) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
       result = "siteform_pay_industry"
     } else {
       result = "others"
