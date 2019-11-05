@@ -1,7 +1,6 @@
 
 package com.cpc.ml.snapshot
 import scala.collection.mutable
-import scala.reflect.ClassTag
 
 
 /**

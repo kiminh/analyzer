@@ -7,7 +7,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 /**
   * created by xiongyao on 2019/10/29
   */
-object SnapshotExample {
+object AlgoSnapshotExtact {
 
   def main(args: Array[String]): Unit = {
 
