@@ -23,6 +23,10 @@ object AlgoSnapshotExtact {
     var hour = args(1).toString
     var minute = args(2).toString
 
+    println("day:",day)
+    println("hour:",day)
+    println("minute:",day)
+
     val sql =
       s"""
          |select
@@ -88,6 +92,8 @@ object AlgoSnapshotExtact {
     ).filter(x => x != null)
 
     val snapshotDataToGo = spark.createDataFrame(rawDataFromSnapshotLog)
+
+    snapshotDataToGo.show(110,false)
     snapshotDataToGo.createOrReplaceTempView("snapshotDataToGo")
 
     val snapshotDataAsDataFrame = spark.sql(
@@ -100,7 +106,7 @@ object AlgoSnapshotExtact {
          |  , userid
          |  , adslotid
          |  , adslot_type
-         |  , contentStr
+         |  , content
          |  , featureStr
          |  , feature_int32
          |  , feature_int64
