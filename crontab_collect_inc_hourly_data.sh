@@ -49,7 +49,6 @@ echo ${next_hour_map["00"]}
 echo ${next_hour_map["01"]}
 echo ${next_hour_map["10"]}
 echo ${next_hour_map["23"]}
-exit 0
 
 
 dir=collect_inc_hourly
