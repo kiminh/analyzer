@@ -1,6 +1,7 @@
 
 package com.cpc.ml.snapshot
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 
 /**
@@ -62,9 +63,9 @@ case class CpcSnapshotEvent(
     features.foreach(f => {
       var name = f.toLowerCase()
       val index = features.indexOf(name)
-      var str_content = getFeatureValue(index, feature_str_offset, feature_str_list)
-      var list_32 = getFeatureValue(index, feature_int_offset, feature_int_list)
-      var list_64 = getFeatureValue(index, feature_int64_offset, feature_int64_list)
+      var str_content = getFeatureStrValue(index, feature_str_offset, feature_str_list)
+      var list_32 = getFeatureInt32Value(index, feature_int_offset, feature_int_list)
+      var list_64 = getFeatureInt64Value(index, feature_int64_offset, feature_int64_list)
 
       if (name.contains("val_rec_")) {
         val ideaidAndUnitid: String = name.replace("val_rec_", "")
@@ -98,28 +99,70 @@ case class CpcSnapshotEvent(
     this
   }
 
-  def getFeatureValue[T](index: Int, feature_offset: Array[Int],
-                         feature_list: Array[T]): Array[T] = {
-    var app_fea_strs = new Array[T](feature_list.length)
-    var feature_offset_list = scala.collection.JavaConversions.seqAsJavaList(feature_offset)
-    var feature_list_new = scala.collection.JavaConversions.seqAsJavaList(feature_list)
+  def getFeatureInt64Value(index: Int,
+                           feature_str_offset: Array[Int],
+                           feature_str_list: Array[Long]): Array[Long] = {
+    var app_fea_strs = new Array[Long](feature_str_list.size)
     if (index >= 0) {
-      val left_offset = feature_offset(index)
-      var right_offset = feature_offset_list.size
-      if (index < feature_offset_list.size - 1)
-        right_offset = feature_offset_list.get(index + 1)
+      val left_offset = feature_str_offset(index)
+      var right_offset = feature_str_offset.size
+      if (index < feature_str_offset.size - 1)
+        right_offset = feature_str_offset(index + 1)
       var i = left_offset
       while ( {
         i < right_offset
       }) {
-        app_fea_strs = app_fea_strs :+ feature_list_new.get(i) {
-          i += 1;
-          i - 1
+        app_fea_strs = app_fea_strs :+ feature_str_list(i)
+        {
+          i += 1; i - 1
         }
       }
     }
     app_fea_strs
   }
 
+  def getFeatureInt32Value(index: Int,
+                           feature_str_offset: Array[Int],
+                           feature_str_list: Array[Int]): Array[Int] = {
+    var app_fea_strs = new Array[Int](feature_str_list.size)
+    if (index >= 0) {
+      val left_offset = feature_str_offset(index)
+      var right_offset = feature_str_offset.size
+      if (index < feature_str_offset.size - 1)
+        right_offset = feature_str_offset(index + 1)
+      var i = left_offset
+      while ( {
+        i < right_offset
+      }) {
+        app_fea_strs = app_fea_strs :+ feature_str_list(i)
+        {
+          i += 1; i - 1
+        }
+      }
+    }
+    app_fea_strs
+  }
+
+  def getFeatureStrValue(index: Int,
+                           feature_str_offset: Array[Int],
+                           feature_str_list: Array[String]): Array[String] = {
+    var app_fea_strs = new Array[String](feature_str_list.length)
+    if (index >= 0) {
+      val left_offset = feature_str_offset(index)
+      var right_offset = feature_str_offset.size
+      if (index < feature_str_offset.size - 1)
+        right_offset = feature_str_offset(index + 1)
+      var i = left_offset
+      while ( {
+        i < right_offset
+      }) {
+        app_fea_strs = app_fea_strs :+ feature_str_list(i);
+        {
+          i += 1; i - 1
+        }
+      }
+    }
+    app_fea_strs
+  }
 
 }
