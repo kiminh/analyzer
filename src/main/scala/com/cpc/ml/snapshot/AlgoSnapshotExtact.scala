@@ -24,13 +24,33 @@ object AlgoSnapshotExtact {
     var minute = args(2).toString
 
     println("day:",day)
-    println("hour:",day)
-    println("minute:",day)
+    println("hour:",hour)
+    println("minute:",minute)
 
     val sql =
       s"""
          |select
-         | *
+         | mediaappsid,
+         | adslottype,
+         | insertionid,
+         | userid,
+         | ideaid,
+         | uid,
+         | modeltype,
+         | adslotid,
+         | feature_name,
+         | feature_type,
+         | feature_str_offset,
+         | feature_str_list,
+         | feature_int_offset,
+         | feature_int_list,
+         | feature_float_offset,
+         | feature_float_list,
+         | feature_int64_offset.
+         | feature_int64_list,
+         | day,
+         | hour,
+         | minute
          |from
          |algo_cpc.cpc_snapshot
          |where day = '$day'
@@ -47,7 +67,6 @@ object AlgoSnapshotExtact {
         val feature_str_offset = x.getAs[Array[Int]]("feature_str_offset")
         val feature_float_list = x.getAs[Array[Float]]("feature_float_list")
         val userid = x.getAs[Int]("userid")
-        val version = x.getAs[String]("version")
         val insertionid = x.getAs[String]("insertionid")
         val ideaid = x.getAs[Int]("ideaid")
         val feature_int64_list = x.getAs[Array[Long]]("feature_int64_list")
