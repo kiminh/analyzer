@@ -36,23 +36,23 @@ object OcpcChargeSchedule {
     // 兼容逻辑：兼容老版本的逻辑
     // 抽取基本数据
     val scheduleData = getPaySchedule(date, version, spark)
-    scheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
+//    scheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010a")
 
     // 更新pay_cnt，pay_date
     val updateScheduleData = updatePaySchedule(date, dayCnt, scheduleData, spark)
-    updateScheduleData
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
+//    updateScheduleData
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_pay_data20191010b")
 
     updateScheduleData
       .select("unitid", "pay_cnt", "pay_date", "flag", "update_flag", "prev_pay_cnt", "prev_pay_date")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
 
 
 
@@ -162,16 +162,16 @@ object OcpcChargeSchedule {
       .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
       .distinct()
 
-    newDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
+//    newDataRaw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
 
     val newData = newDataRaw
       .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .select("unitid")
       .distinct()
 
-    newData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021b")
+//    newData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021b")
 
 
     val data = prevData
