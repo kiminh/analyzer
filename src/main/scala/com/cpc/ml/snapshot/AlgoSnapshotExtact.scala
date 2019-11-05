@@ -4,8 +4,6 @@ import mlmodel.mlmodel.ModelType
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
-import scala.collection.mutable
-
 /**
   * created by xiongyao on 2019/10/29
   */
@@ -24,8 +22,6 @@ object AlgoSnapshotExtact {
     var day = args(0).toString
     var hour = args(1).toString
     var minute = args(2).toString
-
-    import spark.implicits._
 
     println("day:",day)
     println("hour:",hour)
@@ -60,12 +56,10 @@ object AlgoSnapshotExtact {
          |where day = '2019-11-05'
          |and hour = '16'
          |and minute = '00'
-         |limit 10
+         |limit 1000
       """.stripMargin
 
     var Rdd = spark.sql(sql).rdd
-
-    Rdd.take(10)
 
     val rawDataFromSnapshotLog = Rdd.map(
       x => {
@@ -90,8 +84,7 @@ object AlgoSnapshotExtact {
         val day = x.getAs[String]("day")
         val hour = x.getAs[String]("hour")
         val minute = x.getAs[String]("minute")
-
-        val pt = {
+        val model_type = {
           if (modeltype == ModelType.MTYPE_CTR) {
             "qtt"
           } else if (modeltype == ModelType.MTYPE_CVR) {
@@ -109,10 +102,10 @@ object AlgoSnapshotExtact {
           userid = userid,
           adslotid = adslotid,
           adslot_type = adslottype,
+          model_type = model_type,
           day = day,
           hour = hour,
-          minute = minute,
-          pt = pt
+          minute = minute
         )
         snapshotEvent.setFeatures(feature_name, feature_str_offset, feature_str_list, feature_int_offset, feature_int_list, feature_int64_offset, feature_int64_list)
 
@@ -121,7 +114,7 @@ object AlgoSnapshotExtact {
 
     val snapshotDataToGo = spark.createDataFrame(rawDataFromSnapshotLog)
 
-    snapshotDataToGo.show(110,false)
+    snapshotDataToGo.show(10,false)
     snapshotDataToGo.createOrReplaceTempView("snapshotDataToGo")
 
     val snapshotDataAsDataFrame = spark.sql(
@@ -134,30 +127,24 @@ object AlgoSnapshotExtact {
          |  , userid
          |  , adslotid
          |  , adslot_type
+         |  , model_type
          |  , content
          |  , feature_str
          |  , feature_int32
          |  , feature_int64
          |  , val_rec as val_rec
-         |  , day
-         |  , hour
-         |  , minute
-         |  , pt
          |from snapshotDataToGo
        """.stripMargin)
-      .repartition(100)
-      .write
-      .partitionBy("day", "hour", "minute", "pt")
-      .mode(SaveMode.Append)
-      .parquet(
-        s"""
-           |hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/
-        """
-          .stripMargin.trim
-      )
+      .repartition(100).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute")
+
+        spark.sql(
+          s"""
+             |ALTER TABLE dl_cpc.cpc_snapshot_v2
+             | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$minute")
+             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
+      """
+            .stripMargin.trim)
 
     println("-- write to hive successfully -- ")
-
   }
-
 }

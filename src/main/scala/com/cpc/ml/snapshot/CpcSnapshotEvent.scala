@@ -38,10 +38,10 @@ case class CpcSnapshotEvent(
                                 // features stored as int64 values.
                                 var feature_int64: collection.Map[String, Array[Long]] = null,
                                 var val_rec: collection.Map[String, Array[Int]] = null,
+                                var model_type : String = "",
                                 var day : String = "",
                                 var hour : String = "",
-                                var minute : String = "",
-                                var pt : String = ""
+                                var minute : String = ""
                               ) {
   def setFeatures(
                    features: Array[String],
