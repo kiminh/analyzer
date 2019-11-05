@@ -142,39 +142,6 @@ object CollectIncHourlyData {
     df_train_files_collect_1.printSchema()
     df_train_files_collect_1.show(3)
 
-    val rdd_1 = df_train_files_collect_1.rdd.map(
-      rs => {
-        val idx2 = rs.getSeq[Long](0)
-        val idx1 = rs.getSeq[Long](1)
-        val idx_arr = rs.getSeq[Long](2)
-        val idx0 = rs.getSeq[Long](3)
-        val sample_idx = rs.getLong(4)
-        val label_arr = rs.getSeq[Long](5)
-        val dense = rs.getSeq[Long](6)
-        val next_hour_hash = hour_mmh_map.get(next_hour)
-        dense.updated(27, next_hour_hash)
-        Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
-      })
-
-    val rdd_count_1 = rdd_1.count()
-    println(s"rdd_count is : $rdd_count_1")
-    println("DF file count:" + rdd_count_1.toString + " of file:" + train_files_collect_1)
-
-    val tf_df_1: DataFrame = spark.createDataFrame(rdd_1, schema_new)
-    tf_df_1.repartition(600).write.format("tfrecords").option("recordType", "Example").save(file_collect_1)
-
-    //保存count文件
-    val fileName_1 = "count_" + Random.nextInt(100000)
-    writeNum2File(fileName_1, rdd_count_1)
-
-    if (!low_time_list.contains(time_id) && rdd_count_1 <= 5000000) {
-      println(s"time_id $time_id not in low_time_list but count $rdd_count_1 less than 5 millions, invalid count")
-      s"hadoop fs -put $fileName_1 $file_collect_1/invalid_count" !
-    } else {
-      s"hadoop fs -put $fileName_1 $file_collect_1/count" !
-    }
-    s"hadoop fs -chmod -R 0777 $file_collect_1" !
-
     df_train_files_collect_1.rdd.map(
       rs => {
         val idx_arr = rs.getSeq[Long](2)
@@ -209,6 +176,39 @@ object CollectIncHourlyData {
       map({ rs => rs._1 + "\t" + rs._2 }).
       repartition(1).
       saveAsTextFile(instances_1)
+
+    val rdd_1 = df_train_files_collect_1.rdd.map(
+      rs => {
+        val idx2 = rs.getSeq[Long](0)
+        val idx1 = rs.getSeq[Long](1)
+        val idx_arr = rs.getSeq[Long](2)
+        val idx0 = rs.getSeq[Long](3)
+        val sample_idx = rs.getLong(4)
+        val label_arr = rs.getSeq[Long](5)
+        val dense = rs.getSeq[Long](6)
+        val next_hour_hash = hour_mmh_map.get(next_hour)
+        dense.updated(27, next_hour_hash)
+        Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
+      })
+
+    val rdd_count_1 = rdd_1.count()
+    println(s"rdd_count is : $rdd_count_1")
+    println("DF file count:" + rdd_count_1.toString + " of file:" + train_files_collect_1)
+
+    val tf_df_1: DataFrame = spark.createDataFrame(rdd_1, schema_new)
+    tf_df_1.repartition(600).write.format("tfrecords").option("recordType", "Example").save(file_collect_1)
+
+    //保存count文件
+    val fileName_1 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_1, rdd_count_1)
+
+    if (!low_time_list.contains(time_id) && rdd_count_1 <= 5000000) {
+      println(s"time_id $time_id not in low_time_list but count $rdd_count_1 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_1 $file_collect_1/invalid_count" !
+    } else {
+      s"hadoop fs -put $fileName_1 $file_collect_1/count" !
+    }
+    s"hadoop fs -chmod -R 0777 $file_collect_1" !
   }
 }
 
