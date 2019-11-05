@@ -6,19 +6,6 @@ source /etc/profile
 
 ml_name=adlist
 ml_ver=v4refult
-
-date_full=`date`
-#printf "*****************************${date_full}********************************\n"
-curr_date=`date --date='0 days ago' +%Y-%m-%d`
-#printf "now curr_date is:${curr_date}\n"
-now_hour=$(date "+%H")
-now_minutes=$(date "+%M")
-now_id="00"${now_hour}
-if [ ${now_minutes} -ge 30 ];then
-    now_id="30"${now_hour}
-fi
-#printf "now id is:%s\n" ${now_id}
-
 declare -A next_hour_map=()
 next_hour_map["00"]="01"
 next_hour_map["01"]="02"
@@ -45,11 +32,21 @@ next_hour_map["21"]="22"
 next_hour_map["22"]="23"
 next_hour_map["23"]="00"
 
-echo ${next_hour_map["00"]}
-echo ${next_hour_map["01"]}
-echo ${next_hour_map["10"]}
-echo ${next_hour_map["23"]}
+date_full=`date`
+#printf "*****************************${date_full}********************************\n"
+curr_date=`date --date='0 days ago' +%Y-%m-%d`
+#printf "now curr_date is:${curr_date}\n"
+now_hour=$(date "+%H")
+now_minutes=$(date "+%M")
+now_id="00"${now_hour}
+next_hour=${now_hour}
+if [ ${now_minutes} -ge 30 ];then
+    now_id="30"${now_hour}
+    next_hour=${next_hour_map["${now_hour}"]}
+fi
 
+printf "now id is:%s\n" ${now_id}
+printf "next hour is:%s\n" ${next_hour}
 
 dir=collect_inc_hourly
 if [[ ! -d "${dir}" ]]; then
@@ -338,7 +335,7 @@ spark-submit --master yarn --queue ${queue} \
     --conf "spark.sql.shuffle.partitions=500" \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.dnn.baseData.CollectIncHourlyData\
-    ${randjar} ${collect_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
+    ${randjar} ${next_hour} ${collect_path} ${des_dir} ${train_file_collect_1} ${last_date} ${curr_date} ${last_id} ${delete_old}
 
 
 curr_collect_incr=${collect_path}/${curr_date}-${last_id}-incr-instances/part-00000

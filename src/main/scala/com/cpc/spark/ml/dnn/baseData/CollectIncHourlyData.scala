@@ -78,15 +78,15 @@ object CollectIncHourlyData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 7) {
+    if (args.length != 8) {
       System.err.println(
         """
-          |you have to input 7 parameters !!!
+          |you have to input 8 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
     //val Array(src, des_dir, des_date, des_map_prefix, numPartitions) = args
-    val Array(collect_path, des_dir, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
+    val Array(next_hour, collect_path, des_dir, train_files_collect_1, last_date, curr_date, time_id, delete_old) = args
 
     println(args(0))
     println(args(1))
@@ -103,6 +103,13 @@ object CollectIncHourlyData {
     val spark = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
     val sc = spark.sparkContext
 
+    val hour_mmh_file = des_dir + "/hour_mmh_map.txt"
+
+    val hour_mmh_map = sc.textFile(hour_mmh_file).map({
+      rs =>
+        val line_list = rs.split("\t")
+        (line_list(1), line_list(0).toLong)
+    }).collectAsMap()
 
 
     val curr_base_instances_rdd =
@@ -113,9 +120,22 @@ object CollectIncHourlyData {
     })
 
     val instances_1 = collect_path + "/" + curr_date + "-" + time_id + "-incr-instances"
+    val file_collect_1 = collect_path + "/" + curr_date + "-" + time_id + "-new-examples"
     if (delete_old == "true") {
       delete_hdfs_path(instances_1)
+      delete_hdfs_path(file_collect_1)
     }
+
+    val schema_new = StructType(List(
+      StructField("sample_idx", LongType, nullable = true),
+      StructField("label", ArrayType(LongType, containsNull = true)),
+      StructField("dense", ArrayType(LongType, containsNull = true)),
+      StructField("idx0", ArrayType(LongType, containsNull = true)),
+      StructField("idx1", ArrayType(LongType, containsNull = true)),
+      StructField("idx2", ArrayType(LongType, containsNull = true)),
+      StructField("id_arr", ArrayType(LongType, containsNull = true))
+    ))
+    val low_time_list = "0001 3001 0002 3002 0003 3003 0004 3004 0005 3005".split(" ")
 
     val df_train_files_collect_1: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(train_files_collect_1)
     //println("DF file count:" + df_train_files_collect.count().toString + " of file:" + train_files_collect)
@@ -131,8 +151,29 @@ object CollectIncHourlyData {
         val sample_idx = rs.getLong(4)
         val label_arr = rs.getSeq[Long](5)
         val dense = rs.getSeq[Long](6)
+        val next_hour_hash = hour_mmh_map.get(next_hour)
+        dense.updated(27, next_hour_hash)
         Row(sample_idx, label_arr, dense, idx0, idx1, idx2, idx_arr)
       })
+
+    val rdd_count_1 = rdd_1.count()
+    println(s"rdd_count is : $rdd_count_1")
+    println("DF file count:" + rdd_count_1.toString + " of file:" + train_files_collect_1)
+
+    val tf_df_1: DataFrame = spark.createDataFrame(rdd_1, schema_new)
+    tf_df_1.repartition(600).write.format("tfrecords").option("recordType", "Example").save(file_collect_1)
+
+    //保存count文件
+    val fileName_1 = "count_" + Random.nextInt(100000)
+    writeNum2File(fileName_1, rdd_count_1)
+
+    if (!low_time_list.contains(time_id) && rdd_count_1 <= 5000000) {
+      println(s"time_id $time_id not in low_time_list but count $rdd_count_1 less than 5 millions, invalid count")
+      s"hadoop fs -put $fileName_1 $file_collect_1/invalid_count" !
+    } else {
+      s"hadoop fs -put $fileName_1 $file_collect_1/count" !
+    }
+    s"hadoop fs -chmod -R 0777 $file_collect_1" !
 
     df_train_files_collect_1.rdd.map(
       rs => {
