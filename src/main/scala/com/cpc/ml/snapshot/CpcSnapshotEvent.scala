@@ -112,7 +112,7 @@ case class CpcSnapshotEvent(
       while ( {
         i < right_offset
       }) {
-        app_fea_strs = app_fea_strs :+ feature_str_list(i)
+        app_fea_strs = app_fea_strs :+ feature_str_list(i);
         {
           i += 1; i - 1
         }
@@ -134,7 +134,7 @@ case class CpcSnapshotEvent(
       while ( {
         i < right_offset
       }) {
-        app_fea_strs = app_fea_strs :+ feature_str_list(i)
+        app_fea_strs = app_fea_strs :+ feature_str_list(i);
         {
           i += 1; i - 1
         }
