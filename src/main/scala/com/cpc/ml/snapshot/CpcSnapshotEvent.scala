@@ -62,6 +62,7 @@ case class CpcSnapshotEvent(
     features.foreach(f => {
       var name = f.toLowerCase()
       val index = features.indexOf(name)
+
       var str_content = getFeatureStrValue(index, feature_str_offset, feature_str_list)
       var list_32 = getFeatureInt32Value(index, feature_int_offset, feature_int_list)
       var list_64 = getFeatureInt64Value(index, feature_int64_offset, feature_int64_list)
@@ -102,18 +103,24 @@ case class CpcSnapshotEvent(
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Long]): Array[Long] = {
     if (index >= 0) {
-      val left_offset = feature_str_offset(index)
-      var right_offset = feature_str_offset.size
-      if (index < feature_str_offset.size - 1)
-        right_offset = feature_str_offset(index + 1)
-      var a = left_offset - 1
-      var j = 0
-      var app_fea_strs = new Array[Long](right_offset-left_offset)
-      for (a <- left_offset until right_offset){
-        app_fea_strs(j) = feature_str_list(a)
-        j += 1
+      try {
+        val left_offset = feature_str_offset(index)
+        var right_offset = feature_str_offset.size
+        if (index < feature_str_offset.size - 1)
+          right_offset = feature_str_offset(index + 1)
+        var a = left_offset - 1
+        var j = 0
+        if (right_offset > left_offset){
+          var app_fea_strs = new Array[Long](right_offset-left_offset)
+          for (a <- left_offset until right_offset){
+            app_fea_strs(j) = feature_str_list(a)
+            j += 1
+          }
+          return app_fea_strs
+        }
+      } catch {
+        case e :Exception => println(e)
       }
-      return app_fea_strs
     }
     null
   }
@@ -122,18 +129,24 @@ case class CpcSnapshotEvent(
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Int]): Array[Int] = {
     if (index >= 0) {
-      val left_offset = feature_str_offset(index)
-      var right_offset = feature_str_offset.size
-      if (index < feature_str_offset.size - 1)
-        right_offset = feature_str_offset(index + 1)
-      var a = left_offset - 1
-      var j = 0
-      var app_fea_strs = new Array[Int](right_offset-left_offset)
-      for (a <- left_offset until right_offset){
-        app_fea_strs(j) = feature_str_list(a)
-        j += 1
+      try {
+        val left_offset = feature_str_offset(index)
+        var right_offset = feature_str_offset.size
+        if (index < feature_str_offset.size - 1)
+          right_offset = feature_str_offset(index + 1)
+        var a = left_offset - 1
+        var j = 0
+        if (right_offset > left_offset){
+          var app_fea_strs = new Array[Int](right_offset-left_offset)
+          for (a <- left_offset until right_offset){
+            app_fea_strs(j) = feature_str_list(a)
+            j += 1
+          }
+          return app_fea_strs
+        }
+      } catch {
+        case e :Exception => println(e)
       }
-      return app_fea_strs
     }
     null
   }
@@ -142,18 +155,24 @@ case class CpcSnapshotEvent(
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[String]): Array[String] = {
     if (index >= 0) {
-      val left_offset = feature_str_offset(index)
-      var right_offset = feature_str_offset.size
-      if (index < feature_str_offset.size - 1)
-        right_offset = feature_str_offset(index + 1)
-      var a = left_offset - 1
-      var j = 0
-      var app_fea_strs = new Array[String](right_offset-left_offset)
-      for (a <- left_offset until right_offset){
-        app_fea_strs(j) = feature_str_list(a)
-        j += 1
+      try {
+        val left_offset = feature_str_offset(index)
+        var right_offset = feature_str_offset.size
+        if (index < feature_str_offset.size - 1)
+          right_offset = feature_str_offset(index + 1)
+        var a = left_offset - 1
+        var j = 0
+        if (right_offset > left_offset){
+          var app_fea_strs = new Array[String](right_offset-left_offset)
+          for (a <- left_offset until right_offset){
+            app_fea_strs(j) = feature_str_list(a)
+            j += 1
+          }
+          return app_fea_strs
+        }
+      } catch {
+        case e :Exception => println(e)
       }
-      return app_fea_strs
     }
     null
   }
