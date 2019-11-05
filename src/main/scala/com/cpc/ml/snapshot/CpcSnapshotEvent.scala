@@ -101,76 +101,61 @@ case class CpcSnapshotEvent(
   def getFeatureInt64Value(index: Int,
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Long]): Array[Long] = {
-    println(index)
-    println(feature_str_offset)
-    println(feature_str_list)
-    var app_fea_strs = new Array[Long](feature_str_list.size)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
       var right_offset = feature_str_offset.size
       if (index < feature_str_offset.size - 1)
         right_offset = feature_str_offset(index + 1)
-      var i = left_offset
-      while ( {
-        i < right_offset
-      }) {
-        app_fea_strs = app_fea_strs :+ feature_str_list(i);
-        {
-          i += 1; i - 1
-        }
+      var a = left_offset - 1
+      var j = 0
+      var app_fea_strs = new Array[Long](right_offset-left_offset)
+      for (a <- left_offset until right_offset){
+        app_fea_strs(j) = feature_str_list(a)
+        j += 1
       }
+      return app_fea_strs
     }
-    app_fea_strs
+    null
   }
 
   def getFeatureInt32Value(index: Int,
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Int]): Array[Int] = {
-    println(index)
-    println(feature_str_offset)
-    println(feature_str_list)
-    var app_fea_strs = new Array[Int](feature_str_list.size)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
       var right_offset = feature_str_offset.size
       if (index < feature_str_offset.size - 1)
         right_offset = feature_str_offset(index + 1)
-      var i = left_offset
-      while ( {
-        i < right_offset
-      }) {
-        app_fea_strs = app_fea_strs :+ feature_str_list(i);
-        {
-          i += 1; i - 1
-        }
+      var a = left_offset - 1
+      var j = 0
+      var app_fea_strs = new Array[Int](right_offset-left_offset)
+      for (a <- left_offset until right_offset){
+        app_fea_strs(j) = feature_str_list(a)
+        j += 1
       }
+      return app_fea_strs
     }
-    app_fea_strs
+    null
   }
 
   def getFeatureStrValue(index: Int,
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[String]): Array[String] = {
-    var app_fea_strs = new Array[String](feature_str_list.length)
-    println(index)
-    println(feature_str_offset)
-    println(feature_str_list)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
       var right_offset = feature_str_offset.size
       if (index < feature_str_offset.size - 1)
         right_offset = feature_str_offset(index + 1)
-      var i = left_offset
-      while ( {
-        i < right_offset
-      }) {
-        app_fea_strs = app_fea_strs :+ feature_str_list(i);
-        {
-          i += 1; i - 1
-        }
+      var a = left_offset - 1
+      var j = 0
+      var app_fea_strs = new Array[String](right_offset-left_offset)
+      for (a <- left_offset until right_offset){
+        app_fea_strs(j) = feature_str_list(a)
+        j += 1
       }
+      return app_fea_strs
     }
-    app_fea_strs
+    null
   }
 
 }
