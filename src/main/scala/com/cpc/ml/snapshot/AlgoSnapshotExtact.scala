@@ -4,6 +4,8 @@ import mlmodel.mlmodel.ModelType
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+import scala.collection.mutable
+
 /**
   * created by xiongyao on 2019/10/29
   */
@@ -53,31 +55,32 @@ object AlgoSnapshotExtact {
          | minute
          |from
          |algo_cpc.cpc_snapshot
-         |where day = '$day'
-         |and hour = '$hour'
-         |and minute = '$minute'
+         |where day = '2019-11-05'
+         |and hour = '16'
+         |and minute = '00'
+         |limit 10
       """.stripMargin
 
     val rawDataFromSnapshotLog = spark.sql(sql).rdd.map(
       x => {
         val mediaappsid = x.getAs[Int]("mediaappsid").toString
         val adslottype = x.getAs[Int]("adslottype")
-        val feature_int64_offset = x.getAs[Array[Int]]("feature_int64_offset")
-        val feature_name = x.getAs[Array[String]]("feature_name")
-        val feature_str_offset = x.getAs[Array[Int]]("feature_str_offset")
-        val feature_float_list = x.getAs[Array[Float]]("feature_float_list")
+        val feature_int64_offset = x.getAs[Seq[Int]]("feature_int64_offset").toArray
+        val feature_name = x.getAs[Seq[String]]("feature_name").toArray
+        val feature_str_offset = x.getAs[Seq[Int]]("feature_str_offset").toArray
+        val feature_float_list = x.getAs[Seq[Float]]("feature_float_list").toArray
         val userid = x.getAs[Int]("userid")
         val insertionid = x.getAs[String]("insertionid")
         val ideaid = x.getAs[Int]("ideaid")
-        val feature_int64_list = x.getAs[Array[Long]]("feature_int64_list")
-        val feature_int_list = x.getAs[Array[Int]]("feature_int_list")
+        val feature_int64_list = x.getAs[Seq[Long]]("feature_int64_list").toArray
+        val feature_int_list = x.getAs[Seq[Int]]("feature_int_list").toArray
         val feature_type = x.getAs[Int]("feature_type")
         val uid = x.getAs[String]("uid")
-        val feature_float_offset = x.getAs[Array[Int]]("feature_float_offset")
+        val feature_float_offset = x.getAs[Seq[Int]]("feature_float_offset").toArray
         val modeltype = x.getAs[Int]("modeltype")
         val adslotid = x.getAs[Int]("adslotid")
-        val feature_int_offset = x.getAs[Array[Int]]("feature_int_offset")
-        val feature_str_list = x.getAs[Array[String]]("feature_str_list")
+        val feature_int_offset = x.getAs[Seq[Int]]("feature_int_offset").toArray
+        val feature_str_list = x.getAs[Seq[String]]("feature_str_list").toArray
         val day = x.getAs[String]("day")
         val hour = x.getAs[String]("hour")
         val minute = x.getAs[String]("minute")
