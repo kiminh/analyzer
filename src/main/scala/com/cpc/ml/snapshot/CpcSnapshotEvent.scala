@@ -101,6 +101,9 @@ case class CpcSnapshotEvent(
   def getFeatureInt64Value(index: Int,
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Long]): Array[Long] = {
+    println(index)
+    println(feature_str_offset)
+    println(feature_str_list)
     var app_fea_strs = new Array[Long](feature_str_list.size)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
@@ -123,6 +126,9 @@ case class CpcSnapshotEvent(
   def getFeatureInt32Value(index: Int,
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[Int]): Array[Int] = {
+    println(index)
+    println(feature_str_offset)
+    println(feature_str_list)
     var app_fea_strs = new Array[Int](feature_str_list.size)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
@@ -146,6 +152,9 @@ case class CpcSnapshotEvent(
                            feature_str_offset: Array[Int],
                            feature_str_list: Array[String]): Array[String] = {
     var app_fea_strs = new Array[String](feature_str_list.length)
+    println(index)
+    println(feature_str_offset)
+    println(feature_str_list)
     if (index >= 0) {
       val left_offset = feature_str_offset(index)
       var right_offset = feature_str_offset.size

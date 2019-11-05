@@ -25,6 +25,8 @@ object AlgoSnapshotExtact {
     var hour = args(1).toString
     var minute = args(2).toString
 
+    import spark.implicits._
+
     println("day:",day)
     println("hour:",hour)
     println("minute:",minute)
@@ -58,10 +60,14 @@ object AlgoSnapshotExtact {
          |where day = '2019-11-05'
          |and hour = '16'
          |and minute = '00'
-         |limit 100
+         |limit 10
       """.stripMargin
 
-    val rawDataFromSnapshotLog = spark.sql(sql).rdd.map(
+    var Rdd = spark.sql(sql).rdd
+
+    Rdd.take(10)
+
+    val rawDataFromSnapshotLog = Rdd.map(
       x => {
         val mediaappsid = x.getAs[Int]("mediaappsid").toString
         val adslottype = x.getAs[Int]("adslottype")
