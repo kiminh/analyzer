@@ -40,7 +40,7 @@ object OcpcGetPb_baseline_others {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBaseMainOther(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
     // 计算兜底校准系数:jfb_factor, post_cvr, cvr_factor
@@ -78,7 +78,7 @@ object OcpcGetPb_baseline_others {
       .cache()
     pcocData.show(10)
 
-    val bidFactorDataRaw = OcpcBIDfactorData(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorDataRaw = OcpcBIDfactorDataOther(date, hour, version, expTag, bidFactorHourInt, spark)
     val bidFactorData = bidFactorDataRaw
       .select("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
       .cache()
@@ -283,7 +283,7 @@ object OcpcGetPb_baseline_others {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelayOther(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
@@ -327,7 +327,7 @@ object OcpcGetPb_baseline_others {
     data
   }
 
-  def OcpcBIDfactorData(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark:SparkSession) = {
+  def OcpcBIDfactorDataOther(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark:SparkSession) = {
     /*
     计算新版的cvr平滑策略：
     1. 抽取基础数据
