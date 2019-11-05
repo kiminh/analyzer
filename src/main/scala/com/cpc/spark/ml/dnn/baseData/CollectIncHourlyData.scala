@@ -197,7 +197,7 @@ object CollectIncHourlyData {
     println("DF file count:" + rdd_count_1.toString + " of file:" + train_files_collect_1)
 
     val tf_df_1: DataFrame = spark.createDataFrame(rdd_1, schema_new)
-    tf_df_1.repartition(60).write.format("tfrecords").option("recordType", "Example").save(file_collect_1)
+    tf_df_1.repartition(300).write.format("tfrecords").option("recordType", "Example").save(file_collect_1)
 
     //保存count文件
     val fileName_1 = "count_" + Random.nextInt(100000)
