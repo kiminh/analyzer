@@ -1,17 +1,24 @@
 package com.cpc.spark.oCPX.oCPC.calibration_by_tag
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
 object OcpcGetPb_baseline_others {
+  /*
+  新增部分媒体id采用暗投
+   */
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -97,8 +104,8 @@ object OcpcGetPb_baseline_others {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -188,7 +195,89 @@ object OcpcGetPb_baseline_others {
     result
   })
 
-  def OcpcCalibrationBaseMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def getBaseDataDelayOther(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  adslot_type,
+         |  isshow,
+         |  isclick,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  cast(exp_cvr as double) as exp_cvr,
+         |  cast(exp_ctr as double) as exp_ctr,
+         |  media_appsid,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |      when adclass in (110110100, 125100100) then "wzcp"
+         |      else "others"
+         |  end) as industry,
+         |  conversion_goal,
+         |  expids,
+         |  exptags,
+         |  ocpc_expand,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  isclick = 1
+       """.stripMargin
+    println(sqlRequest)
+    val clickData = spark
+      .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("media", lit("Other"))
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr,
+         |  cvr_goal
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  `date` >= '$date1'
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
+
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
+  }
+
+
+  def OcpcCalibrationBaseMainOther(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
     1. 基于原始pcoc，计算预测cvr的量纲系数
@@ -247,7 +336,7 @@ object OcpcGetPb_baseline_others {
      */
 
     // 抽取基础数据
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelayOther(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
