@@ -21,6 +21,7 @@ object DeepOcpcReport {
     // bash: 2019-01-02 12
     val date = args(0).toString
     val dayInt = args(1).toInt
+    println(s"parameter: date=$date, dayInt=$dayInt")
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
