@@ -100,7 +100,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |    on a.searchid = b.searchid and a.ideaid = b.ideaid
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
-                      |  from dl_cpc.ocpc_cvr_log_hourly
+                      |  from dl_cpc.ocpc_quick_cv_log
                       |  where  $selectCondition1) c
                       |  on a.searchid = c.searchid and b.conversion_goal=c.conversion_goal
        """.stripMargin
