@@ -153,7 +153,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
     }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
 
 
-    var dimension = 1
+    var dimension = 0
     var defaultnum = 0
 
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
