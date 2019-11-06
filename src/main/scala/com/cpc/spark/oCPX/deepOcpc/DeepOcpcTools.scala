@@ -62,7 +62,6 @@ object DeepOcpcTools {
     val conf_key = "medias.total.media_selection"
     val mediaSelection = conf.getString(conf_key)
 
-    // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
