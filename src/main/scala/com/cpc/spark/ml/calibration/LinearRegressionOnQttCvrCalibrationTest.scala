@@ -192,7 +192,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
         {
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-          val featurecoe = lrModel.coefficients.toArray(dimension + 1 + featurevecid.indexOf(1.0f))
+          val featurecoe = lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
           val key = s"$cate" + "#" + cateid
           val count = x.getAs[Long]("count")
           (key, (featurecoe, count))
