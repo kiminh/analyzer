@@ -153,7 +153,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
     }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
 
 
-    var dimension = 0
+    var dimension = 1
     var defaultnum = 0
 
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
@@ -213,7 +213,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
         println(s"$key coefficient:$featurecoe")
         featuremap += ((key, featurecoe))
       }
-      dimension = featuremap.size + 1 - defaultnum
+      dimension = featuremap.size  - defaultnum
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
