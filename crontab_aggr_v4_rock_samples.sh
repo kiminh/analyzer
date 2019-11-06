@@ -315,9 +315,11 @@ echo "${date_list}"
 
 date_last=`date --date='1 days ago' +%Y-%m-%d`
 instances_all_list=(
-    `date --date='9 days ago' +%Y-%m-%d`
-    `date --date='1 days ago' +%Y-%m-%d`
+    `date --date='14 days ago' +%Y-%m-%d`
+    `date --date='7 days ago' +%Y-%m-%d`
+    `date --date='5 days ago' +%Y-%m-%d`
     `date --date='3 days ago' +%Y-%m-%d`
+    `date --date='1 days ago' +%Y-%m-%d`
 )
 instances_begin_date_list="$( IFS=$';'; echo "${instances_all_list[*]}" )"
 
