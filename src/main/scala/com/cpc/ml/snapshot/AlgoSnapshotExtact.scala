@@ -132,8 +132,8 @@ object AlgoSnapshotExtact {
          |  , adslot_type
          |  , model_type
          |  , content as contentstr
-         |  , contentstr['model_name'][0] as model_name
-         |  , contentstr['model_id'][1] as model_id
+         |  , content['model_name'][0] as model_name
+         |  , content['model_id'][1] as model_id
          |  , feature_int32
          |  , feature_int64
          |  , val_rec as val_rec
