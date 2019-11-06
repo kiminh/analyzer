@@ -153,7 +153,7 @@ object LinearRegressionOnQttCvrCalibration {
     }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
 
 
-    var dimension = 1
+    var dimension = 0
     var defaultnum = 0
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
     var featuremap = scala.collection.mutable.Map[String,Double]()
@@ -174,7 +174,7 @@ object LinearRegressionOnQttCvrCalibration {
         {
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-          val featurecoe = lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
+          val featurecoe = lrModel.coefficients.toArray(dimension + 1 + featurevecid.indexOf(1.0f))
           val key = s"$cate" + "#" + cateid
           val count = x.getAs[Long]("count")
           (key, (featurecoe, count))
@@ -195,7 +195,7 @@ object LinearRegressionOnQttCvrCalibration {
         println(s"$key coefficient:$featurecoe")
         featuremap += ((key, featurecoe))
       }
-      dimension = featuremap.size + 1 - defaultnum
+      dimension = featuremap.size - defaultnum
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
