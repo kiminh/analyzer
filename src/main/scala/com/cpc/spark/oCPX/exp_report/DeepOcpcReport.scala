@@ -72,12 +72,12 @@ object DeepOcpcReport {
          |        c.iscvr1,
          |        cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |        cast(deep_cpa as double) as deep_cpagiven,
-         |        (case when exptags like '%deepOcpcExpTag:daily%' then 'sy1'
-         |              when exptags like '%deepOcpcExpTag:v2%' then 'sy2'
-         |              when exptags like '%deepOcpcExpTag:v3%' then 'sy2'
+         |        (case when exptags like '%deepOcpcExpTag:daily%' then 'daily'
+         |              when exptags like '%deepOcpcExpTag:v2%' then 'v2'
+         |              when exptags like '%deepOcpcExpTag:v3%' then 'v3'
          |              else 'dz'
          |        end) as cali_tag,
-         |        (case when exptags like '%ocpc_rcl:v205%' then 'sy1'
+         |        (case when exptags like '%ocpc_rcl:v205%' then 'v205'
          |              else 'dz'
          |        end) as recall_tag,
          |        (case
