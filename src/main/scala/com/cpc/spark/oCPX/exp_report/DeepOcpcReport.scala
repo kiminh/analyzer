@@ -37,26 +37,123 @@ object DeepOcpcReport {
       .repartition(1)
       .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
 
-    val totalData1 = getExpDataTotal(date, dayInt, spark)
-    val totalData2 = getExpDataTotal(date1, dayInt, spark)
+    // 校准策略实验
+    val totalCaliData1 = getCaliExpDataTotal(date, dayInt, spark)
+    val totalCaliData2 = getCaliExpDataTotal(date1, dayInt, spark)
+    val dailyCaliData = getCaliExpDataDaily(date, 2 * dayInt, spark)
 
-    val dailyData = getExpDataDaily(date, 2 * dayInt, spark)
-
-    totalData1
+    totalCaliData1
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_a")
-
-    totalData2
+    totalCaliData2
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_b")
-
-    dailyData
+    dailyCaliData
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_c")
 
+    // 转化预召回实验
+    val totalRecallData1 = getRecallExpDataTotal(date, dayInt, spark)
+    val totalRecallData2 = getRecallExpDataTotal(date, dayInt, spark)
+    val dailyRecallData = getRecallExpDataDaily(date, dayInt, spark)
+
+    totalRecallData1
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_d")
+    totalRecallData2
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_e")
+    dailyRecallData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_f")
+
   }
 
-  def getExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
+  def getRecallExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    recall_tag,
+         |    unitid,
+         |    cpa_check_priority,
+         |    media,
+         |    date,
+         |    deep_conversion_goal,
+         |    sum(click) as click,
+         |    sum(cv1) as cv1,
+         |    sum(cv2) as cv2,
+         |    sum(cost) as cost,
+         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+         |FROM
+         |    dl_cpc.deep_ocpc_exp_report_daily
+         |WHERE
+         |    date between '${date1}' and '${date}'
+         |GROUP BY
+         |    recall_tag,
+         |    unitid,
+         |    cpa_check_priority,
+         |    media,
+         |    deep_conversion_goal,
+         |    date
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data
+  }
+
+  def getRecallExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    recall_tag,
+         |    unitid,
+         |    cpa_check_priority,
+         |    media,
+         |    deep_conversion_goal,
+         |    sum(click) as click,
+         |    sum(cv1) as cv1,
+         |    sum(cv2) as cv2,
+         |    sum(cost) as cost,
+         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+         |FROM
+         |    dl_cpc.deep_ocpc_exp_report_daily
+         |WHERE
+         |    date between '${date1}' and '${date}'
+         |GROUP BY
+         |    recall_tag,
+         |    unitid,
+         |    cpa_check_priority,
+         |    media,
+         |    deep_conversion_goal
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data
+  }
+
+  def getCaliExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
@@ -99,7 +196,7 @@ object DeepOcpcReport {
     data
   }
 
-  def getExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
+  def getCaliExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
