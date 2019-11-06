@@ -28,7 +28,7 @@ case class CpcSnapshotEvent(
                                 var uid : String = "",
                                 var ideaid : Long = 0,
                                 var userid : Long = 0,
-                                var adslotid : Int = 0,
+                                var adslotid : String = "",
                                 var adslot_type : Long = 0,
                                 var content: collection.Map[String, Array[String]] = null, // <todo> int , float and / or string?
                                 // feature stored as string.

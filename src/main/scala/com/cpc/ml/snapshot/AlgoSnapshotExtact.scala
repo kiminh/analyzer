@@ -78,7 +78,7 @@ object AlgoSnapshotExtact {
         val uid = x.getAs[String]("uid")
         val feature_float_offset = x.getAs[Seq[Int]]("feature_float_offset").toArray
         val modeltype = x.getAs[Int]("modeltype")
-        val adslotid = x.getAs[Int]("adslotid")
+        val adslotid = x.getAs[Int]("adslotid").toString
         val feature_int_offset = x.getAs[Seq[Int]]("feature_int_offset").toArray
         val feature_str_list = x.getAs[Seq[String]]("feature_str_list").toArray
         val day = x.getAs[String]("day")
