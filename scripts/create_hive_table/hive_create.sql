@@ -377,7 +377,9 @@ user_show_ad_num int,
 adslot_id string,
 click_count int,
 click_unit_count int,
-conversion_from int
+conversion_from int,
+conversion_goal int,
+media_appsid string
 )
 PARTITIONED BY (day string, hour string)
 STORED AS PARQUET;
