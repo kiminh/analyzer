@@ -22,8 +22,6 @@ object AlgoSnapshotExtact {
     var day = args(0).toString
     var hour = args(1).toString
     var intMinute = args(2).toString.toInt
-
-    println("preMinute:",intMinute)
     var minute = getMinute(intMinute)
 
     println("day=",day)
@@ -61,10 +59,9 @@ object AlgoSnapshotExtact {
          |and minute = '$minute'
       """.stripMargin
 
+    println(sql)
     var Rdd = spark.sql(sql).rdd
-
     var count = Rdd.count()
-
     println("data count:",count)
 
     val rawDataFromSnapshotLog = Rdd.map(
@@ -91,9 +88,9 @@ object AlgoSnapshotExtact {
         val hour = x.getAs[String]("hour")
         val minute = x.getAs[String]("minute")
         val model_type = {
-          if (modeltype == ModelType.MTYPE_CTR) {
+          if (modeltype == ModelType.MTYPE_CTR.value) {
             "qtt"
-          } else if (modeltype == ModelType.MTYPE_CVR) {
+          } else if (modeltype == ModelType.MTYPE_CVR.value) {
             "qtt-cvr"
           } else {
             "unknown"
@@ -121,6 +118,7 @@ object AlgoSnapshotExtact {
     val snapshotDataToGo = spark.createDataFrame(rawDataFromSnapshotLog)
 
     snapshotDataToGo.show(10,false)
+    println("extact data count:",snapshotDataToGo.count())
     snapshotDataToGo.createOrReplaceTempView("snapshotDataToGo")
 
     val snapshotDataAsDataFrame = spark.sql(
@@ -134,8 +132,8 @@ object AlgoSnapshotExtact {
          |  , adslotid
          |  , adslot_type
          |  , model_type
-         |  , content
-         |  , feature_str
+         |  , content as contentstr
+         |  , feature_str as featurestr
          |  , feature_int32
          |  , feature_int64
          |  , val_rec as val_rec
