@@ -21,12 +21,14 @@ object AlgoSnapshotExtact {
 
     var day = args(0).toString
     var hour = args(1).toString
-    var intMinute = args(2).toInt
+    var intMinute = args(2).toString.toInt
+
+    println("preMinute:",intMinute)
     var minute = getMinute(intMinute)
 
-    println("day:",day)
-    println("hour:",hour)
-    println("minute:",minute)
+    println("day=",day)
+    println("hour=",hour)
+    println("minute=",minute)
 
     val sql =
       s"""
@@ -60,6 +62,10 @@ object AlgoSnapshotExtact {
       """.stripMargin
 
     var Rdd = spark.sql(sql).rdd
+
+    var count = Rdd.count()
+
+    println("data count:",count)
 
     val rawDataFromSnapshotLog = Rdd.map(
       x => {
