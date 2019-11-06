@@ -205,7 +205,7 @@ object LinearRegressionOnQttCvrCalibration {
       featuremap = featuremap.toMap,
       wRawvalue = w_rawvalue,
       intercept = lrModel.intercept,
-      min = 1.0
+      min = 0.00001
     )
 
     val localPath = saveProtoToLocal(calimodel, LRoutput)
