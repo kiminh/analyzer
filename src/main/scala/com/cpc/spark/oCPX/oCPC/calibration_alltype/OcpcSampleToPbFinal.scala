@@ -122,9 +122,9 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
-      .withColumn("cvr_factor_old", col("cvr_factor")) // todo: 手动调整校准系数
-      .withColumn("cvr_factor_discount", udfCheckCvrFactorDiscount(date)(col("identifier")))
-      .withColumn("cvr_factor", col("cvr_factor_old") * col("cvr_factor_discount"))
+      .withColumn("cali_value_old", col("cali_value")) // todo: 手动调整校准系数
+      .withColumn("cali_value_discount", udfCheckCvrFactorDiscount(date)(col("identifier")))
+      .withColumn("cali_value", col("cali_value_old") * col("cali_value_discount"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
       .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
