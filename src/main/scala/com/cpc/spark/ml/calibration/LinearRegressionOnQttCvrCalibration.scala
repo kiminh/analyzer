@@ -67,7 +67,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |  (select * from
                       |  dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
-                      |  --and $mediaSelection
+                      |  and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')) a
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
@@ -127,7 +127,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.00001).setElasticNetParam(0.1).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
@@ -146,7 +146,7 @@ object LinearRegressionOnQttCvrCalibration {
       x =>
         val searchid = x.getAs[String]("searchid")
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
-        val raw_cvr = x.getAs[Double]("raw_cvr").toDouble
+        val raw_cvr = x.getAs[Double]("raw_cvr")*1e4d
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
         (searchid,exp_cvr,iscvr,raw_cvr,unitid)
