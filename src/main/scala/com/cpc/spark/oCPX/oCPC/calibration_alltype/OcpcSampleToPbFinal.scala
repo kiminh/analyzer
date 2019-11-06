@@ -77,8 +77,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -135,9 +135,9 @@ object OcpcSampleToPbFinal {
       .cache()
 
     data.show(10)
-    data
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+//    data
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
 
     data
   }
