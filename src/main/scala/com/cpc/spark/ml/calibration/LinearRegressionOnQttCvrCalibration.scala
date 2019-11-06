@@ -93,7 +93,7 @@ object LinearRegressionOnQttCvrCalibration {
       .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<default_click_unit_count
         ,col("click_unit_count")).otherwise("default"))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslot_id","label","unitid","raw_cvr",
+      .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
 
