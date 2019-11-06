@@ -24,8 +24,9 @@ object DeepOcpcReport {
 
     val rawData = getCompleteExp(date, dayInt, spark)
     rawData
+      .select("cali_tag", "recall_tag", "cpa_check_priority", "media", "unitid", "conversion_goal", "deep_conversion_goal", "click", "cost", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "cpagiven", "deep_cpagiven", "date")
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.deep_ocpc_exp_report_daily20191106")
+      .write.mode("overwrite").insertInto("test.deep_ocpc_exp_report_daily")
 
   }
 
