@@ -118,7 +118,6 @@ object AlgoSnapshotExtact {
     val snapshotDataToGo = spark.createDataFrame(rawDataFromSnapshotLog)
 
     snapshotDataToGo.show(10,false)
-    println("extact data count:",snapshotDataToGo.count())
     snapshotDataToGo.createOrReplaceTempView("snapshotDataToGo")
 
     val snapshotDataAsDataFrame = spark.sql(
@@ -133,7 +132,8 @@ object AlgoSnapshotExtact {
          |  , adslot_type
          |  , model_type
          |  , content as contentstr
-         |  , feature_str as featurestr
+         |  , feature_str['model_name'] as model_name
+         |  , feature_str['model_id'] as model_id
          |  , feature_int32
          |  , feature_int64
          |  , val_rec as val_rec
