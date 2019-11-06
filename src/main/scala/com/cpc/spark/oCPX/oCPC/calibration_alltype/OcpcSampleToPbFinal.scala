@@ -122,9 +122,9 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
-      .withColumn("cali_value_old", col("cali_value")) // todo: 手动调整校准系数
+      .withColumn("cali_value_before_discount", col("cali_value")) // todo: 手动调整校准系数
       .withColumn("cali_value_discount", udfCheckCvrFactorDiscount(date)(col("identifier")))
-      .withColumn("cali_value", col("cali_value_old") * col("cali_value_discount"))
+      .withColumn("cali_value", col("cali_value_before_discount") * col("cali_value_discount"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
       .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
@@ -191,7 +191,7 @@ object OcpcSampleToPbFinal {
       .sql(sqlRequest)
       .selectExpr("cast(unitid as string) identifier", "conversion_goal")
       .withColumn("max_cali", lit(2.0))
-      .withColumn("min_cali", lit(0.3))
+      .withColumn("min_cali", lit(0.5))
 
     data
   }
