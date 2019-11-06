@@ -158,7 +158,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
 
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
     var featuremap = scala.collection.mutable.Map[String,Double]()
-    for (cate <- numericCols ) {
+    for (cate <- numericCols) {
       if (cate !="raw_cvr")
       {
         val featureid = CalibrationFeature(
@@ -167,8 +167,11 @@ object LinearRegressionOnQttCvrCalibrationTest {
           types = 0
         )
         featuregroup += featureid
-        dimension = featuremap.size + 1 - defaultnum
-        featuremap += ((cate + "#", lrModel.coefficients.toArray(dimension)))
+        dimension = dimension + 1 - defaultnum
+        val key = cate + "#"
+        val featurecoe  = lrModel.coefficients.toArray(dimension)
+        featuremap += ((key, featurecoe))
+        println(s"$key coefficient:$featurecoe")
       }
     }
 
