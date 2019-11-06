@@ -67,13 +67,13 @@ object LinearRegressionOnQttCvrCalibration {
                       |  (select * from
                       |  dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
-                      |  and $mediaSelection
+                      |  --and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')) a
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
                       |  from dl_cpc.ocpc_quick_cv_log
                       |  where  $selectCondition1) c
-                      |  on a.searchid = c.searchid and a.conversion_goal=c.conversion_goal
+                      |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
 
     println(s"sql:\n$sql")
