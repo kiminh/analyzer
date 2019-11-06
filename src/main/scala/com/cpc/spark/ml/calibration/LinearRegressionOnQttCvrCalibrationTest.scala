@@ -167,7 +167,7 @@ object LinearRegressionOnQttCvrCalibrationTest {
           types = 0
         )
         featuregroup += featureid
-        dimension = dimension + 1 - defaultnum
+        dimension = dimension - defaultnum
         val key = cate + "#"
         val featurecoe  = lrModel.coefficients.toArray(dimension)
         featuremap += ((key, featurecoe))
