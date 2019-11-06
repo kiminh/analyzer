@@ -35,7 +35,7 @@ object DeepOcpcReport {
     rawData
       .select("cali_tag", "recall_tag", "cpa_check_priority", "media", "unitid", "conversion_goal", "deep_conversion_goal", "click", "cost", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "cpagiven", "deep_cpagiven", "date")
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.deep_ocpc_exp_report_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
 
     val totalData1 = getExpDataTotal(date, dayInt, spark)
     val totalData2 = getExpDataTotal(date1, dayInt, spark)
@@ -83,7 +83,7 @@ object DeepOcpcReport {
          |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
          |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
          |FROM
-         |    test.deep_ocpc_exp_report_daily
+         |    dl_cpc.deep_ocpc_exp_report_daily
          |WHERE
          |    date between '${date1}' and '${date}'
          |GROUP BY
@@ -125,7 +125,7 @@ object DeepOcpcReport {
          |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
          |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
          |FROM
-         |    test.deep_ocpc_exp_report_daily
+         |    dl_cpc.deep_ocpc_exp_report_daily
          |WHERE
          |    date between '${date1}' and '${date}'
          |GROUP BY
