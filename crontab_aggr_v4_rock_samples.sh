@@ -194,19 +194,6 @@ do
         p00=${realtime_list[$idx]}${end}
         id="${id_list[$idx]}"
 
-        if [ "${now_hour}" = "15" ];then
-            continue
-        fi
-        if [ "${now_hour}" = "16" ];then
-            continue
-        fi
-        if [ "${now_hour}" = "17" ];then
-            continue
-        fi
-        if [ "${now_hour}" = "18" ];then
-            continue
-        fi
-
         is_new=${dir}/train_done_${curr_date}_${id}
         if [[ -f "$is_new" ]]; then
             valid_data+=(${p00})
