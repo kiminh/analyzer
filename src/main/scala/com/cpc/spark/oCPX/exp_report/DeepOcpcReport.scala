@@ -92,7 +92,7 @@ object DeepOcpcReport {
          |        FROM
          |            dl_cpc.ocpc_filter_unionlog
          |        WHERE
-         |            date between '${date}' and '${date1}'
+         |            date between '${date1}' and '${date}'
          |        and deep_cvr_model_name is not NULL
          |        and is_deep_ocpc = 1) as a
          |    left join
@@ -103,7 +103,7 @@ object DeepOcpcReport {
          |        from
          |            dl_cpc.ocpc_label_deep_cvr_hourly
          |        where
-         |            date >= '${date}'
+         |            date >= '${date1}'
          |        group by searchid, deep_conversion_goal, label) as b
          |    ON
          |        a.searchid = b.searchid
@@ -122,7 +122,7 @@ object DeepOcpcReport {
          |        from
          |            dl_cpc.ocpc_label_cvr_hourly
          |        where
-         |            date >= '${date}'
+         |            date >= '${date1}'
          |        group by
          |            searchid,
          |            (case when cvr_goal = 'cvr1' then 1
