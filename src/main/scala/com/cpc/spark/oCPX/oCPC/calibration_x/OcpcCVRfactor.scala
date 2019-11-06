@@ -1,6 +1,9 @@
 package com.cpc.spark.oCPX.oCPC.calibration_x
 
-import com.cpc.spark.oCPX.OcpcTools.{getBaseData, udfAdslotTypeMapAs, udfMediaName, udfSetExpTag}
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.OcpcTools.{getBaseData, getTimeRangeSqlDate, udfAdslotTypeMapAs, udfConcatStringInt, udfDetermineMedia, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration_alltype.udfs.udfGenerateId
 import com.typesafe.config.ConfigFactory
@@ -68,6 +71,90 @@ object OcpcCVRfactor {
 
     resultDF
   }
+
+  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  adslot_type,
+         |  isshow,
+         |  isclick,
+         |  cast(exp_cvr as double) as exp_cvr,
+         |  media_appsid,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |      when adclass in (110110100, 125100100) then "wzcp"
+         |      else "others"
+         |  end) as industry,
+         |  conversion_goal,
+         |  cast(ocpc_log_dict['cvr_factor'] as double) as cvr_factor,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  isclick = 1
+       """.stripMargin
+    println(sqlRequest)
+    val clickData = spark
+      .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr,
+         |  cvr_goal
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
+
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
+  }
+
 
 
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
