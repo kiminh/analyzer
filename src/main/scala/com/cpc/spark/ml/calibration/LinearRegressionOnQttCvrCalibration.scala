@@ -199,6 +199,7 @@ object LinearRegressionOnQttCvrCalibration {
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
+    println(s"w_rawvalue :$w_rawvalue")
 
     val LRoutput = CalibrationModel(
       feature = featuregroup,
