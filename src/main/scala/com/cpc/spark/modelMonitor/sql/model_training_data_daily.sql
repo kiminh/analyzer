@@ -3,5 +3,5 @@ create table if not exists test.model_training_data_daily(
     positive_num        int,
     adslot_type         int
 )
-partitioned by (`date` string, `hour` int, model_name string)
+partitioned by (`date` string, `hour` string, model_name string)
 stored as parquet;

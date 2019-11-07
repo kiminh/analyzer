@@ -22,11 +22,13 @@ object hourlyMonitor {
     val modelName = args(2).toString
     val negativeDiff = args(3).toDouble
     val positiveDiff = args(4).toDouble
+    val ratioDiff = args(5).toDouble
+    val adslotTypeNum = args(6).toInt
 
     // 清理ok文件
-    s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date-$hour.ok" !
+    s"hadoop fs -rm hdfs://emr-cluster/user/cpc/wangjun/okdir/model_check/$modelName-$date-$hour.ok" !
 
-    val dataToday = getData(date, modelName, spark)
+    val dataToday = getData(date, hour, modelName, spark)
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -35,20 +37,23 @@ object hourlyMonitor {
     calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val dataYesterday = getData(date1, modelName, spark)
+    val dataYesterday = getData(date1, hour, modelName, spark)
 
     // 数据对比
     val cmpResult = cmpData(dataToday, dataYesterday, spark)
     val result = cmpResult
       .withColumn("date", lit(date))
-      .select("cvr_yesterday", "cvr_today", "cvr_diff", "hour", "date", "model_name")
+      .withColumn("hour", lit(hour))
+      .withColumn("model_name", lit(modelName))
+      .select("adslot_type", "negative_yesterday", "negative_today", "positive_yesterday", "positive_today", "negative_diff", "positive_diff", "ratio_diff", "date", "hour", "model_name")
 
     result
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.model_cvr_cmp_daily_v2")
+      .write.mode("overwrite").insertInto("test.model_sample_cmp_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.model_sample_cmp_hourly")
 
     // 数据监控
-    val filterResult = result.filter(s"cvr_diff > $cvr_diff")
+    val filterResult = result.filter(s"negative_diff > $negativeDiff or positive_diff > $positiveDiff or ratio_diff > $ratioDiff")
     val cnt = filterResult.count()
     val totalCnt = result.count()
     filterResult.show(10)
@@ -58,55 +63,64 @@ object hourlyMonitor {
     val sub = "cvr model training dataset monitor is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
-    receiver:+="yanglei@qutoutiao.net"
-    receiver:+="admodel@qutoutiao.net"
-    receiver:+="wanlunjun@qutoutiao.net"
-    receiver:+="wangfang03@qutoutiao.net"
-    receiver:+="dongjinbao@qutoutiao.net"
-    if (cnt > 0 || totalCnt != 24) {
+//    receiver:+="yanglei@qutoutiao.net"
+//    receiver:+="admodel@qutoutiao.net"
+//    receiver:+="wanlunjun@qutoutiao.net"
+//    receiver:+="wangfang03@qutoutiao.net"
+//    receiver:+="dongjinbao@qutoutiao.net"
+    if (cnt > 0 || totalCnt != adslotTypeNum) {
       sendMail(message, sub, receiver)
     } else {
       //输出标记文件
-      s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/wangjun/okdir/conversion/new_cvrmodel/$modelName-$date.ok" !
+      s"hadoop fs -touchz hdfs://emr-cluster/user/cpc/wangjun/okdir/model_check/$modelName-$date-$hour.ok" !
     }
 
   }
 
   def cmpData(dataToday: DataFrame, dataYesterday: DataFrame, spark: SparkSession) = {
     val data0 = dataToday
-      .withColumn("cvr_today", col("cvr"))
-      .select("model_name", "cvr_today", "hour")
+      .withColumn("negative_today", col("negative_num"))
+      .withColumn("positive_today", col("positive_num"))
+      .withColumn("ratio_today", col("ratio"))
+      .select("adslot_type", "negative_today", "positive_today", "ratio_today")
 
     val data1 = dataYesterday
-      .withColumn("cvr_yesterday", col("cvr"))
-      .select("model_name", "cvr_yesterday", "hour")
+      .withColumn("negative_yesterday", col("negative_num"))
+      .withColumn("positive_yesterday", col("positive_num"))
+      .withColumn("ratio_yesterday", col("ratio"))
+      .select("adslot_type", "negative_yesterday", "positive_yesterday", "ratio_yesterday")
 
     val data = data1
-      .join(data0, Seq("model_name", "hour"), "outer")
-      .withColumn("cvr_diff", (col("cvr_today") - col("cvr_yesterday")) / col("cvr_yesterday"))
-      .na.fill(1, Seq("cvr_diff"))
-      .withColumn("cvr_diff", abs(col("cvr_diff")))
-      .select("hour", "cvr_yesterday", "cvr_today", "cvr_diff", "model_name")
+      .join(data0, Seq("adslot_type"), "inner")
+      .withColumn("negative_diff", (col("negative_today") - col("negative_yesterday")) / col("negative_yesterday"))
+      .withColumn("positive_diff", (col("positive_today") - col("positive_yesterday")) / col("positive_yesterday"))
+      .withColumn("ratio_diff", (col("ratio_today") - col("ratio_yesterday")) / col("ratio_yesterday"))
+      .select("adslot_type", "negative_yesterday", "negative_today", "positive_yesterday", "positive_today", "negative_diff", "positive_diff", "ratio_diff")
 
 
     data
   }
 
-  def getData(date: String, modelName: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, modelName: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
-         |  click,
-         |  cv,
-         |  cv * 1.0 / click as cvr,
-         |  hour,
-         |  model_name
+         |  negative_num,
+         |  positive_num,
+         |  positive_num * 1.0 / (positive_num + negative_num) as ratio,
+         |  adslot_type
          |FROM
-         |  dl_cpc.model_training_data_daily
+         |  test.model_training_data_daily
          |WHERE
          |  date = '$date'
          |AND
+         |  hour = '$hour'
+         |AND
          |  model_name = '$modelName'
+         |AND
+         |  negative_num > 0
+         |AND
+         |  positive_num > 0
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
