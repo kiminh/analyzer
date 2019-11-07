@@ -63,9 +63,9 @@ object hourlyMonitor {
     val sub = "model training dataset monitor is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
-//    receiver:+="yanglei@qutoutiao.net"
-//    receiver:+="admodel@qutoutiao.net"
-//    receiver:+="wanlunjun@qutoutiao.net"
+    receiver:+="yanglei@qutoutiao.net"
+    receiver:+="admodel@qutoutiao.net"
+    receiver:+="wanlunjun@qutoutiao.net"
     if (cnt > 0 || totalCnt != adslotTypeNum) {
       sendMail(message, sub, receiver)
     } else {
