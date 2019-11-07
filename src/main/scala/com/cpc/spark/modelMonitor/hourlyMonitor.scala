@@ -49,8 +49,8 @@ object hourlyMonitor {
 
     result
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.model_sample_cmp_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.model_sample_cmp_hourly")
+//      .write.mode("overwrite").insertInto("test.model_sample_cmp_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.model_sample_cmp_hourly")
 
     // 数据监控
     val filterResult = result.filter(s"negative_diff > $negativeDiff or positive_diff > $positiveDiff or ratio_diff > $ratioDiff")
@@ -110,7 +110,7 @@ object hourlyMonitor {
          |  positive_num * 1.0 / (positive_num + negative_num) as ratio,
          |  adslot_type
          |FROM
-         |  test.model_training_data_daily
+         |  dl_cpc.model_training_data_daily
          |WHERE
          |  date = '$date'
          |AND
