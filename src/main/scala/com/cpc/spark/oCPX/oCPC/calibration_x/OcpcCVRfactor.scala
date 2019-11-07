@@ -29,11 +29,51 @@ object OcpcCVRfactor {
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
     val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt, spark).cache()
+    val data = BuildFeatures(dataRaw, spark)
 
 //    val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, spark)
     dataRaw
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
 
+  }
+
+
+  def BuildFeatures(dataRaw: DataFrame, spark: SparkSession) = {
+    val data0 = dataRaw.select("identifier", "conversion_goal", "media", "pcoc", "cv", "time", "hour", "prev_time")
+    val data1 = dataRaw
+      .withColumn("prev_pcoc", col("pcoc"))
+      .withColumn("time", col("prev_time"))
+      .select("identifier", "conversion_goal", "media", "time", "prev_pcoc")
+
+
+    val data2 = data0
+      .join(data1, Seq("identifier", "conversion_goal", "media", "time"), "inner")
+      .select("identifier", "conversion_goal", "media", "pcoc", "cv", "time", "prev_pcoc", "prev_time")
+      .withColumn("delta_pcoc", col("pcoc") - col("prev_pcoc"))
+      .select("identifier", "conversion_goal", "media", "pcoc", "cv", "delta_pcoc", "prev_time")
+      .withColumn("prev_pcoc", col("pcoc"))
+      .withColumn("prev_cv", col("cv"))
+      .withColumn("time", col("prev_time"))
+      .select("identifier", "conversion_goal", "media", "time", "prev_pcoc", "prev_cv", "delta_pcoc")
+
+
+    val data = data0
+      .join(data2, Seq("identifier", "conversion_goal", "media", "time"), "inner")
+      .select("identifier", "conversion_goal", "media", "time", "pcoc", "prev_pcoc", "prev_cv", "delta_pcoc", "hour")
+
+    data0
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107a")
+
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107b")
+
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107c")
+
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107d")
+
+    data
   }
 
 //  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw: DataFrame, spark: SparkSession) = {
@@ -60,11 +100,33 @@ object OcpcCVRfactor {
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "hour")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "hour")
+      .withColumn("prev_time", udfMinusTime()(col("time")))
 
 
     resultDF
   }
+
+  def udfMinusTime() = udf((time: String) => {
+    val timeList = time.split(" ")
+    val date = timeList(0)
+    val hour = timeList(1)
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -1)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val result = date1 + " " + hour1
+
+    result
+  })
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
@@ -154,7 +216,8 @@ object OcpcCVRfactor {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media", "hour")
+      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+      .groupBy("identifier", "conversion_goal", "media", "time", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -164,7 +227,7 @@ object OcpcCVRfactor {
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "hour")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "hour")
 
     data
   }
