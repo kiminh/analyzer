@@ -59,8 +59,8 @@ object hourlyMonitor {
     filterResult.show(10)
 
     // email content
-    val message = s"training set for $modelName, $date is incorrect!"
-    val sub = "cvr model training dataset monitor is warning"
+    val message = s"training set for $modelName-$date-$hour is incorrect!"
+    val sub = "model training dataset monitor is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
 //    receiver:+="yanglei@qutoutiao.net"
