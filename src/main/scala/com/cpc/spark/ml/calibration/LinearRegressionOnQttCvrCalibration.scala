@@ -78,7 +78,6 @@ object LinearRegressionOnQttCvrCalibration {
 
     println(s"sql:\n$sql")
     val data = spark.sql(sql)
-    data.persist()
     data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
@@ -97,7 +96,6 @@ object LinearRegressionOnQttCvrCalibration {
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
-    data.unpersist()
 
     val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count")
     val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslot_id" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
