@@ -47,7 +47,7 @@ object LinearRegressionOnQttCvrCalibration {
 
     // build spark session
     val spark = SparkSession.builder()
-      .appName("cvr calibration")
+      .appName(s"cvr calibration  $endDate - $endHour")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .enableHiveSupport()
       .getOrCreate()
