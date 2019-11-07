@@ -22,14 +22,11 @@ object OcpcCVRfactor {
     // bash: 2019-01-02 12 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
-    // 主校准回溯时间长度
-    val hourInt = args(4).toInt
+    val hourInt = args(2).toInt
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, expTag=$expTag, hourInt=$hourInt")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
     val dataRaw = OcpcCalibrationBaseMain(date, hour, hourInt, spark).cache()
 
