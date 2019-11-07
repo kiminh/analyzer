@@ -1,4 +1,4 @@
-create table if not exists test.model_training_data_daily(
+create table if not exists dl_cpc.model_training_data_daily(
     negative_num        int,
     positive_num        int,
     adslot_type         int
