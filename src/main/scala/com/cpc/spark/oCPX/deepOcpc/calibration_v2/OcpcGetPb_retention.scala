@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb {
+object OcpcGetPb_retention {
   /*
   采用基于后验激活率的复合校准策略
   jfb_factor：正常计算

@@ -3,9 +3,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_x
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getBaseData, getTimeRangeSqlDate, udfAdslotTypeMapAs, udfConcatStringInt, udfDetermineMedia, udfMediaName, udfSetExpTag}
-import com.cpc.spark.oCPX.oCPC.calibration_alltype.OcpcCalibrationBase._
-import com.cpc.spark.oCPX.oCPC.calibration_alltype.udfs.udfGenerateId
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfConcatStringInt, udfDetermineMedia}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -15,8 +13,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object OcpcCVRfactor {
   def main(args: Array[String]): Unit = {
     /*
-    校准策略：
-    主校准 + 备用校准：
+    采用拟合模型进行pcoc的时序预估
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -66,7 +63,7 @@ object OcpcCVRfactor {
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "hour")
 
 
     resultDF
@@ -160,7 +157,7 @@ object OcpcCVRfactor {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("identifier", "conversion_goal", "media")
+      .groupBy("identifier", "conversion_goal", "media", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -170,7 +167,7 @@ object OcpcCVRfactor {
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "hour")
 
     data
   }
