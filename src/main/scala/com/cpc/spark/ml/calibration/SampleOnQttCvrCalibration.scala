@@ -26,7 +26,7 @@ object SampleOnQttCvrCalibration {
 
     // build spark session
     val spark = SparkSession.builder()
-      .appName("cvr calibration sample timely")
+      .appName(s"cvr calibration sample timely $day - $hour")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .enableHiveSupport()
       .getOrCreate()
@@ -39,7 +39,7 @@ object SampleOnQttCvrCalibration {
          |select
          |   a.searchid, a.ideaid,a.unitid,a.userid, a.adclass,
          |   b.raw_cvr, b.exp_cvr, b.cvr_model_name,b.user_show_ad_num, b.adslot_id, b.click_count,b.click_unit_count,b.conversion_from,
-         |   b.conversion_goal,b.media_appsid,
+         |   b.conversion_goal,b.media_appsid,b.is_ocpc,
          |   a.day,a.hour
          |from dl_cpc.cpc_basedata_click_event a
          |join dl_cpc.cpc_basedata_adx_event b
