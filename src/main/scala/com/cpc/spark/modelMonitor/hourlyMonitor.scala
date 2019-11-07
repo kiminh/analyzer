@@ -63,9 +63,9 @@ object hourlyMonitor {
     val sub = "model training dataset monitor is warning"
     var receiver = Seq[String]()
     receiver:+="wangjun02@qutoutiao.net"
-    receiver:+="yanglei@qutoutiao.net"
-    receiver:+="admodel@qutoutiao.net"
-    receiver:+="wanlunjun@qutoutiao.net"
+//    receiver:+="yanglei@qutoutiao.net"
+//    receiver:+="admodel@qutoutiao.net"
+//    receiver:+="wanlunjun@qutoutiao.net"
     if (cnt > 0 || totalCnt != adslotTypeNum) {
       sendMail(message, sub, receiver)
     } else {
@@ -93,6 +93,9 @@ object hourlyMonitor {
       .withColumn("negative_diff", (col("negative_today") - col("negative_yesterday")) / col("negative_yesterday"))
       .withColumn("positive_diff", (col("positive_today") - col("positive_yesterday")) / col("positive_yesterday"))
       .withColumn("ratio_diff", (col("ratio_today") - col("ratio_yesterday")) / col("ratio_yesterday"))
+      .withColumn("negative_diff", abs(col("negative_diff")))
+      .withColumn("positive_diff", abs(col("positive_diff")))
+      .withColumn("ratio_diff", abs(col("ratio_diff")))
       .select("adslot_type", "negative_yesterday", "negative_today", "positive_yesterday", "positive_today", "negative_diff", "positive_diff", "ratio_diff")
 
 
