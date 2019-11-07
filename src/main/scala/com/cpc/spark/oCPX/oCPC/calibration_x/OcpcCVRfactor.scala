@@ -152,6 +152,7 @@ object OcpcCVRfactor {
       s"""
          |SELECT
          |  searchid,
+         |  cast(unitid as string) as identifier,
          |  unitid,
          |  userid,
          |  adslot_type,
