@@ -86,7 +86,7 @@ else
     hadoop fs -mkdir ${collect_path}
 fi
 
-curr_incr_base_model_instances=${hdfs_path_model}/${curr_date}-tf-base-mom-8days-6eps-inc/map_instances.data
+curr_incr_base_model_instances=${hdfs_path_model}/${curr_date}-tf-base-mom-14days-3eps-inc/map_instances.data
 hadoop fs -test -s ${curr_incr_base_model_instances}
 if [ $? -eq 0 ] ;then
 	echo 'exist and more than zero bytes:'${curr_incr_base_model_instances}
@@ -265,7 +265,6 @@ do
     all_ids+=("${curr_date}-${id}")
     test_file=${p00}${end}
     last_id=${id}
-    break
 done
 
 printf "got ${#inc_data[@]} today incremental real-time training data file\n"
