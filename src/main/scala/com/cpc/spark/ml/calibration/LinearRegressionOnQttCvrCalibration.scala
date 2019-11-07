@@ -76,7 +76,6 @@ object LinearRegressionOnQttCvrCalibration {
 
     println(s"sql:\n$sql")
     val data = spark.sql(sql)
-    data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
@@ -93,8 +92,6 @@ object LinearRegressionOnQttCvrCalibration {
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
-    dataDF.show(10)
-    dataDF.persist()
 
     val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count")
     val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslot_id" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
@@ -119,17 +116,13 @@ object LinearRegressionOnQttCvrCalibration {
     val pipelineModel = pipeline.fit(dataDF)
     /**transform() 真实转换特征*/
     val dataset = pipelineModel.transform(dataDF)
-    dataset.show(10)
-    dataset.select("label","features").show(10)
 
-    dataDF.unpersist()
     val trainingDF= dataset
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(trainingDF)
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
-      predictions.show(5)
 
     // 输出逻辑回归的系数和截距
     println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
