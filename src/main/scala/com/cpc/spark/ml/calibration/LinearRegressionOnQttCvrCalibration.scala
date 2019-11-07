@@ -25,8 +25,8 @@ object LinearRegressionOnQttCvrCalibration {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val media = args(3)
-//    val model = args(4)
-//    val calimodel = args(5)
+    val model = args(4)
+    val calimodel = args(5)
 //    val k = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
@@ -44,8 +44,6 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
     // parse and process input
-    val model = "qtt-cvr-dnn-rawid-v1wzjf-aibox"
-    val calimodel ="qtt-cvr-dnn-rawid-v1wzjf-aibox"
 
     // build spark session
     val spark = SparkSession.builder()
