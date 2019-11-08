@@ -43,7 +43,7 @@ object OcpcDeepCalculateAUC {
     // 计算auc
     val aucData = getAuc(data, version, date, hour, spark)
     val resultDF = aucData
-      .selectExpr("cast(identifier as int) unitid", "media", "conversion_goal", "auc")
+      .selectExpr("cast(identifier as int) unitid", "media", "deep_conversion_goal", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
