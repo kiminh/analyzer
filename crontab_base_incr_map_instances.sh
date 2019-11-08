@@ -112,7 +112,7 @@ hadoop fs -get ${jarLib} ${randjar}
 delete_old=true
 
 spark-submit --master yarn --queue ${queue} \
-    --name "collect-inc-data" \
+    --name "base-incr-map-instances" \
     --driver-memory 8g --executor-memory 4g \
     --num-executors 1000 --executor-cores 4 \
     --conf spark.hadoop.fs.defaultFS=hdfs://emr-cluster2 \
