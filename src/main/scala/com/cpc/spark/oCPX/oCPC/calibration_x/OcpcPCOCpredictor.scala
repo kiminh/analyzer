@@ -9,7 +9,11 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
-
+import org.apache.spark.ml.regression.LinearRegression
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.feature.StandardScaler
+import org.apache.spark.ml.{Pipeline, PipelineStage}
+import scala.collection.mutable.ListBuffer
 
 object OcpcPCOCpredictor{
   def main(args: Array[String]): Unit = {
@@ -29,13 +33,48 @@ object OcpcPCOCpredictor{
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
-    val data = getTrainingData(date, hour, hourInt, spark).cache()
+    val dataRaw = getTrainingData(date, hour, hourInt, spark)
+    val result = trainAndPredict(dataRaw, spark)
 
 
-//    val result = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, spark)
-    data
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_cvr_factor20190723b")
+  }
 
+  def trainAndPredict(dataRaw: DataFrame, spark: SparkSession) = {
+    /*
+    对pre_pcoc ~ pre_cv做scaler
+     */
+    // 模型训练
+    val stagesArray = new ListBuffer[PipelineStage]()
+
+    val cv_assembler = new VectorAssembler().setInputCols(Array("prev_cv")).setOutputCol("prev_cv_vector")
+    stagesArray.append(cv_assembler)
+    val scaler = new StandardScaler().setInputCol("prev_cv_vector").setOutputCol("scaled_prev_cv").setWithStd(true).setWithMean(false)
+    stagesArray.append(scaler)
+    val featureArray = Array("hour_vec", "prev_pcoc", "diff1_pcoc", "diff2_pcoc", "scaled_prev_cv")
+    val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
+    stagesArray.append(assembler)
+
+    val pipeline = new Pipeline()
+    pipeline.setStages(stagesArray.toArray)
+
+    val data = dataRaw
+      .filter(s"pcoc is not null and prev_pcoc is not null and diff1_pcoc is not null and diff2_pcoc is not null")
+      .withColumn("prev_cv", col("prev_cv").cast("double"))
+
+    val pipelineModel = pipeline.fit(data)
+    val dataset = pipelineModel.transform(data)
+
+
+    val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("pcoc").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
+
+    val predictions = lrModel.transform(dataset).select("identifier", "media", "features", "pcoc", "prediction")
+    lrModel
+  }
+
+  def getPredictData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    /*
+    按照对应特征，给出数据
+     */
   }
 
 
@@ -48,7 +87,7 @@ object OcpcPCOCpredictor{
     4. 四小时前的pcoc二阶差分
     5. 四小时前的cv
      */
-    val dataRaw = getRawData(date, hour, hourInt + 24, spark)
+    val dataRaw = getRawData(date, hour, hourInt + 12, spark)
 
     // hour特征：one-hot编码
     val hourIndexer = new StringIndexer()
@@ -114,19 +153,6 @@ object OcpcPCOCpredictor{
         .join(prevCV, Seq("identifier", "conversion_goal", "media", "time"), "inner")
         .select("identifier", "conversion_goal", "media", "time", "pcoc", "hour_vec", "prev_pcoc", "diff1_pcoc", "diff2_pcoc", "prev_cv")
 
-    dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107a")
-
-    hourFeature
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107b")
-
-    prevPcoc
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107c")
-
-    prevCV
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107d")
-
-
     data
   }
 
@@ -169,7 +195,7 @@ object OcpcPCOCpredictor{
     // 计算结果
     val result = calculateParameter(baseData, spark)
 
-    val resultDF = result.select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "hour")
+    val resultDF = result.select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "date", "hour")
 
 
     resultDF
@@ -286,7 +312,7 @@ object OcpcPCOCpredictor{
     val data  =rawData
       .filter(s"isclick=1")
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-      .groupBy("identifier", "conversion_goal", "media", "time", "hour")
+      .groupBy("identifier", "conversion_goal", "media", "time", "date", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -294,7 +320,7 @@ object OcpcPCOCpredictor{
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "hour")
+      .select("identifier", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "time", "date", "hour")
 
     data
   }
