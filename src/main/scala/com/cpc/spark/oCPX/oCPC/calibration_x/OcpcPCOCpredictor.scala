@@ -64,57 +64,42 @@ object OcpcPCOCpredictor{
       .select("identifier", "conversion_goal", "media", "time", "hour", "hour_index", "hour_vec")
     hourFeature.show(10)
 
-    // 四小时前的pcoc
-    val prevPcoc = dataRaw
-      .withColumn("prev_time", udfMinusTime(4)(col("time")))
-      .withColumn("origin_time", col("time"))
-      .withColumn("time", col("prev_time"))
-      .withColumn("prev_pcoc", col("pcoc"))
-      .select("identifier", "conversion_goal", "media", "time", "prev_pcoc", "origin_time")
-    prevPcoc.show(10)
-
-    // 四小时前的pcoc一阶差分
-    // 一阶差分
+    // 四小时前的pcoc及其差分计算
     val prevPcoc1 = dataRaw
-      .withColumn("prev_time", udfMinusTime(1)(col("time")))
+      .withColumn("prev_time", udfChangeTime(4)(col("time")))
       .withColumn("origin_time", col("time"))
       .withColumn("time", col("prev_time"))
       .withColumn("pcoc1", col("pcoc"))
       .select("identifier", "conversion_goal", "media", "time", "pcoc1", "origin_time")
     prevPcoc1.show(10)
-    val pcocDiff = dataRaw
-      .join(prevPcoc1, Seq("identifier", "conversion_goal", "media", "time"), "inner")
-      .withColumn("diff1_pcoc", col("pcoc") - col("pcoc1"))
-      .select("identifier", "conversion_goal", "media", "time", "diff1_pcoc")
-    // 四小时前数据
-    val prevPcocDiff = pcocDiff
-      .withColumn("prev_time", udfMinusTime(4)(col("time")))
-      .withColumn("origin_time", col("time"))
-      .withColumn("time", col("prev_time"))
-      .select("identifier", "conversion_goal", "media", "time", "diff1_pcoc", "origin_time")
 
-    // 四小时前的pcoc二阶差分
-    // 二阶差分
-    val pcocDiff1 = pcocDiff
-      .withColumn("prev_time", udfMinusTime(1)(col("time")))
+    val prevPcoc2 = dataRaw
+      .withColumn("prev_time", udfChangeTime(5)(col("time")))
       .withColumn("origin_time", col("time"))
       .withColumn("time", col("prev_time"))
-      .withColumn("diff1_pcoc1", col("diff1_pcoc"))
-      .select("identifier", "conversion_goal", "media", "time", "pcoc1", "origin_time")
-    val prevPcocDiff1 = pcocDiff
-      .join(pcocDiff1, Seq("identifier", "conversion_goal", "media", "time"), "inner")
-      .withColumn("diff2_pcoc", col("diff1_pcoc") - col("diff1_pcoc1"))
-      .select("identifier", "conversion_goal", "media", "time", "diff2_pcoc")
-    // 四小时前数据
-    val prevPcocDiff2 = prevPcocDiff1
-      .withColumn("prev_time", udfMinusTime(4)(col("time")))
+      .withColumn("pcoc2", col("pcoc"))
+      .select("identifier", "conversion_goal", "media", "time", "pcoc2", "origin_time")
+    prevPcoc2.show(10)
+
+    val prevPcoc3 = dataRaw
+      .withColumn("prev_time", udfChangeTime(6)(col("time")))
       .withColumn("origin_time", col("time"))
       .withColumn("time", col("prev_time"))
-      .select("identifier", "conversion_goal", "media", "time", "diff2_pcoc", "origin_time")
+      .withColumn("pcoc3", col("pcoc"))
+      .select("identifier", "conversion_goal", "media", "time", "pcoc3", "origin_time")
+    prevPcoc3.show(10)
+
+    val prevPcoc = prevPcoc1
+      .join(prevPcoc2, Seq("identifier", "conversion_goal", "media", "time"), "inner")
+      .join(prevPcoc3, Seq("identifier", "conversion_goal", "media", "time"), "inner")
+      .select("identifier", "conversion_goal", "media", "time", "pcoc1", "pcoc2", "pcoc3")
+      .withColumn("prev_pcoc", col("pcoc1"))
+      .withColumn("diff1_pcoc", udfCalculateDiff1()(col("pcoc1"), col("pcoc2")))
+      .withColumn("diff2_pcoc", udfCalculateDiff2()(col("pcoc1"), col("pcoc2"), col("pcoc3")))
 
     // 四小时的cv数
     val prevCV = dataRaw
-      .withColumn("prev_time", udfMinusTime(4)(col("time")))
+      .withColumn("prev_time", udfChangeTime(4)(col("time")))
       .withColumn("origin_time", col("time"))
       .withColumn("time", col("prev_time"))
       .withColumn("prev_cv", col("cv"))
@@ -126,8 +111,6 @@ object OcpcPCOCpredictor{
         .select("identifier", "conversion_goal", "media", "time", "pcoc")
         .join(hourFeature, Seq("identifier", "conversion_goal", "media", "time"), "inner")
         .join(prevPcoc, Seq("identifier", "conversion_goal", "media", "time"), "inner")
-        .join(prevPcocDiff, Seq("identifier", "conversion_goal", "media", "time"), "inner")
-        .join(prevPcocDiff2, Seq("identifier", "conversion_goal", "media", "time"), "inner")
         .join(prevCV, Seq("identifier", "conversion_goal", "media", "time"), "inner")
         .select("identifier", "conversion_goal", "media", "time", "pcoc", "hour_vec", "prev_pcoc", "diff1_pcoc", "diff2_pcoc", "prev_cv")
 
@@ -137,18 +120,31 @@ object OcpcPCOCpredictor{
     hourFeature
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107b")
 
-    prevPcocDiff
+    prevPcoc
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107c")
 
-    prevPcocDiff2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107d")
-
     prevCV
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107e")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191107d")
 
 
     data
   }
+
+  def udfCalculateDiff2() = udf((pcoc1: Double, pcoc2: Double, pcoc3: Double) => {
+    /*
+    二阶差分
+     */
+    val result = (pcoc1 - pcoc2) - (pcoc2 - pcoc3)
+    result
+  })
+
+  def udfCalculateDiff1() = udf((pcoc1: Double, pcoc2: Double) => {
+    /*
+    一阶差分
+     */
+    val result = pcoc1 - pcoc2
+    result
+  })
 
 //  def OcpcCVRfactorMain(date: String, hour: String, version: String, expTag: String, dataRaw: DataFrame, spark: SparkSession) = {
 //    // cvr实验配置文件
@@ -179,7 +175,7 @@ object OcpcPCOCpredictor{
     resultDF
   }
 
-  def udfMinusTime(hourInt: Int) = udf((time: String) => {
+  def udfChangeTime(hourInt: Int) = udf((time: String) => {
     val timeList = time.split(" ")
     val date = timeList(0)
     val hour = timeList(1)
@@ -189,7 +185,7 @@ object OcpcPCOCpredictor{
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.HOUR, hourInt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
