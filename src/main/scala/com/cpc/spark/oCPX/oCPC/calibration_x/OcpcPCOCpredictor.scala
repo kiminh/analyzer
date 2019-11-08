@@ -10,7 +10,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcCVRfactor {
+object OcpcPCOCpredictor{
   def main(args: Array[String]): Unit = {
     /*
     采用拟合模型进行pcoc的时序预估
