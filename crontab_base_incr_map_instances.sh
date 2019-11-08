@@ -58,7 +58,9 @@ fi
 hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
 
 last_model_base=${last_date}-tf-base-mom-8days-6eps
+last_model_base=${last_date}-tf-base-mom-14days-3eps
 last_model_incr=${last_date}-tf-base-mom-8days-6eps-inc
+last_model_incr=${last_date}-tf-base-mom-14days-3eps-inc
 
 last_base_model_instances=${hdfs_path_model}/${last_model_base}/map_instances.data
 last_incr_model_instances=${hdfs_path_model}/${last_model_incr}/map_instances.data
