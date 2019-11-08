@@ -50,8 +50,6 @@ object LRTrainDuanZi {
     initFeatureDict(spark, dictPathSep)
     initStrFeatureDict(spark, dictPathSep)
 
-    val userAppIdx = getUidApp(spark, appPathSep).cache()
-
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
       s"""
@@ -106,6 +104,8 @@ object LRTrainDuanZi {
     println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
     val queryRawDataFromUnionEventsDF = spark.sql(queryRawDataFromUnionEvents)
+
+    val userAppIdx = getUidApp(spark, appPathSep).cache()
 
     val qttAll = getLeftJoinData(queryRawDataFromUnionEventsDF, userAppIdx).cache()
 
