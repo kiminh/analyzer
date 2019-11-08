@@ -36,12 +36,12 @@ object OcpcDeepCalculateAUC {
   def OcpcCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
     // 抽取数据
     val data = getData(hourInt, version, date, hour, spark)
-    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
-    data
-      .repartition(100).write.mode("overwrite").insertInto(tableName)
+//    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
+//    data
+//      .repartition(100).write.mode("overwrite").insertInto(tableName)
 
     // 计算auc
-    val aucData = getAuc(tableName, version, date, hour, spark)
+    val aucData = getAuc(data, version, date, hour, spark)
     val resultDF = aucData
       .selectExpr("cast(identifier as int) unitid", "media", "conversion_goal", "auc")
       .withColumn("date", lit(date))
@@ -95,6 +95,7 @@ object OcpcDeepCalculateAUC {
          |and $mediaSelection
          |and is_ocpc = 1
          |and is_deep_ocpc = 1
+         |and deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
@@ -130,10 +131,10 @@ object OcpcDeepCalculateAUC {
 
 
 
-  def getAuc(tableName: String, version: String, date: String, hour: String, spark: SparkSession) = {
-    val data = spark
-      .table(tableName)
-      .where(s"version='$version'")
+  def getAuc(data: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+//    val data = spark
+//      .table(tableName)
+//      .where(s"version='$version'")
     import spark.implicits._
 
     val newData = data
