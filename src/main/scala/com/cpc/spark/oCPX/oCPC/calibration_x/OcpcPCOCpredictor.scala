@@ -224,8 +224,6 @@ object OcpcPCOCpredictor{
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
-        avg(col("bid")).alias("acb"),
-        avg(col("price")).alias("acp"),
         avg(col("exp_cvr")).alias("pre_cvr")
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
