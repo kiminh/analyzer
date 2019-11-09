@@ -25,7 +25,7 @@ object OcpcDeepCalculateCV {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF = OcpcDeepCalculateCV(date, hour, version, hourInt, spark)
+    val resultDF = OcpcDeepCalculateCVmain(date, hour, hourInt, spark)
 
     resultDF
       .repartition(10)
@@ -33,9 +33,9 @@ object OcpcDeepCalculateCV {
       .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107b")
   }
 
-  def OcpcDeepCalculateCV(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcDeepCalculateCVmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 抽取数据
-    val data = getData(hourInt, version, date, hour, spark)
+    val data = getData(hourInt, date, hour, spark)
     // 计算auc
     val resultDF = data
         .na.fill(0, Seq("iscvr"))
@@ -49,7 +49,7 @@ object OcpcDeepCalculateCV {
     resultDF
   }
 
-  def getData(hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -123,7 +123,6 @@ object OcpcDeepCalculateCV {
       .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
       .na.fill(0, Seq("label"))
       .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
-      .withColumn("version", lit(version))
 
     resultDF
   }

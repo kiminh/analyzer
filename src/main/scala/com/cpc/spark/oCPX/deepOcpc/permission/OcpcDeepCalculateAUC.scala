@@ -25,7 +25,7 @@ object OcpcDeepCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF =  OcpcDeepCalculateAUCmain(date, hour, version, hourInt, spark)
+    val resultDF =  OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
 
     resultDF
       .repartition(10)
@@ -33,22 +33,19 @@ object OcpcDeepCalculateAUC {
       .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107a")
   }
 
-  def OcpcDeepCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcDeepCalculateAUCmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 抽取数据
-    val data = getData(hourInt, version, date, hour, spark)
-//    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
-//    data
-//      .repartition(100).write.mode("overwrite").insertInto(tableName)
+    val data = getData(hourInt, date, hour, spark)
 
     // 计算auc
-    val aucData = getAuc(data, version, date, hour, spark)
+    val aucData = getAuc(data, date, hour, spark)
     val resultDF = aucData
       .selectExpr("identifier", "media", "deep_conversion_goal", "auc")
 
     resultDF
   }
 
-  def getData(hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -121,17 +118,13 @@ object OcpcDeepCalculateAUC {
       .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
       .na.fill(0, Seq("label"))
       .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
-      .withColumn("version", lit(version))
 
     resultDF
   }
 
 
 
-  def getAuc(data: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
-//    val data = spark
-//      .table(tableName)
-//      .where(s"version='$version'")
+  def getAuc(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
 
     val newData = data
