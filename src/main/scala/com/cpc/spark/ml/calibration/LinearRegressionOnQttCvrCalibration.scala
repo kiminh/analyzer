@@ -81,15 +81,15 @@ object LinearRegressionOnQttCvrCalibration {
     val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
       .filter("ideaidtag=1")
-    val default_click_unit_count = data.groupBy().max("click_unit_count")
-      .first().getAs[Int]("max(click_unit_count)")
+//    val default_click_unit_count = data.groupBy().max("click_unit_count")
+//      .first().getAs[Int]("max(click_unit_count)")
 
     val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("sample",lit(1))
-      .withColumn("click_unit_count",when(col("click_unit_count")<default_click_unit_count
+      .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
@@ -127,7 +127,8 @@ object LinearRegressionOnQttCvrCalibration {
     val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
     // 输出逻辑回归的系数和截距
-    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+    println(s"Coefficients: ${lrModel.coefficients}")
+    println(s"Intercept: ${lrModel.intercept}")
     //获取训练模型的相关信息
     val trainingSummary = lrModel.summary
     //模型残差
