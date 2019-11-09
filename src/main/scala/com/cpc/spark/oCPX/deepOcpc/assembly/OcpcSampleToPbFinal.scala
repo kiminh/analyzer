@@ -44,7 +44,10 @@ object OcpcSampleToPbFinal {
 
     val result1 = data1
       .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-      .join(whiteUnits, Seq("identifier"), "inner")
+      .join(whiteUnits, Seq("identifier"), "left_outer")
+
+    result1
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191109")
 
     val resultDF = result1.filter(s"is_hidden = 0")
 
@@ -194,7 +197,10 @@ object OcpcSampleToPbFinal {
          |  flag = 1
          |""".stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest).distinct()
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("flag", lit(1))
+      .distinct()
 
     data
   }
