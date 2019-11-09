@@ -42,7 +42,9 @@ hdfs_path_model=hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/qtt-list-
 hadoop fs -mkdir ${des_dir}/${curr_date}-collect-inc
 
 curr_model_base=${curr_date}-tf-base-mom-8days-6eps
+curr_model_base=${curr_date}-tf-base-mom-14days-3eps
 curr_model_incr=${curr_date}-tf-base-mom-8days-6eps-inc
+curr_model_incr=${curr_date}-tf-base-mom-14days-3eps-inc
 
 curr_base_model_instances=${hdfs_path_model}/${curr_model_base}/map_instances.data
 curr_incr_model_instances=${hdfs_path_model}/${curr_model_incr}/map_instances.data
