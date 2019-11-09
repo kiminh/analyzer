@@ -1,10 +1,11 @@
-create table if not exists test.ocpc_deep_white_unit_hourly(
+create table if not exists test.ocpc_deep_white_unit_version(
     identifier              string,
     media                   string,
     deep_conversion_goal    int,
     cv                      bigint,
     auc                     double,
-    flag                    int
+    flag                    int,
+    `date`                    string
 )
-partitioned by (`date` string, version string)
+partitioned by (version string)
 stored as parquet;
