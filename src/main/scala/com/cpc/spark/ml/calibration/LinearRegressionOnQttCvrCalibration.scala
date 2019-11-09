@@ -120,11 +120,12 @@ object LinearRegressionOnQttCvrCalibration {
     val dataset = pipelineModel.transform(dataDF)
 
     val trainingDF= dataset
+    trainingDF.show(5)
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
         .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(trainingDF)
-    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
+//    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
     // 输出逻辑回归的系数和截距
     println(s"Coefficients: ${lrModel.coefficients}")
