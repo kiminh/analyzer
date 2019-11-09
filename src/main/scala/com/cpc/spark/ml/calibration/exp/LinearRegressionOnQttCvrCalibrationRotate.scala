@@ -24,13 +24,14 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-10-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-12-08-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 22){
+    for (i <- 0 until 0){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
+      val model = "qtt-cvr-dnn-rawid-v1wzjf-aibox"
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
       val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
@@ -46,32 +47,45 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println(s"testHour=$testHour")
 
       val selectCondition = getTimeRangeSql4(startDate, startHour, endDate, endHour)
+      val selectCondition1 = getTimeRangeSql(startDate, startHour, endDate, endHour)
 
       val sql1 =
         s"""
-           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
-           |    when user_show_ad_num = 0 then '0'
-           |    when user_show_ad_num = 1 then '1'
-           |    when user_show_ad_num = 2 then '2'
-           |    when user_show_ad_num in (3,4) then '4'
-           |    when user_show_ad_num in (5,6,7) then '7'
-           |    else '8' end as show_num,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight0
-           |    from dl_cpc.wy_calibration_sample
-           |    where $selectCondition
+           |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+           |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
+           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
+           |from
+           |  (select * from
+           |  dl_cpc.cvr_calibration_sample_all
+           |  where $selectCondition
+           |  and media_appsid in ('80000001','80000002')
+           |  and cvr_model_name = '$model'
+           |  and is_ocpc = 1) a
+           | left join
+           | (select distinct searchid,conversion_goal,1 as iscvr
+           |  from dl_cpc.ocpc_quick_cv_log
+           |  where  $selectCondition1) c
+           |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
       println(s"$sql1")
 
       val sql2 =
         s"""
-           |select *,cast(rawcvr/10000 as double) as raw_cvr,case
-           |    when user_show_ad_num = 0 then '0'
-           |    when user_show_ad_num = 1 then '1'
-           |    when user_show_ad_num = 2 then '2'
-           |    when user_show_ad_num in (3,4) then '4'
-           |    when user_show_ad_num in (5,6,7) then '7'
-           |    else '8' end as show_num
-           |    from dl_cpc.wy_calibration_sample
-           |    where day ='$testDate' and hour = '$testHour'
+           |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+           |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
+           |if(c.iscvr is not null,1,0) iscvr
+           |from
+           |  (select * from
+           |  dl_cpc.cvr_calibration_sample_all
+           |  where day ='$testDate'
+           |  and media_appsid in ('80000001','80000002')
+           |  and cvr_model_name = '$model'
+           |  and is_ocpc = 1) a
+           | left join
+           | (select distinct searchid,conversion_goal,1 as iscvr
+           |  from dl_cpc.ocpc_quick_cv_log
+           |  where  `date` ='$testDate' ) c
+           |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
       println(s"$sql2")
       val data = spark.sql(sql1)
@@ -86,9 +100,9 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val defaultuserid = data.groupBy("userid").count()
         .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
         .filter("useridtag=1")
-      val default_click_unit_count = data.groupBy().max("click_unit_count")
-        .first().getAs[Int]("max(click_unit_count)")
-      println(s"default_click_count:$default_click_unit_count")
+//      val default_click_unit_count = data.groupBy().max("click_unit_count")
+//        .first().getAs[Int]("max(click_unit_count)")
+//      println(s"default_click_count:$default_click_unit_count")
 
       val df1 = data
           .withColumn("hourweight",col("hourweight0"))
@@ -109,8 +123,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
-        .withColumn("click_unit_count",when(col("click_unit_count")>default_click_unit_count
-          ,default_click_unit_count).otherwise(col("click_unit_count")))
+        .withColumn("click_unit_count",when(col("click_unit_count")>10
+          ,10).otherwise(col("click_unit_count")))
         .withColumn("sample",lit(0))
         .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
@@ -154,7 +168,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       predictions.show(5)
 
       // 输出逻辑回归的系数和截距
-//      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
       //获取训练模型的相关信息
       val trainingSummary = lrModel.summary
       //模型残差
