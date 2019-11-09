@@ -11,7 +11,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
-object OcpcDeepCalculateAUC {
+object OcpcDeepCalculateCV {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -25,25 +25,26 @@ object OcpcDeepCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF =  OcpcDeepCalculateAUCmain(date, hour, version, hourInt, spark)
+    val resultDF = OcpcDeepCalculateCV(date, hour, version, hourInt, spark)
 
     resultDF
       .repartition(10)
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
-      .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107a")
+      .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107b")
   }
 
-  def OcpcDeepCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcDeepCalculateCV(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
     // 抽取数据
     val data = getData(hourInt, version, date, hour, spark)
-//    val tableName = "dl_cpc.ocpc_auc_raw_data_v2"
-//    data
-//      .repartition(100).write.mode("overwrite").insertInto(tableName)
-
     // 计算auc
-    val aucData = getAuc(data, version, date, hour, spark)
-    val resultDF = aucData
-      .selectExpr("identifier", "media", "deep_conversion_goal", "auc")
+    val resultDF = data
+        .na.fill(0, Seq("iscvr"))
+        .groupBy("identifier", "media", "deep_conversion_goal")
+        .agg(
+          sum(col("iscvr")).alias("cv")
+        )
+        .select("identifier", "media", "deep_conversion_goal", "cv")
+
 
     resultDF
   }
@@ -85,7 +86,8 @@ object OcpcDeepCalculateAUC {
          |        when adclass in (110110100, 125100100) then "wzcp"
          |        else "others"
          |    end) as industry,
-         |    deep_conversion_goal
+         |    deep_conversion_goal,
+         |    isclick
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
          |and isclick = 1
@@ -104,7 +106,7 @@ object OcpcDeepCalculateAUC {
     s"""
        |SELECT
        |  searchid,
-       |  label,
+       |  label as iscvr,
        |  deep_conversion_goal
        |FROM
        |  dl_cpc.ocpc_label_deep_cvr_hourly
@@ -125,36 +127,4 @@ object OcpcDeepCalculateAUC {
 
     resultDF
   }
-
-
-
-  def getAuc(data: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
-//    val data = spark
-//      .table(tableName)
-//      .where(s"version='$version'")
-    import spark.implicits._
-
-    val newData = data
-      .select("identifier", "media", "deep_conversion_goal", "score", "label")
-      .withColumn("id", concat_ws("-", col("identifier"), col("media"), col("deep_conversion_goal")))
-      .selectExpr("id", "cast(score as int) score", "label")
-      .coalesce(400)
-
-    newData.show(10)
-
-    val result = utils.getGauc(spark, newData, "id")
-    val resultRDD = result.rdd.map(row => {
-      val id = row.getAs[String]("name")
-      val identifierList = id.trim.split("-")
-      val identifier = identifierList(0)
-      val media = identifierList(1)
-      val conversionGoal = identifierList(2).toInt
-      val auc = row.getAs[Double]("auc")
-      (identifier, media, conversionGoal, auc)
-    })
-    val resultDF = resultRDD.toDF("identifier", "media", "deep_conversion_goal", "auc")
-    resultDF
-  }
-
-
 }
