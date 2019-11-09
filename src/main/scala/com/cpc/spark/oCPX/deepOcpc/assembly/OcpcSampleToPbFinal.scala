@@ -40,9 +40,11 @@ object OcpcSampleToPbFinal {
     val version1 = version
     val data1 = getData(date, hour, tableName1, version1, spark)
     data1.printSchema()
+    val whiteUnits = getPermissionData(version, spark)
 
     val result1 = data1
       .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .join(whiteUnits, Seq("identifier"), "inner")
 
     val resultDF = result1.filter(s"is_hidden = 0")
 
@@ -54,8 +56,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -176,6 +178,26 @@ object OcpcSampleToPbFinal {
     }
     result
   })
+
+
+
+  def getPermissionData(version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier
+         |FROM
+         |  dl_cpc.ocpc_deep_white_unit_version
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  flag = 1
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).distinct()
+
+    data
+  }
 
 }
 
