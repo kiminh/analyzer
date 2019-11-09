@@ -35,9 +35,13 @@ object OcpcDeepPermission {
     val data = cv
       .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "inner")
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag")
+      .withColumn("date", lit(date))
+      .cache()
+    data.show(10)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data_result20191108")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
