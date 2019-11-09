@@ -120,9 +120,9 @@ object OcpcDeepCalculateCV {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid", "deep_conversion_goal"), "left_outer")
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry")
       .na.fill(0, Seq("label"))
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "label", "industry")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry")
 
     resultDF
   }
