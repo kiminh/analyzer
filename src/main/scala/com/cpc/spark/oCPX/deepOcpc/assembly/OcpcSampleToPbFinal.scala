@@ -44,7 +44,7 @@ object OcpcSampleToPbFinal {
 
     val result1 = data1
       .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-      .join(whiteUnits, Seq("identifier"), "left_outer")
+      .join(whiteUnits, Seq("identifier"), "inner")
 
 //    result1
 //      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191109")
