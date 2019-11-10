@@ -37,35 +37,6 @@ object DeepOcpcReport {
       .repartition(1)
       .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
 
-//    // 校准策略实验
-//    val totalCaliData1 = getCaliExpDataTotal(date, dayInt, spark)
-//    val totalCaliData2 = getCaliExpDataTotal(date1, dayInt, spark)
-//    val dailyCaliData = getCaliExpDataDaily(date, 2 * dayInt, spark)
-//
-//    totalCaliData1
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_a")
-//    totalCaliData2
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_b")
-//    dailyCaliData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_c")
-//
-//    // 转化预召回实验
-//    val totalRecallData1 = getRecallExpDataTotal(date, dayInt, spark)
-//    val totalRecallData2 = getRecallExpDataTotal(date, dayInt, spark)
-//    val dailyRecallData = getRecallExpDataDaily(date, dayInt, spark)
-//
-//    totalRecallData1
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_d")
-//    totalRecallData2
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_e")
-//    dailyRecallData
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data_exp_f")
 
   }
 
