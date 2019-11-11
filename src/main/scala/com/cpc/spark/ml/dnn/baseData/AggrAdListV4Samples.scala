@@ -238,7 +238,7 @@ object AggrAdListV4Samples {
               val value_list_prefix = dense.slice(0, 25)
               val value_list_tail = dense.slice(26, 28)
 
-              val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+              val output: Array[String] = new Array[String](dense.length + idx_arr.length - 1)
               for (idx <- value_list_prefix.indices) {
                 output(idx) = value_list_prefix(idx).toString
               }
