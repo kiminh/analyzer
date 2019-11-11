@@ -67,4 +67,6 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_filter_unionlog add columns (deep_conversion_goal int);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (deep_cpa bigint);
 --alter table dl_cpc.ocpc_filter_unionlog add columns (cpa_check_priority int);
-alter table dl_cpc.ocpc_filter_unionlog add columns (ocpc_expand_tag int)
+--alter table dl_cpc.ocpc_filter_unionlog add columns (ocpc_expand_tag int)
+alter table test.ocpc_filter_unionlog add columns (tuid string);
+alter table test.ocpc_filter_unionlog add columns (hidden_tax int);
