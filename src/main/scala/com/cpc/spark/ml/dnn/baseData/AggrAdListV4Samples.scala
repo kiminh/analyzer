@@ -184,6 +184,7 @@ object AggrAdListV4Samples {
         }
 
         if (!exists_hdfs_path(instances_file + "/_SUCCESS")) {
+          delete_hdfs_path(instances_file)
           importedDf.rdd.map(
             rs => {
               val idx2 = rs.getSeq[Long](0)
@@ -216,6 +217,7 @@ object AggrAdListV4Samples {
         }
 
         if (!exists_hdfs_path(instances_file_uid + "/_SUCCESS")) {
+          delete_hdfs_path(instances_file_uid)
           importedDf.rdd.map(
             rs => {
               val dense = rs.getSeq[Long](6)
@@ -229,6 +231,7 @@ object AggrAdListV4Samples {
         }
 
         if (!exists_hdfs_path(instances_file_no_uid + "/_SUCCESS")) {
+          delete_hdfs_path(instances_file_no_uid)
           importedDf.rdd.map(
             rs => {
               val idx_arr = rs.getSeq[Long](2)
