@@ -36,6 +36,7 @@ object OcpcDeepPermission {
       .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "inner")
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost")
+      .withColumn("cpa", col("cost") / col("cv"))
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .cache()

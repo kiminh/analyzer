@@ -12,3 +12,4 @@ stored as parquet;
 
 
 alter table test.ocpc_deep_white_unit_version add columns (cost double)
+alter table test.ocpc_deep_white_unit_version add columns (cpa double)
