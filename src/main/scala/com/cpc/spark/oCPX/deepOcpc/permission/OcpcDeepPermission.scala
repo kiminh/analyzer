@@ -33,7 +33,9 @@ object OcpcDeepPermission {
 
     // 数据关联
     val data = cv
-      .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "inner")
+      .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "outer")
+      .na.fill(0, Seq("cv"))
+      .na.fill(-1.0, Seq("auc"))
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost")
       .withColumn("cpa", col("cost") / col("cv"))
@@ -44,13 +46,13 @@ object OcpcDeepPermission {
 
     data
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
 
     data
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
