@@ -10,5 +10,5 @@ partitioned by (`date` string, version string)
 stored as parquet;
 
 
-alter table test.ocpc_deep_white_unit_hourly add columns (cost double)
-alter table test.ocpc_deep_white_unit_hourly add columns (cpa double)
+alter table dl_cpc.ocpc_deep_white_unit_hourly add columns (cost double)
+alter table dl_cpc.ocpc_deep_white_unit_hourly add columns (cpa double)
