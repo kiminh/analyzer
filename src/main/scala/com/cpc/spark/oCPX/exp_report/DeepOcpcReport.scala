@@ -35,178 +35,179 @@ object DeepOcpcReport {
     rawData
       .select("cali_tag", "recall_tag", "cpa_check_priority", "media", "unitid", "conversion_goal", "deep_conversion_goal", "click", "cost", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "cpagiven", "deep_cpagiven", "date")
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
+      .write.mode("overwrite").insertInto("test.deep_ocpc_exp_report_daily")
 
 
   }
 
-  def getRecallExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |    recall_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    date,
-         |    deep_conversion_goal,
-         |    sum(click) as click,
-         |    sum(cv1) as cv1,
-         |    sum(cv2) as cv2,
-         |    sum(cost) as cost,
-         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
-         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
-         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
-         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
-         |FROM
-         |    dl_cpc.deep_ocpc_exp_report_daily
-         |WHERE
-         |    date between '${date1}' and '${date}'
-         |GROUP BY
-         |    recall_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal,
-         |    date
-         |""".stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    data
-  }
-
-  def getRecallExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |    recall_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal,
-         |    sum(click) as click,
-         |    sum(cv1) as cv1,
-         |    sum(cv2) as cv2,
-         |    sum(cost) as cost,
-         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
-         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
-         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
-         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
-         |FROM
-         |    dl_cpc.deep_ocpc_exp_report_daily
-         |WHERE
-         |    date between '${date1}' and '${date}'
-         |GROUP BY
-         |    recall_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal
-         |""".stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    data
-  }
-
-  def getCaliExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |    cali_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    date,
-         |    deep_conversion_goal,
-         |    sum(click) as click,
-         |    sum(cv1) as cv1,
-         |    sum(cv2) as cv2,
-         |    sum(cost) as cost,
-         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
-         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
-         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
-         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
-         |FROM
-         |    dl_cpc.deep_ocpc_exp_report_daily
-         |WHERE
-         |    date between '${date1}' and '${date}'
-         |GROUP BY
-         |    cali_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal,
-         |    date
-         |""".stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    data
-  }
-
-  def getCaliExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |    cali_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal,
-         |    sum(click) as click,
-         |    sum(cv1) as cv1,
-         |    sum(cv2) as cv2,
-         |    sum(cost) as cost,
-         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
-         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
-         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
-         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
-         |FROM
-         |    dl_cpc.deep_ocpc_exp_report_daily
-         |WHERE
-         |    date between '${date1}' and '${date}'
-         |GROUP BY
-         |    cali_tag,
-         |    unitid,
-         |    cpa_check_priority,
-         |    media,
-         |    deep_conversion_goal
-         |""".stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    data
-  }
+//  def getRecallExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -7)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    recall_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    date,
+//         |    deep_conversion_goal,
+//         |    sum(click) as click,
+//         |    sum(cv1) as cv1,
+//         |    sum(cv2) as cv2,
+//         |    sum(cost) as cost,
+//         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+//         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+//         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+//         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+//         |FROM
+//         |    dl_cpc.deep_ocpc_exp_report_daily
+//         |WHERE
+//         |    date between '${date1}' and '${date}'
+//         |GROUP BY
+//         |    recall_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal,
+//         |    date
+//         |""".stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    data
+//  }
+//
+//  def getRecallExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -7)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    recall_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal,
+//         |    sum(click) as click,
+//         |    sum(cv1) as cv1,
+//         |    sum(cv2) as cv2,
+//         |    sum(cost) as cost,
+//         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+//         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+//         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+//         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+//         |FROM
+//         |    dl_cpc.deep_ocpc_exp_report_daily
+//         |WHERE
+//         |    date between '${date1}' and '${date}'
+//         |GROUP BY
+//         |    recall_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal
+//         |""".stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    data
+//  }
+//
+//  def getCaliExpDataDaily(date: String, dayInt: Int, spark: SparkSession) = {
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -7)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    cali_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    date,
+//         |    deep_conversion_goal,
+//         |    sum(click) as click,
+//         |    sum(cv1) as cv1,
+//         |    sum(cv2) as cv2,
+//         |    sum(cost) as cost,
+//         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+//         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+//         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+//         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+//         |FROM
+//         |    dl_cpc.deep_ocpc_exp_report_daily
+//         |WHERE
+//         |    date between '${date1}' and '${date}'
+//         |GROUP BY
+//         |    cali_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal,
+//         |    date
+//         |""".stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    data
+//  }
+//
+//  def getCaliExpDataTotal(date: String, dayInt: Int, spark: SparkSession) = {
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -7)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    cali_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal,
+//         |    sum(click) as click,
+//         |    sum(cv1) as cv1,
+//         |    sum(cv2) as cv2,
+//         |    sum(cost) as cost,
+//         |    sum(cpagiven * click) * 1.0 / sum(click) as cpagiven,
+//         |    sum(deep_cpagiven * click) * 1.0 / sum(click) as deep_cpagiven,
+//         |    sum(pre_cvr1 * click) * 1.0 / sum(click) as pre_cvr1,
+//         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2
+//         |FROM
+//         |    dl_cpc.deep_ocpc_exp_report_daily
+//         |WHERE
+//         |    date between '${date1}' and '${date}'
+//         |GROUP BY
+//         |    cali_tag,
+//         |    unitid,
+//         |    cpa_check_priority,
+//         |    media,
+//         |    deep_conversion_goal
+//         |""".stripMargin
+//    println(sqlRequest)
+//    val data = spark.sql(sqlRequest)
+//    data
+//  }
 
   def getCompleteExp(date: String, dayInt: Int, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -254,6 +255,7 @@ object DeepOcpcReport {
          |        (case when exptags like '%deepOcpcExpTag:daily%' then 'daily'
          |              when exptags like '%deepOcpcExpTag:v2%' then 'v2'
          |              when exptags like '%deepOcpcExpTag:v3%' then 'v3'
+         |              when exptags like '%deepOcpcExpTag:v4%' then 'v4'
          |              else 'dz'
          |        end) as cali_tag,
          |        (case when exptags like '%ocpc_rcl:v205%' then 'v205'
