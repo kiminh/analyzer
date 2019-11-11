@@ -58,7 +58,7 @@ do
 
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
     instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances"
-    instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances-no-uid-tmp"
+    instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances-no-uid"
 
     echo ${aggr_path}
     echo ${instances_path}
