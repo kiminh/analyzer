@@ -253,6 +253,11 @@ do
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
     if [ "${done_aggr}" = "true" ];then
+        printf "aggr add to collect and continue...\n"
+        collect_date+=(${curr_date})
+        collect_file+=(${aggr_path}/part-*)
+        continue
+
         printf "curr_date ${curr_date} has aggr file but no instances file\n"
         if [[ ${#valid_data[@]} -eq 48 ]] ; then
             printf "original real-time files add to collect and continue...\n"
@@ -260,10 +265,6 @@ do
             collect_file+=(${train_file})
             continue
         fi
-        printf "aggr add to collect and continue...\n"
-        collect_date+=(${curr_date})
-        collect_file+=(${aggr_path}/part-*)
-        continue
     fi
 
     real_curr_date=`date --date='1 days ago' +%Y-%m-%d`
