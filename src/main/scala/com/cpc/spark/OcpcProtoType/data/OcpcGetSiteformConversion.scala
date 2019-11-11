@@ -43,6 +43,7 @@ object OcpcGetSiteformConversion {
       .repartition(10)
       .write
       .mode("overwrite")
+//      .insertInto("test.site_form_unionlog")
       .insertInto("dl_cpc.site_form_unionlog")
 
   }

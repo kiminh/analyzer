@@ -40,9 +40,14 @@ object OcpcSampleToPbFinal {
     val version1 = version
     val data1 = getData(date, hour, tableName1, version1, spark)
     data1.printSchema()
+    val whiteUnits = getPermissionData(version, spark)
 
     val result1 = data1
       .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .join(whiteUnits, Seq("identifier"), "inner")
+
+//    result1
+//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191109")
 
     val resultDF = result1.filter(s"is_hidden = 0")
 
@@ -76,7 +81,14 @@ object OcpcSampleToPbFinal {
          |  version = '$version'
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest).cache()
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("smooth_factor_old", col("smooth_factor"))
+      .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
+      .cache()
+
+//    data
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
     data.show(10)
     data
 
@@ -163,6 +175,35 @@ object OcpcSampleToPbFinal {
 
   }
 
+  def udfSetSmoothFactor() = udf((smoothFactor: Double) => {
+    val result = smoothFactor match {
+      case _ => 0.8
+    }
+    result
+  })
+
+
+
+  def getPermissionData(version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier
+         |FROM
+         |  dl_cpc.ocpc_deep_white_unit_version
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  flag = 1
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("flag", lit(1))
+      .distinct()
+
+    data
+  }
 
 }
 

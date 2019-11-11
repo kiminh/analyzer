@@ -476,7 +476,7 @@ object OcpcTools {
       case "qtt" => "Qtt"
       case "hottopic" => "HT66"
       case "novel" => "MiDu"
-      case _ => "others"
+      case x => x
     }
     result
   })

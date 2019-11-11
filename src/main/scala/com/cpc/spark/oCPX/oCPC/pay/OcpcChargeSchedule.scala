@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.pay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{udfConcatStringInt, udfDetermineIndustry, udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.{udfDetermineMedia}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -88,8 +88,7 @@ object OcpcChargeSchedule {
          |  pay_date,
          |  end_date,
          |  cur_date,
-         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag,
-         |  (case when pay_cnt < 4 and pay_date <= cur_date then 1 else 0 end) as flag
+         |  (case when end_date <= cur_date and pay_cnt < 4 then 1 else 0 end) as update_flag
          |FROM
          |  raw_data
          |""".stripMargin
@@ -103,6 +102,7 @@ object OcpcChargeSchedule {
       .withColumn("prev_pay_date", col("pay_date"))
       .withColumn("pay_cnt", when(col("update_flag") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
       .withColumn("pay_date", when(col("update_flag") === 1, lit(date)).otherwise(col("pay_date")))
+      .withColumn("flag", when(col("pay_cnt") < 4, 1).otherwise(0))
 
     data
   }
@@ -136,12 +136,12 @@ object OcpcChargeSchedule {
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
          |  unitid,
          |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
          |  media_appsid,
          |  adslot_type,
-         |  adclass
+         |  adclass,
+         |  conversion_goal
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -159,13 +159,14 @@ object OcpcChargeSchedule {
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
-      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass")))
+      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
+      .distinct()
 
 //    newDataRaw
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191021a")
 
     val newData = newDataRaw
-      .filter(s"industry in ('feedapp', 'elds', 'pay_industry')")
+      .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .select("unitid")
       .distinct()
 
@@ -184,9 +185,10 @@ object OcpcChargeSchedule {
     data
   }
 
-  def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int) => {
+  def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int, conversionGoal: Int) => {
     val adclassString = adclass.toString
     val adclass3 = adclassString.substring(0, 3)
+    val siteformPayAdclass = Array(130112100, 123100100, 130104100, 118106100, 118109100, 110111100, 118102100, 118105100, 113102100, 130102100, 135101100, 135102100, 135103100)
     var result = "others"
     if (adclass3 == "134" || adclass3 == "107") {
       result = "elds"
@@ -198,6 +200,8 @@ object OcpcChargeSchedule {
       result = "wzcp"
     } else if (adclass == 103100100 || adclass == 111100100 || adclass == 104100100) {
       result = "pay_industry"
+    } else if (siteformPayAdclass.contains(adclass) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
+      result = "siteform_pay_industry"
     } else {
       result = "others"
     }
