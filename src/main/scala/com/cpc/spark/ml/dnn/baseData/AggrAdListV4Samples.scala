@@ -125,8 +125,14 @@ object AggrAdListV4Samples {
 
       val file_des = des_dir + "/" + curr_date + "-aggr"
       val instances_file = des_dir + "/" + curr_date + "-instances"
+      val instances_file_no_uid = des_dir + "/" + curr_date + "-instances-no-uid"
+      val instances_file_uid = des_dir + "/" + curr_date + "-instances-uid"
 
-      if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count") || !exists_hdfs_path(instances_file + "/_SUCCESS")) {
+      if (!exists_hdfs_path(file_des + "/_SUCCESS")
+        || !exists_hdfs_path(file_des + "/count")
+        || !exists_hdfs_path(instances_file + "/_SUCCESS")
+        || !exists_hdfs_path(instances_file_uid + "/_SUCCESS")
+        || !exists_hdfs_path(instances_file_no_uid + "/_SUCCESS")) {
         val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(curr_file)
         //println("DF file count:" + importedDf.count().toString + " of train files")
         if (!exists_hdfs_path(file_des + "/_SUCCESS") || !exists_hdfs_path(file_des + "/count")) {
@@ -208,12 +214,108 @@ object AggrAdListV4Samples {
               key + "\t" + value.toString
           }.repartition(1).saveAsTextFile(instances_file)
         }
-      }
 
+        if (!exists_hdfs_path(instances_file_uid + "/_SUCCESS")) {
+          importedDf.rdd.map(
+            rs => {
+              val dense = rs.getSeq[Long](6)
+              val uid_value = dense(25)
+              (uid_value, 1L)
+            }
+          ).reduceByKey(_ + _).map {
+            case (key, value) =>
+              key + "\t" + value.toString
+          }.repartition(1).saveAsTextFile(instances_file_uid)
+        }
+
+        if (!exists_hdfs_path(instances_file_no_uid + "/_SUCCESS")) {
+          importedDf.rdd.map(
+            rs => {
+              val idx_arr = rs.getSeq[Long](2)
+              val dense = rs.getSeq[Long](6)
+
+              val uid_value = dense(25)
+              val value_list_prefix = dense.slice(0, 25)
+              val value_list_tail = dense.slice(26, 28)
+
+              val output: Array[String] = new Array[String](dense.length + idx_arr.length)
+              for (idx <- value_list_prefix.indices) {
+                output(idx) = value_list_prefix(idx).toString
+              }
+              for (idx <- value_list_tail.indices) {
+                output(idx) = value_list_tail(idx).toString
+              }
+              for (idx <- idx_arr.indices) {
+                output(idx + dense.length) = idx_arr(idx).toString
+              }
+              output.mkString("\t")
+            }
+          ).flatMap(
+            rs => {
+              val line = rs.split("\t")
+              for (elem <- line)
+                yield (elem, 1L)
+            }
+          ).reduceByKey(_ + _).map {
+            case (key, value) =>
+              key + "\t" + value.toString
+          }.repartition(1).saveAsTextFile(instances_file_no_uid)
+        }
+      }
     }
 
     val date_begin_list = date_begin_strs.split(";")
     for (curr_begin_date <- date_begin_list) {
+      val instances_all_uid = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all-uid"
+      if (!exists_hdfs_path(instances_all_uid + "/_SUCCESS")) {
+        //delete_hdfs_path(instances_map)
+        delete_hdfs_path(instances_all_uid)
+        val instances_date_collect = GetDateRange(curr_begin_date, date_last)
+        val output = ArrayBuffer[String]()
+        for (curr_date <- instances_date_collect) {
+          val instances_file_uid = des_dir + "/" + curr_date + "-instances-uid"
+          if (exists_hdfs_path(instances_file_uid + "/_SUCCESS")) {
+            output += instances_file_uid + "/part-*"
+          }
+        }
+
+        if (instances_date_collect.size == output.size) {
+          sc.textFile(output.mkString(",")).map({
+            rs =>
+              val line_list = rs.split("\t")
+              (line_list(0), line_list(1).toLong)
+          }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({
+            case (key, value) =>
+              key + "\t" + value.toString
+          }).saveAsTextFile(instances_all_uid)
+        }
+      }
+
+      val instances_all_no_uid = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all-no-uid"
+      if (!exists_hdfs_path(instances_all_no_uid + "/_SUCCESS")) {
+        //delete_hdfs_path(instances_map)
+        delete_hdfs_path(instances_all_no_uid)
+        val instances_date_collect = GetDateRange(curr_begin_date, date_last)
+        val output = ArrayBuffer[String]()
+        for (curr_date <- instances_date_collect) {
+          val instances_file_no_uid = des_dir + "/" + curr_date + "-instances-no-uid"
+          if (exists_hdfs_path(instances_file_no_uid + "/_SUCCESS")) {
+            output += instances_file_no_uid + "/part-*"
+          }
+        }
+
+        if (instances_date_collect.size == output.size) {
+          sc.textFile(output.mkString(",")).map({
+            rs =>
+              val line_list = rs.split("\t")
+              (line_list(0), line_list(1).toLong)
+          }).reduceByKey(_ + _).repartition(1).sortBy(_._2 * -1).map({
+            case (key, value) =>
+              key + "\t" + value.toString
+          }).saveAsTextFile(instances_all_no_uid)
+        }
+      }
+
       val instances_all = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-all"
       //val instances_map = des_dir + "/" + date_last + "_" + curr_begin_date + "-instances-map"
       //if (!exists_hdfs_path(instances_all + "/_SUCCESS") || !exists_hdfs_path(instances_map + "/_SUCCESS")) {

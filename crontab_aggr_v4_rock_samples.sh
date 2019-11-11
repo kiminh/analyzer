@@ -45,6 +45,7 @@ do
 
     aggr_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-aggr"
     instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances"
+    instances_path="hdfs://emr-cluster/user/cpc/fenghuabin/rockefeller_backup/${curr_date}-instances-no-uid"
 
     echo ${aggr_path}
     echo ${instances_path}
@@ -302,8 +303,8 @@ echo "${date_list}"
 
 date_last=`date --date='1 days ago' +%Y-%m-%d`
 instances_all_list=(
-    `date --date='14 days ago' +%Y-%m-%d`
     `date --date='7 days ago' +%Y-%m-%d`
+    `date --date='14 days ago' +%Y-%m-%d`
     `date --date='5 days ago' +%Y-%m-%d`
     `date --date='3 days ago' +%Y-%m-%d`
     `date --date='1 days ago' +%Y-%m-%d`
