@@ -82,13 +82,22 @@ object LinearRegressionOnQttCvrCalibration {
     val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
       .filter("ideaidtag=1")
-//    val default_click_unit_count = data.groupBy().max("click_unit_count")
-//      .first().getAs[Int]("max(click_unit_count)")
+    val defaultunitid = data.groupBy("unitid").count()
+      .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
+      .filter("unitidtag=1")
+    val defaultuserid = data.groupBy("userid").count()
+      .withColumn("useridtag",when(col("count")>40,1).otherwise(0))
+      .filter("useridtag=1")
+
 
     val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
+      .join(defaultunitid,Seq("unitid"),"left")
+      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
+      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
+      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
       .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
@@ -125,6 +134,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
+        .setMaxIter(1000)
         .setLabelCol("label").setRegParam(0.01).setElasticNetParam(0.1).fit(trainingDF)
 //    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
