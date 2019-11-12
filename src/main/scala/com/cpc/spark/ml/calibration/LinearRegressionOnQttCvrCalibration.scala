@@ -177,7 +177,6 @@ object LinearRegressionOnQttCvrCalibration {
         valueOp = value_op,
         classifyType = classify_type
       )
-      featureid.classifyType
       featuregroup += featureid
 
       val featurevalue = cate + "value"
