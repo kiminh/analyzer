@@ -261,6 +261,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
     println("abs_error is %.3f".format(abs_error))
 
+    val under0 = data.filter("prediction < 0").count()
+
     val p2 = data.groupBy("unitid")
       .agg(
         avg(col("label")).alias("cvr"),
@@ -287,6 +289,6 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     val allnum = p4.count().toDouble
     val rightnum = p4.filter("pcoc<1.1 and pcoc>0.9").count()
     val greaternum = p4.filter("pcoc>1.1").count()
-    println("%s by unitid:unitid sum:%d,avgcvr:%.4f,avgecvr:%.4f,avgpcoc:%.3f,all:%.0f,right:%d,pcoc>1.1:%d,ratio of pcoc in (0.9,1,1):%.3f,ratio of pcoc>1.1:%.3f".format(cate, p2.count(),cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
+    println("%s by unitid:unitid sum:%d,under0: %d, avgcvr:%.4f,avgecvr:%.4f,avgpcoc:%.3f,all:%.0f,right:%d,pcoc>1.1:%d,ratio of pcoc in (0.9,1,1):%.3f,ratio of pcoc>1.1:%.3f".format(cate, p2.count(),under0,cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
   }
 }
