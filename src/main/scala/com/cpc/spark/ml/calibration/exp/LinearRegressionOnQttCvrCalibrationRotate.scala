@@ -105,7 +105,6 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //      println(s"default_click_count:$default_click_unit_count")
 
       val df1 = data
-          .withColumn("hourweight",col("hourweight0"))
         .join(defaultideaid,Seq("ideaid"),"left")
 //        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
