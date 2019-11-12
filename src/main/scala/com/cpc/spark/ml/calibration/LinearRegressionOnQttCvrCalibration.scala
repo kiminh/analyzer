@@ -94,7 +94,7 @@ object LinearRegressionOnQttCvrCalibration {
       .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
-      .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
+      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
       .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
       .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
