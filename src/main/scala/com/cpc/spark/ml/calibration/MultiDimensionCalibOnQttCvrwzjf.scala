@@ -101,7 +101,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
       .withColumn("isclick",col("iscvr")).cache()
     log.show(10)
-    LogToPb(log, session, calimodel)
+    LogToPb(log, session, calimodel,threshold)
     log.unpersist()
     val irModel = IRModel(
       boundaries = Seq(1.0),
