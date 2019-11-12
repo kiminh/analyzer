@@ -90,12 +90,12 @@ object LinearRegressionOnQttCvrCalibration {
 
     val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
-      .join(defaultunitid,Seq("unitid"),"left")
-      .join(defaultuserid,Seq("userid"),"left")
+//      .join(defaultunitid,Seq("unitid"),"left")
+//      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
-      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
-      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
+//      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
+//      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
       .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))

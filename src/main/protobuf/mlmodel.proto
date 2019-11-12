@@ -202,7 +202,7 @@ message Feature {
 
 message Slot {
     int32 slot_id = 1;
-    float start_offset = 2;
+    double lower_bound = 2;
 }
 
 message SlotInfo {
