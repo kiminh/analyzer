@@ -162,7 +162,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.01).setElasticNetParam(0.1).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.01).setElasticNetParam(0.0).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
