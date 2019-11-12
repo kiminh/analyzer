@@ -10,7 +10,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb_delayNoSmooth {
+object OcpcGetPb_delayExpNoSmooth {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -171,10 +171,6 @@ object OcpcGetPb_delayNoSmooth {
          |  *
          |FROM
          |  base_data_raw
-         |WHERE
-         |  (media = 'hottopic' and (exptags like '%ocpcMedia:delayNewHT66,HT66%') or (exptags like '%ocpcMedia:delayExpHT66,HT66%'))
-         |OR
-         |  media in ('qtt', 'novel')
        """.stripMargin
     println(sqlRequest)
     val baseData = spark

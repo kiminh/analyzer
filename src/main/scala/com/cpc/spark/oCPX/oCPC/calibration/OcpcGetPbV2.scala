@@ -131,7 +131,6 @@ object OcpcGetPbV2 {
 
     data
 
-
   }
 
   def getCPAgiven(spark: SparkSession) = {
