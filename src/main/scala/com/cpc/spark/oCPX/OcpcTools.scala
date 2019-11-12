@@ -184,7 +184,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  date,
          |  hour
          |FROM
