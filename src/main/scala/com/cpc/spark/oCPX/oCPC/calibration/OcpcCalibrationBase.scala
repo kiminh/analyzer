@@ -90,6 +90,7 @@ object OcpcCalibrationBase {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
+      .withColumn("price", col("price") - col("hidden_tax"))
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
         sum(col("isclick")).alias("click"),
