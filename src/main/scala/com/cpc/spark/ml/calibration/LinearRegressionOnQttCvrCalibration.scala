@@ -27,7 +27,7 @@ object LinearRegressionOnQttCvrCalibration {
     val media = args(3)
     val model = args(4)
     val calimodel = args(5)
-//    val k = args(6)
+    val conversiongoal = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -65,6 +65,7 @@ object LinearRegressionOnQttCvrCalibration {
                       |  (select * from
                       |  dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
+                      |  and conversion_goal = $conversiongoal
                       |  and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')
                       |  and is_ocpc = 1) a
