@@ -73,7 +73,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         s"""
            |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
            |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
-           |if(c.iscvr is not null,1,0) iscvr
+           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
@@ -157,7 +157,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr"))))
       dataset.show(10)
 
-      val trainingDF= dataset.filter("sample=1")
+      val trainingDF= dataset.filter("sample = 1")
       val validationDF = dataset.filter("sample = 0")
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
