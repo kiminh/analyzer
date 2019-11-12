@@ -34,6 +34,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
     val model = args(4)
     val calimodel = args(5)
     val k = args(6)
+    val threshold = args(7)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -115,21 +116,21 @@ object MultiDimensionCalibOnQttCvrwzjf {
     saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
-  def LogToPb(log:DataFrame, session: SparkSession, model: String)={
+  def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
     val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslotid")))
-      .filter("count1>100000")
+      .filter(s"count1>$threshold")
       .select("adclass","ideaid","user_show_ad_num","adslotid","group")
     val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").count().withColumn("count2",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
-      .filter("count2>100000")
+      .filter(s"count2>$threshold")
       .select("adclass","ideaid","user_show_ad_num","group")
     val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
-      .filter("count3>10000")
+      .filter(s"count3>$threshold")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
-      .filter("count4>10000")
+      .filter(s"count4>>$threshold")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
