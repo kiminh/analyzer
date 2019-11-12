@@ -163,11 +163,21 @@ object LinearRegressionOnQttCvrCalibration {
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
     var featuremap = scala.collection.mutable.Map[String,Double]()
     for (cate <- categoricalColumns ){
+      var value_op = 0
+      var classify_type = CalibrationFeature.ClassifyType.PrefixLen.apply(0)
+      if (cate == "adclass"){
+        value_op = 1
+        classify_type = CalibrationFeature.ClassifyType.PrefixLen.apply(6)
+      }
+
       val featureid = CalibrationFeature(
         asIdx = sampleidx.get(cate).getOrElse(-1),
         prefix = cate + "#",
-        types = 1
+        types = 1,
+        valueOp = value_op,
+        classifyType = classify_type
       )
+      featureid.classifyType
       featuregroup += featureid
 
       val featurevalue = cate + "value"
