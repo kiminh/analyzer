@@ -113,8 +113,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
-        .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","show_num","hour")
+        .select("searchid","ideaid","adclass","adslotid","label","unitid","raw_cvr",
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
       df1.show(10)
 
       val df2 = spark.sql(sql2)
