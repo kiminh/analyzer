@@ -24,12 +24,12 @@ object OcpcCalibrationBase {
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
     val result1 = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
-    val result2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt, spark)
+//    val result2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt, spark)
 
     result1
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
-    result2
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731b")
+//    result2
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731b")
 
   }
 
@@ -79,7 +79,7 @@ object OcpcCalibrationBase {
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "acp_old")
 
 
     resultDF
@@ -90,6 +90,7 @@ object OcpcCalibrationBase {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
+      .withColumn("price_old", col("price"))
       .withColumn("price", col("price") - col("hidden_tax"))
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
@@ -97,11 +98,12 @@ object OcpcCalibrationBase {
         sum(col("iscvr")).alias("cv"),
         avg(col("bid")).alias("acb"),
         avg(col("price")).alias("acp"),
+        avg(col("price_old")).alias("acp_old"),
         avg(col("exp_cvr")).alias("pre_cvr")
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "acp_old")
 
     data
   }
