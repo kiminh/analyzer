@@ -131,7 +131,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
 
       val dataDF = df1.union(df2)
 
