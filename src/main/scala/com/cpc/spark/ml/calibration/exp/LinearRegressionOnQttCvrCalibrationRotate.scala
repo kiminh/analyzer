@@ -221,7 +221,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
 //    online calibration
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-        .withColumn("prediction",when(col("prediction")<0,10).otherwise(col(prediction)))
+        .withColumn("prediction",when(col("prediction")<0,10).otherwise(col("prediction")))
     calculateAuc(calibData,"test calibration",spark)
 
   }
