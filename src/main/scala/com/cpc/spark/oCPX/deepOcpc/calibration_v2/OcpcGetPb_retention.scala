@@ -214,6 +214,8 @@ object OcpcGetPb_retention {
          |  isclick = 1
          |AND
          |  deep_cvr is not null
+         |AND
+         |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
