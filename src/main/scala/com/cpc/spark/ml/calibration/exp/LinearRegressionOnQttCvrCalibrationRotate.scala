@@ -221,6 +221,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
 //    online calibration
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+        .withColumn("prediction",when(col("prediction")<0,10).otherwise(col(prediction)))
     calculateAuc(calibData,"test calibration",spark)
 
   }
@@ -261,7 +262,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
     println("abs_error is %.3f".format(abs_error))
 
-    val under0 = data.filter("prediction < 0").count()
+    val under0 = data.filter("prediction = 10").count()
 
     val p2 = data.groupBy("unitid")
       .agg(
