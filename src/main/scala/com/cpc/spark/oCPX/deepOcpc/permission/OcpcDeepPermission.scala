@@ -25,6 +25,8 @@ object OcpcDeepPermission {
       .appName(s"ocpc identifier auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
+
     // 计算auc
     val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
 
@@ -46,13 +48,13 @@ object OcpcDeepPermission {
 
     data
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
 
     data
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
