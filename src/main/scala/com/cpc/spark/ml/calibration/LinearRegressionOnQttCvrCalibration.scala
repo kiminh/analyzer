@@ -132,7 +132,7 @@ object LinearRegressionOnQttCvrCalibration {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.01).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.03).setElasticNetParam(0.01).fit(trainingDF)
 //    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
     // 输出逻辑回归的系数和截距
