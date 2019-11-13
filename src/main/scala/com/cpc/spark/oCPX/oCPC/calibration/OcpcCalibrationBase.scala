@@ -54,7 +54,9 @@ object OcpcCalibrationBase {
          |  media in ('hottopic', 'novel')
        """.stripMargin
     println(sqlRequest)
-    val baseData = spark.sql(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .withColumn("price", col("price") - col("hidden_tax"))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
@@ -73,13 +75,15 @@ object OcpcCalibrationBase {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("price", col("price") - col("hidden_tax"))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
 
     val resultDF = result
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "acp_old")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
 
 
     resultDF
@@ -90,20 +94,17 @@ object OcpcCalibrationBase {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .withColumn("price_old", col("price"))
-      .withColumn("price", col("price") - col("hidden_tax"))
       .groupBy("unitid", "conversion_goal", "media")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
         avg(col("bid")).alias("acb"),
         avg(col("price")).alias("acp"),
-        avg(col("price_old")).alias("acp_old"),
         avg(col("exp_cvr")).alias("pre_cvr")
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "acp_old")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
 
     data
   }
