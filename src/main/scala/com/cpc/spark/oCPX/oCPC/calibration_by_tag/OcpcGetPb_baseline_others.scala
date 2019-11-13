@@ -235,6 +235,7 @@ object OcpcGetPb_baseline_others {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -296,6 +297,7 @@ object OcpcGetPb_baseline_others {
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
+      .withColumn("price", col("price") - col("hidden_tax"))
       .selectExpr("cast(unitid as string) identifier", "userid", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 
@@ -349,6 +351,7 @@ object OcpcGetPb_baseline_others {
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
+      .withColumn("price", col("price") - col("hidden_tax"))
       .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isshow", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 

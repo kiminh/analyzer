@@ -122,6 +122,7 @@ object OcpcGetPb_delayExpNoSmooth {
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
+      .withColumn("price", col("price") - col("hidden_tax"))
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 
@@ -175,6 +176,7 @@ object OcpcGetPb_delayExpNoSmooth {
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
+      .withColumn("price", col("price") - col("hidden_tax"))
       .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isshow", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
 
 
