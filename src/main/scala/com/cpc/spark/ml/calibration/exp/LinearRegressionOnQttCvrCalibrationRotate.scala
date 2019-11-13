@@ -135,7 +135,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val dataDF = df1.union(df2)
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count","conversion_from")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count","conversion_from","siteid")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
