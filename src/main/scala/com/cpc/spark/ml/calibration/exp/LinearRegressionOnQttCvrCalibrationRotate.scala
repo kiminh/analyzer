@@ -31,7 +31,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
-      val model = "qtt-cvr-dnn-rawid-v1wzjf-ldy"
+      val model = "qtt-cvr-dnn-rawid-v2form-aibox"
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
       val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
