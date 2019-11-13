@@ -24,7 +24,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-11-10-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-11-11-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
     for (i <- 0 until 1){
 
@@ -53,7 +53,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         s"""
            |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
            |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
-           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
+           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight,
+           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
@@ -73,7 +74,8 @@ object LinearRegressionOnQttCvrCalibrationRotate {
         s"""
            |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
            |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
-           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
+           |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight,
+           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
@@ -114,7 +116,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
         .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
       df1.show(10)
 
       val df2 = spark.sql(sql2)
@@ -133,7 +135,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 
       val dataDF = df1.union(df2)
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","click_unit_count","conversion_from")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
