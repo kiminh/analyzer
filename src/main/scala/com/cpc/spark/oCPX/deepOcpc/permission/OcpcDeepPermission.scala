@@ -41,18 +41,18 @@ object OcpcDeepPermission {
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost")
       .withColumn("cpa", col("cost") / col("cv"))
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
       .cache()
     data.show(10)
 
     data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     data
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "date", "cost", "cpa", "version")
+      .withColumn("version", lit(version))
       .repartition(1)
       .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")

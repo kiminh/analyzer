@@ -5,11 +5,10 @@ create table if not exists test.ocpc_deep_white_unit_version(
     cv                      bigint,
     auc                     double,
     flag                    int,
-    `date`                  string
+    cost                    double,
+    cpa                     double
 )
 partitioned by (version string)
 stored as parquet;
 
 
-alter table dl_cpc.ocpc_deep_white_unit_version add columns (cost double)
-alter table dl_cpc.ocpc_deep_white_unit_version add columns (cpa double)
