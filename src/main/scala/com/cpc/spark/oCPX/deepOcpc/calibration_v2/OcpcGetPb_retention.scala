@@ -1,7 +1,12 @@
 package com.cpc.spark.oCPX.deepOcpc.calibration_v2
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
-import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
+//import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -31,7 +36,7 @@ object OcpcGetPb_retention {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
     // 计算计费比系数、后验激活转化率、先验点击次留率
-    val data1 = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV1, spark)
+    val data1 = OcpcShallowFactor(date, hour, hourInt, expTag, minCV1, spark)
 //    data1
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
@@ -114,6 +119,131 @@ object OcpcGetPb_retention {
     }
     result
   })
+
+  /*
+  shallow factor
+   */
+  def OcpcShallowFactor(date: String, hour: String, hourInt: Int, expTag: String, minCV: Int, spark: SparkSession) = {
+    val baseData = getShallowBaseData(hourInt, date, hour, spark)
+
+    val resultDF = baseData
+      .filter(s"isclick=1")
+      .groupBy("unitid", "deep_conversion_goal", "media")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        sum(col("bid")).alias("total_bid"),
+        sum(col("price")).alias("total_price"),
+        sum(col("exp_cvr")).alias("total_pre_cvr")
+      )
+      .select("unitid", "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
+      .na.fill(0, Seq("cv"))
+      .filter(s"deep_conversion_goal = 2")
+      .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("min_cv1", lit(minCV))
+
+    resultDF.show(10)
+
+    resultDF
+  }
+
+  def getShallowBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 抽取媒体id
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  adslot_type,
+         |  isshow,
+         |  isclick,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  media_appsid,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |      when adclass in (110110100, 125100100) then "wzcp"
+         |      else "others"
+         |  end) as industry,
+         |  conversion_goal,
+         |  deep_conversion_goal,
+         |  expids,
+         |  exptags,
+         |  ocpc_expand,
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
+         |  exp_cvr,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_deep_ocpc = 1
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  isclick = 1
+         |AND
+         |  deep_cvr is not null
+       """.stripMargin
+    println(sqlRequest)
+    val clickData = spark
+      .sql(sqlRequest)
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("price", col("price") - col("hidden_tax"))
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr,
+         |  conversion_goal
+         |FROM
+         |  dl_cpc.ocpc_cvr_log_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2)
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
+  }
+
+
 
 
 }
