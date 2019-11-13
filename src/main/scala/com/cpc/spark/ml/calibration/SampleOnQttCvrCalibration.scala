@@ -45,8 +45,6 @@ object SampleOnQttCvrCalibration {
          |join dl_cpc.cpc_basedata_adx_event b
          |   on a.searchid = b.searchid and a.ideaid = b.ideaid
          |   and b.day = '$day' and b.hour = '$hour'
-         |   and b.bid_mode = 0
-         |   and b.charge_type = 1
          |   and b.conversion_goal>0
          |where
          |  a.day = '$day' and a.hour = '$hour'
