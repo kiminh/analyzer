@@ -28,7 +28,6 @@ object OcpcGetPb_pay {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
-    // 计算计费比系数、后验激活转化率、先验点击次留率
     val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
 //    rawData
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
@@ -60,8 +59,8 @@ object OcpcGetPb_pay {
     resultDF
       .withColumn("deep_conversion_goal", lit(3))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
   }
 
@@ -150,6 +149,7 @@ object OcpcGetPb_pay {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  date,
          |  hour
@@ -167,11 +167,14 @@ object OcpcGetPb_pay {
          |  isclick = 1
          |AND
          |  deep_cvr is not null
+         |AND
+         |  deep_conversion_goal = 3
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("price", col("price") - col("hidden_tax"))
 
     // 抽取cv数据
     val sqlRequest2 =
