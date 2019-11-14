@@ -279,7 +279,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
   }
 
   def saveProtoToLocal2(modelName: String, config: PostCalibrations): String = {
-    val filename = s"post-calibration-$modelName.mlm"
+    val filename = s"post-calibration-$modelName-v2.mlm"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
@@ -288,7 +288,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
   }
 
   def saveFlatTextFileForDebug2(modelName: String, config: PostCalibrations): Unit = {
-    val filename = s"post-calibration-flat-$modelName.txt"
+    val filename = s"post-calibration-flat-$modelName-v2.txt"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
