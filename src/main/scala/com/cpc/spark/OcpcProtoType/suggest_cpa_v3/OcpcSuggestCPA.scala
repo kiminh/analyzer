@@ -127,7 +127,7 @@ object OcpcSuggestCPA {
     var result = isRecommend
     if (isRecommend == 1) {
       result = (media, industry, conversionGoal) match {
-        case ("qtt", "elds", _) | ("qtt", "feedapp", 2) | ("novel", "elds", _) | ("novel", "feedapp", 2) => {
+        case ("qtt", "elds", _) | ("qtt", "feedapp", _) | ("novel", "elds", _) | ("novel", "feedapp", _) => {
           if (cv >= 10 && auc >= 0.6) {
             1
           } else {
@@ -135,7 +135,7 @@ object OcpcSuggestCPA {
           }
         }
         case (_, "wzcp", _) => 1
-        case ("qtt", "others", 3) | ("qtt", "others", 4) | ("hottopic", "others", 3) | ("hottopic", "others", 4) => {
+        case (_, "others", _) => {
           if (cv >= 10 && auc >= 0.55) {
             1
           } else if (cv >= 60 && auc >= 0.5) {
