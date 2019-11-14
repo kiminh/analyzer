@@ -108,7 +108,7 @@ object OcpcSuggestCPA {
     data.printSchema()
     val resultDF = data
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
+      .withColumn("is_recommend", udfIsRecommendV2()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
       .na.fill(0, Seq("is_recommend"))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
@@ -117,7 +117,7 @@ object OcpcSuggestCPA {
     resultDF.show(10)
 
     resultDF
-        .write.mode("overwrite").saveAsTable("test.check_suggest_cpa20191114a")
+        .write.mode("overwrite").saveAsTable("test.check_suggest_cpa20191114b")
 
     resultDF
 
