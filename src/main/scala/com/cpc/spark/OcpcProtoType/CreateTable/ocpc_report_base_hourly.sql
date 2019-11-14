@@ -32,3 +32,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_report_base_hourly add columns (total_rawcvr double);
 alter table test.ocpc_report_base_hourly add columns (deep_conversion_goal int);
 alter table test.ocpc_report_base_hourly add columns (cpa_check_priority int);
+alter table test.ocpc_report_base_hourly add columns (is_deep_ocpc int);
