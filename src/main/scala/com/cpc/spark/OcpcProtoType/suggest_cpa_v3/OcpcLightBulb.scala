@@ -38,36 +38,18 @@ object OcpcLightBulb{
 
     currentLight
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_hourly")
 
     currentLight
       .repartition(5)
       .select("unitid", "userid", "adclass", "media", "cpa", "version")
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
+      .write.mode("overwrite").insertInto("test.ocpc_unit_light_control_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unit_light_control_version")
 
     // 根据上一个小时的灯泡数据，分别判断需要熄灭和点亮的灯泡
     val result = getUpdateTableV2(currentLight, date, hour, version, spark)
-//    val lightUnits2 = getUnitidList(date, hour, spark)
-//    lightUnits2
-//      .select("unitid", "userid", "conversion_goal", "media")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(1)
-////      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
-//
-//
-//
-//    val result = lightUnits1
-//      .select("unitid", "ocpc_light", "current_cpa")
-//      .join(lightUnits2.select("unitid", "test_flag"), Seq("unitid"), "outer")
-//      .withColumn("ocpc_light_old", col("ocpc_light"))
-//      .withColumn("ocpc_light", when(col("test_flag").isNotNull, lit(1)).otherwise(col("ocpc_light")))
-//      .na.fill(0.0, Seq("current_cpa"))
-
 
     // 抽取adv的ocpc单元
     val ocpcUnitsRaw = getConversionGoal(date, hour, spark)
@@ -86,226 +68,13 @@ object OcpcLightBulb{
 
     resultDF
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
     // 存入redis
 //    saveDataToRedis(version, date, hour, spark)
 //    println(s"############## saving redis database ################")
   }
-
-  def getUnitidList(date: String, hour: String, spark: SparkSession) = {
-    // 按照配置文件的黑名单，过滤掉不参与测试的单元
-    val conf = ConfigFactory.load("ocpc")
-
-    val url = conf.getString("adv_read_mysql.new_deploy.url")
-    val user = conf.getString("adv_read_mysql.new_deploy.user")
-    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
-    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status, target_medias, create_time from adv.unit where ideas is not null) as tmp"
-
-    val ocpcBlackListConf = conf.getString("ocpc_all.light_control.ocpc_black_list")
-    val ocpcBlacklist = spark
-      .read
-      .format("json")
-      .json(ocpcBlackListConf)
-      .select("userid")
-      .withColumn("black_flag", lit(1))
-      .distinct()
-    println("ocpc blacklist for testing ocpc light:")
-    ocpcBlacklist.show(10)
-
-    // 按照前24小时的消费，过滤掉不能参与测试的单元（账户前一天oCPC日耗低于1000元）
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val today = dateConverter.parse(date + " " + hour)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val prevTime = dateConverter.format(yesterday)
-    val prevTimeValue = prevTime.split(" ")
-    val date1 = prevTimeValue(0)
-    val hour1 = prevTimeValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
-
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  userid,
-         |  conversion_goal,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
-         |      else 'novel'
-         |  end) as media,
-         |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
-         |FROM
-         |  dl_cpc.ocpc_base_unionlog
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  is_ocpc = 1
-         |AND
-         |  conversion_goal > 0
-         |GROUP BY
-         |  userid,
-         |  conversion_goal,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
-         |      else 'novel'
-         |  end)
-       """.stripMargin
-    println(sqlRequest1)
-    val userCost = spark
-      .sql(sqlRequest1)
-      .withColumn("cost_flag", when(col("cost") >= 1000.0, lit(1)).otherwise(0))
-      .select("userid", "conversion_goal", "media", "cost", "cost_flag")
-
-
-    // 增加单元层级白名单
-    val ocpcWhiteUnits = conf.getString("ocpc_all.light_control.ocpc_unit_whitelist")
-    val ocpcWhiteUnitList= spark
-      .read
-      .format("json")
-      .json(ocpcWhiteUnits)
-      .select("unitid", "userid", "media")
-      .withColumn("unit_white_flag", lit(1))
-      .distinct()
-    println("ocpc unit white list for testing ocpc light:")
-    ocpcWhiteUnitList.show(10)
-
-
-
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-
-    val deadline = date + " " + hour + ":00:00"
-
-    data.createOrReplaceTempView("base_data")
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |    id as unitid,
-         |    user_id as userid,
-         |    cast(conversion_goal as int) as conversion_goal,
-         |    ocpc_status,
-         |    target_medias,
-         |    cast(is_ocpc as int) as is_ocpc,
-         |    cast(a as string) as media_appsid,
-         |    (case when create_time >= '$deadline' then 1 else 0 end) as time_flag,
-         |    create_time,
-         |    '$deadline' as deadline
-         |from
-         |    base_data
-         |lateral view explode(split(target_medias, ',')) b as a
-         |WHERE
-         |    is_ocpc = 1
-         |and
-         |    ocpc_status not in (2, 4)
-       """.stripMargin
-    println(sqlRequest2)
-    val rawResult = spark
-      .sql(sqlRequest2)
-      .filter(s"is_ocpc = 1")
-      .na.fill("", Seq("media_appsid"))
-      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
-      .select("unitid", "userid", "conversion_goal", "media", "time_flag", "create_time")
-      .distinct()
-      .join(ocpcBlacklist, Seq("userid"), "left_outer")
-      .join(userCost, Seq("userid", "conversion_goal", "media"), "left_outer")
-      .na.fill(0, Seq("cost_flag"))
-      .join(ocpcWhiteUnitList, Seq("unitid", "userid", "media"), "left_outer")
-      .na.fill(0, Seq("black_flag", "cost_flag", "unit_white_flag"))
-      .withColumn("check_flag", udfDetermineFlag()(col("time_flag"), col("black_flag"), col("cost_flag"), col("unit_white_flag")))
-
-
-    val result = rawResult
-      .filter(s"media in ('qtt', 'hottopic')")
-      .filter(s"check_flag = 1")
-//      .filter(s"black_flag is null")
-//      .filter(s"cost_flag = 1")
-
-
-    val totalCnt = result.count()
-    val cnt = totalCnt.toFloat / 10
-    val resultDF1raw = result
-      .orderBy(rand())
-      .limit(cnt.toInt)
-      .withColumn("test_flag", lit(1))
-      .select("unitid", "userid", "conversion_goal", "media", "test_flag")
-      .distinct()
-
-    val cv3Cnt = resultDF1raw.filter(s"conversion_goal = 3").count().toFloat / 5
-    val resultDF1CV3 = resultDF1raw
-      .filter(s"conversion_goal = 3")
-      .limit(cv3Cnt.toInt)
-    val resultDF1notCV3 = resultDF1raw.filter(s"conversion_goal != 3")
-    val resultDF1 = resultDF1CV3
-        .union(resultDF1notCV3)
-        .distinct()
-
-    println(s"totalCnt=$totalCnt, cnt=$cnt")
-
-    val resultDF2 = rawResult
-      .filter(s"media in ('qtt', 'hottopic')")
-      .filter(s"unit_white_flag = 1")
-      .withColumn("test_flag", lit(1))
-      .select("unitid", "userid", "conversion_goal", "media", "test_flag")
-      .distinct()
-
-
-    val resultDF = resultDF1
-      .union(resultDF2)
-      .distinct()
-
-
-    resultDF.show(10)
-    resultDF
-  }
-
-  def udfDetermineFlag() = udf((timeFlag: Int, blackFlag: Int, costFlag: Int, unitWhiteFlag: Int) => {
-    var result = 1
-    if (unitWhiteFlag == 1) {
-      result = 1
-    } else {
-      if (timeFlag == 1 && blackFlag == 0 && costFlag == 1) {
-        result = 1
-      } else {
-        result = 0
-      }
-//      if (blackFlag == 1) {
-//        result = 0
-//      } else {
-//        if (costFlag == 1) {
-//          result = 1
-//        } else {
-//          result = 0
-//        }
-//      }
-    }
-    result
-  })
-
-  def udfDetermineMediaNew() = udf((mediaId: String) => {
-    var result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "" => "qtt"
-      case _ => "novel"
-    }
-    result
-  })
-
 
   def cleanRedis(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
@@ -419,7 +188,7 @@ object OcpcLightBulb{
          |WHERE
          |  is_ocpc = 1
          |AND
-         |  ocpc_status in (2, 4)
+         |  ocpc_status not in (0, 3)
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -430,12 +199,14 @@ object OcpcLightBulb{
     data1.show(10)
     ocpcUnit
       .filter(s"is_ocpc = 1")
-      .withColumn("ocpc_light", when(col("ocpc_status") === 2 || col("ocpc_status") === 4, 1).otherwise(0))
+      .withColumn("ocpc_light", when(col("ocpc_status") === 0 || col("ocpc_status") === 3, 0).otherwise(1))
       .select("unitid", "ocpc_light")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_adv_light_status_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_adv_light_status_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_adv_light_status_hourly")
+
 
     val data2 = currentLight
       .groupBy("unitid", "userid")
