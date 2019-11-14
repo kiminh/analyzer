@@ -152,7 +152,7 @@ object OcpcSuggestCPA {
           }
         }
         case (_, _, _) => {
-          if (cv >= 20 && auc >= 0.6) {
+          if (cv >= 60 && auc >= 0.6) {
             1
           } else {
             0
