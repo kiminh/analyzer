@@ -57,6 +57,8 @@ object AlgoSnapshotExtact {
          |where day = '$day'
          |and hour = '$hour'
          |and minute = '$minute'
+         |and mediaappsid is not null
+         |and mediaappsid !=''
       """.stripMargin
 
     println(sql)
@@ -66,6 +68,7 @@ object AlgoSnapshotExtact {
 
     val rawDataFromSnapshotLog = Rdd.map(
       x => {
+
         val mediaappsid = x.getAs[Int]("mediaappsid").toString
         val adslottype = x.getAs[Int]("adslottype")
         val feature_int64_offset = x.getAs[Seq[Int]]("feature_int64_offset").toArray
