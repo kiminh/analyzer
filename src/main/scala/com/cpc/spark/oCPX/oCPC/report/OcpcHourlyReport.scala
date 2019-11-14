@@ -46,9 +46,9 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "check_cpa_priority", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "date", "hour")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "check_cpa_priority"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority"))
 
 
     resultDF
@@ -69,7 +69,7 @@ object OcpcHourlyReport {
          |  adslot_type,
          |  conversion_goal,
          |  deep_conversion_goal,
-         |  check_cpa_priority,
+         |  cpa_check_priority,
          |  industry,
          |  media,
          |  hr,
@@ -92,7 +92,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, check_cpa_priority, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
