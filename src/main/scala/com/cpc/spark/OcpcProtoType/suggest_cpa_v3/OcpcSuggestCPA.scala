@@ -75,8 +75,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -110,8 +110,6 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
       .na.fill(0, Seq("is_recommend"))
-//      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
-//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .cache()
@@ -119,8 +117,51 @@ object OcpcSuggestCPA {
     resultDF.show(10)
 
     resultDF
+        .write.mode("overwrite").saveAsTable("test.check_suggest_cpa20191114a")
+
+    resultDF
 
   }
+
+  def udfIsRecommendV2() = udf((industry: String, media: String, conversionGoal: Int, cv: Long, auc: Double, isRecommend: Int) => {
+    var result = isRecommend
+    if (isRecommend == 1) {
+      result = (media, industry, conversionGoal) match {
+        case ("qtt", "elds", _) | ("qtt", "feedapp", 2) | ("novel", "elds", _) | ("novel", "feedapp", 2) => {
+          if (cv >= 10 && auc >= 0.6) {
+            1
+          } else {
+            0
+          }
+        }
+        case (_, "wzcp", _) => 1
+        case ("qtt", "others", 3) | ("qtt", "others", 4) | ("hottopic", "others", 3) | ("hottopic", "others", 4) => {
+          if (cv >= 10 && auc >= 0.55) {
+            1
+          } else if (cv >= 60 && auc >= 0.5) {
+            1
+          } else {
+            0
+          }
+        }
+        case ("hottopic", "feedapp", 1) => {
+          if (cv >= 20 && auc >= 0.6) {
+            1
+          } else {
+            0
+          }
+        }
+        case (_, _, _) => {
+          if (cv >= 20 && auc >= 0.6) {
+            1
+          } else {
+            0
+          }
+        }
+      }
+    }
+    result
+  })
 
   def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Long, auc: Double, isRecommend: Int) => {
     var result = isRecommend
