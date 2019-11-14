@@ -130,7 +130,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
     val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
-      .filter(s"count4>>$threshold")
+      .filter(s"count4>$threshold")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
 
