@@ -60,6 +60,13 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
       s"""
          |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass,
          |cvr_model_name, a.adslot_id as adslotid, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from,
+         |case
+         |  when user_show_ad_num = 0 then '0'
+         |  when user_show_ad_num = 1 then '1'
+         |  when user_show_ad_num = 2 then '2'
+         |  when user_show_ad_num in (3,4) then '4'
+         |  when user_show_ad_num in (5,6,7) then '7'
+         |  else '8' end as user_show_ad_num
          |if(c.iscvr is not null,1,0) isclick
          |from
          |  (select * from
@@ -76,7 +83,6 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |""".stripMargin
 
     val log = session.sql(sql)
-      .withColumn("isclick",col("iscvr")).cache()
     log.show(10)
     LogToPb(log, session, calimodel,threshold)
   }
