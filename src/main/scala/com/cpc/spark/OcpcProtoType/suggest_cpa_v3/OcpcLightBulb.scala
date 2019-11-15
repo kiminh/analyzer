@@ -356,7 +356,7 @@ object OcpcLightBulb{
          |AND
          |  isclick = 1
          |AND
-         |  ocpc_step = 2
+         |  ocpc_step >= 2
        """.stripMargin
     println(sqlRequest2)
     val rawData2 = spark

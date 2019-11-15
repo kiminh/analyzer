@@ -356,7 +356,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
@@ -433,7 +433,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
