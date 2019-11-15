@@ -58,7 +58,6 @@ object AlgoSnapshotExtact {
          |and hour = '$hour'
          |and minute = '$minute'
          |and mediaappsid is not null
-         |and mediaappsid !=''
       """.stripMargin
 
     println(sql)
