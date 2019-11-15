@@ -29,8 +29,8 @@ object OcpcDailyCostReport {
     baseData
       .withColumn("date", lit(date))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_total_cost_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_total_cost_daily")
 
 
   }
@@ -72,7 +72,7 @@ object OcpcDailyCostReport {
       .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"ocpc_step=1 or (ocpc_step=2 and is_hidden=0)")
+      .filter(s"ocpc_step=1 or (ocpc_step>=2 and is_hidden=0)")
 
     rawData.createOrReplaceTempView("raw_data")
 
@@ -125,8 +125,7 @@ object OcpcDailyCostReport {
          |    price,
          |    media_appsid,
          |    ocpc_log,
-         |    (case when length(ocpc_log) > 0 then 2 else 1 end) as ocpc_step,
-         |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
+         |    ocpc_step
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -139,7 +138,6 @@ object OcpcDailyCostReport {
       .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"ocpc_step=1 or (ocpc_step=2 and is_hidden=0)")
 
     rawData.createOrReplaceTempView("raw_data")
 
