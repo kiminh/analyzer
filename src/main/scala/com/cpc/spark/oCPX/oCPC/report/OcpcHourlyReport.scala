@@ -36,6 +36,7 @@ object OcpcHourlyReport {
     // 分ideaid和conversion_goal统计数据
     val baseData = calculateBaseData(rawData, spark)
 
+    // todo
 //    // 深度转化数据
 //    val deepRawData = getDeepBaseData(date, hour, spark)
 //
@@ -59,6 +60,8 @@ object OcpcHourlyReport {
       .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "date", "hour")
       .filter(s"date is not null and hour is not null")
       .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc"))
+    // todo
+
 //      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "date", "hour")
 //      .filter(s"date is not null and hour is not null")
 //      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click"))
@@ -66,8 +69,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
