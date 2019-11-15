@@ -217,7 +217,7 @@ object OcpcHourlyReport {
          |    media_appsid,
          |    ocpc_log_dict,
          |    deep_ocpc_log_dict,
-         |    (case when length(deep_ocpc_log_dict) > 0 then 1 else 0 end) as real_deep_flag,
+         |    (case when deep_ocpc_log_dict is not null then 1 else 0 end) as real_deep_flag,
          |    hour as hr
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
