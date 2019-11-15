@@ -64,8 +64,8 @@ object OcpcFreePass {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
     val resultDF = spark
@@ -77,8 +77,8 @@ object OcpcFreePass {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
