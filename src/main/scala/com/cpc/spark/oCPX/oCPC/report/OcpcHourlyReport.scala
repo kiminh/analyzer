@@ -281,7 +281,7 @@ object OcpcHourlyReport {
          |  sum(isclick) as deep_click,
          |  sum(iscvr) as deep_cv,
          |  sum(case when isclick=1 then deep_cvr else 0 end) * 1.0 as total_deepcvr,
-         |  sum(case when isclick=1 then deep_cpa as double) else 0 end) as total_deep_cpagiven,
+         |  sum(case when isclick=1 then cast(deep_cpa as double) else 0 end) as total_deep_cpagiven,
          |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
          |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_deep_cvrfactor,
          |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_deep_calipcvr,
