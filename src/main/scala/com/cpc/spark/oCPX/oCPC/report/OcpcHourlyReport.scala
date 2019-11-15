@@ -36,18 +36,18 @@ object OcpcHourlyReport {
     // 分ideaid和conversion_goal统计数据
     val baseData = calculateBaseData(rawData, spark)
 
-    // 深度转化数据
-    val deepRawData = getDeepBaseData(date, hour, spark)
-
-    // 统计深度转化指标
-    val deepBaseData = calculateDeepBaseData(deepRawData, spark)
-
-    // 数据关联
-    val data = baseData
-        .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "is_hidden"), "left_outer")
+//    // 深度转化数据
+//    val deepRawData = getDeepBaseData(date, hour, spark)
+//
+//    // 统计深度转化指标
+//    val deepBaseData = calculateDeepBaseData(deepRawData, spark)
+//
+//    // 数据关联
+//    val data = baseData
+//        .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "is_hidden"), "left_outer")
 
     // 存储数据到hadoop
-    saveBaseDataToHDFS(data, date, hour, spark)
+    saveBaseDataToHDFS(baseData, date, hour, spark)
 
 
   }
@@ -56,9 +56,12 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "date", "hour")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc"))
+//      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "date", "hour")
+//      .filter(s"date is not null and hour is not null")
+//      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click"))
 
 
     resultDF
