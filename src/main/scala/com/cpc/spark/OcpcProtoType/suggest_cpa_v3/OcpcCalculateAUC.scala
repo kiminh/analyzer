@@ -113,7 +113,7 @@ object OcpcCalculateAUC {
        |FROM
        |  dl_cpc.ocpc_label_cvr_hourly
        |WHERE
-       |  $selectCondition2
+       |  $selectCondition1
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)

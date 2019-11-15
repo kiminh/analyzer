@@ -184,6 +184,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -272,6 +273,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -354,7 +356,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
@@ -431,7 +433,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND

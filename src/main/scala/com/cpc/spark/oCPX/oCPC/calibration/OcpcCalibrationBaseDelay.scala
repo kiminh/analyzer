@@ -71,7 +71,9 @@ object OcpcCalibrationBaseDelay {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("price", col("price") - col("hidden_tax"))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)

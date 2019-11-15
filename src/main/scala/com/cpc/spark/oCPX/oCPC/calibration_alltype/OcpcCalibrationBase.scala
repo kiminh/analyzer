@@ -80,6 +80,7 @@ object OcpcCalibrationBase {
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
+      .withColumn("price", col("price") - col("hidden_tax"))
       .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
       .withColumn("identifier", udfGenerateId()(col("unitid"), col("adslot_type")))
 

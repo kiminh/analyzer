@@ -38,3 +38,11 @@
 {"exp_tag": "baselineHT66", "conversion_goal": 2, "min_cv": 0, "smooth_factor": 0}
 {"exp_tag": "baselineHT66", "conversion_goal": 3, "min_cv": 0, "smooth_factor": 0}
 {"exp_tag": "baselineHT66", "conversion_goal": 4, "min_cv": 0, "smooth_factor": 0}
+{"exp_tag": "delayExpHT66", "conversion_goal": 1, "min_cv": 0, "smooth_factor": 0.5}
+{"exp_tag": "delayExpHT66", "conversion_goal": 2, "min_cv": 0, "smooth_factor": 0.5}
+{"exp_tag": "delayExpHT66", "conversion_goal": 3, "min_cv": 0, "smooth_factor": 0.5}
+{"exp_tag": "delayExpHT66", "conversion_goal": 4, "min_cv": 0, "smooth_factor": 0.5}
+{"exp_tag": "delayExpNoSmoothHT66", "conversion_goal": 1, "min_cv": 0, "smooth_factor": 0}
+{"exp_tag": "delayExpNoSmoothHT66", "conversion_goal": 2, "min_cv": 0, "smooth_factor": 0}
+{"exp_tag": "delayExpNoSmoothHT66", "conversion_goal": 3, "min_cv": 0, "smooth_factor": 0}
+{"exp_tag": "delayExpNoSmoothHT66", "conversion_goal": 4, "min_cv": 0, "smooth_factor": 0}

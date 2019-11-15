@@ -75,7 +75,7 @@ object OcpcSuggestCPA24 {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+      //      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
@@ -90,37 +90,133 @@ object OcpcSuggestCPA24 {
       .join(ocpcStatus, Seq("unitid", "userid"), "left_outer")
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "ocpc_status")
 
-    rawData.createOrReplaceTempView("raw_data")
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  *,
-         |  (case
-         |    when industry in ('elds', 'feedapp') and media in ('qtt', 'novel') then 10
-         |    when media = 'hottopic' and conversion_goal = 1 and industry = 'feedapp' then 20
-         |    else 60
-         |  end) as cv_threshold
-         |FROM
-         |  raw_data
-       """.stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest)
-    data.printSchema()
-    val resultDF = data
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("ocpc_all.light_control.ocpc_userid_threshold")
+    val confRawData = spark.read.format("json").json(confPath)
+    val confData = confRawData
+      .select("userid", "min_cv", "min_auc")
+      .distinct()
+    confData.show(10)
+
+    val resultDF = rawData
+      .join(confData, Seq("userid"), "left_outer")
+      .na.fill(-1, Seq("min_cv", "min_auc"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend")))
+      .withColumn("is_recommend", udfIsRecommendV2()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend"), col("min_cv"), col("min_auc")))
       .na.fill(0, Seq("is_recommend"))
-//      .withColumn("is_recommend", when(col("auc") <= 0.6, 0).otherwise(col("is_recommend")))
-//      .withColumn("is_recommend", when(col("cvrcnt") < col("cv_threshold"), 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
       .cache()
 
     resultDF.show(10)
 
+    //    resultDF
+    //        .write.mode("overwrite").saveAsTable("test.check_suggest_cpa20191114b")
+
     resultDF
 
   }
+
+  def udfIsRecommendV2() = udf((industry: String, media: String, conversionGoal: Int, cv: Long, auc: Double, isRecommend: Int, minCV: Int, minAuc: Double) => {
+    var result = isRecommend
+    if (isRecommend == 1) {
+      result = (media, industry, conversionGoal) match {
+        case ("qtt", "elds", _) | ("qtt", "feedapp", _) | ("novel", "elds", _) | ("novel", "feedapp", _) => {
+          val cvThresh = {
+            if (minCV < 0) {
+              10
+            } else {
+              minCV
+            }
+          }
+          val aucThreshold = {
+            if (minAuc < 0) {
+              0.6
+            } else {
+              minAuc
+            }
+          }
+
+          if (cv >= cvThresh && auc >= aucThreshold) {
+            1
+          } else {
+            0
+          }
+        }
+        case (_, "wzcp", _) => 1
+        case (_, "others", _) => {
+          val cvThresh = {
+            if (minCV < 0) {
+              10
+            } else {
+              minCV
+            }
+          }
+          val aucThreshold = {
+            if (minAuc < 0) {
+              0.5
+            } else {
+              minAuc
+            }
+          }
+
+          if (cv >= cvThresh && auc >= 0.55) {
+            1
+          } else if (cv >= 60 && auc >= aucThreshold) {
+            1
+          } else {
+            0
+          }
+        }
+        case ("hottopic", "feedapp", 1) => {
+          val cvThresh = {
+            if (minCV < 0) {
+              20
+            } else {
+              minCV
+            }
+          }
+          val aucThreshold = {
+            if (minAuc < 0) {
+              0.6
+            } else {
+              minAuc
+            }
+          }
+
+          if (cv >= cvThresh && auc >= aucThreshold) {
+            1
+          } else {
+            0
+          }
+        }
+        case (_, _, _) => {
+          val cvThresh = {
+            if (minCV < 0) {
+              60
+            } else {
+              minCV
+            }
+          }
+          val aucThreshold = {
+            if (minAuc < 0) {
+              0.6
+            } else {
+              minAuc
+            }
+          }
+
+          if (cv >= cvThresh && auc >= aucThreshold) {
+            1
+          } else {
+            0
+          }
+        }
+      }
+    }
+    result
+  })
 
   def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Long, auc: Double, isRecommend: Int) => {
     var result = isRecommend
@@ -294,14 +390,6 @@ object OcpcSuggestCPA24 {
          |    $timeSelection
          |AND
          |    $mediaSelection
-         |AND
-         |    antispam = 0
-         |AND
-         |    adslot_type in (1,2,3)
-         |AND
-         |    adsrc = 1
-         |AND
-         |    (charge_type is null or charge_type = 1)
          |AND
          |    conversion_goal > 0
          |AND

@@ -36,7 +36,7 @@ object OcpcUnionlog {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // DONE 调整过滤条件：ocpc_Step
     val baseData = data
-        .filter(s"ocpc_step = 2")
+        .filter(s"ocpc_step >= 2")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
         .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
@@ -108,7 +108,9 @@ object OcpcUnionlog {
          |    deep_conversion_goal,
          |    deep_cpa,
          |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    ocpc_expand_tag,
+         |    tuid,
+         |    hidden_tax
          |from
          |    base_data
        """.stripMargin
@@ -207,7 +209,9 @@ object OcpcUnionlog {
          |    ori_cvr,
          |    uid_mc_show0,
          |    uid_mc_click0,
-         |    site_type
+         |    site_type,
+         |    tuid,
+         |    hidden_tax
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

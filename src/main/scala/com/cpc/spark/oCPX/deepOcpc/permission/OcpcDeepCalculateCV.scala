@@ -41,9 +41,10 @@ object OcpcDeepCalculateCV {
         .na.fill(0, Seq("iscvr"))
         .groupBy("identifier", "media", "deep_conversion_goal")
         .agg(
-          sum(col("iscvr")).alias("cv")
+          sum(col("iscvr")).alias("cv"),
+          sum(col("price")).alias("cost")
         )
-        .select("identifier", "media", "deep_conversion_goal", "cv")
+        .select("identifier", "media", "deep_conversion_goal", "cv", "cost")
 
 
     resultDF
@@ -87,6 +88,7 @@ object OcpcDeepCalculateCV {
          |        else "others"
          |    end) as industry,
          |    deep_conversion_goal,
+         |    price * 0.01 as price,
          |    isclick
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
@@ -120,9 +122,9 @@ object OcpcDeepCalculateCV {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid", "deep_conversion_goal"), "left_outer")
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price")
       .na.fill(0, Seq("label"))
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price")
 
     resultDF
   }

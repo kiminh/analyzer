@@ -38,7 +38,7 @@ object OcpcUnionlogQuickFix {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // DONE 调整过滤条件：ocpc_Step
     val baseData = data
-        .filter(s"ocpc_step = 2")
+        .filter(s"ocpc_step >= 2")
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
         .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 

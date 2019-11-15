@@ -25,6 +25,8 @@ object OcpcDeepPermission {
       .appName(s"ocpc identifier auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
+
     // 计算auc
     val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
 
@@ -33,20 +35,24 @@ object OcpcDeepPermission {
 
     // 数据关联
     val data = cv
-      .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "inner")
+      .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "outer")
+      .na.fill(0, Seq("cv"))
+      .na.fill(-1.0, Seq("auc"))
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost")
+      .withColumn("cpa", col("cost") / col("cv"))
       .cache()
     data.show(10)
 
     data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     data
+      .withColumn("version", lit(version))
       .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")

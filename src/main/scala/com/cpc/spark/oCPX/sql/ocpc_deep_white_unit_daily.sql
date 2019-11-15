@@ -1,4 +1,4 @@
-create table if not exists test.ocpc_deep_white_unit_hourly(
+create table if not exists test.ocpc_deep_white_unit_daily(
     identifier              string,
     media                   string,
     deep_conversion_goal    int,
