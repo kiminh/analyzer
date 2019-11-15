@@ -84,7 +84,7 @@ object OcpcHourlyReport {
          |  industry,
          |  media,
          |  hr,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  0 as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
@@ -103,7 +103,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
@@ -277,7 +277,7 @@ object OcpcHourlyReport {
          |  industry,
          |  media,
          |  hr,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  0 as is_hidden,
          |  sum(isclick) as deep_click,
          |  sum(iscvr) as deep_cv,
          |  sum(case when isclick=1 then deep_cvr else 0 end) * 1.0 as total_deepcvr,
@@ -289,7 +289,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 and real_deep_flag = 1 then 1 else 0 end) as real_deep_click
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr, cast(ocpc_log_dict['IsHiddenOcpc'] as int)
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
