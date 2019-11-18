@@ -181,23 +181,12 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       println("mse:" + trainingSummary.meanSquaredError)
       //模型均方根误差
       println("r-squared:" + trainingSummary.rootMeanSquaredError)
-//      lrModel.transform(trainingDF).rdd.map{
-//        x =>
-//          val exp_cvr = x.getAs[Double]("prediction")*1e6d
-//          val raw_cvr = x.getAs[Double]("raw_cvr")
-//          val unitid = x.getAs[Int]("unitid")
-//          val iscvr = x.getAs[Int]("label")
-//          val hour = x.getAs[String]("hour")
-//          val searchid = x.getAs[String]("searchid")
-//          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
-//      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid").write.mode("overwrite")
-//        .saveAsTable("dl_cpc.wy_calibration_prediction_train")
 
       val result = lrModel.transform(validationDF).rdd.map{
         x =>
-          val raw_cvr = x.getAs[Double]("raw_cvr")
+          val raw_cvr = x.getAs[Double]("raw_cvr")*1e6d
           val exp_cvr = x.getAs[Double]("prediction")*raw_cvr
-          val old_exp_cvr = x.getAs[Int]("exp_cvr")
+          val old_exp_cvr = x.getAs[Int]("exp_cvr")*1e6d
           val unitid = x.getAs[Int]("unitid")
           val iscvr = x.getAs[Double]("iscvr")
           val hour = x.getAs[String]("hour")
