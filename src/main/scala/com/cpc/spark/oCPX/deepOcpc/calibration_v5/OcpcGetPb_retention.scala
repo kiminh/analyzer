@@ -128,6 +128,7 @@ object OcpcGetPb_retention {
       .join(resultRetention, Seq("unitid", "deep_conversion_goal", "media"), "inner")
       .select("unitid", "deep_conversion_goal", "media", "recall_shallow_factor", "deep_factor")
       .withColumn("cvr_factor", col("recall_shallow_factor") * col("deep_factor"))
+      .filter(s"cvr_factor is not null")
       .cache()
 
     result.show(10)
@@ -209,6 +210,7 @@ object OcpcGetPb_retention {
         sum(col("price")).alias("acp")
       )
       .withColumn("jfb_factor", col("acb") * 1.0 / col("acp"))
+      .filter("jfb_factor is not null")
       .cache()
 
     result.show(10)
