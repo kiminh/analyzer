@@ -26,24 +26,28 @@ object OcpcDeepBase_shallowfactor {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val expTag = args(2).toString
-    val minCV = args(3).toInt
+    val minCV = args(2).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, expTag=$expTag, minCV=$minCV")
+    println(s"date=$date, hour=$hour, minCV=$minCV")
 
-    // 计算分小时数据基础数据表
-    val baseData = calculateBaseData(date, hour, expTag, spark)
 
     // 按照minCV过滤出合适的
-    val result = calculateCalibration(baseData, minCV, spark)
-
-    baseData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118a")
+    val result = OcpcDeepBase_shallowfactorMain(date, hour, minCV, spark)
 
     result
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118b")
 
+  }
+
+  def OcpcDeepBase_shallowfactorMain(date: String, hour: String, minCV: Int, spark: SparkSession) = {
+    // 计算分小时数据基础数据表
+    val baseData = calculateBaseData(date, hour, spark)
+
+    // 按照minCV过滤出合适的
+    val result = calculateCalibration(baseData, minCV, spark)
+
+    result
   }
 
   def calculateCalibration(rawData: DataFrame, minCV: Int, spark: SparkSession) = {
@@ -133,7 +137,7 @@ object OcpcDeepBase_shallowfactor {
     result
   })
 
-  def calculateBaseData(date: String, hour: String, expTag: String, spark: SparkSession) = {
+  def calculateBaseData(date: String, hour: String, spark: SparkSession) = {
     val rawData = getShallowBaseData(72, date, hour, spark)
 
     val resultDF = rawData
@@ -149,7 +153,6 @@ object OcpcDeepBase_shallowfactor {
       .na.fill(0, Seq("cv"))
       .filter(s"deep_conversion_goal = 2")
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .cache()
 
 

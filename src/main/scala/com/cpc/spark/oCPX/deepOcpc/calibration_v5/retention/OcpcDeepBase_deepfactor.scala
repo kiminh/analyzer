@@ -25,25 +25,38 @@ object OcpcDeepBase_deepfactor {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val date = args(0).toString
-    val expTag = args(1).toString
-    val minCV = args(2).toInt
+    val minCV = args(1).toInt
 
     println("parameters:")
-    println(s"date=$date, expTag:$expTag, minCV:$minCV")
+    println(s"date=$date, minCV:$minCV")
 
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -2)
+    val date1String = calendar.getTime
+    val date1 = dateConverter.format(date1String)
+
+
+    // 计算自然天激活次留率
+    val result = OcpcDeepBase_deepfactorMain(date1, minCV, spark)
+
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118b")
+
+
+  }
+
+  def OcpcDeepBase_deepfactorMain(date: String, minCV: Int, spark: SparkSession) = {
     // 计算计费比系数、后验激活转化率、先验点击次留率
     val baseData = calculateBaseData(date, spark)
 
     // 计算自然天激活次留率
     val result = calculateCalibration(baseData, minCV, spark)
 
-    baseData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118a")
-
     result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118b")
-
-
   }
 
 
