@@ -158,7 +158,9 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       /**fit() 根据需要计算特征统计信息*/
       val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
       /**transform() 真实转换特征*/
-      val dataset = assembler.transform(pipelineModel.withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr"))))
+      val dataset = assembler.transform(pipelineModel
+//        .withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr")))
+      )
       dataset.show(10)
 
       val trainingDF= dataset.filter("sample = 1")
@@ -276,11 +278,12 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
     val p_adclass = data.groupBy("adclass")
         .agg(
           avg(col("prediction")/1e6d).alias("ecvr"),
-          sum(col("label")).cast(DoubleType).alias("cvrnum")
+          sum(col("label")).cast(DoubleType).alias("cvrnum"),
+          count(col("label")).alias("count")
         )
         .withColumn("pcoc",col("ecvr")/col("cvr"))
         .groupBy()
-        .agg(avg("pcoc").alias("adclass_pcoc"))
+        .agg((sum(col("pcoc")*col("count"))/sum(col("count"))).alias("adclass_pcoc"))
         .first().getAs[Double]("adclass_pcoc")
     println("%s by adclass,avg_pcoc is %.3f".format(cate,p_adclass))
 
