@@ -188,7 +188,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
           val exp_cvr = x.getAs[Double]("prediction")*raw_cvr
           val old_exp_cvr = x.getAs[Int]("exp_cvr")
           val unitid = x.getAs[Int]("unitid")
-          val iscvr = x.getAs[Double]("iscvr")
+          val iscvr = x.getAs[Int]("iscvr")
           val hour = x.getAs[String]("hour")
           val searchid = x.getAs[String]("searchid")
           val adclass = x.getAs[String]("adclass")
