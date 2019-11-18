@@ -53,9 +53,16 @@ object OcpcGetPb_retention {
       .withColumn("conversion_goal", col("deep_conversion_goal"))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+
 
     // 数据组装
     val resultData = assemblyData(data, spark)
+
+    resultData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029d")
+
 
     // 输出到结果表 dl_cpc.ocpc_deep_pb_data_hourly
     // 明投单元
