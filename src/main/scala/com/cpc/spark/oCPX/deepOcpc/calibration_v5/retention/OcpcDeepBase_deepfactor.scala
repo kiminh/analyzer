@@ -90,7 +90,7 @@ object OcpcDeepBase_deepfactor {
       .na.fill(0, Seq("click1", "total_exp_cvr1", "total_retention_cvr1", "activation_cv1", "retention_cv1", "click2", "total_exp_cvr2", "total_retention_cvr2", "activation_cv2", "retention_cv2", "click3", "total_exp_cvr3", "total_retention_cvr3", "activation_cv3", "retention_cv3"))
       .withColumn("window_length", udfDetermineWindowLength(minCV)(col("retention_cv1"), col("retention_cv2"), col("retention_cv3")))
       .withColumn("click", udfDetermineValueByWindow()(col("window_length"), col("click1"), col("click2"), col("click3")))
-      .withColumn("activation_cv", udfDetermineValueByWindow()(col("window_length"), col("activation_cv11"), col("activation_cv2"), col("activation_cv3")))
+      .withColumn("activation_cv", udfDetermineValueByWindow()(col("window_length"), col("activation_cv1"), col("activation_cv2"), col("activation_cv3")))
       .withColumn("retention_cv", udfDetermineValueByWindow()(col("window_length"), col("retention_cv1"), col("retention_cv2"), col("retention_cv3")))
       .withColumn("total_exp_cvr", udfDetermineValueByWindow()(col("window_length"), col("total_exp_cvr1"), col("total_exp_cvr2"), col("total_exp_cvr3")))
       .withColumn("total_retention_cvr", udfDetermineValueByWindow()(col("window_length"), col("total_retention_cvr1"), col("total_retention_cvr2"), col("total_retention_cvr3")))
