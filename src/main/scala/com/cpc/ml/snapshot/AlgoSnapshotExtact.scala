@@ -22,25 +22,9 @@ object AlgoSnapshotExtact {
     var day = args(0).toString
     var hour = args(1).toString
     var minute = args(2).toString
-
-    var startMinute = ""
-    var endMinute = ""
-    var mPart = ""
-    if (minute.toInt >=0 && minute.toInt <30){
-      mPart = "00"
-      startMinute = "00"
-      endMinute = "29"
-    } else {
-      mPart = "30"
-      startMinute = "30"
-      endMinute = "59"
-    }
-
     println("day=",day)
     println("hour=",hour)
     println("minute=",minute)
-    println("sMinute=",startMinute)
-    println("eMinute=",endMinute)
 
     val sql =
       s"""
@@ -70,8 +54,7 @@ object AlgoSnapshotExtact {
          |algo_cpc.cpc_snapshot
          |where day = '$day'
          |and hour = '$hour'
-         |and minute >= '$startMinute'
-         |and minute <= '$endMinute'
+         |and minute = '$minute'
          |and mediaappsid is not null
       """.stripMargin
 
@@ -153,13 +136,13 @@ object AlgoSnapshotExtact {
          |  , val_rec as val_rec
          |from snapshotDataToGo
        """.stripMargin)
-      .repartition(100).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$mPart")
+      .repartition(100).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute")
 
         spark.sql(
           s"""
              |ALTER TABLE dl_cpc.cpc_snapshot_v2
-             | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$mPart")
-             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$mPart'
+             | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$minute")
+             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
       """
             .stripMargin.trim)
 
