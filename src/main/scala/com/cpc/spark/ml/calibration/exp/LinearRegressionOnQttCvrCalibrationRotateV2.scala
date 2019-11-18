@@ -134,7 +134,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
       val dataDF = df1.union(df2)
         .withColumn("label",col("iscvr")/col("raw_cvr"))
-        .filter("label is null")
+        .filter("label is not null")
 
       val categoricalColumns = Array("adclass","adslot_id","unitid0","userid")
 
