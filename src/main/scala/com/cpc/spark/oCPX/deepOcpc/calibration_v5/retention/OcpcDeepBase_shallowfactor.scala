@@ -111,7 +111,7 @@ object OcpcDeepBase_shallowfactor {
       .withColumn("recall_cv", udfDetermineValueByWindow()(col("window_length"), col("recall_cv1"), col("recall_cv2"), col("recall_cv3")))
       .withColumn("total_pre_cvr", udfDetermineValueByWindow()(col("window_length"), col("total_pre_cvr1"), col("total_pre_cvr2"), col("total_pre_cvr3")))
       .withColumn("click", udfDetermineValueByWindow()(col("window_length"), col("click1"), col("click2"), col("click3")))
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("post_cvr", col("recall_cv") * 1.0 / col("click"))
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("shallow_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
       .cache()
