@@ -56,9 +56,9 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid", "date", "hour")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid"))
 
 
     resultDF
@@ -212,6 +212,8 @@ object OcpcHourlyReport {
          |    is_deep_ocpc,
          |    isclick,
          |    isshow,
+         |    price,
+         |    bid_discounted_by_ad_slot as bid,
          |    deep_cvr * 1.0 / 1000000 as deep_cvr,
          |    deep_cpa,
          |    media_appsid,
@@ -280,6 +282,8 @@ object OcpcHourlyReport {
          |  0 as is_hidden,
          |  sum(isclick) as deep_click,
          |  sum(iscvr) as deep_cv,
+         |  sum(case when isclick=1 then price else 0 end) as total_deep_price,
+         |  sum(case when isclick=1 then bid else 0 end) as total_deep_bid,
          |  sum(case when isclick=1 then deep_cvr else 0 end) * 1.0 as total_deepcvr,
          |  sum(case when isclick=1 then cast(deep_cpa as double) else 0 end) as total_deep_cpagiven,
          |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
