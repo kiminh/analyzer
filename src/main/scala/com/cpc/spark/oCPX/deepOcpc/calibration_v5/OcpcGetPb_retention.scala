@@ -208,7 +208,7 @@ object OcpcGetPb_retention {
         avg(col("bid")).alias("acb"),
         sum(col("price")).alias("acp")
       )
-      .withColumn("jfb_factor", col("bid") * 1.0 / col("price"))
+      .withColumn("jfb_factor", col("acb") * 1.0 / col("acp"))
       .cache()
 
     result.show(10)
