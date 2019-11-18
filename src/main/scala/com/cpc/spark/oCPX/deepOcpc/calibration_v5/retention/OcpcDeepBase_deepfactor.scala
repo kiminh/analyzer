@@ -147,7 +147,7 @@ object OcpcDeepBase_deepfactor {
     val preCvrData = getPreCvData(date, 3, spark)
 
     val data = preCvrData
-      .join(postCvrData, Seq("unitid", "deep_conversion_goal", "media", "date"), "outer")
+      .join(postCvrData, Seq("unitid", "deep_conversion_goal", "media", "date"), "left_outer")
       .na.fill(0.0, Seq("total_exp_cvr", "total_retention_cvr", "activation_cv", "retention_cv", "click"))
       .withColumn("media", udfMediaName()(col("media")))
       .select("unitid", "deep_conversion_goal", "media", "date", "total_exp_cvr", "total_retention_cvr", "activation_cv", "retention_cv", "click")
