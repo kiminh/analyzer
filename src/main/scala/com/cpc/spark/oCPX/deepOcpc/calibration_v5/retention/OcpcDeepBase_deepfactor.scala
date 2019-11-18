@@ -56,7 +56,8 @@ object OcpcDeepBase_deepfactor {
     // 计算自然天激活次留率
     val result = calculateCalibration(baseData, minCV, spark)
 
-    result
+    val resultDF = result.filter(s"window_length > 0")
+    resultDF
   }
 
 

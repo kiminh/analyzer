@@ -47,7 +47,8 @@ object OcpcDeepBase_shallowfactor {
     // 按照minCV过滤出合适的
     val result = calculateCalibration(baseData, minCV, spark)
 
-    result
+    val resultDF = result.filter(s"window_length > 0")
+    resultDF
   }
 
   def calculateCalibration(rawData: DataFrame, minCV: Int, spark: SparkSession) = {
