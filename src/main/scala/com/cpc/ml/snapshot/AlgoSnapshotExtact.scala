@@ -21,13 +21,19 @@ object AlgoSnapshotExtact {
 
     var day = args(0).toString
     var hour = args(1).toString
-    var startMinute = args(2).toString
-    var endMinute = args(3).toString
+    var minute = args(2).toString
+
+    var startMinute = ""
+    var endMinute = ""
     var mPart = ""
-    if (startMinute.toInt >=0 && startMinute.toInt <30){
+    if (minute.toInt >=0 && minute.toInt <30){
       mPart = "00"
+      var startMinute = "00"
+      var endMinute = "30"
     } else {
       mPart = "30"
+      var startMinute = "30"
+      var endMinute = "59"
     }
 
     println("day=",day)
