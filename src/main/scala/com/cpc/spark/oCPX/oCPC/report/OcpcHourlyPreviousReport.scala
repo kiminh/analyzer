@@ -40,7 +40,7 @@ object OcpcHourlyPreviousReport {
 
       println("###############################################")
       println(s"update report data: $date, $dayCnt, $date1")
-//      updateData(date1, spark)
+      updateData(date1, spark)
     }
   }
 
