@@ -25,14 +25,14 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-11-11-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-11-16-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
     for (i <- 0 until 1){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
-      val model = "qtt-cvr-dnn-rawid-v2form-aibox"
+      val model = "qtt-cvr-dnn-rawid-v1wzjf-ldy"
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
       val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
@@ -94,12 +94,12 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       val data = spark.sql(sql1)
       data.show(10)
 
-      val defaultideaid = data.groupBy("ideaid").count()
-        .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
-        .filter("ideaidtag=1")
-//      val defaultunitid = data.groupBy("unitid").count()
-//        .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
-//        .filter("unitidtag=1")
+//      val defaultideaid = data.groupBy("ideaid").count()
+//        .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
+//        .filter("ideaidtag=1")
+      val defaultunitid = data.groupBy("unitid").count()
+        .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
+        .filter("unitidtag=1")
 //      val defaultuserid = data.groupBy("userid").count()
 //        .withColumn("useridtag",when(col("count")>40,1).otherwise(0))
 //        .filter("useridtag=1")
@@ -108,12 +108,12 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 //      println(s"default_click_count:$default_click_unit_count")
 
       val df1 = data
-        .join(defaultideaid,Seq("ideaid"),"left")
-//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultideaid,Seq("ideaid"),"left")
+        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("label",col("iscvr"))
-        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
         .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
@@ -122,22 +122,22 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
       val df2 = spark.sql(sql2)
         .withColumn("label",col("iscvr"))
-        .join(defaultideaid,Seq("ideaid"),"left")
-//        .join(defaultunitid,Seq("unitid"),"left")
+//        .join(defaultideaid,Seq("ideaid"),"left")
+        .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
         .withColumn("click_unit_count",when(col("click_unit_count")>10
           ,10).otherwise(col("click_unit_count")))
         .withColumn("sample",lit(0))
-        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-//        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+//        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
-          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
+          "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid","unitid0")
 
       val dataDF = df1.union(df2)
         .withColumn("label",col("label")/col("raw_cvr"))
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
+      val categoricalColumns = Array("adclass","adslot_id","unitid0","userid")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
@@ -201,8 +201,9 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
           val iscvr = x.getAs[Int]("label")
           val hour = x.getAs[String]("hour")
           val searchid = x.getAs[String]("searchid")
-          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid)
-      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
+          val adclass = x.getAs[String]("adclass")
+          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,old_exp_cvr,adclass)
+      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","old_exp_cvr","adclass")
 
       if(i == 0){
         result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
@@ -211,21 +212,16 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       }
     }
 
-//    val train = spark.sql("select * from dl_cpc.wy_calibration_prediction_train")
-//    val modeltrain = train.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
-//    calculateAuc(modeltrain,"train original",spark)
-//
-//    val calibtrain = train.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-//    calculateAuc(calibtrain,"train calibration",spark)
 
-//    dl_cpc.wy_calibration_prediction_v5conv5_18
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
     //    raw data
-    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
+    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
     calculateAuc(modelData,"test original",spark)
 
-//    online calibration
-    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
+    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
+    calculateAuc(onlineData,"online calibration",spark)
+
+    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid","adclass")
         .withColumn("prediction",when(col("prediction")<0,10).otherwise(col("prediction")))
     calculateAuc(calibData,"test calibration",spark)
 
@@ -276,6 +272,18 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         sum(col("label")).cast(DoubleType).alias("cvrnum")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
+
+    val p_adclass = data.groupBy("adclass")
+        .agg(
+          avg(col("prediction")/1e6d).alias("ecvr"),
+          sum(col("label")).cast(DoubleType).alias("cvrnum")
+        )
+        .withColumn("pcoc",col("ecvr")/col("cvr"))
+        .groupBy()
+        .agg(avg("pcoc").alias("adclass_pcoc"))
+        .first().getAs[Double]("adclass_pcoc")
+    println("%s by adclass,avg_pcoc is %.3f".format(cate,p_adclass))
+
 
     p2.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_unit_analysis")
 
