@@ -47,7 +47,7 @@ object OcpcHourlyReport {
         .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "is_hidden"), "left_outer")
 
     // 存储数据到hadoop
-    saveBaseDataToHDFS(baseData, date, hour, spark)
+    saveBaseDataToHDFS(data, date, hour, spark)
 
 
   }
