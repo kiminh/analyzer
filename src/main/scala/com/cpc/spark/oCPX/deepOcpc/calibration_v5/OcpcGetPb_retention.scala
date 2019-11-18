@@ -207,7 +207,7 @@ object OcpcGetPb_retention {
       .groupBy("unitid", "deep_conversion_goal", "media")
       .agg(
         avg(col("bid")).alias("acb"),
-        sum(col("price")).alias("acp")
+        avg(col("price")).alias("acp")
       )
       .withColumn("jfb_factor", col("acb") * 1.0 / col("acp"))
       .filter("jfb_factor is not null")
