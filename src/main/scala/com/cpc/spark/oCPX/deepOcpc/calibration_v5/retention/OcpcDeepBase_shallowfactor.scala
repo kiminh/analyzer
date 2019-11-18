@@ -72,14 +72,35 @@ object OcpcDeepBase_shallowfactor {
 
     val base1 = baseData
       .filter(s"time_window = 1")
+      .groupBy("unitid", "deep_conversion_goal", "media")
+      .agg(
+        sum(col("click")).alias("click1"),
+        sum(col("cv")).alias("cv1"),
+        sum(col("total_pre_cvr")).alias("total_pre_cvr1"),
+        sum(col("recall_cv")).alias("recall_cv1")
+      )
       .select("unitid", "deep_conversion_goal", "media", "click1", "cv1", "total_pre_cvr1", "recall_cv1")
 
     val base2 = baseData
       .filter(s"time_window = 2")
+      .groupBy("unitid", "deep_conversion_goal", "media")
+      .agg(
+        sum(col("click")).alias("click2"),
+        sum(col("cv")).alias("cv2"),
+        sum(col("total_pre_cvr")).alias("total_pre_cvr2"),
+        sum(col("recall_cv")).alias("recall_cv2")
+      )
       .select("unitid", "deep_conversion_goal", "media", "click2", "cv2", "total_pre_cvr2", "recall_cv2")
 
     val base3 = baseData
       .filter(s"time_window = 3")
+      .groupBy("unitid", "deep_conversion_goal", "media")
+      .agg(
+        sum(col("click")).alias("click3"),
+        sum(col("cv")).alias("cv3"),
+        sum(col("total_pre_cvr")).alias("total_pre_cvr3"),
+        sum(col("recall_cv")).alias("recall_cv3")
+      )
       .select("unitid", "deep_conversion_goal", "media", "click3", "cv3", "total_pre_cvr3", "recall_cv3")
 
     val resultDF = base1
