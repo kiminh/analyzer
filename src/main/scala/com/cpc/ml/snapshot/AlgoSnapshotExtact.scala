@@ -21,12 +21,19 @@ object AlgoSnapshotExtact {
 
     var day = args(0).toString
     var hour = args(1).toString
-    var intMinute = args(2).toString.toInt
-    var minute = getMinute(intMinute)
+    var startMinute = args(2).toString
+    var endMinute = args(3).toString
+    var mPart = ""
+    if (startMinute.toInt >=0 && startMinute.toInt <30){
+      mPart = "00"
+    } else {
+      mPart = "30"
+    }
 
     println("day=",day)
     println("hour=",hour)
-    println("minute=",minute)
+    println("sMinute=",startMinute)
+    println("eMinute=",endMinute)
 
     val sql =
       s"""
@@ -56,15 +63,13 @@ object AlgoSnapshotExtact {
          |algo_cpc.cpc_snapshot
          |where day = '$day'
          |and hour = '$hour'
-         |and minute = '$minute'
+         |and minute >= '$startMinute'
+         |and minute < '$endMinute'
          |and mediaappsid is not null
       """.stripMargin
 
     println(sql)
     var Rdd = spark.sql(sql).rdd
-    var count = Rdd.count()
-    println("data count:",count)
-
     val rawDataFromSnapshotLog = Rdd.map(
       x => {
 
@@ -141,13 +146,13 @@ object AlgoSnapshotExtact {
          |  , val_rec as val_rec
          |from snapshotDataToGo
        """.stripMargin)
-      .repartition(100).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute")
+      .repartition(100).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$mPart")
 
         spark.sql(
           s"""
              |ALTER TABLE dl_cpc.cpc_snapshot_v2
-             | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$minute")
-             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
+             | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$mPart")
+             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$mPart'
       """
             .stripMargin.trim)
 
@@ -156,41 +161,4 @@ object AlgoSnapshotExtact {
 
   }
 
-  def getMinute(intMinute : Int): String = {
-    var minute = ""
-    if (intMinute >= 0 && intMinute <5){
-      minute = "00"
-    } else if (intMinute >= 5 && intMinute <10){
-      minute = "05"
-    }  else if (intMinute >= 10 && intMinute <15){
-      minute = "10"
-    }
-    else if (intMinute >= 15 && intMinute <20){
-      minute = "15"
-    }
-    else if (intMinute >= 20 && intMinute <25){
-      minute = "20"
-    }
-    else if (intMinute >= 25 && intMinute <30){
-      minute = "25"
-    }
-    else if (intMinute >= 30 && intMinute <35){
-      minute = "30"
-    }
-    else if (intMinute >= 35 && intMinute <40){
-      minute = "35"
-    }
-    else if (intMinute >= 40 && intMinute <45){
-      minute = "40"
-    }
-    else if (intMinute >= 45 && intMinute <50){
-      minute = "45"
-    }
-    else if (intMinute >= 50 && intMinute <55){
-      minute = "50"
-    } else {
-      minute = "55"
-    }
-    return minute
-  }
 }
