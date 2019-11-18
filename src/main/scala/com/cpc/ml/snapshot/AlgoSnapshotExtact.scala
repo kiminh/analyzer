@@ -71,7 +71,7 @@ object AlgoSnapshotExtact {
          |where day = '$day'
          |and hour = '$hour'
          |and minute >= '$startMinute'
-         |and minute < '$endMinute'
+         |and minute <= '$endMinute'
          |and mediaappsid is not null
       """.stripMargin
 
