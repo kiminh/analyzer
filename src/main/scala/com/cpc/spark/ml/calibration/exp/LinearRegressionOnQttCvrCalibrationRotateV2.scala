@@ -186,7 +186,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         x =>
           val raw_cvr = x.getAs[Double]("raw_cvr")*1e6d
           val exp_cvr = x.getAs[Double]("prediction")*raw_cvr
-          val old_exp_cvr = x.getAs[Int]("exp_cvr")*1e6d
+          val old_exp_cvr = x.getAs[Int]("exp_cvr")
           val unitid = x.getAs[Int]("unitid")
           val iscvr = x.getAs[Double]("iscvr")
           val hour = x.getAs[String]("hour")
@@ -194,6 +194,8 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
           val adclass = x.getAs[String]("adclass")
           (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,old_exp_cvr,adclass)
       }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","old_exp_cvr","adclass")
+
+      result.show(10)
 
       if(i == 0){
         result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
@@ -265,6 +267,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
     val p_adclass = data.groupBy("adclass")
         .agg(
+          avg(col("label")).alias("cvr"),
           avg(col("prediction")/1e6d).alias("ecvr"),
           sum(col("label")).cast(DoubleType).alias("cvrnum"),
           count(col("label")).alias("count")
