@@ -43,8 +43,8 @@ object OcpcGetPb_retention {
 
     // 计费比系数
     val data2 = OcpcJFBfactor(date, hour, spark)
-    data2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
+//    data2
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029b")
 
 
     // 计算cvr校准系数
@@ -52,16 +52,14 @@ object OcpcGetPb_retention {
       .join(data2, Seq("unitid", "deep_conversion_goal", "media"), "inner")
       .withColumn("conversion_goal", col("deep_conversion_goal"))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
 
 
     // 数据组装
     val resultData = assemblyData(data, spark)
-
-    resultData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029d")
+//    resultData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029d")
 
 
     // 输出到结果表 dl_cpc.ocpc_deep_pb_data_hourly
@@ -81,8 +79,8 @@ object OcpcGetPb_retention {
     resultDF
       .withColumn("deep_conversion_goal", lit(2))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
   }
 
   def assemblyData(rawData: DataFrame, spark: SparkSession) = {
