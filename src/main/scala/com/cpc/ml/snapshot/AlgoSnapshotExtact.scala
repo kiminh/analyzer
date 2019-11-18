@@ -28,16 +28,17 @@ object AlgoSnapshotExtact {
     var mPart = ""
     if (minute.toInt >=0 && minute.toInt <30){
       mPart = "00"
-      var startMinute = "00"
-      var endMinute = "30"
+      startMinute = "00"
+      endMinute = "29"
     } else {
       mPart = "30"
-      var startMinute = "30"
-      var endMinute = "59"
+      startMinute = "30"
+      endMinute = "59"
     }
 
     println("day=",day)
     println("hour=",hour)
+    println("minute=",minute)
     println("sMinute=",startMinute)
     println("eMinute=",endMinute)
 
