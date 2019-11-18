@@ -34,7 +34,7 @@ object OcpcHourlyPreviousReport {
       val today = dateConverter.parse(date)
       val calendar = Calendar.getInstance
       calendar.setTime(today)
-      calendar.add(Calendar.HOUR, -dayCnt)
+      calendar.add(Calendar.DATE, -dayCnt)
       val yesterday = calendar.getTime
       val date1 = dateConverter.format(yesterday)
 
