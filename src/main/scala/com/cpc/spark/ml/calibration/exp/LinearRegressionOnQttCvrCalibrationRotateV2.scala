@@ -111,7 +111,6 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 //        .join(defaultideaid,Seq("ideaid"),"left")
         .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
-        .withColumn("label",col("iscvr"))
 //        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
         .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
@@ -121,7 +120,6 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       df1.show(10)
 
       val df2 = spark.sql(sql2)
-        .withColumn("label",col("iscvr"))
 //        .join(defaultideaid,Seq("ideaid"),"left")
         .join(defaultunitid,Seq("unitid"),"left")
 //        .join(defaultuserid,Seq("userid"),"left")
@@ -135,7 +133,8 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid","unitid0")
 
       val dataDF = df1.union(df2)
-        .withColumn("label",col("label")/col("raw_cvr"))
+        .withColumn("label",col("iscvr")/col("raw_cvr"))
+        .filter("label is null")
 
       val categoricalColumns = Array("adclass","adslot_id","unitid0","userid")
 
