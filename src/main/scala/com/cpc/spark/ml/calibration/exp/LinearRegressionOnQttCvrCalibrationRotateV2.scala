@@ -30,7 +30,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
     for (i <- 0 until 1){
 
       val endTime = T0.plusHours(i)
-      val startTime = endTime.minusHours(2)
+      val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
       val model = "qtt-cvr-dnn-rawid-v1wzjf-ldy"
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
