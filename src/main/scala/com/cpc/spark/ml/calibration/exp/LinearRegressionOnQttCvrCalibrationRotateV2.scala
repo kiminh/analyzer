@@ -261,7 +261,8 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       .agg(
         avg(col("label")).alias("cvr"),
         avg(col("prediction")/1e6d).alias("ecvr"),
-        sum(col("label")).cast(DoubleType).alias("cvrnum")
+        sum(col("label")).cast(DoubleType).alias("cvrnum"),
+        count(col("label")).alias("count")
       )
       .withColumn("pcoc",col("ecvr")/col("cvr"))
 
