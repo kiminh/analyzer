@@ -39,10 +39,6 @@ object OcpcDailyCostReport {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -64,7 +60,6 @@ object OcpcDailyCostReport {
          |    dl_cpc.cpc_union_log
          |WHERE
          |    `date` = '$date'
-         |and $mediaSelection
          |and ext_int['is_ocpc'] = 1
        """.stripMargin
     println(sqlRequest1)
@@ -106,10 +101,6 @@ object OcpcDailyCostReport {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -130,7 +121,6 @@ object OcpcDailyCostReport {
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    `date` = '$date'
-         |and $mediaSelection
          |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
