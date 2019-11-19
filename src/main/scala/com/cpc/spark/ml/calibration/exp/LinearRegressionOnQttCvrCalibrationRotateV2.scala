@@ -207,11 +207,11 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
     //    raw data
-//    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
-//    calculateAuc(modelData,"test original",spark)
-//
-//    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
-//    calculateAuc(onlineData,"online calibration",spark)
+    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
+    calculateAuc(modelData,"test original",spark)
+
+    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
+    calculateAuc(onlineData,"online calibration",spark)
 
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid","adclass")
         .withColumn("prediction",when(col("prediction")<0,10).otherwise(col("prediction")))
