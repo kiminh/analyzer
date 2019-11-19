@@ -193,15 +193,15 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       val result = lrModel.transform(validationDF).rdd.map{
         x =>
           val exp_cvr = x.getAs[Double]("prediction")*1e6d
-          val raw_cvr = x.getAs[Double]("raw_cvr")
+          val raw_cvr = x.getAs[Double]("raw_cvr")*1e4d
           val old_exp_cvr = x.getAs[Int]("exp_cvr")
           val unitid = x.getAs[Int]("unitid")
           val iscvr = x.getAs[Int]("label")
           val hour = x.getAs[String]("hour")
           val searchid = x.getAs[String]("searchid")
           val adclass = x.getAs[String]("adclass")
-          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,adclass)
-      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","adclass")
+          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,adclass,old_exp_cvr)
+      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","adclass","old_exp_cvr")
 
       if(i == 0){
         result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_1")
