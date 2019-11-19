@@ -164,7 +164,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.01).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.1).setElasticNetParam(0.01).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
@@ -210,18 +210,15 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }
     }
 
-//    val train = spark.sql("select * from dl_cpc.wy_calibration_prediction_train")
-//    val modeltrain = train.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
-//    calculateAuc(modeltrain,"train original",spark)
-//
-//    val calibtrain = train.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
-//    calculateAuc(calibtrain,"train calibration",spark)
 
 //    dl_cpc.wy_calibration_prediction_v5conv5_18
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_1")
     //    raw data
-    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid","adclass")
-    (modelData,"test original",spark)
+    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
+    calculateAuc(modelData,"test original",spark)
+
+    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
+    calculateAuc(onlineData,"online calibration",spark)
 
 //    online calibration
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid","adclass")
