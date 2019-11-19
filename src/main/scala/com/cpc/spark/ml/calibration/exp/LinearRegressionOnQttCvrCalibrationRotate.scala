@@ -203,9 +203,9 @@ object LinearRegressionOnQttCvrCalibrationRotate {
       }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid")
 
       if(i == 0){
-        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
+        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction_1")
       } else {
-        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
+        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction_1")
       }
     }
 
@@ -217,7 +217,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
 //    calculateAuc(calibtrain,"train calibration",spark)
 
 //    dl_cpc.wy_calibration_prediction_v5conv5_18
-  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
+  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction_1")
     //    raw data
     val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
     (modelData,"test original",spark)
