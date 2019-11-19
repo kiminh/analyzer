@@ -37,9 +37,7 @@ object OcpcWhiteList {
         .toString
         .replace("[", "")
         .replace("]", "")
-//    println(adclassList.get(0))
     println(adclassStringList)
-    adclassList
 
     // 数据关联
     val adclassSelection = "adclass in (" + adclassStringList + ")"
@@ -87,15 +85,30 @@ object OcpcWhiteList {
       .option("dbtable", table)
       .load()
 
+    // add some black list of users
     val resultDF = data
       .withColumn("userid", col("id"))
       .withColumn("adclass", col("category"))
-      .selectExpr("userid", "adclass")
+      .selectExpr("cast(userid as int) as userid", "adclass")
+      .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
+      .filter(s"userid_black_flag = 0")
       .distinct()
 
     resultDF.show(10)
+
+//    resultDF
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
     resultDF
   }
+
+  def udfUseridBlackList() = udf((userid: Int) => {
+    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964)
+    if (blackUsers.contains(userid)) {
+      1
+    } else {
+      0
+    }
+  })
 
   def getUnitData(spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
@@ -126,7 +139,7 @@ object OcpcWhiteList {
       s"""
          |SELECT
          |    unitid,
-         |    userid,
+         |    cast(userid as int) userid,
          |    conversion_goal,
          |    is_ocpc,
          |    ocpc_status,

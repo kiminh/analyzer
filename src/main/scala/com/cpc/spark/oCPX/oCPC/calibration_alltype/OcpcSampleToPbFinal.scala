@@ -39,10 +39,10 @@ object OcpcSampleToPbFinal {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
-    val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
-    val version1 = version
-    val data1 = getData(date, hour, tableName1, version1, spark)
-    data1.printSchema()
+//    val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
+//    val version1 = version
+//    val data1 = getData(date, hour, tableName1, version1, spark)
+//    data1.printSchema()
 
     val tableName2 = "dl_cpc.ocpc_param_pb_data_hourly"
     val version2 = version
@@ -54,8 +54,8 @@ object OcpcSampleToPbFinal {
     val data3 = getData(date, hour, tableName3, version3, spark)
     data3.printSchema()
 
-    val result1 = data1
-      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+//    val result1 = data1
+//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
 
     val result2 = data2
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -66,7 +66,8 @@ object OcpcSampleToPbFinal {
 
 
 
-    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
+//    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
+    val result = result2.union(result3).filter(s"is_hidden = 0")
     val resultDF = setDataByConfig(result, version, date, hour, spark)
 
     val finalVersion = version + "pbfile"
