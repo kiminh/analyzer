@@ -24,7 +24,7 @@ object OcpcTools {
     // 测试实时数据表和离线表
     val dataRaw = getBaseData(24, date, hour, spark)
     val data = dataRaw
-      .withColumn("bid_new", udfCalculateBidWithHiddenTax()(col("date"), col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("bid_new", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price_new", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     data
