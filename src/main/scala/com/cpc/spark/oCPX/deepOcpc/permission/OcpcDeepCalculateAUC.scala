@@ -72,7 +72,7 @@ object OcpcDeepCalculateAUC {
          |    cast(deep_cvr as bigint) as score,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    (case

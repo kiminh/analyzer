@@ -170,8 +170,16 @@ object OcpcWhiteList {
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
       case "80004948" => "hottopic"
+      case "80004953" => "hottopic"
       case "" => "qtt"
-      case _ => "novel"
+      case "80001098" => "novel"
+      case "80001292" => "novel"
+      case "80001539" => "novel"
+      case "80002480" => "novel"
+      case "80001011" => "novel"
+      case "80004786" => "novel"
+      case "80004787" => "novel"
+      case _ => "others"
     }
     result
   })

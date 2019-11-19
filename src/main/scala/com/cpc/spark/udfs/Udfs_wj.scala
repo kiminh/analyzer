@@ -50,8 +50,8 @@ object Udfs_wj{
     */
   def udfGetMedia() = udf((media_appsid: String) => {
     val qtt = List("80000001","80000002")
-    val hottopic = List("80002819", "80004944", "80004948")
-    val midu = List("80001098","80001292","80001011","80001539","80002480")
+    val hottopic = List("80002819", "80004944", "80004948", "80004953")
+    val midu = List("80001098","80001292","80001011","80001539","80002480", "80004786", "80004787")
     if (qtt.contains(media_appsid)) //
       "qtt"
     else if (midu.contains((media_appsid)))

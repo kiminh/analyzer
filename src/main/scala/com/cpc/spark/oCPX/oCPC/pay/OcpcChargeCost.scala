@@ -40,11 +40,6 @@ object OcpcChargeCost {
   }
 
   def getBaseData(date: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 获取基础数据
     val sqlRequest1 =
       s"""
@@ -62,8 +57,6 @@ object OcpcChargeCost {
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  `date` = '$date'
-         |AND
-         |  $mediaSelection
          |AND
          |  is_ocpc = 1
          |AND

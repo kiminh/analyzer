@@ -92,6 +92,7 @@ object DeepOcpcReport {
          |              when exptags like '%deepOcpcExpTag:v2%' then 'v2'
          |              when exptags like '%deepOcpcExpTag:v3%' then 'v3'
          |              when exptags like '%deepOcpcExpTag:v4%' then 'v4'
+         |              when exptags like '%deepOcpcExpTag:v5%' then 'v5'
          |              else 'dz'
          |        end) as cali_tag,
          |        (case when exptags like '%ocpc_rcl:v205%' then 'v205'
@@ -99,7 +100,7 @@ object DeepOcpcReport {
          |        end) as recall_tag,
          |        (case
          |            when media_appsid in ('80000001', '80000002') then 'qtt'
-         |            when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |            when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |            else 'novel'
          |        end) as media,
          |        date
