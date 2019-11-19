@@ -27,7 +27,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
     val T0 = LocalDateTime.parse("2019-11-16-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 1){
+    for (i <- 0 until 23){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
@@ -136,7 +136,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         .withColumn("label",col("iscvr")/col("raw_cvr"))
         .filter("label is not null")
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
@@ -167,7 +167,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
 //        .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.1).setElasticNetParam(0.01).fit(trainingDF)
+        .setLabelCol("label").setRegParam(1).setElasticNetParam(0.01).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
