@@ -48,14 +48,14 @@ object OcpcDeepPermission {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     data
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
