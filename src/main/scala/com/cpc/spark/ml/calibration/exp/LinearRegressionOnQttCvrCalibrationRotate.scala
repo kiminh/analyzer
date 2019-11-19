@@ -18,20 +18,20 @@ object LinearRegressionOnQttCvrCalibrationRotate {
   def main(args: Array[String]): Unit = {
     // build spark session
     val spark = SparkSession.builder()
-      .appName("[trident] extract as event")
+      .appName("lr calibration")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
-    val T0 = LocalDateTime.parse("2019-11-11-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val T0 = LocalDateTime.parse("2019-11-16-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
     for (i <- 0 until 1){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
       val testTime = T0.plusHours(i + 2)
-      val model = "qtt-cvr-dnn-rawid-v2form-aibox"
+      val model = "qtt-cvr-dnn-rawid-v1wzjf-ldy"
       val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
       val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
       val endDate = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
