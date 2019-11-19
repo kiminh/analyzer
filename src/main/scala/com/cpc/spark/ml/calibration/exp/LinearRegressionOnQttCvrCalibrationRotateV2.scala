@@ -136,7 +136,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         .withColumn("label",col("iscvr")/col("raw_cvr"))
         .filter("label is not null")
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {

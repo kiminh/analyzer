@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.calibration.exp
+package com.cpc.spark.ml.calibration
 
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
@@ -25,9 +25,8 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     val endHour = args(1)
     val hourRange = args(2).toInt
     val media = args(3)
-//    val model = args(4)
-//    val calimodel = args(5)
-//    val k = args(6)
+    val model = args(4)
+    val calimodel = args(5)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -44,12 +43,10 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
     // parse and process input
-    val model = "qtt-cvr-dnn-rawid-v1wzjf-aibox"
-    val calimodel ="qtt-cvr-dnn-rawid-v1wzjf-aibox"
 
     // build spark session
     val spark = SparkSession.builder()
-      .appName("[trident] extract as event")
+      .appName(s"cvr calibration  $endDate - $endHour")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .enableHiveSupport()
       .getOrCreate()
@@ -60,60 +57,54 @@ object LinearRegressionOnQttCvrCalibrationV2 {
 
     // get union log
     val sql = s"""
-                      |select a.searchid, cast(b.raw_cvr/10000 as double) as raw_cvr, substring(a.adclass,1,6) as adclass,
-                      |b.cvr_model_name as model, b.adslot_id as adslotid, a.ideaid,user_show_ad_num, exp_cvr,
-                      |unitid,userid,click_count,click_unit_count,conversion_from,hour,
-                      |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12.1 + 1) hourweight
+                      |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+                      |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
+                      |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
                       |from
-                      |(select searchid,ideaid,unitid,userid,adclass,hour
-                      |  from dl_cpc.cpc_basedata_click_event
+                      |  (select * from
+                      |  dl_cpc.cvr_calibration_sample_all
                       |  where $selectCondition2
-                      |  and $mediaSelection and isclick = 1
-                      |  and adsrc in (1,28)
-                      |  and antispam_score = 10000
-                      |  )a
-                      |  join
-                      |  (select searchid,ideaid,user_show_ad_num,conversion_goal,raw_cvr,cvr_model_name,adslot_id,exp_cvr
-                      |  ,click_count,click_unit_count,conversion_from
-                      |  from
-                      |  dl_cpc.cpc_basedata_adx_event
-                      |  where  $selectCondition2
                       |  and $mediaSelection
                       |  and cvr_model_name in ('$calimodel','$model')
-                      |  AND bid_mode = 0
-                      |  and charge_type = 1
-                      |  and conversion_goal>0) b
-                      |    on a.searchid = b.searchid and a.ideaid = b.ideaid
+                      |  and is_ocpc = 1) a
                       | left join
                       | (select distinct searchid,conversion_goal,1 as iscvr
                       |  from dl_cpc.ocpc_quick_cv_log
                       |  where  $selectCondition1) c
-                      |  on a.searchid = c.searchid and b.conversion_goal=c.conversion_goal
+                      |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
 
     println(s"sql:\n$sql")
     val data = spark.sql(sql)
-    data.show(10)
 
     val defaultideaid = data.groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
       .filter("ideaidtag=1")
-    val default_click_unit_count = data.groupBy().max("click_unit_count")
-      .first().getAs[Int]("max(click_unit_count)")
+    val defaultunitid = data.groupBy("unitid").count()
+      .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
+      .filter("unitidtag=1")
+    val defaultuserid = data.groupBy("userid").count()
+      .withColumn("useridtag",when(col("count")>40,1).otherwise(0))
+      .filter("useridtag=1")
+
 
     val dataDF = data
       .join(defaultideaid,Seq("ideaid"),"left")
+//      .join(defaultunitid,Seq("unitid"),"left")
+//      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
+//      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
+//      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
       .withColumn("sample",lit(1))
-      .withColumn("click_unit_count",when(col("click_unit_count")<default_click_unit_count
+      .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
-      .select("searchid","ideaid","user_show_ad_num","adclass","adslotid","label","unitid","raw_cvr",
+      .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
     dataDF.show(10)
 
-    val categoricalColumns = Array("ideaid","adclass","adslotid","unitid","userid","click_unit_count")
-    val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslotid" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
+    val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
+    val sampleidx = Map("ideaid" -> 11,"adclass" -> 16,"adslot_id" -> 5,"unitid" -> 12 ,"userid" -> 14,"conversion_from" -> 73,
       "click_unit_count" -> 35)
 
     val stagesArray = new ListBuffer[PipelineStage]()
@@ -135,19 +126,18 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     val pipelineModel = pipeline.fit(dataDF)
     /**transform() 真实转换特征*/
     val dataset = pipelineModel.transform(dataDF)
-    dataset.show(10)
-    dataset.select("label","features").show(10)
 
     val trainingDF= dataset
+    trainingDF.show(5)
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.00001).setElasticNetParam(0.1).fit(trainingDF)
-    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
-      predictions.show(5)
+        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.01).fit(trainingDF)
+//    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
     // 输出逻辑回归的系数和截距
-    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+    println(s"Coefficients: ${lrModel.coefficients}")
+    println(s"Intercept: ${lrModel.intercept}")
     //获取训练模型的相关信息
     val trainingSummary = lrModel.summary
     //模型残差
@@ -161,22 +151,31 @@ object LinearRegressionOnQttCvrCalibrationV2 {
       x =>
         val searchid = x.getAs[String]("searchid")
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
-        val raw_cvr = x.getAs[Double]("raw_cvr").toDouble
+        val raw_cvr = x.getAs[Double]("raw_cvr")*1e4d
         val unitid = x.getAs[Int]("unitid")
         val iscvr = x.getAs[Int]("label")
         (searchid,exp_cvr,iscvr,raw_cvr,unitid)
     }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
 
 
-    var dimension = 1
+    var dimension = 0
     var defaultnum = 0
     var featuregroup = scala.collection.mutable.ArrayBuffer[CalibrationFeature]()
     var featuremap = scala.collection.mutable.Map[String,Double]()
     for (cate <- categoricalColumns ){
+      var value_op = 0
+      var classify_type = CalibrationFeature.ClassifyType.PrefixLen.apply(0)
+      if (cate == "adclass"){
+        value_op = 1
+        classify_type = CalibrationFeature.ClassifyType.PrefixLen.apply(6)
+      }
+
       val featureid = CalibrationFeature(
         asIdx = sampleidx.get(cate).getOrElse(-1),
         prefix = cate + "#",
-        types = 1
+        types = 1,
+        valueOp = value_op,
+        classifyType = classify_type
       )
       featuregroup += featureid
 
@@ -189,7 +188,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
         {
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-          val featurecoe = lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
+          val featurecoe = lrModel.coefficients.toArray(dimension + 1 + featurevecid.indexOf(1.0f))
           val key = s"$cate" + "#" + cateid
           val count = x.getAs[Long]("count")
           (key, (featurecoe, count))
@@ -210,17 +209,18 @@ object LinearRegressionOnQttCvrCalibrationV2 {
         println(s"$key coefficient:$featurecoe")
         featuremap += ((key, featurecoe))
       }
-      dimension = featuremap.size + 1 - defaultnum
+      dimension = featuremap.size - defaultnum
     }
 
     val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
+    println(s"w_rawvalue :$w_rawvalue")
 
     val LRoutput = CalibrationModel(
       feature = featuregroup,
       featuremap = featuremap.toMap,
       wRawvalue = w_rawvalue,
       intercept = lrModel.intercept,
-      min = 1.0
+      min = 0.00001
     )
 
     val localPath = saveProtoToLocal(calimodel, LRoutput)
