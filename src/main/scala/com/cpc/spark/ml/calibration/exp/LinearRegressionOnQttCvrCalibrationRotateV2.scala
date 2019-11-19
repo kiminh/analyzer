@@ -293,7 +293,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
     val cvr2 = p3.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
     val ecvr2 = p3.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
-    val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
+    val pcoc = p3.groupBy().agg((sum(col("pcoc")*col("count"))/sum(col("count"))).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
     val allnum = p4.count().toDouble
     val rightnum = p4.filter("pcoc<1.1 and pcoc>0.9").count()
     val greaternum = p4.filter("pcoc>1.1").count()
