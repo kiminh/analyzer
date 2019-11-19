@@ -91,6 +91,7 @@ object OcpcWhiteList {
       .withColumn("adclass", col("category"))
       .selectExpr("cast(userid as int) as userid", "adclass")
       .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
+      .filter(s"userid_black_flag = 0")
       .distinct()
 
     resultDF.show(10)
