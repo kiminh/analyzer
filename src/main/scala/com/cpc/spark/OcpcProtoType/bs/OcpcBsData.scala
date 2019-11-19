@@ -30,9 +30,6 @@ object OcpcBsData {
 
 
     val baseData = getBaseData(hourInt, date, hour, spark)
-//    baseData
-//      .repartition(100)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20190916b")
 
     // 计算结果
     val data = calculateData(baseData, expTag, spark)
@@ -44,8 +41,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -214,7 +211,7 @@ object OcpcBsData {
          |  isclick,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'Qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948') then 'HT66'
+         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'HT66'
          |      else 'MiDu'
          |  end) as media,
          |  cast(exp_cvr as double) as exp_cvr,
