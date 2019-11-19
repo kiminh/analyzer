@@ -63,8 +63,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
 //
   }
 
@@ -96,8 +96,8 @@ object OcpcWhiteList {
 
     resultDF.show(10)
 
-    resultDF
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
+//    resultDF
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
     resultDF
   }
 
