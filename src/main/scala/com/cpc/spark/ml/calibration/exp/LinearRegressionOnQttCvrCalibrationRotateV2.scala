@@ -27,7 +27,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 
     val T0 = LocalDateTime.parse("2019-11-16-23", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
 
-    for (i <- 0 until 23){
+    for (i <- 0 until 1){
 
       val endTime = T0.plusHours(i)
       val startTime = endTime.minusHours(24)
@@ -80,14 +80,14 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
-           |  where day ='$testDate' and hour = '$testHour'
+           |  where day ='$testDate'
            |  and media_appsid in ('80000001','80000002')
            |  and cvr_model_name = '$model'
            |  and is_ocpc = 1) a
            | left join
            | (select distinct searchid,conversion_goal,1 as iscvr
            |  from dl_cpc.ocpc_quick_cv_log
-           |  where  `date` ='$testDate'  and hour = '$testHour') c
+           |  where  `date` ='$testDate' ) c
            |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
       println(s"$sql2")
