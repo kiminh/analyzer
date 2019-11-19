@@ -57,7 +57,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
 
     // get union log
     val sql = s"""
-                      |select a.searchid, cast(raw_cvr/10000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+                      |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
                       |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
                       |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight
                       |from
@@ -96,11 +96,11 @@ object LinearRegressionOnQttCvrCalibrationV2 {
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
 //      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
 //      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
-      .withColumn("sample",lit(1))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
-        "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour")
+        "exp_cvr","hourweight","userid","conversion_from","click_unit_count","hour")
+      .withColumn("label",col("label")/col("raw_cvr"))
     dataDF.show(10)
 
     val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
@@ -115,7 +115,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     }
 
     val numericCols = Array("raw_cvr")
-    val assemblerInputs = numericCols ++ categoricalColumns.map(_ + "classVec")
+    val assemblerInputs = categoricalColumns.map(_ + "classVec")
     /**使用VectorAssembler将所有特征转换为一个向量*/
     val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
     stagesArray.append(assembler)
@@ -188,7 +188,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
         {
           val cateid = x.getAs[String](cate)
           val featurevecid = x.getAs[org.apache.spark.ml.linalg.SparseVector](featurevec).toArray
-          val featurecoe = lrModel.coefficients.toArray(dimension + 1 + featurevecid.indexOf(1.0f))
+          val featurecoe = lrModel.coefficients.toArray(dimension + featurevecid.indexOf(1.0f))
           val key = s"$cate" + "#" + cateid
           val count = x.getAs[Long]("count")
           (key, (featurecoe, count))
@@ -212,13 +212,11 @@ object LinearRegressionOnQttCvrCalibrationV2 {
       dimension = featuremap.size - defaultnum
     }
 
-    val w_rawvalue = lrModel.coefficients.toArray(0)*1e2d
-    println(s"w_rawvalue :$w_rawvalue")
 
     val LRoutput = CalibrationModel(
       feature = featuregroup,
       featuremap = featuremap.toMap,
-      wRawvalue = w_rawvalue,
+      wRawvalue = 1,
       intercept = lrModel.intercept,
       min = 0.00001
     )
