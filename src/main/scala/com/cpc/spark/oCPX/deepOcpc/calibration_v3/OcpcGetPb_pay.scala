@@ -59,8 +59,8 @@ object OcpcGetPb_pay {
     resultDF
       .withColumn("deep_conversion_goal", lit(3))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
   }
 

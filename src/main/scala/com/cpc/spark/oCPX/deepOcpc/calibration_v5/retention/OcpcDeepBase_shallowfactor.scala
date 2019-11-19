@@ -249,7 +249,6 @@ object OcpcDeepBase_shallowfactor {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
          |  exp_cvr,
          |  date,
          |  hour
@@ -274,7 +273,6 @@ object OcpcDeepBase_shallowfactor {
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("price", col("price") - col("hidden_tax"))
 
     // 抽取cv数据
     val sqlRequest2 =
