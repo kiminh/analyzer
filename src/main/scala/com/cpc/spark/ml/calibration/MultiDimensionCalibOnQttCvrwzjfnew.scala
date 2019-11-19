@@ -106,18 +106,18 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
       .select("adclass","group")
 
     val data1 = log.join(group1,Seq("adclass","ideaid","user_show_ad_num","adslotid"),"inner")
-    val calimap1 = GroupToConfig(data1, session,model)
+    val calimap1 = GroupToConfig(data1, session,model,threshold)
 
     val data2 = log.join(group2,Seq("adclass","ideaid","user_show_ad_num"),"inner")
-    val calimap2 = GroupToConfig(data2, session,model)
+    val calimap2 = GroupToConfig(data2, session,model,threshold)
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
-    val calimap3 = GroupToConfig(data3, session,model)
+    val calimap3 = GroupToConfig(data3, session,model,threshold)
 
     val data4 = log.join(group4,Seq("adclass"),"inner")
-    val calimap4 = GroupToConfig(data4, session,model)
+    val calimap4 = GroupToConfig(data4, session,model,threshold)
 
-    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
+    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model,threshold)
     val calimap = calimap1 ++ calimap2 ++ calimap3 ++ calimap4 ++ calimap5
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
@@ -306,7 +306,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d
