@@ -59,7 +59,8 @@ object OcpcBIDfactor {
     // 抽取基础数据
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .withColumn("price", col("price") - col("hidden_tax"))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 //    baseData
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.check_bid_factor20190723b")
 

@@ -73,7 +73,8 @@ object OcpcCalibrationBaseDelay {
      */
     val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
     val baseData = baseDataRaw
-      .withColumn("price", col("price") - col("hidden_tax"))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
