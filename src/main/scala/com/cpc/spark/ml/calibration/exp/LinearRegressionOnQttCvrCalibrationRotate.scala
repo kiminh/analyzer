@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.tools.CalcMetrics
-import com.typesafe.config.ConfigFactory
+import com.cpc.spark.ml.calibration.exp.LinearRegressionOnQttCvrCalibrationRotateV2.calculateAuc
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.regression.LinearRegression
 import org.apache.spark.ml.{Pipeline, PipelineStage}
@@ -220,7 +220,7 @@ object LinearRegressionOnQttCvrCalibrationRotate {
   val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
     //    raw data
     val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr*10000 as Int) prediction","unitid")
-    calculateAuc(modelData,"test original",spark)
+    (modelData,"test original",spark)
 
 //    online calibration
     val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid")
@@ -240,59 +240,4 @@ object LinearRegressionOnQttCvrCalibrationRotate {
     Vectors.dense(result).toSparse
   })
 
-  def calculateAuc(data:DataFrame,cate:String,spark: SparkSession): Unit ={
-    val testData = data.selectExpr("cast(label as Int) label","cast(prediction as Int) score")
-    val auc = CalcMetrics.getAuc(spark,testData)
-    println("###      %s auc:%.4f".format(cate,auc))
-    val p1= data.groupBy().agg(avg(col("label")).alias("cvr"),avg(col("prediction")/1e6d).alias("ecvr"))
-    val cvr = p1.first().getAs[Double]("cvr")
-    val ecvr = p1.first().getAs[Double]("ecvr")
-    println("%s: cvr:%.4f,ecvr:%.4f,ecvr/cvr:%.3f".format(cate, cvr, ecvr, ecvr/cvr))
-
-    testData.createOrReplaceTempView("data")
-    val abs_error_sql =
-      s"""
-         |select
-         |sum(if(iscvr>0,
-         |if(sum_exp_cvr/iscvr/1000000>1,sum_exp_cvr/iscvr/1000000,iscvr*1000000/sum_exp_cvr),1)*imp)/sum(imp) abs_error
-         |from
-         |(
-         |    select round(score/1000,0) as label,sum(score) sum_exp_cvr,sum(label) iscvr,count(*) as imp
-         |    from data
-         |    group by round(score/1000,0)
-         |    )
-       """.stripMargin
-    val abs_error = spark.sql(abs_error_sql).first().getAs[Double]("abs_error")
-    println("abs_error is %.3f".format(abs_error))
-
-    val under0 = data.filter("prediction = 10").count()
-
-    val p2 = data.groupBy("unitid")
-      .agg(
-        avg(col("label")).alias("cvr"),
-        avg(col("prediction")/1e6d).alias("ecvr"),
-        sum(col("label")).cast(DoubleType).alias("cvrnum")
-      )
-      .withColumn("pcoc",col("ecvr")/col("cvr"))
-
-    p2.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_unit_analysis")
-
-      val p3 = p2.filter("cvrnum > 20")
-
-    p3.createOrReplaceTempView("unit")
-    val sql =
-      s"""
-         |select unitid,cvr,ecvr,cvrnum,pcoc,ROW_NUMBER() OVER (ORDER BY cvrnum DESC) rank
-         |from unit
-       """.stripMargin
-    val p4 = spark.sql(sql)
-
-    val cvr2 = p3.groupBy().agg(avg(col("cvr")).alias("cvr2")).first().getAs[Double]("cvr2")
-    val ecvr2 = p3.groupBy().agg(avg(col("ecvr")).alias("ecvr2")).first().getAs[Double]("ecvr2")
-    val pcoc = p3.groupBy().agg(avg(col("pcoc")).alias("avgpcoc")).first().getAs[Double]("avgpcoc")
-    val allnum = p4.count().toDouble
-    val rightnum = p4.filter("pcoc<1.1 and pcoc>0.9").count()
-    val greaternum = p4.filter("pcoc>1.1").count()
-    println("%s by unitid:unitid sum:%d,under0: %d, avgcvr:%.4f,avgecvr:%.4f,avgpcoc:%.3f,all:%.0f,right:%d,pcoc>1.1:%d,ratio of pcoc in (0.9,1,1):%.3f,ratio of pcoc>1.1:%.3f".format(cate, p2.count(),under0,cvr2, ecvr2, pcoc,allnum,rightnum,greaternum,rightnum/allnum,greaternum/allnum))
-  }
 }
