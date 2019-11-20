@@ -85,12 +85,12 @@ object OcpcDeepPermissionV2 {
     /*
     保存数据
      */
-//    result
-//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-//      .withColumn("version", lit(version))
-//      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-//    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+    result
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
 
 
     result
@@ -121,17 +121,28 @@ object OcpcDeepPermissionV2 {
     result
   }
 
-  def getPrevData(version: String, spark: SparkSession) = {
+  def getPrevData(date: String, version: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
     val sqlRequest =
       s"""
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_deep_white_unit_version
+         |  test.ocpc_deep_white_unit_backup_daily
          |WHERE
          |  version = '$version'
          |AND
          |  flag = 1
+         |AND
+         |  date = '$date1'
          |""".stripMargin
     println(sqlRequest)
     val data = spark
