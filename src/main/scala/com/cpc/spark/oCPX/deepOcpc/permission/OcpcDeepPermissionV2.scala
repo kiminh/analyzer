@@ -85,12 +85,12 @@ object OcpcDeepPermissionV2 {
     /*
     保存数据
      */
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("version", lit(version))
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
 
 
     result
