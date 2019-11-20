@@ -28,10 +28,10 @@ object OcpcDeepPermission {
     println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
 
     // 计算auc
-    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
+    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, 2, spark)
 
     // 计算cv
-    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, spark)
+    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, 2, spark)
 
     // 数据关联
     val data = cv
