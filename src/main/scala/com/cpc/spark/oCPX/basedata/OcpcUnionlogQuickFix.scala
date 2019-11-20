@@ -20,17 +20,21 @@ object OcpcUnionlogQuickFix {
 
     data
       .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191120")
+
+//    data
+//      .repartition(100)
 //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-
-    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
-
-
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(50)
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//
+//    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
+//
+//
+//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+//    ocpcData
+//      .repartition(50)
 //      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -110,7 +114,9 @@ object OcpcUnionlogQuickFix {
          |    deep_conversion_goal,
          |    deep_cpa,
          |    cpa_check_priority,
-         |    ocpc_expand_tag
+         |    ocpc_expand_tag,
+         |    tuid,
+         |    hidden_tax
          |from
          |    base_data
        """.stripMargin
@@ -128,8 +134,8 @@ object OcpcUnionlogQuickFix {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    spark.udf.register("calculateBid", (valueLog: String, bid: Long) => {
-      var resultBid = bid
+    spark.udf.register("calculateBid", (valueLog: String, bid: Long, hiddenTax: Int) => {
+      var resultBid = bid - bid
       if (valueLog != null && valueLog != "") {
         val logs = valueLog.split(",")
         for (log <- logs) {
@@ -141,7 +147,11 @@ object OcpcUnionlogQuickFix {
           }
         }
       }
-      resultBid
+      var result = bid
+      if (resultBid == bid && hiddenTax > 0) {
+        result = bid + hiddenTax
+      }
+      result
     })
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
@@ -197,7 +207,8 @@ object OcpcUnionlogQuickFix {
          |    user_req_num,
          |    is_new_ad,
          |    is_auto_coin,
-         |    calculateBid(ocpc_log, bid_discounted_by_ad_slot) as bid_discounted_by_ad_slot,
+         |    calculateBid(ocpc_log, bid_discounted_by_ad_slot, hidden_tax) as bid_discounted_by_ad_slot,
+         |    bid_discounted_by_ad_slot_origin,
          |    discount,
          |    exp_cpm,
          |    cvr_threshold,
@@ -224,7 +235,10 @@ object OcpcUnionlogQuickFix {
          |    ocpc_expand_tag,
          |    ori_cvr,
          |    uid_mc_show0,
-         |    uid_mc_click0
+         |    uid_mc_click0,
+         |    site_type,
+         |    tuid,
+         |    hidden_tax
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
