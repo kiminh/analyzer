@@ -26,7 +26,7 @@ object OcpcGetPb_pay {
     val minCV = args(4).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag")
+    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, minCV=$minCV")
 
     // 校准系数
     val data1 = OcpcCvrFactor(date, hour, minCV, spark)
