@@ -17,15 +17,15 @@ object OcpcDeepCalculateAUC {
     Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val hourInt = args(3).toInt
+    val hourInt = args(2).toInt
+    val deepConversionGoal = args(3).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF =  OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
+    val resultDF =  OcpcDeepCalculateAUCmain(date, hour, hourInt, deepConversionGoal, spark)
 
     resultDF
       .repartition(10)
@@ -33,9 +33,9 @@ object OcpcDeepCalculateAUC {
       .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107a")
   }
 
-  def OcpcDeepCalculateAUCmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcDeepCalculateAUCmain(date: String, hour: String, hourInt: Int, deepConversionGoal: Int, spark: SparkSession) = {
     // 抽取数据
-    val data = getData(hourInt, date, hour, spark)
+    val data = getData(hourInt, date, hour, deepConversionGoal, spark)
 
     // 计算auc
     val aucData = getAuc(data, date, hour, spark)
@@ -45,7 +45,7 @@ object OcpcDeepCalculateAUC {
     resultDF
   }
 
-  def getData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getData(hourInt: Int, date: String, hour: String, deepConversionGoal: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -92,7 +92,9 @@ object OcpcDeepCalculateAUC {
          |and deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val scoreData = spark.sql(sqlRequest)
+    val scoreData = spark
+      .sql(sqlRequest)
+      .filter(s"deep_conversion_goal = $deepConversionGoal")
 
     // 取历史区间: cvr数据
     val selectCondition2 = s"`date`>='$date1'"

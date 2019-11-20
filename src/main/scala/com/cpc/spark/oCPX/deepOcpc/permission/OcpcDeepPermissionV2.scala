@@ -22,97 +22,40 @@ object OcpcDeepPermissionV2 {
 
     println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
 
+    /*
+    次留单元的准入数据
+     */
+    val permissionData = getPermissionData(date, hour, hourInt, 2, spark)
+
+    /*
+    付费单元的准入数据
+     */
+
+
+    /*
+    1.union数据
+    2.判断是否准入
+    3.保存数据
+     */
+
+    /*
+    读取历史准入数据
+     */
+
+    /*
+    更新准入数据
+     */
+
+  }
+
+  def getPermissionData(date: String, hour: String, hourInt: Int, deepConversionGoal: Int, spark: SparkSession) = {
     // 计算auc
-    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
+    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, deepConversionGoal, spark)
 
     // 计算cv
-    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, spark)
-
-    // 数据关联
-    val data = cv
-      .join(auc, Seq("identifier", "media", "deep_conversion_goal"), "outer")
-      .na.fill(0, Seq("cv"))
-      .na.fill(-1.0, Seq("auc"))
-      .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost")
-      .withColumn("cpa", col("cost") / col("cv"))
-      .cache()
-    data.show(10)
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
-
-    data
-      .withColumn("version", lit(version))
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-
-    val prevData = getPrevData(version, spark)
-    val resultDF = updateLight(prevData, data, spark)
-
-    resultDF
-      .withColumn("version", lit(version))
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_status_light_version")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_status_light_version")
+    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, deepConversionGoal, spark)
   }
 
-  def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
-    var result = 0
-    if (cv > 10 && auc > 0.55) {
-      result = 1
-    }
-    result
-  })
 
-  def updateLight(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
-    val currentData = data
-      .groupBy("identifier")
-      .agg(
-        max(col("flag")).alias("current_flag")
-      )
-      .select("identifier", "current_flag")
-
-    val result = currentData
-      .join(prevData, Seq("identifier"), "outer")
-      .select("identifier", "prev_flag", "current_flag")
-      .na.fill(0, Seq("prev_flag", "current_flag"))
-      .withColumn("flag", udfCheckFlag()(col("prev_flag"), col("current_flag")))
-
-    result
-  }
-
-  def udfCheckFlag() = udf((prevFlag: Int, currentFlag: Int) => {
-    val result = math.max(prevFlag, currentFlag)
-    result
-  })
-
-  def getPrevData(version: String, spark: SparkSession) = {
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  identifier,
-         |  flag
-         |FROM
-         |  dl_cpc.ocpc_deep_status_light_version
-         |WHERE
-         |  version = '$version'
-         |""".stripMargin
-    println(sqlRequest)
-    val data = spark
-        .sql(sqlRequest)
-        .groupBy("identifier")
-        .agg(
-          max(col("flag")).alias("prev_flag")
-        )
-        .select("identifier", "prev_flag")
-
-    data
-  }
 
 }
