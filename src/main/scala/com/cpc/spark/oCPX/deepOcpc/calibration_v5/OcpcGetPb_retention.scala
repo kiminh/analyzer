@@ -183,7 +183,9 @@ object OcpcGetPb_retention {
          |  exptags,
          |  ocpc_expand,
          |  hidden_tax,
-         |  exp_cvr
+         |  exp_cvr,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
