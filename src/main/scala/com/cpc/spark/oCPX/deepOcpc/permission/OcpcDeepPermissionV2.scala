@@ -1,18 +1,13 @@
 package com.cpc.spark.oCPX.deepOcpc.permission
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.OcpcProtoType.OcpcTools._
-import com.typesafe.config.ConfigFactory
+import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateAUC._
+import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateCV._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
-import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateAUC._
-import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateCV._
 
 
-object OcpcDeepPermission {
+object OcpcDeepPermissionV2 {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     Logger.getRootLogger.setLevel(Level.WARN)
