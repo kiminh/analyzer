@@ -55,7 +55,14 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
            |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
            |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
            |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight,
-           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid
+           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid,
+           |case
+           |  when user_show_ad_num = 0 then '0'
+           |  when user_show_ad_num = 1 then '1'
+           |  when user_show_ad_num = 2 then '2'
+           |  when user_show_ad_num in (3,4) then '4'
+           |  when user_show_ad_num in (5,6,7) then '7'
+           |  else '8' end as user_show_ad_num
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
@@ -76,7 +83,14 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
            |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
            |cvr_model_name, adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,
            |if(c.iscvr is not null,1,0) iscvr,round(if(hour>$endHour,hour-$endHour,hour+24-$endHour)/12 + 1) hourweight,
-           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid
+           |case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid,
+           |case
+           |  when user_show_ad_num = 0 then '0'
+           |  when user_show_ad_num = 1 then '1'
+           |  when user_show_ad_num = 2 then '2'
+           |  when user_show_ad_num in (3,4) then '4'
+           |  when user_show_ad_num in (5,6,7) then '7'
+           |  else '8' end as user_show_ad_num
            |from
            |  (select * from
            |  dl_cpc.cvr_calibration_sample_all
@@ -115,7 +129,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
         .withColumn("sample",lit(1))
-        .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr",
+        .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
       df1.show(10)
 
@@ -127,7 +141,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
 //        .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
 //        .withColumn("unitid0",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
 //        .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise(9999999))
-        .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr",
+        .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
 
       val dataDF = df1.union(df2)
@@ -136,7 +150,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         .withColumn("label",col("iscvr")/col("raw_cvr"))
         .filter("label is not null")
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from","user_show_ad_num")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
