@@ -41,11 +41,13 @@ object OcpcDeepPermissionV2 {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
+    println("retention data #################################")
     val retentionData = getPermissionData(date1, hour1, 72, 2, spark)
 
     /*
     付费单元的准入数据
      */
+    println("pay data ######################################")
     val payData = getPermissionData(date, hour, 96, 3, spark)
 
     /*
