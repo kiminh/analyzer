@@ -19,13 +19,12 @@ object OcpcDeepPermissionV2 {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val hourInt = args(3).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
+    println(s"parameters: date=$date, hour=$hour, version=$version")
 
     /*
     次留单元的准入数据
@@ -67,20 +66,72 @@ object OcpcDeepPermissionV2 {
       .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
     //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
-    data
-      .withColumn("version", lit(version))
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-
     /*
     读取历史准入数据
      */
+    val prevData = getPrevData(version, spark)
 
     /*
     更新准入数据
      */
+    val result = updateData(prevData, data, spark)
 
+    result
+        .repartition(1)
+        .write.mode("overwrite").saveAsTable("test.ocpc_deep_white_unit_version20191120")
+
+    /*
+    保存数据
+     */
+    result
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+  }
+
+  def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
+    /*
+    过滤出不在prevData，同时在data中推荐的新单元
+     */
+    val prevDataFlag = prevData
+      .select("identifier", "media", "deep_conversion_goal")
+      .withColumn("prev_flag", lit(1))
+    val currentData = data
+      .join(prevDataFlag, Seq("identifier", "media", "deep_conversion_goal"), "left_outer")
+      .na.fill(0, Seq("prev_flag"))
+      .filter(s"prev_flag = 0")
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("is_new", lit(1))
+
+    val result = prevData.union(currentData)
+
+    result
+  }
+
+  def getPrevData(version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_deep_white_unit_version
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  flag = 1
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("is_new", lit(0))
+      .cache()
+
+    data.show(10)
+
+    data
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
