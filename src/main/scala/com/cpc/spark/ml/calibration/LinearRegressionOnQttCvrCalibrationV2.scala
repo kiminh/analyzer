@@ -216,7 +216,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     val LRoutput = CalibrationModel(
       feature = featuregroup,
       featuremap = featuremap.toMap,
-      wRawvalue = 1,
+      wRawvalue = 1.0,
       intercept = lrModel.intercept,
       min = 0.00001
     )
