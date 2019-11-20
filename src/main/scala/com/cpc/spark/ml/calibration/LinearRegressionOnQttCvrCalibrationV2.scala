@@ -81,7 +81,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
 //      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
-      .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
+      .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr",
         "exp_cvr","hourweight","userid","conversion_from","click_unit_count","hour")
       .withColumn("label",col("iscvr")/col("raw_cvr"))
       .filter("label is not null")
