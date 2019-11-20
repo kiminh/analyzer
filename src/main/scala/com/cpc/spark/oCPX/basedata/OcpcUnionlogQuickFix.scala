@@ -18,23 +18,23 @@ object OcpcUnionlogQuickFix {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-    data
-      .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191120")
-
 //    data
 //      .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//
-//    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
-//
-//
-//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-//    ocpcData
-//      .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191120")
+
+    data
+      .repartition(100)
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+
+    println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
+
+
+    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+    ocpcData
+      .repartition(50)
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -208,7 +208,6 @@ object OcpcUnionlogQuickFix {
          |    is_new_ad,
          |    is_auto_coin,
          |    calculateBid(ocpc_log, bid_discounted_by_ad_slot, hidden_tax) as bid_discounted_by_ad_slot,
-         |    bid_discounted_by_ad_slot as bid_discounted_by_ad_slot_origin,
          |    discount,
          |    exp_cpm,
          |    cvr_threshold,
