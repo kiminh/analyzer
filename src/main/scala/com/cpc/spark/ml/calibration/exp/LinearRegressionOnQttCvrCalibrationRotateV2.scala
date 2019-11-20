@@ -150,7 +150,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
         .withColumn("label",col("iscvr")/col("raw_cvr"))
         .filter("label is not null")
 
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from","siteid")
+      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
 
       val stagesArray = new ListBuffer[PipelineStage]()
       for (cate <- categoricalColumns) {
@@ -181,7 +181,7 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
       println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
       val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.01).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(trainingDF)
       val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
       predictions.show(5)
 
