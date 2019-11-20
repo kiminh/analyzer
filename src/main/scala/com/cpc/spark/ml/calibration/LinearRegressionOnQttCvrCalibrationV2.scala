@@ -79,7 +79,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
 
     val dataDF = data
       .withColumn("label",col("iscvr"))
-      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
+//      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
