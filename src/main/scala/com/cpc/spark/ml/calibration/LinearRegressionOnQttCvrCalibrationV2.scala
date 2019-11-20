@@ -78,13 +78,12 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     val data = spark.sql(sql)
 
     val dataDF = data
-      .withColumn("label",col("iscvr"))
 //      .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","hourweight","userid","conversion_from","click_unit_count","hour")
-      .withColumn("label",col("label")/col("raw_cvr"))
+      .withColumn("label",col("iscvr")/col("raw_cvr"))
       .filter("label is not null")
 
     dataDF.show(10)
