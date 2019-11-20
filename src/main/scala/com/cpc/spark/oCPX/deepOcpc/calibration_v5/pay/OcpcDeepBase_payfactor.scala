@@ -46,9 +46,6 @@ object OcpcDeepBase_payfactor {
     // 按照minCV过滤出合适的
     val result = calculateCalibration(baseData, minCV, spark)
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191120a")
-
     val resultDF = result.filter(s"window_length > 0")
     resultDF
   }

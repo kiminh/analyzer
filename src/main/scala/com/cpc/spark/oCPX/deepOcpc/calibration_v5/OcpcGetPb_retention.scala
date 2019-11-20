@@ -38,8 +38,8 @@ object OcpcGetPb_retention {
 
     // 校准系数
     val data1 = OcpcCvrFactor(date, hour, expTag, minCV1, minCV2, spark)
-    data1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+//    data1
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计费比系数
     val data2 = OcpcJFBfactor(date, hour, spark)
