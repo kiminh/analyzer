@@ -145,91 +145,92 @@ object LinearRegressionOnQttCvrCalibrationRotateV2 {
           "exp_cvr","sample","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
 
       val dataDF = df1.union(df2)
-        .withColumn("click_unit_count",when(col("click_unit_count")>10
-          ,10).otherwise(col("click_unit_count")))
-        .withColumn("label",col("iscvr")/col("raw_cvr"))
-        .filter("label is not null")
-
-      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
-
-      val stagesArray = new ListBuffer[PipelineStage]()
-      for (cate <- categoricalColumns) {
-        val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
-        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
-        stagesArray.append(indexer,encoder)
-      }
-
-      val numericCols = Array("raw_cvr")
-      val crossCols = Array("unitidXp")
-      val assemblerInputs = categoricalColumns.map(_ + "classVec")
-      /**使用VectorAssembler将所有特征转换为一个向量*/
-      val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
-//      stagesArray.append(assembler)
-
-      val pipeline = new Pipeline()
-      pipeline.setStages(stagesArray.toArray)
-      /**fit() 根据需要计算特征统计信息*/
-      val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
-      /**transform() 真实转换特征*/
-      val dataset = assembler.transform(pipelineModel
-//        .withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr")))
-      )
-      dataset.show(10)
-
-      val trainingDF= dataset.filter("sample = 1")
-      val validationDF = dataset.filter("sample = 0")
-      println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
-      val lrModel = new LinearRegression().setFeaturesCol("features")
-        .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(trainingDF)
-      val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
-      predictions.show(5)
-
-      // 输出逻辑回归的系数和截距
-      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
-      //获取训练模型的相关信息
-      val trainingSummary = lrModel.summary
-      //模型残差
-      trainingSummary.residuals.show()
-      //模型均方差
-      println("mse:" + trainingSummary.meanSquaredError)
-      //模型均方根误差
-      println("r-squared:" + trainingSummary.rootMeanSquaredError)
-
-      val result = lrModel.transform(validationDF).rdd.map{
-        x =>
-          val raw_cvr = x.getAs[Double]("raw_cvr")*1e6d
-          val exp_cvr = x.getAs[Double]("prediction")*raw_cvr
-          val old_exp_cvr = x.getAs[Int]("exp_cvr")
-          val unitid = x.getAs[Int]("unitid")
-          val iscvr = x.getAs[Int]("iscvr")
-          val hour = x.getAs[String]("hour")
-          val searchid = x.getAs[String]("searchid")
-          val adclass = x.getAs[String]("adclass")
-          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,old_exp_cvr,adclass)
-      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","old_exp_cvr","adclass")
-
-      result.show(10)
-
-      if(i == 0){
-        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
-      } else {
-        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
-      }
-    }
-
-
-  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
-    //    raw data
-    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
-    calculateAuc(modelData,"test original",spark)
-
-    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
-    calculateAuc(onlineData,"online calibration",spark)
-
-    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid","adclass")
-        .withColumn("prediction",when(col("prediction")<0,10).otherwise(col("prediction")))
-    calculateAuc(calibData,"test calibration",spark)
+      dataDF.write.mode("overwrite").saveAsTable("dl_cpc.calibration_sample_temp")
+//        .withColumn("click_unit_count",when(col("click_unit_count")>10
+//          ,10).otherwise(col("click_unit_count")))
+//        .withColumn("label",col("iscvr")/col("raw_cvr"))
+//        .filter("label is not null")
+//
+//      val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid","conversion_from")
+//
+//      val stagesArray = new ListBuffer[PipelineStage]()
+//      for (cate <- categoricalColumns) {
+//        val indexer = new StringIndexer().setInputCol(cate).setOutputCol(s"${cate}Index")
+//        val encoder = new OneHotEncoder().setInputCol(indexer.getOutputCol).setOutputCol(s"${cate}classVec").setDropLast(false)
+//        stagesArray.append(indexer,encoder)
+//      }
+//
+//      val numericCols = Array("raw_cvr")
+//      val crossCols = Array("unitidXp")
+//      val assemblerInputs = categoricalColumns.map(_ + "classVec")
+//      /**使用VectorAssembler将所有特征转换为一个向量*/
+//      val assembler = new VectorAssembler().setInputCols(assemblerInputs).setOutputCol("features")
+////      stagesArray.append(assembler)
+//
+//      val pipeline = new Pipeline()
+//      pipeline.setStages(stagesArray.toArray)
+//      /**fit() 根据需要计算特征统计信息*/
+//      val pipelineModel = pipeline.fit(dataDF).transform(dataDF)
+//      /**transform() 真实转换特征*/
+//      val dataset = assembler.transform(pipelineModel
+////        .withColumn("unitidXp",output2(col("unitidclassVec"),col("raw_cvr")))
+//      )
+//      dataset.show(10)
+//
+//      val trainingDF= dataset.filter("sample = 1")
+//      val validationDF = dataset.filter("sample = 0")
+//      println(s"trainingDF size=${trainingDF.count()},validationDF size=${validationDF.count()}")
+//      val lrModel = new LinearRegression().setFeaturesCol("features")
+//        .setWeightCol("hourweight")
+//        .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(trainingDF)
+//      val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
+//      predictions.show(5)
+//
+//      // 输出逻辑回归的系数和截距
+//      println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+//      //获取训练模型的相关信息
+//      val trainingSummary = lrModel.summary
+//      //模型残差
+//      trainingSummary.residuals.show()
+//      //模型均方差
+//      println("mse:" + trainingSummary.meanSquaredError)
+//      //模型均方根误差
+//      println("r-squared:" + trainingSummary.rootMeanSquaredError)
+//
+//      val result = lrModel.transform(validationDF).rdd.map{
+//        x =>
+//          val raw_cvr = x.getAs[Double]("raw_cvr")*1e6d
+//          val exp_cvr = x.getAs[Double]("prediction")*raw_cvr
+//          val old_exp_cvr = x.getAs[Int]("exp_cvr")
+//          val unitid = x.getAs[Int]("unitid")
+//          val iscvr = x.getAs[Int]("iscvr")
+//          val hour = x.getAs[String]("hour")
+//          val searchid = x.getAs[String]("searchid")
+//          val adclass = x.getAs[String]("adclass")
+//          (exp_cvr,iscvr,raw_cvr,unitid,hour,searchid,old_exp_cvr,adclass)
+//      }.toDF("exp_cvr","iscvr","raw_cvr","unitid","hour","seachid","old_exp_cvr","adclass")
+//
+//      result.show(10)
+//
+//      if(i == 0){
+//        result.write.mode("overwrite").saveAsTable("dl_cpc.wy_calibration_prediction")
+//      } else {
+//        result.write.mode("append").insertInto("dl_cpc.wy_calibration_prediction")
+//      }
+//    }
+//
+//
+//  val prediction = spark.sql("select * from dl_cpc.wy_calibration_prediction")
+//    //    raw data
+//    val modelData = prediction.selectExpr("cast(iscvr as Int) label","cast(raw_cvr as Int) prediction","unitid","adclass")
+//    calculateAuc(modelData,"test original",spark)
+//
+//    val onlineData = prediction.selectExpr("cast(iscvr as Int) label","cast(old_exp_cvr as Int) prediction","unitid","adclass")
+//    calculateAuc(onlineData,"online calibration",spark)
+//
+//    val calibData = prediction.selectExpr("cast(iscvr as Int) label","cast(exp_cvr as Int) prediction","unitid","adclass")
+//        .withColumn("prediction",when(col("prediction")<0,10).otherwise(col("prediction")))
+//    calculateAuc(calibData,"test calibration",spark)
 
   }
 
