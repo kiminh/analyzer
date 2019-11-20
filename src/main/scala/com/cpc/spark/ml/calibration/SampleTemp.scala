@@ -44,6 +44,7 @@ object SampleTemp {
     val data = spark.sql(sql)
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid")
+    data.show(10)
     val avgs = data.rdd.map(f => {
       f.mkString("\001")
     })
