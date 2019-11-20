@@ -43,7 +43,7 @@ object SampleTemp {
     println(sql)
     val data = spark.sql(sql)
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
-        "exp_cvr","day","hourweight","userid","conversion_from","click_unit_count","hour","siteid")
+        "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid")
     val avgs = data.rdd.map(f => {
       f.mkString("\001")
     })
@@ -55,7 +55,7 @@ object SampleTemp {
 //      .collect()
 
     printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample.csv"),
-      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001hourweight\001userid\001conversion_from\001click_unit_count\001hour\001siteid") {
+      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001click_unit_count\001hour\001siteid") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
