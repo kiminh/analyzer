@@ -17,13 +17,12 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.oCPX.deepOcpc.calibration_v4.OcpcGetPb_pay \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6
+    --class com.cpc.spark.oCPX.deepOcpc.calibration_v5.OcpcGetPb_pay \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5
 
 
 #val date = args(0).toString
 #val hour = args(1).toString
 #val version = args(2).toString
 #val expTag = args(3).toString
-#val hourInt = args(4).toInt
-#val minCV = args(5).toInt
+#val minCV = args(4).toInt
