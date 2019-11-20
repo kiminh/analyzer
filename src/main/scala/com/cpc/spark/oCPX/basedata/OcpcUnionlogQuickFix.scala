@@ -208,7 +208,7 @@ object OcpcUnionlogQuickFix {
          |    is_new_ad,
          |    is_auto_coin,
          |    calculateBid(ocpc_log, bid_discounted_by_ad_slot, hidden_tax) as bid_discounted_by_ad_slot,
-         |    bid_discounted_by_ad_slot_origin,
+         |    bid_discounted_by_ad_slot as bid_discounted_by_ad_slot_origin,
          |    discount,
          |    exp_cpm,
          |    cvr_threshold,
