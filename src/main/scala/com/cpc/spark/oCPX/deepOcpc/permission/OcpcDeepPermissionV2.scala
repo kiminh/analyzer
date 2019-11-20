@@ -48,7 +48,7 @@ object OcpcDeepPermissionV2 {
     付费单元的准入数据
      */
     println("pay data ######################################")
-    val payData = getPermissionData(date, hour, 96, 3, spark)
+    val payData = getPermissionData(date, hour, 72, 3, spark)
 
     /*
     1.union数据
@@ -91,6 +91,15 @@ object OcpcDeepPermissionV2 {
       .repartition(1)
       .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
     //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+
+
+    result
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
   def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
@@ -118,7 +127,7 @@ object OcpcDeepPermissionV2 {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_deep_white_unit_version
+         |  test.ocpc_deep_white_unit_version
          |WHERE
          |  version = '$version'
          |AND
@@ -127,8 +136,6 @@ object OcpcDeepPermissionV2 {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .withColumn("deep_cpagiven", lit(0.0))
-      .withColumn("click", lit(0))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
       .withColumn("is_new", lit(0))
       .cache()
