@@ -77,30 +77,16 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     println(s"sql:\n$sql")
     val data = spark.sql(sql)
 
-    val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("ideaidtag",when(col("count")>40,1).otherwise(0))
-      .filter("ideaidtag=1")
-    val defaultunitid = data.groupBy("unitid").count()
-      .withColumn("unitidtag",when(col("count")>40,1).otherwise(0))
-      .filter("unitidtag=1")
-    val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>40,1).otherwise(0))
-      .filter("useridtag=1")
-
-
     val dataDF = data
-      .join(defaultideaid,Seq("ideaid"),"left")
-//      .join(defaultunitid,Seq("unitid"),"left")
-//      .join(defaultuserid,Seq("userid"),"left")
       .withColumn("label",col("iscvr"))
       .withColumn("ideaid",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
-//      .withColumn("unitid",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
-//      .withColumn("userid",when(col("useridtag")===1,col("userid")).otherwise("default"))
       .withColumn("click_unit_count",when(col("click_unit_count")<10
         ,col("click_unit_count")).otherwise("default"))
       .select("searchid","ideaid","adclass","adslot_id","label","unitid","raw_cvr",
         "exp_cvr","hourweight","userid","conversion_from","click_unit_count","hour")
       .withColumn("label",col("label")/col("raw_cvr"))
+      .filter("label is not null")
+
     dataDF.show(10)
 
     val categoricalColumns = Array("ideaid","adclass","adslot_id","unitid","userid")
@@ -132,7 +118,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
     println(s"trainingDF size=${trainingDF.count()}")
     val lrModel = new LinearRegression().setFeaturesCol("features")
         .setWeightCol("hourweight")
-        .setLabelCol("label").setRegParam(0.018).setElasticNetParam(0.01).fit(trainingDF)
+        .setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.01).fit(trainingDF)
 //    val predictions = lrModel.transform(trainingDF).select("label", "features", "prediction","unitid")
 
     // 输出逻辑回归的系数和截距
