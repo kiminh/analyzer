@@ -60,6 +60,8 @@ object OcpcDeepPermissionV2 {
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
       .withColumn("cpa", col("deep_cpareal"))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .cache()
+    data.show(10)
 
     data
       .withColumn("date", lit(date))
@@ -116,7 +118,8 @@ object OcpcDeepPermissionV2 {
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
       .withColumn("is_new", lit(1))
 
-    val result = prevData.union(currentData)
+    val result = prevData.union(currentData).cache()
+    result.show(10)
 
     result
   }
