@@ -125,6 +125,8 @@ object OcpcDeepPermissionV2 {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
+      .withColumn("deep_cpagiven", lit(0.0))
+      .withColumn("click", lit(0))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
       .withColumn("is_new", lit(0))
       .cache()
