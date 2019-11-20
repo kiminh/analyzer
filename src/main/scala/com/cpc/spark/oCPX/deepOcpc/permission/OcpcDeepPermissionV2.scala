@@ -71,7 +71,7 @@ object OcpcDeepPermissionV2 {
     /*
     读取历史准入数据
      */
-    val prevData = getPrevData(version, spark)
+    val prevData = getPrevData(date, version, spark)
 
     /*
     更新准入数据
