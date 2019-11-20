@@ -22,32 +22,14 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-    val dataRaw1 = getBaseData(48, date, hour, spark)
-    val data1 = dataRaw1
-      .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-    data1
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
+    val dataRaw = getBaseData(24, date, hour, spark)
+    val data = dataRaw
+      .withColumn("bid_new", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price_new", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
-    val dataRaw2 = getRealtimeData(48, date, hour, spark)
-    val data2 = dataRaw2
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-    data2
+    data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
+      .write.mode("overwrite").saveAsTable("test.check_exp_data20191119a")
   }
 
   def udfAdslotTypeMapAs() = udf((adslotType: Int) => {
@@ -184,7 +166,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
+         |  hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -273,7 +255,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
+         |  hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -583,6 +565,34 @@ object OcpcTools {
       result = 0
     }
     result
+  })
+
+  def udfCalculateBidWithHiddenTax() = udf((date: String, bid: Int, hiddenTax: Int) => {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val dataDate = dateConverter.parse(date)
+    val expDate = dateConverter.parse("2019-11-19")
+    val result = {
+      if (dataDate.before(expDate)) {
+        bid
+      } else {
+        val taxDiff = math.max(0, hiddenTax)
+        bid - taxDiff
+      }
+    }
+    if (result < 0) {
+      0
+    } else {
+      result
+    }
+  })
+
+  def udfCalculatePriceWithHiddenTax() = udf((price: Int, hiddenTax: Int) => {
+    val result = price - hiddenTax
+    if (result < 0) {
+      0
+    } else {
+      result
+    }
   })
 
 }

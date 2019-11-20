@@ -1,9 +1,9 @@
-package com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention
+package com.cpc.spark.oCPX.deepOcpc.calibration_v5.pay
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcDeepBase_shallowfactor {
+object OcpcDeepBase_payfactor {
   /*
   采用基于后验激活率的复合校准策略
   jfb_factor：正常计算
@@ -33,14 +33,13 @@ object OcpcDeepBase_shallowfactor {
 
 
     // 按照minCV过滤出合适的
-    val result = OcpcDeepBase_shallowfactorMain(date, hour, minCV, spark)
+    val result = OcpcDeepBase_payfactorMain(date, hour, minCV, spark)
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191118b")
+
 
   }
 
-  def OcpcDeepBase_shallowfactorMain(date: String, hour: String, minCV: Int, spark: SparkSession) = {
+  def OcpcDeepBase_payfactorMain(date: String, hour: String, minCV: Int, spark: SparkSession) = {
     // 计算分小时数据基础数据表
     val baseData = calculateBaseData(date, hour, spark)
 
@@ -120,8 +119,8 @@ object OcpcDeepBase_shallowfactor {
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("recall_post_cvr", col("recall_cv") * 1.0 / col("click"))
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
-      .withColumn("shallow_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
-      .withColumn("recall_shallow_factor", col("recall_post_cvr") * 1.0 / col("pre_cvr"))
+      .withColumn("cvr_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
+      .withColumn("recall_cvr_factor", col("recall_post_cvr") * 1.0 / col("pre_cvr"))
       .cache()
 
     resultDF.show(10)
@@ -139,7 +138,7 @@ object OcpcDeepBase_shallowfactor {
   })
 
   def calculateBaseData(date: String, hour: String, spark: SparkSession) = {
-    val rawData = getShallowBaseData(72, date, hour, spark)
+    val rawData = getBaseData(72, date, hour, spark)
 
     val resultDF = rawData
       .filter(s"isclick=1")
@@ -152,7 +151,6 @@ object OcpcDeepBase_shallowfactor {
       )
       .select("unitid", "deep_conversion_goal", "media", "time_window", "click", "cv", "total_pre_cvr")
       .na.fill(0, Seq("cv"))
-      .filter(s"deep_conversion_goal = 2")
       .withColumn("media", udfMediaName()(col("media")))
       .cache()
 
@@ -205,7 +203,7 @@ object OcpcDeepBase_shallowfactor {
 
   })
 
-  def getShallowBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -249,7 +247,7 @@ object OcpcDeepBase_shallowfactor {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  exp_cvr,
+         |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  date,
          |  hour
          |FROM
@@ -267,7 +265,7 @@ object OcpcDeepBase_shallowfactor {
          |AND
          |  deep_cvr is not null
          |AND
-         |  deep_conversion_goal = 2
+         |  deep_conversion_goal = 3
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
@@ -280,9 +278,9 @@ object OcpcDeepBase_shallowfactor {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  conversion_goal
+         |  deep_conversion_goal
          |FROM
-         |  dl_cpc.ocpc_cvr_log_hourly
+         |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
@@ -291,7 +289,7 @@ object OcpcDeepBase_shallowfactor {
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF

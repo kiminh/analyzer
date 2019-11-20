@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention.OcpcDeepBase_deepfactor.OcpcDeepBase_deepfactorMain
 import com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention.OcpcDeepBase_shallowfactor.OcpcDeepBase_shallowfactorMain
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
@@ -38,8 +38,8 @@ object OcpcGetPb_retention {
 
     // 校准系数
     val data1 = OcpcCvrFactor(date, hour, expTag, minCV1, minCV2, spark)
-    data1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+//    data1
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计费比系数
     val data2 = OcpcJFBfactor(date, hour, spark)
@@ -182,8 +182,10 @@ object OcpcGetPb_retention {
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
-         |  exp_cvr
+         |  hidden_tax,
+         |  exp_cvr,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -206,7 +208,8 @@ object OcpcGetPb_retention {
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("price", col("price") - col("hidden_tax"))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     val result = rawData
       .groupBy("unitid", "deep_conversion_goal", "media")

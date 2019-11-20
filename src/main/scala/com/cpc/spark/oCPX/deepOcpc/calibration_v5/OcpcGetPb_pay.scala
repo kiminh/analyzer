@@ -3,7 +3,8 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.deepOcpc.calibration_v5.pay.OcpcDeepBase_payfactor.OcpcDeepBase_payfactorMain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -22,20 +23,29 @@ object OcpcGetPb_pay {
     val hour = args(1).toString
     val version = args(2).toString
     val expTag = args(3).toString
-    val hourInt = args(4).toInt
-    val minCV = args(5).toInt
+    val minCV = args(4).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, minCV=$minCV")
 
-    val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
-//    rawData
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
+    // 校准系数
+    val data1 = OcpcCvrFactor(date, hour, minCV, spark)
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191120a")
+
+    // 计费比系数
+    val data2 = OcpcJFBfactor(date, hour, spark)
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191120b")
+
 
     // 计算cvr校准系数
-    val data = calculateCalibrationValue(rawData, spark)
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+    val data = data1
+      .join(data2, Seq("unitid", "deep_conversion_goal", "media"), "inner")
+      .withColumn("conversion_goal", col("deep_conversion_goal"))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191120c")
 
 
     // 数据组装
@@ -105,7 +115,27 @@ object OcpcGetPb_pay {
     result
   })
 
-  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+
+  /*
+  校准系数
+   */
+  def OcpcCvrFactor(date: String, hour: String, minCV: Int, spark: SparkSession) = {
+    val data = OcpcDeepBase_payfactorMain(date, hour, minCV, spark)
+    val result = data
+      .select("unitid", "deep_conversion_goal", "media", "recall_cvr_factor")
+      .withColumn("cvr_factor", col("recall_cvr_factor"))
+      .filter(s"cvr_factor is not null")
+      .cache()
+
+    result.show(10)
+
+    result
+  }
+
+  /*
+  计费比系数
+   */
+  def OcpcJFBfactor(date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -117,7 +147,7 @@ object OcpcGetPb_pay {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -137,20 +167,13 @@ object OcpcGetPb_pay {
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  media_appsid,
-         |  (case
-         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
-         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
-         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
-         |      when adclass in (110110100, 125100100) then "wzcp"
-         |      else "others"
-         |  end) as industry,
          |  conversion_goal,
          |  deep_conversion_goal,
          |  expids,
          |  exptags,
          |  ocpc_expand,
-         |  (case when hidden_tax is null then 0 else hidden_tax end) as hidden_tax,
-         |  deep_cvr * 1.0 / 1000000 as exp_cvr,
+         |  hidden_tax,
+         |  exp_cvr,
          |  date,
          |  hour
          |FROM
@@ -171,61 +194,25 @@ object OcpcGetPb_pay {
          |  deep_conversion_goal = 3
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val rawData = spark
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("price", col("price") - col("hidden_tax"))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
-    // 抽取cv数据
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  label as iscvr,
-         |  deep_conversion_goal
-         |FROM
-         |  dl_cpc.ocpc_label_deep_cvr_hourly
-         |WHERE
-         |  $selectCondition
-       """.stripMargin
-    println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2).distinct()
-
-    // 数据关联
-    val resultDF = clickData
-      .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
-      .na.fill(0, Seq("iscvr"))
-
-    resultDF
-  }
-
-
-  def OcpcCalibrationFactor(date: String, hour: String, hourInt: Int, expTag: String, minCV: Int, spark: SparkSession) = {
-    val baseData = getBaseData(hourInt, date, hour, spark)
-
-    val resultDF = baseData
-      .filter(s"isclick=1")
+    val result = rawData
       .groupBy("unitid", "deep_conversion_goal", "media")
       .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv"),
-        sum(col("bid")).alias("total_bid"),
-        sum(col("price")).alias("total_price"),
-        sum(col("exp_cvr")).alias("total_pre_cvr")
+        avg(col("bid")).alias("acb"),
+        avg(col("price")).alias("acp")
       )
-      .select("unitid", "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
-      .na.fill(0, Seq("cv"))
-      .filter(s"deep_conversion_goal = 3")
-      .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .withColumn("min_cv", lit(minCV))
+      .withColumn("jfb_factor", col("acb") * 1.0 / col("acp"))
+      .filter("jfb_factor is not null")
+      .cache()
 
-    resultDF.show(10)
-
-    resultDF
+    result.show(10)
+    result
   }
 
 
