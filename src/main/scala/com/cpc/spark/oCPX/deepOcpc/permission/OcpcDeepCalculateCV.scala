@@ -46,7 +46,8 @@ object OcpcDeepCalculateCV {
           sum(col("price")).alias("cost"),
           avg(col("deep_cpa")).alias("deep_cpagiven")
         )
-        .select("identifier", "media", "deep_conversion_goal", "click", "cv", "cost", "deep_cpagiven")
+        .withColumn("deep_cpareal", col("cost") / col("cv"))
+        .select("identifier", "media", "deep_conversion_goal", "click", "cv", "cost", "deep_cpagiven", "deep_cpareal")
 
 
     resultDF
@@ -91,7 +92,7 @@ object OcpcDeepCalculateCV {
          |    end) as industry,
          |    deep_conversion_goal,
          |    price * 0.01 as price,
-         |    deep_cpa,
+         |    deep_cpa * 0.01 as deep_cpa,
          |    isclick
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
