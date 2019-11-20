@@ -139,7 +139,7 @@ object LinearRegressionOnQttCvrCalibrationV2 {
         val exp_cvr = x.getAs[Double]("prediction")*1e6d
         val raw_cvr = x.getAs[Double]("raw_cvr")*1e4d
         val unitid = x.getAs[Int]("unitid")
-        val iscvr = x.getAs[Int]("label")
+        val iscvr = x.getAs[Int]("iscvr")
         (searchid,exp_cvr,iscvr,raw_cvr,unitid)
     }.toDF("searchid","exp_cvr","iscvr","raw_cvr","unitid")
 
