@@ -65,8 +65,8 @@ object OcpcDeepPermissionV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     /*
     读取历史准入数据
@@ -77,10 +77,10 @@ object OcpcDeepPermissionV2 {
     更新准入数据
      */
     val result = updateData(prevData, data, spark)
-
-    result
-        .repartition(1)
-        .write.mode("overwrite").saveAsTable("test.ocpc_deep_white_unit_version20191120")
+//
+//    result
+//        .repartition(1)
+//        .write.mode("overwrite").saveAsTable("test.ocpc_deep_white_unit_version20191120")
 
     /*
     保存数据
@@ -89,8 +89,8 @@ object OcpcDeepPermissionV2 {
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
 
 
     result
@@ -98,8 +98,8 @@ object OcpcDeepPermissionV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
-    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
   def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
@@ -136,7 +136,7 @@ object OcpcDeepPermissionV2 {
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_deep_white_unit_backup_daily
+         |  dl_cpc.ocpc_deep_white_unit_backup_daily
          |WHERE
          |  version = '$version'
          |AND

@@ -12,4 +12,4 @@ partitioned by (version string)
 stored as parquet;
 
 
-alter table test.ocpc_deep_white_unit_version add columns (deep_cpagiven double, click bigint)
+alter table dl_cpc.ocpc_deep_white_unit_version add columns (deep_cpagiven double, click bigint)

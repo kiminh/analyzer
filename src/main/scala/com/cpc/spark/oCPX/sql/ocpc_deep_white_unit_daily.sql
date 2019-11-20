@@ -12,4 +12,4 @@ stored as parquet;
 
 --alter table dl_cpc.ocpc_deep_white_unit_daily add columns (cost double)
 --alter table dl_cpc.ocpc_deep_white_unit_daily add columns (cpa double)
-alter table test.ocpc_deep_white_unit_daily add columns (deep_cpagiven double, click bigint)
+alter table dl_cpc.ocpc_deep_white_unit_daily add columns (deep_cpagiven double, click bigint)
