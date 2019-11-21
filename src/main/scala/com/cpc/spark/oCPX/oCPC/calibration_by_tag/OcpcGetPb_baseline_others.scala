@@ -248,9 +248,13 @@ object OcpcGetPb_baseline_others {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
+    // todo
+    // 修改外媒的校准策略
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .filter(s"media == 'others'")
       .withColumn("media", lit("Other"))
 
     // 抽取cv数据

@@ -6,7 +6,6 @@ create table if not exists test.deep_ocpc_exp_report_daily(
     unitid                  int,
     conversion_goal         int,
     deep_conversion_goal    int,
-    date                    string,
     click                   bigint,
     cost                    double,
     pre_cvr1                double,
@@ -18,3 +17,5 @@ create table if not exists test.deep_ocpc_exp_report_daily(
 )
 partitioned by (`date` string)
 stored as parquet;
+
+alter table test.deep_ocpc_exp_report_daily add columns (show bigint);
