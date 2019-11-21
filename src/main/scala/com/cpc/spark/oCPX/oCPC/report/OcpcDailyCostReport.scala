@@ -39,10 +39,6 @@ object OcpcDailyCostReport {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -64,7 +60,6 @@ object OcpcDailyCostReport {
          |    dl_cpc.cpc_union_log
          |WHERE
          |    `date` = '$date'
-         |and $mediaSelection
          |and ext_int['is_ocpc'] = 1
        """.stripMargin
     println(sqlRequest1)
@@ -72,7 +67,7 @@ object OcpcDailyCostReport {
       .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"ocpc_step=1 or (ocpc_step=2 and is_hidden=0)")
+      .filter(s"ocpc_step=1 or (ocpc_step>=2 and is_hidden=0)")
 
     rawData.createOrReplaceTempView("raw_data")
 
@@ -106,10 +101,6 @@ object OcpcDailyCostReport {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -125,13 +116,11 @@ object OcpcDailyCostReport {
          |    price,
          |    media_appsid,
          |    ocpc_log,
-         |    (case when length(ocpc_log) > 0 then 2 else 1 end) as ocpc_step,
-         |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden
+         |    ocpc_step
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    `date` = '$date'
-         |and $mediaSelection
          |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
@@ -139,7 +128,6 @@ object OcpcDailyCostReport {
       .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .filter(s"ocpc_step=1 or (ocpc_step=2 and is_hidden=0)")
 
     rawData.createOrReplaceTempView("raw_data")
 

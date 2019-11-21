@@ -151,6 +151,10 @@ object OcpcFreePass {
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` = '$date1'"
 
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.total.media_selection"
+    val mediaSelection = conf.getString(conf_key)
+
     val sqlRequest1 =
       s"""
          |SELECT
@@ -158,7 +162,7 @@ object OcpcFreePass {
          |  conversion_goal,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |      else 'novel'
          |  end) as media,
          |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
@@ -166,6 +170,8 @@ object OcpcFreePass {
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  $selectCondition
+         |AND
+         |  $mediaSelection
          |AND
          |  is_ocpc = 1
          |AND
@@ -175,7 +181,7 @@ object OcpcFreePass {
          |  conversion_goal,
          |  (case
          |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948') then 'hottopic'
+         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |      else 'novel'
          |  end)
        """.stripMargin
@@ -275,7 +281,7 @@ object OcpcFreePass {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status, create_time from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status, create_time from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status in (0, 3)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -317,6 +323,7 @@ object OcpcFreePass {
       .sql(sqlRequest)
       .na.fill("", Seq("media_appsid"))
       .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "time_flag", "create_time", "deadline")
       .distinct()
 
@@ -332,8 +339,16 @@ object OcpcFreePass {
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
       case "80004948" => "hottopic"
+      case "80004953" => "hottopic"
       case "" => "qtt"
-      case _ => "novel"
+      case "80001098" => "novel"
+      case "80001292" => "novel"
+      case "80001539" => "novel"
+      case "80002480" => "novel"
+      case "80001011" => "novel"
+      case "80004786" => "novel"
+      case "80004787" => "novel"
+      case _ => "others"
     }
     result
   })

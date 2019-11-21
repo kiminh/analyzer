@@ -73,7 +73,7 @@ object OcpcQuickLog {
          |AND
          |  $mediaSelection
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND

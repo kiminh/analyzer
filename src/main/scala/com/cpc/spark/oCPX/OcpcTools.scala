@@ -22,32 +22,14 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-    val dataRaw1 = getBaseData(48, date, hour, spark)
-    val data1 = dataRaw1
-      .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-    data1
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729a")
+    val dataRaw = getBaseData(24, date, hour, spark)
+    val data = dataRaw
+      .withColumn("bid_new", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price_new", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
-    val dataRaw2 = getRealtimeData(48, date, hour, spark)
-    val data2 = dataRaw2
-      .groupBy("unitid", "conversion_goal", "media")
-      .agg(
-        avg(col("exp_cvr")).alias("pre_cvr"),
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv")
-      )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-    data2
+    data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_cv_data20190729b")
+      .write.mode("overwrite").saveAsTable("test.check_exp_data20191119a")
   }
 
   def udfAdslotTypeMapAs() = udf((adslotType: Int) => {
@@ -184,6 +166,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -272,6 +255,7 @@ object OcpcTools {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  hidden_tax,
          |  date,
          |  hour
          |FROM
@@ -354,7 +338,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
@@ -431,7 +415,7 @@ object OcpcTools {
          |AND
          |  media in ('qtt', 'novel', 'hottopic')
          |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
@@ -476,19 +460,27 @@ object OcpcTools {
       case "qtt" => "Qtt"
       case "hottopic" => "HT66"
       case "novel" => "MiDu"
-      case _ => "others"
+      case x => x
     }
     result
   })
 
   def udfDetermineMedia() = udf((mediaId: String) => {
-    var result = mediaId match {
+    val result = mediaId match {
       case "80000001" => "qtt"
       case "80000002" => "qtt"
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
       case "80004948" => "hottopic"
-      case _ => "novel"
+      case "80004953" => "hottopic"
+      case "80001098" => "novel"
+      case "80001292" => "novel"
+      case "80001539" => "novel"
+      case "80002480" => "novel"
+      case "80001011" => "novel"
+      case "80004786" => "novel"
+      case "80004787" => "novel"
+      case _ => "others"
     }
     result
   })
@@ -573,6 +565,34 @@ object OcpcTools {
       result = 0
     }
     result
+  })
+
+  def udfCalculateBidWithHiddenTax() = udf((date: String, bid: Int, hiddenTax: Int) => {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val dataDate = dateConverter.parse(date)
+    val expDate = dateConverter.parse("2019-11-19")
+    val result = {
+      if (dataDate.before(expDate)) {
+        bid
+      } else {
+        val taxDiff = math.max(0, hiddenTax)
+        bid - taxDiff
+      }
+    }
+    if (result < 0) {
+      0
+    } else {
+      result
+    }
+  })
+
+  def udfCalculatePriceWithHiddenTax() = udf((price: Int, hiddenTax: Int) => {
+    val result = price - hiddenTax
+    if (result < 0) {
+      0
+    } else {
+      result
+    }
   })
 
 }

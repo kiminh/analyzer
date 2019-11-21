@@ -1,69 +1,45 @@
-package com.cpc.spark.oCPX.deepOcpc.calibration_v2
+package com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.deepOcpc.calibration_tools.OcpcCalibrationBase._
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfConcatStringInt, udfDetermineMedia}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.feature.{OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.regression.LinearRegression
+import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+import scala.collection.mutable.ListBuffer
 
-object OcpcShallowFactor {
+object prepareSample {
   def main(args: Array[String]): Unit = {
     /*
-    计算计费比
+    采用拟合模型进行pcoc的时序预估
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
 
+    // 计算日期周期
+    // bash: 2019-01-02 12 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val expTag = args(2).toString
-    val hourInt = args(3).toInt
-    val minCV = args(4).toInt
+    val hourInt = args(2).toInt
 
-    // 实验数据
+
     println("parameters:")
-    println(s"date=$date, hour=$hour, expTag=$expTag, hourInt=$hourInt")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
-    val result = OcpcShallowFactorMain(date, hour, hourInt, expTag, minCV, spark).cache()
+    val baseData = getBaseData(date, hour, hourInt, spark).cache()
+    val avgPcoc = getAveragePCOC(baseData, spark)
+    val diffPcoc = getDiffPcoc(baseData, spark)
 
-    result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_ocpc_factor20191029a")
+
   }
 
-  def OcpcShallowFactorMain(date: String, hour: String, hourInt: Int, expTag: String, minCV: Int, spark: SparkSession) = {
-    val baseData = getBaseData(hourInt, date, hour, spark)
-
-    val resultDF = baseData
-      .filter(s"isclick=1")
-      .groupBy("unitid", "deep_conversion_goal", "media")
-      .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv"),
-        sum(col("bid")).alias("total_bid"),
-        sum(col("price")).alias("total_price"),
-        sum(col("exp_cvr")).alias("total_pre_cvr")
-      )
-      .select("unitid", "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
-      .na.fill(0, Seq("cv"))
-      .filter(s"deep_conversion_goal = 2")
-      .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .withColumn("min_cv1", lit(minCV))
-
-    resultDF.show(10)
-
-    resultDF
-  }
-
-  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -87,13 +63,13 @@ object OcpcShallowFactor {
       s"""
          |SELECT
          |  searchid,
+         |  cast(unitid as string) as identifier,
          |  unitid,
          |  userid,
          |  adslot_type,
          |  isshow,
          |  isclick,
-         |  bid_discounted_by_ad_slot as bid,
-         |  price,
+         |  cast(exp_cvr as double) as exp_cvr,
          |  media_appsid,
          |  (case
          |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
@@ -103,31 +79,24 @@ object OcpcShallowFactor {
          |      else "others"
          |  end) as industry,
          |  conversion_goal,
-         |  deep_conversion_goal,
-         |  expids,
-         |  exptags,
-         |  ocpc_expand,
-         |  exp_cvr,
+         |  cast(ocpc_log_dict['cvr_factor'] as double) as cvr_factor,
          |  date,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  is_deep_ocpc = 1
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
-         |AND
-         |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
 
     // 抽取cv数据
@@ -136,21 +105,45 @@ object OcpcShallowFactor {
          |SELECT
          |  searchid,
          |  label as iscvr,
-         |  conversion_goal
+         |  cvr_goal
          |FROM
-         |  dl_cpc.ocpc_cvr_log_hourly
+         |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
+
 
     // 数据关联
     val resultDF = clickData
-      .join(cvData, Seq("searchid", "conversion_goal"), "left_outer")
+      .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
     resultDF
   }
 
+
+  def getDiffPcoc(dataRaw: DataFrame, spark: SparkSession) = {
+
+  }
+
+  def getAveragePCOC(dataRaw: DataFrame, spark: SparkSession) = {
+    // 数据关联
+    val resultDF = dataRaw
+      .groupBy("identifier", "media", "conversion_goal")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        avg(col("exp_cvr")).alias("pre_cvr")
+      )
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+
+    resultDF
+
+  }
+
 }
+
+

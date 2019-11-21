@@ -37,9 +37,7 @@ object OcpcWhiteList {
         .toString
         .replace("[", "")
         .replace("]", "")
-//    println(adclassList.get(0))
     println(adclassStringList)
-    adclassList
 
     // 数据关联
     val adclassSelection = "adclass in (" + adclassStringList + ")"
@@ -87,15 +85,30 @@ object OcpcWhiteList {
       .option("dbtable", table)
       .load()
 
+    // add some black list of users
     val resultDF = data
       .withColumn("userid", col("id"))
       .withColumn("adclass", col("category"))
-      .selectExpr("userid", "adclass")
+      .selectExpr("cast(userid as int) as userid", "adclass")
+      .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
+      .filter(s"userid_black_flag = 0")
       .distinct()
 
     resultDF.show(10)
+
+//    resultDF
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
     resultDF
   }
+
+  def udfUseridBlackList() = udf((userid: Int) => {
+    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964)
+    if (blackUsers.contains(userid)) {
+      1
+    } else {
+      0
+    }
+  })
 
   def getUnitData(spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
@@ -104,7 +117,7 @@ object OcpcWhiteList {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status not in (2, 4)) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status in (0, 3)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -126,7 +139,7 @@ object OcpcWhiteList {
       s"""
          |SELECT
          |    unitid,
-         |    userid,
+         |    cast(userid as int) userid,
          |    conversion_goal,
          |    is_ocpc,
          |    ocpc_status,
@@ -157,8 +170,16 @@ object OcpcWhiteList {
       case "80002819" => "hottopic"
       case "80004944" => "hottopic"
       case "80004948" => "hottopic"
+      case "80004953" => "hottopic"
       case "" => "qtt"
-      case _ => "novel"
+      case "80001098" => "novel"
+      case "80001292" => "novel"
+      case "80001539" => "novel"
+      case "80002480" => "novel"
+      case "80001011" => "novel"
+      case "80004786" => "novel"
+      case "80004787" => "novel"
+      case _ => "others"
     }
     result
   })

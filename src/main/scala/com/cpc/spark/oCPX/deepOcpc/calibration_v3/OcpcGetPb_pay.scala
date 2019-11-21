@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v3
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -28,7 +28,6 @@ object OcpcGetPb_pay {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
-    // 计算计费比系数、后验激活转化率、先验点击次留率
     val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
 //    rawData
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
@@ -150,6 +149,7 @@ object OcpcGetPb_pay {
          |  expids,
          |  exptags,
          |  ocpc_expand,
+         |  hidden_tax,
          |  deep_cvr * 1.0 / 1000000 as exp_cvr,
          |  date,
          |  hour
@@ -167,11 +167,15 @@ object OcpcGetPb_pay {
          |  isclick = 1
          |AND
          |  deep_cvr is not null
+         |AND
+         |  deep_conversion_goal = 3
        """.stripMargin
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     // 抽取cv数据
     val sqlRequest2 =
