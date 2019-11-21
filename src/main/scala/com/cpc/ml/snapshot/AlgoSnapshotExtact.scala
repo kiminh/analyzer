@@ -136,13 +136,13 @@ object AlgoSnapshotExtact {
          |  , val_rec as val_rec
          |from snapshotDataToGo
        """.stripMargin)
-      .repartition(200).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute")
+      .repartition(500).write.mode(SaveMode.Overwrite).parquet(s"hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute")
 
         spark.sql(
           s"""
              |ALTER TABLE dl_cpc.cpc_snapshot_v2
              | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$minute")
-             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
+             | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
       """
             .stripMargin.trim)
 
