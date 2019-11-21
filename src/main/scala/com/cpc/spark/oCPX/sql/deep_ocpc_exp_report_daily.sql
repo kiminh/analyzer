@@ -18,4 +18,4 @@ create table if not exists test.deep_ocpc_exp_report_daily(
 partitioned by (`date` string)
 stored as parquet;
 
-alter table test.deep_ocpc_exp_report_daily add columns (show bigint);
+alter table dl_cpc.deep_ocpc_exp_report_daily add columns (show bigint);
