@@ -17,15 +17,15 @@ object OcpcDeepCalculateCV {
     Logger.getRootLogger.setLevel(Level.WARN)
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val hourInt = args(3).toInt
+    val hourInt = args(2).toInt
+    val deepConversionGoal = args(3).toInt
     val spark = SparkSession
       .builder()
       .appName(s"ocpc identifier auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF = OcpcDeepCalculateCVmain(date, hour, hourInt, spark)
+    val resultDF = OcpcDeepCalculateCVmain(date, hour, hourInt, deepConversionGoal, spark)
 
     resultDF
       .repartition(10)
@@ -33,24 +33,27 @@ object OcpcDeepCalculateCV {
       .write.mode("overwrite").saveAsTable("test.ocpc_unitid_auc_hourly20191107b")
   }
 
-  def OcpcDeepCalculateCVmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcDeepCalculateCVmain(date: String, hour: String, hourInt: Int, deepConversionGoal: Int, spark: SparkSession) = {
     // 抽取数据
-    val data = getData(hourInt, date, hour, spark)
+    val data = getData(hourInt, date, hour, deepConversionGoal, spark)
     // 计算auc
     val resultDF = data
         .na.fill(0, Seq("iscvr"))
         .groupBy("identifier", "media", "deep_conversion_goal")
         .agg(
+          sum(col("isclick")).alias("click"),
           sum(col("iscvr")).alias("cv"),
-          sum(col("price")).alias("cost")
+          sum(col("price")).alias("cost"),
+          avg(col("deep_cpa")).alias("deep_cpagiven")
         )
-        .select("identifier", "media", "deep_conversion_goal", "cv", "cost")
+        .withColumn("deep_cpareal", col("cost") / col("cv"))
+        .select("identifier", "media", "deep_conversion_goal", "click", "cv", "cost", "deep_cpagiven", "deep_cpareal")
 
 
     resultDF
   }
 
-  def getData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getData(hourInt: Int, date: String, hour: String, deepConversionGoal: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -89,6 +92,7 @@ object OcpcDeepCalculateCV {
          |    end) as industry,
          |    deep_conversion_goal,
          |    price * 0.01 as price,
+         |    deep_cpa * 0.01 as deep_cpa,
          |    isclick
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
@@ -99,7 +103,9 @@ object OcpcDeepCalculateCV {
          |and deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val scoreData = spark.sql(sqlRequest)
+    val scoreData = spark
+      .sql(sqlRequest)
+      .filter(s"deep_conversion_goal = $deepConversionGoal")
 
     // 取历史区间: cvr数据
     val selectCondition2 = s"`date`>='$date1'"
@@ -122,9 +128,9 @@ object OcpcDeepCalculateCV {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid", "deep_conversion_goal"), "left_outer")
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price", "deep_cpa", "isclick")
       .na.fill(0, Seq("label"))
-      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price")
+      .select("searchid", "identifier", "media", "deep_conversion_goal", "score", "iscvr", "industry", "price", "deep_cpa", "isclick")
 
     resultDF
   }

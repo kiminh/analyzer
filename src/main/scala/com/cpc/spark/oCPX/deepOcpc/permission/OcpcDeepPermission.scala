@@ -28,10 +28,10 @@ object OcpcDeepPermission {
     println(s"parameters: date=$date, hour=$hour, version=$version, hourInt=$hourInt")
 
     // 计算auc
-    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, spark)
+    val auc = OcpcDeepCalculateAUCmain(date, hour, hourInt, 2, spark)
 
     // 计算cv
-    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, spark)
+    val cv = OcpcDeepCalculateCVmain(date, hour, hourInt, 2, spark)
 
     // 数据关联
     val data = cv
@@ -48,14 +48,23 @@ object OcpcDeepPermission {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     data
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+
+    val prevData = getPrevData(version, spark)
+    val resultDF = updateLight(prevData, data, spark)
+
+    resultDF
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_status_light_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_status_light_version")
   }
 
   def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
@@ -65,5 +74,50 @@ object OcpcDeepPermission {
     }
     result
   })
+
+  def updateLight(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
+    val currentData = data
+      .groupBy("identifier")
+      .agg(
+        max(col("flag")).alias("current_flag")
+      )
+      .select("identifier", "current_flag")
+
+    val result = currentData
+      .join(prevData, Seq("identifier"), "outer")
+      .select("identifier", "prev_flag", "current_flag")
+      .na.fill(0, Seq("prev_flag", "current_flag"))
+      .withColumn("flag", udfCheckFlag()(col("prev_flag"), col("current_flag")))
+
+    result
+  }
+
+  def udfCheckFlag() = udf((prevFlag: Int, currentFlag: Int) => {
+    val result = math.max(prevFlag, currentFlag)
+    result
+  })
+
+  def getPrevData(version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  flag
+         |FROM
+         |  dl_cpc.ocpc_deep_status_light_version
+         |WHERE
+         |  version = '$version'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .groupBy("identifier")
+        .agg(
+          max(col("flag")).alias("prev_flag")
+        )
+        .select("identifier", "prev_flag")
+
+    data
+  }
 
 }
