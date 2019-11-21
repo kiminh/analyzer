@@ -142,7 +142,7 @@ object AlgoSnapshotExtact {
           s"""
              |ALTER TABLE dl_cpc.cpc_snapshot_v2
              | add if not exists PARTITION(`dt` = "$day", `hour` = "$hour", `minute` = "$minute")
-             | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
+             | LOCATION 'hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_snapshot_v2/dt=$day/hour=$hour/minute=$minute'
       """
             .stripMargin.trim)
 
