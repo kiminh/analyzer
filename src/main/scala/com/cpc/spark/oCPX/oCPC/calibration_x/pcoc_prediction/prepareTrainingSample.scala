@@ -30,7 +30,45 @@ object prepareTrainingSample {
     val data1 = getData(date, hour, hourInt, version, "test.ocpc_pcoc_sample_part1_hourly", spark)
     val data2 = getData(date, hour, hourInt, version, "test.ocpc_pcoc_sample_part2_hourly", spark)
 
+    val samples = assemblySample(data1, data2, spark)
+    samples
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122c")
   }
+
+  def assemblySample(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
+    val data1 = dataRaw1
+      .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "date", "hour")
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122a")
+
+    val data2 = dataRaw2
+      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour")
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122b")
+
+    val data = data1
+      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time")
+      .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "hour", "time", "pcoc")
+
+    data
+  }
+
+  def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, hourInt)
+    val nextDay = calendar.getTime
+    val result = dateConverter.format(nextDay)
+
+    result
+  })
 
   def getData(date: String, hour: String, hourInt: Int, version: String, tableName: String, spark: SparkSession) = {
     // 取历史数据
@@ -60,6 +98,8 @@ object prepareTrainingSample {
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
+
+    data
   }
 
 }
