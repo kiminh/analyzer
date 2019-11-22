@@ -60,7 +60,7 @@ object prepareSample {
     result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_pcoc_sample_part1_hourly20191122")
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
