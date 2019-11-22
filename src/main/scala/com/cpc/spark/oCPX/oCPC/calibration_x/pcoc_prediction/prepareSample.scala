@@ -52,7 +52,7 @@ object prepareSample {
 
     val diff2Pcoc = calculateDiffData(diffPcoc1, diffPcoc2, spark)
 
-    val recentData = getRecentPcoc(rawData, date, hour, spark)
+    val recentData = getRecentPcoc(baseData, date, hour, spark)
 
     val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, spark)
 
