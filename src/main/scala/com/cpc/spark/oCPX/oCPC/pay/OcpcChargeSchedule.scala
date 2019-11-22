@@ -180,7 +180,7 @@ object OcpcChargeSchedule {
       result = "yysc"
     } else if (adclass == 110110100 || adclass == 125100100) {
       result = "wzcp"
-    } else if (adclass3 == 103 || adclass3 == 111 || adclass3 == 104) {
+    } else if (adclass3 == "103" || adclass3 == "111" || adclass3 == "104") {
       result = "pay_industry"
     } else if (siteformPayAdclass.contains(adclass) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
       result = "siteform_pay_industry"
