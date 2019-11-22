@@ -33,9 +33,17 @@ object prepareSample {
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
     val rawData = getBaseData(date, hour, hourInt, spark).cache()
-    val baseData = calculateBaseData(rawData, spark)
+    val baseData = calculateBaseData(rawData, spark).cache()
+    baseData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122a")
+
     val avgPcoc = getBasePcoc(baseData, spark)
+    avgPcoc
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122b")
+
     val diffPcoc1 = getDiffPcoc(baseData, date, hour, spark)
+    diffPcoc1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122c")
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -49,15 +57,20 @@ object prepareSample {
     val hour1 = tmpDateValue1(1)
 
     val diffPcoc2 = getDiffPcoc(baseData, date1, hour1, spark)
+    diffPcoc2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122d")
 
     val diff2Pcoc = calculateDiffData(diffPcoc1, diffPcoc2, spark)
+    diff2Pcoc
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122e")
 
     val recentData = getRecentPcoc(baseData, date, hour, spark)
+    recentData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122f")
 
     val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, spark)
-
     result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122g")
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
