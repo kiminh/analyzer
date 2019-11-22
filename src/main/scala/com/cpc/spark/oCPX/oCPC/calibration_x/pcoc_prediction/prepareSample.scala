@@ -26,10 +26,11 @@ object prepareSample {
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
+    val version = args(3).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version")
 
     val rawData = getBaseData(date, hour, hourInt, spark).cache()
     val baseData = calculateBaseData(rawData, spark).cache()
@@ -58,9 +59,11 @@ object prepareSample {
     val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, spark)
 
     result
+      .repartition(1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").saveAsTable("test.ocpc_pcoc_sample_part1_hourly20191122")
+      .withColumn("version", lit(version))
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
