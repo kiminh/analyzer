@@ -32,19 +32,119 @@ object prepareSample {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
-    val baseData = getBaseData(date, hour, hourInt, spark).cache()
-    val avgPcoc = getAveragePCOC(baseData, spark)
-    val diffPcoc = getDiffPcoc(baseData, spark)
+    val rawData = getBaseData(date, hour, hourInt, spark).cache()
+    val baseData = calculateBaseData(rawData, spark)
+    val avgPcoc = getBasePcoc(baseData, spark)
+    val diffPcoc1 = getDiffPcoc(baseData, date, hour, spark)
 
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -1)
+    val tmpDate1 = dateConverter.format(calendar.getTime)
+    val tmpDateValue1 = tmpDate1.split(" ")
+    val date1 = tmpDateValue1(0)
+    val hour1 = tmpDateValue1(1)
 
+    val diffPcoc2 = getDiffPcoc(baseData, date1, hour1, spark)
+
+    val diff2Pcoc = calculateDiffData(diffPcoc1, diffPcoc2, spark)
+
+    val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, spark)
+
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122a")
+  }
+
+  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+    val data1 = dataRaw1
+      .withColumn("avg_pcoc", col("pcoc"))
+      .select("identifier", "media", "conversion_goal", "avg_pcoc")
+
+    val data2 = dataRaw2
+      .withColumn("diff1_pcoc", col("value"))
+      .select("identifier", "media", "conversion_goal", "diff1_pcoc")
+
+    val data3 = dataRaw3
+      .withColumn("diff2_pcoc", col("value"))
+      .select("identifier", "media", "conversion_goal", "diff2_pcoc")
+
+    val result = data1
+      .join(data2, Seq("identifier", "media", "conversion_goal"), "inner")
+      .join(data3, Seq("identifier", "media", "conversion_goal"), "inner")
+      .select("identifier", "media", "conversion_goal", "avg_pcoc", "diff1_pcoc", "diff2_pcoc")
+
+    result
+  }
+
+  def getDiffPcoc(dataRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -1)
+    val tmpDate1 = dateConverter.format(calendar.getTime)
+    val tmpDateValue1 = tmpDate1.split(" ")
+    val date1 = tmpDateValue1(0)
+    val hour1 = tmpDateValue1(1)
+
+    val dataRaw0 = dataRaw
+      .filter(s"`date` = '$date' and `hour` = '$hour'")
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("value", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "media", "conversion_goal", "value")
+
+    val dataRaw1 = dataRaw
+      .filter(s"`date` = '$date1' and `hour` = '$hour1'")
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("value", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "media", "conversion_goal", "value")
+
+    val diffData = calculateDiffData(dataRaw0, dataRaw1, spark)
+
+    diffData
+  }
+
+  def calculateDiffData(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
+    val data1 = dataRaw1
+      .withColumn("value1", col("value"))
+      .select("identifier", "media", "conversion_goal", "value1")
+
+    val data2 = dataRaw2
+      .withColumn("value2", col("value"))
+      .select("identifier", "media", "conversion_goal", "value2")
+
+    val data = data1
+      .join(data2, Seq("identifier", "media", "conversion_goal"), "inner")
+      .withColumn("value", col("value1") - col("value2"))
+      .select("identifier", "media", "conversion_goal", "value")
+
+    data
+  }
+
+  def getBasePcoc(dataRaw: DataFrame, spark: SparkSession) = {
+    val result = dataRaw
+      .groupBy("identifier", "media", "conversion_goal")
+      .agg(
+        sum(col("click")).alias("click"),
+        sum(col("cv")).alias("cv"),
+        sum(col("total_pre_cvr")).alias("total_pre_cvr")
+      )
+      .select("identifier", "media", "conversion_goal", "date", "hour", "click", "cv", "total_pre_cvr")
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "media", "conversion_goal", "pcoc")
+
+    result
   }
 
   def getBaseData(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -87,8 +187,6 @@ object prepareSample {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
@@ -114,7 +212,6 @@ object prepareSample {
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
 
-
     // 数据关联
     val resultDF = clickData
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
@@ -123,22 +220,16 @@ object prepareSample {
     resultDF
   }
 
-
-  def getDiffPcoc(dataRaw: DataFrame, spark: SparkSession) = {
-
-  }
-
-  def getAveragePCOC(dataRaw: DataFrame, spark: SparkSession) = {
+  def calculateBaseData(dataRaw: DataFrame, spark: SparkSession) = {
     // 数据关联
     val resultDF = dataRaw
-      .groupBy("identifier", "media", "conversion_goal")
+      .groupBy("identifier", "media", "conversion_goal", "date", "hour")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
-        avg(col("exp_cvr")).alias("pre_cvr")
+        sum(col("exp_cvr")).alias("total_pre_cvr")
       )
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "media", "conversion_goal", "date", "hour", "click", "cv", "total_pre_cvr")
 
     resultDF
 
