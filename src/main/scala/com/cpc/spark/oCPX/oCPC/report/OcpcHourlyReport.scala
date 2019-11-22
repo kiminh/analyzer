@@ -150,7 +150,6 @@ object OcpcHourlyReport {
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and $mediaSelection
          |and isshow = 1
          |and conversion_goal > 0
        """.stripMargin
@@ -226,7 +225,6 @@ object OcpcHourlyReport {
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and $mediaSelection
          |and isshow = 1
          |and conversion_goal > 0
          |and is_deep_ocpc=1

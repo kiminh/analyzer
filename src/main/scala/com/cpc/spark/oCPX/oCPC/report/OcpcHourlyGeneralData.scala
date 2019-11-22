@@ -194,10 +194,6 @@ object OcpcHourlyGeneralData {
   }
 
   def getCpcData(date: String, hour: String, spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -218,7 +214,6 @@ object OcpcHourlyGeneralData {
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and $mediaSelection
          |and isshow = 1
          |and conversion_goal > 0
        """.stripMargin
@@ -232,10 +227,6 @@ object OcpcHourlyGeneralData {
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -260,7 +251,6 @@ object OcpcHourlyGeneralData {
          |WHERE
          |    `date` = '$date'
          |and `hour` <= '$hour'
-         |and $mediaSelection
          |and isshow = 1
          |and conversion_goal > 0
        """.stripMargin

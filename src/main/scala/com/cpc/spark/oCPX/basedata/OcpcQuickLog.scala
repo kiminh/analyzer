@@ -134,7 +134,7 @@ object OcpcQuickLog {
       if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
         result = 1
       } else if (traceType == "active_third" && traceOp2 == "") {
-        result = 0
+        result = 0 // result = 2
       } else if (traceType == "active_third" && traceOp2 == "0") {
         result = 2
       } else if (traceType == "active_third" && traceOp2 == "1") {
