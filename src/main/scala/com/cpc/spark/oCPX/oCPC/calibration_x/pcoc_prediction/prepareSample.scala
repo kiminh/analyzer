@@ -52,29 +52,49 @@ object prepareSample {
 
     val diff2Pcoc = calculateDiffData(diffPcoc1, diffPcoc2, spark)
 
-    val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, spark)
+    val recentData = getRecentPcoc(rawData, date, hour, spark)
+
+    val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, spark)
 
     result
       .write.mode("overwrite").saveAsTable("test.check_ocpc_result_data20191122a")
   }
 
-  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
     val data1 = dataRaw1
       .withColumn("avg_pcoc", col("pcoc"))
       .select("identifier", "media", "conversion_goal", "avg_pcoc")
+      .filter(s"avg_pcoc is not null")
 
     val data2 = dataRaw2
       .withColumn("diff1_pcoc", col("value"))
       .select("identifier", "media", "conversion_goal", "diff1_pcoc")
+      .filter(s"diff1_pcoc is not null")
 
     val data3 = dataRaw3
       .withColumn("diff2_pcoc", col("value"))
       .select("identifier", "media", "conversion_goal", "diff2_pcoc")
+      .filter(s"diff2_pcoc is not null")
+
+    val data4 = dataRaw4
+      .select("identifier", "media", "conversion_goal", "recent_pcoc")
+      .filter(s"recent_pcoc is not null")
 
     val result = data1
       .join(data2, Seq("identifier", "media", "conversion_goal"), "inner")
       .join(data3, Seq("identifier", "media", "conversion_goal"), "inner")
-      .select("identifier", "media", "conversion_goal", "avg_pcoc", "diff1_pcoc", "diff2_pcoc")
+      .select("identifier", "media", "conversion_goal", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
+
+    result
+  }
+
+  def getRecentPcoc(dataRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val result = dataRaw
+      .filter(s"`date` = '$date' and `hour` = '$hour'")
+      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("recent_pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("identifier", "media", "conversion_goal", "recent_pcoc")
 
     result
   }
