@@ -83,6 +83,7 @@ object prepareSample {
     val result = data1
       .join(data2, Seq("identifier", "media", "conversion_goal"), "inner")
       .join(data3, Seq("identifier", "media", "conversion_goal"), "inner")
+      .join(data4, Seq("identifier", "media", "conversion_goal"), "inner")
       .select("identifier", "media", "conversion_goal", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
 
     result
