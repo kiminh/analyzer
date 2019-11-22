@@ -135,7 +135,7 @@ object prepareSample {
         sum(col("cv")).alias("cv"),
         sum(col("total_pre_cvr")).alias("total_pre_cvr")
       )
-      .select("identifier", "media", "conversion_goal", "date", "hour", "click", "cv", "total_pre_cvr")
+      .select("identifier", "media", "conversion_goal", "click", "cv", "total_pre_cvr")
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
