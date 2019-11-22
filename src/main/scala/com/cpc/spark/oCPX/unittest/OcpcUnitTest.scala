@@ -32,7 +32,7 @@ object OcpcUnitTest {
     val baseDataRaw = getBaseDataDelayOther(24, date, hour, spark)
 
     baseDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122a")
 
   }
 
