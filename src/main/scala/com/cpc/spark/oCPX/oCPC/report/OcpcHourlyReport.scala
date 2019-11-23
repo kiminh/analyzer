@@ -44,7 +44,7 @@ object OcpcHourlyReport {
 
     // 数据关联
     val data = baseData
-        .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "is_hidden"), "left_outer")
+        .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "ocpc_expand", "is_hidden"), "left_outer")
 
     // 存储数据到hadoop
     saveBaseDataToHDFS(data, date, hour, spark)
@@ -56,15 +56,15 @@ object OcpcHourlyReport {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", col("hr"))
-      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid", "date", "hour")
+      .select("ideaid", "unitid", "userid", "adclass", "conversion_goal", "industry", "media", "show", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid", "ocpc_expand", "date", "hour")
       .filter(s"date is not null and hour is not null")
-      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid"))
+      .na.fill(0, Seq("impression", "click", "cv", "total_price", "total_bid", "total_precvr", "total_prectr", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_calipostcvr", "total_cpasuggest", "total_smooth_factor", "is_hidden", "adslot_type", "total_exp_cpm", "total_rawcvr", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "deep_click", "deep_cv", "total_deepcvr", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_smooth_factor", "real_deep_click", "total_deep_price", "total_deep_bid", "ocpc_expand"))
 
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
@@ -84,6 +84,7 @@ object OcpcHourlyReport {
          |  industry,
          |  media,
          |  hr,
+         |  ocpc_expand,
          |  0 as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
@@ -103,7 +104,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr, ocpc_expand
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
@@ -134,6 +135,7 @@ object OcpcHourlyReport {
          |    deep_conversion_goal,
          |    cpa_check_priority,
          |    is_deep_ocpc,
+         |    ocpc_expand,
          |    isclick,
          |    isshow,
          |    price,
@@ -159,7 +161,6 @@ object OcpcHourlyReport {
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-//      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
 
     // 关联转化表
@@ -209,6 +210,7 @@ object OcpcHourlyReport {
          |    deep_conversion_goal,
          |    cpa_check_priority,
          |    is_deep_ocpc,
+         |    ocpc_expand,
          |    isclick,
          |    isshow,
          |    price,
@@ -277,6 +279,7 @@ object OcpcHourlyReport {
          |  industry,
          |  media,
          |  hr,
+         |  ocpc_expand,
          |  0 as is_hidden,
          |  sum(isclick) as deep_click,
          |  sum(iscvr) as deep_cv,
@@ -291,7 +294,7 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 and real_deep_flag = 1 then 1 else 0 end) as real_deep_click
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr, ocpc_expand
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
