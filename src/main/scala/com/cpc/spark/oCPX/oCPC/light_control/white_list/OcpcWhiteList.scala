@@ -63,8 +63,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
 //
   }
 
@@ -102,7 +102,7 @@ object OcpcWhiteList {
   }
 
   def udfUseridBlackList() = udf((userid: Int) => {
-    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964)
+    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964, 1688637)
     if (blackUsers.contains(userid)) {
       1
     } else {
