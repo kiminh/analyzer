@@ -43,12 +43,11 @@ object prepareTrainingSample {
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
       .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour")
-      .selectExpr("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour", "cast(hour as double) as hr")
 
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
-      .withColumn("string_feature_list", udfStringFeatures()(col("hr")))
+      .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
       .withColumn("double_feature_list", col("feature_list"))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "pcoc")
 
