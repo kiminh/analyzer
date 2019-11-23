@@ -100,12 +100,12 @@ object pcocModel {
       .setOutputCol("hour_vec")
     val hourFeature = hourEncoder
       .transform(hourIndexed)
-      .select("identifier", "media", "conversion_goal", "conversion_from", "hour", "hour_index", "hour_vec")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "hour_vec")
     hourFeature.show(10)
 
     // 数据关联
     val data = dataRaw
-      .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "label")
       .join(hourFeature, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
       .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour_vec", "label")
 
