@@ -31,6 +31,8 @@ object pcocModel {
 
     val trainingData = getTrainingData(data, spark)
 
+//    val predictData = getPredictData(spark)
+
     val result = trainAndPredict(trainingData, spark)
 
     result
