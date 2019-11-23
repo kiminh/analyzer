@@ -48,7 +48,7 @@ object prepareTrainingSample {
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
       .withColumn("label", col("pcoc"))
-      .filter("label is not nulli")
+      .filter("label is not null")
       .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
 
     val data = data1
