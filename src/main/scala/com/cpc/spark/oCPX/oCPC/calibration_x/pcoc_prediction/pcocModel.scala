@@ -107,12 +107,15 @@ object pcocModel {
 
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
-//    val predictData = pipelineModel.transform(predictFeatures)
+    val predictData = pipelineModel.transform(predictFeatures)
 
 
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
-    val predictions = lrModel.transform(dataset).select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
+    val predictions = lrModel
+      .transform(predictData)
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
 
     predictions
   }
