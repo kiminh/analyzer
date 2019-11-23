@@ -128,6 +128,7 @@ object prepareLabel {
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .select("identifier", "media", "conversion_goal", "conversion_from", "date", "hour", "pcoc")
+      .filter(s"pcoc is not null")
 
     resultDF
 

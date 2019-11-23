@@ -39,22 +39,26 @@ object prepareTrainingSample {
     val data1 = dataRaw1
       .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
       .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "date", "hour")
-    data1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122a")
 
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
       .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour")
-    data2
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122b")
+      .selectExpr("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour", "cast(hour as double) as hr")
 
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "hour", "time", "pcoc")
+      .withColumn("string_feature_list", udfStringFeatures()(col("hr")))
+      .withColumn("double_feature_list", col("feature_list"))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "pcoc")
 
     data
   }
+
+  def udfStringFeatures() = udf((hr: String) => {
+    val result = Array(hr)
+    result
+  })
 
   def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
     // 取历史数据
