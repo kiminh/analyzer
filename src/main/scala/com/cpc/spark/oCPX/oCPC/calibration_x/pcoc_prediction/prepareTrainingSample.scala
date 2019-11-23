@@ -52,7 +52,7 @@ object prepareTrainingSample {
       .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
 
     val data = data1
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "hour_diff")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
       .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
       .withColumn("double_feature_list", col("feature_list"))
