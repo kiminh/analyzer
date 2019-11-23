@@ -86,17 +86,19 @@ object OcpcWhiteList {
       .load()
 
     // add some black list of users
-    val resultDF = data
+    val result = data
       .withColumn("userid", col("id"))
       .withColumn("adclass", col("category"))
       .selectExpr("cast(userid as int) as userid", "adclass")
       .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
+
+    val resultDF = result
       .filter(s"userid_black_flag = 0")
       .distinct()
 
     resultDF.show(10)
 
-    resultDF
+    result
         .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
     resultDF
   }
