@@ -42,6 +42,8 @@ object pcocModel {
     /*
     对pre_pcoc ~ pre_cv做scaler
      */
+    val data = dataRaw.cache()
+    data.show(10)
     // 模型训练
     val stagesArray = new ListBuffer[PipelineStage]()
 
@@ -52,8 +54,8 @@ object pcocModel {
     val pipeline = new Pipeline()
     pipeline.setStages(stagesArray.toArray)
 
-    val pipelineModel = pipeline.fit(dataRaw)
-    val dataset = pipelineModel.transform(dataRaw)
+    val pipelineModel = pipeline.fit(data)
+    val dataset = pipelineModel.transform(data)
 
 
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
