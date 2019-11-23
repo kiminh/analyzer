@@ -60,7 +60,7 @@ object pcocModel {
 
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
-    val predictions = lrModel.transform(dataset).select("identifier", "media", "conversion_goal", "conversion_from", "features", "label", "prediction")
+    val predictions = lrModel.transform(dataset).select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "label", "prediction")
 
     predictions
   }
@@ -107,7 +107,7 @@ object pcocModel {
     val data = dataRaw
       .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "label")
       .join(hourFeature, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour_vec", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour_vec", "label")
 
     data
   }
