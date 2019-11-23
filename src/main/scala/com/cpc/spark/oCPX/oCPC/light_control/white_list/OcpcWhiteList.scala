@@ -96,8 +96,8 @@ object OcpcWhiteList {
 
     resultDF.show(10)
 
-//    resultDF
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
+    resultDF
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191119")
     resultDF
   }
 
