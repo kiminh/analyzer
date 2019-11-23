@@ -1,5 +1,8 @@
 package com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.ml.feature.{OneHotEncoder, StandardScaler, StringIndexer, VectorAssembler}
@@ -21,26 +24,68 @@ object pcocModel {
     // bash: 2019-01-02 12 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
+    val hourDiff = args(2).toInt
+    val version = args(3).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+    println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version")
 
     val data = getData(date, hour, version, spark)
 
     val trainingData = getTrainingData(data, spark)
 
-//    val predictData = getPredictData(spark)
+    val predictData = getPredictData(date, hour, hourDiff, version, spark)
 
-    val result = trainAndPredict(trainingData, spark)
+    val result = trainAndPredict(trainingData, predictData, spark)
 
     result
       .write.mode("overwrite").saveAsTable("test.check_ocpc_predict_pcoc_data20191123")
 
   }
 
-  def trainAndPredict(dataRaw: DataFrame, spark: SparkSession) = {
+  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, hourDiff)
+    val tmpDate1 = dateConverter.format(calendar.getTime)
+    val tmpDateValue1 = tmpDate1.split(" ")
+    val hour1 = tmpDateValue1(1)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  test.ocpc_pcoc_sample_part1_hourly
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  hour = '$hour'
+         |AND
+         |  version = '$version'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("avg_pcoc", col("double_feature_list").getItem(0))
+      .withColumn("diff1_pcoc", col("double_feature_list").getItem(1))
+      .withColumn("diff2_pcoc", col("double_feature_list").getItem(2))
+      .withColumn("recent_pcoc", col("double_feature_list").getItem(3))
+      .withColumn("hour", lit(hour1))
+      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour", "time")
+      .cache()
+
+    data.show(10)
+
+    data
+  }
+
+  def trainAndPredict(dataRaw: DataFrame, predictFeatures: DataFrame, spark: SparkSession) = {
     /*
     对pre_pcoc ~ pre_cv做scaler
      */
@@ -58,11 +103,12 @@ object pcocModel {
 
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
+    val predictData = pipelineModel.transform(predictFeatures)
 
 
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
-    val predictions = lrModel.transform(dataset).select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "label", "prediction")
+    val predictions = lrModel.transform(predictData).select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
 
     predictions
   }
@@ -75,7 +121,7 @@ object pcocModel {
       .withColumn("diff2_pcoc", col("double_feature_list").getItem(2))
       .withColumn("recent_pcoc", col("double_feature_list").getItem(3))
       .withColumn("hour", col("string_feature_list").getItem(0))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour", "label")
 
     dataRaw
   }
