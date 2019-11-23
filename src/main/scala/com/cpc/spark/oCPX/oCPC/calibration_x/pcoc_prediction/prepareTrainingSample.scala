@@ -32,24 +32,31 @@ object prepareTrainingSample {
 
     val samples = assemblySample(data1, data2, spark)
     samples
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122c")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour_diff", "time", "label")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
   }
 
   def assemblySample(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
     val data1 = dataRaw1
       .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "date", "hour")
+      .withColumn("hour_diff", lit(4))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "date", "hour", "hour_diff")
 
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "time", "date", "hour")
+      .withColumn("label", col("pcoc"))
+      .filter("label is not nulli")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
 
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
       .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
       .withColumn("double_feature_list", col("feature_list"))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "pcoc")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "label", "hour_diff")
 
     data
   }
