@@ -112,6 +112,7 @@ object prepareSample {
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("recent_pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("recent_cv", col("cv"))
       .select("identifier", "media", "conversion_goal", "conversion_from", "recent_pcoc", "recent_cv")
 
     result
