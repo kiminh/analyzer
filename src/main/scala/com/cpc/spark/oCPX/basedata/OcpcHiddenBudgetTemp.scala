@@ -7,6 +7,9 @@ object OcpcHiddenBudgetTemp {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+
+    val tableName = args(0).toString
+    println(s"table name is $tableName")
     
     val sqlRequest =
       s"""
@@ -26,7 +29,7 @@ object OcpcHiddenBudgetTemp {
     val data = spark.sql(sqlRequest)
     data
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_hourly_test")
+      .write.mode("overwrite").saveAsTable(s"test.$tableName")
   }
 
 
