@@ -66,8 +66,8 @@ object prepareSample {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part1_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part1_hourly")
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, minCV: Int, spark: SparkSession) = {
