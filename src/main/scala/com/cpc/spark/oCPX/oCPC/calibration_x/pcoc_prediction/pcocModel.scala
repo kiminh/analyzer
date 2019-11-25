@@ -85,7 +85,7 @@ object pcocModel {
     data
   }
 
-  def trainAndPredict(dataRaw: DataFrame, predictFeatures: DataFrame, spark: SparkSession) = {
+  def trainAndPredict(dataRaw: DataFrame, predictRawData: DataFrame, spark: SparkSession) = {
     /*
     对pre_pcoc ~ pre_cv做scaler
      */
@@ -94,11 +94,37 @@ object pcocModel {
     // 模型训练
     val stagesArray = new ListBuffer[PipelineStage]()
 
+//    one-hot for hour
     val hourIndexer = new StringIndexer().setInputCol("hour").setOutputCol("hour_index")
     stagesArray.append(hourIndexer)
     val hourEncoder = new OneHotEncoder().setInputCol("hour_index").setOutputCol("hour_vec")
     stagesArray.append(hourEncoder)
-    val featureArray = Array("hour_vec", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
+
+//    one-hot for identifier
+    val identifierIndexer = new StringIndexer().setInputCol("identifier").setOutputCol("identifier_index")
+    stagesArray.append(identifierIndexer)
+    val identifierEncoder = new OneHotEncoder().setInputCol("identifier_index").setOutputCol("identifier_vec")
+    stagesArray.append(identifierEncoder)
+
+//    one-hot for media
+    val mediaIndexer = new StringIndexer().setInputCol("media").setOutputCol("media_index")
+    stagesArray.append(mediaIndexer)
+    val mediaEncoder = new OneHotEncoder().setInputCol("media_index").setOutputCol("media_vec")
+    stagesArray.append(mediaEncoder)
+
+//    one-hot for conversion_goal
+    val conversionGoalIndexer = new StringIndexer().setInputCol("conversion_goal").setOutputCol("conversion_goal_index")
+    stagesArray.append(conversionGoalIndexer)
+    val conversionGoalEncoder = new OneHotEncoder().setInputCol("conversion_goal_index").setOutputCol("conversion_goal_vec")
+    stagesArray.append(conversionGoalEncoder)
+
+//    one-hot for conversion_from
+    val conversionFromIndexer = new StringIndexer().setInputCol("conversion_from").setOutputCol("conversion_from_index")
+    stagesArray.append(conversionFromIndexer)
+    val conversionFromEncoder = new OneHotEncoder().setInputCol("conversion_from_index").setOutputCol("conversion_from_vec")
+    stagesArray.append(conversionFromEncoder)
+
+    val featureArray = Array("identifier_vec", "media_vec", "conversion_goal_vec", "conversion_from_vec", "hour_vec", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
 
@@ -107,6 +133,10 @@ object pcocModel {
 
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
+
+    val dataItem = data.select("identifier", "media", "conversion_goal", "conversion_from", "hour")
+    val predictFeatures = predictRawData
+      .join(dataItem, Seq("identifier", "media", "conversion_goal", "conversion_from", "hour"), "inner")
     val predictData = pipelineModel.transform(predictFeatures)
 
 
