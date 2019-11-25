@@ -33,7 +33,8 @@ object prepareLabel {
       .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "date", "hour")
       .repartition(1)
       .withColumn("version", lit(version))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part2_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part2_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part2_hourly")
 
   }
 
