@@ -1,4 +1,4 @@
-CREATE TABLE test.ocpc_pcoc_prediction_result_hourly(
+CREATE TABLE dl_cpc.ocpc_pcoc_prediction_result_hourly(
     identifier                  string,
     media                       string,
     conversion_goal             int,
@@ -10,5 +10,5 @@ CREATE TABLE test.ocpc_pcoc_prediction_result_hourly(
     avg_pcoc                    double,
     pred_pcoc                   double
 )
-partitioned by (`date` string, `hour` string, version string)
+partitioned by (`date` string, `hour` string, version string, exp_tag string)
 stored as parquet;

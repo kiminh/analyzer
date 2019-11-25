@@ -22,13 +22,14 @@ object prepareTrainingSample {
     val hour = args(1).toString
     val hourInt = args(2).toInt
     val version = args(3).toString
+    val expTag = args(4).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
-    val data1 = getData(date, hour, hourInt, version, "test.ocpc_pcoc_sample_part1_hourly", spark)
-    val data2 = getData(date, hour, hourInt, version, "test.ocpc_pcoc_sample_part2_hourly", spark)
+    val data1 = getData(date, hour, hourInt, version, expTag, "test.ocpc_pcoc_sample_part1_hourly", spark)
+    val data2 = getData(date, hour, hourInt, version, expTag, "test.ocpc_pcoc_sample_part2_hourly", spark)
 
     val samples = assemblySample(data1, data2, spark)
     samples
@@ -36,6 +37,7 @@ object prepareTrainingSample {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
 //      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
   }
@@ -81,7 +83,7 @@ object prepareTrainingSample {
     result
   })
 
-  def getData(date: String, hour: String, hourInt: Int, version: String, tableName: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, hourInt: Int, version: String, expTag: String, tableName: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -106,6 +108,8 @@ object prepareTrainingSample {
          |  $selectCondition
          |AND
          |  version = '$version'
+         |AND
+         |  exp_tag = '$expTag'
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

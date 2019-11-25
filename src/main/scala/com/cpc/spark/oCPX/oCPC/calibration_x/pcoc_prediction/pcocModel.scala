@@ -26,16 +26,17 @@ object pcocModel {
     val hour = args(1).toString
     val hourDiff = args(2).toInt
     val version = args(3).toString
+    val expTag = args(4).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version")
+    println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version, expTag=$expTag")
 
-    val data = getData(date, hour, version, spark)
+    val data = getData(date, hour, version, expTag, spark)
 
     val trainingData = getTrainingData(data, spark)
 
-    val predictData = getPredictData(date, hour, hourDiff, version, spark)
+    val predictData = getPredictData(date, hour, hourDiff, version, expTag, spark)
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
@@ -48,7 +49,9 @@ object pcocModel {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .withColumn("exp_tag", lit(expTag))
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
@@ -76,7 +79,7 @@ object pcocModel {
     data
   }
 
-  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, spark: SparkSession) = {
+  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
@@ -99,6 +102,8 @@ object pcocModel {
          |  hour = '$hour'
          |AND
          |  version = '$version'
+         |AND
+         |  exp_tag = '$expTag'
          |""".stripMargin
     println(sqlRequest)
     val data = spark
@@ -243,7 +248,7 @@ object pcocModel {
 
 
 
-  def getData(date: String, hour: String, version: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
     val sqlRequest =
       s"""
@@ -255,6 +260,8 @@ object pcocModel {
          |  $selectCondition
          |AND
          |  version = '$version'
+         |AND
+         |  exp_tag = '$expTag'
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

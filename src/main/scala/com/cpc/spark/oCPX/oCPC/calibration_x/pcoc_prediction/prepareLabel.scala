@@ -22,10 +22,11 @@ object prepareLabel {
     val hour = args(1).toString
     val hourInt = args(2).toInt
     val version = args(3).toString
+    val expTag = args(4).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
     val rawData = getBaseData(date, hour, hourInt, spark).cache()
     val baseData = calculateBaseData(rawData, spark).cache()
@@ -33,6 +34,7 @@ object prepareLabel {
       .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "date", "hour")
       .repartition(1)
       .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
 //      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part2_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part2_hourly")
 
