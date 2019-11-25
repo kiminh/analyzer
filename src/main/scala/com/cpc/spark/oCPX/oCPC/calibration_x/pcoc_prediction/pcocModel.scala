@@ -40,9 +40,6 @@ object pcocModel {
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_predict_pcoc_data20191123")
-
     val resultDF = extracePredictData(result, hourDiff, spark)
     resultDF
       .repartition(1)
