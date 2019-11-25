@@ -29,7 +29,7 @@ object prepareTrainingSample {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
-    val data1 = getData(date, hour, hourInt, version, expTag, "dl_cpc.ocpc_pcoc_sample_part1_hourly", spark)
+    val data1 = getFeatureData(date, hour, hourInt, version, expTag, spark)
     val data2 = prepareLabelMain(date, hour, hourInt, spark)
 
     val samples = assemblySample(data1, data2, spark)
@@ -84,7 +84,7 @@ object prepareTrainingSample {
     result
   })
 
-  def getData(date: String, hour: String, hourInt: Int, version: String, expTag: String, tableName: String, spark: SparkSession) = {
+  def getFeatureData(date: String, hour: String, hourInt: Int, version: String, expTag: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -104,7 +104,7 @@ object prepareTrainingSample {
          |SELECT
          |  *
          |FROM
-         |  $tableName
+         |  dl_cpc.ocpc_pcoc_sample_part1_hourly
          |WHERE
          |  $selectCondition
          |AND
