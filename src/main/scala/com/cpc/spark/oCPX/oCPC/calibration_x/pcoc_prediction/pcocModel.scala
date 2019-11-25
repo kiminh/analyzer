@@ -42,6 +42,35 @@ object pcocModel {
     result
       .write.mode("overwrite").saveAsTable("test.check_ocpc_predict_pcoc_data20191123")
 
+    val resultDF = extracePredictData(result, hourDiff, spark)
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+
+  }
+
+  def extracePredictData(dataRaw: DataFrame, hourDiff: Int, spark: SparkSession) = {
+    dataRaw.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  media,
+         |  conversion_goal,
+         |  conversion_from,
+         |  time,
+         |  $hourDiff as hour_diff,
+         |  double_feature_list,
+         |  string_feature_list,
+         |  avg_pcoc,
+         |  prediction as pred_pcoc
+         |FROM
+         |  raw_data
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def getPredictData(date: String, hour: String, hourDiff: Int, version: String, spark: SparkSession) = {
@@ -144,11 +173,23 @@ object pcocModel {
 
     val predictions = lrModel
       .transform(dataset)
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction", "label")
+      .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
+      .withColumn("double_feature_list", udfDoubleFeatures()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction", "label")
 //      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
 
     predictions
   }
+
+  def udfDoubleFeatures() = udf((avgPcoc: Double, diff1Pcoc: Double, diff2Pcoc: Double, recentPcoc: Double) => {
+    val result = Array(avgPcoc, diff1Pcoc, diff2Pcoc, recentPcoc)
+    result
+  })
+
+  def udfStringFeatures() = udf((hr: String) => {
+    val result = Array(hr)
+    result
+  })
 
   def parseFeatures(rawData: DataFrame, spark: SparkSession) = {
 //    udfAggregateFeature()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc"))
