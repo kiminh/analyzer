@@ -21,7 +21,7 @@ object OcpcHiddenBudgetTemp {
          |and
          |    version = 'qtt_demo'
          |and
-         |    industry not in ('wzcp');
+         |    industry not in ('wzcp')
          |""".stripMargin
     val data = spark.sql(sqlRequest)
     data
