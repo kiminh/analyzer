@@ -36,7 +36,8 @@ object prepareTrainingSample {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
   }
 
   def assemblySample(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
