@@ -26,6 +26,7 @@ object OcpcHiddenBudgetTemp {
          |and
          |    industry not in ('wzcp')
          |""".stripMargin
+    println(sqlRequest)
     val data = spark.sql(sqlRequest)
     data
       .repartition(1)
