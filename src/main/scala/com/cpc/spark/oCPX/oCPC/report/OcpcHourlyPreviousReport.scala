@@ -59,7 +59,7 @@ object OcpcHourlyPreviousReport {
 
     // 数据关联
     val data = baseData
-      .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "is_hidden"), "left_outer")
+      .join(deepBaseData, Seq("ideaid", "unitid", "userid", "adclass", "adslot_type", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "industry", "media", "hr", "ocpc_expand", "is_hidden"), "left_outer")
 
     // 存储数据到hadoop
     saveBaseDataToHDFS(data, date, "23", spark)
