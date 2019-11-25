@@ -165,7 +165,7 @@ object pcocModel {
 //    standard scaler
     val scaler = new StandardScaler()
       .setInputCol("features")
-      .setOutputCol("scaledFeatures")
+      .setOutputCol("scaled_features")
       .setWithStd(true)
       .setWithMean(false)
     stagesArray.append(scaler)
@@ -182,7 +182,7 @@ object pcocModel {
     val predictData = pipelineModel.transform(predictFeatures)
 
 
-    val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
+    val lrModel = new LinearRegression().setFeaturesCol("scaled_features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
     val predictions = lrModel
       .transform(predictData)
