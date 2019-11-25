@@ -162,6 +162,14 @@ object pcocModel {
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
 
+//    standard scaler
+    val scaler = new StandardScaler()
+      .setInputCol("features")
+      .setOutputCol("scaledFeatures")
+      .setWithStd(true)
+      .setWithMean(false)
+    stagesArray.append(scaler)
+
     val pipeline = new Pipeline()
     pipeline.setStages(stagesArray.toArray)
 
