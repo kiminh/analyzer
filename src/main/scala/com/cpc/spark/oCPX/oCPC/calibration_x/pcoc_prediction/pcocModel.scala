@@ -45,6 +45,9 @@ object pcocModel {
     val resultDF = extracePredictData(result, hourDiff, spark)
     resultDF
       .repartition(1)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
       .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
 
   }
