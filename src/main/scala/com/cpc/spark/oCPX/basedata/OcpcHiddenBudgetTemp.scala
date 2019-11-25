@@ -1,11 +1,9 @@
 package com.cpc.spark.oCPX.basedata
 
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.SparkSession
 
-object OcpcHidenBudgetTemp {
+object OcpcHiddenBudgetTemp {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
