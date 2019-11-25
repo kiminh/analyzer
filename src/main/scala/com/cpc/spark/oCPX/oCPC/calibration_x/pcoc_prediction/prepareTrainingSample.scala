@@ -28,8 +28,8 @@ object prepareTrainingSample {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
-    val data1 = getData(date, hour, hourInt, version, expTag, "test.ocpc_pcoc_sample_part1_hourly", spark)
-    val data2 = getData(date, hour, hourInt, version, expTag, "test.ocpc_pcoc_sample_part2_hourly", spark)
+    val data1 = getData(date, hour, hourInt, version, expTag, "dl_cpc.ocpc_pcoc_sample_part1_hourly", spark)
+    val data2 = getData(date, hour, hourInt, version, expTag, "dl_cpc.ocpc_pcoc_sample_part2_hourly", spark)
 
     val samples = assemblySample(data1, data2, spark)
     samples
