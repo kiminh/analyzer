@@ -47,8 +47,8 @@ object pcocModel {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
@@ -162,13 +162,13 @@ object pcocModel {
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
 
-//    standard scaler
-    val scaler = new StandardScaler()
-      .setInputCol("features")
-      .setOutputCol("scaled_features")
-      .setWithStd(true)
-      .setWithMean(false)
-    stagesArray.append(scaler)
+////    standard scaler
+//    val scaler = new StandardScaler()
+//      .setInputCol("features")
+//      .setOutputCol("scaled_features")
+//      .setWithStd(true)
+//      .setWithMean(false)
+//    stagesArray.append(scaler)
 
     val pipeline = new Pipeline()
     pipeline.setStages(stagesArray.toArray)
@@ -182,7 +182,7 @@ object pcocModel {
     val predictData = pipelineModel.transform(predictFeatures)
 
 
-    val lrModel = new LinearRegression().setFeaturesCol("scaled_features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
+    val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
     val predictions = lrModel
       .transform(predictData)
