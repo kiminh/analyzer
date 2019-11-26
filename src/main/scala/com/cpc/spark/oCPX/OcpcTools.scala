@@ -325,6 +325,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  isclick,
          |  exp_cvr,
          |  media_appsid,
@@ -401,6 +402,7 @@ object OcpcTools {
          |SELECT
          |  searchid,
          |  unitid,
+         |  userid,
          |  isclick,
          |  exp_cvr,
          |  media_appsid,
