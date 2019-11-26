@@ -35,7 +35,10 @@ object OcpcGetPb_realtime {
     // 计算pcoc
     val pcocData = OcpcCVRfactor(date, hour, hourInt, minCV, spark)
 
-    val data = assemblyData(jfbData, pcocData, expTag, spark)
+    // 分段校准
+    val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
+
+    val data = assemblyData(jfbData, pcocData, bidFactor, expTag, spark)
 
     val result = data
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
@@ -57,19 +60,73 @@ object OcpcGetPb_realtime {
 
   }
 
-  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, expTag: String, spark: SparkSession) = {
+  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, bidFactor: DataFrame, expTag: String, spark: SparkSession) = {
     // 组装数据
     val result = pcocData
       .join(jfbData, Seq("identifier", "conversion_goal", "media"), "inner")
-      .select("identifier", "conversion_goal", "media", "jfb_factor", "cvr_factor", "cv", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .withColumn("high_bid_factor", lit(1.0))
-      .withColumn("low_bid_facotor", lit(1.0))
-      .withColumn("post_cvr", lit(0.0))
-      .withColumn("smooth_factor", lit(0.0))
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-
+      .join(bidFactor, Seq("identifier", "conversion_goal", "media"), "left_outer")
+      .select("identifier", "conversion_goal", "media", "jfb_factor", "cvr_factor", "post_cvr", "high_bid_factor", "low_bid_factor")
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("post_cvr"))
+      .withColumn("smooth_factor", lit(0.0))
+    
     result
+  }
+
+  /*
+  分段校准
+   */
+  def OcpcBIDfactor(date: String, hour: String, version: String, expTag: String, hourInt: Int, spark:SparkSession) = {
+    /*
+    计算新版的cvr平滑策略：
+    1. 抽取基础数据
+    2. 计算该维度下pcoc与计费比、后验cvr等等指标
+    3. 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+     */
+
+    // 抽取基础数据
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data_raw")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  base_data_raw
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .selectExpr("searchid", "cast(unitid as string) identifier", "conversion_goal", "media", "isshow", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+
+
+    // 计算各维度下的pcoc、jfb以及后验cvr等指标
+    val dataRaw1 = calculateData1(baseData, version, expTag, date, hour, spark)
+
+    val data1 = dataRaw1
+      .filter(s"cv >= min_cv")
+      .cache()
+    data1.show(10)
+
+
+    // 计算该维度下根据给定highBidFactor计算出的lowBidFactor
+    val baseData2 = baseData
+      .withColumn("media", udfMediaName()(col("media")))
+      .join(data1, Seq("identifier", "conversion_goal", "media"), "inner")
+
+    val data2 = calculateData2(baseData2, date, hour, spark)
+
+    val resultDF = data1
+      .select("identifier", "conversion_goal", "media", "exp_tag", "cv", "min_cv", "post_cvr")
+      .join(data2, Seq("identifier", "conversion_goal", "media"), "inner")
+      .selectExpr("identifier", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor", "post_cvr", "cv", "min_cv")
+      .withColumn("version", lit(version))
+
+    resultDF
+
   }
 
   /*
