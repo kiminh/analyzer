@@ -32,17 +32,17 @@ object pcocModel_v2 {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version, expTag=$expTag")
 
-    val data = getData(date, hour, version, expTag, spark)
+    val data = getData(date, hour, version, spark)
 
     val trainingData = getTrainingData(data, spark)
 
-    val predictData = getPredictData(date, hour, hourDiff, version, expTag, spark)
+    val predictData = getPredictData(date, hour, hourDiff, version, spark)
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-//    result
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
+    result
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
 
     val resultDF = extracePredictData(result, hourDiff, spark)
     resultDF
@@ -80,7 +80,7 @@ object pcocModel_v2 {
     data
   }
 
-  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {
+  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
@@ -104,7 +104,7 @@ object pcocModel_v2 {
          |AND
          |  version = '$version'
          |AND
-         |  exp_tag = '$expTag'
+         |  exp_tag = 'v1'
          |""".stripMargin
     println(sqlRequest)
     val data = spark
@@ -192,8 +192,8 @@ object pcocModel_v2 {
       .transform(predictData)
       .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
       .withColumn("double_feature_list", udfDoubleFeatures()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc")))
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction", "label")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction", "label")
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
       .cache()
 
     predictions.show(10)
@@ -257,7 +257,7 @@ object pcocModel_v2 {
 
 
 
-  def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, version: String, spark: SparkSession) = {
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
     val sqlRequest =
       s"""
@@ -270,7 +270,7 @@ object pcocModel_v2 {
          |AND
          |  version = '$version'
          |AND
-         |  exp_tag = '$expTag'
+         |  exp_tag = 'v1'
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
