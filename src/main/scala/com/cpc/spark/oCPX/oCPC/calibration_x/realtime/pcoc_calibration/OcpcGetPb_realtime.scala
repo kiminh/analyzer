@@ -36,11 +36,7 @@ object OcpcGetPb_realtime {
 
     // 计算jfb_factor,
     val jfbDataRaw = OcpcJFBfactor(date, hour, spark)
-    val jfbData = jfbDataRaw
-      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor")
-      .cache()
-    jfbData.show(10)
+
 //
 //    // 计算pcoc
 //    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
@@ -85,28 +81,35 @@ object OcpcGetPb_realtime {
 
   def OcpcJFBfactor(date: String, hour: String, spark: SparkSession) = {
     val baseDataRaw = getBaseData(24, date, hour, spark)
-    baseDataRaw.createOrReplaceTempView("base_data_raw")
+    baseDataRaw
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+      .createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
       s"""
          |SELECT
-         |  *
+         |  cast(unitid as string) identifier,
+         |  userid,
+         |  conversion_goal,
+         |  media,
+         |  sum(isclick) as click,
+         |  avg(bid) as acb,
+         |  avg(acp) as acp
          |FROM
          |  base_data_raw
+         |WHERE
+         |  isclick=1
+         |GROUP BY cast(unitid as string), userid, conversion_goal, media
        """.stripMargin
     println(sqlRequest)
     val baseData = spark
       .sql(sqlRequest)
-      .selectExpr("cast(unitid as string) identifier", "userid", "conversion_goal", "media", "isclick", "iscvr", "bid", "price", "exp_cvr", "date", "hour")
+      .select("identifier", "userid", "conversion_goal", "media", "click", "acb", "acp")
+      .withColumn("jfb_factor", col("acb") * 1.0 / col("acp") )
 
-
-
-    // 计算结果
-    val result = calculateParameter(baseData, spark)
-
-    val resultDF = result
-      .select("identifier", "userid", "conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr", "date", "hour")
-
+    val resultDF = baseData
+      .select("identifier", "userid", "conversion_goal", "media", "click", "acb", "acp", "jfb_factor")
 
     resultDF
   }
