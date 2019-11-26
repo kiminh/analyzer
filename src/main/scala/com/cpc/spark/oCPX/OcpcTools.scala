@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -120,6 +120,24 @@ object OcpcTools {
     conf
   }
 
+  def mapMediaName(dataRaw: DataFrame, spark: SparkSession) = {
+    // 媒体id映射表
+    val conf = ConfigFactory.load("ocpc")
+    val mediaMapPath = conf.getString("exp_config_v2.media_map")
+    val mediaMapRaw = spark.read.format("json").json(mediaMapPath)
+    val mediaMap = mediaMapRaw
+      .withColumn("media_name", col("media"))
+      .select("media_name", "media_appsid")
+      .distinct()
+    mediaMap.show(10)
+
+    val data = dataRaw
+      .join(mediaMap, Seq("media_appsid"), "left_outer")
+      .withColumn("media", when(col("media_name").isNull, "others").otherwise(col("media_name")))
+
+    data
+  }
+
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 抽取媒体id
@@ -181,10 +199,12 @@ object OcpcTools {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+      .withColumn("media_original", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
