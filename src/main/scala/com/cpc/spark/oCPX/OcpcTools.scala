@@ -192,8 +192,6 @@ object OcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
