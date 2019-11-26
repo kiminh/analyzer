@@ -51,8 +51,8 @@ object pcocModel_v2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
