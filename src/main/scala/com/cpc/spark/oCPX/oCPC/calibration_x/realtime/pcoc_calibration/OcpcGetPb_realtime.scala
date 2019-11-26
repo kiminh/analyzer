@@ -110,9 +110,15 @@ object OcpcGetPb_realtime {
 
     val resultDF = baseData
       .select("identifier", "userid", "conversion_goal", "media", "click", "acb", "acp", "jfb_factor")
+      .withColumn("jfb_factor", udfCheckJFBfactor(1.0, 3.0)(col("jfb_factor")))
 
     resultDF
   }
+
+  def udfCheckJFBfactor(minValue: Double, maxValue: Double) = udf((jfbFactor: Double) => {
+    var result = math.min(math.max(minValue, jfbFactor), maxValue)
+    result
+  })
 
 
 }
