@@ -26,15 +26,16 @@ object OcpcUnitTest {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = args(2).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
-    val baseDataRaw = OcpcCVRfactor(date, hour, 24, spark)
+    val baseDataRaw = OcpcCVRfactor(date, hour, hourInt, spark)
 
     baseDataRaw
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126a")
 
   }
 
