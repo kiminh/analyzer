@@ -140,11 +140,6 @@ object OcpcTools {
 
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -200,7 +195,6 @@ object OcpcTools {
     val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media_original", udfDetermineMedia()(col("media_appsid")))
 
     val clickData = mapMediaName(clickDataRaw, spark)
 
@@ -229,11 +223,6 @@ object OcpcTools {
   }
 
   def getBaseDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -281,17 +270,16 @@ object OcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -318,11 +306,6 @@ object OcpcTools {
   }
 
   def getRealtimeData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -344,7 +327,7 @@ object OcpcTools {
          |  unitid,
          |  isclick,
          |  exp_cvr,
-         |  media,
+         |  media_appsid,
          |  industry,
          |  conversion_goal,
          |  date,
@@ -354,8 +337,6 @@ object OcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  media in ('qtt', 'novel', 'hottopic')
-         |AND
          |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
@@ -363,9 +344,10 @@ object OcpcTools {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
-//      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -421,7 +403,7 @@ object OcpcTools {
          |  unitid,
          |  isclick,
          |  exp_cvr,
-         |  media,
+         |  media_appsid,
          |  industry,
          |  conversion_goal,
          |  date,
@@ -431,8 +413,6 @@ object OcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  media in ('qtt', 'novel', 'hottopic')
-         |AND
          |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
@@ -440,9 +420,10 @@ object OcpcTools {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
-    //      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -478,6 +459,7 @@ object OcpcTools {
       case "qtt" => "Qtt"
       case "hottopic" => "HT66"
       case "novel" => "MiDu"
+      case "others" => "Other"
       case x => x
     }
     result
