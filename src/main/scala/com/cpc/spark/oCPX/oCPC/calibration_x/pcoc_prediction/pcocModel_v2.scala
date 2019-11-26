@@ -51,8 +51,8 @@ object pcocModel_v2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
@@ -180,9 +180,9 @@ object pcocModel_v2 {
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
 
-    val dataItem = data.select("media", "conversion_goal", "conversion_from", "hour").distinct()
+    val dataItem = data.select("identifier", "media", "conversion_goal", "conversion_from", "hour").distinct()
     val predictFeatures = predictRawData
-      .join(dataItem, Seq("media", "conversion_goal", "conversion_from", "hour"), "inner")
+      .join(dataItem, Seq("identifier", "media", "conversion_goal", "conversion_from", "hour"), "inner")
     val predictData = pipelineModel.transform(predictFeatures)
 
 
