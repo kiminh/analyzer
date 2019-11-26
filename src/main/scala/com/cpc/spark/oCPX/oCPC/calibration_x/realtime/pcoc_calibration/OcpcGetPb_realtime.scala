@@ -71,7 +71,7 @@ object OcpcGetPb_realtime {
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr"))
       .withColumn("smooth_factor", lit(0.0))
-    
+
     result
   }
 

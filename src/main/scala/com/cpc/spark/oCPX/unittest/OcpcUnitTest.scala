@@ -27,6 +27,7 @@ object OcpcUnitTest {
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
+    val minCV = 40
 
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
@@ -34,7 +35,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "realtime_v1"
 
-    val baseDataRaw = OcpcJFBfactor(date, hour, spark)
+    val baseDataRaw = OcpcCVRfactor(date, hour, hourInt, minCV, spark)
 
     baseDataRaw
       .repartition(1)
