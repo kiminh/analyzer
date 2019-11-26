@@ -10,7 +10,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_baseline_others.getBaseDataDelayOther
-import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pcoc_calibration.OcpcGetPb_realtime.{OcpcCVRfactor, OcpcJFBfactor}
+import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pcoc_calibration.OcpcGetPb_realtime.{OcpcBIDfactor, OcpcCVRfactor, OcpcJFBfactor}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -31,7 +31,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
-    val baseDataRaw = OcpcCVRfactor(date, hour, hourInt, spark)
+    val version = "ocpctest"
+    val expTag = "realtime_v1"
+
+    val baseDataRaw = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
 
     baseDataRaw
       .repartition(1)
