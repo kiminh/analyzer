@@ -33,6 +33,7 @@ object OcpcUnitTest {
     val baseDataRaw = OcpcCVRfactor(date, hour, 24, spark)
 
     baseDataRaw
+      .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126a")
 
   }
