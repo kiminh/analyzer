@@ -130,7 +130,8 @@ object OcpcGetPb_realtime {
          |  adclass,
          |  cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |  media_appsid,
-         |  conversion_goal
+         |  conversion_goal,
+         |  isclick
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
