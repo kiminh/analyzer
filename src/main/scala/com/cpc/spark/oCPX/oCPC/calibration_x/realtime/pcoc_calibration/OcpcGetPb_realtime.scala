@@ -95,7 +95,7 @@ object OcpcGetPb_realtime {
          |  media,
          |  sum(isclick) as click,
          |  avg(bid) as acb,
-         |  avg(acp) as acp
+         |  avg(price) as acp
          |FROM
          |  base_data_raw
          |WHERE
