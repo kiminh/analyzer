@@ -54,7 +54,8 @@ object OcpcMergeDelayData {
     val qtt = editExpTag + "Qtt"
     val midu = editExpTag + "MiDu"
     val hottopic = editExpTag + "HT66"
-    val result = s"exp_tag in ('$qtt', '$midu', '$hottopic')"
+    val others = editExpTag + "Other"
+    val result = s"exp_tag in ('$qtt', '$midu', '$hottopic', '$others')"
     result
   }
 
