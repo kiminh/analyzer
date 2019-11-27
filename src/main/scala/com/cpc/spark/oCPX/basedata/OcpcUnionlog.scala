@@ -16,10 +16,10 @@ object OcpcUnionlog {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-//    data
-//      .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+    data
+      .repartition(100)
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -27,8 +27,7 @@ object OcpcUnionlog {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-      .write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog20191123")
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
@@ -38,8 +37,6 @@ object OcpcUnionlog {
     // DONE 调整过滤条件：ocpc_Step
     val baseData = data
         .filter(s"ocpc_step >= 2")
-//        .withColumn("ocpc_log_dict", udfStringToMapFilter()(col("ocpc_log")))
-//        .withColumn("deep_ocpc_log_dict", udfStringToMapFilter()(col("deep_ocpc_log")))
         .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
         .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
