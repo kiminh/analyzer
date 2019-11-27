@@ -38,11 +38,10 @@ object OcpcUnionlog {
     // DONE 调整过滤条件：ocpc_Step
     val baseData = data
         .filter(s"ocpc_step >= 2")
-        .withColumn("ocpc_log_dict", udfStringToMapFilter()(col("ocpc_log")))
-        .withColumn("deep_ocpc_log_dict", udfStringToMapFilter()(col("deep_ocpc_log")))
-//        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-//        .withColumn("deep_ocpc_log_dict", col("deep_ocpc_log"))
-//        .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
+//        .withColumn("ocpc_log_dict", udfStringToMapFilter()(col("ocpc_log")))
+//        .withColumn("deep_ocpc_log_dict", udfStringToMapFilter()(col("deep_ocpc_log")))
+        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+        .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -114,9 +113,7 @@ object OcpcUnionlog {
          |    cpa_check_priority,
          |    ocpc_expand_tag,
          |    tuid,
-         |    hidden_tax,
-         |    ocpc_log,
-         |    deep_ocpc_log
+         |    hidden_tax
          |from
          |    base_data
        """.stripMargin
