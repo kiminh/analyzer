@@ -135,6 +135,20 @@ object OcpcTools {
     data
   }
 
+  def udfSetFilterFlag() = udf((media: String, date: String, hour: String) => {
+    val hourInt = hour.toInt
+    val result = (media, date) match {
+      case ("novel", "2019-11-26") => {
+        if (hourInt >= 6 && hourInt < 16) {
+          1
+        } else {
+          0
+        }
+      }
+      case (_, _) => 0
+    }
+  })
+
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
@@ -193,7 +207,11 @@ object OcpcTools {
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
 
-    val clickData = mapMediaName(clickDataRaw, spark)
+    // 清除米读异常数据
+    val clickDataRawNew = mapMediaName(clickDataRaw, spark)
+    val clickData = clickDataRawNew
+      .withColumn("filter_flag", udfSetFilterFlag()(col("media"), col("date"), col("hour")))
+
 
     // 抽取cv数据
     val sqlRequest2 =

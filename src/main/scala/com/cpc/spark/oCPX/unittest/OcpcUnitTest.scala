@@ -35,7 +35,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "realtimev1"
 
-    val baseDataRaw = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
+    val baseDataRaw = getBaseData(24, date, hour, spark)
 
     baseDataRaw
       .repartition(1)
