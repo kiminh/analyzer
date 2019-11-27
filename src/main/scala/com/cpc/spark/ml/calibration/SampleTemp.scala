@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.calibration
 
 import java.io.File
-
+import sys.process._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, when}
@@ -74,6 +74,8 @@ object SampleTemp {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
+   val move ="hdfs dfs -put /home/cpc/wy/calibration_sample/calibration_sample.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample.csv "
+    move !
   }
 
   def printToFile(f: java.io.File,ColumnName:String)(op: java.io.PrintWriter => Unit)
