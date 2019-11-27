@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, concat_ws}
+import org.apache.spark.sql.functions.{col, concat_ws, when}
 
 object SampleTemp {
   def main(args: Array[String]): Unit = {
@@ -42,21 +42,35 @@ object SampleTemp {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
+    val defaultideaid = data.filter("day='2019-11-16'").groupBy("ideaid").count()
+      .withColumn("ideaidtag",when(col("count")>20,1).otherwise(0))
+      .filter("ideaidtag=1")
+    val defaultunitid = data.filter("day='2019-11-16'").groupBy("unitid").count()
+      .withColumn("unitidtag",when(col("count")>20,1).otherwise(0))
+      .filter("unitidtag=1")
+    val defaultuserid = data.filter("day='2019-11-16'").groupBy("userid").count()
+      .withColumn("useridtag",when(col("count")>20,1).otherwise(0))
+      .filter("useridtag=1")
+
+    val result = data
+      .join(defaultideaid,Seq("ideaid"),"left")
+      .join(defaultunitid,Seq("unitid"),"left")
+      .join(defaultuserid,Seq("userid"),"left")
+      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
+      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
+      .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise("default"))
+      .filter("iscvr is not null")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
-        "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid")
-    data.show(10)
-    val avgs = data.rdd.map(f => {
+        "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid","ideaidnew","unitidnew","useridnew")
+      result.show(10)
+    val avgs = result.rdd.map(f => {
       f.mkString("\001")
     })
       .collect()
 
-//    val avgs = data.rdd
-//      .map( t=>
-//        t(0).toString()+"\001"+t(1).toString())
-//      .collect()
 
     printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample.csv"),
-      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001click_unit_count\001hour\001siteid") {
+      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001click_unit_count\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
