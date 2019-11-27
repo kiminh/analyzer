@@ -21,19 +21,21 @@ object OcpcGetPb_realtime {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
-    val hourInt = args(4).toInt
-    val minCV = args(5).toInt
+    val date1 = args(2).toString
+    val hour1 = args(3).toString
+    val version = args(4).toString
+    val expTag = args(5).toString
+    val hourInt = args(6).toInt
+    val minCV = args(7).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt, minCV:$minCV")
+    println(s"date=$date, hour=$hour, date1:$date1, hour1:$hour1, version:$version, expTag:$expTag, hourInt:$hourInt, minCV:$minCV")
 
     // 计算jfb_factor,
     val jfbData = OcpcJFBfactor(date, hour, spark)
 
     // 计算pcoc
-    val pcocData = OcpcCVRfactor(date, hour, hourInt, minCV, spark)
+    val pcocData = OcpcCVRfactor(date1, hour1, hourInt, minCV, spark)
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
