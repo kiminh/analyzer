@@ -31,21 +31,12 @@ object OcpcGetPb_realtime {
 
     // 计算jfb_factor,
     val jfbData = OcpcJFBfactor(date, hour, spark)
-    jfbData
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126a")
 
     // 计算pcoc
     val pcocData = OcpcCVRfactor(date, hour, hourInt, minCV, spark)
-    pcocData
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126b")
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
-    bidFactor
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126c")
 
     val data = assemblyData(jfbData, pcocData, bidFactor, expTag, spark)
 
