@@ -35,11 +35,11 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "realtimev1"
 
-    val baseDataRaw = getBaseData(24, date, hour, spark)
+    val baseDataRaw = getRealtimeData(24, date, hour, spark)
 
     baseDataRaw
 //      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127a")
 
   }
 
