@@ -28,8 +28,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
@@ -65,7 +65,8 @@ object OcpcQuickLog {
          |  adclass,
          |  price,
          |  adtype,
-         |  bid_ocpc
+         |  bid_ocpc,
+         |  hidden_tax
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
@@ -85,7 +86,7 @@ object OcpcQuickLog {
       .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "bid_ocpc")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "bid_ocpc", "hidden_tax")
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -120,7 +121,7 @@ object OcpcQuickLog {
 
     val clickData = data1
       .join(data2, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "ocpc_log", "bid_ocpc")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "ocpc_log", "bid_ocpc", "hidden_tax")
 
     clickData
   }
