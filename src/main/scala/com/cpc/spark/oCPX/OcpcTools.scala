@@ -22,10 +22,7 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-    val dataRaw = getBaseData(24, date, hour, spark)
-    val data = dataRaw
-      .withColumn("bid_new", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
-      .withColumn("price_new", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+    val data = getRealtimeData(24, date, hour, spark)
 
     data
       .repartition(5)
