@@ -90,7 +90,10 @@ object OcpcGetPb_realtime {
 
     // 抽取基础数据
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
-    baseDataRaw.createOrReplaceTempView("base_data_raw")
+    baseDataRaw
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+      .createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
       s"""
