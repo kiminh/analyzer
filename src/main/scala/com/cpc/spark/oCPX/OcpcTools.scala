@@ -349,6 +349,7 @@ object OcpcTools {
          |  industry,
          |  conversion_goal,
          |  price,
+         |  hidden_tax,
          |  date,
          |  hour
          |FROM
