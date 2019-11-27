@@ -1,5 +1,8 @@
 package com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pid_calibration
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor.{calculateData1, calculateData2}
 import org.apache.log4j.{Level, Logger}
@@ -23,6 +26,9 @@ object OcpcGetPb_pidrealtime {
     val expTag = args(5).toString
     val hourInt = args(6).toInt
     val minCV = args(7).toInt
+    val kp = args(8).toDouble
+    val ki = args(9).toDouble
+    val kd = args(10).toDouble
 
     println("parameters:")
     println(s"date=$date, hour=$hour, date1:$date1, hour1:$hour1, version:$version, expTag:$expTag, hourInt:$hourInt, minCV:$minCV")
@@ -31,12 +37,12 @@ object OcpcGetPb_pidrealtime {
     val jfbData = OcpcJFBfactor(date, hour, spark)
 
     // 计算pcoc
-    val pcocData = OcpcCVRfactor(date1, hour1, hourInt, minCV, spark)
+    val pidData = OcpcPIDfactor(date1, hour1, hourInt, 1, minCV, kp, ki, kd, spark)
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
 
-    val data = assemblyData(jfbData, pcocData, bidFactor, expTag, spark)
+    val data = assemblyData(jfbData, pidData, bidFactor, expTag, spark)
 
     val result = data
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
@@ -131,43 +137,99 @@ object OcpcGetPb_pidrealtime {
   }
 
   /*
-  cvr校准系数
+  pid校准系数
    */
-  def OcpcCVRfactor(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
-    val baseDataRaw = getRealtimeData(24, date, hour, spark)
-    baseDataRaw.createOrReplaceTempView("base_data_raw")
+  def udfCalculatePID(kp: Double, ki: Double, kd: Double) = udf((currentError: Double, prevError: Double, lastError: Double) => {
+    var result = kp * (currentError - prevError) + ki * currentError + kd * (currentError - 2.0 * prevError + lastError)
+    result
+  })
 
-    val sqlRequest =
+  def udfCalculateError() = udf((cpagiven: Double, cpareal: Double) => {
+    val result = 1.0 - cpareal / cpagiven
+    result
+  })
+
+  def calculateError(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
+    val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
+
+    baseDataRaw
+      .withColumn("cpagiven", col("bid_ocpc"))
+      .withColumn("cvr_factor", col("price") / (col("cpagiven") * col("exp_cvr")))
+      .createOrReplaceTempView("base_data")
+
+    val sqlRequest1 =
       s"""
          |SELECT
-         |  cast(unitid as string) identifier,
-         |  userid,
+         |  cast(unitid as string) as identifier,
          |  conversion_goal,
          |  media,
-         |  sum(exp_cvr) as total_pre_cvr,
-         |  sum(isclick) as click,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpareal,
+         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven,
+         |  sum(case when isclick=1 then cvr_factor else 0 end) * 1.0 / sum(isclick) as cvr_factor,
          |  sum(iscvr) as cv
          |FROM
-         |  base_data_raw
-         |WHERE
-         |  isclick=1
-         |GROUP BY cast(unitid as string), userid, conversion_goal, media
+         |  base_data
+         |GROUP BY cast(unitid as string), conversion_goal, media
        """.stripMargin
-    println(sqlRequest)
+    val data = spark.sql(sqlRequest1)
 
-    val baseData = spark
-      .sql(sqlRequest)
-      .select("identifier", "userid", "conversion_goal", "media", "total_pre_cvr", "click", "cv")
-      .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
-      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
-      .withColumn("cvr_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
+    val currentError = data
+      .select("identifier", "conversion_goal", "media", "cpareal", "cpagiven", "cvr_factor", "cv")
+      .filter(s"cv > $minCV")
+      .withColumn("error", udfCalculateError()(col("cpagiven"), col("cpareal")))
 
-    val resultDF = baseData
-      .select("identifier", "userid", "conversion_goal", "media", "total_pre_cvr", "click", "cv", "cvr_factor")
-      .withColumn("cvr_factor", udfCheckBound(0.5, 2.0)(col("cvr_factor")))
-      .filter(s"cv > $minCV and cvr_factor is not null")
+    currentError
+  }
 
-    resultDF
+  def OcpcPIDfactor(date: String, hour: String, hourInt: Int, hourDiff: Int, minCV: Int, kp: Double, ki: Double, kd: Double, spark: SparkSession) = {
+    val currentErrorRaw = calculateError(date, hour, hourInt, minCV, spark)
+    val currentError = currentErrorRaw
+      .withColumn("current_error", col("error"))
+      .withColumn("prev_cali", col("cvr_factor"))
+      .select("identifier", "conversion_goal", "media", "prev_cali", "current_error")
+
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourDiff)
+    val yesterday1 = calendar.getTime
+    val tmpDate1 = dateConverter.format(yesterday1)
+    val tmpDateValue1 = tmpDate1.split(" ")
+    val date1 = tmpDateValue1(0)
+    val hour1 = tmpDateValue1(1)
+    val prevErrorRaw = calculateError(date1, hour1, hourInt, minCV, spark)
+    val prevError = prevErrorRaw
+      .withColumn("prev_error", col("error"))
+      .select("identifier", "conversion_goal", "media", "prev_error")
+
+    calendar.add(Calendar.HOUR, -hourDiff)
+    val yesterday2 = calendar.getTime
+    val tmpDate2 = dateConverter.format(yesterday2)
+    val tmpDateValue2 = tmpDate2.split(" ")
+    val date2 = tmpDateValue2(0)
+    val hour2 = tmpDateValue2(1)
+    val lastErrorRaw = calculateError(date2, hour2, hourInt, minCV, spark)
+    val lastError = lastErrorRaw
+      .withColumn("last_error", col("error"))
+      .select("identifier", "conversion_goal", "media", "last_error")
+
+
+    val data = currentError
+      .join(prevError, Seq("identifier", "conversion_goal", "media"), "inner")
+      .join(lastError, Seq("identifier", "conversion_goal", "media"), "inner")
+      .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "prev_cali")
+      .na.fill(0, Seq("prev_cali", "prev_error", "last_error"))
+      .withColumn("increment_value", udfCalculatePID(kp, ki, kd)(col("current_error"), col("prev_error"), col("last_error")))
+      .withColumn("kp", lit(kp))
+      .withColumn("ki", lit(ki))
+      .withColumn("kd", lit(kd))
+      .withColumn("current_cali", col("increment_value") + col("prev_cali"))
+      .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_cali", "prev_cali")
+      .withColumn("cvr_factor", col("current_cali"))
+
+    data
   }
 
 

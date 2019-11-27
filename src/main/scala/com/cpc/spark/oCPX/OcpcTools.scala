@@ -348,6 +348,7 @@ object OcpcTools {
          |  media_appsid,
          |  industry,
          |  conversion_goal,
+         |  price,
          |  date,
          |  hour
          |FROM
