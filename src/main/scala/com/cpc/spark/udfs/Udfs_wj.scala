@@ -96,6 +96,20 @@ object Udfs_wj{
     }
   })
 
+  def udfStringToMapFilter() = udf((valueLog: String) => {
+    var flag = 0
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        if (splits.length == 1) {
+          flag = 1
+        }
+      }
+    }
+    flag
+  })
+
   def udfStringToMapCheck() = udf((valueLog: String) => {
     var result = 0
     if (valueLog != null && valueLog != "") {
