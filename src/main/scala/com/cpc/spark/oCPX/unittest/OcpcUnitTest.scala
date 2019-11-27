@@ -38,7 +38,7 @@ object OcpcUnitTest {
     val baseDataRaw = getBaseData(24, date, hour, spark)
 
     baseDataRaw
-      .repartition(1)
+//      .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191126a")
 
   }
