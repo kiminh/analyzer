@@ -153,6 +153,8 @@ object OcpcGetPb_pidrealtime {
     val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
 
     baseDataRaw
+      .na.fill(0, Seq("hidden_tax"))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("cpagiven", col("bid_ocpc"))
       .withColumn("cvr_factor", col("price") / (col("cpagiven") * col("exp_cvr")))
       .createOrReplaceTempView("base_data")

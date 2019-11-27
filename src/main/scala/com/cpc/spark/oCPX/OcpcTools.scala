@@ -350,6 +350,7 @@ object OcpcTools {
          |  conversion_goal,
          |  price,
          |  hidden_tax,
+         |  bid_ocpc,
          |  date,
          |  hour
          |FROM
