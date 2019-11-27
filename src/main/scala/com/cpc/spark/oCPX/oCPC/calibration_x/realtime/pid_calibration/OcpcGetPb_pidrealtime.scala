@@ -152,10 +152,11 @@ object OcpcGetPb_pidrealtime {
   def calculateError(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
     val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
 
-    // todo filter the null value
+    // todo
+    // filter the null value
     baseDataRaw
       .na.fill(0, Seq("hidden_tax"))
-      .filter(s"bid_ocpc is not null")
+      .filter(s"bid_ocpc is not null") // todo
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("cpagiven", col("bid_ocpc"))
       .withColumn("cvr_factor", col("price") / (col("cpagiven") * col("exp_cvr")))
