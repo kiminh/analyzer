@@ -56,9 +56,9 @@ object SampleTemp {
       .join(defaultideaid,Seq("ideaid"),"left")
       .join(defaultunitid,Seq("unitid"),"left")
       .join(defaultuserid,Seq("userid"),"left")
-      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
-      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
-      .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise("default"))
+      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid").toString()).otherwise("default"))
+      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid").toString()).otherwise("default"))
+      .withColumn("useridnew",when(col("useridtag")===1,col("userid").toString()).otherwise("default"))
       .filter("iscvr is not null")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid","ideaidnew","unitidnew","useridnew")
