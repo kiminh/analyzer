@@ -18,7 +18,7 @@ object SampleTemp {
     val sql =
       s"""
          |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
-         |adslot_id, cast(a.ideaid as string),exp_cvr,cast(unitid as string),cast(userid as string),click_unit_count,conversion_from, hour,a.day,
+         |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,a.day,
          |if(c.iscvr is not null,1,0) iscvr,case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid,
          |case
          |  when user_show_ad_num = 0 then '0'
@@ -56,9 +56,9 @@ object SampleTemp {
       .join(defaultideaid,Seq("ideaid"),"left")
       .join(defaultunitid,Seq("unitid"),"left")
       .join(defaultuserid,Seq("userid"),"left")
-      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid")).otherwise("default"))
-      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise("default"))
-      .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise("default"))
+      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
+      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
+      .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .filter("iscvr is not null")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","click_unit_count","hour","siteid","ideaidnew","unitidnew","useridnew")
