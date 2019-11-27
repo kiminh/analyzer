@@ -147,6 +147,7 @@ object OcpcTools {
       }
       case (_, _) => 0
     }
+    result
   })
 
 
