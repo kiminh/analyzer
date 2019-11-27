@@ -28,8 +28,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
     // 转化数据
     val cvData = getCvLog(date, hour, spark)
@@ -37,8 +37,8 @@ object OcpcQuickLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
   }
@@ -47,7 +47,6 @@ object OcpcQuickLog {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
     val selectCondition1 = s"day = '$date' and hour = '$hour'"
 
     val sqlRequest1 =
@@ -71,8 +70,6 @@ object OcpcQuickLog {
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
          |  $selectCondition1
-         |AND
-         |  $mediaSelection
          |AND
          |  ocpc_step >= 1
          |AND
@@ -113,8 +110,6 @@ object OcpcQuickLog {
          |  dl_cpc.cpc_basedata_adx_event
          |WHERE
          |  $selectCondition2
-         |AND
-         |  $mediaSelection
          |AND
          |  is_ocpc = 1
          |AND
