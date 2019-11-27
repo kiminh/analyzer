@@ -212,6 +212,7 @@ object OcpcTools {
     val clickDataRawNew = mapMediaName(clickDataRaw, spark)
     val clickData = clickDataRawNew
       .withColumn("filter_flag", udfSetFilterFlag()(col("media"), col("date"), col("hour")))
+      .filter(s"filter_flag = 0")
 
 
     // 抽取cv数据
