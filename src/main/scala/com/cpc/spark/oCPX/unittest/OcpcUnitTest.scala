@@ -10,6 +10,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_baseline_others.getBaseDataDelayOther
+import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.getFeatureData
 import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pcoc_calibration.OcpcGetPb_realtime.{OcpcBIDfactor, OcpcCVRfactor, OcpcJFBfactor}
 import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pid_calibration.OcpcGetPb_pidrealtime.{OcpcPIDfactor, calculateError}
 import org.apache.log4j.{Level, Logger}
@@ -36,7 +37,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "realtimev1"
 
-    val baseDataRaw = OcpcPIDfactor(date, hour, hourInt, 1, minCV, 0.1, 0.1, 0.0, spark)
+    val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
 
     baseDataRaw
 //      .repartition(1)
