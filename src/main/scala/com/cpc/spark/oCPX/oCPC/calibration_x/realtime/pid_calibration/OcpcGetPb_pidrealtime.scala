@@ -38,6 +38,8 @@ object OcpcGetPb_pidrealtime {
 
     // 计算pcoc
     val pidData = OcpcPIDfactor(date1, hour1, hourInt, 1, minCV, kp, ki, kd, spark)
+    pidData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_pid_data20191128")
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
