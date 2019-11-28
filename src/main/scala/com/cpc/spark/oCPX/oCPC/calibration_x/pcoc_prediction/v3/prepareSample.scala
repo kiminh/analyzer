@@ -41,7 +41,7 @@ object prepareSample {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part_hourly")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part1_hourly")
   }
 
@@ -58,14 +58,25 @@ object prepareSample {
       .join(data4, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
       .join(data5, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
       .selectExpr("identifier", "media", "conversion_goal", "conversion_from", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72")
-      .withColumn("feature_list", udfAggregateFeature()(col("pcoc6"), col("pcoc12"), col("pcoc24"), col("pcoc48"), col("pcoc72"), col("cv6"), col("cv12"), col("cv24"), col("cv48"), col("cv72")))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list")
+      .withColumn("double_feature_list", udfDoubleFeatures()(col("pcoc6"), col("pcoc12"), col("pcoc24"), col("pcoc48"), col("pcoc72"), col("cv6"), col("cv12"), col("cv24"), col("cv48"), col("cv72")))
+      .withColumn("string_feature_list", udfStringFeatures()(col("cv6"), col("cv12"), col("cv24"), col("cv48"), col("cv72")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list")
 
     result
   }
 
   def udfAggregateFeature() = udf((value1: Double, value2: Double, value3: Double, value4: Double, value5: Double, value6: Double, value7: Double, value8: Double, value9: Double, value10: Double) => {
     val result = Array(value1, value2, value3, value4, value5, value6, value7, value8, value9, value10)
+    result
+  })
+
+  def udfDoubleFeatures() = udf((value1: Double, value2: Double, value3: Double, value4: Double, value5: Double) => {
+    val result = Array(value1, value2, value3, value4, value5)
+    result
+  })
+
+  def udfStringFeatures() = udf((value1: String, value2: String, value3: String, value4: String, value5: String) => {
+    val result = Array(value1, value2, value3, value4, value5)
     result
   })
 
@@ -200,8 +211,8 @@ object prepareSample {
     val data = spark
       .sql(sqlRequest)
       .withColumn("pcoc" + outputCol, col("pre_cvr") * 1.0 / col("post_cvr"))
-      .filter(s"cv > $minCV")
-      .withColumn("cv" + outputCol, col("cv"))
+      .filter(s"cv > 0")
+      .withColumn("cv" + outputCol, when(col("cv") > minCV, "1").otherwise("0"))
       .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc" + outputCol, "cv" + outputCol)
 
     data
