@@ -39,7 +39,11 @@ object OcpcGetPb_pidrealtime {
     // 计算pcoc
     val pidData = OcpcPIDfactor(date1, hour1, hourInt, 1, minCV, kp, ki, kd, spark)
     pidData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pid_data20191128")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
+      .write.mode("overwrite").insertInto("test.ocpc_realtime_pid_parameters_hourly")
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
@@ -60,8 +64,8 @@ object OcpcGetPb_pidrealtime {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 //
 
   }
