@@ -35,7 +35,7 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour, hourInt=$hourInt")
 
     val version = "ocpctest"
-    val expTag = "realtimev1"
+    val expTag = "v3"
 
     val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
 
