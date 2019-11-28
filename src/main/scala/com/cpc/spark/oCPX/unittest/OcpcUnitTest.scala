@@ -42,7 +42,7 @@ object OcpcUnitTest {
 
     baseDataRaw
 //      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127d")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127e")
 
   }
 
