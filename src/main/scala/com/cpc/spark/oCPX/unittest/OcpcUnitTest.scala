@@ -38,7 +38,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v3"
 
-    val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
+    val baseDataRaw = getBaseDataDelayOther(hourInt, date, hour, spark)
 
     baseDataRaw
 //      .repartition(1)

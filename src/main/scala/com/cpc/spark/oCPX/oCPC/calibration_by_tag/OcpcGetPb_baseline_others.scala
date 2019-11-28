@@ -236,6 +236,7 @@ object OcpcGetPb_baseline_others {
          |  exptags,
          |  ocpc_expand,
          |  hidden_tax,
+         |  (case when cvr_model_name = 'qtt-cvr-dnn-rawid-v5-media' then 1 else 0 end) as filter_flag, // todo
          |  date,
          |  hour
          |FROM
