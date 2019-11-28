@@ -48,12 +48,16 @@ object prepareTrainingSample {
       .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
       .withColumn("hour_diff", lit(4))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "date", "hour", "hour_diff")
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191128a")
 
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
       .withColumn("label", col("pcoc"))
       .filter("label is not null")
       .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191128b")
 
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
