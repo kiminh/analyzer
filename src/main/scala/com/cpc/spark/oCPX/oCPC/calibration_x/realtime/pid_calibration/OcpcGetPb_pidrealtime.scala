@@ -239,6 +239,9 @@ object OcpcGetPb_pidrealtime {
       .withColumn("current_cali", col("increment_value") + col("prev_cali"))
       .select("identifier", "conversion_goal", "media", "current_error", "prev_error", "last_error", "kp", "ki", "kd", "increment_value", "current_cali", "prev_cali")
       .withColumn("cvr_factor", col("current_cali"))
+      .cache()
+
+    data.show(10)
 
     data
   }
