@@ -43,7 +43,8 @@ object OcpcGetPb_pidrealtime {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_realtime_pid_parameters_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_realtime_pid_parameters_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_realtime_pid_parameters_hourly")
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
