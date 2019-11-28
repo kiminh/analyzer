@@ -10,6 +10,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
 import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_baseline_others.getBaseDataDelayOther
+import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.getFeatureData
 import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pcoc_calibration.OcpcGetPb_realtime.{OcpcBIDfactor, OcpcCVRfactor, OcpcJFBfactor}
 import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pid_calibration.OcpcGetPb_pidrealtime.{OcpcPIDfactor, calculateError}
@@ -37,7 +38,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v3"
 
-    val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
+    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
 
     baseDataRaw
 //      .repartition(1)
