@@ -252,6 +252,7 @@ object OcpcGetPb_baseline_others {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
+      .filter(s"filter_flag = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media == 'others'")
