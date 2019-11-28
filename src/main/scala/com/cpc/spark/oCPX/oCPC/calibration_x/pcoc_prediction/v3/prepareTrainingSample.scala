@@ -58,11 +58,16 @@ object prepareTrainingSample {
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
-      .withColumn("string_feature_list", concat(col("string_feature_list"), col("hour")))
+      .withColumn("string_feature_list", udfStringListAppend()(col("string_feature_list"), col("hour")))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "label", "hour_diff")
 
     data
   }
+
+  def udfStringListAppend() = udf((arrayCol: Array[String], itemCol: String) => {
+    val result = arrayCol :+ itemCol
+    result
+  })
 
   def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
     // 取历史数据
