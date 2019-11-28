@@ -38,11 +38,11 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v3"
 
-    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
+    val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
 
     baseDataRaw
 //      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127c")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127d")
 
   }
 
