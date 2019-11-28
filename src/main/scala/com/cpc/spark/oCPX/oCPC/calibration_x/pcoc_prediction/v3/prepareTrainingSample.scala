@@ -39,15 +39,15 @@ object prepareTrainingSample {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
   }
 
   def assemblySample(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
     val data1 = dataRaw1
       .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
       .withColumn("hour_diff", lit(4))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "date", "hour", "hour_diff")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "date", "hour", "hour_diff")
 
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
@@ -56,19 +56,13 @@ object prepareTrainingSample {
       .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
 
     val data = data1
-      .select("identifier", "media", "conversion_goal", "conversion_from", "feature_list", "time", "hour_diff")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
-      .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
-      .withColumn("double_feature_list", col("feature_list"))
+      .withColumn("string_feature_list", concat(col("string_feature_list"), array(col("hour"))))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "label", "hour_diff")
 
     data
   }
-
-  def udfStringFeatures() = udf((hr: String) => {
-    val result = Array(hr)
-    result
-  })
 
   def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
     // 取历史数据
@@ -104,7 +98,7 @@ object prepareTrainingSample {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pcoc_sample_part1_hourly
+         |  dl_cpc.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  $selectCondition
          |AND
