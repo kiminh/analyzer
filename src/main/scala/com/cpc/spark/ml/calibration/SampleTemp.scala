@@ -42,13 +42,13 @@ object SampleTemp {
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    val defaultideaid = data.filter("day='2019-11-16'").groupBy("ideaid").count()
+    val defaultideaid = data.filter("day='2019-11-27'").groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>=10,1).otherwise(0))
       .filter("ideaidtag=1")
-    val defaultunitid = data.filter("day='2019-11-16'").groupBy("unitid").count()
+    val defaultunitid = data.filter("day='2019-11-27'").groupBy("unitid").count()
       .withColumn("unitidtag",when(col("count")>=10,1).otherwise(0))
       .filter("unitidtag=1")
-    val defaultuserid = data.filter("day='2019-11-16'").groupBy("userid").count()
+    val defaultuserid = data.filter("day='2019-11-27'").groupBy("userid").count()
       .withColumn("useridtag",when(col("count")>=10,1).otherwise(0))
       .filter("useridtag=1")
 
