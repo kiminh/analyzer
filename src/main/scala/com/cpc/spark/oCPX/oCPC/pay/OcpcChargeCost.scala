@@ -54,7 +54,7 @@ object OcpcChargeCost {
          |  bid_ocpc as cpagiven,
          |  0 as is_hidden
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.cpc_basedata_union_events
          |WHERE
          |  `date` = '$date'
          |AND
