@@ -26,14 +26,16 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v3"
 
-    val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
+    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
 
     val data = baseDataRaw
-      .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
-      .withColumn("hour_diff", lit(4))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "date", "hour", "hour_diff")
+      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+      .withColumn("label", col("pcoc"))
+      .filter("label is not null")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
+
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129b")
 
   }
 
