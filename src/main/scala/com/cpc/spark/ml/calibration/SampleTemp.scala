@@ -37,7 +37,7 @@ object SampleTemp {
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
          |  from dl_cpc.ocpc_quick_cv_log
-         |  where  `date` in ('2019-11-16','2019-11-17')) c
+         |  where  `date` in ('2019-11-27','2019-11-28')) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
              """.stripMargin
     println(sql)
