@@ -40,9 +40,9 @@ object pcocModel {
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-    result
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129b")
+//    result
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129b")
 
     val resultDF = extracePredictData(result, hourDiff, spark)
     resultDF
@@ -51,8 +51,8 @@ object pcocModel {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
