@@ -68,8 +68,8 @@ object prepareTrainingSample {
     data
   }
 
-  def udfStringListAppend() = udf((arrayCol: Array[String], itemCol: String) => {
-    val result = arrayCol :+ itemCol
+  def udfStringListAppend() = udf((arrayCol: Seq[String], itemCol: String) => {
+    val result = arrayCol ++ Array(itemCol)
     result
   })
 
