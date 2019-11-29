@@ -30,9 +30,9 @@ object SampleTemp {
          |from
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
-         |  where day in ('2019-11-16','2019-11-17')
+         |  where day in ('2019-11-27','2019-11-28')
          |  and media_appsid in ('80000001','80000002')
-         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v1wzjf-ldy"
+         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v1wzjfgoal"
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
