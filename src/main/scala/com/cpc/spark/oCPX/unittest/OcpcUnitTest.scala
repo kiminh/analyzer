@@ -29,7 +29,7 @@ object OcpcUnitTest {
     val baseDataRaw = getFeatureData(date, hour, hourInt, version, expTag, spark)
 
     baseDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191127e")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191128a")
 
   }
 
