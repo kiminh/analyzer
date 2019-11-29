@@ -40,19 +40,19 @@ object pcocModel {
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-//    result
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
-
-    val resultDF = extracePredictData(result, hourDiff, spark)
-    resultDF
+    result
       .repartition(1)
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .withColumn("exp_tag", lit(expTag))
-//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129a")
+
+//    val resultDF = extracePredictData(result, hourDiff, spark)
+//    resultDF
+//      .repartition(1)
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .withColumn("exp_tag", lit(expTag))
+////      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
@@ -96,7 +96,7 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pcoc_sample_part1_hourly
+         |  dl_cpc.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  date = '$date'
          |AND
@@ -109,13 +109,19 @@ object pcocModel {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .withColumn("avg_pcoc", col("feature_list").getItem(0))
-      .withColumn("diff1_pcoc", col("feature_list").getItem(1))
-      .withColumn("diff2_pcoc", col("feature_list").getItem(2))
-      .withColumn("recent_pcoc", col("feature_list").getItem(3))
+      .withColumn("pcoc6", col("double_feature_list").getItem(0))
+      .withColumn("pcoc12", col("double_feature_list").getItem(1))
+      .withColumn("pcoc24", col("double_feature_list").getItem(2))
+      .withColumn("pcoc48", col("double_feature_list").getItem(3))
+      .withColumn("pcoc72", col("double_feature_list").getItem(4))
+      .withColumn("cv6", col("string_feature_list").getItem(0))
+      .withColumn("cv12", col("string_feature_list").getItem(1))
+      .withColumn("cv24", col("string_feature_list").getItem(2))
+      .withColumn("cv48", col("string_feature_list").getItem(3))
+      .withColumn("cv72", col("string_feature_list").getItem(4))
       .withColumn("hour", lit(hour1))
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour", "time")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "hour", "time", "double_feature_list", "string_feature_list")
       .cache()
 
     data.show(10)
@@ -150,19 +156,37 @@ object pcocModel {
     val mediaEncoder = new OneHotEncoder().setInputCol("media_index").setOutputCol("media_vec")
     stagesArray.append(mediaEncoder)
 
-//    one-hot for conversion_goal
-    val conversionGoalIndexer = new StringIndexer().setInputCol("conversion_goal").setOutputCol("conversion_goal_index")
-    stagesArray.append(conversionGoalIndexer)
-    val conversionGoalEncoder = new OneHotEncoder().setInputCol("conversion_goal_index").setOutputCol("conversion_goal_vec")
-    stagesArray.append(conversionGoalEncoder)
+//    one-hot for cv6
+    val cv6Indexer = new StringIndexer().setInputCol("cv6").setOutputCol("cv6_index")
+    stagesArray.append(cv6Indexer)
+    val cv6Encoder = new OneHotEncoder().setInputCol("cv6_index").setOutputCol("cv6_vec")
+    stagesArray.append(cv6Encoder)
 
-//    one-hot for conversion_from
-    val conversionFromIndexer = new StringIndexer().setInputCol("conversion_from").setOutputCol("conversion_from_index")
-    stagesArray.append(conversionFromIndexer)
-    val conversionFromEncoder = new OneHotEncoder().setInputCol("conversion_from_index").setOutputCol("conversion_from_vec")
-    stagesArray.append(conversionFromEncoder)
+//    one-hot for cv12
+    val cv12Indexer = new StringIndexer().setInputCol("cv12").setOutputCol("cv12_index")
+    stagesArray.append(cv12Indexer)
+    val cv12Encoder = new OneHotEncoder().setInputCol("cv12_index").setOutputCol("cv12_vec")
+    stagesArray.append(cv12Encoder)
 
-    val featureArray = Array("identifier_vec", "media_vec", "conversion_goal_vec", "conversion_from_vec", "hour_vec", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
+//    one-hot for cv24
+    val cv24Indexer = new StringIndexer().setInputCol("cv24").setOutputCol("cv24_index")
+    stagesArray.append(cv24Indexer)
+    val cv24Encoder = new OneHotEncoder().setInputCol("cv24_index").setOutputCol("cv24_vec")
+    stagesArray.append(cv24Encoder)
+
+//    one-hot for cv48
+    val cv48Indexer = new StringIndexer().setInputCol("cv48").setOutputCol("cv48_index")
+    stagesArray.append(cv48Indexer)
+    val cv48Encoder = new OneHotEncoder().setInputCol("cv48_index").setOutputCol("cv48_vec")
+    stagesArray.append(cv48Encoder)
+
+//    one-hot for cv72
+    val cv72Indexer = new StringIndexer().setInputCol("cv72").setOutputCol("cv72_index")
+    stagesArray.append(cv72Indexer)
+    val cv72Encoder = new OneHotEncoder().setInputCol("cv72_index").setOutputCol("cv72_vec")
+    stagesArray.append(cv72Encoder)
+
+    val featureArray = Array("identifier_vec", "media_vec", "hour_vec", "cv6_vec", "cv12_vec", "cv24_vec", "cv48_vec", "cv72_vec", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72")
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
 
@@ -189,11 +213,9 @@ object pcocModel {
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
     val predictions = lrModel
-      .transform(predictData)
-      .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
-      .withColumn("double_feature_list", udfDoubleFeatures()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc")))
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction", "label")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
+      .transform(dataset)
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "features", "double_feature_list", "string_feature_list", "prediction", "label")
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
       .cache()
 
     predictions.show(10)
@@ -213,12 +235,18 @@ object pcocModel {
   def parseFeatures(rawData: DataFrame, spark: SparkSession) = {
 //    udfAggregateFeature()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc"))
     val dataRaw = rawData
-      .withColumn("avg_pcoc", col("double_feature_list").getItem(0))
-      .withColumn("diff1_pcoc", col("double_feature_list").getItem(1))
-      .withColumn("diff2_pcoc", col("double_feature_list").getItem(2))
-      .withColumn("recent_pcoc", col("double_feature_list").getItem(3))
-      .withColumn("hour", col("string_feature_list").getItem(0))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "hour", "label")
+      .withColumn("pcoc6", col("double_feature_list").getItem(0))
+      .withColumn("pcoc12", col("double_feature_list").getItem(1))
+      .withColumn("pcoc24", col("double_feature_list").getItem(2))
+      .withColumn("pcoc48", col("double_feature_list").getItem(3))
+      .withColumn("pcoc72", col("double_feature_list").getItem(4))
+      .withColumn("cv6", col("string_feature_list").getItem(0))
+      .withColumn("cv12", col("string_feature_list").getItem(1))
+      .withColumn("cv24", col("string_feature_list").getItem(2))
+      .withColumn("cv48", col("string_feature_list").getItem(3))
+      .withColumn("cv72", col("string_feature_list").getItem(4))
+      .withColumn("hour", col("string_feature_list").getItem(5))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "hour", "label", "double_feature_list", "string_feature_list")
 
     dataRaw
   }
@@ -250,7 +278,7 @@ object pcocModel {
 
     // 数据关联
     val data = dataRaw
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "label", "double_feature_list", "string_feature_list")
 
     data
   }
@@ -264,7 +292,7 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pcoc_sample_hourly
+         |  test.ocpc_pcoc_sample_hourly
          |WHERE
          |  $selectCondition
          |AND
