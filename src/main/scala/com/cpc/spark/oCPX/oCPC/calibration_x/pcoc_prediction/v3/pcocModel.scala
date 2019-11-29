@@ -69,7 +69,7 @@ object pcocModel {
          |  $hourDiff as hour_diff,
          |  double_feature_list,
          |  string_feature_list,
-         |  avg_pcoc,
+         |  pcoc24 as avg_pcoc,
          |  prediction as pred_pcoc
          |FROM
          |  raw_data
