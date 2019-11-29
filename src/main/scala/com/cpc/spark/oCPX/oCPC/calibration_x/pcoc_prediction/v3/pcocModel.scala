@@ -44,14 +44,14 @@ object pcocModel {
       .repartition(1)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129a")
 
-//    val resultDF = extracePredictData(result, hourDiff, spark)
-//    resultDF
-//      .repartition(1)
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .withColumn("exp_tag", lit(expTag))
-////      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+    val resultDF = extracePredictData(result, hourDiff, spark)
+    resultDF
+      .repartition(1)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
@@ -96,7 +96,7 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pcoc_sample_part_hourly
+         |  test.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  date = '$date'
          |AND
