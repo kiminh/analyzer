@@ -51,16 +51,18 @@ object OcpcChargeCost {
          |  conversion_goal,
          |  isclick,
          |  price,
-         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
+         |  bid_ocpc as cpagiven,
+         |  0 as is_hidden
          |FROM
-         |  dl_cpc.ocpc_filter_unionlog
+         |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  `date` = '$date'
          |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
+         |AND
+         |  ocpc_status = 2
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark
