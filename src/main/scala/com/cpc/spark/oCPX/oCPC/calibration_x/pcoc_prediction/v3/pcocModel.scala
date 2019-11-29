@@ -42,7 +42,7 @@ object pcocModel {
 
     result
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129b")
 
     val resultDF = extracePredictData(result, hourDiff, spark)
     resultDF
@@ -213,9 +213,9 @@ object pcocModel {
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
     val predictions = lrModel
-      .transform(dataset)
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "features", "double_feature_list", "string_feature_list", "prediction", "label")
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
+      .transform(predictData)
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "features", "double_feature_list", "string_feature_list", "prediction", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "features", "double_feature_list", "string_feature_list", "prediction")
       .cache()
 
     predictions.show(10)
