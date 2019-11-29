@@ -56,7 +56,7 @@ object OcpcChargeCost {
          |FROM
          |  dl_cpc.cpc_basedata_union_events
          |WHERE
-         |  `date` = '$date'
+         |  `day` = '$date'
          |AND
          |  is_ocpc = 1
          |AND
