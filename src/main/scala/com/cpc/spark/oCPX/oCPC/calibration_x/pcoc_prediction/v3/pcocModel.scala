@@ -96,7 +96,7 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_pcoc_sample_part_hourly
+         |  dl_cpc.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  date = '$date'
          |AND
@@ -292,7 +292,7 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_pcoc_sample_hourly
+         |  dl_cpc.ocpc_pcoc_sample_hourly
          |WHERE
          |  $selectCondition
          |AND
