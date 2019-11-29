@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour}
+import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -26,18 +26,29 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v3"
 
-    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
+//    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
+//
+//    val data = baseDataRaw
+//      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+//      .withColumn("label", col("pcoc"))
+//      .filter("label is not null")
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
+//
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129b")
+////    data
+////      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129a")
+    val data1 = spark.table("test.check_ocpc_data20191129a")
+    val data2 = spark.table("test.check_ocpc_data20191129b")
 
-    val data = baseDataRaw
-      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-      .withColumn("label", col("pcoc"))
-      .filter("label is not null")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
+    val data = data1
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
+      .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
+      .withColumn("string_feature_list", udfStringListAppend()(col("string_feature_list"), col("hour")))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "label", "hour_diff")
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129b")
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129c")
 
   }
 
