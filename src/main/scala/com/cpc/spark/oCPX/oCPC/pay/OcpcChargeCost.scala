@@ -33,8 +33,8 @@ object OcpcChargeCost {
 
     resultDF
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
 
 
   }
