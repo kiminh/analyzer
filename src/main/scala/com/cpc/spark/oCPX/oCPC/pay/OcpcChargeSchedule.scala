@@ -45,8 +45,8 @@ object OcpcChargeSchedule {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_pay_cnt_daily_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_cnt_daily_v2")
 
 
 
@@ -122,7 +122,7 @@ object OcpcChargeSchedule {
       s"""
          |SELECT
          |  unitid,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  0 as is_hidden,
          |  media_appsid,
          |  adslot_type,
          |  adclass,
