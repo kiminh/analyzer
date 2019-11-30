@@ -28,8 +28,8 @@ object OcpcCompensateBackup {
       .withColumn("date", lit(date))
       .repartition(10)
 //      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_backup_daily20191130")
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_backup_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_backup_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_backup_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_backup_daily")
 
 
   }
