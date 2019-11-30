@@ -28,8 +28,8 @@ object OcpcCompensateBackup {
       .withColumn("date", lit(date))
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.ocpc_compensate_backup_daily20191130")
-//      .write.mode("overwrite").insertInto("test.ocpc_pay_single_date_daily_v2")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pay_single_date_daily_v2")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_backup_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_backup_daily")
 
 
   }
@@ -41,15 +41,18 @@ object OcpcCompensateBackup {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, cpc_flag, logic_version, create_time FROM ocpc_compensate) as tmp"
+    val table = "(SELECT unit_id as unitid, user_id as userid, compensate_key, ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, cpc_flag, logic_version, create_time FROM ocpc_compensate) as tmp"
 
-    val resultDF = spark.read.format("jdbc")
+    val data = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
       .option("user", user)
       .option("password", passwd)
       .option("dbtable", table)
       .load()
+
+    val resultDF = data
+        .selectExpr("unitid", "userid", "compensate_key", "cast(ocpc_charge_time as string) ocpc_charge_time", "cost", "conversion", "cpareal", "cpagiven", "pay", "cpc_flag", "logic_version", "cast(create_time as string) as create_time")
 
     resultDF.show(10)
     resultDF
