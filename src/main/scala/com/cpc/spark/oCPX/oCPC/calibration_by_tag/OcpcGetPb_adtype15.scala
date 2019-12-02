@@ -57,63 +57,48 @@ object OcpcGetPb_adtype15 {
       .cache()
     pcocData.show(10)
 
-//    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
-//    val bidFactorData = bidFactorDataRaw
-//      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
-//      .cache()
-//    bidFactorData.show(10)
-//
-//    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
-//    data.show(10)
-//
-//    dataRaw1.unpersist()
-//    dataRaw2.unpersist()
-//    dataRaw3.unpersist()
-//    // 明投单元
-//    val resultUnhidden = data
-//      .withColumn("cpagiven", lit(1.0))
-//      .withColumn("is_hidden", lit(0))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//    // 暗投单元
-//    val hiddenUnits = getCPAgiven(spark)
-//    val resultHidden = data
-//      .join(hiddenUnits, Seq("unitid"), "inner")
-//      .withColumn("is_hidden", lit(1))
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//
-//    val resultDF = resultUnhidden
-//      .union(resultHidden)
-//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-//
-//    resultDF
-//      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+    val bidFactorData = bidFactorDataRaw
+      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+      .cache()
+    bidFactorData.show(10)
+
+    val data = assemblyData(jfbData, pcocData, spark).cache()
+    data.show(10)
+
+    dataRaw.unpersist()
+
+    // 明投单元
+    val resultDF = data
+      .withColumn("cpagiven", lit(1.0))
+      .withColumn("is_hidden", lit(0))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
 
 
-  def assemblyData(jfbData: DataFrame, smoothData: DataFrame, pcocData: DataFrame, bidFactorData: DataFrame, spark: SparkSession) = {
+  def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = jfbData
       .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(smoothData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .join(bidFactorData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
-      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
+      .withColumn("high_bid_factor", lit(1.0))
+      .withColumn("low_bid_factor", lit(1.0))
+      .withColumn("post_cvr", lit(0.0))
+      .withColumn("smooth_factor", lit(0.0))
+      .na.fill(1.0, Seq("jfb_factor", "cvr_factor"))
 
     data
-
   }
 
   /*
