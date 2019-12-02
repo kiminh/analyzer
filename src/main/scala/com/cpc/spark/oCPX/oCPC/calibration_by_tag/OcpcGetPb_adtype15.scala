@@ -1,10 +1,15 @@
 package com.cpc.spark.oCPX.oCPC.calibration_by_tag
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.oCPX.OcpcTools.{getBaseData, getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcBIDfactor._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2._
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
+//import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2._
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcSmoothfactorV2._
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -33,75 +38,72 @@ object OcpcGetPb_adtype15 {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
-    // 计算jfb_factor,cvr_factor,post_cvr
-    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
-    dataRaw1.show(10)
-    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt2, spark).cache()
-    dataRaw2.show(10)
-    val dataRaw3 = OcpcCalibrationBaseMain(date, hour, hourInt3, spark).cache()
-    dataRaw3.show(10)
+    // 基础数据
+    val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
+    dataRaw.show(10)
 
-    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
-    val jfbData = jfbDataRaw
-      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
-      .cache()
-    jfbData.show(10)
-
-    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
-    val smoothData = smoothDataRaw
-      .withColumn("post_cvr", col("cvr"))
-      .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
-      .cache()
-    smoothData.show(10)
-
-    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
-    val pcocData = pcocDataRaw
-      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
-      .cache()
-    pcocData.show(10)
-
-    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
-    val bidFactorData = bidFactorDataRaw
-      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
-      .cache()
-    bidFactorData.show(10)
-
-    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
-    data.show(10)
-
-    dataRaw1.unpersist()
-    dataRaw2.unpersist()
-    dataRaw3.unpersist()
-    // 明投单元
-    val resultUnhidden = data
-      .withColumn("cpagiven", lit(1.0))
-      .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-    // 暗投单元
-    val hiddenUnits = getCPAgiven(spark)
-    val resultHidden = data
-      .join(hiddenUnits, Seq("unitid"), "inner")
-      .withColumn("is_hidden", lit(1))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-
-    val resultDF = resultUnhidden
-      .union(resultHidden)
-      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-    resultDF
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//    // 计费比系数模块
+//    val jfbDataRaw = OcpcJFBfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+//    val jfbData = jfbDataRaw
+//      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
+//      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
+//      .cache()
+//    jfbData.show(10)
+//
+//    val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+//    val smoothData = smoothDataRaw
+//      .withColumn("post_cvr", col("cvr"))
+//      .select("unitid", "conversion_goal", "exp_tag", "post_cvr", "smooth_factor")
+//      .cache()
+//    smoothData.show(10)
+//
+//    val pcocDataRaw = OcpcCVRfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
+//    val pcocData = pcocDataRaw
+//      .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
+//      .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
+//      .cache()
+//    pcocData.show(10)
+//
+//    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
+//    val bidFactorData = bidFactorDataRaw
+//      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
+//      .cache()
+//    bidFactorData.show(10)
+//
+//    val data = assemblyData(jfbData, smoothData, pcocData, bidFactorData, spark).cache()
+//    data.show(10)
+//
+//    dataRaw1.unpersist()
+//    dataRaw2.unpersist()
+//    dataRaw3.unpersist()
+//    // 明投单元
+//    val resultUnhidden = data
+//      .withColumn("cpagiven", lit(1.0))
+//      .withColumn("is_hidden", lit(0))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//    // 暗投单元
+//    val hiddenUnits = getCPAgiven(spark)
+//    val resultHidden = data
+//      .join(hiddenUnits, Seq("unitid"), "inner")
+//      .withColumn("is_hidden", lit(1))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//
+//    val resultDF = resultUnhidden
+//      .union(resultHidden)
+//      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//    resultDF
+//      .repartition(1)
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -121,24 +123,155 @@ object OcpcGetPb_adtype15 {
 
   }
 
-  def getCPAgiven(spark: SparkSession) = {
+  /*
+  基础数据
+   */
+  def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    /*
+    动态计算alpha平滑系数
+    1. 基于原始pcoc，计算预测cvr的量纲系数
+    2. 二分搜索查找到合适的平滑系数
+     */
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    // 计算结果
+    val resultDF = calculateParameter(baseData, spark)
+
+
+    resultDF
+  }
+
+  def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
+    val data  =rawData
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media", "date", "hour")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv"),
+        avg(col("bid")).alias("acb"),
+        avg(col("price")).alias("acp"),
+        avg(col("exp_cvr")).alias("pre_cvr")
+      )
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour")
+
+    data
+  }
+
+  /*
+  计费比系数模块
+   */
+  def OcpcJFBfactorMain(date: String, hour: String, expTag: String, dataRaw: DataFrame, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
+    // smooth实验配置文件
+    // min_cv:配置文件中如果为负数或空缺，则用默认值0，其他情况使用设定值
+    // smooth_factor：配置文件中如果为负数或空缺，则用默认值(由udfSelectSmoothFactor函数决定)，其他情况使用设定值
+    val expConf = getJfbExpConf(spark)
+
+//    val data1 = dataRaw1
+//      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+//      .withColumn("media", udfMediaName()(col("media")))
+//      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+//      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+//      .na.fill(0, Seq("min_cv"))
+//      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+//      .filter(s"cv > 0")
+//    data1.show(10)
+//
+//    val data2 = dataRaw2
+//      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+//      .withColumn("media", udfMediaName()(col("media")))
+//      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+//      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+//      .na.fill(0, Seq("min_cv"))
+//      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+//      .filter(s"cv > 0")
+//    data2.show(10)
+//
+//    val data3 = dataRaw3
+//      .withColumn("jfb", col("acp") * 1.0 / col("acb"))
+//      .withColumn("media", udfMediaName()(col("media")))
+//      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+//      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
+//      .na.fill(0, Seq("min_cv"))
+//      .withColumn("min_cv", udfSetMinCV()(col("min_cv")))
+//      .filter(s"cv > 0")
+//    data3.show(10)
+//
+//
+//    // 计算最终值
+//    val calibration1 = calculateCalibrationValue(data1, data2, spark)
+//    val calibrationNew = data3
+//      .withColumn("jfb_new", col("jfb"))
+//      .select("unitid", "conversion_goal", "exp_tag", "jfb_new")
+//
+//    val calibration = calibrationNew
+//      .join(calibration1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+//      .withColumn("jfb", when(col("jfb3").isNotNull, col("jfb3")).otherwise(col("jfb_new")))
+//      .cache()
+//
+//    calibration.show(10)
+//    //    calibration
+//    //      .repartition(10).write.mode("overwrite").saveAsTable("test.check_jfb_factor20190723a")
+//
+//    val resultDF = calibration
+//      .withColumn("version", lit(version))
+//      .select("unitid", "conversion_goal", "exp_tag", "version", "jfb")
+//
+//
+//    resultDF
+  }
+
+  def getJfbExpConf(spark: SparkSession) ={
+    // 从配置文件读取数据
+    val conf = ConfigFactory.load("ocpc")
+    val confPath = conf.getString("exp_config_v2.jfb_factor")
+    val rawData = spark.read.format("json").json(confPath)
+    val data = rawData
+      .groupBy("exp_tag", "conversion_goal")
+      .agg(min(col("min_cv")).alias("min_cv"))
+      .distinct()
+
+    println("jfb factor: config")
+    data.show(10)
+
+    data
+  }
+
+  def getDataByTimeSpan(dataRaw: DataFrame, date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    dataRaw.createOrReplaceTempView("raw_data")
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid,
-         |  avg(cpa) as cpagiven
+         |  *
          |FROM
-         |  test.ocpc_auto_budget_hourly
+         |  raw_data
          |WHERE
-         |  industry in ('wzcp')
-         |GROUP BY unitid
-       """.stripMargin
+         |  $selectCondition
+         |""".stripMargin
     println(sqlRequest)
-    val result = spark.sql(sqlRequest).cache()
-    result.show(10)
-    result
-  }
+    val data = spark.sql(sqlRequest)
 
+    data
+  }
 
 
 }

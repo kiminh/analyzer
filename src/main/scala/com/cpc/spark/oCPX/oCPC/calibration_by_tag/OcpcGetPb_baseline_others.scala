@@ -210,7 +210,6 @@ object OcpcGetPb_baseline_others {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
-    // todo
     val sqlRequest =
       s"""
          |SELECT
@@ -237,7 +236,6 @@ object OcpcGetPb_baseline_others {
          |  exptags,
          |  ocpc_expand,
          |  hidden_tax,
-         |  (case when cvr_model_name = 'qtt-cvr-dnn-rawid-v5-media' then 1 else 0 end) as filter_flag,
          |  date,
          |  hour
          |FROM
@@ -252,7 +250,6 @@ object OcpcGetPb_baseline_others {
     println(sqlRequest)
     val clickData = spark
       .sql(sqlRequest)
-      .filter(s"filter_flag = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"media == 'others'")
