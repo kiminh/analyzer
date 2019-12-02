@@ -289,7 +289,7 @@ object OcpcGetPb_adtype15 {
          |  unitid,
          |  conversion_goal,
          |  exp_tag,
-         |  jfb,
+         |  pcoc,
          |  priority,
          |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority) as seq
          |FROM
