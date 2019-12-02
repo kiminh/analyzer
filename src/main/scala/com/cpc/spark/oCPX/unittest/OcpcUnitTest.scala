@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.OcpcCalibrationBase
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCalibrationBase, getDataByTimeSpan}
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
 import org.apache.log4j.{Level, Logger}
@@ -31,11 +31,12 @@ object OcpcUnitTest {
     val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
 
     val dataRaw2 = OcpcCalibrationBase(date, hour, hourInt1, spark).cache()
+    val data2  = getDataByTimeSpan(dataRaw2, date, hour, hourInt1, spark)
 
     dataRaw1
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191202a")
 
-    dataRaw2
+    data2
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191202b")
 
   }
