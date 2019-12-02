@@ -32,7 +32,7 @@ object SampleTemp {
          |  dl_cpc.cvr_calibration_sample_all
          |  where day in ('2019-11-27','2019-11-28')
          |  and media_appsid in ('80000001','80000002')
-         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v1wzjfgoal"
+         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v5conv5"
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
@@ -69,7 +69,7 @@ object SampleTemp {
       .collect()
 
 
-    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-2.csv"),
+    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-3.csv"),
       "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001click_unit_count\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
