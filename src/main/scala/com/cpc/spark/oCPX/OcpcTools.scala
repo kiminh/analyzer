@@ -209,11 +209,7 @@ object OcpcTools {
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
 
     // 清除米读异常数据
-    val clickDataRawNew = mapMediaName(clickDataRaw, spark)
-    val clickData = clickDataRawNew
-      .withColumn("filter_flag", udfSetFilterFlag()(col("media"), col("date"), col("hour")))
-      .filter(s"filter_flag = 0")
-
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =

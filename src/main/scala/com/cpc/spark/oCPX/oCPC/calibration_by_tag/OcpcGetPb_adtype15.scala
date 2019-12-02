@@ -319,12 +319,15 @@ object OcpcGetPb_adtype15 {
          |  exp_tag,
          |  jfb,
          |  priority,
-         |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority desc) as seq
+         |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority) as seq
          |FROM
          |  base_data
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
+
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_jfb_data20191202a")
 
     val resultDF = data
         .filter(s"seq = 1")
