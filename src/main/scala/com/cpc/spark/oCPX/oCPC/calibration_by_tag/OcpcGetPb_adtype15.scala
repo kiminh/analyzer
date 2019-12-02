@@ -48,12 +48,6 @@ object OcpcGetPb_adtype15 {
       .cache()
     jfbData.show(10)
 
-//    val dataRawOnlySmooth1 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt1, spark).cache()
-//    dataRawOnlySmooth1.show(10)
-//    val dataRawOnlySmooth2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt2, spark).cache()
-//    dataRawOnlySmooth2.show(10)
-//    val dataRawOnlySmooth3 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt3, spark).cache()
-//    dataRawOnlySmooth3.show(10)
     val smoothDataRaw = OcpcSmoothfactorMain(date, hour, version, expTag, dataRaw1, dataRaw2, dataRaw3, spark)
     val smoothData = smoothDataRaw
       .withColumn("post_cvr", col("cvr"))
@@ -80,10 +74,6 @@ object OcpcGetPb_adtype15 {
     dataRaw1.unpersist()
     dataRaw2.unpersist()
     dataRaw3.unpersist()
-
-//    dataRawOnlySmooth1.unpersist()
-//    dataRawOnlySmooth2.unpersist()
-//    dataRawOnlySmooth3.unpersist()
     // 明投单元
     val resultUnhidden = data
       .withColumn("cpagiven", lit(1.0))

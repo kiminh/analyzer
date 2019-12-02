@@ -1,5 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
+import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
 import org.apache.log4j.{Level, Logger}
@@ -17,38 +18,24 @@ object OcpcUnitTest {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val hourInt = args(2).toInt
+    val hourInt1 = args(2).toInt
     val minCV = 10
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt1")
 
     val version = "ocpctest"
     val expTag = "v3"
 
-//    val baseDataRaw = prepareLabelMain(date, hour, hourInt, spark)
-//
-//    val data = baseDataRaw
-//      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-//      .withColumn("label", col("pcoc"))
-//      .filter("label is not null")
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
-//
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129b")
-////    data
-////      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129a")
-    val data1 = spark.table("test.check_ocpc_data20191129a")
-    val data2 = spark.table("test.check_ocpc_data20191129b")
+    val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
 
-    val data = data1
-      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
-      .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from", "time"), "inner")
-      .withColumn("string_feature_list", udfStringListAppend()(col("string_feature_list"), col("hour")))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "hour", "time", "label", "hour_diff")
+    val dataRaw2 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191129c")
+    dataRaw1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191202a")
+
+    dataRaw2
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191202b")
 
   }
 
