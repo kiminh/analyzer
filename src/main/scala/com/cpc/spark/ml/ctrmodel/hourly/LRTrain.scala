@@ -44,7 +44,7 @@ object LRTrain {
 
     initFeatureDict(spark, ctrPathSep)
 
-    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+//    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
@@ -101,7 +101,7 @@ object LRTrain {
       spark,
       "ctrparser4",
       "qtt-bs-ctrparser4-daily",
-      getLeftJoinData(qttAll, userAppIdx),
+      qttAll,
       "qtt-bs-ctrparser4-daily.lrm",
       4e8
     )
@@ -123,7 +123,7 @@ object LRTrain {
 
 
     rawDataFromTrident.unpersist()
-    userAppIdx.unpersist()
+//    userAppIdx.unpersist()
   }
 
 
