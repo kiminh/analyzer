@@ -30,7 +30,7 @@ object OcpcUnitTest {
 
     val dataRaw1 = OcpcCalibrationBaseMain(date, hour, hourInt1, spark).cache()
 
-    val dataRaw2 = OcpcCalibrationBase(date, hour, hourInt1, spark).cache()
+    val dataRaw2 = OcpcCalibrationBase(date, hour, 48, spark).cache()
     val data2  = getDataByTimeSpan(dataRaw2, date, hour, hourInt1, spark)
 
     dataRaw1
