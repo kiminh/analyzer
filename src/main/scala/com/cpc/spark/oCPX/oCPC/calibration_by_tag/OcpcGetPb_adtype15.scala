@@ -50,18 +50,13 @@ object OcpcGetPb_adtype15 {
       .cache()
     jfbData.show(10)
 
+    // 校准系数模块
     val pcocDataRaw = OcpcCVRfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
     pcocData.show(10)
-
-    val bidFactorDataRaw = OcpcBIDfactorMain(date, hour, version, expTag, bidFactorHourInt, spark)
-    val bidFactorData = bidFactorDataRaw
-      .select("unitid", "conversion_goal", "exp_tag", "high_bid_factor", "low_bid_factor")
-      .cache()
-    bidFactorData.show(10)
 
     val data = assemblyData(jfbData, pcocData, spark).cache()
     data.show(10)
