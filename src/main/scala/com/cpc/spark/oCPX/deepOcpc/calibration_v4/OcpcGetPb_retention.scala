@@ -206,8 +206,6 @@ object OcpcGetPb_retention {
          |AND
          |  isclick = 1
          |AND
-         |  deep_cvr is not null
-         |AND
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
@@ -278,8 +276,7 @@ object OcpcGetPb_retention {
          |  exp_cvr,
          |  deep_cvr,
          |  pure_deep_exp_cvr,
-         |  (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * exp_cvr * 1.0 / 1000000 else deep_cvr * 1.0 / 1000000 end) as retention_cvr_new,
-         |  deep_cvr * 1.0 / 1000000 as retention_cvr,
+         |  (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * exp_cvr * 1.0 / 1000000 else deep_cvr * 1.0 / 1000000 end) as retention_cvr,
          |  isclick,
          |  media_appsid
          |FROM
