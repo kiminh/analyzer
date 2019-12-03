@@ -65,7 +65,6 @@ object OcpcWhiteList {
       .repartition(1)
 //      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
-//
   }
 
   def getUserData(spark: SparkSession) = {
@@ -92,6 +91,9 @@ object OcpcWhiteList {
       .selectExpr("cast(userid as int) as userid", "adclass")
       .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
 
+//    result
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
+
     val resultDF = result
       .filter(s"userid_black_flag = 0")
       .distinct()
@@ -102,7 +104,7 @@ object OcpcWhiteList {
   }
 
   def udfUseridBlackList() = udf((userid: Int) => {
-    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964, 1688637)
+    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964, 1688637, 1701747, 1680417, 1676193, 1657091, 1684700, 1644013, 1657071, 1685039)
     if (blackUsers.contains(userid)) {
       1
     } else {

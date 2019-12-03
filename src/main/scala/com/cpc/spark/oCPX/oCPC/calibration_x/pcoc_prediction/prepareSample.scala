@@ -27,10 +27,12 @@ object prepareSample {
     val hour = args(1).toString
     val hourInt = args(2).toInt
     val version = args(3).toString
+    val expTag = args(4).toString
+    val minCV = args(5).toInt
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
     val rawData = getBaseData(date, hour, hourInt, spark).cache()
     val baseData = calculateBaseData(rawData, spark).cache()
@@ -56,17 +58,19 @@ object prepareSample {
 
     val recentData = getRecentPcoc(baseData, date, hour, spark)
 
-    val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, spark)
+    val result = assemblyData(avgPcoc, diffPcoc1, diff2Pcoc, recentData, minCV, spark)
 
     result
       .repartition(1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
+      .withColumn("exp_tag", lit(expTag))
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part1_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part1_hourly")
   }
 
-  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
+  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, minCV: Int, spark: SparkSession) = {
     val data1 = dataRaw1
       .withColumn("avg_pcoc", col("pcoc"))
       .select("identifier", "media", "conversion_goal", "conversion_from", "avg_pcoc")
@@ -83,8 +87,8 @@ object prepareSample {
       .filter(s"diff2_pcoc is not null")
 
     val data4 = dataRaw4
+      .filter(s"recent_pcoc is not null and recent_cv >= $minCV")
       .select("identifier", "media", "conversion_goal", "conversion_from", "recent_pcoc")
-      .filter(s"recent_pcoc is not null")
 
     val result = data1
       .join(data2, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
@@ -108,7 +112,8 @@ object prepareSample {
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("recent_pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "recent_pcoc")
+      .withColumn("recent_cv", col("cv"))
+      .select("identifier", "media", "conversion_goal", "conversion_from", "recent_pcoc", "recent_cv")
 
     result
   }

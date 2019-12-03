@@ -1,6 +1,6 @@
 package com.cpc.spark.oCPX.basedata
 
-import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import com.cpc.spark.udfs.Udfs_wj.{udfStringToMap, udfStringToMapFilter}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -110,7 +110,8 @@ object OcpcUnionlog {
          |    cpa_check_priority,
          |    ocpc_expand_tag,
          |    tuid,
-         |    hidden_tax
+         |    hidden_tax,
+         |    pure_deep_exp_cvr
          |from
          |    base_data
        """.stripMargin
@@ -211,7 +212,8 @@ object OcpcUnionlog {
          |    uid_mc_click0,
          |    site_type,
          |    tuid,
-         |    hidden_tax
+         |    hidden_tax,
+         |    pure_deep_exp_cvr
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

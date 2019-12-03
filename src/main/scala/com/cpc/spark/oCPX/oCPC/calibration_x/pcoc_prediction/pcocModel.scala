@@ -26,25 +26,61 @@ object pcocModel {
     val hour = args(1).toString
     val hourDiff = args(2).toInt
     val version = args(3).toString
+    val expTag = args(4).toString
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version")
+    println(s"date=$date, hour=$hour, hourDiff=$hourDiff, version=$version, expTag=$expTag")
 
-    val data = getData(date, hour, version, spark)
+    val data = getData(date, hour, version, expTag, spark)
 
     val trainingData = getTrainingData(data, spark)
 
-    val predictData = getPredictData(date, hour, hourDiff, version, spark)
+    val predictData = getPredictData(date, hour, hourDiff, version, expTag, spark)
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_predict_pcoc_data20191123")
+//    result
+//      .repartition(1)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
+
+    val resultDF = extracePredictData(result, hourDiff, spark)
+    resultDF
+      .repartition(1)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
+//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
-  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, spark: SparkSession) = {
+  def extracePredictData(dataRaw: DataFrame, hourDiff: Int, spark: SparkSession) = {
+    dataRaw.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  media,
+         |  conversion_goal,
+         |  conversion_from,
+         |  time,
+         |  $hourDiff as hour_diff,
+         |  double_feature_list,
+         |  string_feature_list,
+         |  avg_pcoc,
+         |  prediction as pred_pcoc
+         |FROM
+         |  raw_data
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
+  }
+
+  def getPredictData(date: String, hour: String, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
@@ -60,13 +96,15 @@ object pcocModel {
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_pcoc_sample_part1_hourly
+         |  dl_cpc.ocpc_pcoc_sample_part1_hourly
          |WHERE
          |  date = '$date'
          |AND
          |  hour = '$hour'
          |AND
          |  version = '$version'
+         |AND
+         |  exp_tag = '$expTag'
          |""".stripMargin
     println(sqlRequest)
     val data = spark
@@ -85,7 +123,7 @@ object pcocModel {
     data
   }
 
-  def trainAndPredict(dataRaw: DataFrame, predictFeatures: DataFrame, spark: SparkSession) = {
+  def trainAndPredict(dataRaw: DataFrame, predictRawData: DataFrame, spark: SparkSession) = {
     /*
     对pre_pcoc ~ pre_cv做scaler
      */
@@ -94,31 +132,83 @@ object pcocModel {
     // 模型训练
     val stagesArray = new ListBuffer[PipelineStage]()
 
+//    one-hot for hour
     val hourIndexer = new StringIndexer().setInputCol("hour").setOutputCol("hour_index")
     stagesArray.append(hourIndexer)
     val hourEncoder = new OneHotEncoder().setInputCol("hour_index").setOutputCol("hour_vec")
     stagesArray.append(hourEncoder)
-    val featureArray = Array("hour_vec", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
+
+//    one-hot for identifier
+    val identifierIndexer = new StringIndexer().setInputCol("identifier").setOutputCol("identifier_index")
+    stagesArray.append(identifierIndexer)
+    val identifierEncoder = new OneHotEncoder().setInputCol("identifier_index").setOutputCol("identifier_vec")
+    stagesArray.append(identifierEncoder)
+
+//    one-hot for media
+    val mediaIndexer = new StringIndexer().setInputCol("media").setOutputCol("media_index")
+    stagesArray.append(mediaIndexer)
+    val mediaEncoder = new OneHotEncoder().setInputCol("media_index").setOutputCol("media_vec")
+    stagesArray.append(mediaEncoder)
+
+//    one-hot for conversion_goal
+    val conversionGoalIndexer = new StringIndexer().setInputCol("conversion_goal").setOutputCol("conversion_goal_index")
+    stagesArray.append(conversionGoalIndexer)
+    val conversionGoalEncoder = new OneHotEncoder().setInputCol("conversion_goal_index").setOutputCol("conversion_goal_vec")
+    stagesArray.append(conversionGoalEncoder)
+
+//    one-hot for conversion_from
+    val conversionFromIndexer = new StringIndexer().setInputCol("conversion_from").setOutputCol("conversion_from_index")
+    stagesArray.append(conversionFromIndexer)
+    val conversionFromEncoder = new OneHotEncoder().setInputCol("conversion_from_index").setOutputCol("conversion_from_vec")
+    stagesArray.append(conversionFromEncoder)
+
+    val featureArray = Array("identifier_vec", "media_vec", "conversion_goal_vec", "conversion_from_vec", "hour_vec", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc")
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
+
+////    standard scaler
+//    val scaler = new StandardScaler()
+//      .setInputCol("features")
+//      .setOutputCol("scaled_features")
+//      .setWithStd(true)
+//      .setWithMean(false)
+//    stagesArray.append(scaler)
 
     val pipeline = new Pipeline()
     pipeline.setStages(stagesArray.toArray)
 
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
+
+    val dataItem = data.select("identifier", "media", "conversion_goal", "conversion_from", "hour").distinct()
+    val predictFeatures = predictRawData
+      .join(dataItem, Seq("identifier", "media", "conversion_goal", "conversion_from", "hour"), "inner")
     val predictData = pipelineModel.transform(predictFeatures)
 
 
     val lrModel = new LinearRegression().setFeaturesCol("features").setLabelCol("label").setRegParam(0.001).setElasticNetParam(0.1).fit(dataset)
 
     val predictions = lrModel
-      .transform(dataset)
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
-      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "prediction")
+      .transform(predictData)
+      .withColumn("string_feature_list", udfStringFeatures()(col("hour")))
+      .withColumn("double_feature_list", udfDoubleFeatures()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc")))
+//      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction", "label")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "avg_pcoc", "diff1_pcoc", "diff2_pcoc", "recent_pcoc", "features", "double_feature_list", "string_feature_list", "prediction")
+      .cache()
 
+    predictions.show(10)
     predictions
   }
+
+  def udfDoubleFeatures() = udf((avgPcoc: Double, diff1Pcoc: Double, diff2Pcoc: Double, recentPcoc: Double) => {
+    val result = Array(avgPcoc, diff1Pcoc, diff2Pcoc, recentPcoc)
+    result
+  })
+
+  def udfStringFeatures() = udf((hr: String) => {
+    val result = Array(hr)
+    result
+  })
 
   def parseFeatures(rawData: DataFrame, spark: SparkSession) = {
 //    udfAggregateFeature()(col("avg_pcoc"), col("diff1_pcoc"), col("diff2_pcoc"), col("recent_pcoc"))
@@ -167,18 +257,20 @@ object pcocModel {
 
 
 
-  def getData(date: String, hour: String, version: String, spark: SparkSession) = {
+  def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
     val selectCondition = s"`date` = '$date' and `hour` = '$hour'"
     val sqlRequest =
       s"""
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_pcoc_sample_hourly
+         |  dl_cpc.ocpc_pcoc_sample_hourly
          |WHERE
          |  $selectCondition
          |AND
          |  version = '$version'
+         |AND
+         |  exp_tag = '$expTag'
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

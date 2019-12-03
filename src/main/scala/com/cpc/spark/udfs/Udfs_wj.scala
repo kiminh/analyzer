@@ -86,14 +86,30 @@ object Udfs_wj{
       val logs = valueLog.split(",")
       for (log <- logs) {
         val splits = log.split(":")
-        val key = splits(0)
-        val value = splits(1)
-        result += (key -> value)
+        if (splits.length == 2) {
+          val key = splits(0)
+          val value = splits(1)
+          result += (key -> value)
+        }
       }
       result
     } else {
       null
     }
+  })
+
+  def udfStringToMapFilter() = udf((valueLog: String) => {
+    var flag = 0
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        if (splits.length == 1) {
+          flag = 1
+        }
+      }
+    }
+    flag
   })
 
   def udfStringToMapCheck() = udf((valueLog: String) => {
