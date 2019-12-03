@@ -102,7 +102,6 @@ object LRTrain {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
-    val userAppIdx = getUidApp(spark, cvrPathSep)
     for (key <- dictStr.keys) {
       println(key)
     }
@@ -227,10 +226,9 @@ object LRTrain {
 
       val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-      val joined = getLeftJoinData(df, userAppIdx)
-      joined.write.mode(SaveMode.Append).parquet(dfPath)
+      df.write.mode(SaveMode.Append).parquet(dfPath)
 
-      joined.unpersist()
+//      joined.unpersist()
       // ideaids.unpersist()
       df.unpersist()
     })
@@ -472,7 +470,6 @@ object LRTrain {
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
-    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
 
     println("check before save")
     println("check dict:")
@@ -485,17 +482,12 @@ object LRTrain {
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
     model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
-    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
-    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
-    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
-    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {

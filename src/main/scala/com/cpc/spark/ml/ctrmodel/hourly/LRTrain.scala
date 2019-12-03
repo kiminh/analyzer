@@ -283,8 +283,6 @@ object LRTrain {
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
-    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
-    val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
 
     // backup on hdfs.
     model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
@@ -292,16 +290,12 @@ object LRTrain {
 
     // backup on local machine.
     model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
-    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
-    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
-    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
 
     /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
