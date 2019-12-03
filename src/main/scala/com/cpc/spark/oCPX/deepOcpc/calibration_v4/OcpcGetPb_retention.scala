@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v4
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -218,11 +218,12 @@ object OcpcGetPb_retention {
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -264,11 +265,6 @@ object OcpcGetPb_retention {
   }
 
   def getPreCvrData(date: String, expTag: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -289,7 +285,8 @@ object OcpcGetPb_retention {
          |  exp_cvr,
          |  deep_cvr,
          |  pure_deep_exp_cvr,
-         |  (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * deep_cvr * 1.0 / 1000000000000 else deep_cvr * 1.0 / 1000000 end) as retention_cvr,
+         |  (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * deep_cvr * 1.0 / 1000000000000 else deep_cvr * 1.0 / 1000000 end) as retention_cvr_new,
+         |  deep_cvr * 1.0 / 1000000 as retention_cvr,
          |  isclick,
          |  media_appsid
          |FROM
@@ -304,10 +301,16 @@ object OcpcGetPb_retention {
          |  isclick=1
          |""".stripMargin
     println(sqlRequest)
-    val data = spark
+    val dataRaw = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .filter(s"deep_conversion_goal = 2")
+
+    val baseData = mapMediaName(dataRaw, spark)
+
+    baseData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191203b")
+
+    val data = baseData
       .groupBy("unitid", "media")
       .agg(
         sum(col("isclick")).alias("click"),
@@ -321,11 +324,6 @@ object OcpcGetPb_retention {
   }
 
   def getDeepCvr(date: String, expTag: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -353,15 +351,14 @@ object OcpcGetPb_retention {
          |WHERE
          |  day = '$date2'
          |AND
-         |  $mediaSelection
-         |AND
          |  array_contains(conversion_target, 'api_app_active')
          |""".stripMargin
     println(sqlRequest1)
-    val data1 = spark
+    val data1Raw = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .distinct()
+
+    val data1 = mapMediaName(data1Raw, spark)
 
     // 次留数据
     val sqlRequest2 =
@@ -374,8 +371,6 @@ object OcpcGetPb_retention {
          |WHERE
          |  day = '$date1'
          |AND
-         |  $mediaSelection
-         |AND
          |  array_contains(conversion_target, 'api_app_retention')
          |""".stripMargin
     println(sqlRequest2)
@@ -384,6 +379,7 @@ object OcpcGetPb_retention {
       .distinct()
 
     val data = data1
+      .distinct()
       .join(data2, Seq("searchid"), "left_outer")
       .groupBy("unitid", "media")
       .agg(

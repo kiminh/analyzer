@@ -29,7 +29,7 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour, hourInt=$hourInt1")
 
     val version = "ocpctest"
-    val expTag = "adtype15"
+    val expTag = "v4"
 
     val dataRaw = getPreCvrData(date, expTag, spark)
 
