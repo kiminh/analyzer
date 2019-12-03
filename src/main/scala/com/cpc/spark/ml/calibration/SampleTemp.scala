@@ -19,7 +19,7 @@ object SampleTemp {
       s"""
          |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
          |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,a.day,
-         |if(c.iscvr is not null,1,0) iscvr,case when siteid = 0 then '外链' when siteid>=5000000 then '赤兔' when siteid>=2000000 then '鲸鱼' else '老建站' end siteid,
+         |if(c.iscvr is not null,1,0) iscvr,case when siteid = 0 then 'wailian' when siteid>=5000000 then 'chitu' when siteid>=2000000 then 'jingyu' else 'laojianzhan' end siteid,
          |case
          |  when user_show_ad_num = 0 then '0'
          |  when user_show_ad_num = 1 then '1'
@@ -75,7 +75,7 @@ object SampleTemp {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
-   val move ="hdfs dfs -put /home/cpc/wy/calibration_sample/calibration_sample.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample.csv "
+   val move ="hdfs dfs -put /home/cpc/wy/calibration_sample/calibration_sample-v5conv5-test.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample-v5conv5-test.csv"
     move !
   }
 
