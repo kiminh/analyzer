@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention.OcpcDeepBase_deepfactor.OcpcDeepBase_deepfactorMain
 import com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention.OcpcDeepBase_shallowfactor.OcpcDeepBase_shallowfactorMain
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
@@ -79,8 +79,8 @@ object OcpcGetPb_retention {
     resultDF
       .withColumn("deep_conversion_goal", lit(2))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
   }
 
   def assemblyData(rawData: DataFrame, spark: SparkSession) = {
@@ -146,11 +146,6 @@ object OcpcGetPb_retention {
   计费比系数
    */
   def OcpcJFBfactor(date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -187,11 +182,9 @@ object OcpcGetPb_retention {
          |  date,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_base_unionlog_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  is_deep_ocpc = 1
          |AND
@@ -199,19 +192,18 @@ object OcpcGetPb_retention {
          |AND
          |  isclick = 1
          |AND
-         |  deep_cvr is not null
-         |AND
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val rawData = spark.sql(sqlRequest)
+
+
+    val baseData = mapMediaName(rawData, spark)
+
+    val result = baseData
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-
-    val result = rawData
       .groupBy("unitid", "deep_conversion_goal", "media")
       .agg(
         avg(col("bid")).alias("acb"),

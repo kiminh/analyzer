@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDay, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDay, mapMediaName, udfDetermineMedia, udfMediaName, udfSetExpTag}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -185,11 +185,6 @@ object OcpcDeepBase_deepfactor {
 
 
   def getPreCvData(date: String, dayInt: Int, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -215,7 +210,7 @@ object OcpcDeepBase_deepfactor {
          |  date,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_base_unionlog_hourly
          |WHERE
          |  $selectCondition
          |AND
@@ -228,9 +223,12 @@ object OcpcDeepBase_deepfactor {
          |  deep_conversion_goal = 2
          |""".stripMargin
     println(sqlRequest)
-    val data = spark
+    val dataRaw = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val baseData = mapMediaName(dataRaw, spark)
+
+    val data = baseData
       .groupBy("unitid", "deep_conversion_goal", "media", "date")
       .agg(
         sum(col("isclick")).alias("click"),
@@ -243,11 +241,6 @@ object OcpcDeepBase_deepfactor {
   }
 
   def getPostCvData(date: String, dayInt: Int, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -274,15 +267,14 @@ object OcpcDeepBase_deepfactor {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  array_contains(conversion_target, 'api_app_active')
          |""".stripMargin
     println(sqlRequest1)
-    val data1 = spark
+    val data1Raw = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .distinct()
+
+    val data1 = mapMediaName(data1Raw, spark)
 
     // 次留数据
     val sqlRequest2 =
@@ -294,8 +286,6 @@ object OcpcDeepBase_deepfactor {
          |  dl_cpc.cpc_conversion
          |WHERE
          |  day >= '$date1'
-         |AND
-         |  $mediaSelection
          |AND
          |  array_contains(conversion_target, 'api_app_retention')
          |""".stripMargin
