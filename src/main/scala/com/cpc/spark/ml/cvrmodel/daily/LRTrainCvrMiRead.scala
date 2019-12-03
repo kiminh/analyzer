@@ -78,10 +78,12 @@ object LRTrainCvrMiRead {
     var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
-    val spark: SparkSession = model
-      .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
+    val typeWord = "miread"
 
-    val cachePrefix = "/tmp/cvr_cache/"
+    val spark: SparkSession = model
+      .initSpark(s"[cpc-model] ${typeWord}-bs-%s-daily".format(parser))
+
+    val cachePrefix = s"/tmp/cvr_cache_${typeWord}/"
 
     initFeatureDict(spark, cvrPathSep)
 
@@ -235,14 +237,14 @@ object LRTrainCvrMiRead {
     var name=""
     var destfile=""
     if ("ctrparser4".equals(parser)){
-      name="miread-bs-cvrparser4-daily"
-      destfile="miread-bs-cvrparser4-daily.lrm"
+      name=s"${typeWord}-bs-cvrparser4-daily"
+      destfile=s"${typeWord}-bs-cvrparser4-daily.lrm"
     }else if("cvrparser5".equals(parser)){
-      name="miread-bs-cvrparser5-daily"
-      destfile="miread-bs-cvrparser5-daily.lrm"
+      name=s"${typeWord}-bs-cvrparser5-daily"
+      destfile=s"${typeWord}-bs-cvrparser5-daily.lrm"
     }else if("cvrparser8".equals(parser)){
-      name="miread-bs-cvrparser8-daily"
-      destfile="miread-bs-cvrparser8-daily.lrm"
+      name=s"${typeWord}-bs-cvrparser8-daily"
+      destfile=s"${typeWord}-bs-cvrparser8-daily.lrm"
     }
 
     println("name = " + name + " , destfile = " + destfile)
