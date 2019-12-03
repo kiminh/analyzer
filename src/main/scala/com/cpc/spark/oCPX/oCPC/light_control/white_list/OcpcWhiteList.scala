@@ -63,8 +63,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
   }
 
   def getUserData(spark: SparkSession) = {
@@ -93,8 +93,8 @@ object OcpcWhiteList {
       .join(blackUserid, Seq("userid"), "left_outer")
       .na.fill(0, Seq("userid_black_flag"))
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
+//    result
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
 
     val resultDF = result
       .filter(s"userid_black_flag = 0")
