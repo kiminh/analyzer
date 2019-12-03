@@ -153,11 +153,6 @@ object OcpcGetPb_retention {
   }
 
   def getShallowBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -201,11 +196,9 @@ object OcpcGetPb_retention {
          |  date,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_base_unionlog_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  is_deep_ocpc = 1
          |AND
@@ -306,9 +299,6 @@ object OcpcGetPb_retention {
       .filter(s"deep_conversion_goal = 2")
 
     val baseData = mapMediaName(dataRaw, spark)
-
-    baseData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191203b")
 
     val data = baseData
       .groupBy("unitid", "media")
