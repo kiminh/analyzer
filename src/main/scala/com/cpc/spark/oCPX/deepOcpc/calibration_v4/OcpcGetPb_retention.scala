@@ -72,8 +72,8 @@ object OcpcGetPb_retention {
     resultDF
       .withColumn("deep_conversion_goal", lit(2))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
   }
 
   def assemblyData(rawData: DataFrame, spark: SparkSession) = {
@@ -287,11 +287,13 @@ object OcpcGetPb_retention {
          |  conversion_goal,
          |  deep_conversion_goal,
          |  exp_cvr,
-         |  deep_cvr * 1.0 / 1000000 as retention_cvr,
+         |  deep_cvr,
+         |  pure_deep_exp_cvr,
+         |  (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * deep_cvr * 1.0 / 1000000000000 else deep_cvr * 1.0 / 1000000 end) as retention_cvr,
          |  isclick,
          |  media_appsid
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_base_unionlog_hourly
          |WHERE
          |  date = '$date1'
          |AND
