@@ -48,3 +48,7 @@ CREATE TABLE IF NOT EXISTS test.ocpc_filter_unionlog_hourly
 )
 PARTITIONED by (`date` STRING, `hour` STRING)
 STORED as PARQUET;
+
+
+alter table test.ocpc_filter_unionlog_hourly add columns (hidden_tax int);
+alter table test.ocpc_filter_unionlog_hourly add columns (pure_deep_exp_cvr int);
