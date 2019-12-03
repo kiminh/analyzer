@@ -1,7 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
 import com.cpc.spark.oCPX.deepOcpc.calibration_v4.OcpcGetPb_retention.getPreCvrData
-import com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention.OcpcDeepBase_shallowfactor.OcpcDeepBase_shallowfactorMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2.OcpcCVRfactorMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2.OcpcJFBfactorMain
@@ -32,7 +31,7 @@ object OcpcUnitTest {
     val version = "ocpctest"
     val expTag = "v4"
 
-    val dataRaw = OcpcDeepBase_shallowfactorMain(date, hour, minCV1, spark)
+    val dataRaw = getPreCvrData(date, expTag, spark)
 
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191203a")
