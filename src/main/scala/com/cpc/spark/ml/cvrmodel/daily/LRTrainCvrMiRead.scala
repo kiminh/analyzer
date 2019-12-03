@@ -185,7 +185,7 @@ object LRTrainCvrMiRead {
            |    dl_cpc.cpc_basedata_union_events
            |    where
            |    day = "$dt"
-           |    and media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', ‘80004787')
+           |    and media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787')
            |    and isshow = 1
            |    and isclick = 1
            |    and adsrc=1
