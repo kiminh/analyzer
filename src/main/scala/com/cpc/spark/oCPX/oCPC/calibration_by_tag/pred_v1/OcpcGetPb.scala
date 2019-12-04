@@ -28,11 +28,38 @@ object OcpcGetPb {
     val baselineData = getBaselineData(date, hour, version, expTag2, spark)
 
     // 读取pcoc预估模型校准数据
+    val predictionData = getPredictionData(date, hour, version, expTag1, spark)
 
     // 读取筛选词表
 
     // 推送至校准数据表
 
+  }
+
+  def getPredictionData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   cast(identifier as int) as unitid,
+         |   media,
+         |   1.0 / pred_pcoc as cvr_factor
+         |FROM
+         |    dl_cpc.ocpc_pcoc_prediction_result_hourly
+         |WHERE
+         |    `date` = '$date'
+         |AND
+         |    `hour` = '$hour'
+         |AND
+         |    version = '$version'
+         |AND
+         |    exp_tag = '$expTag'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("media", udfMediaName()(col("media")))
+
+    data
   }
 
   def getExpTags(expTag: String, spark: SparkSession) = {
