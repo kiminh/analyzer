@@ -46,24 +46,42 @@ object OcpcMaeMonitor {
 
   }
 
+  def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, hourInt)
+    val nextDay = calendar.getTime
+    val result = dateConverter.format(nextDay)
+
+    result
+  })
+
+
   def calculateHourlyDiff(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, hourDiff: Int, expTag: String, spark: SparkSession) = {
     val data1 = dataRaw1
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("real_pcoc", col("pcoc"))
-      .select("unitid", "exp_tag", "date", "hour", "click", "real_pcoc")
+      .withColumn("time", concat_ws(" ", col("date"), col("hour")))
+      .select("unitid", "exp_tag", "time", "click", "real_pcoc")
 
     val data2 = dataRaw2
       .withColumn("baseline_pcoc", col("pcoc"))
-      .select("unitid", "exp_tag", "date", "hour", "baseline_pcoc")
+      .withColumn("time", udfAddHour(hourDiff)(col("date"), col("hour")))
+      .select("unitid", "exp_tag", "time", "baseline_pcoc")
 
     val data3 = dataRaw3
       .withColumn("pred_pcoc", col("pcoc"))
-      .select("unitid", "exp_tag", "date", "hour", "pred_pcoc")
+      .withColumn("time", udfAddHour(hourDiff)(col("date"), col("hour")))
+      .select("unitid", "exp_tag", "time", "pred_pcoc")
 
     val data = data1
-      .join(data2, Seq("unitid", "exp_tag", "date", "hour"), "inner")
-      .join(data3, Seq("unitid", "exp_tag", "date", "hour"), "inner")
-      .select("unitid", "exp_tag", "date", "hour", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc")
+      .join(data2, Seq("unitid", "exp_tag", "time"), "inner")
+      .join(data3, Seq("unitid", "exp_tag", "time"), "inner")
+      .select("unitid", "exp_tag", "time", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc")
 
     data.createOrReplaceTempView("data")
     val sqlRequest =
@@ -71,8 +89,7 @@ object OcpcMaeMonitor {
          |SELECT
          |  unitid,
          |  exp_tag,
-         |  date,
-         |  hour,
+         |  time,
          |  click,
          |  real_pcoc,
          |  baseline_pcoc,
