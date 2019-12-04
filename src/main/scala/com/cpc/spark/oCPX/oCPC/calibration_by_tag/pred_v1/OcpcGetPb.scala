@@ -39,6 +39,18 @@ object OcpcGetPb {
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204c")
 
     // 推送到校准数据表
+    val resultDF = data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+      .cache()
+    resultDF.show(10)
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
   }
 
