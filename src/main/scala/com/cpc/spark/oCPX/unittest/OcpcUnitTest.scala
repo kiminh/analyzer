@@ -5,7 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2.OcpcCVRfactorMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2.OcpcJFBfactorMain
 import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCVRfactor, OcpcCalibrationBase, OcpcJFBfactor, getDataByTimeSpan}
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v1.OcpcGetPb.{getBaselineData, getPredictionData}
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v1.OcpcGetPb.{getBaselineData, getPredictionData, getSelectionTable}
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.OcpcMaeMonitor.{getBaselinePcoc, getPredPcoc, getRealPcoc}
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
@@ -28,7 +28,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getPredictionData(date, hour, "ocpctest", "v3", spark)
+    val dataRaw = getSelectionTable(date, hour, "ocpctest", "pcocPredV1", spark)
 
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204b")

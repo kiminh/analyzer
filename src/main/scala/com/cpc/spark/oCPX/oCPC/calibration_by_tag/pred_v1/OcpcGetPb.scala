@@ -31,9 +31,35 @@ object OcpcGetPb {
     val predictionData = getPredictionData(date, hour, version, expTag1, spark)
 
     // 读取筛选词表
+    val selectionTable = getSelectionTable(date, hour, version, expTag2, spark)
 
     // 推送至校准数据表
 
+  }
+
+  def getSelectionTable(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
+    val expTagSelection = getExpTags(expTag, spark)
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  exp_tag,
+         |  method
+         |FROM
+         |  dl_cpc.ocpc_calibration_method_hourly
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  version = '$version'
+         |AND
+         |  $expTagSelection
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    data.show(10)
+    data
   }
 
   def getPredictionData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
