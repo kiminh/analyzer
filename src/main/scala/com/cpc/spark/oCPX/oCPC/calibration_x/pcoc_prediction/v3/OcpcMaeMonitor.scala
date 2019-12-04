@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getBaseDataDelay, getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -34,12 +34,41 @@ object OcpcMaeMonitor {
     val predData = getPredPcoc(date, hour, 12, hourDiff, version, expTag1, spark)
 
     // 真实pcoc
+    val hourlyPcoc = getRealPcoc(date, hour, 12, spark)
 
     // 计算分小时分单元分媒体mae
 
     // 计算点击加权分单元分媒体mae
 
 
+  }
+
+  def getRealPcoc(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    baseDataRaw.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  media,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+         |  sum(isclick) as click,
+         |  sum(iscvr) as cv,
+         |  date,
+         |  hour
+         |FROM
+         |  base_data
+         |WHERE
+         |  isclick=1
+         |GROUP BY unitid, media, date, hour
+         |""".stripMargin
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("media", udfMediaName()(col("media")))
+
+    data
   }
 
   def getPredPcoc(date: String, hour: String, hourInt: Int, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {
@@ -78,8 +107,8 @@ object OcpcMaeMonitor {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .withColumn("media_new", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media_new")))
+      .withColumn("media", udfMediaName()(col("media")))
+//      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media_new")))
 
     data
   }
