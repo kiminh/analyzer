@@ -55,7 +55,7 @@ object OcpcGetPb {
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, expTag: String, spark: SparkSession) = {
-    val data1 = dataRaw1.filter(s"method = 'pred'").select("unitid", "exp_tag")
+    val data1 = dataRaw1.filter(s"method = 'pred'").select("unitid", "exp_tag").distinct()
 
     val data2 = dataRaw2
       .withColumn("cvr_factor_baseline", col("cvr_factor"))
