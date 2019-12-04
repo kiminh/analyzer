@@ -136,7 +136,7 @@ object OcpcMaeMonitor {
     val data = data1
       .join(data2, Seq("unitid", "exp_tag", "time"), "inner")
       .join(data3, Seq("unitid", "exp_tag", "time"), "inner")
-      .select("unitid", "exp_tag", "time", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc")
+      .select("unitid", "exp_tag", "time", "click", "cv", "real_pcoc", "baseline_pcoc", "pred_pcoc")
 
     data.createOrReplaceTempView("data")
     val sqlRequest =
