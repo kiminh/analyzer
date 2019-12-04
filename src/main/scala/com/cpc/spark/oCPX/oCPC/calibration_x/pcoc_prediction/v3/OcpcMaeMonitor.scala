@@ -74,6 +74,7 @@ object OcpcMaeMonitor {
       .select("unitid", "exp_tag", "time", "baseline_pcoc")
 
     val data3 = dataRaw3
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("pred_pcoc", col("pcoc"))
       .withColumn("time", udfAddHour(hourDiff)(col("date"), col("hour")))
       .select("unitid", "exp_tag", "time", "pred_pcoc")
