@@ -88,7 +88,7 @@ object OcpcMaeMonitor {
          |  exp_tag,
          |  sum(click) as click,
          |  sum(cv) as cv,
-         |  sum(baseline_diff * click) * 1.0 / sum(click) as basline_mae,
+         |  sum(baseline_diff * click) * 1.0 / sum(click) as baseline_mae,
          |  sum(pred_diff * click) * 1.0 / sum(click) as pred_mae
          |FROM
          |  base_data
