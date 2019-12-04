@@ -33,8 +33,33 @@ object OcpcGetPb {
     // 读取筛选词表
     val selectionTable = getSelectionTable(date, hour, version, expTag2, spark)
 
-    // 推送至校准数据表
+    // 数据合并
+    val data = assemblyData(selectionTable, baselineData, predictionData, expTag2, spark)
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204c")
 
+    // 推送到校准数据表
+
+  }
+
+  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, expTag: String, spark: SparkSession) = {
+    val data1 = dataRaw1.filter(s"method = 'pred'").select("unitid", "exp_tag")
+
+    val data2 = dataRaw2
+      .withColumn("cvr_factor_baseline", col("cvr_factor"))
+      .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor_baseline", "high_bid_factor", "low_bid_factor", "cpagiven", "exp_tag", "is_hidden")
+
+    val data3 = dataRaw3
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .join(data1, Seq("unitid", "exp_tag"), "inner")
+      .withColumn("cvr_factor_pred", col("cvr_factor"))
+      .select("unitid", "exp_tag", "cvr_factor_pred")
+
+    val data = data2
+      .join(data3, Seq("unitid", "exp_tag"), "left_outer")
+      .withColumn("cvr_factor", when(col("cvr_factor_pred").isNull, col("cvr_factor_baseline")).otherwise(col("cvr_factor_pred")))
+
+    data
   }
 
   def getSelectionTable(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
