@@ -44,8 +44,8 @@ object OcpcMaeMonitor {
       .withColumn("version", lit(version))
       .select("unitid", "time", "click", "cv", "real_pcoc", "baseline_pcoc", "pred_pcoc", "baseline_diff", "pred_diff", "date", "hour", "version", "exp_tag")
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204d")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_cmp_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
 
     // 计算点击加权分单元分媒体mae
     val result = calculateMae(hourlyDiff, spark)
@@ -59,7 +59,8 @@ object OcpcMaeMonitor {
       .withColumn("version", lit(version))
       .select("unitid", "method", "baseline_mae", "pred_mae", "click", "cv", "date", "hour", "version", "exp_tag")
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_hourly")
   }
 
   def generatePriorityTable(baseData: DataFrame, spark: SparkSession) = {
