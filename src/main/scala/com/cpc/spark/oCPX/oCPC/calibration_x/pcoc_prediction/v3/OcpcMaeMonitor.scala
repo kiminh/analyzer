@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -31,6 +31,7 @@ object OcpcMaeMonitor {
     val baselineData = getBaselinePcoc(date, hour, 12, hourDiff, version, expTag2, spark)
 
     // pcoc预估校准策略的pcoc
+    val predData = getPredPcoc(date, hour, 12, hourDiff, version, expTag1, spark)
 
     // 真实pcoc
 
@@ -39,6 +40,48 @@ object OcpcMaeMonitor {
     // 计算点击加权分单元分媒体mae
 
 
+  }
+
+  def getPredPcoc(date: String, hour: String, hourInt: Int, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.HOUR, -hourDiff)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   cast(identifier as int) as unitid,
+         |   media,
+         |   pred_pcoc as pcoc,
+         |   date,
+         |   hour
+         |FROM
+         |    dl_cpc.ocpc_pcoc_prediction_result_hourly
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    version = '$version'
+         |AND
+         |    exp_tag = '$expTag'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("media_new", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media_new")))
+
+    data
   }
 
   def getBaselinePcoc(date: String, hour: String, hourInt: Int, hourDiff: Int, version: String, expTag: String, spark: SparkSession) = {

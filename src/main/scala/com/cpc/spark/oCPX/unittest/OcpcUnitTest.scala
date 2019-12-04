@@ -6,7 +6,7 @@ import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBa
 import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2.OcpcJFBfactorMain
 import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCVRfactor, OcpcCalibrationBase, OcpcJFBfactor, getDataByTimeSpan}
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.OcpcMaeMonitor.getBaselinePcoc
+import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.OcpcMaeMonitor.{getBaselinePcoc, getPredPcoc}
 import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -27,10 +27,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getBaselinePcoc(date, hour, 12, 4, "ocpctest", "pcocPredV1", spark)
+    val dataRaw = getPredPcoc(date, hour, 12, 4, "ocpctest", "v3", spark)
 
     dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204b")
 
   }
 
