@@ -2,6 +2,7 @@ create table if not exists test.ocpc_calibration_method_cmp_hourly(
     unitid                  int,
     time                    string,
     click                   bigint,
+    cv                      bigint,
     real_pcoc               double,
     baseline_pcoc           double,
     pred_pcoc               double,

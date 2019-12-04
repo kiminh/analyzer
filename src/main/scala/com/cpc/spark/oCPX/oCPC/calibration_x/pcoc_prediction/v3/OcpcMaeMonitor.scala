@@ -42,17 +42,41 @@ object OcpcMaeMonitor {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "time", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc", "baseline_diff", "pred_diff", "date", "hour", "version", "exp_tag")
+      .select("unitid", "time", "click", "cv", "real_pcoc", "baseline_pcoc", "pred_pcoc", "baseline_diff", "pred_diff", "date", "hour", "version", "exp_tag")
       .repartition(1)
       .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204d")
 
     // 计算点击加权分单元分媒体mae
     val result = calculateMae(hourlyDiff, spark)
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204e")
 
     // 生成单元校准策略优先级词表
+    val resultDF = generatePriorityTable(result, spark)
+
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "method", "baseline_mae", "pred_mae", "click", "cv", "date", "hour", "version", "exp_tag")
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_hourly")
+  }
+
+  def generatePriorityTable(baseData: DataFrame, spark: SparkSession) = {
+    val data1 = baseData
+      .filter(s"baseline_mae < pred_mae")
+      .withColumn("method", lit("baseline"))
+      .select("unitid", "exp_tag", "method", "baseline_mae", "pred_mae", "click", "cv")
+      .distinct()
+    val data2 = baseData
+      .filter(s"baseline_mae >= pred_mae")
+      .withColumn("method", lit("pred"))
+      .select("unitid", "exp_tag", "method", "baseline_mae", "pred_mae", "click", "cv")
+      .distinct()
+
+    val data = data1.union(data2).distinct()
+
+    data
   }
 
   def calculateMae(baseData: DataFrame, spark: SparkSession) = {
@@ -62,6 +86,8 @@ object OcpcMaeMonitor {
          |SELECT
          |  unitid,
          |  exp_tag,
+         |  sum(click) as click,
+         |  sum(cv) as cv,
          |  sum(baseline_diff * click) * 1.0 / sum(click) as basline_mae,
          |  sum(pred_diff * click) * 1.0 / sum(click) as pred_mae
          |FROM
@@ -94,7 +120,7 @@ object OcpcMaeMonitor {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("real_pcoc", col("pcoc"))
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
-      .select("unitid", "exp_tag", "time", "click", "real_pcoc")
+      .select("unitid", "exp_tag", "time", "click", "cv", "real_pcoc")
 
     val data2 = dataRaw2
       .withColumn("baseline_pcoc", col("pcoc"))
@@ -120,6 +146,7 @@ object OcpcMaeMonitor {
          |  exp_tag,
          |  time,
          |  click,
+         |  cv,
          |  real_pcoc,
          |  baseline_pcoc,
          |  pred_pcoc,
@@ -158,6 +185,7 @@ object OcpcMaeMonitor {
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .withColumn("media", udfMediaName()(col("media")))
+      .filter(s"pcoc is not null")
 
     data
   }
