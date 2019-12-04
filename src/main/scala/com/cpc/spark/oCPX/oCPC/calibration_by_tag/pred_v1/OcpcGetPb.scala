@@ -35,8 +35,6 @@ object OcpcGetPb {
 
     // 数据合并
     val data = assemblyData(selectionTable, baselineData, predictionData, expTag2, spark)
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204c")
 
     // 推送到校准数据表
     val resultDF = data
