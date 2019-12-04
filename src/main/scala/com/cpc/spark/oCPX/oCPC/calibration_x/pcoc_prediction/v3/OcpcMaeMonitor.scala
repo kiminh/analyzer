@@ -5,7 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.{getBaseDataDelay, getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcMaeMonitor {
@@ -18,10 +18,10 @@ object OcpcMaeMonitor {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(3).toString
-    val expTag1 = args(4).toString
-    val expTag2 = args(5).toString
-    val hourDiff = args(6).toInt
+    val version = args(2).toString
+    val expTag1 = args(3).toString
+    val expTag2 = args(4).toString
+    val hourDiff = args(5).toInt
 
 
     println("parameters:")
@@ -36,11 +36,56 @@ object OcpcMaeMonitor {
     // 真实pcoc
     val hourlyPcoc = getRealPcoc(date, hour, 12, spark)
 
-    // 计算分小时分单元分媒体mae
+    // 计算分小时分单元分媒体的pcoc差异
+    val hourlyDiff = calculateHourlyDiff(hourlyPcoc, baselineData, predData, hourDiff, expTag2, spark)
+    hourlyDiff
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204d")
 
     // 计算点击加权分单元分媒体mae
 
 
+  }
+
+  def calculateHourlyDiff(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, hourDiff: Int, expTag: String, spark: SparkSession) = {
+    val data1 = dataRaw1
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("real_pcoc", col("pcoc"))
+      .select("unitid", "exp_tag", "date", "hour", "click", "real_pcoc")
+
+    val data2 = dataRaw2
+      .withColumn("baseline_pcoc", col("pcoc"))
+      .select("unitid", "exp_tag", "date", "hour", "baseline_pcoc")
+
+    val data3 = dataRaw3
+      .withColumn("pred_pcoc", col("pcoc"))
+      .select("unitid", "exp_tag", "date", "hour", "pred_pcoc")
+
+    val data = data1
+      .join(data2, Seq("unitid", "exp_tag", "date", "hour"), "inner")
+      .join(data3, Seq("unitid", "exp_tag", "date", "hour"), "inner")
+      .select("unitid", "exp_tag", "date", "hour", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc")
+
+    data.createOrReplaceTempView("data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  exp_tag,
+         |  date,
+         |  hour,
+         |  click,
+         |  real_pcoc,
+         |  baseline_pcoc,
+         |  pred_pcoc,
+         |  abs(real_pcoc - baseline_pcoc) as baseline_diff,
+         |  abs(real_pcoc - pred_pcoc) as pred_diff
+         |FROM
+         |  data
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+
+    result
   }
 
   def getRealPcoc(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
