@@ -33,7 +33,7 @@ object LRTrain {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model
-      .initSpark("[cpc-model] linear regression")
+      .initSpark("qtt-bs-lr-ctr")
 
     // 按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
@@ -1227,7 +1227,7 @@ object LRTrain {
     }
     i += 1000 + 1*/
 
-    println("Vectors size = " + i)
+//    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
