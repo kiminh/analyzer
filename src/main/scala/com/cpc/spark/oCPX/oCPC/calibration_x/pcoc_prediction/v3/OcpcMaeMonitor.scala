@@ -37,13 +37,41 @@ object OcpcMaeMonitor {
     val hourlyPcoc = getRealPcoc(date, hour, 12, spark)
 
     // 计算分小时分单元分媒体的pcoc差异
-    val hourlyDiff = calculateHourlyDiff(hourlyPcoc, baselineData, predData, hourDiff, expTag2, spark)
+    val hourlyDiff = calculateHourlyDiff(hourlyPcoc, baselineData, predData, hourDiff, expTag2, spark).cache()
     hourlyDiff
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204d")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("unitid", "time", "click", "real_pcoc", "baseline_pcoc", "pred_pcoc", "baseline_diff", "pred_diff", "date", "hour", "version", "exp_tag")
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204d")
 
     // 计算点击加权分单元分媒体mae
+    val result = calculateMae(hourlyDiff, spark)
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204e")
 
+    // 生成单元校准策略优先级词表
+  }
 
+  def calculateMae(baseData: DataFrame, spark: SparkSession) = {
+    baseData.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  exp_tag,
+         |  sum(baseline_diff * click) * 1.0 / sum(click) as basline_mae,
+         |  sum(pred_diff * click) * 1.0 / sum(click) as pred_mae
+         |FROM
+         |  base_data
+         |GROUP BY unitid, exp_tag
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
   }
 
   def udfAddHour(hourInt: Int) = udf((date: String, hour: String) => {
