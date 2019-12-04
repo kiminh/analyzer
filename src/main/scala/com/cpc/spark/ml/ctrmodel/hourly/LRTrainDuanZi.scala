@@ -92,7 +92,7 @@ object LRTrainDuanZi {
          |  , hour
          |from dl_cpc.cpc_basedata_union_events
          |where %s
-         |  and media_appsid in ("80002819", "80004944", "80004948")
+         |  and media_appsid in ('80002819', '80004944', '80004948', '80004953')
          |  and adsrc in (1, 28)
          |  and isshow = 1
          |  and ideaid > 0
