@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
@@ -25,17 +26,18 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val resultDF = OcpcCalculateAUCmain(date, hour, version, hourInt, spark)
+    val resultDF = OcpcCalculateAUCmain(date, hour, hourInt, spark)
 
     resultDF
+      .withColumn("version", lit(version))
       .repartition(10)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
-//      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_hourly_v2")
+      .write.mode("overwrite").insertInto("test.ocpc_unitid_auc_hourly_v2")
   }
 
-  def OcpcCalculateAUCmain(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcCalculateAUCmain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     // 抽取数据
-    val data = getData(hourInt, version, date, hour, spark)
+    val data = getData(hourInt, date, hour, spark)
 
     // 计算auc
     val aucData = getAuc(data, spark)
@@ -43,12 +45,11 @@ object OcpcCalculateAUC {
       .selectExpr("cast(identifier as int) unitid", "media", "conversion_goal", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
 
     resultDF
   }
 
-  def getData(hourInt: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -62,10 +63,6 @@ object OcpcCalculateAUC {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition1 = getTimeRangeSqlDate(date1, hour1, date, hour)
-
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -74,11 +71,7 @@ object OcpcCalculateAUC {
          |    cast(unitid as string) identifier,
          |    cast(exp_cvr * 1000000 as bigint) as score,
          |    conversion_goal,
-         |    (case
-         |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |        else 'novel'
-         |    end) as media,
+         |    media_appsid,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -89,14 +82,15 @@ object OcpcCalculateAUC {
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
          |and isclick = 1
-         |and $mediaSelection
          |and is_ocpc = 1
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
-    val scoreData = spark
+    val scoreDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+
+    val scoreData = mapMediaName(scoreDataRaw, spark)
 
     // 取历史区间: cvr数据
     val selectCondition2 = s"`date`>='$date1'"
@@ -113,7 +107,7 @@ object OcpcCalculateAUC {
        |  $selectCondition1
        """.stripMargin
     println(sqlRequest2)
-    val cvrData = spark.sql(sqlRequest2)
+    val cvrData = spark.sql(sqlRequest2).distinct()
 
 
     // 关联数据
@@ -122,7 +116,6 @@ object OcpcCalculateAUC {
       .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
       .na.fill(0, Seq("label"))
       .select("searchid", "identifier", "media", "conversion_goal", "score", "label", "industry")
-      .withColumn("version", lit(version))
 
     resultDF
   }
