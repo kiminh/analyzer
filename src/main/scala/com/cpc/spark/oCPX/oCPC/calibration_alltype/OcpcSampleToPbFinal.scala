@@ -124,7 +124,7 @@ object OcpcSampleToPbFinal {
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
       .withColumn("cali_value_before_change", col("cali_value")) // todo: 手动调整校准系数
-      .withColumn("cali_value", udfCheckCaliMaxById(date)(col("identifier"), col("exp_tag"), col("cali_value")))
+      .withColumn("cali_value", udfCheckCaliMaxById(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
       .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
