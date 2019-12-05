@@ -102,9 +102,9 @@ object OcpcHourlyReport {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) as total_cpasuggest,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor,
-         |  sum(case when hidden_tax < 0 then hidden_tax else 0 end) as bl_hidden_tax,
-         |  sum(case when hidden_tax > 0 then hidden_tax else 0 end) as bk_hidden_tax
-         | 
+         |  sum(case when hidden_tax < 0 and isclick=1 then -hidden_tax else 0 end) as bl_hidden_tax,
+         |  sum(case when hidden_tax > 0 and isclick=1 then hidden_tax else 0 end) as bk_hidden_tax
+         |
          |FROM
          |  raw_data
          |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media, hr, ocpc_expand
