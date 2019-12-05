@@ -263,7 +263,7 @@ object LRTrain {
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
-    model.run(sampleTrain, 50, 1e-8)
+    model.run(sampleTrain, 10, 1e-8)
     model.test(sampleTest)
 
     model.printLrTestLog()
