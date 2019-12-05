@@ -54,6 +54,8 @@ object LRTrainV4 {
     val queryRawDataFromUnionEvents =
       s"""
          |select
+         |  * from
+         |(select
          |  searchid
          |  , isclick as label
          |  , sex
@@ -90,13 +92,15 @@ object LRTrainV4 {
          |  , userid
          |  , is_new_ad
          |  , hour
+         |  , rand() as rand_v
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and media_appsid in ('80000001','80000002')
          |  and adslot_type in (1, 2)
          |  and isshow = 1
          |  and ideaid > 0
-         |  and unitid > 0
+         |  and unitid > 0)a
+         |where rand_v>=0 and rand_v<=0.1
        """.stripMargin
         .format(getSelectedHoursBefore(date, hour, 72))
 
