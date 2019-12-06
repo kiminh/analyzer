@@ -62,8 +62,8 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |  when user_show_ad_num = 2 then '2'
          |  when user_show_ad_num in (3,4) then '4'
          |  when user_show_ad_num in (5,6,7) then '7'
-         |  else '8' end as user_show_ad_num
-         |if(c.iscvr is not null,1,0) isclick
+         |  else '8' end as user_show_ad_num,
+         |  if(c.iscvr is not null,1,0) isclick
          |from
          |  (select * from
          |  dl_cpc.cpc_basedata_union_events
@@ -75,7 +75,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |  from dl_cpc.ocpc_cvr_log_hourly
          |  where  $selectCondition1) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
-         |""".stripMargin
+         """.stripMargin
 
     val log = session.sql(sql)
     log.show(10)
