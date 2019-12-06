@@ -56,7 +56,7 @@ object OcpcLightBulb{
       .join(units, Seq("unitid", "media"), "inner")
       .withColumn("unit_id", col("unitid"))
       .withColumn("ocpc_light", lit(1))
-      .selectExpr("unit_id", "ocpc_light", "cast(round(current_cpa, 2) as double) as ocpc_suggest_price")
+      .selectExpr("unit_id", "ocpc_light", "cast(round(cpa, 2) as double) as ocpc_suggest_price")
 
     data
   }
