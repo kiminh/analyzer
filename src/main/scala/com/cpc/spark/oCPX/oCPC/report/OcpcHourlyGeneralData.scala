@@ -302,6 +302,7 @@ object OcpcHourlyGeneralData {
 
   def getAuc(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
+    import spark.implicits._
     val sqlRequest =
       s"""
          |SELECT
