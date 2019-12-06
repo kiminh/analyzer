@@ -123,7 +123,7 @@ object OcpcSuggestCPA {
         case ("others", _, _) => {
           val cvThresh = {
             if (minCV < 0) {
-              0
+              1
             } else {
               minCV
             }
