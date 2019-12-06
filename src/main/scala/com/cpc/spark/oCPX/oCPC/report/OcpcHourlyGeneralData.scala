@@ -322,7 +322,7 @@ object OcpcHourlyGeneralData {
 
     val newData = data
       .withColumn("id", concat_ws("-", col("industry"), col("conversion_goal"), col("media"), col("ocpc_expand")))
-      .selectExpr("id", "cast(score as long) score", "label")
+      .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
 
     newData.show(10)
