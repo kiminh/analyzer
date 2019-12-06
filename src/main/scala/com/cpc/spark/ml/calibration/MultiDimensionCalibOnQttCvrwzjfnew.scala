@@ -124,15 +124,14 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.select("isclick","ectr","model","group")
+    val result = data.select("isclick","ectr","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      val model = x.getString(2)
-      val group = x.getString(3)
+      val group = x.getString(2)
       val key = group
       (key, (ectr, isClick))
     }).groupByKey()
@@ -172,65 +171,6 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     return calimap
   }
 
-  def AllToConfig(data:DataFrame, keyset:DataFrame,session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
-                  maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
-    val irTrainer = new IsotonicRegression()
-    val sc = session.sparkContext
-    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    var boundaries = Seq[Double]()
-    var predictions = Seq[Double]()
-    val result = data.select("user_show_ad_num","adslot_id","ideaid","isclick","ectr")
-      .rdd.map( x => {
-      var isClick = 0d
-      if (x.get(3) != null) {
-        isClick = x.getLong(3).toDouble
-      }
-      val ectr = x.getLong(4).toDouble / 1e6d
-      (calimodel, (ectr, isClick))
-    }).groupByKey()
-      .mapValues(
-        x =>
-          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
-      )
-      .toLocalIterator
-      .map {
-        x =>
-          val modelName: String = x._1
-          val bins = x._2._1
-          val samples = x._2._2
-          val size = bins._2
-          val positiveSize = bins._3
-          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
-          println(s"bin size: ${bins._1.size}")
-          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
-          boundaries = irFullModel.boundaries
-          predictions = irFullModel.predictions
-          val irModel = IRModel(
-            boundaries = irFullModel.boundaries,
-            predictions = irFullModel.predictions
-          )
-          println(s"bin size: ${irFullModel.boundaries.length}")
-          println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-      }.toList
-    val irModel = IRModel(
-      boundaries,
-      predictions
-    )
-    println(irModel.toString)
-    val keymap = keyset.select("group").rdd.map( x => {
-      val group = x.getString(0)
-      val key = calimodel + "_" + group
-      val config = CalibrationConfig(
-        name = key,
-        ir = Option(irModel)
-      )
-      calimap += ((key,config))
-    }).toLocalIterator
-
-    return calimap
-  }
-
-  // input: (<ectr, click>)
   // output: original ectr/ctr, calibrated ectr/ctr
   def computeCalibration(samples: Array[(Double, Double)], irModel: IRModel): (Double, Double) = {
     var imp = 0.0
