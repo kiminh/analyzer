@@ -38,16 +38,16 @@ object OcpcSampleToPbFinal {
 
     val tableName1 = "dl_cpc.ocpc_deep_param_pb_data_hourly"
     val version1 = version
-    val data1 = getData(date, hour, tableName1, version1, spark)
-    data1.printSchema()
-    val whiteUnits = getPermissionData(version, spark)
+    val result1 = getData(date, hour, tableName1, version1, spark)
+    result1.printSchema()
+//    val whiteUnits = getPermissionData(version, spark)
+//
+//    val result1 = data1
+//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+//      .join(whiteUnits, Seq("identifier"), "inner")
 
-    val result1 = data1
-      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-      .join(whiteUnits, Seq("identifier"), "inner")
-
-//    result1
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191109")
+    result1
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191206a")
 
     val resultDF = result1.filter(s"is_hidden = 0")
 
@@ -59,8 +59,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
