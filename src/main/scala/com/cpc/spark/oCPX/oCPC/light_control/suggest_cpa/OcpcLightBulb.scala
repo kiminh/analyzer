@@ -68,7 +68,7 @@ object OcpcLightBulb{
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status, create_time from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status in (0, 3)) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status, create_time from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status != 2) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
