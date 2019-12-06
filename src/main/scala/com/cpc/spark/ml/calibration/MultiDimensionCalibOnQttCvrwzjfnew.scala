@@ -70,6 +70,8 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |  where $selectCondition2
          |  and cvr_model_name in ('$calimodel','$model')
          |  and isclick = 1
+         |  and ideaid > 0 and adsrc = 1 AND userid > 0
+         |  AND (charge_type IS NULL OR charge_type = 1)
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
