@@ -76,8 +76,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -120,6 +120,28 @@ object OcpcSuggestCPA {
     var result = isRecommend
     if (isRecommend == 1) {
       result = (media, industry, conversionGoal) match {
+        case ("others", _, _) => {
+          val cvThresh = {
+            if (minCV < 0) {
+              0
+            } else {
+              minCV
+            }
+          }
+          val aucThreshold = {
+            if (minAuc < 0) {
+              0.6
+            } else {
+              minAuc
+            }
+          }
+
+          if (cv >= cvThresh && auc >= aucThreshold) {
+            1
+          } else {
+            0
+          }
+        }
         case ("qtt", "elds", _) | ("qtt", "feedapp", _) | ("novel", "elds", _) | ("novel", "feedapp", _) => {
           val cvThresh = {
             if (minCV < 0) {

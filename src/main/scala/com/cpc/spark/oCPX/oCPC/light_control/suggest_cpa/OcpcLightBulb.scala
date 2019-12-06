@@ -45,8 +45,8 @@ object OcpcLightBulb{
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
   }
 
@@ -154,7 +154,9 @@ object OcpcLightBulb{
        """.stripMargin
 
     println(sqlRequest)
-    val data1 = spark.sql(sqlRequest)
+    val data1 = spark
+      .sql(sqlRequest)
+      .na.fill(0.0, Seq("cpa1"))
 
     val data2raw = getConfCPA(version, date, hour, spark)
     val data2 = data2raw
