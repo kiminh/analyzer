@@ -316,8 +316,9 @@ object OcpcHourlyGeneralData {
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
+
     val newData = data
-      .select("industry", "conversion_goal", "media", "ocpc_expand", score", "label")
+      .sql(sqlRequest)
       .withColumn("id", concat_ws("-", col("industry"), col("conversion_goal"), col("media"), col("ocpc_expand")))
       .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
