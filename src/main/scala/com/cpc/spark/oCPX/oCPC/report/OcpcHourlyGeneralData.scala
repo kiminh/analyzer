@@ -318,7 +318,6 @@ object OcpcHourlyGeneralData {
 
 
     val newData = data
-      .sql(sqlRequest)
       .withColumn("id", concat_ws("-", col("industry"), col("conversion_goal"), col("media"), col("ocpc_expand")))
       .selectExpr("id", "cast(score as int) score", "label")
       .coalesce(400)
