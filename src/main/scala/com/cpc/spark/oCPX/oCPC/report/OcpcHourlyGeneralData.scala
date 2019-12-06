@@ -35,9 +35,12 @@ object OcpcHourlyGeneralData {
     // 统计汇总数据
     val cpcData = getCPCstats(cpcRawData, date, hour, spark)
     val ocpcData = getOCPCstats(ocpcRawData, date, hour, spark)
+    //auc
+    val aucData = getAuc(ocpcRawData, date, hour, spark)
 
     val joinData = ocpcData
       .join(cpcData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "inner")
+      .join(aucData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "inner")
 
     // 计算前一天数据
     val result1 = joinData
@@ -59,7 +62,7 @@ object OcpcHourlyGeneralData {
 
     val resultDF = result
       .withColumn("cost", col("ocpc_cost") * 0.01)
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given", "conversion_goal", "media", "ocpc_expand", "pre_cvr", "post_cvr")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "cpa_real", "cpa_given", "conversion_goal", "media", "ocpc_expand", "pre_cvr", "post_cvr", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -68,7 +71,7 @@ object OcpcHourlyGeneralData {
     resultDF.show(10)
 
     resultDF
-      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "conversion_goal", "media", "date", "hour", "version",  "ocpc_expand", "pre_cvr", "post_cvr")
+      .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "conversion_goal", "media",  "ocpc_expand", "pre_cvr", "post_cvr", "auc", "date", "hour", "version")
       .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
 //      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
 
@@ -294,4 +297,46 @@ object OcpcHourlyGeneralData {
     resultDF
 
   }
+
+  def getAuc(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  industry,
+         |  conversion_goal,
+         |  media,
+         |  ocpc_expand,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) as score,
+         |  sum(iscvr) as label
+         |FROM
+         |  raw_data
+         |GROUP BY industry, conversion_goal, media, ocpc_expand
+      """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val newData = data
+      .select("industry", "conversion_goal", "media", "ocpc_expand", score", "label")
+      .withColumn("id", concat_ws("-", col("industry"), col("conversion_goal"), col("media"), col("ocpc_expand")))
+      .selectExpr("id", "cast(score as int) score", "label")
+      .coalesce(400)
+
+    newData.show(10)
+
+    val result = utils.getGauc(spark, newData, "id")
+    val resultRDD = result.rdd.map(row => {
+      val id = row.getAs[String]("name")
+      val identifierList = id.trim.split("-")
+      val industry = identifierList(0)
+      val conversionGoal = identifierList(1).toInt
+      val media = identifierList(2)
+      val ocpc_expand = identifierList(3)
+      val auc = row.getAs[Double]("auc")
+      (industry, conversionGoal, media, ocpc_expand, auc)
+    })
+    val resultDF = resultRDD.toDF("industry", "conversion_goal", "media", "ocpc_expand", "auc")
+    resultDF
+  }
+
 }
