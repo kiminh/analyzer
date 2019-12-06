@@ -5,6 +5,8 @@ import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
 import com.cpc.spark.OcpcProtoType.suggest_cpa_v3.OcpcCalculateAUC.OcpcCalculateAUCmain
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
+import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcCalculateAUC.OcpcCalculateAUCmain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -55,7 +57,7 @@ object OcpcSuggestCPA {
     kvalue.show(10)
 
     // 模型部分
-    val aucData = OcpcCalculateAUCmain(date, hour, version, hourInt, spark).repartition(10).cache()
+    val aucData = OcpcCalculateAUCmain(date, hour, hourInt, spark).repartition(10).cache()
     aucData.show(10)
 
     // 获取ocpc_status
@@ -75,8 +77,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -103,7 +105,7 @@ object OcpcSuggestCPA {
       .join(confData, Seq("userid"), "left_outer")
       .na.fill(-1, Seq("min_cv", "min_auc"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", udfIsRecommendV2()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend"), col("min_cv"), col("min_auc")))
+      .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend"), col("min_cv"), col("min_auc")))
       .na.fill(0, Seq("is_recommend"))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
@@ -111,14 +113,11 @@ object OcpcSuggestCPA {
 
     resultDF.show(10)
 
-//    resultDF
-//        .write.mode("overwrite").saveAsTable("test.check_suggest_cpa20191114b")
-
     resultDF
 
   }
 
-  def udfIsRecommendV2() = udf((industry: String, media: String, conversionGoal: Int, cv: Long, auc: Double, isRecommend: Int, minCV: Int, minAuc: Double) => {
+  def udfIsRecommend() = udf((industry: String, media: String, conversionGoal: Int, cv: Long, auc: Double, isRecommend: Int, minCV: Int, minAuc: Double) => {
     var result = isRecommend
     if (isRecommend == 1) {
       result = (media, industry, conversionGoal) match {
@@ -218,42 +217,6 @@ object OcpcSuggestCPA {
     result
   })
 
-  def udfIsRecommend() = udf((industry: String, media: String, conversion_goal: Int, cv: Long, auc: Double, isRecommend: Int) => {
-    var result = isRecommend
-    if (isRecommend == 1) {
-      if ((media == "novel" || media == "qtt") && (industry == "elds" || industry == "feedapp")) {
-        if (cv >= 10 && auc >= 0.6) {
-          result = 1
-        } else {
-          result = 0
-        }
-      } else if (industry == "others") {
-        if (cv >= 10 && auc >= 0.55) {
-          result = 1
-        } else if (cv >= 60 && auc >= 0.5) {
-          result = 1
-        } else {
-          result = 0
-        }
-      } else if ((media == "hottopic") && (industry == "feedapp") && (conversion_goal == 1)) {
-        if (cv >= 20 && auc >= 0.6) {
-          result = 1
-        } else {
-          result = 0
-        }
-      } else {
-        if (cv >= 60 && auc >= 0.6) {
-          result = 1
-        } else {
-          result = 0
-        }
-      }
-    } else {
-      result = isRecommend
-    }
-    result
-  })
-
   def getKvalue(baseData: DataFrame, baseStat: DataFrame, date: String, hour: String, spark: SparkSession) = {
     baseStat.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -337,11 +300,6 @@ object OcpcSuggestCPA {
     抽取基础数据用于后续计算与统计
     unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
      */
-    // 媒体选择
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 时间区间选择
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val endDay = date + " " + hour
@@ -367,11 +325,7 @@ object OcpcSuggestCPA {
          |    isclick,
          |    price,
          |    bid_discounted_by_ad_slot as bid,
-         |    (case
-         |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |        else 'novel'
-         |    end) as media,
+         |    media_appsid,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -383,22 +337,22 @@ object OcpcSuggestCPA {
          |    exp_cvr,
          |    exp_ctr,
          |    conversion_goal,
-         |    adslot_type
+         |    0 as adslot_type
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
          |    $timeSelection
-         |AND
-         |    $mediaSelection
          |AND
          |    conversion_goal > 0
          |AND
          |    is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
-    val ctrData = spark
+    val ctrDataRaw = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+
+    val ctrData = mapMediaName(ctrDataRaw, spark)
 
     // 抽取转化数据
     val sqlRequest2 =
