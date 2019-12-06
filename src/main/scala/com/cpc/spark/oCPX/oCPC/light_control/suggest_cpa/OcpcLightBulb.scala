@@ -45,8 +45,8 @@ object OcpcLightBulb{
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
   }
 
@@ -152,7 +152,6 @@ object OcpcLightBulb{
          |and ocpc_status != 2
          |group by unitid, media
        """.stripMargin
-
     println(sqlRequest)
     val data1 = spark
       .sql(sqlRequest)
