@@ -29,13 +29,9 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     val endDate = args(0)
     val endHour = args(1)
     val hourRange = args(2).toInt
-    val media = args(3)
-    val model = args(4)
-    val calimodel = args(5)
-    val threshold = args(6).toInt
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key)
+    val model = args(3)
+    val calimodel = args(4)
+    val threshold = args(5).toInt
 
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
@@ -70,14 +66,13 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |if(c.iscvr is not null,1,0) isclick
          |from
          |  (select * from
-         |  dl_cpc.cvr_calibration_sample_all
+         |  dl_cpc.cpc_basedata_union_events
          |  where $selectCondition2
-         |  and $mediaSelection
          |  and cvr_model_name in ('$calimodel','$model')
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
-         |  from dl_cpc.ocpc_quick_cv_log
+         |  from dl_cpc.ocpc_cvr_log_hourly
          |  where  $selectCondition1) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
          |""".stripMargin
