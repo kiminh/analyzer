@@ -310,11 +310,10 @@ object OcpcHourlyGeneralData {
          |  conversion_goal,
          |  media,
          |  ocpc_expand,
-         |  sum(case when isclick=1 then exp_cvr else 0 end) as score,
-         |  sum(iscvr) as label
+         |  case when isclick=1 then exp_cvr else 0 end as score,
+         |  iscvr as label
          |FROM
          |  raw_data
-         |GROUP BY industry, conversion_goal, media, ocpc_expand
       """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
