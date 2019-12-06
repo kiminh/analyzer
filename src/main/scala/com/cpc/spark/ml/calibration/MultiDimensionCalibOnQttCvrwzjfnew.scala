@@ -244,7 +244,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
   : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
-    val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
+    val binNumber = Math.min(Math.max(2, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var allClickSum = 0d
