@@ -83,19 +83,19 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
-    val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").sum("isclick").withColumn("count1",col("count"))
+    val group1 = log.groupBy("adclass","ideaid","user_show_ad_num","adslotid").count().withColumn("count1",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslotid")))
       .filter(s"count1>$threshold")
       .select("adclass","ideaid","user_show_ad_num","adslotid","group")
-    val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").sum("isclick").withColumn("count2",col("count"))
+    val group2 = log.groupBy("adclass","ideaid","user_show_ad_num").count().withColumn("count2",col("count"))
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num")))
       .filter(s"count2>$threshold")
       .select("adclass","ideaid","user_show_ad_num","group")
-    val group3 = log.groupBy("adclass","ideaid").sum("isclick").withColumn("count3",col("count"))
+    val group3 = log.groupBy("adclass","ideaid").count().withColumn("count3",col("count"))
       .filter(s"count3>$threshold")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
-    val group4 = log.groupBy("adclass").sum("isclick").withColumn("count4",col("count"))
+    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
       .filter(s"count4>>$threshold")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
