@@ -71,4 +71,4 @@ STORED as PARQUET;
 alter table dl_cpc.ocpc_filter_unionlog add columns (tuid string);
 alter table dl_cpc.ocpc_filter_unionlog add columns (hidden_tax int);
 alter table dl_cpc.ocpc_filter_unionlog add columns (pure_deep_exp_cvr int);
-alter table test.ocpc_filter_unionlog add columns (deep_ocpc_step int);
+alter table dl_cpc.ocpc_filter_unionlog add columns (deep_ocpc_step int);
