@@ -18,8 +18,8 @@ object OcpcUnionlogHourly {
 
     data
       .repartition(100)
-      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_hourly")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog_hourly")
 
@@ -27,8 +27,8 @@ object OcpcUnionlogHourly {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_hourly")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_hourly")
   }

@@ -1,14 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.deepOcpc.calibration_v4.OcpcGetPb_retention.getPreCvrData
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCVRfactorV2.OcpcCVRfactorMain
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcCalibrationBase.OcpcCalibrationBaseMain
-import com.cpc.spark.oCPX.oCPC.calibration.OcpcJFBfactorV2.OcpcJFBfactorMain
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCVRfactor, OcpcCalibrationBase, OcpcJFBfactor, getDataByTimeSpan}
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v1.OcpcGetPb.{getBaselineData, getPredictionData, getSelectionTable}
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.prepareLabel.prepareLabelMain
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.OcpcMaeMonitor.{getBaselinePcoc, getPredPcoc, getRealPcoc}
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareTrainingSample.{getFeatureData, udfAddHour, udfStringListAppend}
+import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcCalculateAUC.OcpcCalculateAUCmain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -28,10 +20,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getSelectionTable(date, hour, "ocpctest", "pcocPredV1", spark)
+    val dataRaw = OcpcCalculateAUCmain(date, hour, 24, spark)
 
     dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191204b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205a")
 
   }
 
