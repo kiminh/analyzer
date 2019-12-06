@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcCalculateAUC.OcpcCalculateAUCmain
-import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcLightBulb.getRecommendationAd
+import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcLightBulb.{getRecommendationAd, getUnitData}
 import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcSuggestCPA.getBaseLog
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -22,10 +22,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getRecommendationAd("ocpcv1", date, hour, spark)
+    val dataRaw = getUnitData(spark)
 
     dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205c")
 
   }
 

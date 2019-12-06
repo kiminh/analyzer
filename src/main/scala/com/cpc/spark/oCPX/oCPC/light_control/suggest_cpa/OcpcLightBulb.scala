@@ -166,9 +166,6 @@ object OcpcLightBulb{
       .select("unitid", "media", "cpa1", "cpa2")
       .withColumn("cpa", when(col("cpa2").isNotNull, col("cpa2")).otherwise(col("cpa1")))
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_exp_data_new20191206a")
-
     val resultDF = result
       .select("unitid", "media", "cpa")
 
