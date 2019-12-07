@@ -38,11 +38,11 @@ object OcpcHourlyGeneralData {
     val cpcData = getCPCstats(cpcRawData, date, hour, spark)
     val ocpcData = getOCPCstats(ocpcRawData, date, hour, spark)
     //auc
-    val aucData = getAuc(ocpcRawData, date, hour, spark)
+    //val aucData = getAuc(ocpcRawData, date, hour, spark)
 
     val joinData = ocpcData
       .join(cpcData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "inner")
-      .join(aucData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "inner")
+      //.join(aucData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "inner")
 
     // 计算前一天数据
     val result1 = joinData
@@ -68,6 +68,7 @@ object OcpcHourlyGeneralData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .withColumn("auc", lit(hour))
       .cache()
 
     resultDF.show(10)
