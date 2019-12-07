@@ -1,6 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
+import com.cpc.spark.OcpcProtoType.bs.OcpcBsData.getBaseData
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -21,7 +22,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getUnitData(date, hour, spark)
+    val dataRaw = getBaseData(48, date, hour, spark)
 
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205")
