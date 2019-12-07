@@ -2,15 +2,17 @@ package com.cpc.spark.OcpcProtoType.bs
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import scala.collection.mutable.ListBuffer
 import java.io.FileOutputStream
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import ocpcBsParmas.ocpcBsParmas.{SingleItem, OcpcBsParmasList}
+import ocpcBsParmas.ocpcBsParmas.{OcpcBsParmasList, SingleItem}
 
 
 object OcpcBsData {
@@ -41,8 +43,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -126,6 +128,7 @@ object OcpcBsData {
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
       .select("key", "cv", "cvr", "ctr", "bscvr", "total_price", "total_bid")
@@ -180,11 +183,6 @@ object OcpcBsData {
   }
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -209,32 +207,33 @@ object OcpcBsData {
          |  adtype as original_adtype,
          |  isshow,
          |  isclick,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'Qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'HT66'
-         |      else 'MiDu'
-         |  end) as media,
+         |  media_appsid,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr,
          |  cast(bscvr as double) * 1.0 / 1000000 as bscvr,
          |  bid_discounted_by_ad_slot as bid,
-         |  price
+         |  price,
+         |  hidden_tax,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  isshow = 1
          |AND
          |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("adtype", udfMapAdtype()(col("original_adtype")))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
