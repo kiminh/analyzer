@@ -2,15 +2,17 @@ package com.cpc.spark.oCPX.bsOcpc
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import scala.collection.mutable.ListBuffer
 import java.io.FileOutputStream
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import ocpcBsParmas.ocpcBsParmas.{SingleItem, OcpcBsParmasList}
+import ocpcBsParmas.ocpcBsParmas.{OcpcBsParmasList, SingleItem}
 
 
 object OcpcBsData {
@@ -180,11 +182,6 @@ object OcpcBsData {
   }
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -209,32 +206,31 @@ object OcpcBsData {
          |  adtype as original_adtype,
          |  isshow,
          |  isclick,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'Qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'HT66'
-         |      else 'MiDu'
-         |  end) as media,
+         |  media_appsid,
          |  cast(exp_cvr as double) as exp_cvr,
          |  cast(exp_ctr as double) as exp_ctr,
          |  cast(bscvr as double) * 1.0 / 1000000 as bscvr,
          |  bid_discounted_by_ad_slot as bid,
-         |  price
+         |  price,
+         |  hidden_tax
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  isshow = 1
          |AND
          |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("adtype", udfMapAdtype()(col("original_adtype")))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -249,7 +245,7 @@ object OcpcBsData {
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
