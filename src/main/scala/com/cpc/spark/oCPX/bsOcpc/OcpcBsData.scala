@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 import java.io.FileOutputStream
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
-import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax}
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -128,6 +128,7 @@ object OcpcBsData {
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
       .select("key", "cv", "cvr", "ctr", "bscvr", "total_price", "total_bid")
