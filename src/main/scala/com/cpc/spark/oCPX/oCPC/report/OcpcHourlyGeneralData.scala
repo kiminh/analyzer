@@ -311,10 +311,11 @@ object OcpcHourlyGeneralData {
          |  conversion_goal,
          |  media,
          |  ocpc_expand,
-         |  case when isclick=1 then exp_cvr else 0 end as score,
+         |  cast(exp_cvr * 1000000 as bigint) as score,
          |  iscvr as label
          |FROM
          |  raw_data
+         |where isclick=1
       """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
