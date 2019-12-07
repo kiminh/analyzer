@@ -52,12 +52,13 @@ object OcpcHourlyGeneralData {
       .withColumn("cost_high", col("high_cost") * 0.01)
       .withColumn("low_unit_percent", col("low_unitid_cnt") * 1.0 / col("unitid_cnt"))
       .withColumn("pay_percent", col("high_cost") * 1.0 / col("ocpc_cost"))
+      .withColumn("auc", col("high_cost") )
 
     val prevData = getPrevData(date, hour, version, spark)
     val result2 = result1
         .join(prevData, Seq("industry", "conversion_goal", "media", "ocpc_expand"), "left_outer")
         .na.fill(0.0, Seq("cost_yesterday"))
-        //.withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("ocpc_cost") * 0.01 - col("cost_yesterday")) / col("cost_yesterday")))
+        .withColumn("cost_cmp", when(col("cost_yesterday") === 0.0, 1.0).otherwise((col("ocpc_cost") * 0.01 - col("cost_yesterday")) / col("cost_yesterday")))
     val result = result2
 
     result.show(10)
@@ -68,7 +69,6 @@ object OcpcHourlyGeneralData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .withColumn("auc", lit(hour))
       .cache()
 
     resultDF.show(10)
