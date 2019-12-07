@@ -30,25 +30,25 @@ object SampleTemp {
          |from
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
-         |  where day in ('2019-11-27')
+         |  where day in ('2019-11-28')
          |  and media_appsid in ('80000001','80000002')
-         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v5conv5"
+         |  and cvr_model_name =  "qtt-cvr-dnn-rawid-v1wzjfgoal"
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
          |  from dl_cpc.ocpc_quick_cv_log
-         |  where  `date` in ('2019-11-27')) c
+         |  where  `date` in ('2019-11-28')) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
-    val defaultideaid = data.filter("day='2019-11-27'").groupBy("ideaid").count()
+    val defaultideaid = data.filter("day='2019-11-28'").groupBy("ideaid").count()
       .withColumn("ideaidtag",when(col("count")>=10,1).otherwise(0))
       .filter("ideaidtag=1")
-    val defaultunitid = data.filter("day='2019-11-27'").groupBy("unitid").count()
+    val defaultunitid = data.filter("day='2019-11-28'").groupBy("unitid").count()
       .withColumn("unitidtag",when(col("count")>=10,1).otherwise(0))
       .filter("unitidtag=1")
-    val defaultuserid = data.filter("day='2019-11-27'").groupBy("userid").count()
+    val defaultuserid = data.filter("day='2019-11-28'").groupBy("userid").count()
       .withColumn("useridtag",when(col("count")>=10,1).otherwise(0))
       .filter("useridtag=1")
 
@@ -60,7 +60,7 @@ object SampleTemp {
       .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
       .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .filter("iscvr is not null")
-      .filter("day = '2019-11-27'")
+      .filter("day = '2019-11-28'")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","hour","siteid","ideaidnew","unitidnew","useridnew")
       result.show(10)
@@ -70,12 +70,12 @@ object SampleTemp {
       .collect()
 
 
-    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-v5conv5-train.csv"),
+    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-v1wzjf-1128.csv"),
       "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
-   val move ="hdfs dfs -put -f /home/cpc/wy/calibration_sample/calibration_sample-v5conv5-train.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample-v5conv5-train.csv"
+   val move ="hdfs dfs -put -f /home/cpc/wy/calibration_sample/calibration_sample-v1wzjf-1128.csv.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample-v1wzjf-1128.csv"
     move !
   }
 
