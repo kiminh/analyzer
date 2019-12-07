@@ -212,7 +212,9 @@ object OcpcBsData {
          |  cast(bscvr as double) * 1.0 / 1000000 as bscvr,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
-         |  hidden_tax
+         |  hidden_tax,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
