@@ -176,7 +176,7 @@ object LRTrainV4 {
     */
   def nDayBefore(dateStart: String, n: Int): immutable.IndexedSeq[String] = {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-    1.to(n).map(c => {
+    0.to(n).map(c => {
       val cal = Calendar.getInstance()
       cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 1, 0, 0)
       cal.add(Calendar.DAY_OF_MONTH, -c)
