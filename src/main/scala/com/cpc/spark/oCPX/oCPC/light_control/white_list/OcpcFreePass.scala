@@ -85,11 +85,14 @@ object OcpcFreePass {
   }
 
   def ocpcBlackUnits(spark: SparkSession) = {
+    // ocpc补量策略实验
     val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
 
     val data = dataRaw
       .withColumn("unitid", udfGetItem(0, " ")(col("value")))
-      .select("unitid").distinct()
+      .withColumn("bl_flag", lit(1))
+      .select("unitid", "bl_flag")
+      .distinct()
 
     data
   }
