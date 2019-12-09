@@ -3,7 +3,8 @@ package com.cpc.spark.ml.checktool
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, udf}
+import org.apache.spark.sql.functions._
+import java.util.Properties
 //import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
@@ -34,12 +35,12 @@ object GetModelPath{
     }
 
     val sql = s"""
-                 |select a.searchid,a.$raw,model_id
+                 |select a.searchid,a.$raw as raw,model_id
                  |from dl_cpc.cpc_basedata_union_events a
                  |join
                  |  dl_cpc.cpc_snapshot_v2 c
                  |  on a.searchid = c.searchid and a.ideaid=c.ideaid
-                 |  and c.dt = '$dt' and c.hour = "$hour" and c.model_name = '$modelName'
+                 |  and c.dt = '$dt' and c.hour = '$hour' and c.model_name = '$modelName'
                  |  where a.day ='$dt' and a.hour='$hour'
                  |  and a.$condition = '$modelName'
                  |  and a.adsrc in (1,28) and a.$action = 1
@@ -47,17 +48,20 @@ object GetModelPath{
     println(s"sql:\n$sql")
     val basedata = spark.sql(sql)
     basedata.show(10)
-      basedata.createOrReplaceTempView("tmp")
 
-    val sql2 =
-      s"""
-         |select model_id,count(*) as count
-         |from tmp
-         |group by model_id
-         |order by count desc
-         |""".stripMargin
+    val select_model_id = basedata.groupBy("model_id").count().orderBy(desc("count"))
+      .first().getAs[String]("model_id")
 
-    val select_model_id = spark.sql(sql2).first().getAs[String]("model_id")
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rm-2ze0566kl6tl9zp5w.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "model_info_r")
+    jdbcProp.put("password", "PHPymz8ERZeujN6L")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+
+    val table=s"(select job_name from dl_scheduler.model_info where pack_id = $select_model_id) as tmp"
+    val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp)
+    model_path.show(5)
+
 
 
   }
