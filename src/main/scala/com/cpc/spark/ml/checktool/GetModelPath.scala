@@ -1,11 +1,11 @@
 package com.cpc.spark.ml.checktool
 
+import java.io._
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import java.util.Properties
-//import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
@@ -35,7 +35,7 @@ object GetModelPath{
     }
 
     val sql = s"""
-                 |select a.searchid,a.$raw as raw,model_id
+                 |select a.searchid,a.$raw as raw,model_id,day
                  |from dl_cpc.cpc_basedata_union_events a
                  |join
                  |  dl_cpc.cpc_snapshot_v2 c
@@ -51,6 +51,8 @@ object GetModelPath{
 
     val select_model_id = basedata.groupBy("model_id").count().orderBy(desc("count"))
       .first().getAs[String]("model_id")
+    basedata.filter(s"model_id = 'select_model_id'")
+      .write.mode("overwrite").saveAsTable("dl_cpc.dnn_model_score_online")
 
     val jdbcProp = new Properties()
     val jdbcUrl = "jdbc:mysql://rm-2ze0566kl6tl9zp5w.mysql.rds.aliyuncs.com"
@@ -59,10 +61,11 @@ object GetModelPath{
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     val table=s"(select job_name from dl_scheduler.model_info where pack_id = '$select_model_id') as tmp"
-    val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp)
-    model_path.show(5)
+    val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp).first().getAs[String]("job_name")
 
-
+    val writer = new PrintWriter(new File(s"model_path_{$modelName}.txt" ))
+    writer.write(s"$model_path")
+    writer.close()
 
   }
 
