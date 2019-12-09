@@ -43,8 +43,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -181,8 +181,8 @@ object OcpcBsData {
       .withColumn("cvr_factor", udfSeRangeValue(0.2, 5.0)(col("cvr_factor")))
       .withColumn("jfb_factor", udfSeRangeValue(1.0, 2.0)(col("jfb_factor")))
 
-    data
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
+//    data
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
 
     data
   }
