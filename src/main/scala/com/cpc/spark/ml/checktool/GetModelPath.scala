@@ -62,8 +62,9 @@ object GetModelPath{
 
     val table=s"(select job_name from dl_scheduler.model_info where pack_id = '$select_model_id') as tmp"
     val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp).first().getAs[String]("job_name")
+    println(model_path)
 
-    val writer = new PrintWriter(new File(s"model_path_{$modelName}.txt" ))
+    val writer = new PrintWriter(new File(s"model_path_$modelName.txt" ))
     writer.write(s"$model_path")
     writer.close()
 
