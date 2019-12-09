@@ -38,6 +38,7 @@ object OcpcBsData {
     val result = data.filter(s"cv >= $minCV")
 
     result
+        .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("exp_tag", lit(expTag))
@@ -175,13 +176,22 @@ object OcpcBsData {
     val data = data1
       .union(data2)
       .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
-
+      .withColumn("cvr_factor_old", col("cvr_factor"))
+      .withColumn("jfb_factor_old", col("jfb_factor"))
+      .withColumn("cvr_factor", udfSeRangeValue(0.2, 5.0)(col("cvr_factor")))
+      .withColumn("jfb_factor", udfSeRangeValue(1.0, 2.0)(col("jfb_factor")))
 
     data
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
 
-
-
+    data
   }
+
+  def udfSeRangeValue(minValue: Double, maxValue: Double) = udf((value: Double) => {
+    var result = math.min(math.max(minValue, value), maxValue)
+
+    result
+  })
 
   def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
