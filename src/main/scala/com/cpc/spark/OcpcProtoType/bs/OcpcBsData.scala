@@ -168,6 +168,7 @@ object OcpcBsData {
       .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
       .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
       .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
+      .filter(s"cv >= $minCV")
       .cache()
 
     data1.show(10)
