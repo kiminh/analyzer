@@ -77,12 +77,29 @@ object OcpcFreePass {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
   }
+
+  def ocpcBlackUnits(spark: SparkSession) = {
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
+
+    val data = dataRaw
+      .withColumn("unitid", udfGetItem(0, " ")(col("value")))
+      .select("unitid").distinct()
+
+    data
+  }
+
+  def udfGetItem(index: Int, splitter: String) = udf((value: String) => {
+    val valueItem = value.split(splitter)(index)
+    val result = valueItem.toInt
+    result
+  }
+  )
 
   def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int, timeFlag: Int) => {
     var cmpValue = 1
