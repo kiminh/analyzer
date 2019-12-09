@@ -104,7 +104,7 @@ object LRTrainV4 {
            |  , hour
            |  , rand() as rand_v
            |from dl_cpc.cpc_basedata_union_events
-           |where %s
+           |where day = "$dt"
            |  and media_appsid in ('80000001','80000002')
            |  and adslot_type in (1, 2)
            |  and isshow = 1
