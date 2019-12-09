@@ -159,6 +159,7 @@ object OcpcBsData {
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
       .select("key", "cv", "cvr", "ctr", "bscvr", "total_price", "total_bid")
