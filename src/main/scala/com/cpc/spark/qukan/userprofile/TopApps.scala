@@ -62,10 +62,9 @@ object TopApps {
 
     val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("dongwei@aiclk.com",
       "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
-      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
-      "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
-//    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net"))
+      "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net", "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
+      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net", "zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
+//    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
     if (!b) {
       println("发送邮件失败")
     }
@@ -88,11 +87,10 @@ object TopApps {
     }
 
     val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("dongwei@aiclk.com",
-      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net",
-      "yishaobin@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net", "yuxiaoyang@qutoutiao.net", "heting@qutoutiao.net",
       "liutianlin@qutoutiao.net", "baizhen@qutoutiao.net", "zhangzhiyang@qutoutiao.net",
-      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net", "zhuqiqi@qutoutiao.net"))
-    //val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhanghongyang@aiclk.com"))
+      "duruiyu@qutoutiao.net", "chenge@qutoutiao.net", "zhangxiaonian@qutoutiao.net", "zhangwei07@qutoutiao.net", "fanyiming@qutoutiao.net", "zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
+//    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
     if (!qtt) {
       println("发送邮件失败")
     }
