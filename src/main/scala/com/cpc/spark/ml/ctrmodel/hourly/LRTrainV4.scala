@@ -57,6 +57,8 @@ object LRTrainV4 {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
+    println("dates = " + dates)
+
     dates.foreach(dt => {
       val tomorrow=DateUtils.getPrevDate(dt, -1)
 
