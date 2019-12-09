@@ -58,7 +58,7 @@ object GetModelPath{
     jdbcProp.put("password", "PHPymz8ERZeujN6L")
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
-    val table=s"(select job_name from dl_scheduler.model_info where pack_id = $select_model_id) as tmp"
+    val table=s"(select job_name from dl_scheduler.model_info where pack_id = '$select_model_id') as tmp"
     val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp)
     model_path.show(5)
 
