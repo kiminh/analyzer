@@ -43,6 +43,9 @@ object OcpcFreePass {
     // 获取白名单
     val whiteList = getWhiteList(spark)
 
+    // oCPC补量实验
+    val ocpcBuliang = getBlackList(spark)
+
     // 数据关联
     val joinData = unit
         .join(user, Seq("userid"), "inner")
@@ -57,6 +60,9 @@ object OcpcFreePass {
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
+        .join(ocpcBuliang, Seq("unitid"), "left_outer")
+        .na.fill(0, Seq("bl_flag"))
+        .withColumn("flag", when(col("bl_flag") === 1, 0).otherwise(col("flag")))
 
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
@@ -64,12 +70,12 @@ object OcpcFreePass {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
     val resultDF = spark
-      .table("dl_cpc.ocpc_auto_second_stage_light")
+      .table("test.ocpc_auto_second_stage_light")
       .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
 
     resultDF
