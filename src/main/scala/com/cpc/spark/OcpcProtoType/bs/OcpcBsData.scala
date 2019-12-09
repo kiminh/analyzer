@@ -34,8 +34,7 @@ object OcpcBsData {
     val baseData = getBaseData(hourInt, date, hour, spark)
 
     // 计算结果
-    val data = calculateData(baseData, expTag, spark)
-    val result = data.filter(s"cv >= $minCV")
+    val result = calculateData(baseData, expTag, minCV, spark)
 
     result
         .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
@@ -44,8 +43,8 @@ object OcpcBsData {
         .withColumn("exp_tag", lit(expTag))
         .withColumn("version", lit(version))
         .repartition(5)
-//        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
-        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
+        .write.mode("overwrite").insertInto("test.ocpc_bs_params_pb_hourly")
+//        .write.mode("overwrite").insertInto("dl_cpc.ocpc_bs_params_pb_hourly")
 
 
     savePbPack(result, fileName, spark)
@@ -108,7 +107,7 @@ object OcpcBsData {
   }
 
 
-  def calculateData(baseData: DataFrame, expTag: String, spark: SparkSession) = {
+  def calculateData(baseData: DataFrame, expTag: String, minCV: Int, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest1 =
       s"""
@@ -137,6 +136,7 @@ object OcpcBsData {
       .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
       .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
       .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
+      .filter(s"cv >= $minCV")
       .cache()
 
     val sqlRequest2 =
@@ -181,8 +181,8 @@ object OcpcBsData {
       .withColumn("cvr_factor", udfSeRangeValue(0.2, 5.0)(col("cvr_factor")))
       .withColumn("jfb_factor", udfSeRangeValue(1.0, 2.0)(col("jfb_factor")))
 
-//    data
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
+    data
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
 
     data
   }
