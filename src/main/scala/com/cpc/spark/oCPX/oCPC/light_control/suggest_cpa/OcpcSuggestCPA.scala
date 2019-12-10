@@ -68,6 +68,8 @@ object OcpcSuggestCPA {
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
+    result
+      .write.mode("overwrite").saveAsTable("test.check_exp_data20191210b")
 
     val resultDF = result
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
@@ -76,14 +78,14 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcStatus: DataFrame, spark: SparkSession) = {
     /*
-    assemlby the data together
+    assembly the data together
      */
     val rawData = baseData
       .join(kvalue, Seq("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type"), "left_outer")
@@ -100,14 +102,20 @@ object OcpcSuggestCPA {
       .distinct()
     confData.show(10)
 
+    val buliangUnits = ocpcBuliangUnits(spark)
+
     val resultDF = rawData
       .join(confData, Seq("userid"), "left_outer")
+      .join(buliangUnits, Seq("unitid"), "left_outer")
+      .na.fill(0, Seq("bl_flag"))
       .na.fill(-1, Seq("min_cv", "min_auc"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend"), col("min_cv"), col("min_auc")))
-      .na.fill(0, Seq("is_recommend"))
+      .na.fill(0, Seq("is_recommend", "cvrcnt"))
+      .withColumn("is_recommend_old", col("is_recommend"))
+      .withColumn("is_recommend", when(col("bl_flag") === 1 && col("cvrcnt") < 30, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
-      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
+      .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status", "bl_flag", "is_recommend_old")
       .cache()
 
     resultDF.show(10)
@@ -115,6 +123,26 @@ object OcpcSuggestCPA {
     resultDF
 
   }
+
+  def ocpcBuliangUnits(spark: SparkSession) = {
+    // ocpc补量策略实验
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
+
+    val data = dataRaw
+      .withColumn("unitid", udfGetItem(0, " ")(col("value")))
+      .withColumn("bl_flag", lit(1))
+      .select("unitid", "bl_flag")
+      .distinct()
+
+    data
+  }
+
+  def udfGetItem(index: Int, splitter: String) = udf((value: String) => {
+    val valueItem = value.split(splitter)(index)
+    val result = valueItem.toInt
+    result
+  }
+  )
 
   def udfIsRecommend() = udf((industry: String, media: String, conversionGoal: Int, cv: Long, auc: Double, isRecommend: Int, minCV: Int, minAuc: Double) => {
     var result = isRecommend
