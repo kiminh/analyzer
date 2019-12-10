@@ -63,7 +63,10 @@ object LRTrainV4 {
       val tomorrow=DateUtils.getPrevDate(dt, -1)
 
       val queryRawDataFromUnionEvents =
-        s"""select
+        s"""
+           |select
+           |  * from
+           |(select
            |  searchid
            |  , isclick as label
            |  , sex
@@ -107,8 +110,8 @@ object LRTrainV4 {
            |  and adslot_type in (1, 2)
            |  and isshow = 1
            |  and ideaid > 0
-           |  and unitid > 0
-           |  distribute by rand() sort by rand() limit 90000000
+           |  and unitid > 0)a
+           |where rand_v>=0 and rand_v<=0.1
          """.stripMargin
 
       println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
