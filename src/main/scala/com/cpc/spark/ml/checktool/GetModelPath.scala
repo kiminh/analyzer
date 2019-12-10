@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.checktool
 
 import java.io._
-import com.cpc.spark.common.Murmur3Hash.stringHash64
+import sys.process._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -35,7 +35,7 @@ object GetModelPath{
     }
 
     val sql = s"""
-                 |select a.searchid,a.$raw as raw,model_id,day
+                 |select a.searchid,a.$raw as raw,model_id,a.$condition as model,day
                  |from dl_cpc.cpc_basedata_union_events a
                  |join
                  |  dl_cpc.cpc_snapshot_v2 c
@@ -64,13 +64,14 @@ object GetModelPath{
     val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp).first().getAs[String]("job_name")
     println(model_path)
 
-    val writer = new PrintWriter(new File(s"model_path_$modelName.txt" ))
+    val file = s"model_path_${modelName}_${dt}.txt"
+    val writer = new PrintWriter(new File(file))
     writer.write(s"$model_path")
     writer.close()
 
-  }
+   s"hdfs dfs -put -f $file hdfs://emr-cluster/user/cpc/wy/dnn_lastmodel_path/$file" !
 
-  def hash64(seed:Int)= udf {
-    x:String =>  stringHash64(x,seed)}
+
+  }
 
 }
