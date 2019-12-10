@@ -52,7 +52,7 @@ object OcpcCompensateBackup {
 
     val resultDF = data
         .withColumn("is_deep_ocpc", lit(0))
-        .selectExpr("unitid", "userid", "compensate_key", "cast(ocpc_charge_time as string) ocpc_charge_time", "cost", "conversion", "cpareal", "cpagiven", "pay", "cpc_flag", "logic_version", "cast(create_time as string) as create_time", "is_deep_ocpc")
+        .selectExpr("unitid", "userid", "compensate_key", "cast(ocpc_charge_time as string) ocpc_charge_time", "cost", "conversion", "cpareal", "cpagiven", "pay", "cpc_flag", "logic_version", "cast(create_time as string) as create_time", "is_deep_ocpc", "")
 
     resultDF.show(10)
     resultDF
