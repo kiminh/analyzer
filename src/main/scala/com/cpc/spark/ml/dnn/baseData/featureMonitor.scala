@@ -59,7 +59,8 @@ object FeatureMonitor {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
-    val importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path")
+    val importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path").repartition(3000)
+    importedDf.cache()
     val sample_count = importedDf.count()
     //统计one-hot特征的非空样本占比，以及每个one-hot特征的id量；
     var feature_defalt = Murmur3Hash.stringHash64(name_list_one_hot(0), 0)
