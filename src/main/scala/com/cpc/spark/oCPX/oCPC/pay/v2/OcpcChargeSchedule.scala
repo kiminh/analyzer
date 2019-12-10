@@ -44,7 +44,51 @@ object OcpcChargeSchedule {
   }
 
   def getTodayData(date: String, spark: SparkSession) = {
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  timestamp,
+         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
+         |  row_number() over(partition by unitid order by timestamp) as seq
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  date = '$date'
+         |""".stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .filter(s"seq = 1")
+      .withColumn("is_deep_ocpc", lit(0))
+      .select("searchid", "unitid", "time_stamp", "ocpc_charge_time")
 
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  timestamp,
+         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
+         |  row_number() over(partition by unitid order by timestamp) as seq
+         |FROM
+         |  dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  deep_ocpc_step = 2
+         |""".stripMargin
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .filter(s"seq = 1")
+      .withColumn("is_deep_ocpc", lit(1))
+      .select("searchid", "unitid", "time_stamp", "ocpc_charge_time")
+
+    val data = data1.union(data2)
+
+    data
   }
 
 
