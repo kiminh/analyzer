@@ -70,7 +70,7 @@ object OcpcChargeSchedule {
          |  deep_ocpc_charge_time,
          |  (case when ocpc_charge_time == " " then deep_ocpc_charge_time
          |        else ocpc_charge_time
-         |   end) as final_charge_time
+         |   end) as final_charge_time,
          |   cast(split(compensate_key, '~')[1] as int) as pay_cnt
          |FROM
          |  raw_data
