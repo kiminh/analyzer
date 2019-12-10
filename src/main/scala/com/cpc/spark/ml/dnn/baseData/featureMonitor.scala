@@ -59,8 +59,7 @@ object FeatureMonitor {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
-    val importedDf: DataFrame = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path")
-    importedDf.cache()
+    val importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path")
     val sample_count = importedDf.count()
     //统计one-hot特征的非空样本占比，以及每个one-hot特征的id量；
     var feature_defalt = Murmur3Hash.stringHash64(name_list_one_hot(0), 0)
@@ -73,7 +72,7 @@ object FeatureMonitor {
       one_hot_feature_id_num = one_hot_feature_id_num + "," + importedDf.select(expr(s"dense[$i]").alias("feature")).filter(s"feature!=$feature_defalt").distinct().count().toString
     }
     //统计每个multi-hot特征的平均id量
-    val feature_count = importedDf.select(countIdNumber(15)($"idx1").alias("sparse"))
+    val feature_count = importedDf.select(countIdNumber(count_multi_hot.toInt)($"idx1").alias("sparse"))
     var multi_hot_feature_count = feature_count.select(avg(expr(s"sparse[0]")).alias("feature")).rdd.map(r => r.getAs[Double]("feature")).collect()(0).toString
 
     for(i <- 1 until count_multi_hot.toInt){
