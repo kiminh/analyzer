@@ -64,8 +64,6 @@ object LRTrainV4 {
 
       val queryRawDataFromUnionEvents =
         s"""select
-           |  * from
-           |(select
            |  searchid
            |  , isclick as label
            |  , sex
@@ -109,8 +107,8 @@ object LRTrainV4 {
            |  and adslot_type in (1, 2)
            |  and isshow = 1
            |  and ideaid > 0
-           |  and unitid > 0)a
-           |where rand_v>=0 and rand_v<=0.05
+           |  and unitid > 0
+           |  distribute by rand() sort by rand() limit 90000000
          """.stripMargin
 
       println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)

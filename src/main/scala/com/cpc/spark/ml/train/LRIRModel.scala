@@ -179,6 +179,11 @@ class LRIRModel {
     if (testSum < 0) {
       throw new Exception("must run lr test first or test results is empty")
     }
+
+    val predictMean = lrTestResults.map(_._1).mean()
+    val realMean = lrTestResults.map(_._2).mean()
+    val pcoc = predictMean / realMean
+
     var test0 = 0
     var test1 = 0
     lrTestResults
@@ -231,6 +236,7 @@ class LRIRModel {
             sum._2.toDouble / (sum._1 + sum._2).toDouble)
       }
     log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
+    log + "predictMean: %.10f, realMean: %.10f, pcoc: %.10f\n".format(predictMean, realMean, pcoc)
   }
 
   private var irmodel: IsotonicRegressionModel = _
