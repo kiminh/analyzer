@@ -384,5 +384,13 @@ media_appsid string
 PARTITIONED BY (day string, hour string)
 STORED AS PARQUET;
 
+create table if not exists  dl_cpc.dnn_model_score_online (
+searchid string,
+raw int,
+model_id string
+)
+PARTITIONED BY (model string, day string)
+STORED AS PARQUET;
+
 
 
