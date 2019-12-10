@@ -68,8 +68,6 @@ object OcpcSuggestCPA {
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcStatus, spark)
-    result
-      .write.mode("overwrite").saveAsTable("test.check_exp_data20191210b")
 
     val resultDF = result
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status")
@@ -78,8 +76,8 @@ object OcpcSuggestCPA {
       .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
+//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_recommend_units_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_recommend_units_hourly")
     println("successfully save data into table: dl_cpc.ocpc_recommend_units_hourly")
   }
 
@@ -126,8 +124,8 @@ object OcpcSuggestCPA {
 
   def ocpcBuliangUnits(spark: SparkSession) = {
     // ocpc补量策略实验
-//    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
-    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_unit_test.list")
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
+//    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_unit_test.list")
 
     val data = dataRaw
       .withColumn("unitid", udfGetItem(0, " ")(col("value")))
