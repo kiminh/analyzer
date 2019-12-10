@@ -44,7 +44,7 @@ object OcpcFreePass {
     val whiteList = getWhiteList(spark)
 
     // oCPC补量实验
-    val ocpcBuliang = getBlackList(spark)
+    val ocpcBuliang = ocpcBlackUnits(spark)
 
     // 数据关联
     val joinData = unit
