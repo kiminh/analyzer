@@ -65,6 +65,9 @@ object OcpcFreePass {
         .withColumn("flag", when(col("bl_flag") === 1, 0).otherwise(col("flag")))
 
     joinData
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191210a")
+
+    joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
