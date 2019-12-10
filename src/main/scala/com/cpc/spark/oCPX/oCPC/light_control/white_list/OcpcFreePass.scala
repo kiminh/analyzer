@@ -64,8 +64,8 @@ object OcpcFreePass {
         .na.fill(0, Seq("bl_flag"))
         .withColumn("flag", when(col("bl_flag") === 1, 0).otherwise(col("flag")))
 
-    joinData
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191210a")
+//    joinData
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191210a")
 
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
@@ -73,8 +73,8 @@ object OcpcFreePass {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
     val resultDF = spark
@@ -86,8 +86,8 @@ object OcpcFreePass {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
