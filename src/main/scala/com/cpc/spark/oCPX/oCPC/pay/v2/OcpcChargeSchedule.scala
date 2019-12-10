@@ -37,11 +37,16 @@ object OcpcChargeSchedule {
     val ocpcCompensate = getOcpcCompensate(date, spark)
 
     // 统计今天的分单元消耗和开始消费时间
-    
+    val data = getTodayData(date, spark)
 
     // 更新赔付周期表
 
   }
+
+  def getTodayData(date: String, spark: SparkSession) = {
+
+  }
+
 
   def getOcpcCompensate(date: String, spark: SparkSession) = {
     // ocpc赔付备份表
