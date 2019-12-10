@@ -72,6 +72,7 @@ object FeatureMonitor {
       one_hot_feature_count = one_hot_feature_count + "," + (importedDf.select(expr(s"dense[$i]").alias("feature")).filter(s"feature!=$feature_defalt").count()*1.0/sample_count).toString
       one_hot_feature_id_num = one_hot_feature_id_num + "," + importedDf.select(expr(s"dense[$i]").alias("feature")).filter(s"feature!=$feature_defalt").distinct().count().toString
     }
+    one_hot_feature_id_num = one_hot_feature_id_num + "," + sample_count.toString
     //统计每个multi-hot特征的平均id量
     val feature_count = importedDf.select(countIdNumber(count_multi_hot.toInt)($"idx1").alias("sparse"))
     var multi_hot_feature_count = feature_count.select(avg(expr(s"sparse[0]")).alias("feature")).rdd.map(r => r.getAs[Double]("feature")).collect()(0).toString
