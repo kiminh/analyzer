@@ -26,6 +26,8 @@ object OutputScoreDifference{
     val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$dt/result-*")
       .toDF("id","prediction","num")
 
+    dnn_data.show(10)
+
     println("sum is %d".format(dnn_data.count()))
     // get union log
 

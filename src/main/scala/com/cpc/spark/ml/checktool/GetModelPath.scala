@@ -51,7 +51,7 @@ object GetModelPath{
 
     val select_model_id = basedata.groupBy("model_id").count().orderBy(desc("count"))
       .first().getAs[String]("model_id")
-    println("model id is %s",select_model_id)
+    println("model id is ",select_model_id)
     basedata.filter(s"model_id = '$select_model_id'").repartition(5).write.mode("overwrite").insertInto("dl_cpc.dnn_model_score_online")
 
     val jdbcProp = new Properties()
