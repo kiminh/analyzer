@@ -62,7 +62,7 @@ object OcpcChargeSchedule {
       .sql(sqlRequest1)
       .filter(s"seq = 1")
       .withColumn("is_deep_ocpc", lit(0))
-      .select("searchid", "unitid", "timestamp", "ocpc_charge_time")
+      .select("searchid", "unitid", "timestamp", "ocpc_charge_time", "is_deep_ocpc")
 
     val sqlRequest2 =
       s"""
@@ -84,7 +84,7 @@ object OcpcChargeSchedule {
       .sql(sqlRequest2)
       .filter(s"seq = 1")
       .withColumn("is_deep_ocpc", lit(1))
-      .select("searchid", "unitid", "timestamp", "ocpc_charge_time")
+      .select("searchid", "unitid", "timestamp", "ocpc_charge_time", "is_deep_ocpc")
 
     val data = data1.union(data2)
 
