@@ -122,7 +122,7 @@ object OcpcChargeSchedule {
       s"""
          |SELECT
          |  unitid,
-         |  cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |  0 as is_hidden,
          |  media_appsid,
          |  adslot_type,
          |  adclass,
@@ -147,6 +147,9 @@ object OcpcChargeSchedule {
       .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
       .distinct()
 
+//    newDataRaw
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191126")
+
     val newData = newDataRaw
       .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .select("unitid")
@@ -166,7 +169,8 @@ object OcpcChargeSchedule {
   def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int, conversionGoal: Int) => {
     val adclassString = adclass.toString
     val adclass3 = adclassString.substring(0, 3)
-    val siteformPayAdclass = Array(130112100, 123100100, 130104100, 118106100, 118109100, 110111100, 118102100, 118105100, 113102100, 130102100, 135101100, 135102100, 135103100)
+    val adclass2 = adclassString.substring(0, 6)
+    val siteformPayAdclass = Array("110111", "113102", "118102", "118105", "118106", "118109", "123101", "123102", "123103", "123104", "123105", "123106", "123107", "123108", "123109", "123110", "123111", "123112", "123113", "123114", "123115", "130102", "130104", "130112", "135101", "135102", "135103")
     var result = "others"
     if (adclass3 == "134" || adclass3 == "107") {
       result = "elds"
@@ -178,7 +182,7 @@ object OcpcChargeSchedule {
       result = "wzcp"
     } else if (adclass3 == "103" || adclass3 == "111" || adclass3 == "104") {
       result = "pay_industry"
-    } else if (siteformPayAdclass.contains(adclass) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
+    } else if (siteformPayAdclass.contains(adclass2) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
       result = "siteform_pay_industry"
     } else {
       result = "others"

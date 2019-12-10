@@ -88,7 +88,10 @@ object OcpcUnionlogHourly {
          |    is_deep_ocpc,
          |    deep_conversion_goal,
          |    deep_cpa,
-         |    cpa_check_priority
+         |    cpa_check_priority,
+         |    hidden_tax,
+         |    pure_deep_exp_cvr,
+         |    deep_ocpc_step
          |from
          |    base_data
        """.stripMargin
@@ -158,7 +161,10 @@ object OcpcUnionlogHourly {
          |    is_deep_ocpc,
          |    deep_conversion_goal,
          |    deep_cpa,
-         |    cpa_check_priority
+         |    cpa_check_priority,
+         |    hidden_tax,
+         |    pure_deep_exp_cvr,
+         |    deep_ocpc_step
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)

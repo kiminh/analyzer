@@ -1,18 +1,12 @@
 package com.cpc.spark.oCPX.unittest
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCVRfactorRealtime._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcCalculateCalibrationValue._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcJFBfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcSmoothfactor._
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_baseline_others.getBaseDataDelayOther
+import com.cpc.spark.OcpcProtoType.bs.OcpcBsData.getBaseData
+import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
 
 
 object OcpcUnitTest {
@@ -29,10 +23,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val baseDataRaw = getBaseDataDelayOther(24, date, hour, spark)
+    val dataRaw = ocpcBlackUnits(spark)
 
-    baseDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191122a")
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205")
 
   }
 

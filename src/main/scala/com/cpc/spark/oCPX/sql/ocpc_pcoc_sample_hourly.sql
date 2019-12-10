@@ -1,4 +1,4 @@
-CREATE TABLE test.ocpc_pcoc_sample_hourly(
+CREATE TABLE dl_cpc.ocpc_pcoc_sample_hourly(
     identifier                  string,
     media                       string,
     conversion_goal             int,
@@ -9,5 +9,5 @@ CREATE TABLE test.ocpc_pcoc_sample_hourly(
     time                        string,
     label                       double
 )
-partitioned by (`date` string, `hour` string, version string)
+partitioned by (`date` string, `hour` string, version string, exp_tag string)
 stored as parquet;
