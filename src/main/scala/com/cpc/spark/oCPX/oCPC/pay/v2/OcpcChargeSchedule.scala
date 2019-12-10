@@ -68,6 +68,7 @@ object OcpcChargeSchedule {
          |  unitid,
          |  ocpc_charge_time,
          |  deep_ocpc_charge_time,
+         |  compensate_key,
          |  (case when ocpc_charge_time == " " then deep_ocpc_charge_time
          |        else ocpc_charge_time
          |   end) as final_charge_time,
