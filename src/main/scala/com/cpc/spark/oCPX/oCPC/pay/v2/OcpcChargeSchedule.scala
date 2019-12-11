@@ -93,7 +93,7 @@ object OcpcChargeSchedule {
 
     val data = data1
       .join(data2, Seq("unitid"), "left_outer")
-      .select("unitid", "timestamp", "ocpc_charge_time", "deep_timestamp", "ocpc_charge_time", "deep_ocpc_charge_time")
+      .select("unitid", "timestamp", "ocpc_charge_time", "deep_timestamp", "deep_ocpc_charge_time")
 
     data
   }
