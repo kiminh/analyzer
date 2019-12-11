@@ -156,10 +156,4 @@ object OcpcChargeSchedule {
     data
   }
 
-  def udfCheckIsPay(date: String, dayCnt: Int) = udf((finalChargeTime: String) => {
-
-  })
-
-
-
 }
