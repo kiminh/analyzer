@@ -3,8 +3,8 @@ package com.cpc.spark.ml.checktool
 import com.cpc.spark.common.Murmur3Hash.stringHash64
 import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQttCvrV3.LogToPb
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, udf}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions._
 
 /**
   * author: wangyao
@@ -43,9 +43,14 @@ object OutputScoreDifference{
       .withColumn("diff",restrict(col("diff")))
 
     basedata.show(10)
-    println("sum is %d".format(basedata.count()))
-   val result = basedata.groupBy("diff").count()
+    val sum = basedata.count()
+    println("sum is %d".format(sum))
+   val result = basedata
+       .withColumn("diff",when(col("diff")<0.8,0.8).otherwise(col("diff")))
+       .withColumn("diff",when(col("diff")>1.2,1.2).otherwise(col("diff")))
+       .groupBy("diff").count()
        .orderBy("diff")
+       .withColumn("ratio",col("count")/sum)
 
     result.show(100)
 
