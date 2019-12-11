@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfDetermineMedia, udfMediaName, udfSetExpTag}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -206,11 +206,6 @@ object OcpcDeepBase_shallowfactor {
   })
 
   def getShallowBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -253,11 +248,9 @@ object OcpcDeepBase_shallowfactor {
          |  date,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_base_unionlog_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  is_deep_ocpc = 1
          |AND
@@ -265,14 +258,14 @@ object OcpcDeepBase_shallowfactor {
          |AND
          |  isclick = 1
          |AND
-         |  deep_cvr is not null
-         |AND
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =

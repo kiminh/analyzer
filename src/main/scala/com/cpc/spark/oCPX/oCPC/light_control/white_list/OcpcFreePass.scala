@@ -43,6 +43,9 @@ object OcpcFreePass {
     // 获取白名单
     val whiteList = getWhiteList(spark)
 
+    // oCPC补量实验
+    val ocpcBuliang = ocpcBlackUnits(spark)
+
     // 数据关联
     val joinData = unit
         .join(user, Seq("userid"), "inner")
@@ -57,6 +60,12 @@ object OcpcFreePass {
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
+        .join(ocpcBuliang, Seq("unitid"), "left_outer")
+        .na.fill(0, Seq("bl_flag"))
+        .withColumn("flag", when(col("bl_flag") === 1, 0).otherwise(col("flag")))
+
+//    joinData
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191210a")
 
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
@@ -69,7 +78,7 @@ object OcpcFreePass {
 
 
     val resultDF = spark
-      .table("dl_cpc.ocpc_auto_second_stage_light")
+      .table("test.ocpc_auto_second_stage_light")
       .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
 
     resultDF
@@ -83,6 +92,26 @@ object OcpcFreePass {
 
 
   }
+
+  def ocpcBlackUnits(spark: SparkSession) = {
+    // ocpc补量策略实验
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
+
+    val data = dataRaw
+      .withColumn("unitid", udfGetItem(0, " ")(col("value")))
+      .withColumn("bl_flag", lit(1))
+      .select("unitid", "bl_flag")
+      .distinct()
+
+    data
+  }
+
+  def udfGetItem(index: Int, splitter: String) = udf((value: String) => {
+    val valueItem = value.split(splitter)(index)
+    val result = valueItem.toInt
+    result
+  }
+  )
 
   def udfDetermineFlag() = udf((flagRatio: Int, randomValue: Int, userBlackFlag: Int, userCostFlag: Int, unitWhiteFlag: Int, timeFlag: Int) => {
     var cmpValue = 1

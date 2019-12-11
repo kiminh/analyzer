@@ -85,11 +85,13 @@ object OcpcWhiteList {
       .load()
 
     // add some black list of users
+    val blackUserid = getBlackList(spark)
     val result = data
       .withColumn("userid", col("id"))
       .withColumn("adclass", col("category"))
       .selectExpr("cast(userid as int) as userid", "adclass")
-      .withColumn("userid_black_flag", udfUseridBlackList()(col("userid")))
+      .join(blackUserid, Seq("userid"), "left_outer")
+      .na.fill(0, Seq("userid_black_flag"))
 
 //    result
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
@@ -103,14 +105,32 @@ object OcpcWhiteList {
     resultDF
   }
 
-  def udfUseridBlackList() = udf((userid: Int) => {
-    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964, 1688637, 1701747, 1680417, 1676193, 1657091, 1684700, 1644013, 1657071, 1685039)
-    if (blackUsers.contains(userid)) {
-      1
-    } else {
-      0
-    }
-  })
+//  def udfUseridBlackList() = udf((userid: Int) => {
+//    val blackUsers = Array(1638665, 1638667, 1600258, 1593001, 1589964, 1688637, 1701747, 1680417, 1676193, 1657091, 1684700, 1644013, 1657071, 1685039, 1711117, 1709423, 1709186, 1646976)
+//    if (blackUsers.contains(userid)) {
+//      1
+//    } else {
+//      0
+//    }
+//  })
+
+  def getBlackList(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val ocpcBlackListConf = conf.getString("ocpc_all.light_control.ocpc_black_list")
+    val ocpcBlacklist = spark
+      .read
+      .format("json")
+      .json(ocpcBlackListConf)
+      .selectExpr("cast(userid as int) as userid")
+      .withColumn("userid_black_flag", lit(1))
+      .distinct()
+    println("ocpc blacklist for testing ocpc light:")
+    ocpcBlacklist.show(10)
+
+    ocpcBlacklist
+
+  }
 
   def getUnitData(spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
