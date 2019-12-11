@@ -25,7 +25,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getShallowData(date, 7, spark)
+    val dataRaw = getShallowData(date, 1, spark)
 
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191211b")
