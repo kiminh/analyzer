@@ -146,8 +146,8 @@ object OcpcChargeSchedule {
          |  compensate_key,
          |  final_charge_time,
          |  pay_cnt,
-         |  row_number() over(partition by unitid order by final_charge_time desc) as seq1,
-         |  row_number() over(partition by unitid order by pay_cnt desc) as seq2
+         |  row_number() over(partition by unitid order by final_charge_time) as seq1,
+         |  row_nubmer() over(partition by unitid order by final_charge_time desc) as seq2
          |FROM
          |  base_data
          |""".stripMargin
