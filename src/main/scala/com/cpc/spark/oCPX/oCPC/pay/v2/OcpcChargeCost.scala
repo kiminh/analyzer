@@ -5,7 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.udfConcatStringInt
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcChargeCost {
@@ -30,7 +30,32 @@ object OcpcChargeCost {
     // 计算七天的分天展点消以及深层转化
     val deepOcpcData = getDeepData(date, dayCnt, spark)
 
+    // 数据关联
+    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
+  }
+
+  def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, session: SparkSession) = {
+    val data1 = dataRaw1
+      .withColumn("click1", col("click"))
+      .withColumn("cv1", col("cv"))
+      .withColumn("cost1", col("cost"))
+      .withColumn("cpagiven1", col("cpagiven"))
+      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1")
+
+    val data2 = dataRaw2
+      .withColumn("click2", col("click"))
+      .withColumn("cv2", col("cv"))
+      .withColumn("cost2", col("cost"))
+      .withColumn("cpagiven2", col("cpagiven"))
+      .select("unitid", "date", "cpa_check_priority", "flag", "click2", "cv2", "cost2", "cpagiven2")
+      .filter(s"flag = 1")
+
+    val data = data1
+      .join(data2, Seq("unitid", "date", "flag"), "left_outer")
+      .na.fill(0, Seq("cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2"))
+
+    data
   }
 
   def getDeepData(date: String, dayCnt: Int, spark: SparkSession) = {
@@ -93,15 +118,13 @@ object OcpcChargeCost {
       .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
-    baseData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211a")
-
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
          |  date,
+         |  cpa_check_priority,
          |  flag,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
@@ -109,7 +132,7 @@ object OcpcChargeCost {
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, flag
+         |GROUP BY unitid, date, cpa_check_priority, flag
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
