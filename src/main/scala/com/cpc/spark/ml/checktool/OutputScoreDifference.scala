@@ -46,8 +46,8 @@ object OutputScoreDifference{
     val sum = basedata.count()
     println("sum is %d".format(sum))
    val result = basedata
-       .withColumn("diff",when(col("diff")<0.8,0.8).otherwise(col("diff")))
-       .withColumn("diff",when(col("diff")>1.2,1.2).otherwise(col("diff")))
+       .withColumn("diff",when(col("diff")<0.9,0.9).otherwise(col("diff")))
+       .withColumn("diff",when(col("diff")>1.1,1.1).otherwise(col("diff")))
        .groupBy("diff").count()
        .orderBy("diff")
        .withColumn("ratio",col("count")/sum)
