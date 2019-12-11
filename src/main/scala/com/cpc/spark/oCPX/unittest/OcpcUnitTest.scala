@@ -28,7 +28,7 @@ object OcpcUnitTest {
     val dataRaw = getShallowData(date, 7, spark)
 
     dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191210a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191211b")
 
   }
 
