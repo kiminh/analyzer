@@ -93,6 +93,9 @@ object OcpcChargeCost {
       .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
+    baseData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211a")
+
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest3 =
       s"""
@@ -171,8 +174,6 @@ object OcpcChargeCost {
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
-    baseData
-        .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest3 =
