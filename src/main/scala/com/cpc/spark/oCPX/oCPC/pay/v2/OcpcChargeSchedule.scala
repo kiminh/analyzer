@@ -89,11 +89,11 @@ object OcpcChargeSchedule {
     val data2 = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .select("searchid", "unitid", "timestamp", "deep_ocpc_charge_time")
+      .select("searchid", "unitid", "deep_timestamp", "deep_ocpc_charge_time")
 
     val data = data1
       .join(data2, Seq("unitid"), "left_outer")
-      .select("unitid", "timestamp", "ocpc_charge_time", "deep_timestamp", "deep_ocpc_charge_time")
+      .select("unitid", "timestamp", "ocpc_charge_time", "deep_timestamp", "ocpc_charge_time", "deep_ocpc_charge_time")
 
     data
   }
