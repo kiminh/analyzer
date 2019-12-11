@@ -133,7 +133,7 @@ object OcpcChargeSchedule {
     println(sqlRequest2)
     val baseData = spark
         .sql(sqlRequest2)
-        .filter(s"ocpc_charge_time is null")
+        .filter(s"ocpc_charge_time is not null")
 
     baseData.createOrReplaceTempView("base_data")
 
