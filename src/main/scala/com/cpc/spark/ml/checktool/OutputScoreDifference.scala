@@ -38,13 +38,14 @@ object OutputScoreDifference{
     val basedata = spark.sql(sql)
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
-      .withColumn("p_offline",col("prediction")*1e6d)
+      .selectExpr("raw","cast(prediction*1e6d as Int) p_offline")
       .withColumn("diff",col("p_offline")/col("raw"))
       .withColumn("diff",restrict(col("diff")))
 
     basedata.show(10)
     println("sum is %d".format(basedata.count()))
    val result = basedata.groupBy("diff").count()
+       .orderBy("diff")
 
     result.show(100)
 
