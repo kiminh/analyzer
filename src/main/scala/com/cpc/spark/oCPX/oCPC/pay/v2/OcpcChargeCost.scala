@@ -66,8 +66,6 @@ object OcpcChargeCost {
          |WHERE
          |  $selectCondition
          |AND
-         |  deep_ocpc_step = 2
-         |AND
          |  cpa_check_priority in (2, 3)
          |AND
          |  is_deep_ocpc = 1
@@ -148,8 +146,6 @@ object OcpcChargeCost {
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  ocpc_step = 2
          |""".stripMargin
     println(sqlRequest1)
     val clickData = spark
