@@ -235,7 +235,7 @@ class LRIRModel {
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble)
       }
-    log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
+    log = log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
     log + "predictMean: %.10f, realMean: %.10f, pcoc: %.10f\n".format(predictMean, realMean, pcoc)
   }
 
