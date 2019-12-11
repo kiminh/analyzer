@@ -107,7 +107,6 @@ object OcpcChargeSchedule {
     val sqlRequest7 =
       s"""
          |SELECT
-         |  searchid,
          |  unitid,
          |  ocpc_charge_time,
          |  row_number() over(partition by unitid order by ocpc_charge_time desc) as seq
@@ -127,7 +126,6 @@ object OcpcChargeSchedule {
     val sqlRequest8 =
       s"""
          |SELECT
-         |  searchid,
          |  unitid,
          |  deep_ocpc_charge_time,
          |  row_number() over(partition by unitid order by deep_ocpc_charge_time desc) as seq
@@ -157,7 +155,6 @@ object OcpcChargeSchedule {
     val sqlRequest12 =
       s"""
          |SELECT
-         |  searchid,
          |  unitid,
          |  pay_cnt,
          |  row_number() over(partition by unitid order by final_ocpc_charge_time desc) as seq
