@@ -39,7 +39,7 @@ object OcpcCompensateBackup {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(SELECT unit_id as unitid, user_id as userid, compensate_key, ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, cpc_flag, logic_version, create_time FROM ocpc_compensate) as tmp"
+    val table = "(SELECT unit_id as unitid, user_id as userid, compensate_key, ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, cpc_flag, logic_version, create_time, is_pay FROM ocpc_compensate) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -52,7 +52,7 @@ object OcpcCompensateBackup {
     val resultDF = data
         .withColumn("is_deep_ocpc", lit(0))
         .withColumn("deep_ocpc_charge_time", lit(" "))
-        .selectExpr("unitid", "userid", "compensate_key", "cast(ocpc_charge_time as string) ocpc_charge_time", "cost", "conversion", "cpareal", "cpagiven", "pay", "cpc_flag", "logic_version", "cast(create_time as string) as create_time", "is_deep_ocpc", "deep_ocpc_charge_time")
+        .selectExpr("unitid", "userid", "compensate_key", "cast(ocpc_charge_time as string) ocpc_charge_time", "cost", "conversion", "cpareal", "cpagiven", "pay", "cpc_flag", "logic_version", "cast(create_time as string) as create_time", "is_deep_ocpc", "deep_ocpc_charge_time", "is_pay")
 
     resultDF.show(10)
     resultDF
