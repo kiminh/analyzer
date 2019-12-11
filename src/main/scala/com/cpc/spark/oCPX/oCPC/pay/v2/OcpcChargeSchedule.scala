@@ -40,7 +40,6 @@ object OcpcChargeSchedule {
     val data = getTodayData(date, spark)
 
     // 更新赔付周期表
-    val
 
   }
 
