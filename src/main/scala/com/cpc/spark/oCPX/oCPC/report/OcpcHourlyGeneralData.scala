@@ -101,7 +101,7 @@ object OcpcHourlyGeneralData {
          |  ocpc_expand,
          |  cost as cost_yesterday
          |FROM
-         |  test.ocpc_general_data_industry_hourly
+         |  dl_cpc.ocpc_general_data_industry_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
