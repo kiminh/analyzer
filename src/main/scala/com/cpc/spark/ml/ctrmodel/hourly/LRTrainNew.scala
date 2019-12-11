@@ -58,7 +58,7 @@ object LRTrainNew {
       s"""
          |select
          |  searchid
-         |  , isclick as label
+         |  ,isclick as label
          |  , sex
          |  , age
          |  , os
