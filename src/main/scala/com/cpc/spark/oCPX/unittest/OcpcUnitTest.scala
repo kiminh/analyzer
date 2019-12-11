@@ -25,10 +25,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val data = getOcpcCompensate(date, 7, spark)
+    val data = getTodayData(date, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211d")
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211e")
 
   }
 

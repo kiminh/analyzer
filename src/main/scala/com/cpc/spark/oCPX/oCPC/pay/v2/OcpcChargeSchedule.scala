@@ -42,6 +42,8 @@ object OcpcChargeSchedule {
     // 更新赔付周期表
     val data = updateSchedule(ocpcCompensate, todayData, date, spark)
 
+    //
+
   }
 
   def updateSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, date: String, spark: SparkSession) = {
