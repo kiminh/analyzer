@@ -131,6 +131,7 @@ object LRTrainV4 {
 
       //      joined.unpersist()
       // ideaids.unpersist()
+
       df.unpersist()
     })
 
