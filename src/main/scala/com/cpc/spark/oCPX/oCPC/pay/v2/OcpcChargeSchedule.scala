@@ -34,19 +34,152 @@ object OcpcChargeSchedule {
     val dayCnt = args(2).toInt
 
     // 获取前一天的ocpc_compensate线上数据（备份表），基于ocpc_charge_time和deep_ocpc_charge_time来判断周期开始日期以及分别需要计算深度还是浅层赔付
-    val ocpcCompensate = getOcpcCompensate(date, 7, spark)
+    val ocpcCompensate = getOcpcCompensate(date, dayCnt, spark)
 
     // 统计今天的分单元消耗和开始消费时间
     val todayData = getTodayData(date, spark)
 
     // 更新赔付周期表
-    val data = updateSchedule(ocpcCompensate, todayData, date, spark)
+    val data = joinSchedule(ocpcCompensate, todayData, date, dayCnt, spark)
 
     //
 
   }
 
-  def updateSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, date: String, spark: SparkSession) = {
+  def joinSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
+    /*
+    1. 过滤出ocpcCompensate表中ocpc_charge_time不为空的记录，保留一条，记为表1
+    2. 过滤出ocpcCompensate表中deep_ocpc_charge_time不为空的记录，保留一条，记为表2
+    3. 令todayData为表3
+    4. 令todayData中deep_ocpc_charge_time不为空的为表4
+    5. 表1与表3关联，获取不在表1在表3的记录，记为表5
+    6. 表2与表4关联，获取不在表2在表4的记录，记为表6
+    7. ocpcCompensate表中的ocpc_charge_time保留最后一条，如果超过赔付周期或者赔付次数超过上限，则不再赔付，表7
+    8. ocpcCompensate表中的deep_ocpc_charge_time保留最后一条，表8
+    9. 表7与表5进行union， 表9
+    10. 表8月表6进行union， 表10
+    11. 表9与表10外关联，表11
+    12. ocpcCompensate中取出unitid与pay_cnt，按照final_ocpc_charge_time最后一条记录，表12
+    13. 表11关联表12，pay_cnt填0
+     */
+
+    // 过滤出ocpcCompensate表中ocpc_charge_time不为空的记录，保留一条，记为表1
+    val data1 = ocpcCompensate
+      .withColumn("flag", lit(1))
+      .filter(s"ocpc_charge_time != ' '")
+      .select("unitid", "flag")
+      .distinct()
+
+    // 过滤出ocpcCompensate表中deep_ocpc_charge_time不为空的记录，保留一条，记为表2
+    val data2 = ocpcCompensate
+      .filter(s"deep_ocpc_charge_time != ' '")
+      .withColumn("flag", lit(1))
+      .select("unitid", "flag")
+      .distinct()
+
+    // 令todayData为表3
+    val data3 = todayData
+      .select("unitid", "ocpc_charge_time")
+      .distinct()
+
+    // 令todayData中deep_ocpc_charge_time不为空的为表4
+    val data4 = todayData
+      .filter(s"deep_ocpc_charge_time != ' '")
+      .select("unitid", "deep_ocpc_charge_time")
+      .distinct()
+
+    // 表1与表3关联，获取不在表1在表3的记录，记为表5
+    val data5 = data3
+      .join(data1, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .select("unitid", "ocpc_charge_time")
+      .distinct()
+
+    // 表2与表4关联，获取不在表2在表4的记录，记为表6
+    val data6 = data4
+      .join(data2, Seq("unitid"), "left_outer")
+      .filter(s"flag is null")
+      .select("unitid", "deep_ocpc_charge_time")
+      .distinct()
+
+    // ocpcCompensate表中的ocpc_charge_time保留最后一条，如果超过赔付周期或者赔付次数超过上限，则不再赔付，表7
+    ocpcCompensate.createOrReplaceTempView("ocpc_compensate")
+    val sqlRequest7 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  ocpc_charge_time,
+         |  row_number() over(partition by unitid order by ocpc_charge_time desc) as seq
+         |FROM
+         |  ocpc_compensate
+         |WHERE
+         |  ocpc_charge_time = ' '
+         |""".stripMargin
+    println(sqlRequest7)
+    val data7 = spark
+      .sql(sqlRequest7)
+      .filter(s"seq = 1")
+      .select("untid", "ocpc_charge_time")
+      .distinct()
+
+    // ocpcCompensate表中的deep_ocpc_charge_time保留最后一条，表8
+    val sqlRequest8 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  deep_ocpc_charge_time,
+         |  row_number() over(partition by unitid order by deep_ocpc_charge_time desc) as seq
+         |FROM
+         |  ocpc_compensate
+         |WHERE
+         |  deep_ocpc_charge_time = ' '
+         |""".stripMargin
+    val data8 = spark
+      .sql(sqlRequest8)
+      .filter(s"seq = 1")
+      .select("unitid", "deep_ocpc_charge_time")
+      .distinct()
+
+    // 表7与表5进行union， 表9
+    val data9 = data5.union(data7)
+
+    // 表8月表6进行union， 表10
+    val data10 = data6.union(data8)
+
+    // 表9与表10外关联，表11
+    val data11 = data9
+      .join(data10, Seq("unitid"), "outer")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time")
+
+    // ocpcCompensate中取出unitid与pay_cnt，按照final_ocpc_charge_time最后一条记录，表12
+    val sqlRequest12 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  pay_cnt,
+         |  row_number() over(partition by unitid order by final_ocpc_charge_time desc) as seq
+         |FROM
+         |  ocpc_compensate
+         |WHERE
+         |  final_ocpc_charge_time = ' '
+         |""".stripMargin
+    println(sqlRequest12)
+    val data12 = spark
+      .sql(sqlRequest12)
+      .filter(s"seq = 1")
+      .select("unitid", "pay_cnt")
+      .distinct()
+
+    // 数据关联，表13
+    val data13 = data11
+      .join(data12, Seq("unitid"), "left_outer")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt")
+      .na.fill(0, Seq("pay_cnt")) // pay_cnt代表已完成的赔付周期数
+
+    data13
 
   }
 
@@ -133,27 +266,9 @@ object OcpcChargeSchedule {
          |  raw_data
          |""".stripMargin
     println(sqlRequest2)
-    val baseData = spark
+    val data = spark
         .sql(sqlRequest2)
         .filter(s"ocpc_charge_time is not null")
-
-    baseData.createOrReplaceTempView("base_data")
-
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  ocpc_charge_time,
-         |  deep_ocpc_charge_time,
-         |  compensate_key,
-         |  final_charge_time,
-         |  pay_cnt,
-         |  row_number() over(partition by unitid order by final_charge_time) as seq1,
-         |  row_number() over(partition by unitid order by final_charge_time desc) as seq2
-         |FROM
-         |  base_data
-         |""".stripMargin
-    val data = spark.sql(sqlRequest3)
 
     data
   }
