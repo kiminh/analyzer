@@ -7,6 +7,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.getShallowData
 import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData}
 
 
@@ -24,7 +25,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = getTodayData(date, spark)
+    val dataRaw = getShallowData(date, 7, spark)
 
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191210a")
