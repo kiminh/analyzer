@@ -34,12 +34,17 @@ object OcpcChargeSchedule {
     val dayCnt = args(2).toInt
 
     // 获取前一天的ocpc_compensate线上数据（备份表），基于ocpc_charge_time和deep_ocpc_charge_time来判断周期开始日期以及分别需要计算深度还是浅层赔付
-    val ocpcCompensate = getOcpcCompensate(date, spark)
+    val ocpcCompensate = getOcpcCompensate(date, 7, spark)
 
     // 统计今天的分单元消耗和开始消费时间
-    val data = getTodayData(date, spark)
+    val todayData = getTodayData(date, spark)
 
     // 更新赔付周期表
+    val data = updateSchedule(ocpcCompensate, todayData, date, spark)
+
+  }
+
+  def updateSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, date: String, spark: SparkSession) = {
 
   }
 
@@ -61,16 +66,15 @@ object OcpcChargeSchedule {
     val data1 = spark
       .sql(sqlRequest1)
       .filter(s"seq = 1")
-      .withColumn("is_deep_ocpc", lit(0))
-      .select("searchid", "unitid", "timestamp", "ocpc_charge_time", "is_deep_ocpc")
+      .select("unitid", "timestamp", "ocpc_charge_time")
 
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
          |  unitid,
-         |  timestamp,
-         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
+         |  timestamp as deep_timestamp,
+         |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as deep_ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -83,16 +87,17 @@ object OcpcChargeSchedule {
     val data2 = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .withColumn("is_deep_ocpc", lit(1))
-      .select("searchid", "unitid", "timestamp", "ocpc_charge_time", "is_deep_ocpc")
+      .select("searchid", "unitid", "timestamp", "deep_ocpc_charge_time")
 
-    val data = data1.union(data2)
+    val data = data1
+      .join(data2, Seq("unitid"), "left_outer")
+      .select("unitid", "timestamp", "ocpc_charge_time", "deep_timestamp", "deep_ocpc_charge_time")
 
     data
   }
 
 
-  def getOcpcCompensate(date: String, spark: SparkSession) = {
+  def getOcpcCompensate(date: String, dayCnt: Int, spark: SparkSession) = {
     // ocpc赔付备份表
     val sqlRequest1 =
       s"""
@@ -126,10 +131,34 @@ object OcpcChargeSchedule {
          |  raw_data
          |""".stripMargin
     println(sqlRequest2)
-    val data = spark.sql(sqlRequest2)
+    val baseData = spark
+        .sql(sqlRequest2)
+        .filter(s"ocpc_charge_time is null")
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  ocpc_charge_time,
+         |  deep_ocpc_charge_time,
+         |  compensate_key,
+         |  final_charge_time,
+         |  pay_cnt,
+         |  row_number() over(partition by unitid order by final_charge_time desc) as seq1,
+         |  row_number() over(partition by unitid order by pay_cnt desc) as seq2
+         |FROM
+         |  base_data
+         |""".stripMargin
+    val data = spark.sql(sqlRequest3)
 
     data
   }
+
+  def udfCheckIsPay(date: String, dayCnt: Int) = udf((finalChargeTime: String) => {
+
+  })
 
 
 
