@@ -157,7 +157,7 @@ object OcpcChargeSchedule {
          |SELECT
          |  unitid,
          |  pay_cnt,
-         |  row_number() over(partition by unitid order by final_ocpc_charge_time desc) as seq
+         |  row_number() over(partition by unitid order by final_charge_time desc) as seq
          |FROM
          |  ocpc_compensate
          |WHERE
