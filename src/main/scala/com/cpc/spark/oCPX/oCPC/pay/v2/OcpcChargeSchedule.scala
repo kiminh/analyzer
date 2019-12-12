@@ -90,13 +90,11 @@ object OcpcChargeSchedule {
 
   def udfCheckDate(date: String, dayCnt: Int) = udf((ocpcChargeTime: String) => {
     // 取历史数据
-    val dateConverter1 = new SimpleDateFormat("yyyy-MM-dd")
-    val dateConverter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS")
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
 
-    val today = dateConverter1.parse(date)
-    
-    val ocpcChargeDate = dateConverter2.parse(ocpcChargeTime)
-    val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
+    val today = dateConverter.parse(date)
+    val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
+    val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24) + 1
     val payCnt = dateDiff / dayCnt
     val calcDates = dateDiff % dayCnt
 
