@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
 import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, getDeepData, getShallowData}
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData, joinSchedule}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData, joinSchedule, updateSchedule}
 
 
 object OcpcUnitTest {
@@ -35,7 +35,13 @@ object OcpcUnitTest {
     val data = joinSchedule(ocpcCompensate, todayData, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211f")
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211a")
+
+    // 更新赔付周期表
+    val result = updateSchedule(data, date, 7, spark)
+
+    result
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211b")
 
   }
 

@@ -59,16 +59,27 @@ object OcpcChargeSchedule {
      */
     val data = dataRaw
       .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
-      .withColumn("flag", when(col("first_charge_time").isNull, 1).otherwise(0))
-      .withColumn("first_charge_time", when(col("flag") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
+      .withColumn("flag1", when(col("first_charge_time").isNull, 1).otherwise(0))
+      .withColumn("first_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
+      .withColumn("last_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_charge_time")))
+      .withColumn("last_ocpc_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
+      .withColumn("flag2", when(col("last_deep_ocpc_charge_time").isNull, 1).otherwise(0))
+      .withColumn("last_deep_ocpc_charge_time", when(col("flag2") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_ocpc_charge_time")))
+      .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
+      .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("last_charge_time")))
+      .withColumn("calc_dates", col("pay_schedule2").getItem(1))
+      .withColumn("date_diff", col("pay_schedule2").getItem(2))
+      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
+      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("pay_flag", udfDeterminePayFlag()(col("pay_cnt"), col("deep_ocpc_charge_time")))
 
-
-
+    data
   }
 
   def udfDeterminePayFlag() = udf((payCnt: Int, deepOcpcChargeTime: String) => {
     val result = {
-      if (payCnt >= 4 && deepOcpcChargeTime == " ") {
+      if (payCnt >= 4 && deepOcpcChargeTime == None) {
         0
       } else {
         1
