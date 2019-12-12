@@ -339,6 +339,9 @@ object OcpcChargeCost {
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
 
+    clickData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211e")
+
     // 抽取cv数据
     val sqlRequest2 =
       s"""
