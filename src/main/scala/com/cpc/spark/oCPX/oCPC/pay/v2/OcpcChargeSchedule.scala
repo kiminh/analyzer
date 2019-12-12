@@ -48,10 +48,20 @@ object OcpcChargeSchedule {
   }
 
   def updateSchedule(dataRaw: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
+    /*
+    更新schedule表
+    1. 根据是否有fisrt_charge_time，判断是否有历史，记录，若无历史记录，则fisrt_charge_time, last_charge_time, last_ocpc_charge_time均等于ocpc_charge_time。若有历史记录，则跳过
+    2. 根据是否有last_deep_ocpc_charge_time判断是否有历史深度转化数据，若无，则last_deep_ocpc_charge_time等于deep_ocpc_charge_time。若有历史记录，则跳过
+    3. 根据first_charge_time计算pay_cnt（赔付周期）
+    4. 根据last_charge_time计算赔付所需日数和间隔时间
+    5. 间隔时间如果等于8，则向last_ocpc_charge_time和last_deep_ocpc_charge_time中基于ocpc_charge_time和deep_ocpc_charge_time进行更新
+     */
     val data = dataRaw
-      .withColumn("pay_schedule", udfCheckDate(date, dayCnt)(col("ocpc_charge_time")))
-      .withColumn("pay_cnt", col("pay_schedule").getItem(0))
-      .withColumn("calc_dates", col("pay_schedule").getItem(1))
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
+      .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_charge_time")))
+      .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
+      .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("final_charge_time")))
+      .withColumn("calc_dates", col("pay_schedule2").getItem(1))
       .withColumn("flag", udfDeterminePayFlag()(col("pay_cnt"), col("deep_ocpc_charge_time")))
 
 
@@ -84,7 +94,7 @@ object OcpcChargeSchedule {
     val payCnt = dateDiff / dayCnt
     val calcDates = dateDiff % dayCnt
 
-    val result = Array(payCnt, calcDates)
+    val result = Array(payCnt, calcDates， dateDiff)
     result
   })
 
@@ -108,6 +118,7 @@ object OcpcChargeSchedule {
          |  ocpc_charge_time as first_charge_time,
          |  ocpc_charge_time as last_ocpc_charge_time,
          |  deep_ocpc_charge_time as last_deep_ocpc_charge_time,
+         |  final_charge_time,
          |  row_number() over(partition by unitid order by ocpc_charge_time) as seq1,
          |  row_number() over(partition by unitid order by final_charge_time desc) as seq2
          |FROM
@@ -133,12 +144,12 @@ object OcpcChargeSchedule {
 
     // 令todayData为表4
     val data4 = todayData
-      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "final_charge_time")
 
     // 表3与表4外关联，记为表5
     val data5 = data3
       .join(data4, Seq("unitid"), "outer")
-      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
 
     data5
   }
