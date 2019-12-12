@@ -285,13 +285,14 @@ object OcpcChargeCost {
          |  date,
          |  cpa_check_priority,
          |  flag,
+         |  flag0,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, cpa_check_priority, flag
+         |GROUP BY unitid, date, cpa_check_priority, flag, flag0
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
@@ -365,13 +366,14 @@ object OcpcChargeCost {
          |  unitid,
          |  date,
          |  flag,
+         |  flag0,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, flag
+         |GROUP BY unitid, date, flag, flag0
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
