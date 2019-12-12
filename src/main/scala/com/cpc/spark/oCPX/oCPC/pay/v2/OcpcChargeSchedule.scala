@@ -119,7 +119,7 @@ object OcpcChargeSchedule {
     val data7 = spark
       .sql(sqlRequest7)
       .filter(s"seq = 1")
-      .select("untid", "ocpc_charge_time")
+      .select("unitid", "ocpc_charge_time")
       .distinct()
 
     // ocpcCompensate表中的deep_ocpc_charge_time保留最后一条，表8
