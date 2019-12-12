@@ -242,7 +242,7 @@ object OcpcChargeCost {
          |  is_deep_ocpc,
          |  (case when is_deep_ocpc = 1 and cpa_check_priority in (2, 3) and deep_ocpc_step = 2 then 1
          |        else 0
-         |   end) as flag,
+         |   end) as flag0,
          |   date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -256,6 +256,7 @@ object OcpcChargeCost {
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
+      .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -324,7 +325,7 @@ object OcpcChargeCost {
          |  is_deep_ocpc,
          |  (case when is_deep_ocpc = 1 and cpa_check_priority in (2, 3) and deep_ocpc_step = 2 then 1
          |        else 0
-         |   end) as flag,
+         |   end) as flag0,
          |   date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -335,6 +336,7 @@ object OcpcChargeCost {
     val clickData = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+      .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -376,6 +378,24 @@ object OcpcChargeCost {
 
     data
   }
+
+  def udfDetermineFlag(date: String) = udf((currentDate: String, isDeepOcpc: Int, cpaCheckPriority: Int, deepOcpcStep: Int) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+
+    val date0 = dateConverter.parse(date)
+    val date1 = dateConverter.parse(currentDate)
+
+    var result = 0
+    if (date1.getTime() >= date0.getTime() && isDeepOcpc == 1 && deepOcpcStep == 2) {
+      if (cpaCheckPriority == 2 || cpaCheckPriority == 3) {
+        result = 1
+      } else {
+        result = 0
+      }
+    }
+    result
+  })
 
 
 }
