@@ -7,7 +7,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, getDeepData, getShallowData}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, calculatePayRaw, getDeepData, getSchedule, getShallowData}
 import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData, joinSchedule, updateSchedule}
 
 
@@ -52,8 +52,14 @@ object OcpcUnitTest {
     // 数据关联
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
-    data
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211c")
+    // 抽取周期数据表
+    val scheduleData = getSchedule(date, spark)
+
+    // 统计消费与赔付
+    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
+
+    payDataRaw
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211d")
 
   }
 

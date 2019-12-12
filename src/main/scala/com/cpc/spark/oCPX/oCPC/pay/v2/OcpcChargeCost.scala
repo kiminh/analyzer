@@ -37,11 +37,93 @@ object OcpcChargeCost {
     val scheduleData = getSchedule(date, spark)
 
     // 统计消费与赔付
-    val payData = calculatePay(data, scheduleData, date, spark)
+    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
+
+    // 按照深度ocpc赔付的逻辑进行数据调整
+    val payData = calculateFinalPay(payDataRaw, spark)
 
   }
 
-  def calculatePay(dataRaw: DataFrame, scheduleDataRaw: DataFrame, date: String, spark: SparkSession) = {
+  def calculateFinalPay(dataRaw: DataFrame, spark: SparkSession) = {
+    /*
+    按照深度ocpc的赔付逻辑调整数据
+    1. 对flag=1的部分，分别汇总结算每个单元浅层和深层的赔付情况，如果cpa_check_priority = 2， 则保留深度赔付数据，如果cpa_check_priority = 3， 则保留赔付金额较大的数据，需要记录保留的是浅层还是深层
+    2. 对flag=0的部分，分别汇总结算每个单元的浅层赔付情况，需要记录保留的是浅层
+    3. 数据union
+     */
+    dataRaw.createOrReplaceTempView("raw_data")
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  cpa_check_priority,
+         |  flag,
+         |  last_ocpc_charge_time,
+         |  last_deep_ocpc_charge_time,
+         |  click1,
+         |  cv1,
+         |  cpagiven1,
+         |  cost1,
+         |  cost1 / cv1 as cpareal1,
+         |  (case when cv1 = 0 then cost1
+         |        when cv1 > 0 and cost1 > 1.2 * cv1 * cpagiven1 then cost1 - 1.2 * cv1 * cpagiven1
+         |        else 0
+         |  end) as pay1,
+         |  click2,
+         |  cv2,
+         |  cpagiven2,
+         |  cost2,
+         |  cost2 / cv2 as cpareal2,
+         |  (case when cv2 = 0 then cost2
+         |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
+         |        else 0
+         |  end) as pay2
+         |FROM
+         |  raw_data
+         |""".stripMargin
+    println(sqlRequest1)
+    val baseData = spark.sql(sqlRequest1)
+
+    // 对flag=1的部分，分别汇总结算每个单元浅层和深层的赔付情况，如果cpa_check_priority = 2， 则保留深度赔付数据，如果cpa_check_priority = 3， 则保留赔付金额较大的数据，需要记录保留的是浅层还是深层
+    val data1 = baseData
+      .filter(s"flag = 1")
+      .withColumn("pay_type", udfDeterminePayType()(col("cpa_check_priority"), col("pay1"), col("pay2")))
+      .withColumn("click", when(col("pay_type") === 1, col("click2")).otherwise(col("click1")))
+      .withColumn("cv", when(col("pay_type") === 1, col("cv2")).otherwise(col("cv1")))
+      .withColumn("cpagiven", when(col("pay_type") === 1, col("cpagiven2")).otherwise(col("cpagiven1")))
+      .withColumn("cpareal", when(col("pay_type") === 1, col("cpareal2")).otherwise(col("cpareal1")))
+      .withColumn("cost", when(col("pay_type") === 1, col("cost2")).otherwise(col("cost1")))
+      .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
+
+    // 对flag=0的部分，分别汇总结算每个单元的浅层赔付情况，需要记录保留的是浅层
+    val data2 = baseData
+      .filter(s"flag = 0")
+      .withColumn("click", col("click1"))
+      .withColumn("cv", col("cv1"))
+      .withColumn("cpagiven", col("cpagiven1"))
+      .withColumn("cpareal", col("cpareal1"))
+      .withColumn("cost", col("cost1"))
+      .withColumn("pay", col("pay1"))
+
+
+  }
+
+  def udfDeterminePayType() = udf((cpaCheckPriority: Int, pay1: Double, pay2: Double) => {
+    val result = {
+      if (cpaCheckPriority == 2) {
+        1
+      } else {
+        if (pay1 >= pay2) {
+          0
+        } else {
+          1
+        }
+      }
+    }
+    result
+  })
+
+  def calculatePayRaw(dataRaw: DataFrame, scheduleDataRaw: DataFrame, date: String, spark: SparkSession) = {
     val costData = dataRaw
       .withColumn("date_dist", udfCalculateDateDist(date)(col("date")))
       .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist")
@@ -61,6 +143,7 @@ object OcpcChargeCost {
       s"""
          |SELECT
          |  unitid,
+         |  cpa_check_priority,
          |  flag,
          |  sum(click1) as click1,
          |  sum(cv1) as cv1,
@@ -74,9 +157,13 @@ object OcpcChargeCost {
          |  data
          |WHERE
          |  is_in_schedule = 1
+         |GROUP BY unitid, cpa_check_priority, flag
          |""".stripMargin
     println(sqlRequest)
-    val result = spark.sql(sqlRequest)
+    val result = spark
+      .sql(sqlRequest)
+      .join(schedulData, Seq("unitid"), "inner")
+      .select("unitid", "cpa_check_priority", "flag", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
 
     result
   }
