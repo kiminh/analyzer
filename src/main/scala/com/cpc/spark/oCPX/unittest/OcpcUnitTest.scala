@@ -52,6 +52,9 @@ object OcpcUnitTest {
     // 数据关联
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
+    data
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211c")
+
   }
 
 }
