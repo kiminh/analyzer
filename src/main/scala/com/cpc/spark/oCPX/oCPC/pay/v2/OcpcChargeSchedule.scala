@@ -94,7 +94,7 @@ object OcpcChargeSchedule {
     val payCnt = dateDiff / dayCnt
     val calcDates = dateDiff % dayCnt
 
-    val result = Array(payCnt, calcDates， dateDiff)
+    val result = Array(payCnt, calcDates, dateDiff)
     result
   })
 
