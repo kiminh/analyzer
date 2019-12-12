@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.pay.v2
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.udfDetermineMedia
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -39,14 +39,111 @@ object OcpcChargeSchedule {
     // 统计今天的分单元消耗和开始消费时间
     val todayData = getTodayData(date, spark)
 
-    // 更新赔付周期表
-    val data = joinSchedule(ocpcCompensate, todayData, date, dayCnt, spark)
+    // 关联赔付周期表
+    val data = joinSchedule(ocpcCompensate, todayData, spark)
 
-    //
+    // 更新赔付周期表
+    val result = updateSchedule(data, date, dayCnt, spark)
 
   }
 
-  def joinSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
+  def updateSchedule(dataRaw: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
+    val data = dataRaw
+      .withColumn("pay_schedule", udfCheckDate(date, dayCnt)(col("ocpc_charge_time")))
+      .withColumn("pay_cnt", col("pay_schedule").getItem(0))
+      .withColumn("calc_dates", col("pay_schedule").getItem(1))
+      .withColumn("flag", udfDeterminePayFlag()(col("pay_cnt"), col("deep_ocpc_charge_time")))
+
+
+  }
+
+  def udfDeterminePayFlag() = udf((payCnt: Int, deepOcpcChargeTime: String) => {
+    val result = {
+      if (payCnt >= 4 && deepOcpcChargeTime == " ") {
+        0
+      } else {
+        1
+      }
+    }
+    result
+  })
+
+  def udfCheckDate(date: String, dayCnt: Int) = udf((ocpcChargeTime: String) => {
+    // 取历史数据
+    val dateConverter1 = new SimpleDateFormat("yyyy-MM-dd")
+    val dateConverter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS")
+
+    val today = dateConverter1.parse(date)
+    val todayCalendar = Calendar.getInstance()
+    todayCalendar.setTime(today)
+
+    val ocpcChargeDate = dateConverter2.parse(ocpcChargeTime)
+    val ocpcChargeDateCalendar = Calendar.getInstance()
+    ocpcChargeDateCalendar.setTime(ocpcChargeDate)
+    val dateDiff = todayCalendar.get(Calendar.DATE) - ocpcChargeDateCalendar.get(Calendar.DATE) + 1
+    val payCnt = dateDiff / dayCnt
+    val calcDates = dateDiff % dayCnt
+
+    val result = Array(payCnt, calcDates)
+    result
+  })
+
+  def joinSchedule(ocpcCompensate: DataFrame, todayData: DataFrame, spark: SparkSession) = {
+    /*
+    关联周期表与今天的新数据
+    1. 过滤ocpcCompensate表中ocpc_charge_time中的第一条记录，记为表1
+    2. 过滤ocpcCompensate表中final_charge_time中最后一条记录，记为表2
+    3. 表1与表2外关联，记为表3
+    4. 令todayData为表4
+    5. 表3与表4外关联，记为表5
+     */
+    ocpcCompensate.createOrReplaceTempView("ocpc_compensate")
+
+    // 过滤ocpcCompensate表中ocpc_charge_time中的第一条记录，记为表1
+    // 过滤ocpcCompensate表中final_charge_time中最后一条记录，记为表2
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  ocpc_charge_time as first_charge_time,
+         |  ocpc_charge_time as last_ocpc_charge_time,
+         |  deep_ocpc_charge_time as last_deep_ocpc_charge_time,
+         |  row_number() over(partition by unitid order by ocpc_charge_time) as seq1,
+         |  row_number() over(partition by unitid order by final_charge_time desc) as seq2
+         |FROM
+         |  ocpc_compensate
+         |WHERE
+         |  ocpc_charge_time != ' '
+         |""".stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .filter(s"seq1 = 1")
+      .select("unitid", "first_charge_time")
+      .distinct()
+
+    val data2 = spark
+      .sql(sqlRequest1)
+      .filter(s"seq2 = 1")
+      .select("unitid", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .distinct()
+
+    // 表1与表2外关联，记为表3
+    val data3 = data1.join(data2, Seq("unitid"), "outer")
+
+    // 令todayData为表4
+    val data4 = todayData
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time")
+
+    // 表3与表4外关联，记为表5
+    val data5 = data3
+      .join(data4, Seq("unitid"), "outer")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+
+    data5
+  }
+
+  def joinScheduleV2(ocpcCompensate: DataFrame, todayData: DataFrame, spark: SparkSession) = {
     /*
     1. 过滤出ocpcCompensate表中ocpc_charge_time不为空的记录，保留一条，记为表1
     2. 过滤出ocpcCompensate表中deep_ocpc_charge_time不为空的记录，保留一条，记为表2
@@ -109,7 +206,8 @@ object OcpcChargeSchedule {
          |SELECT
          |  unitid,
          |  ocpc_charge_time,
-         |  row_number() over(partition by unitid order by ocpc_charge_time desc) as seq
+         |  row_number() over(partition by unitid order by ocpc_charge_time desc) as seq1,
+         |  row_number() over(partition by
          |FROM
          |  ocpc_compensate
          |WHERE
@@ -174,10 +272,10 @@ object OcpcChargeSchedule {
     val data13 = data11
       .join(data12, Seq("unitid"), "left_outer")
       .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt")
+      .na.fill(" ", Seq("ocpc_charge_time", "deep_ocpc_charge_time"))
       .na.fill(0, Seq("pay_cnt")) // pay_cnt代表已完成的赔付周期数
 
     data13
-
   }
 
   def getTodayData(date: String, spark: SparkSession) = {

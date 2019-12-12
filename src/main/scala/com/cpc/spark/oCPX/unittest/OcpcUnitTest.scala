@@ -32,7 +32,7 @@ object OcpcUnitTest {
     val todayData = getTodayData(date, spark)
 
     // 更新赔付周期表
-    val data = joinSchedule(ocpcCompensate, todayData, date, 7, spark)
+    val data = joinSchedule(ocpcCompensate, todayData, spark)
 
     data
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211f")
