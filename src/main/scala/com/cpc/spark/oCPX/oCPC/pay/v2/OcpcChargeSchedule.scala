@@ -50,7 +50,7 @@ object OcpcChargeSchedule {
   def updateSchedule(dataRaw: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
     /*
     更新schedule表
-    1. 根据是否有fisrt_charge_time，判断是否有历史，记录，若无历史记录，则fisrt_charge_time, last_charge_time, last_ocpc_charge_time均等于ocpc_charge_time。若有历史记录，则跳过
+    1. 根据是否有fisrt_charge_time，判断是否有历史，记录，若无历史记录，则fisrt_charge_time, final_charge_time, last_ocpc_charge_time均等于ocpc_charge_time。若有历史记录，则跳过
     2. 根据是否有last_deep_ocpc_charge_time判断是否有历史深度转化数据，若无，则last_deep_ocpc_charge_time等于deep_ocpc_charge_time。若有历史记录，则跳过
     3. 根据first_charge_time计算pay_cnt（赔付周期）
     4. 根据last_charge_time计算赔付所需日数和间隔时间
@@ -61,7 +61,7 @@ object OcpcChargeSchedule {
       .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
       .withColumn("flag1", when(col("first_charge_time").isNull, 1).otherwise(0))
       .withColumn("first_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
-      .withColumn("last_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_charge_time")))
+      .withColumn("final_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("final_charge_time")))
       .withColumn("last_ocpc_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
       .withColumn("flag2", when(col("last_deep_ocpc_charge_time").isNull, 1).otherwise(0))
       .withColumn("last_deep_ocpc_charge_time", when(col("flag2") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
