@@ -71,8 +71,8 @@ object OcpcChargeSchedule {
       .withColumn("calc_dates", col("pay_schedule2").getItem(1))
       .withColumn("date_diff", col("pay_schedule2").getItem(2))
       .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("last_deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
-      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_cnt") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_cnt") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
+      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
 
     data
   }
