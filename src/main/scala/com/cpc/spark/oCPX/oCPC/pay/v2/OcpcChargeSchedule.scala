@@ -55,14 +55,13 @@ object OcpcChargeSchedule {
     3. 根据first_charge_time计算pay_cnt（赔付周期）
     4. 根据last_charge_time计算赔付所需日数和间隔时间
     5. 间隔时间如果等于8，则向last_ocpc_charge_time和last_deep_ocpc_charge_time中基于ocpc_charge_time和deep_ocpc_charge_time进行更新
+    6. 根据pay_cnt和last_deep_ocpc_charge_time来判断是否需要继续赔付
      */
     val data = dataRaw
       .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
-      .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_charge_time")))
-      .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
-      .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("final_charge_time")))
-      .withColumn("calc_dates", col("pay_schedule2").getItem(1))
-      .withColumn("flag", udfDeterminePayFlag()(col("pay_cnt"), col("deep_ocpc_charge_time")))
+      .withColumn("flag", when(col("first_charge_time").isNull, 1).otherwise(0))
+      .withColumn("first_charge_time", when(col("flag") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
+
 
 
   }
@@ -344,8 +343,8 @@ object OcpcChargeSchedule {
       s"""
          |SELECT
          |  unitid,
-         |  ocpc_charge_time,
-         |  deep_ocpc_charge_time,
+         |  (case when ocpc_charge_time = ' ' then null else ocpc_charge_time end) as ocpc_charge_time,
+         |  (case when deep_ocpc_charge_time = ' ' then null else deep_ocpc_charge_time end) as deep_ocpc_charge_time,
          |  compensate_key
          |FROM
          |  dl_cpc.ocpc_compensate_backup_daily
@@ -364,7 +363,7 @@ object OcpcChargeSchedule {
          |  ocpc_charge_time,
          |  deep_ocpc_charge_time,
          |  compensate_key,
-         |  (case when ocpc_charge_time == " " then deep_ocpc_charge_time
+         |  (case when ocpc_charge_time is null then deep_ocpc_charge_time
          |        else ocpc_charge_time
          |   end) as final_charge_time,
          |   cast(split(compensate_key, '~')[1] as int) as pay_cnt
