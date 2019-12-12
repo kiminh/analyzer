@@ -36,16 +36,66 @@ object OcpcChargeCost {
     // 抽取周期数据表
     val scheduleData = getSchedule(date, spark)
 
+    // 统计消费与赔付
+    val payData = calculatePay(data, scheduleData, date, spark)
+
   }
+
+  def calculatePay(dataRaw: DataFrame, scheduleDataRaw: DataFrame, date: String, spark: SparkSession) = {
+    val costData = dataRaw
+      .withColumn("date_dist", udfCalculateDateDist(date)(col("date")))
+      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist")
+      .na.fill(0, Seq("cv1", "cv2"))
+
+    val schedulData = scheduleDataRaw
+      .select("unitid", "calc_date", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+
+    val data = costData
+      .join(schedulData, Seq("unitid"), "inner")
+      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_date", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_date"), 1).otherwise(0))
+
+    data.createOrReplaceTempView("data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  flag,
+         |  sum(click1) as click1,
+         |  sum(cv1) as cv1,
+         |  sum(cpagiven1 * click1) * 1.0 / sum(click1) as cpagiven1,
+         |  sum(cost1) as cost1,
+         |  sum(click2) as click2,
+         |  sum(cv2) as cv2,
+         |  sum(cpagiven2 * click2) * 1.0 / sum(click2) as cpagiven2,
+         |  sum(cost2) as cost2
+         |FROM
+         |  data
+         |WHERE
+         |  is_in_schedule = 1
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+
+    result
+  }
+
+  def udfCalculateDateDist(date: String) = udf((currentDate: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+
+    val today = dateConverter.parse(date)
+    val ocpcChargeDate = dateConverter.parse(currentDate.split(" ")(0))
+    val result = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24) + 1
+    result
+  })
 
   def getSchedule(date: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid,
-         |  calc_date,
-         |  last_ocpc_charge_time,
-         |  last_deep_ocpc_charge_time
+         |  *
          |FROM
          |  test.ocpc_check_exp_data20191211b
          |WHERE
