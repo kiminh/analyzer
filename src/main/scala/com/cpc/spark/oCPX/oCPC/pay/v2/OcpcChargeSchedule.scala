@@ -113,7 +113,7 @@ object OcpcChargeSchedule {
          |FROM
          |  ocpc_compensate
          |WHERE
-         |  ocpc_charge_time = ' '
+         |  ocpc_charge_time != ' '
          |""".stripMargin
     println(sqlRequest7)
     val data7 = spark
@@ -132,7 +132,7 @@ object OcpcChargeSchedule {
          |FROM
          |  ocpc_compensate
          |WHERE
-         |  deep_ocpc_charge_time = ' '
+         |  deep_ocpc_charge_time != ' '
          |""".stripMargin
     val data8 = spark
       .sql(sqlRequest8)
@@ -161,7 +161,7 @@ object OcpcChargeSchedule {
          |FROM
          |  ocpc_compensate
          |WHERE
-         |  final_charge_time = ' '
+         |  final_charge_time != ' '
          |""".stripMargin
     println(sqlRequest12)
     val data12 = spark
