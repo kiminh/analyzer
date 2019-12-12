@@ -240,9 +240,6 @@ object OcpcChargeCost {
          |  deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
-         |  (case when is_deep_ocpc = 1 and cpa_check_priority in (2, 3) and deep_ocpc_step = 2 then 1
-         |        else 0
-         |   end) as flag0,
          |   date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -257,6 +254,7 @@ object OcpcChargeCost {
     val clickData = spark
       .sql(sqlRequest1)
       .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
+      .na.fill(0, Seq("flag"))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -285,14 +283,13 @@ object OcpcChargeCost {
          |  date,
          |  cpa_check_priority,
          |  flag,
-         |  flag0,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, cpa_check_priority, flag, flag0
+         |GROUP BY unitid, date, cpa_check_priority, flag
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
@@ -324,9 +321,6 @@ object OcpcChargeCost {
          |  deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
-         |  (case when is_deep_ocpc = 1 and cpa_check_priority in (2, 3) and deep_ocpc_step = 2 then 1
-         |        else 0
-         |   end) as flag0,
          |   date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -338,9 +332,7 @@ object OcpcChargeCost {
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
-
-    clickData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211e")
+      .na.fill(0, Seq("flag"))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -369,14 +361,13 @@ object OcpcChargeCost {
          |  unitid,
          |  date,
          |  flag,
-         |  flag0,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, flag, flag0
+         |GROUP BY unitid, date, flag
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
