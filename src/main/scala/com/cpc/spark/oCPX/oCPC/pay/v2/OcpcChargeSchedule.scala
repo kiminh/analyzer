@@ -74,7 +74,8 @@ object OcpcChargeSchedule {
       .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
       .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
       .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
-      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time", "last_deep_ocpc_charge_time"))
+      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time"))
+      .withColumn("last_deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("last_deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("last_deep_ocpc_charge_time")))
 
     data
   }
