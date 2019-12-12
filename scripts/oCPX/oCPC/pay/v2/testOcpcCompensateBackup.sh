@@ -11,6 +11,8 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
+
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 20g \
@@ -18,9 +20,8 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.oCPX.oCPC.report.OcpcHourlyGeneralData \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3
+    --class com.cpc.spark.oCPX.oCPC.pay.v2.OcpcCompensateBackup \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1
+
 
 #val date = args(0).toString
-#val hour = args(1).toString
-#val version = args(2).toString

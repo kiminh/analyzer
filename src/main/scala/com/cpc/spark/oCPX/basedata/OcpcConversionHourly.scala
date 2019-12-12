@@ -131,8 +131,6 @@ object OcpcConversionHourly {
     println(sqlRequest2)
     val data2 = spark.sql(sqlRequest2)
 
-
-
     val resultDF = data1
       .union(data2)
       .select("searchid", "label")
@@ -149,6 +147,54 @@ object OcpcConversionHourly {
 
   def getLabel3(date: String, hour: String, spark: SparkSession) = {
     var selectCondition = s"`date`='$date' and hour = '$hour'"
+
+    val sqlRequest1 =
+      s"""
+         |select
+         |    searchid
+         |from dl_cpc.ml_cvr_feature_v1
+         |lateral view explode(cvr_list) b as a
+         |where $selectCondition
+         |and access_channel="site"
+         |and a in ('ctsite_form')
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  label=1
+         |AND
+         |  (adclass like '134%' or adclass like '107%')
+         |GROUP BY searchid, label
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid
+         |FROM
+         |  dl_cpc.site_form_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  ideaid>0
+         |AND
+         |  searchid is not null
+         |GROUP BY searchid
+       """.stripMargin
+    println(sqlRequest3)
+    val data3 = spark.sql(sqlRequest3)
+
     // js加粉
     val sqlRequest4 =
       s"""
@@ -183,25 +229,11 @@ object OcpcConversionHourly {
     println(sqlRequest5)
     val data5 = spark.sql(sqlRequest5)
 
-    val sqlRequest6 =
-      s"""
-         |select
-         |    distinct searchid,
-         |from
-         |     dl_cpc.cpc_conversion
-         |where
-         |    day='$date'
-         |and
-         |    `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target, 'api_ldy_sform')
-       """.stripMargin
-    println(sqlRequest6)
-    val data6 = spark.sql(sqlRequest6)
-
-    val resultDF = data4
+    val resultDF = data1
+      .union(data2)
+      .union(data3)
+      .union(data4)
       .union(data5)
-      .union(data6)
       .distinct()
       .withColumn("label", lit(1))
       .select("searchid", "label")
@@ -218,17 +250,18 @@ object OcpcConversionHourly {
   def getLabel2(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
-         |select
-         |    searchid,
-         |    1 as label
-         |from
-         |     dl_cpc.cpc_conversion
-         |where
-         |    day='$date'
-         |and
-         |    `hour` = '$hour'
-         |and
-         |    array_contains(conversion_target, 'api')
+         |SELECT
+         |  searchid,
+         |  label
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+         |AND
+         |  label=1
+         |GROUP BY searchid, label
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
@@ -262,12 +295,12 @@ object OcpcConversionHourly {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
-        .sql(sqlRequest)
-        .select("searchid", "label")
-        .distinct()
-        .withColumn("date", lit(date))
-        .withColumn("hour", lit(hour))
-        .withColumn("cvr_goal", lit("cvr1"))
+      .sql(sqlRequest)
+      .select("searchid", "label")
+      .distinct()
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("cvr_goal", lit("cvr1"))
 
     resultDF.show(10)
     resultDF.printSchema()
