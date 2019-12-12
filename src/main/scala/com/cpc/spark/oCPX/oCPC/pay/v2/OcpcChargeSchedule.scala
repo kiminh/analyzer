@@ -161,7 +161,7 @@ object OcpcChargeSchedule {
          |FROM
          |  ocpc_compensate
          |WHERE
-         |  final_ocpc_charge_time = ' '
+         |  final_charge_time = ' '
          |""".stripMargin
     println(sqlRequest12)
     val data12 = spark
