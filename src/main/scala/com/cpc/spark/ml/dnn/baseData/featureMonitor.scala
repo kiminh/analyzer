@@ -43,16 +43,16 @@ object FeatureMonitor {
       }
       result
   }
-  def generateSql(model_name: String, update_type: String, hour: String, curday: String): String = {
+  def generateSql(model_name: String, update_type: String, hour: String, curday: String, sample_path: String): String = {
     var sql = ""
     if(update_type == "daily"){
-      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='daily' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='daily' and task='$model_name'"
     } else if (update_type == "hourly"){
-      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='hourly' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='hourly' and task='$model_name'"
     } else if (update_type == "halfhourly" && hour.substring(2, 4) == "00"){
-      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='realtime-00' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-00' and task='$model_name'"
     } else if (update_type == "halfhourly" && hour.substring(2, 4) == "30"){
-      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='realtime-30' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-30' and task='$model_name'"
     }
     sql
   }
@@ -82,7 +82,7 @@ object FeatureMonitor {
     if (sample_path.startsWith("hdfs://")) {
       importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(sample_path).repartition(3000)
     } else {
-      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday))
+      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday, sample_path))
         .rdd.map(x => Base64.decodeBase64(x.getString(0)))
         .filter(_ != null)
       val exampleRdd = rdd.map(x => Example.parseFrom(new BytesWritable(x).getBytes))
