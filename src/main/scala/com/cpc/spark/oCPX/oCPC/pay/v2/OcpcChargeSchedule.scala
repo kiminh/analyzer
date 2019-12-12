@@ -135,7 +135,7 @@ object OcpcChargeSchedule {
     val data2 = spark
       .sql(sqlRequest1)
       .filter(s"seq2 = 1")
-      .select("unitid", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
       .distinct()
 
     // 表1与表2外关联，记为表3
@@ -143,7 +143,7 @@ object OcpcChargeSchedule {
 
     // 令todayData为表4
     val data4 = todayData
-      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "final_charge_time")
+      .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time")
 
     // 表3与表4外关联，记为表5
     val data5 = data3
