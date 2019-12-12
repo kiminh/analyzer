@@ -63,16 +63,18 @@ object OcpcChargeSchedule {
       .withColumn("first_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
       .withColumn("final_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("final_charge_time")))
       .withColumn("last_ocpc_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-      .withColumn("flag2", when(col("last_deep_ocpc_charge_time").isNull, 1).otherwise(0))
-      .withColumn("last_deep_ocpc_charge_time", when(col("flag2") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+//      .withColumn("flag2", when(col("last_deep_ocpc_charge_time").isNull, 1).otherwise(0))
+//      .withColumn("last_deep_ocpc_charge_time", when(col("flag2") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_charge_time")))
       .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
       .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("final_charge_time")))
       .withColumn("calc_dates", col("pay_schedule2").getItem(1))
       .withColumn("date_diff", col("pay_schedule2").getItem(2))
-      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("last_deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
+      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
       .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
       .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time", "last_deep_ocpc_charge_time"))
 
     data
   }

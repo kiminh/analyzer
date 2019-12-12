@@ -33,6 +33,27 @@ object OcpcChargeCost {
     // 数据关联
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
+    // 抽取周期数据表
+    val scheduleData = getSchedule(date, spark)
+
+  }
+
+  def getSchedule(date: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  calc_date,
+         |  last_ocpc_charge_time,
+         |  last_deep_ocpc_charge_time
+         |FROM
+         |  test.ocpc_check_exp_data20191211b
+         |WHERE
+         |  pay_flag = 1
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, session: SparkSession) = {
