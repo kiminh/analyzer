@@ -94,13 +94,9 @@ object OcpcChargeSchedule {
     val dateConverter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS")
 
     val today = dateConverter1.parse(date)
-    val todayCalendar = Calendar.getInstance()
-    todayCalendar.setTime(today)
-
+    
     val ocpcChargeDate = dateConverter2.parse(ocpcChargeTime)
-    val ocpcChargeDateCalendar = Calendar.getInstance()
-    ocpcChargeDateCalendar.setTime(ocpcChargeDate)
-    val dateDiff = todayCalendar.get(Calendar.DATE) - ocpcChargeDateCalendar.get(Calendar.DATE) + 1
+    val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
     val payCnt = dateDiff / dayCnt
     val calcDates = dateDiff % dayCnt
 
