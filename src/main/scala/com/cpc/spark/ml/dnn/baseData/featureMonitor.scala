@@ -90,7 +90,8 @@ object FeatureMonitor {
       val feature_value = spark.sql(
         s"""
            |select one_hot_feature_count, one_hot_feature_id_num, multi_hot_feature_count
-           |from dl_cpc.cpc_feature_monitor where day="$oneday" and model_name="$model_name"
+           |from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day in (
+           |select max(day) from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day<"$curday")
            |""".stripMargin)
       if(feature_value.count()==0){
         print("feature exception: Unable to find the historical information of this feature in the model")
@@ -119,11 +120,12 @@ object FeatureMonitor {
         }
       }
     }
-    if(update_type == "hourly"){
+    if(update_type == "hourly" || update_type == "halfhourly"){
       val feature_value = spark.sql(
         s"""
            |select one_hot_feature_count, one_hot_feature_id_num, multi_hot_feature_count
-           |from dl_cpc.cpc_feature_monitor where day="$oneday" and model_name="$model_name" and hour='$hour'
+           |from dl_cpc.cpc_feature_monitor where model_name="$model_name" and hour='$hour' and day in (
+           |select max(day) from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day<"$curday")
            |""".stripMargin)
       if(feature_value.count()==0){
         print("feature exception: Unable to find the historical information of this feature in the model")
