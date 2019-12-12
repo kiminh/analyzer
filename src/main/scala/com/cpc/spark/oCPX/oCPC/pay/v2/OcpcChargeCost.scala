@@ -130,12 +130,12 @@ object OcpcChargeCost {
       .na.fill(0, Seq("cv1", "cv2"))
 
     val schedulData = scheduleDataRaw
-      .select("unitid", "calc_date", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
 
     val data = costData
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_date", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
-      .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_date"), 1).otherwise(0))
+      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_dates"), 1).otherwise(0))
 
     data.createOrReplaceTempView("data")
 
