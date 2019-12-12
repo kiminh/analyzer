@@ -72,21 +72,11 @@ object OcpcChargeSchedule {
       .withColumn("date_diff", col("pay_schedule2").getItem(2))
       .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
       .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
-      .withColumn("pay_flag", udfDeterminePayFlag()(col("pay_cnt"), col("deep_ocpc_charge_time")))
+      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("last_deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
 
     data
   }
 
-  def udfDeterminePayFlag() = udf((payCnt: Int, deepOcpcChargeTime: String) => {
-    val result = {
-      if (payCnt >= 4 && deepOcpcChargeTime == None) {
-        0
-      } else {
-        1
-      }
-    }
-    result
-  })
 
   def udfCheckDate(date: String, dayCnt: Int) = udf((ocpcChargeTime: String) => {
     // 取历史数据
