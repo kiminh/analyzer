@@ -5,7 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.time.DateUtils
+import org.apache.hadoop.io.BytesWritable
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.expressions.UserDefinedGenerator
@@ -14,6 +16,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
+import org.tensorflow.example.Example
+import org.tensorflow.spark.datasources.tfrecords.TensorFlowInferSchema
+import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecoder
 
 import scala.collection.mutable.ArrayBuffer
 import scala.sys.process._
@@ -38,6 +43,19 @@ object FeatureMonitor {
       }
       result
   }
+  def generateSql(model_name: String, update_type: String, hour: String, curday: String): String = {
+    var sql = ""
+    if(update_type == "daily"){
+      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='daily' and task='$model_name'"
+    } else if (update_type == "hourly"){
+      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='hourly' and task='$model_name'"
+    } else if (update_type == "halfhourly" && hour.substring(2, 4) == "00"){
+      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='realtime-00' and task='$model_name'"
+    } else if (update_type == "halfhourly" && hour.substring(2, 4) == "30"){
+      sql = s"select example from dl_cpc.cpc_sample_v2 where dt='$curday' and pt='realtime-30' and task='$model_name'"
+    }
+    sql
+  }
 
   def main(args: Array[String]): Unit = {
     if (args.length != 8) {
@@ -59,7 +77,21 @@ object FeatureMonitor {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
-    val importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path").repartition(3000)
+    var importedDf: DataFrame = null
+
+    if (sample_path.startsWith("hdfs://")) {
+      importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(sample_path).repartition(3000)
+    } else {
+      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday))
+        .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+        .filter(_ != null)
+      val exampleRdd = rdd.map(x => Example.parseFrom(new BytesWritable(x).getBytes))
+      val finalSchema = TensorFlowInferSchema(exampleRdd)
+      val rowRdd = exampleRdd.map(example => DefaultTfRecordRowDecoder.decodeExample(example, finalSchema))
+      importedDf = spark.createDataFrame(rowRdd, finalSchema).repartition(3000)
+    }
+
+    println("file read finish")
     importedDf.cache()
     val sample_count = importedDf.count()
     //统计one-hot特征的非空样本占比，以及每个one-hot特征的id量；
