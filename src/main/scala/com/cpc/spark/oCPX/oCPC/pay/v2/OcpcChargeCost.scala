@@ -60,6 +60,7 @@ object OcpcChargeCost {
          |  flag,
          |  last_ocpc_charge_time,
          |  last_deep_ocpc_charge_time,
+         |  date_diff,
          |  click1,
          |  cv1,
          |  cpagiven1,
@@ -130,7 +131,7 @@ object OcpcChargeCost {
       .na.fill(0, Seq("cv1", "cv2"))
 
     val schedulData = scheduleDataRaw
-      .select("unitid", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "calc_dates", "date_diff", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
 
     val data = costData
       .join(schedulData, Seq("unitid"), "inner")
@@ -163,7 +164,7 @@ object OcpcChargeCost {
     val result = spark
       .sql(sqlRequest)
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "cpa_check_priority", "flag", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "cpa_check_priority", "flag", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "date_diff")
 
     result
   }
