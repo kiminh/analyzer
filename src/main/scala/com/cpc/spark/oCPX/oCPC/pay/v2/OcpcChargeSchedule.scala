@@ -61,7 +61,6 @@ object OcpcChargeSchedule {
       .withColumn("first_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
       .withColumn("final_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("final_charge_time")))
       .withColumn("last_ocpc_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-//      .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_charge_time")))
       .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
       .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("final_charge_time")))
@@ -69,6 +68,8 @@ object OcpcChargeSchedule {
       .withColumn("date_diff", col("pay_schedule2").getItem(2))
       .withColumn("is_pay_flag", when(col("pay_cnt") < 4, 1).otherwise(0))
       .na.fill(date + " 00:00:00", Seq("ocpc_charge_time"))
+      .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
+      .withColumn("deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("deep_ocpc_charge_time")))
 //      .withColumn("last_ocpc_charge_time", udfCheckLastOcpcChargeTime()(col("is_pay_flag"), col("date_diff"), col("ocpc_charge_time"), col("last_ocpc_charge_time")))
 //      .withColumn("last_deep_ocpc_charge_time", udfCheckLastDeepOcpcChargeTime()())
 //      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
@@ -101,6 +102,7 @@ object OcpcChargeSchedule {
          |  calc_dates,
          |  date_diff,
          |  is_pay_flag,
+         |  is_deep_pay_flag,
          |  flag1,
          |  last_ocpc_charge_time as last_ocpc_charge_time_old,
          |  last_deep_ocpc_charge_time as last_deep_ocpc_charge_time_old,
@@ -108,8 +110,8 @@ object OcpcChargeSchedule {
          |        when date_diff = 1 and pay_cnt = 0 then ocpc_charge_time -- 新单元，第一天
          |        else last_ocpc_charge_time
          |   end) as last_ocpc_charge_time,
-         |   (case when date_diff = 8 and last_deep_ocpc_charge_time is not null then deep_ocpc_charge_time
-         |         when last_deep_ocpc_charge_time is null then deep_ocpc_charge_time
+         |   (case when date_diff = 8 and last_deep_ocpc_charge_time is not null then deep_ocpc_charge_time -- 上个周期结束，且上个赔付周期有深度赔付周期记录的单元
+         |         when last_deep_ocpc_charge_time is null then deep_ocpc_charge_time -- 上个周期深度赔付周期记录不存在，但是今天有深度赔付数据
          |         else last_deep_ocpc_charge_time
          |   end) as last_deep_ocpc_charge_time
          |FROM
