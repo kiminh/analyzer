@@ -93,7 +93,7 @@ object OcpcChargeSchedule {
          |SELECT
          |  unitid,
          |  ocpc_charge_time,
-         |  deep_opc_charge_time,
+         |  deep_ocpc_charge_time,
          |  first_charge_time,
          |  final_charge_time,
          |  pay_schedule1,
