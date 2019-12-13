@@ -81,12 +81,11 @@ object OcpcChargeSchedule {
     data.createOrReplaceTempView("data")
     /*
     last_ocpc_charge_time替换成ocpc_charge_time:
-    1. 新单元，第一天
-    2. 上个周期结束且浅层赔付周期未结束单元
+    1. 周期第一天，且浅层赔付未结束
 
     last_deep_ocpc_charge_time替换成deep_ocpc_charge_time:
-    1. 上个周期结束，且上个赔付周期有深度赔付周期记录的单元
-    2. 上个周期深度赔付周期记录不存在，但是今天有深度赔付数据
+    1. 需要深度赔付，赔付周期第一天
+    2. 需要深度赔付，非赔付周期第一天，且上个周期无深度赔付记录
      */
     val sqlRequest =
       s"""
@@ -106,12 +105,11 @@ object OcpcChargeSchedule {
          |  flag1,
          |  last_ocpc_charge_time as last_ocpc_charge_time_old,
          |  last_deep_ocpc_charge_time as last_deep_ocpc_charge_time_old,
-         |  (case when date_diff = 8 and is_pay_flag = 1 then ocpc_charge_time -- 上个周期结束，且浅层赔付未结束
-         |        when date_diff = 1 and pay_cnt = 0 then ocpc_charge_time -- 新单元，第一天
+         |  (case when calc_dates = 1 and is_pay_flag = 1 then ocpc_charge_time -- 周期第一天，且浅层赔付未结束
          |        else last_ocpc_charge_time
          |   end) as last_ocpc_charge_time,
-         |   (case when date_diff = 8 and last_deep_ocpc_charge_time is not null then deep_ocpc_charge_time -- 上个周期结束，且上个赔付周期有深度赔付周期记录的单元
-         |         when last_deep_ocpc_charge_time is null then deep_ocpc_charge_time -- 上个周期深度赔付周期记录不存在，但是今天有深度赔付数据
+         |   (case when calc_dates = 1 and is_deep_pay_flag = 1 then deep_ocpc_charge_time -- 需要深度赔付，赔付周期第一天
+         |         when calc_dates > 1 and is_deep_pay_flag = 1 and last_deep_ocpc_charge_time is null then deep_ocpc_charge_time -- 需要深度赔付，非赔付周期第一天，且上个周期无深度赔付记录
          |         else last_deep_ocpc_charge_time
          |   end) as last_deep_ocpc_charge_time
          |FROM
@@ -164,7 +162,7 @@ object OcpcChargeSchedule {
     val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
     val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24) + 1
     val payCnt = dateDiff / dayCnt
-    val calcDates = dateDiff % dayCnt
+    val calcDates = dateDiff % (dayCnt + 1)
 
     val result = Array(payCnt, calcDates, dateDiff)
     result
