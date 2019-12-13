@@ -12,18 +12,16 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object OcpcChargeSchedule {
   def main(args: Array[String]): Unit = {
     /*
-    ocpc周期控制模块
-    结果表包括以下字段：unitid, pay_cnt, pay_date, flag
+    赔付标识分两块：浅层赔付标识和深层赔付标识，基于is_pay_flag和is_deep_pay_flag：
+    last_ocpc_charge_time替换成ocpc_charge_time:
+    1. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 0
+    2. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 1
+    last_ocpc_charge_time替换成null:
+    is_pay_flag = 0
 
-    pay_cnt: 已经完成赔付的次数
-    pay_date: 当前赔付周期的起始日期
-    flag: 当前周期是否需要计算赔付(基于pay_cnt判断)
-
-    pay_cnt的更新：
-    根据pay_date，date，dayCnt判断该赔付周期是否结束，如果当前周期结束，pay_cnt++
-
-    pay_date的更新：
-    更新逻辑同上
+    last_deep_ocpc_charge_time替换成deep_ocpc_charge_time：
+    1. is_deep_pay_flag = 1, last_deep_ocpc_charge_time为null
+    2. is_deep_pay_flag = 1, date_diff = 8
      */
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -51,7 +49,7 @@ object OcpcChargeSchedule {
     /*
     更新schedule表
     1. 根据是否有fisrt_charge_time，判断是否有历史，记录，若无历史记录，则fisrt_charge_time, final_charge_time, last_ocpc_charge_time均等于ocpc_charge_time。若有历史记录，则跳过
-    2. 根据是否有last_deep_ocpc_charge_time判断是否有历史深度转化数据，若无，则last_deep_ocpc_charge_time等于deep_ocpc_charge_time。若有历史记录，则跳过
+    2. 根据是否有last_deep_ocpc_charge_time或者deep_ocpc_charge_time判断是否有历史深度转化数据，若无，则is_deep_pay_flag为0，否则为1
     3. 根据first_charge_time计算pay_cnt（赔付周期）
     4. 根据last_charge_time计算赔付所需日数和间隔时间
     5. 间隔时间如果等于8，则向last_ocpc_charge_time和last_deep_ocpc_charge_time中基于ocpc_charge_time和deep_ocpc_charge_time进行更新
@@ -63,22 +61,97 @@ object OcpcChargeSchedule {
       .withColumn("first_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("first_charge_time")))
       .withColumn("final_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("final_charge_time")))
       .withColumn("last_ocpc_charge_time", when(col("flag1") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-//      .withColumn("flag2", when(col("last_deep_ocpc_charge_time").isNull, 1).otherwise(0))
-//      .withColumn("last_deep_ocpc_charge_time", when(col("flag2") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
-      .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
+//      .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("pay_schedule1", udfCheckDate(date, dayCnt)(col("first_charge_time")))
       .withColumn("pay_cnt", col("pay_schedule1").getItem(0))
       .withColumn("pay_schedule2", udfCheckDate(date, dayCnt)(col("final_charge_time")))
       .withColumn("calc_dates", col("pay_schedule2").getItem(1))
       .withColumn("date_diff", col("pay_schedule2").getItem(2))
-      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
-      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
-      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time"))
-      .withColumn("last_deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("last_deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("is_pay_flag", when(col("pay_cnt") < 4, 1).otherwise(0))
+      .na.fill(date + " 00:00:00", Seq("ocpc_charge_time"))
+//      .withColumn("last_ocpc_charge_time", udfCheckLastOcpcChargeTime()(col("is_pay_flag"), col("date_diff"), col("ocpc_charge_time"), col("last_ocpc_charge_time")))
+//      .withColumn("last_deep_ocpc_charge_time", udfCheckLastDeepOcpcChargeTime()())
+//      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
+//      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
+//      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+//      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time"))
+//      .withColumn("last_deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("last_deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("last_deep_ocpc_charge_time")))
 
-    data
+    data.createOrReplaceTempView("data")
+    /*
+    last_ocpc_charge_time替换成ocpc_charge_time:
+    1. 新单元，第一天
+    2. 上个周期结束且浅层赔付周期未结束单元
+
+    last_deep_ocpc_charge_time替换成deep_ocpc_charge_time:
+    1. 上个周期结束，且上个赔付周期有深度赔付周期记录的单元
+    2. 上个周期深度赔付周期记录不存在，但是今天有深度赔付数据
+     */
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  ocpc_charge_time,
+         |  deep_opc_charge_time,
+         |  first_charge_time,
+         |  final_charge_time,
+         |  pay_schedule1,
+         |  pay_cnt,
+         |  pay_schedule2,
+         |  calc_dates,
+         |  date_diff,
+         |  is_pay_flag,
+         |  flag1,
+         |  last_ocpc_charge_time as last_ocpc_charge_time_old,
+         |  last_deep_ocpc_charge_time as last_deep_ocpc_charge_time_old,
+         |  (case when date_diff = 8 and is_pay_flag = 1 then ocpc_charge_time -- 上个周期结束，且浅层赔付未结束
+         |        when date_diff = 1 and pay_cnt = 0 then ocpc_charge_time -- 新单元，第一天
+         |        else last_ocpc_charge_time
+         |   end) as last_ocpc_charge_time,
+         |   (case when date_diff = 8 and last_deep_ocpc_charge_time is not null then deep_ocpc_charge_time
+         |         when last_deep_ocpc_charge_time is null then deep_ocpc_charge_time
+         |         else last_deep_ocpc_charge_time
+         |   end) as last_deep_ocpc_charge_time
+         |FROM
+         |  data
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+
+    result
   }
+
+//  def udfCheckLastDeepOcpcChargeTime() = udf((isDeepPayFlag: Int, dateDiff: Int, deepOcpcChargeTime: String, lastDeepOcpcChargeTime: String) => {
+//    /*
+//    last_deep_ocpc_charge_time替换成deep_ocpc_charge_time：
+//    1. is_deep_pay_flag = 1, last_deep_ocpc_charge_time为null
+//    2. is_deep_pay_flag = 1, date_diff = 8
+//     */
+//    var result = lastDeepOcpcChargeTime
+//    if (isDeepPayFlag == 1) {
+//      if (dateDiff == 8 || result == None) {
+//        result = deepOcpcChargeTime
+//      }
+//    }
+//    result
+//  })
+//
+//  def udfCheckLastOcpcChargeTime() = udf((isPayFlag: Int, dateDiff: Int, ocpcChargeTime: String, lastOcpcChargeTime: String) => {
+//    /*
+//    last_ocpc_charge_time替换成ocpc_charge_time:
+//    1. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 0
+//    2. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 1
+//    last_ocpc_charge_time替换成null:
+//    is_pay_flag = 0
+//     */
+//    var result = lastOcpcChargeTime
+//    if (dateDiff == 8) {
+//      if (isPayFlag == 1) {
+//        result = ocpcChargeTime
+//      }
+//    }
+//    result
+//  })
 
 
   def udfCheckDate(date: String, dayCnt: Int) = udf((ocpcChargeTime: String) => {
