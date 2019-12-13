@@ -187,7 +187,9 @@ object OcpcChargeCost {
          |FROM
          |  test.ocpc_check_exp_data20191211b
          |WHERE
-         |  pay_flag = 1
+         |  is_pay_flag = 1
+         |OR
+         |  is_deep_pay_flag = 1
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
