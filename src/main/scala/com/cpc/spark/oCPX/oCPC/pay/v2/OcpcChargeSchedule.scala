@@ -160,9 +160,9 @@ object OcpcChargeSchedule {
 
     val today = dateConverter.parse(date)
     val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
-    val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24) + 1
-    val payCnt = dateDiff / dayCnt
-    val calcDates = dateDiff % (dayCnt + 1)
+    val dateDiff = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
+    val payCnt = (dateDiff + 1) / dayCnt
+    val calcDates = dateDiff % dayCnt + 1
 
     val result = Array(payCnt, calcDates, dateDiff)
     result
