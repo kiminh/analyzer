@@ -58,11 +58,12 @@ object OcpcUnitTest {
     // 统计消费与赔付
     val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
 
-    payDataRaw
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215c")
 
-//    // 按照深度ocpc赔付的逻辑进行数据调整
-//    val payData = calculateFinalPay(payDataRaw, spark)
+    // 按照深度ocpc赔付的逻辑进行数据调整
+    val payData = calculateFinalPay(payDataRaw, spark)
+
+    payData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215c")
 
 
 
