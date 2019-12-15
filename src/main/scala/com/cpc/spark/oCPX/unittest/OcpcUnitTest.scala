@@ -7,7 +7,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, calculatePayRaw, getDeepData, getSchedule, getShallowData}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, calculateFinalPay, calculatePayRaw, getDeepData, getSchedule, getShallowData}
 import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData, joinSchedule, updateSchedule}
 
 
@@ -45,21 +45,30 @@ object OcpcUnitTest {
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, 7, spark)
+    shallowOcpcData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
 
     // 计算七天的分天展点消以及深层转化
     val deepOcpcData = getDeepData(date, 7, spark)
+    deepOcpcData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215bi")
 
-    // 数据关联
-    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
+//    // 数据关联
+//    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
+//
+//    // 抽取周期数据表
+//    val scheduleData = getSchedule(date, spark)
+//
+//    // 统计消费与赔付
+//    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
+//
+//    payDataRaw
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215c")
 
-    // 抽取周期数据表
-    val scheduleData = getSchedule(date, spark)
+//    // 按照深度ocpc赔付的逻辑进行数据调整
+//    val payData = calculateFinalPay(payDataRaw, spark)
 
-    // 统计消费与赔付
-    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
 
-    payDataRaw
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191212a")
 
   }
 

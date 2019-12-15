@@ -46,21 +46,30 @@ object OcpcChargeCost {
 
   def calculateFinalPay(dataRaw: DataFrame, spark: SparkSession) = {
     /*
-    按照深度ocpc的赔付逻辑调整数据
-    1. 对flag=1的部分，分别汇总结算每个单元浅层和深层的赔付情况，如果cpa_check_priority = 2， 则保留深度赔付数据，如果cpa_check_priority = 3， 则保留赔付金额较大的数据，需要记录保留的是浅层还是深层
-    2. 对flag=0的部分，分别汇总结算每个单元的浅层赔付情况，需要记录保留的是浅层
-    3. 数据union
+    按照deep_ocpc_step来区分消费部分：deep_ocpc_step = 1的为浅层消费，等于2为深层消费
+
+    对于浅层消费: 正常计算数据
+
+    对于深层消费：
+    1. 如果cpa_check_priority为1，使用浅层消费，为2使用深层消费，为3使用赔付金额更大的消费类型
+
+    对于ocpc_charge_time和last_deep_ocpc_charge_time的使用:
+    1. 如果is_pay_flag为0，ocpc_charge_time为空，否则使用last_ocpc_charge_time
+    2. 如果is_deep_pay_flag为0，则last_deep_ocpc_charge_time为空，否则使用last_deep_ocpc_charge_time
      */
     dataRaw.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
       s"""
          |SELECT
          |  unitid,
+         |  deep_ocpc_step,
          |  cpa_check_priority,
-         |  flag,
          |  last_ocpc_charge_time,
          |  last_deep_ocpc_charge_time,
          |  date_diff,
+         |  pay_cnt,
+         |  is_pay_flag,
+         |  is_deep_pay_flag,
          |  click1,
          |  cv1,
          |  cpagiven1,
@@ -85,9 +94,24 @@ object OcpcChargeCost {
     println(sqlRequest1)
     val baseData = spark.sql(sqlRequest1)
 
-    // 对flag=1的部分，分别汇总结算每个单元浅层和深层的赔付情况，如果cpa_check_priority = 2， 则保留深度赔付数据，如果cpa_check_priority = 3， 则保留赔付金额较大的数据，需要记录保留的是浅层还是深层
+    // 对于浅层消费: 正常计算数据, deep_ocpc_step = 1
     val data1 = baseData
-      .filter(s"flag = 1")
+      .filter(s"deep_ocpc_step = 1")
+      .withColumn("click", col("click1"))
+      .withColumn("cv", col("cv1"))
+      .withColumn("cpagiven", col("cpagiven1"))
+      .withColumn("cpareal", col("cpareal1"))
+      .withColumn("cost", col("cost1"))
+      .withColumn("pay", col("pay1"))
+      .withColumn("pay_type", lit(0))
+
+    data1
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
+
+    // 对于深层消费：
+    // 如果cpa_check_priority为1，使用浅层消费，为2使用深层消费，为3使用赔付金额更大的消费类型
+    val data2 = baseData
+      .filter(s"deep_ocpc_step = 2")
       .withColumn("pay_type", udfDeterminePayType()(col("cpa_check_priority"), col("pay1"), col("pay2")))
       .withColumn("click", when(col("pay_type") === 1, col("click2")).otherwise(col("click1")))
       .withColumn("cv", when(col("pay_type") === 1, col("cv2")).otherwise(col("cv1")))
@@ -96,30 +120,49 @@ object OcpcChargeCost {
       .withColumn("cost", when(col("pay_type") === 1, col("cost2")).otherwise(col("cost1")))
       .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
 
-    // 对flag=0的部分，分别汇总结算每个单元的浅层赔付情况，需要记录保留的是浅层
-    val data2 = baseData
-      .filter(s"flag = 0")
-      .withColumn("click", col("click1"))
-      .withColumn("cv", col("cv1"))
-      .withColumn("cpagiven", col("cpagiven1"))
-      .withColumn("cpareal", col("cpareal1"))
-      .withColumn("cost", col("cost1"))
-      .withColumn("pay", col("pay1"))
+    data2
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215b")
 
+    val result1 = data1
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
+    val result2 = data2
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+
+    val result = result1.union(result2)
+
+    result.createOrReplaceTempView("result_table")
+    // 对于ocpc_charge_time和last_deep_ocpc_charge_time的使用:
+    // 1. 如果is_pay_flag为0，ocpc_charge_time为空，否则使用last_ocpc_charge_time
+    // 2. 如果is_deep_pay_flag为0，则last_deep_ocpc_charge_time为空，否则使用last_deep_ocpc_charge_time
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  *,
+         |  (case when is_pay_flag = 0 then null else last_ocpc_charge_time end) as ocpc_charge_time,
+         |  (case when is_deep_pay_flag = 0 then null else last_deep_ocpc_charge_time end) as last_deep_ocpc_charge_time
+         |FROM
+         |  result_table
+         |""".stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2)
+
+    resultDF
   }
 
+
   def udfDeterminePayType() = udf((cpaCheckPriority: Int, pay1: Double, pay2: Double) => {
-    val result = {
-      if (cpaCheckPriority == 2) {
-        1
-      } else {
+    val result = cpaCheckPriority match {
+      case 1 => 0
+      case 2 => 1
+      case 3 => {
         if (pay1 >= pay2) {
           0
         } else {
           1
         }
       }
+      case _ => 0
     }
     result
   })
@@ -131,7 +174,7 @@ object OcpcChargeCost {
       .na.fill(0, Seq("cv1", "cv2"))
 
     val schedulData = scheduleDataRaw
-      .select("unitid", "calc_dates", "date_diff", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "calc_dates", "date_diff", "pay_cnt", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag")
 
     val data = costData
       .join(schedulData, Seq("unitid"), "inner")
@@ -144,8 +187,8 @@ object OcpcChargeCost {
       s"""
          |SELECT
          |  unitid,
+         |  deep_ocpc_step,
          |  cpa_check_priority,
-         |  flag,
          |  sum(click1) as click1,
          |  sum(cv1) as cv1,
          |  sum(cpagiven1 * click1) * 1.0 / sum(click1) as cpagiven1,
@@ -158,13 +201,13 @@ object OcpcChargeCost {
          |  data
          |WHERE
          |  is_in_schedule = 1
-         |GROUP BY unitid, cpa_check_priority, flag
+         |GROUP BY unitid, deep_ocpc_step, cpa_check_priority
          |""".stripMargin
     println(sqlRequest)
     val result = spark
       .sql(sqlRequest)
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "cpa_check_priority", "flag", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "date_diff")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "date_diff", "pay_cnt", "is_pay_flag", "is_deep_pay_flag")
 
     result
   }
@@ -202,19 +245,19 @@ object OcpcChargeCost {
       .withColumn("cv1", col("cv"))
       .withColumn("cost1", col("cost"))
       .withColumn("cpagiven1", col("cpagiven"))
-      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1")
 
     val data2 = dataRaw2
       .withColumn("click2", col("click"))
       .withColumn("cv2", col("cv"))
       .withColumn("cost2", col("cost"))
       .withColumn("cpagiven2", col("cpagiven"))
-      .select("unitid", "date", "cpa_check_priority", "flag", "click2", "cv2", "cost2", "cpagiven2")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "flag", "click2", "cv2", "cost2", "cpagiven2")
       .filter(s"flag = 1")
 
     val data = data1
-      .join(data2, Seq("unitid", "date", "flag"), "left_outer")
-      .na.fill(0, Seq("cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2"))
+      .join(data2, Seq("unitid", "date", "deep_ocpc_step", "cpa_check_priority"), "left_outer")
+      .na.fill(0, Seq("click2", "cv2", "cost2", "cpagiven2"))
 
     data
   }
@@ -240,7 +283,7 @@ object OcpcChargeCost {
          |  isclick,
          |  price,
          |  cast(deep_cpa as double) as cpagiven,
-         |  deep_ocpc_step,
+         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,,
          |  cpa_check_priority,
          |  is_deep_ocpc,
          |   date
@@ -248,16 +291,16 @@ object OcpcChargeCost {
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  cpa_check_priority in (2, 3)
-         |AND
-         |  is_deep_ocpc = 1
+         |AND is_deep_ocpc = 1
+         |AND isshow = 1
+         |AND conversion_goal > 0
+         |AND deep_ocpc_step = 2
          |""".stripMargin
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
-      .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
-      .na.fill(0, Seq("flag"))
+      .na.fill(1, Seq("deep_ocpc_step"))
+      .na.fill(0, Seq("cpa_check_priority"))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -284,6 +327,7 @@ object OcpcChargeCost {
          |SELECT
          |  unitid,
          |  date,
+         |  deep_ocpc_step,
          |  cpa_check_priority,
          |  flag,
          |  sum(isclick) as click,
@@ -292,10 +336,12 @@ object OcpcChargeCost {
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, cpa_check_priority, flag
+         |GROUP BY unitid, date, deep_ocpc_step, cpa_check_priority
          |""".stripMargin
     println(sqlRequest3)
-    val data = spark.sql(sqlRequest3)
+    val data = spark
+        .sql(sqlRequest3)
+        .filter(s"deep_ocpc_step = 2")
 
     data
   }
@@ -321,7 +367,7 @@ object OcpcChargeCost {
          |  isclick,
          |  price,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |  deep_ocpc_step,
+         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
          |   date
@@ -329,13 +375,15 @@ object OcpcChargeCost {
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
+         |AND isshow = 1
+         |AND conversion_goal > 0
          |""".stripMargin
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("flag", udfDetermineFlag("2019-12-09")(col("date"), col("is_deep_ocpc"), col("cpa_check_priority"), col("deep_ocpc_step")))
-      .na.fill(0, Seq("flag"))
+      .na.fill(1, Seq("deep_ocpc_step"))
+      .na.fill(0, Seq("cpa_check_priority"))
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -363,14 +411,15 @@ object OcpcChargeCost {
          |SELECT
          |  unitid,
          |  date,
-         |  flag,
+         |  deep_ocpc_step,
+         |  cpa_check_priority,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
          |FROM
          |  base_data
-         |GROUP BY unitid, date, flag
+         |GROUP BY unitid, date, deep_ocpc_step, cpa_check_priority
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3)
@@ -378,23 +427,23 @@ object OcpcChargeCost {
     data
   }
 
-  def udfDetermineFlag(date: String) = udf((currentDate: String, isDeepOcpc: Int, cpaCheckPriority: Int, deepOcpcStep: Int) => {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-
-    val date0 = dateConverter.parse(date)
-    val date1 = dateConverter.parse(currentDate)
-
-    var result = 0
-    if (date1.getTime() >= date0.getTime() && isDeepOcpc == 1 && deepOcpcStep == 2) {
-      if (cpaCheckPriority == 2 || cpaCheckPriority == 3) {
-        result = 1
-      } else {
-        result = 0
-      }
-    }
-    result
-  })
+//  def udfDetermineFlag(date: String) = udf((currentDate: String, isDeepOcpc: Int, cpaCheckPriority: Int, deepOcpcStep: Int) => {
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//
+//    val date0 = dateConverter.parse(date)
+//    val date1 = dateConverter.parse(currentDate)
+//
+//    var result = 0
+//    if (date1.getTime() >= date0.getTime() && isDeepOcpc == 1 && deepOcpcStep == 2) {
+//      if (cpaCheckPriority == 2 || cpaCheckPriority == 3) {
+//        result = 1
+//      } else {
+//        result = 0
+//      }
+//    }
+//    result
+//  })
 
 
 }
