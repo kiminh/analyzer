@@ -294,13 +294,13 @@ object OcpcChargeCost {
          |AND is_deep_ocpc = 1
          |AND isshow = 1
          |AND conversion_goal > 0
-         |AND deep_ocpc_step = 2
          |""".stripMargin
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
       .na.fill(0, Seq("cpa_check_priority"))
+      .filter(s"deep_ocpc_step = 2")
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -320,11 +320,6 @@ object OcpcChargeCost {
     val baseData = clickData
       .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
-
-    baseData.printSchema()
-
-    baseData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191214a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest3 =
