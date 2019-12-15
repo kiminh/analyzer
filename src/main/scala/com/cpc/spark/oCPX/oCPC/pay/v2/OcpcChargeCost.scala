@@ -322,7 +322,7 @@ object OcpcChargeCost {
       .na.fill(0, Seq("iscvr"))
 
     baseData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191214a")
 
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest3 =
