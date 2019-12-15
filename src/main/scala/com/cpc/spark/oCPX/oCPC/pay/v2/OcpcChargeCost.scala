@@ -253,7 +253,6 @@ object OcpcChargeCost {
       .withColumn("cost2", col("cost"))
       .withColumn("cpagiven2", col("cpagiven"))
       .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2")
-      .filter(s"flag = 1")
 
     val data = data1
       .join(data2, Seq("unitid", "date", "deep_ocpc_step", "cpa_check_priority"), "left_outer")
