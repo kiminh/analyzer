@@ -46,14 +46,14 @@ object OcpcUnitTest {
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, 7, spark)
 
-    // 计算七天的分天展点消以及深层转化
-    val deepOcpcData = getDeepData(date, 7, spark)
+//    // 计算七天的分天展点消以及深层转化
+//    val deepOcpcData = getDeepData(date, 7, spark)
+//
+//    // 数据关联
+//    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
-    // 数据关联
-    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
-
-    data
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215d")
+    shallowOcpcData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215e")
 //
 //    // 抽取周期数据表
 //    val scheduleData = getSchedule(date, spark)
