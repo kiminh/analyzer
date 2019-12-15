@@ -44,9 +44,9 @@ object OcpcUnitTest {
 //      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211b")
 
     // 计算七天的分天展点消以及浅层转化
-    val shallowOcpcData = getShallowData(date, 7, spark)
-    shallowOcpcData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
+//    val shallowOcpcData = getShallowData(date, 7, spark)
+//    shallowOcpcData
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
 
     // 计算七天的分天展点消以及深层转化
     val deepOcpcData = getDeepData(date, 7, spark)
