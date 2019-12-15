@@ -299,7 +299,6 @@ object OcpcChargeCost {
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
-      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .na.fill(1, Seq("deep_ocpc_step"))
       .na.fill(0, Seq("cpa_check_priority"))
 
