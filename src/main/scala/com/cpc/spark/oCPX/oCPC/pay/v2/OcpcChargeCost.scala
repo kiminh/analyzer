@@ -140,7 +140,7 @@ object OcpcChargeCost {
          |SELECT
          |  *,
          |  (case when is_pay_flag = 0 then null else last_ocpc_charge_time end) as ocpc_charge_time,
-         |  (case when is_deep_pay_flag = 0 then null else last_deep_ocpc_charge_time end) as last_deep_ocpc_charge_time
+         |  (case when is_deep_pay_flag = 0 then null else last_deep_ocpc_charge_time end) as deep_ocpc_charge_time
          |FROM
          |  result_table
          |""".stripMargin
