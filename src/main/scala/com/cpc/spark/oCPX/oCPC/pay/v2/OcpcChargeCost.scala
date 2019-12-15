@@ -286,7 +286,7 @@ object OcpcChargeCost {
          |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
-         |   date
+         |  date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
