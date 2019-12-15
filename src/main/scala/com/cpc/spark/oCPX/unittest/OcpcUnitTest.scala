@@ -52,18 +52,21 @@ object OcpcUnitTest {
     // 数据关联
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
-    // 抽取周期数据表
-    val scheduleData = getSchedule(date, spark)
-
-    // 统计消费与赔付
-    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
-
-
-    // 按照深度ocpc赔付的逻辑进行数据调整
-    val payData = calculateFinalPay(payDataRaw, spark)
-
-    payData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215c")
+    data
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215d")
+//
+//    // 抽取周期数据表
+//    val scheduleData = getSchedule(date, spark)
+//
+//    // 统计消费与赔付
+//    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
+//
+//
+//    // 按照深度ocpc赔付的逻辑进行数据调整
+//    val payData = calculateFinalPay(payDataRaw, spark)
+//
+//    payData
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215c")
 
 
 
