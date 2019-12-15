@@ -329,7 +329,6 @@ object OcpcChargeCost {
          |  date,
          |  deep_ocpc_step,
          |  cpa_check_priority,
-         |  flag,
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
