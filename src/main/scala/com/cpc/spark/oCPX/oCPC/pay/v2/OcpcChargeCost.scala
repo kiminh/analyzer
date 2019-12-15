@@ -283,7 +283,7 @@ object OcpcChargeCost {
          |  isclick,
          |  price,
          |  cast(deep_cpa as double) as cpagiven,
-         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,,
+         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
          |   date
