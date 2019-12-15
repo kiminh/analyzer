@@ -283,7 +283,7 @@ object OcpcChargeCost {
          |  isclick,
          |  price,
          |  cast(deep_cpa as double) as cpagiven,
-         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,
+         |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
          |  date
@@ -299,6 +299,7 @@ object OcpcChargeCost {
     println(sqlRequest1)
     val clickData = spark
       .sql(sqlRequest1)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .na.fill(1, Seq("deep_ocpc_step"))
       .na.fill(0, Seq("cpa_check_priority"))
 
@@ -366,7 +367,7 @@ object OcpcChargeCost {
          |  isclick,
          |  price,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |  (case when date < '2019-12-09' then 1 else deep_ocpc_step end) as deep_ocpc_step,
+         |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
          |  cpa_check_priority,
          |  is_deep_ocpc,
          |   date
