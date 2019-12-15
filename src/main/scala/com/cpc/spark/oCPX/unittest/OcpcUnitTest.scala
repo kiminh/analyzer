@@ -49,7 +49,7 @@ object OcpcUnitTest {
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
 
     // 计算七天的分天展点消以及深层转化
-    val deepOcpcData = getDeepData(date, 2, spark)
+    val deepOcpcData = getDeepData(date, 7, spark)
     deepOcpcData
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215b")
 
