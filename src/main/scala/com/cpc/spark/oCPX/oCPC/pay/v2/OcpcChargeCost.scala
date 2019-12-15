@@ -170,7 +170,7 @@ object OcpcChargeCost {
   def calculatePayRaw(dataRaw: DataFrame, scheduleDataRaw: DataFrame, date: String, spark: SparkSession) = {
     val costData = dataRaw
       .withColumn("date_dist", udfCalculateDateDist(date)(col("date")))
-      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "date_dist")
       .na.fill(0, Seq("cv1", "cv2"))
 
     val schedulData = scheduleDataRaw
@@ -178,7 +178,7 @@ object OcpcChargeCost {
 
     val data = costData
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "date", "flag", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
       .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_dates"), 1).otherwise(0))
 
     data.createOrReplaceTempView("data")
