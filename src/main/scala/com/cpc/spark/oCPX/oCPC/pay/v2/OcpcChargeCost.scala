@@ -321,6 +321,8 @@ object OcpcChargeCost {
       .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
+    baseData.printSchema()
+
     baseData
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191214a")
 
