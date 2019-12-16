@@ -94,6 +94,7 @@ object LRTrain {
     val qttAll = rawDataFromTrident
       .filter(x =>
         Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
+          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
       )
 
     train(
