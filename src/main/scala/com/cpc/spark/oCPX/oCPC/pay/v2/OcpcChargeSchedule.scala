@@ -54,7 +54,7 @@ object OcpcChargeSchedule {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216")
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
 
   }
 
