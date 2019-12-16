@@ -48,11 +48,13 @@ object FeatureMonitor {
     if(update_type == "daily"){
       sql = s"select example from $sample_path where dt='$curday' and pt='daily' and task='$model_name'"
     } else if (update_type == "hourly"){
-      sql = s"select example from $sample_path where dt='$curday' and pt='hourly' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='hourly' and task='$model_name' and hour='$hour'"
     } else if (update_type == "halfhourly" && hour.substring(2, 4) == "00"){
-      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-00' and task='$model_name'"
+      val hour_new = hour.substring(0, 2)
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-00' and task='$model_name' and hour='$hour_new'"
     } else if (update_type == "halfhourly" && hour.substring(2, 4) == "30"){
-      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-30' and task='$model_name'"
+      val hour_new = hour.substring(0, 2)
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-30' and task='$model_name' and hour='$hour_new'"
     }
     sql
   }
