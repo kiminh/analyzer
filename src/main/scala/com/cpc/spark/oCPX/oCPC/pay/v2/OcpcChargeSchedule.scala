@@ -85,8 +85,7 @@ object OcpcChargeSchedule {
       .na.fill(date + " 00:00:00", Seq("ocpc_charge_time"))
       .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("deep_ocpc_charge_time")))
-
-
+      .withColumn("recent_charge_time", udfCalculateRecentChargeTime(date)(col("calc_dates")))
 
     data.createOrReplaceTempView("data")
     /*
@@ -108,6 +107,7 @@ object OcpcChargeSchedule {
          |  deep_ocpc_charge_time,
          |  first_charge_time,
          |  final_charge_time,
+         |  recent_charge_time,
          |  pay_schedule1,
          |  pay_cnt,
          |  pay_schedule2,
@@ -119,10 +119,12 @@ object OcpcChargeSchedule {
          |  last_ocpc_charge_time as last_ocpc_charge_time_old,
          |  last_deep_ocpc_charge_time as last_deep_ocpc_charge_time_old,
          |  (case when calc_dates = 1 and is_pay_flag = 1 then ocpc_charge_time -- 周期第一天，且浅层赔付未结束
+         |        when calc_dates != 1 and is_pay_flag = 1 then recent_charge_time -- 非周期第一天，且浅层赔付未结束
          |        else last_ocpc_charge_time
          |   end) as last_ocpc_charge_time,
          |   (case when calc_dates = 1 and is_deep_pay_flag = 1 then deep_ocpc_charge_time -- 需要深度赔付，赔付周期第一天
          |         when calc_dates > 1 and is_deep_pay_flag = 1 and last_deep_ocpc_charge_time is null then deep_ocpc_charge_time -- 需要深度赔付，非赔付周期第一天，且上个周期无深度赔付记录
+         |         when calc_dates > 1 and is_deep_pay_flag = 1 and last_deep_ocpc_charge_time is not null then recent_charge_time -- 需要深度赔付，非赔付周期第一天，且上个周期无深度赔付记录
          |         else last_deep_ocpc_charge_time
          |   end) as last_deep_ocpc_charge_time
          |FROM
@@ -131,29 +133,26 @@ object OcpcChargeSchedule {
     println(sqlRequest)
     val result = spark
       .sql(sqlRequest)
-      .withColumn("recent_charge_time", udfCalculateRecentChargeTime(date)(col("calc_dates")))
-      .withColumn("date_diff1", udfCmpDate(date)(col("last_ocpc_charge_time")))
-      .withColumn("date_diff2", udfCmpDate(date)(col("last_deep_ocpc_charge_time")))
-      .withColumn("last_ocpc_charge_time", when(col("date_diff1") >= 7, col("recent_charge_time")).otherwise(col("last_ocpc_charge_time")))
-      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff2") >= 7, col("recent_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("last_deep_ocpc_charge_time", when(col("last_deep_ocpc_charge_time").isNotNull, udfSetDeepOcpcChargeTime("2019-12-09")(col("last_deep_ocpc_charge_time"))).otherwise(col("last_deep_ocpc_charge_time")))
+
 
     result
   }
 
-  def udfCmpDate(date: String) = udf((ocpcChargeTime: String) => {
-    var result = 0
-    if (ocpcChargeTime == None) {
-      result = 0
-    } else {
-      // 取历史数据
-      val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+  def udfSetDeepOcpcChargeTime(date: String) = udf((deepOcpcChargeTime: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
 
-      val today = dateConverter.parse(date)
-      val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
-      val result = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
+    val today = dateConverter.parse(date)
+    val ocpcChargeDate = dateConverter.parse(deepOcpcChargeTime.split(" ")(0))
+
+    var result = deepOcpcChargeTime
+    if (today.getTime() > ocpcChargeDate.getTime()) {
+      result = date + " 00:00:00"
     }
     result
   })
+
 
   def udfCalculateRecentChargeTime(date: String) = udf((calcDates: Int) => {
     // 取历史数据
