@@ -147,6 +147,8 @@ object OcpcChargeSchedule {
       .withColumn("pay_schedule", udfCheckDate(date, dayCnt)(col("ocpc_charge_time")))
       .withColumn("calc_dates", col("pay_schedule").getItem(1))
       .withColumn("date_diff", col("pay_schedule").getItem(2))
+      .withColumn("pay_cnt", when(col("calc_dates") === 1, col("pay_cnt") + 1).otherwise(col("pay_cnt")))
+      .withColumn("pay_cnt", when(col("pay_cnt") < 0, 0).otherwise(col("pay_cnt")))
       .withColumn("is_pay_flag", when(col("pay_cnt") < 4, 1).otherwise(0))
       .withColumn("is_deep_pay_flag", when(col("current_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("recent_charge_time", udfCalculateRecentChargeTime(date)(col("calc_dates")))
@@ -272,7 +274,7 @@ object OcpcChargeSchedule {
       .join(data, Seq("unitid"), "outer")
       .select("unitid", "current_ocpc_charge_time", "current_deep_ocpc_charge_time", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt")
       .na.fill(date + " 00:00:00", Seq("current_ocpc_charge_time"))
-      .na.fill(0, Seq("pay_cnt"))
+      .na.fill(-1, Seq("pay_cnt"))
 
     result
   }
