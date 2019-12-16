@@ -56,7 +56,7 @@ object OcpcUnitTest {
 //      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216a")
 //
     // 抽取周期数据表
-    val scheduleData = getSchedule(date, spark)
+    val scheduleData = getSchedule(date, "ocpctest", spark)
 
     val data = spark.table("test.ocpc_check_exp_data20191216a")
     // 统计消费与赔付
