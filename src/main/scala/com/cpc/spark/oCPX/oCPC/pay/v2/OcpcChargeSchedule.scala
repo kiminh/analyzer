@@ -118,9 +118,8 @@ object OcpcChargeSchedule {
          |  flag1,
          |  last_ocpc_charge_time as last_ocpc_charge_time_old,
          |  last_deep_ocpc_charge_time as last_deep_ocpc_charge_time_old,
-         |  (case when calc_dates = 1 and is_pay_flag = 1 then ocpc_charge_time -- 周期第一天，且浅层赔付未结束
-         |        when calc_dates != 1 and is_pay_flag = 1 then recent_charge_time -- 非周期第一天，且浅层赔付未结束
-         |        when calc_dates != 1 and is_deep_pay_flag = 1 then recent_charge_time -- 非周期第一天，且浅层赔付未结束
+         |  (case when calc_dates = 1 and (is_pay_flag = 1 or is_deep_pay_flag = 1) then ocpc_charge_time -- 周期第一天，且浅层赔付未结束
+         |        when calc_dates != 1 and (is_pay_flag = 1 or is_deep_pay_flag = 1) then recent_charge_time -- 非周期第一天，且浅层赔付未结束
          |        else last_ocpc_charge_time
          |   end) as last_ocpc_charge_time,
          |   (case when calc_dates = 1 and is_deep_pay_flag = 1 then deep_ocpc_charge_time -- 需要深度赔付，赔付周期第一天
