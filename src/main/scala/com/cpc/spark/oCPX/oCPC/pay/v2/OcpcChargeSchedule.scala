@@ -439,6 +439,10 @@ object OcpcChargeSchedule {
         .sql(sqlRequest1)
     data.createOrReplaceTempView("base_data")
 
+    data
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216a")
+
     // 整合ocpc_charge_time
     val sqlRequest2 =
       s"""
