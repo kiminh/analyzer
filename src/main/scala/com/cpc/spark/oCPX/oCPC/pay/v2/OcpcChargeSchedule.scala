@@ -108,7 +108,6 @@ object OcpcChargeSchedule {
          |  deep_ocpc_charge_time,
          |  first_charge_time,
          |  final_charge_time,
-         |  recent_charge_time,
          |  pay_schedule1,
          |  pay_cnt,
          |  pay_schedule2,
