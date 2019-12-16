@@ -1,27 +1,19 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.lang3.time.DateUtils
 import org.apache.hadoop.io.BytesWritable
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.expressions.UserDefinedGenerator
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.tensorflow.example.Example
 import org.tensorflow.spark.datasources.tfrecords.TensorFlowInferSchema
 import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecoder
-
-import scala.collection.mutable.ArrayBuffer
-import scala.sys.process._
 
 /**
   * 解析tfrecord到hdfs并监控特征变化
@@ -43,12 +35,12 @@ object FeatureMonitor {
       }
       result
   }
-  def generateSql(model_name: String, update_type: String, hour: String, curday: String, sample_path: String): String = {
+  def generateSql(model_name: String, update_type: String, hour: String, curday: String, sample_path: String, pt: String): String = {
     var sql = ""
     if(update_type == "daily"){
-      sql = s"select example from $sample_path where dt='$curday' and pt='daily' and task='$model_name'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='$pt' and task='$model_name'"
     } else if (update_type == "hourly"){
-      sql = s"select example from $sample_path where dt='$curday' and pt='hourly' and task='$model_name' and hour='$hour'"
+      sql = s"select example from $sample_path where dt='$curday' and pt='$pt' and task='$model_name' and hour='$hour'"
     } else if (update_type == "halfhourly" && hour.substring(2, 4) == "00"){
       val hour_new = hour.substring(0, 2)
       sql = s"select example from $sample_path where dt='$curday' and pt='realtime-00' and task='$model_name' and hour='$hour_new'"
@@ -60,14 +52,14 @@ object FeatureMonitor {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 8) {
+    if (args.length != 9) {
       System.err.println(
         """
           |you have to input 8 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
-    val Array(one_hot_feature, count_one_hot, count_multi_hot, model_name, sample_path, update_type, curday, hour) = args
+    val Array(one_hot_feature, count_one_hot, count_multi_hot, model_name, sample_path, update_type, curday, hour, pt) = args
     val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
@@ -84,7 +76,7 @@ object FeatureMonitor {
     if (sample_path.startsWith("hdfs://")) {
       importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(sample_path).repartition(3000)
     } else {
-      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday, sample_path))
+      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday, sample_path, pt))
         .rdd.map(x => Base64.decodeBase64(x.getString(0)))
         .filter(_ != null)
       val exampleRdd = rdd.map(x => Example.parseFrom(new BytesWritable(x).getBytes))
