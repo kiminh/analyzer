@@ -179,6 +179,8 @@ object OcpcChargeSchedule {
          |  is_pay_flag,
          |  is_deep_pay_flag,
          |  recent_charge_time,
+         |  pay_cnt_old,
+         |  pay_cnt,
          |  (case when calc_dates = 1 and pay_cnt = 0 then current_ocpc_charge_time -- 第一个周期第一天，且浅层赔付未结束
          |        when pay_cnt > 0 then recent_charge_time
          |        else ocpc_charge_time
