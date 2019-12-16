@@ -110,7 +110,7 @@ object OcpcChargeCost {
 
     // 对于浅层消费: 正常计算数据, deep_ocpc_step = 1
     val data1 = baseData
-      .filter(s"deep_ocpc_step != 2 and is_filter = 0")
+      .filter(s"deep_ocpc_step != 2")
       .withColumn("click", col("click1"))
       .withColumn("cv", col("cv1"))
       .withColumn("cpagiven", col("cpagiven1"))
@@ -138,6 +138,7 @@ object OcpcChargeCost {
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215b")
 
     val result1 = data1
+      .filter(s"is_filter = 0")
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
     val result2 = data2
