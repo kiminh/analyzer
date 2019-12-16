@@ -43,8 +43,8 @@ object OcpcChargeCost {
     // 按照深度ocpc赔付的逻辑进行数据调整
     val payData = calculateFinalPay(payDataRaw, spark)
 
-    payData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
+//    payData
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
 
     val resultDF = payData
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
@@ -53,7 +53,8 @@ object OcpcChargeCost {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
 
@@ -101,7 +102,7 @@ object OcpcChargeCost {
          |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
          |        else 0
          |  end) as pay2,
-         |  (case when deep_ocpc_step = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
+         |  (case when cpa_check_priority = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
          |FROM
          |  raw_data
          |""".stripMargin
@@ -119,9 +120,6 @@ object OcpcChargeCost {
       .withColumn("pay", col("pay1"))
       .withColumn("pay_type", lit(0))
 
-    data1
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215a")
-
     // 对于深层消费：
     // 如果cpa_check_priority为1，使用浅层消费，为2使用深层消费，为3使用赔付金额更大的消费类型
     val data2 = baseData
@@ -133,9 +131,6 @@ object OcpcChargeCost {
       .withColumn("cpareal", when(col("pay_type") === 1, col("cpareal2")).otherwise(col("cpareal1")))
       .withColumn("cost", when(col("pay_type") === 1, col("cost2")).otherwise(col("cost1")))
       .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
-
-    data2
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215b")
 
     val result1 = data1
       .filter(s"is_filter = 0")
