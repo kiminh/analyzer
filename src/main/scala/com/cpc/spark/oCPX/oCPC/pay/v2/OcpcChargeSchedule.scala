@@ -144,7 +144,7 @@ object OcpcChargeSchedule {
     // 如果date_diff > 8, last_ocpc_charge_time = recent_charge_time, is_deep_pay_flag=1,
     val data = dataRaw
       .select("unitid", "current_ocpc_charge_time", "current_deep_ocpc_charge_time", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt")
-      .withColumn("pay_schedule", udfCheckDate(date, dayCnt)(col("ocpc_charge_timei")))
+      .withColumn("pay_schedule", udfCheckDate(date, dayCnt)(col("ocpc_charge_time")))
       .withColumn("calc_dates", col("pay_schedule").getItem(1))
       .withColumn("date_diff", col("pay_schedule").getItem(2))
       .withColumn("pay_cnt_old", col("pay_cnt"))
