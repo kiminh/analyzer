@@ -348,7 +348,7 @@ object OcpcChargeSchedule {
          |  unitid,
          |  adslot_type,
          |  adclass,
-         |  conversion_goal
+         |  conversion_goal,
          |  timestamp,
          |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
@@ -372,7 +372,7 @@ object OcpcChargeSchedule {
          |  unitid,
          |  adslot_type,
          |  adclass,
-         |  conversion_goal
+         |  conversion_goal,
          |  timestamp as deep_timestamp,
          |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as deep_ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
