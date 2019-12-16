@@ -5,7 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.time.DateUtils
+import org.apache.hadoop.io.BytesWritable
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.expressions.UserDefinedGenerator
@@ -14,6 +16,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
+import org.tensorflow.example.Example
+import org.tensorflow.spark.datasources.tfrecords.TensorFlowInferSchema
+import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecoder
 
 import scala.collection.mutable.ArrayBuffer
 import scala.sys.process._
@@ -38,6 +43,19 @@ object FeatureMonitor {
       }
       result
   }
+  def generateSql(model_name: String, update_type: String, hour: String, curday: String, sample_path: String): String = {
+    var sql = ""
+    if(update_type == "daily"){
+      sql = s"select example from $sample_path where dt='$curday' and pt='daily' and task='$model_name'"
+    } else if (update_type == "hourly"){
+      sql = s"select example from $sample_path where dt='$curday' and pt='hourly' and task='$model_name'"
+    } else if (update_type == "halfhourly" && hour.substring(2, 4) == "00"){
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-00' and task='$model_name'"
+    } else if (update_type == "halfhourly" && hour.substring(2, 4) == "30"){
+      sql = s"select example from $sample_path where dt='$curday' and pt='realtime-30' and task='$model_name'"
+    }
+    sql
+  }
 
   def main(args: Array[String]): Unit = {
     if (args.length != 8) {
@@ -59,7 +77,21 @@ object FeatureMonitor {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
-    val importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(s"$sample_path").repartition(3000)
+    var importedDf: DataFrame = null
+
+    if (sample_path.startsWith("hdfs://")) {
+      importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(sample_path).repartition(3000)
+    } else {
+      val rdd = spark.sql(generateSql(model_name, update_type, hour, curday, sample_path))
+        .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+        .filter(_ != null)
+      val exampleRdd = rdd.map(x => Example.parseFrom(new BytesWritable(x).getBytes))
+      val finalSchema = TensorFlowInferSchema(exampleRdd)
+      val rowRdd = exampleRdd.map(example => DefaultTfRecordRowDecoder.decodeExample(example, finalSchema))
+      importedDf = spark.createDataFrame(rowRdd, finalSchema).repartition(3000)
+    }
+
+    println("file read finish")
     importedDf.cache()
     val sample_count = importedDf.count()
     //统计one-hot特征的非空样本占比，以及每个one-hot特征的id量；
@@ -90,7 +122,8 @@ object FeatureMonitor {
       val feature_value = spark.sql(
         s"""
            |select one_hot_feature_count, one_hot_feature_id_num, multi_hot_feature_count
-           |from dl_cpc.cpc_feature_monitor where day="$oneday" and model_name="$model_name"
+           |from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day in (
+           |select max(day) from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day<"$curday")
            |""".stripMargin)
       if(feature_value.count()==0){
         print("feature exception: Unable to find the historical information of this feature in the model")
@@ -110,7 +143,11 @@ object FeatureMonitor {
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
         if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
-          exception_feature = exception_feature :+ name_list_one_hot(i)
+          if(i == count_one_hot.toInt){
+            exception_feature = exception_feature :+ "sample_count"
+          } else {
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
@@ -119,11 +156,12 @@ object FeatureMonitor {
         }
       }
     }
-    if(update_type == "hourly"){
+    if(update_type == "hourly" || update_type == "halfhourly"){
       val feature_value = spark.sql(
         s"""
            |select one_hot_feature_count, one_hot_feature_id_num, multi_hot_feature_count
-           |from dl_cpc.cpc_feature_monitor where day="$oneday" and model_name="$model_name" and hour='$hour'
+           |from dl_cpc.cpc_feature_monitor where model_name="$model_name" and hour='$hour' and day in (
+           |select max(day) from dl_cpc.cpc_feature_monitor where model_name="$model_name" and day<"$curday")
            |""".stripMargin)
       if(feature_value.count()==0){
         print("feature exception: Unable to find the historical information of this feature in the model")
@@ -143,7 +181,11 @@ object FeatureMonitor {
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
         if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
-          exception_feature = exception_feature :+ name_list_one_hot(i)
+          if(i == count_one_hot.toInt){
+            exception_feature = exception_feature :+ "sample_count"
+          } else {
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
