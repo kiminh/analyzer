@@ -40,9 +40,6 @@ object OcpcChargeSchedule {
     // 关联赔付周期表
     val data = joinSchedule(ocpcCompensate, todayData, date, spark)
 
-    data
-      .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216a")
 
 //    // 更新赔付周期表
 //    val result = updateScheduleV2(data, date, dayCnt, spark)
@@ -275,11 +272,18 @@ object OcpcChargeSchedule {
       .withColumn("current_deep_ocpc_charge_time", col("deep_ocpc_charge_time"))
       .select("unitid", "current_ocpc_charge_time", "current_deep_ocpc_charge_time")
 
+    data
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216a")
+
+    ocpcCompensate
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216b")
+
     // 表3与表4外关联，记为表5
     val result = ocpcCompensate
       .join(data, Seq("unitid"), "outer")
       .select("unitid", "current_ocpc_charge_time", "current_deep_ocpc_charge_time", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt")
-      .na.fill(date + " 00:00:00", Seq("current_ocpc_charge_time"))
       .na.fill(-1, Seq("pay_cnt"))
 
     result

@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
 import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, calculateFinalPay, calculatePayRaw, getDeepData, getSchedule, getShallowData}
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getTodayData, joinSchedule, updateSchedule}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getOcpcCompensateSchedule, getTodayData, joinSchedule, updateSchedule}
 
 
 object OcpcUnitTest {
@@ -25,51 +25,19 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-//    // 获取前一天的ocpc_compensate线上数据（备份表），基于ocpc_charge_time和deep_ocpc_charge_time来判断周期开始日期以及分别需要计算深度还是浅层赔付
-//    val ocpcCompensate = getOcpcCompensate(date, 7, spark)
-//
-//    // 统计今天的分单元消耗和开始消费时间
-//    val todayData = getTodayData(date, spark)
-//
-//    // 更新赔付周期表
-//    val data = joinSchedule(ocpcCompensate, todayData, spark)
-//
-//    data
-//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211a")
-//
-//    // 更新赔付周期表
-//    val result = updateSchedule(data, date, 7, spark)
-//
-//    result
-//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191211b")
+    // 获取前一天的ocpc_compensate线上数据（备份表），基于ocpc_charge_time和deep_ocpc_charge_time来判断周期开始日期以及分别需要计算深度还是浅层赔付
+    val ocpcCompensate = getOcpcCompensateSchedule(date, "ocpc", spark)
 
-//    // 计算七天的分天展点消以及浅层转化
-//    val shallowOcpcData = getShallowData(date, 7, spark)
-//
-//    // 计算七天的分天展点消以及深层转化
-//    val deepOcpcData = getDeepData(date, 7, spark)
-//
-//    // 数据关联
-//    val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
-//
-//    data
-//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216a")
-//
-    // 抽取周期数据表
-    val scheduleData = getSchedule(date, "ocpctest", spark)
+    // 统计今天的分单元消耗和开始消费时间
+    val todayData = getTodayData(date, spark)
 
-    val data = spark.table("test.ocpc_check_exp_data20191216a")
-    // 统计消费与赔付
-    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
+    // 关联赔付周期表
+    val data = joinSchedule(ocpcCompensate, todayData, date, spark)
 
 
-    // 按照深度ocpc赔付的逻辑进行数据调整
-    val payData = calculateFinalPay(payDataRaw, spark)
-
-    payData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
-
-
+    data
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216ci")
 
   }
 
