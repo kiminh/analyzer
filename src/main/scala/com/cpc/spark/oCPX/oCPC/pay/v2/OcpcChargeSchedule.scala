@@ -55,6 +55,8 @@ object OcpcChargeSchedule {
     5. 间隔时间如果等于8，则向last_ocpc_charge_time和last_deep_ocpc_charge_time中基于ocpc_charge_time和deep_ocpc_charge_time进行更新
     6. 根据pay_cnt和last_deep_ocpc_charge_time来判断是否需要继续赔付
      */
+
+//    如果date_diff > 8, last_ocpc_charge_time = recent_charge_time, is_deep_pay_flag=1,
     val data = dataRaw
       .select("unitid", "ocpc_charge_time", "deep_ocpc_charge_time", "first_charge_time", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "final_charge_time")
       .withColumn("flag1", when(col("first_charge_time").isNull, 1).otherwise(0))
@@ -70,18 +72,18 @@ object OcpcChargeSchedule {
       .na.fill(date + " 00:00:00", Seq("ocpc_charge_time"))
       .withColumn("is_deep_pay_flag", when(col("last_deep_ocpc_charge_time").isNotNull || col("deep_ocpc_charge_time").isNotNull, 1).otherwise(0))
       .withColumn("deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("deep_ocpc_charge_time")))
-//      .withColumn("last_ocpc_charge_time", udfCheckLastOcpcChargeTime()(col("is_pay_flag"), col("date_diff"), col("ocpc_charge_time"), col("last_ocpc_charge_time")))
-//      .withColumn("last_deep_ocpc_charge_time", udfCheckLastDeepOcpcChargeTime()())
-//      .withColumn("pay_flag", when(col("pay_cnt") < 4 || col("is_deep_pay_flag") === 1, 1).otherwise(0))
-//      .withColumn("last_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("ocpc_charge_time")).otherwise(col("last_ocpc_charge_time")))
-//      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") === 8 && col("pay_flag") === 1, col("deep_ocpc_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
-//      .na.fill(date + " 00:00:00", Seq("last_ocpc_charge_time"))
-//      .withColumn("last_deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("last_deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("last_deep_ocpc_charge_time")))
+      .withColumn("recent_charge_time", udfCalculateRecentChargeTime(date)(col("calc_dates")))
+      .withColumn("last_ocpc_charge_time", when(col("date_diff") > 8, col("recent_charge_time")).otherwise(col("last_ocpc_charge_time")))
+      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") > 8, col("recent_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+
 
     data.createOrReplaceTempView("data")
     /*
+    date_diff > 8 and is_pay_flag = 1, last_ocpc_charge_time替换成recent_charge_time
+    date_diff > 8 and is_deep_pay_flag = 1, last_deep_ocpc_charge_time替换成recent_charge_time
+
     last_ocpc_charge_time替换成ocpc_charge_time:
-    1. 周期第一天，且浅层赔付未结束
+    1. 周期第一天，且浅层赔付未结束(calc_dates = 1)
 
     last_deep_ocpc_charge_time替换成deep_ocpc_charge_time:
     1. 需要深度赔付，赔付周期第一天
@@ -95,6 +97,7 @@ object OcpcChargeSchedule {
          |  deep_ocpc_charge_time,
          |  first_charge_time,
          |  final_charge_time,
+         |  recent_charge_time,
          |  pay_schedule1,
          |  pay_cnt,
          |  pay_schedule2,
@@ -121,37 +124,20 @@ object OcpcChargeSchedule {
     result
   }
 
-//  def udfCheckLastDeepOcpcChargeTime() = udf((isDeepPayFlag: Int, dateDiff: Int, deepOcpcChargeTime: String, lastDeepOcpcChargeTime: String) => {
-//    /*
-//    last_deep_ocpc_charge_time替换成deep_ocpc_charge_time：
-//    1. is_deep_pay_flag = 1, last_deep_ocpc_charge_time为null
-//    2. is_deep_pay_flag = 1, date_diff = 8
-//     */
-//    var result = lastDeepOcpcChargeTime
-//    if (isDeepPayFlag == 1) {
-//      if (dateDiff == 8 || result == None) {
-//        result = deepOcpcChargeTime
-//      }
-//    }
-//    result
-//  })
-//
-//  def udfCheckLastOcpcChargeTime() = udf((isPayFlag: Int, dateDiff: Int, ocpcChargeTime: String, lastOcpcChargeTime: String) => {
-//    /*
-//    last_ocpc_charge_time替换成ocpc_charge_time:
-//    1. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 0
-//    2. date_diff = 8, is_pay_flag = 1, is_deep_pay_flag = 1
-//    last_ocpc_charge_time替换成null:
-//    is_pay_flag = 0
-//     */
-//    var result = lastOcpcChargeTime
-//    if (dateDiff == 8) {
-//      if (isPayFlag == 1) {
-//        result = ocpcChargeTime
-//      }
-//    }
-//    result
-//  })
+  def udfCalculateRecentChargeTime(date: String) = udf((calcDates: Int) => {
+    // 取历史数据
+    val dayCnt = calcDates - 1
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val result = date1 + " 00:00:00"
+    result
+  })
 
 
   def udfCheckDate(date: String, dayCnt: Int) = udf((ocpcChargeTime: String) => {
