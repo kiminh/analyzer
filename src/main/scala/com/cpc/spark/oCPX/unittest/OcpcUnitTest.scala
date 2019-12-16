@@ -37,7 +37,7 @@ object OcpcUnitTest {
 
     ocpcCompensate
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216ci")
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216c")
 
   }
 
