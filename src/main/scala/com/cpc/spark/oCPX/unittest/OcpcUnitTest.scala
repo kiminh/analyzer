@@ -1,14 +1,9 @@
 package com.cpc.spark.oCPX.unittest
 
-
-import com.cpc.spark.OcpcProtoType.bs.OcpcBsData.getBaseData
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{assemblyData, calculateFinalPay, calculatePayRaw, getDeepData, getSchedule, getShallowData}
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensate, getOcpcCompensateSchedule, getTodayData, joinSchedule, updateSchedule}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getOcpcCompensateSchedule}
 
 
 object OcpcUnitTest {

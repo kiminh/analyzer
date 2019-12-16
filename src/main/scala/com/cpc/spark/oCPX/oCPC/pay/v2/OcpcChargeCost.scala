@@ -47,7 +47,7 @@ object OcpcChargeCost {
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
 
     val resultDF = payData
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type", "ocpc_charge_time", "deep_ocpc_charge_time")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
@@ -66,9 +66,9 @@ object OcpcChargeCost {
     对于深层消费：
     1. 如果cpa_check_priority为1，使用浅层消费，为2使用深层消费，为3使用赔付金额更大的消费类型
 
-    对于ocpc_charge_time和last_deep_ocpc_charge_time的使用:
-    1. 如果is_pay_flag为0，ocpc_charge_time为空，否则使用last_ocpc_charge_time
-    2. 如果is_deep_pay_flag为0，则last_deep_ocpc_charge_time为空，否则使用last_deep_ocpc_charge_time
+    对于ocpc_charge_time和deep_ocpc_charge_time的使用:
+    1. 如果is_pay_flag为0，ocpc_charge_time为空，否则使用ocpc_charge_time
+    2. 如果is_deep_pay_flag为0，则deep_ocpc_charge_time为空，否则使用deep_ocpc_charge_time
      */
     dataRaw.createOrReplaceTempView("raw_data")
     val sqlRequest1 =
@@ -77,8 +77,8 @@ object OcpcChargeCost {
          |  unitid,
          |  deep_ocpc_step,
          |  cpa_check_priority,
-         |  last_ocpc_charge_time,
-         |  last_deep_ocpc_charge_time,
+         |  ocpc_charge_time,
+         |  deep_ocpc_charge_time,
          |  date_diff,
          |  pay_cnt,
          |  is_pay_flag,
@@ -100,7 +100,8 @@ object OcpcChargeCost {
          |  (case when cv2 = 0 then cost2
          |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
          |        else 0
-         |  end) as pay2
+         |  end) as pay2,
+         |  (case when deep_ocpc_step = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
          |FROM
          |  raw_data
          |""".stripMargin
@@ -109,7 +110,7 @@ object OcpcChargeCost {
 
     // 对于浅层消费: 正常计算数据, deep_ocpc_step = 1
     val data1 = baseData
-      .filter(s"deep_ocpc_step = 1")
+      .filter(s"deep_ocpc_step != 2 and is_filter = 1")
       .withColumn("click", col("click1"))
       .withColumn("cv", col("cv1"))
       .withColumn("cpagiven", col("cpagiven1"))
@@ -137,30 +138,14 @@ object OcpcChargeCost {
       .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191215b")
 
     val result1 = data1
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
     val result2 = data2
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
     val result = result1.union(result2)
 
-    result.createOrReplaceTempView("result_table")
-    // 对于ocpc_charge_time和last_deep_ocpc_charge_time的使用:
-    // 1. 如果is_pay_flag为0，ocpc_charge_time为空，否则使用last_ocpc_charge_time
-    // 2. 如果is_deep_pay_flag为0，则last_deep_ocpc_charge_time为空，否则使用last_deep_ocpc_charge_time
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  *,
-         |  (case when is_pay_flag = 0 then null else last_ocpc_charge_time end) as ocpc_charge_time,
-         |  (case when is_deep_pay_flag = 0 then null else last_deep_ocpc_charge_time end) as deep_ocpc_charge_time
-         |FROM
-         |  result_table
-         |""".stripMargin
-    println(sqlRequest2)
-    val resultDF = spark.sql(sqlRequest2)
-
-    resultDF
+    result
   }
 
 
@@ -187,11 +172,11 @@ object OcpcChargeCost {
       .na.fill(0, Seq("cv1", "cv2"))
 
     val schedulData = scheduleDataRaw
-      .select("unitid", "calc_dates", "date_diff", "pay_cnt", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag")
+      .select("unitid", "calc_dates", "date_diff", "pay_cnt", "ocpc_charge_time", "deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag")
 
     val data = costData
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "last_ocpc_charge_time", "last_deep_ocpc_charge_time")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "ocpc_charge_time", "deep_ocpc_charge_time")
       .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_dates"), 1).otherwise(0))
 
     data.createOrReplaceTempView("data")
@@ -220,7 +205,7 @@ object OcpcChargeCost {
     val result = spark
       .sql(sqlRequest)
       .join(schedulData, Seq("unitid"), "inner")
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "date_diff", "pay_cnt", "is_pay_flag", "is_deep_pay_flag")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "ocpc_charge_time", "deep_ocpc_charge_time", "date_diff", "pay_cnt", "is_pay_flag", "is_deep_pay_flag")
 
     result
   }
@@ -241,7 +226,7 @@ object OcpcChargeCost {
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_compensate_schedule_daily
+         |  dl_cpc.ocpc_compensate_schedule_daily
          |WHERE
          |  `date` = '$date'
          |AND
@@ -437,24 +422,6 @@ object OcpcChargeCost {
 
     data
   }
-
-//  def udfDetermineFlag(date: String) = udf((currentDate: String, isDeepOcpc: Int, cpaCheckPriority: Int, deepOcpcStep: Int) => {
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//
-//    val date0 = dateConverter.parse(date)
-//    val date1 = dateConverter.parse(currentDate)
-//
-//    var result = 0
-//    if (date1.getTime() >= date0.getTime() && isDeepOcpc == 1 && deepOcpcStep == 2) {
-//      if (cpaCheckPriority == 2 || cpaCheckPriority == 3) {
-//        result = 1
-//      } else {
-//        result = 0
-//      }
-//    }
-//    result
-//  })
 
 
 }
