@@ -34,10 +34,6 @@ object OcpcGetPb_adtype15 {
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
-    // todo
-    dataRaw
-      .write.mode("overwrite").saveAsTable("test.ocpc_pb_data_hourly_exp20191216")
-
     // 计费比系数模块
     val jfbDataRaw = OcpcJFBfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
@@ -71,8 +67,8 @@ object OcpcGetPb_adtype15 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
