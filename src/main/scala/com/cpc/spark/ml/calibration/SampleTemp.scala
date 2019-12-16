@@ -30,13 +30,13 @@ object SampleTemp {
          |from
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
-         |  where day in ('2019-12-14')
+         |  where day in ('2019-12-14','2019-12-15')
          |  and cvr_model_name =  "novel-cvr-dnn-rawid-v9"
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr
          |  from dl_cpc.ocpc_quick_cv_log
-         |  where  `date` in ('2019-12-14')) c
+         |  where  `date` in ('2019-12-14','2019-12-15')) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
              """.stripMargin
     println(sql)
@@ -59,7 +59,7 @@ object SampleTemp {
       .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
       .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .filter("iscvr is not null")
-      .filter("day = '2019-12-14'")
+      .filter("day = '2019-12-15'")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","hour","siteid","ideaidnew","unitidnew","useridnew")
       result.show(10)
@@ -69,12 +69,12 @@ object SampleTemp {
       .collect()
 
 
-    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-novel-1214.csv"),
+    printToFile(new File("/home/cpc/wy/calibration_sample/calibration_sample-novel-1215.csv"),
       "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
-   val move ="hdfs dfs -put -f /home/cpc/wy/calibration_sample/calibration_sample-novel-1214.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample-novel-1214.csv"
+   val move ="hdfs dfs -put -f /home/cpc/wy/calibration_sample/calibration_sample-novel-1215.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample-novel-1215.csv"
     move !
   }
 
