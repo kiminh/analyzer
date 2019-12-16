@@ -141,12 +141,17 @@ object OcpcChargeSchedule {
   }
 
   def udfCmpDate(date: String) = udf((ocpcChargeTime: String) => {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    var result = 0
+    if (ocpcChargeTime == None) {
+      result = 0
+    } else {
+      // 取历史数据
+      val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
 
-    val today = dateConverter.parse(date)
-    val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
-    val result = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
+      val today = dateConverter.parse(date)
+      val ocpcChargeDate = dateConverter.parse(ocpcChargeTime.split(" ")(0))
+      val result = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24)
+    }
     result
   })
 

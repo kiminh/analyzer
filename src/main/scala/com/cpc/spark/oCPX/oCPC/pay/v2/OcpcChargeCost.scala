@@ -22,7 +22,8 @@ object OcpcChargeCost {
 
     // 计算日期周期
     val date = args(0).toString
-    val dayCnt = args(1).toInt
+    val version = args(1).toString
+    val dayCnt = args(2).toInt
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, dayCnt, spark)
@@ -34,13 +35,25 @@ object OcpcChargeCost {
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
     // 抽取周期数据表
-    val scheduleData = getSchedule(date, spark)
+    val scheduleData = getSchedule(date, version, spark)
 
     // 统计消费与赔付
     val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
 
     // 按照深度ocpc赔付的逻辑进行数据调整
     val payData = calculateFinalPay(payDataRaw, spark)
+
+    payData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
+
+    val resultDF = payData
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type", "ocpc_charge_time", "deep_ocpc_charge_time")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_result_daily20191216")
 
   }
 
@@ -222,20 +235,20 @@ object OcpcChargeCost {
     result
   })
 
-  def getSchedule(date: String, spark: SparkSession) = {
+  def getSchedule(date: String, version: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_check_exp_data20191211b
+         |  test.ocpc_compensate_schedule_daily
          |WHERE
-         |  is_pay_flag = 1
-         |OR
-         |  is_deep_pay_flag = 1
+         |  `date` = '$date'
+         |AND
+         |  version = '$version'
          |""".stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark.sql(sqlRequest).filter(s"is_pay_flag = 1 OR is_deep_pay_flag = 1")
     data
   }
 
