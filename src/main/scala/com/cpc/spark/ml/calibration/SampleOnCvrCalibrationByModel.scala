@@ -90,12 +90,12 @@ object SampleOnCvrCalibrationByModel {
       .collect()
 
 
-    printToFile(new File(s"/home/cpc/wy/calibration_sample/calibration_sample_$model.csv"),
+    printToFile(new File(s"/home/cpc/scheduled_job/hourly_calibration/calibration_sample_$model.csv"),
       "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
-   val move =s"hdfs dfs -put -f /home/cpc/wy/calibration_sample/calibration_sample_$model.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample_$model.csv"
+   val move =s"hdfs dfs -put -f /home/cpc/scheduled_job/hourly_calibration/calibration_sample_$model.csv hdfs://emr-cluster/user/cpc/wy/calibration_sample_$model.csv"
     move !
   }
 
