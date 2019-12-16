@@ -74,7 +74,7 @@ object OcpcChargeSchedule {
       .withColumn("deep_ocpc_charge_time", when(col("is_deep_pay_flag") === 1 && col("deep_ocpc_charge_time").isNull, date + " 00:00:00").otherwise(col("deep_ocpc_charge_time")))
       .withColumn("recent_charge_time", udfCalculateRecentChargeTime(date)(col("calc_dates")))
       .withColumn("last_ocpc_charge_time", when(col("date_diff") >= 7, col("recent_charge_time")).otherwise(col("last_ocpc_charge_time")))
-      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") >= 7 && col("is_deep_pay_flag") === 1, col("recent_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
+//      .withColumn("last_deep_ocpc_charge_time", when(col("date_diff") >= 7 && col("is_deep_pay_flag") === 1, col("recent_charge_time")).otherwise(col("last_deep_ocpc_charge_time")))
 
 
     data.createOrReplaceTempView("data")
