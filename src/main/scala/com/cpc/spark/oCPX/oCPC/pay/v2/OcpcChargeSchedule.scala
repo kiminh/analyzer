@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfDetermineMedia}
+import com.cpc.spark.oCPX.oCPC.pay.OcpcChargeSchedule.udfDeterminePayIndustry
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -55,8 +56,8 @@ object OcpcChargeSchedule {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
 
   }
 
@@ -345,6 +346,9 @@ object OcpcChargeSchedule {
          |SELECT
          |  searchid,
          |  unitid,
+         |  adslot_type,
+         |  adclass,
+         |  conversion_goal
          |  timestamp,
          |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
@@ -356,6 +360,8 @@ object OcpcChargeSchedule {
     println(sqlRequest1)
     val data1 = spark
       .sql(sqlRequest1)
+      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
+      .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .filter(s"seq = 1")
       .select("unitid", "timestamp", "ocpc_charge_time")
 
@@ -364,6 +370,9 @@ object OcpcChargeSchedule {
          |SELECT
          |  searchid,
          |  unitid,
+         |  adslot_type,
+         |  adclass,
+         |  conversion_goal
          |  timestamp as deep_timestamp,
          |  from_unixtime(timestamp,'YYYY-MM-dd HH:mm:ss') as deep_ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
@@ -377,6 +386,8 @@ object OcpcChargeSchedule {
     println(sqlRequest2)
     val data2 = spark
       .sql(sqlRequest2)
+      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
+      .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .filter(s"seq = 1")
       .select("searchid", "unitid", "deep_timestamp", "deep_ocpc_charge_time")
 
@@ -491,5 +502,30 @@ object OcpcChargeSchedule {
 
     data
   }
+
+  def udfDeterminePayIndustry() = udf((adslotType: Int, adclass: Int, conversionGoal: Int) => {
+    val adclassString = adclass.toString
+    val adclass3 = adclassString.substring(0, 3)
+    val adclass2 = adclassString.substring(0, 6)
+    val siteformPayAdclass = Array("110111", "113102", "118102", "118105", "118106", "118109", "123101", "123102", "123103", "123104", "123105", "123106", "123107", "123108", "123109", "123110", "123111", "123112", "123113", "123114", "123115", "130102", "130104", "130112", "135101", "135102", "135103")
+    var result = "others"
+    if (adclass3 == "134" || adclass3 == "107") {
+      result = "elds"
+    } else if (adclass3 == "100" && adslotType != 7) {
+      result = "feedapp"
+    } else if (adclass3 == "100" && adslotType == 7) {
+      result = "yysc"
+    } else if (adclass == 110110100 || adclass == 125100100) {
+      result = "wzcp"
+    } else if (adclass3 == "103" || adclass3 == "111" || adclass3 == "104") {
+      result = "pay_industry"
+    } else if (siteformPayAdclass.contains(adclass2) && conversionGoal == 3) { // 【ID1091867】新增行业赔付规则-医护&医美&招商加盟
+      result = "siteform_pay_industry"
+    } else {
+      result = "others"
+    }
+    result
+
+  })
 
 }
