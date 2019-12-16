@@ -449,7 +449,7 @@ object OcpcChargeSchedule {
          |SELECT
          |  unitid,
          |  ocpc_charge_time,
-         |  null as deep_ocpc_charge_time,
+         |  (case when 1 = 2 then null else ocpc_charge_time end) as deep_ocpc_charge_time,
          |  pay_cnt
          |FROM
          |  base_data
