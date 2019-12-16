@@ -110,7 +110,7 @@ object OcpcChargeCost {
 
     // 对于浅层消费: 正常计算数据, deep_ocpc_step = 1
     val data1 = baseData
-      .filter(s"deep_ocpc_step != 2 and is_filter = 1")
+      .filter(s"deep_ocpc_step != 2 and is_filter = 0")
       .withColumn("click", col("click1"))
       .withColumn("cv", col("cv1"))
       .withColumn("cpagiven", col("cpagiven1"))
