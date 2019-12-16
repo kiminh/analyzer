@@ -186,7 +186,7 @@ object OcpcChargeSchedule {
          |        when pay_cnt > 0 then recent_charge_time
          |        else ocpc_charge_time
          |   end) as ocpc_charge_time,
-         |   (case when calc_dates = 1 and is_deep_pay_flag = 1 and deep_ocpc_charge_time is null then current_deep_ocpc_charge_time -- 需要深度赔付，且深度赔付周期第一天
+         |   (case when is_deep_pay_flag = 1 and deep_ocpc_charge_time is null then current_deep_ocpc_charge_time -- 需要深度赔付，且第一个深度赔付周期
          |         when deep_ocpc_charge_time is not null then recent_charge_time -- 需要深度赔付，非深度第一个周期
          |         else deep_ocpc_charge_time
          |   end) as deep_ocpc_charge_time
