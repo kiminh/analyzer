@@ -43,6 +43,15 @@ object OcpcChargeSchedule {
     // 更新赔付周期表
     val result = updateSchedule(data, date, dayCnt, spark)
 
+    val resultDF = result
+      .select("unitid", "calc_dates", "date_diff", "pay_cnt", "last_ocpc_charge_time", "last_deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag", "first_charge_time", "final_charge_time", "recent_charge_time", "last_ocpc_charge_time_old", "last_deep_ocpc_charge_time_old")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216")
+
   }
 
   def updateSchedule(dataRaw: DataFrame, date: String, dayCnt: Int, spark: SparkSession) = {
