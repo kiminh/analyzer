@@ -19,3 +19,4 @@ partitioned by (`date` string)
 stored as parquet;
 
 alter table dl_cpc.deep_ocpc_exp_report_daily add columns (show bigint);
+alter table test.deep_ocpc_exp_report_daily add columns (deep_ocpc_step int)

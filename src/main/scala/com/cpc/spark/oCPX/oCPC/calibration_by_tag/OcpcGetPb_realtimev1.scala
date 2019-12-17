@@ -135,6 +135,11 @@ object OcpcGetPb_realtimev1 {
    */
   def OcpcCVRfactor(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
     val baseDataRaw = getRealtimeData(24, date, hour, spark)
+
+    // todo
+    baseDataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191217c")
+
     baseDataRaw.createOrReplaceTempView("base_data_raw")
 
     val sqlRequest =
