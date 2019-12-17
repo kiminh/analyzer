@@ -63,8 +63,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
@@ -234,6 +234,7 @@ object OcpcHourlyReport {
          |and isshow = 1
          |and conversion_goal > 0
          |and is_deep_ocpc=1
+         |and deep_ocpc_step = 2
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark
