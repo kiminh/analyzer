@@ -104,7 +104,8 @@ object DeepOcpcReport {
          |        (case
          |            when media_appsid in ('80000001', '80000002') then 'qtt'
          |            when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |            else 'novel'
+         |            when media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787') then 'novel'
+         |            else 'others'
          |        end) as media,
          |        a.deep_ocpc_step,
          |        date
@@ -116,7 +117,6 @@ object DeepOcpcReport {
          |        WHERE
          |            date between '${date1}' and '${date}'
          |        and deep_cvr_model_name is not NULL
-         |        and $mediaSelection
          |        and is_deep_ocpc = 1
          |        and deep_ocpc_step > 0) as a
          |    left join
