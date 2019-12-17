@@ -19,9 +19,15 @@ object OcpcUnionlogQuickFix {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-    data
-      .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216")
+    val deepOcpcUnit = getDeepOcpcTime(spark)
+
+    deepOcpcUnit
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216a")
+
+
+//    data
+//      .repartition(100)
+//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216")
 //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
@@ -135,7 +141,6 @@ object OcpcUnionlogQuickFix {
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
     val deepOcpcUnit = getDeepOcpcTime(spark)
-    deepOcpcUnit.show(10)
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
