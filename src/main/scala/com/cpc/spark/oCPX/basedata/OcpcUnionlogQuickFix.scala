@@ -19,15 +19,10 @@ object OcpcUnionlogQuickFix {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-    val deepOcpcUnit = getDeepOcpcTime(spark)
 
-    deepOcpcUnit
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216a")
-
-
-//    data
-//      .repartition(100)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216")
+    data
+      .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216")
 //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
@@ -237,9 +232,9 @@ object OcpcUnionlogQuickFix {
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-      .join(deepOcpcUnit, Seq("unitid"), "left_outer")
-      .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
-      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
+//      .join(deepOcpcUnit, Seq("unitid"), "left_outer")
+//      .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
+//      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
 //      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
 
     val resultDF = rawData
