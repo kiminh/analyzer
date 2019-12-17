@@ -55,9 +55,10 @@ object ConditionedUVDaily {
 
     import spark.implicits._
 
-    // 省份 / 城市 / 性别 / 年龄段 / 金币 / 操作系统 / 网络状况 / 携带电话级别
+    // 省份 / 城市 / 性别 / 年龄段 / 金币 / 操作系统 / 网络状况 / 携带电话级别 / 是否新老用户
     // fym 190508: it occurs that coin/share_coin seem to be deprecated.
-    val conditions = s"province,city,sex,age,coin,os,network,phone_level"
+    val conditions = s"province,city,sex,age,coin,os,network,phone_level,qukan_new_user"
+//    val conditions = s"qukan_new_user"
 
     val queryRawDataFromUnionEvents =
       s"""
@@ -143,18 +144,16 @@ object ConditionedUVDaily {
                                      redis: RedisClient,
                                      redisNew: RedisClient
                                      ) : Unit = {
-    val filteredUidWithCondition = df
-      .filter(_.getAs[Int](condition) > 0) // coin -> coin.
+    val filteredUidWithCondition: Dataset[Row] = df.filter((_: Row).getAs[Int](condition) >= 0) // coin -> coin.
 
-    val conditionedColumn = {
-      if (condition == "coin") {
-        "share_coin_level" // coin -> shared_coin_level.
-      } else {
-        condition
+    val conditionedColumn: String = {
+      condition match {
+        case "coin" => "share_coin_level"
+        case _ => condition
       }
     }
 
-    val uidWithCondition = filteredUidWithCondition
+    val uidWithCondition: DataFrame = filteredUidWithCondition
       .select(
         col(conditionedColumn),
         col("uid")
@@ -165,12 +164,10 @@ object ConditionedUVDaily {
       )
       .agg(expr("count(*)").alias("count")) // calculate total uv given specified column.
 
-    val totalCountUidWithCondition = uidWithCondition
-      .count()
-
+    val totalCountUidWithCondition: Long = uidWithCondition.count()
     println(totalCountUidWithCondition)
 
-    val percentageUidWithCondition = uidWithCondition
+    val percentageUidWithCondition: Seq[(Int, Double)] = uidWithCondition
       .groupBy(col(conditionedColumn))
       .agg(expr("count(*)").alias("count_by_condition")) // sub-uv given specified column.
       .withColumn(
@@ -182,7 +179,7 @@ object ConditionedUVDaily {
         )
       )
       .rdd
-      .map(x => {
+      .map((x: Row) => {
         (
           (
             x.getAs[Int](conditionedColumn),
@@ -191,25 +188,32 @@ object ConditionedUVDaily {
           , 1
         )
       })
-      .map(x => x._1)
+      .map((x: ((Int, Double), Int)) => x._1)
       .toLocalIterator
       .toSeq
-      .sortWith((x, y) => x._1 < y._1)
+      .sortWith((x: (Int, Double), y: (Int, Double)) => x._1 < y._1)
+
+    val conditionToGoRedis: String = {
+      conditionedColumn match {
+        case "qukan_new_user" => "old_or_new_user"
+        case _ => conditionedColumn
+      }
+    }
 
     if (condition == "coin") { // accumulative percentage.
       var n = 0d
       percentageUidWithCondition
-        .foreach(x => {
+        .foreach((x: (Int, Double)) => {
           n = n + x._2
-          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, n, redis)
-          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, n, redisNew)
+          printPercentageAndSetKeyIntoRedis(appType, conditionToGoRedis, x._1, n, redis)
+          printPercentageAndSetKeyIntoRedis(appType, conditionToGoRedis, x._1, n, redisNew)
         }
       )
     } else { // simply print them.
       percentageUidWithCondition
-        .foreach(x => {
-          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, x._2, redis)
-          printPercentageAndSetKeyIntoRedis(appType, conditionedColumn, x._1, x._2, redisNew)
+        .foreach((x: (Int, Double)) => {
+          printPercentageAndSetKeyIntoRedis(appType, conditionToGoRedis, x._1, x._2, redis)
+          printPercentageAndSetKeyIntoRedis(appType, conditionToGoRedis, x._1, x._2, redisNew)
         }
       )
     }
@@ -222,20 +226,39 @@ object ConditionedUVDaily {
                                        value: Double,
                                        redis: RedisClient
                                        ) : Unit = {
+
+    /*
+      新老用户
+        union_events逻辑:0老用户  1新用户 2未知
+        写入redis逻辑：   1新用户  2老用户 0未知
+     */
+    val keyShuffled: Int = {
+      if (condition == "old_or_new_user") {
+        key match {
+          case 0 => 2 // 老
+          case 1 => 1 // 新
+          case 2 => 0 // 未知
+          case _ => 0 // 未知
+        }
+      } else {
+        key
+      }
+    }
+
     println("-- %s - %s - %s percentage: %s --"
       .format(
         appType,
         condition,
-        key,
+        keyShuffled,
         value
       )
     ) // black-box after flight.
 
-    val keyToGo = "%stouched_uv_percent_%s_%d"
+    val keyToGo: String = "%stouched_uv_percent_%s_%d"
       .format(
         if (appType == "qtt") "" else "miRead_",
         condition,
-        key
+        keyShuffled
       ) // to-fly.
 
     println(keyToGo)
