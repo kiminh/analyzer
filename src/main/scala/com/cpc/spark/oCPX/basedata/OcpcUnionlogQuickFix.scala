@@ -135,7 +135,10 @@ object OcpcUnionlogQuickFix {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    val deepOcpcUnit = getDeepOcpcTime(spark)
+    val deepOcpcUnitRaw = getDeepOcpcTime(date, hour, spark)
+
+    val deepOcpcUnit = deepOcpcUnitRaw
+      .select("unitid", "flag").distinct()
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
@@ -233,7 +236,7 @@ object OcpcUnionlogQuickFix {
     val rawData = spark
       .sql(sqlRequest)
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
-//      .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
+      .na.fill(0, Seq("flag"))
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
 //      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
 
@@ -246,20 +249,7 @@ object OcpcUnionlogQuickFix {
     resultDF
   }
 
-  def udfCheckDeepOcpcStep(date: String, hour: String) = udf((lastDeepOcpcOpenTime: String, deepOcpcStep: Int) => {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-
-    val today = dateConverter.parse(date + " " + hour)
-    val ocpcChargeDate = dateConverter.parse(lastDeepOcpcOpenTime.split(":")(0))
-    var result = deepOcpcStep
-    if (today.getTime() > ocpcChargeDate.getTime()) {
-      result = 2
-    }
-    result
-  })
-
-  def getDeepOcpcTime(spark: SparkSession) = {
+  def getDeepOcpcTime(date: String, hour: String, spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
 
     val url = conf.getString("adv_read_mysql.new_deploy.url")
@@ -278,11 +268,25 @@ object OcpcUnionlogQuickFix {
 
     val resultDF = data
       .selectExpr("unitid",  "last_deep_ocpc_opentime")
+      .withColumn("flag", udfCheckDeepOcpcStepFlag(date, hour)(col("last_deep_ocpc_opentime")))
       .distinct()
 
     resultDF.show(10)
     resultDF
   }
+
+  def udfCheckDeepOcpcStepFlag(date: String, hour: String) = udf((lastDeepOcpcOpenTime: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+
+    val today = dateConverter.parse(date + " " + hour)
+    val ocpcChargeDate = dateConverter.parse(lastDeepOcpcOpenTime.split(":")(0))
+    var result = 0
+    if (today.getTime() > ocpcChargeDate.getTime()) {
+      result = 1
+    }
+    result
+  })
 
 
 
