@@ -135,6 +135,7 @@ object OcpcUnionlogQuickFix {
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
     val deepOcpcUnit = getDeepOcpcTime(spark)
+    deepOcpcUnit.show(10)
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
@@ -234,7 +235,7 @@ object OcpcUnionlogQuickFix {
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
       .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
-      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
+//      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
 
     val resultDF = rawData
       .withColumn("date", lit(date))
