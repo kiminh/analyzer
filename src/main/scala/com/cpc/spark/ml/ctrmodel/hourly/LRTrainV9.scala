@@ -1242,7 +1242,7 @@ object LRTrainV9 {
     els = els :+ (0, 1d)
     i += 1
 
-    els = els :+ (0, bcbias1)
+    els = els :+ (1, bcbias1)
     i += 1
 
     //(24)
