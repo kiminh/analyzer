@@ -52,8 +52,8 @@ object OcpcGetPb_realtimev1 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 //
 
   }
@@ -161,6 +161,10 @@ object OcpcGetPb_realtimev1 {
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("cvr_factor", col("post_cvr") * 1.0 / col("pre_cvr"))
+
+    // todo
+    baseData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191217b")
 
     val resultDF = baseData
       .select("identifier", "userid", "conversion_goal", "media", "total_pre_cvr", "click", "cv", "cvr_factor")
