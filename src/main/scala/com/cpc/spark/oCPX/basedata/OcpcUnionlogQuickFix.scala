@@ -138,7 +138,9 @@ object OcpcUnionlogQuickFix {
     val deepOcpcUnitRaw = getDeepOcpcTime(date, hour, spark)
 
     val deepOcpcUnit = deepOcpcUnitRaw
-      .select("unitid", "flag").distinct()
+      .groupBy("unitid")
+      .agg(max(col("flag")).alias("flag"))
+      .select("unitid", "flag")
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
@@ -235,10 +237,10 @@ object OcpcUnionlogQuickFix {
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-      .join(deepOcpcUnit, Seq("unitid"), "left_outer")
-      .na.fill(0, Seq("flag"))
-      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
-      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("cpa_check_priority") > 0, 2).otherwise(col("deep_ocpc_step")))
+//      .join(deepOcpcUnit, Seq("unitid"), "left_outer")
+//      .na.fill(0, Seq("flag"))
+//      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
+//      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("cpa_check_priority") > 0, 2).otherwise(col("deep_ocpc_step")))
 
     val resultDF = rawData
       .withColumn("date", lit(date))
