@@ -335,6 +335,45 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
+
+  def savePbPackAndRate(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true, rate:Double): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      auPRC = auPRC,
+      auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir:Option[IRModel] = if(withIR) {
+      Option(IRModel(
+        boundaries = irmodel.boundaries.toSeq,
+        predictions = irmodel.predictions.toSeq,
+        meanSquareError = irError * irError
+      ))
+    }else{
+      None
+    }
+    val pack = Pack(
+      lr = Option(lr),
+      ir = ir,
+      rate,
+      createTime = new Date().getTime,
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      mediaid = dict("mediaid")
+    )
+    pack.writeTo(new FileOutputStream(path))
+  }
+
   def savePbPackNew(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]], dictLength: Map[String, Int],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
