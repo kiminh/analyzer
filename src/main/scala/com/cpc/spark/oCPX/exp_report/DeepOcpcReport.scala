@@ -160,7 +160,7 @@ object DeepOcpcReport {
          |        a.searchid = c.searchid
          |    AND
          |        a.conversion_goal = c.conversion_goal) as t
-         |group by t.cali_tag, t.recall_tag, t.cpa_check_priority, t.media, t.unitid, t.conversion_goal, t.deep_conversion_goal, t.date, t.eep_ocpc_step
+         |group by t.cali_tag, t.recall_tag, t.cpa_check_priority, t.media, t.unitid, t.conversion_goal, t.deep_conversion_goal, t.date, t.deep_ocpc_step
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
