@@ -305,7 +305,7 @@ object OcpcChargeCost {
          |FROM
          |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
-         |  `date` >= '$date'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
@@ -387,7 +387,7 @@ object OcpcChargeCost {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
