@@ -238,7 +238,7 @@ object OcpcUnionlogQuickFix {
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
       .na.fill(0, Seq("flag"))
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
-//      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
+      .withColumn("deep_ocpc_step", when(col("flag") === 1, 2).otherwise(col("deep_ocpc_step")))
 
     val resultDF = rawData
       .withColumn("date", lit(date))
