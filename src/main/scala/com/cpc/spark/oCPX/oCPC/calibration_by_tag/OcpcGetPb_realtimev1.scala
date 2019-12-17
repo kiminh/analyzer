@@ -134,7 +134,7 @@ object OcpcGetPb_realtimev1 {
   cvr校准系数
    */
   def OcpcCVRfactor(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
-    val baseDataRaw = getRealtimeData(24, date, hour, spark)
+    val baseDataRaw = getRealtimeData(hourInt, date, hour, spark)
 
     // todo
     baseDataRaw
