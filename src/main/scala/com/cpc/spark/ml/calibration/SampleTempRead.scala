@@ -22,7 +22,7 @@ object SampleTempRead{
       .option("header", "true")
       .option("inferSchema", "false") //是否自动推到内容的类型
       .option("delimiter","\001")  //分隔符，默认为 ,
-      .load("hdfs://emr-cluster/user/cpc/wy/tensorflow_cali_result_wzjf_load_r5.csv")
+      .load("hdfs://emr-cluster/user/cpc/wy/tensorflow_cali_result_novel_r5.csv")
     df.show(10)
 
     df.write.mode("overwrite").saveAsTable("dl_cpc.wy_tensorflow_cali_result")
