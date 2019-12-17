@@ -276,9 +276,6 @@ object OcpcUnionlogQuickFix {
       .load()
 
     val resultDF = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .withColumn("cpagiven", col("ocpc_bid"))
       .selectExpr("unitid",  "last_deep_ocpc_opentime")
       .distinct()
 
