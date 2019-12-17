@@ -50,10 +50,6 @@ object DeepOcpcReport {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     val sqlRequest =
       s"""
          |SELECT
