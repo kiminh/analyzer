@@ -233,7 +233,7 @@ object OcpcUnionlogQuickFix {
     val rawData = spark
       .sql(sqlRequest)
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
-      .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
+//      .na.fill(date + " " + hour + ":00:00", Seq("last_deep_ocpc_opentime"))
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
 //      .withColumn("deep_ocpc_step", udfCheckDeepOcpcStep(date, hour)(col("last_deep_ocpc_opentime"), col("deep_ocpc_step")))
 
