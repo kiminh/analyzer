@@ -246,8 +246,9 @@ object LRTrainV9 {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate), rate/1000.0)
-    val sampleTest = formatSample(spark, parser, test, rate/1000.0)
+    val bias1=scala.math.exp(1000.0/rate)
+    val sampleTrain = formatSample(spark, parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate), bias1)
+    val sampleTest = formatSample(spark, parser, test, bias1)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
     model.run(sampleTrain, 10, 1e-8)
@@ -276,10 +277,10 @@ object LRTrainV9 {
     model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata/%s".format(date))
 
     // backup on local machine.
-    model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
+    model.savePbPackAndBias(parser, lrfilepathBackup, dict.toMap, dictStr.toMap, true, bias1)
 
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPackAndBias(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, true, bias1)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
@@ -291,14 +292,14 @@ object LRTrainV9 {
     }*/
   }
 
-  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame, rate: Double): RDD[LabeledPoint] = {
+  def formatSample(spark: SparkSession, parser: String, ulog: DataFrame, bias1: Double): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
-    val BcRate = spark.sparkContext.broadcast(rate)
+    val BcBias1 = spark.sparkContext.broadcast(bias1)
     ulog.rdd
       .mapPartitions {
         p =>
           dict = BcDict.value
-          bcrate = BcRate.value
+          bcbias1 = BcBias1.value
           p.map {
             u =>
               val vec = parser match {
@@ -315,7 +316,7 @@ object LRTrainV9 {
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
                 case "ctrparser9" =>
-                  getCtrVectorParser9(u, bcrate)
+                  getCtrVectorParser9(u, bcbias1)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
@@ -323,7 +324,7 @@ object LRTrainV9 {
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
-  var bcrate = 0d
+  var bcbias1 = 0d
   val dictNames = Seq(
     "mediaid",
     "planid",
@@ -1230,7 +1231,7 @@ object LRTrainV9 {
   }
 
 
-  def getCtrVectorParser9(x: Row, bcrate: Double): Vector = {
+  def getCtrVectorParser9(x: Row, bcbias1: Double): Vector = {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
@@ -1241,7 +1242,7 @@ object LRTrainV9 {
     els = els :+ (0, 1d)
     i += 1
 
-    els = els :+ (0, bcrate)
+    els = els :+ (0, bcbias1)
     i += 1
 
     //(24)

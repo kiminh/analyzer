@@ -34,7 +34,7 @@ message Pack {
     map<string,int32> channel = 15;
     map<string,int32> dtuid = 16;
     map<string,int32> lengthmap = 17;
-    double bias1 = 18;
+    double bias1 = 18;  //模型最后需要减去的修正偏差
 }
 
 

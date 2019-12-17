@@ -336,7 +336,7 @@ class LRIRModel {
   }
 
 
-  def savePbPackAndRate(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true, rate:Double): Unit = {
+  def savePbPackAndBias(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true, bias1_value:Double): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -361,7 +361,6 @@ class LRIRModel {
     val pack = Pack(
       lr = Option(lr),
       ir = ir,
-      rate,
       createTime = new Date().getTime,
       planid = dict("planid"),
       unitid = dict("unitid"),
@@ -369,7 +368,8 @@ class LRIRModel {
       slotid = dict("slotid"),
       adclass = dict("adclass"),
       cityid = dict("cityid"),
-      mediaid = dict("mediaid")
+      mediaid = dict("mediaid"),
+      bias1 = bias1_value
     )
     pack.writeTo(new FileOutputStream(path))
   }
