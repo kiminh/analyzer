@@ -249,7 +249,7 @@ object OcpcUnionlogQuickFix {
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
       .na.fill(0, Seq("flag"))
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
-      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("cpa_check_priority") > 0, 2).otherwise(col("deep_ocpc_step")))
+      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("deep_ocpc_step") === 1, 2).otherwise(col("deep_ocpc_step")))
 
     val resultDF = rawData
       .withColumn("date", lit(date))
