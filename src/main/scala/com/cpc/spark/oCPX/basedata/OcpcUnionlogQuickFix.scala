@@ -141,13 +141,13 @@ object OcpcUnionlogQuickFix {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    val deepOcpcUnitRaw = getDeepOcpcTime(date, hour, spark)
+    val deepOcpcUnit = getDeepOcpcTime(date, hour, spark).cache()
 
-    val deepOcpcUnit = deepOcpcUnitRaw
-      .groupBy("unitid")
-      .agg(max(col("flag")).alias("flag"))
-      .select("unitid", "flag")
-      .cache()
+//    val deepOcpcUnit = deepOcpcUnitRaw
+//      .groupBy("unitid")
+//      .agg(max(col("flag")).alias("flag"))
+//      .select("unitid", "flag")
+//      .cache()
 
     deepOcpcUnit.show(10)
 
@@ -247,9 +247,9 @@ object OcpcUnionlogQuickFix {
     val rawData = spark
       .sql(sqlRequest)
       .join(deepOcpcUnit, Seq("unitid"), "left_outer")
-//      .na.fill(0, Seq("flag"))
-//      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
-//      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("cpa_check_priority") > 0, 2).otherwise(col("deep_ocpc_step")))
+      .na.fill(0, Seq("flag"))
+      .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
+      .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("cpa_check_priority") > 0, 2).otherwise(col("deep_ocpc_step")))
 
     val resultDF = rawData
       .withColumn("date", lit(date))
