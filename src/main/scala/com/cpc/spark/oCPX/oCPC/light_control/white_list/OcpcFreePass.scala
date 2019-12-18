@@ -62,6 +62,7 @@ object OcpcFreePass {
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
         .join(ocpcBuliang, Seq("userid"), "left_outer")
         .na.fill(0, Seq("is_open"))
+        .withColumn("flag_old", col("flag"))
         .withColumn("flag", when(col("is_open") === 1, 1).otherwise(col("flag")))
 
     joinData
