@@ -95,8 +95,8 @@ object OcpcFreePass {
   }
 
   def ocpcBlackUsers(spark: SparkSession) = {
-//    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_user/ocpc_hidden_tax_user.list")
-    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_user.list")
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_user/ocpc_hidden_tax_user.list")
+//    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_user.list")
 
     val data = dataRaw
       .select("value")
