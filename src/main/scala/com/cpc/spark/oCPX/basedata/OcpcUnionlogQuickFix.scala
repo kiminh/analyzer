@@ -23,7 +23,7 @@ object OcpcUnionlogQuickFix {
 
     deepOcpcUnitRaw
       .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216b")
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191218a")
 
 
 //    data
