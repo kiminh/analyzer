@@ -140,13 +140,13 @@ object FeatureMonitor {
           if(i == count_one_hot.toInt){
             exception_feature = exception_feature :+ "sample_count"
           } else {
-            exception_feature = exception_feature :+ name_list_one_hot(i)
+            exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
           }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
         if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
-          exception_feature = exception_feature :+ i.toString
+          exception_feature = exception_feature :+ "multihot_" + i.toString
         }
       }
     }
@@ -178,13 +178,13 @@ object FeatureMonitor {
           if(i == count_one_hot.toInt){
             exception_feature = exception_feature :+ "sample_count"
           } else {
-            exception_feature = exception_feature :+ name_list_one_hot(i)
+            exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
           }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
         if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
-          exception_feature = exception_feature :+ i.toString
+          exception_feature = exception_feature :+ "multihot_" + i.toString
         }
       }
     }
