@@ -19,15 +19,17 @@ object OcpcCompensateBackup {
 
     // 计算日期周期
     val date = args(0).toString
+    val version = args(1).toString
 
     // 计算当天数据
     val data = getOcpcCompensate(spark)
 
     data
       .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
       .repartition(10)
-//      .write.mode("overwrite").insertInto("test.ocpc_compensate_backup_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_backup_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_backup_daily_v2")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_backup_daily_v2")
 
 
   }

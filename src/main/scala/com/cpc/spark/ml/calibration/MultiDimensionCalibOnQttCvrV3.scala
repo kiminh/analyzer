@@ -3,9 +3,7 @@ package com.cpc.spark.ml.calibration
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import com.cpc.spark.OcpcProtoType.model_novel_v3.OcpcSuggestCPAV3.matchcvr
-import com.cpc.spark.common.Murmur3Hash.stringHash64
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql4
@@ -13,7 +11,7 @@ import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.{CalibrationConfig, IRModel, PostCalibrations}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
-import com.cpc.spark.ml.calibration.HourlyCalibration.{saveFlatTextFileForDebug, saveProtoToLocal}
+import com.cpc.spark.ml.calibration.HourlyCalibration.{saveProtoToLocal,saveFlatTextFileForDebug}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.mllib.regression.IsotonicRegression
 
@@ -35,7 +33,7 @@ object MultiDimensionCalibOnQttCvrV3 {
     val media = args(3)
     val model = args(4)
     val calimodel = args(5)
-    val task = args(6)
+    val k = args(6)
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
@@ -61,50 +59,56 @@ object MultiDimensionCalibOnQttCvrV3 {
 
     // get union log
     val clicksql = s"""
-                 |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                 |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid
-                 |  from
-                 |  (select *
-                 |  from dl_cpc.cpc_basedata_union_events
-                 |  where $selectCondition2
-                 |  and $mediaSelection and isclick = 1
-                 |  and cvr_model_name in ('$calimodel','$model')
-                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
-                 |  AND (charge_type IS NULL OR charge_type = 1)
-                 |  )a
-                 |  join dl_cpc.dw_unitid_conversion_target_hourly b
-                 |    on a.unitid = b.unitid
-                 |    and b.day = '$endDate' and b.hour = '$endHour'
-                 |    and b.conversion_target[0] not in ('none','site_uncertain')
+                      |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
+                      |a.cvr_model_name as model, a.ideaid, a.conversion_from
+                      |  from
+                      |  (select *
+                      |  from dl_cpc.cpc_basedata_union_events
+                      |  where $selectCondition2
+                      |  and $mediaSelection and isclick = 1
+                      |  and cvr_model_name in ('$calimodel','$model')
+                      |  and ideaid > 0 and adsrc = 1 AND userid > 0
+                      |  AND (charge_type IS NULL OR charge_type = 1)
+                      |  )a
+                      |  join dl_cpc.dw_unitid_conversion_target_hourly b
+                      |    on a.unitid = b.unitid
+                      |    and b.day = '$endDate' and b.hour = '$endHour'
+                      |    and b.conversion_target[0] not in ('none','site_uncertain')
        """.stripMargin
     println(s"sql:\n$clicksql")
     val clickData = session.sql(clicksql)
     val cvrsql =s"""
-                 |select distinct a.searchid,
-                 |       a.conversion_target as unit_target,
-                 |       b.conversion_target[0] as real_target
-                 |from
-                 |   (select *
-                 |    from dl_cpc.cpc_conversion
-                 |   where $selectCondition2
-                 |and size(conversion_target)>0) a
-                 |join dl_cpc.dw_unitid_conversion_target_hourly b
-                 |    on a.unitid=b.unitid
-                 |    and b.day = '$endDate' and b.hour = '$endHour'
+                   |select distinct a.searchid,
+                   |       a.conversion_target as unit_target,
+                   |       b.conversion_target[0] as real_target
+                   |from
+                   |   (select *
+                   |    from dl_cpc.cpc_conversion
+                   |   where $selectCondition2
+                   |and size(conversion_target)>0) a
+                   |join dl_cpc.dw_unitid_conversion_target_hourly b
+                   |    on a.unitid=b.unitid
+                   |    and b.day = '$endDate' and b.hour = '$endHour'
        """.stripMargin
     val cvrData = session.sql(cvrsql)
       .withColumn("iscvr",matchcvr(col("unit_target"),col("real_target")))
       .filter("iscvr = 1")
       .select("searchid", "iscvr")
     val log = clickData.join(cvrData,Seq("searchid"),"left")
-        .withColumn("isclick",col("iscvr"))
+      .withColumn("isclick",col("iscvr"))
     log.show(10)
-    val calibrationnum = log.count()
-    println("total calibration data is %d".format(calibrationnum))
-    if(calibrationnum>200000){
-      LogToPb(log, session, calimodel)
-    }
-    else CalibrationColdStart(startDate, session, calimodel,task)
+    LogToPb(log, session, calimodel)
+    val irModel = IRModel(
+      boundaries = Seq(1.0),
+      predictions = Seq(k.toDouble)
+    )
+    println(s"k is: $k")
+    val caliconfig = CalibrationConfig(
+      name = calimodel,
+      ir = Option(irModel)
+    )
+    val localPath = saveProtoToLocal(calimodel, caliconfig)
+    saveFlatTextFileForDebug(calimodel, caliconfig)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String)={
@@ -112,19 +116,27 @@ object MultiDimensionCalibOnQttCvrV3 {
       .filter("count3>10000")
       .withColumn("group",concat_ws("_",col("adclass"),col("ideaid")))
       .select("adclass","ideaid","group")
-    val group4 = log.groupBy("adclass").count().withColumn("count4",col("count"))
+    val group4 = log.groupBy("adclass","conversion_from").count().withColumn("count4",col("count"))
       .filter("count4>10000")
+      .withColumn("group",concat_ws("_",col("adclass"),col("conversion_from")))
+      .select("adclass","conversion_from","group")
+    val group5 = log.groupBy("adclass").count().withColumn("count5",col("count"))
+      .filter("count5>10000")
       .withColumn("group",col("adclass"))
       .select("adclass","group")
+
 
     val data3 = log.join(group3,Seq("adclass","ideaid"),"inner")
     val calimap3 = GroupToConfig(data3, session,model)
 
-    val data4 = log.join(group4,Seq("adclass"),"inner")
+    val data4 = log.join(group4,Seq("adclass","conversion_from"),"inner")
     val calimap4 = GroupToConfig(data4, session,model)
 
-    val calimap5 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
-    val calimap =  calimap3 ++ calimap4 ++ calimap5
+    val data5 = log.join(group5,Seq("adclass"),"inner")
+    val calimap5 = GroupToConfig(data5, session,model)
+
+    val calimap6 = GroupToConfig(log.withColumn("group",lit("0")), session,model)
+    val calimap = calimap3 ++ calimap4 ++ calimap5 ++ calimap6
     val califile = PostCalibrations(calimap.toMap)
     val localPath = saveProtoToLocal2(model, califile)
     saveFlatTextFileForDebug2(model, califile)
@@ -135,14 +147,15 @@ object MultiDimensionCalibOnQttCvrV3 {
     val irTrainer = new IsotonicRegression()
     val sc = session.sparkContext
     var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
-    val result = data.selectExpr("isclick","cast (ectr as long) ectr" ,"group")
+    val result = data.select("isclick","ectr","model","group")
       .rdd.map( x => {
       var isClick = 0d
       if (x.get(0) != null) {
         isClick = x.getInt(0).toDouble
       }
       val ectr = x.getLong(1).toDouble / 1e6d
-      val group = x.getString(2)
+      val model = x.getString(2)
+      val group = x.getString(3)
       val key = group
       (key, (ectr, isClick))
     }).groupByKey()
@@ -160,8 +173,8 @@ object MultiDimensionCalibOnQttCvrV3 {
           val positiveSize = bins._3
           println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
-          if (positiveSize < 1) {
-            println("no positive sample, don't output the calibration")
+          if (positiveSize < 5) {
+            println("positive sample too small, don't output the calibration")
             CalibrationConfig()
           } else {
             val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
@@ -179,6 +192,64 @@ object MultiDimensionCalibOnQttCvrV3 {
             config
           }
       }.toList
+    return calimap
+  }
+
+  def AllToConfig(data:DataFrame, keyset:DataFrame,session: SparkSession, calimodel: String, minBinSize: Int = MIN_BIN_SIZE,
+                  maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 2): scala.collection.mutable.Map[String,CalibrationConfig] = {
+    val irTrainer = new IsotonicRegression()
+    val sc = session.sparkContext
+    var calimap = scala.collection.mutable.Map[String,CalibrationConfig]()
+    var boundaries = Seq[Double]()
+    var predictions = Seq[Double]()
+    val result = data.select("user_show_ad_num","adslot_id","ideaid","isclick","ectr")
+      .rdd.map( x => {
+      var isClick = 0d
+      if (x.get(3) != null) {
+        isClick = x.getLong(3).toDouble
+      }
+      val ectr = x.getLong(4).toDouble / 1e6d
+      (calimodel, (ectr, isClick))
+    }).groupByKey()
+      .mapValues(
+        x =>
+          (binIterable(x, minBinSize, maxBinCount), Utils.sampleFixed(x, 100000))
+      )
+      .toLocalIterator
+      .map {
+        x =>
+          val modelName: String = x._1
+          val bins = x._2._1
+          val samples = x._2._2
+          val size = bins._2
+          val positiveSize = bins._3
+          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
+          println(s"bin size: ${bins._1.size}")
+          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
+          boundaries = irFullModel.boundaries
+          predictions = irFullModel.predictions
+          val irModel = IRModel(
+            boundaries = irFullModel.boundaries,
+            predictions = irFullModel.predictions
+          )
+          println(s"bin size: ${irFullModel.boundaries.length}")
+          println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+      }.toList
+    val irModel = IRModel(
+      boundaries,
+      predictions
+    )
+    println(irModel.toString)
+    val keymap = keyset.select("group").rdd.map( x => {
+      val group = x.getString(0)
+      val key = calimodel + "_" + group
+      val config = CalibrationConfig(
+        name = key,
+        ir = Option(irModel)
+      )
+      calimap += ((key,config))
+    }).toLocalIterator
+
     return calimap
   }
 
@@ -284,59 +355,4 @@ object MultiDimensionCalibOnQttCvrV3 {
     }
     return (bins, totalSize, allClickSum)
   }
-
-  def CalibrationColdStart(dt: String, spark: SparkSession, model: String,task:String){
-      import spark.implicits._
-
-      val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_prediction/$task/result-*")
-        .toDF("id","prediction","num")
-
-      //    val dnn_data = spark.sql(s"select * from dl_cpc.cpc_pscore where dt='$dt' and " +
-      //      s"hour='00' and pt='daily' and task='$task'")
-      println("sum is %d".format(dnn_data.count()))
-      // get union log
-
-      val sql = s"""
-                   |select a.searchid, substring(a.adclass,1,6) as adclass,
-                   |a.ideaid,coalesce(c.iscvr,0) as iscvr
-                   |from dl_cpc.cpc_basedata_union_events a
-                   |join dl_cpc.dw_unitid_conversion_target b
-                   |    on a.unitid = b.unitid
-                   |    and b.day = '$dt'
-                   |    and b.conversion_target[0] not in ('none','site_uncertain')
-                   |left join
-                   |  (
-                   |    select distinct aa.searchid,aa.ideaid,1 as iscvr,
-                   |       bb.conversion_target[0] as real_target
-                   |    from dl_cpc.cpc_conversion aa
-                   |    join dl_cpc.dw_unitid_conversion_target bb
-                   |      on aa.unitid=bb.unitid
-                   |      and bb.day = '$dt'
-                   |      and bb.conversion_target[0] not in ('none','site_uncertain')
-                   |      and array_contains(aa.conversion_target,bb.conversion_target[0])
-                   |      where aa.day = '$dt'
-                   |      ) c
-                   |  on a.searchid = c.searchid and a.ideaid=c.ideaid
-                   |  where a.day ='$dt'
-                   |  and a.media_appsid in ('80000001','80000002') and a.isclick = 1
-                   |  and a.adsrc = 1
-                   |  AND (charge_type IS NULL OR charge_type = 1)
-       """.stripMargin
-      println(s"sql:\n$sql")
-      val basedata = spark.sql(sql)
-        .withColumn("id",hash64(0)(col("searchid")))
-        .join(dnn_data,Seq("id"),"inner")
-        .withColumn("isclick",col("iscvr"))
-        .withColumn("ectr",col("prediction")*1e6d)
-
-      basedata.show(10)
-      println("sum is %d".format(basedata.count()))
-
-      LogToPb(basedata, spark, model)
-
-    }
-
-  def hash64(seed:Int)= udf {
-    x:String =>  stringHash64(x,seed)}
-
 }
