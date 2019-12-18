@@ -73,28 +73,29 @@ object OcpcFreePass {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
-    val resultDF = spark
-      .table("dl_cpc.ocpc_auto_second_stage_light")
-      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
-
-    resultDF
-      .select("unitid", "userid", "conversion_goal", "media")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+//    val resultDF = spark
+//      .table("dl_cpc.ocpc_auto_second_stage_light")
+//      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
+//
+//    resultDF
+//      .select("unitid", "userid", "conversion_goal", "media")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 
   }
 
   def ocpcBlackUsers(spark: SparkSession) = {
-    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_user/ocpc_hidden_tax_user.list")
+//    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_user/ocpc_hidden_tax_user.list")
+    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_user.list")
 
     val data = dataRaw
       .select("value")
