@@ -19,18 +19,18 @@ object OcpcUnionlogQuickFix {
 
     val data = getBaseUnionlog(date, hour, spark)
 
-    val deepOcpcUnitRaw = getDeepOcpcTime(date, hour, spark)
-
-    deepOcpcUnitRaw
-      .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191218a")
-
-
-//    data
+//    val deepOcpcUnitRaw = getDeepOcpcTime(date, hour, spark)
+//
+//    deepOcpcUnitRaw
 //      .repartition(100)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216b")
-////      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191218a")
+
+
+    data
+      .repartition(100)
+      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216b")
+//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -147,6 +147,9 @@ object OcpcUnionlogQuickFix {
       .groupBy("unitid")
       .agg(max(col("flag")).alias("flag"))
       .select("unitid", "flag")
+      .cache()
+
+    deepOcpcUnit.show(10)
 
     var selectWhere = s"(`day`='$date' and hour = '$hour')"
     // 新版基础数据抽取逻辑
