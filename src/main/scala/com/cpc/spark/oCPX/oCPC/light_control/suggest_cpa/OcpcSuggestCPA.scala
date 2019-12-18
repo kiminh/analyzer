@@ -125,7 +125,6 @@ object OcpcSuggestCPA {
   def ocpcBuliangUnits(spark: SparkSession) = {
     // ocpc补量策略实验
     val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_unit/ocpc_hidden_tax_unit.list")
-//    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_unit_test.list")
 
     val data = dataRaw
       .withColumn("unitid", udfGetItem(0, " ")(col("value")))
