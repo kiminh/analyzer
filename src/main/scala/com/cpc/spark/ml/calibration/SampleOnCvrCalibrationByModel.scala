@@ -18,6 +18,7 @@ object SampleOnCvrCalibrationByModel {
     val hourRange = args(2).toInt
     val model = args(3)
     val calimodel = args(4)
+    val media = args(5)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
@@ -31,7 +32,14 @@ object SampleOnCvrCalibrationByModel {
     println(s"startHour=$startHour")
     val selectCondition1 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql(startDate, startHour, endDate, endHour)
-
+    var mediaCondition = "media_appsid in ('80000001','80000002','80000006','80000064','80000066')"
+    if (media == "novel"){
+      mediaCondition = "media_appsid in ('80001011','80001098','80001292','80001539','80002480','80004786','80004787')"
+    } else if (media == "rddz"){
+      mediaCondition = "media_appsid in ('80004948','80002819','80004944','80004953')"
+    } else if (media == "ext"){
+      mediaCondition = "media_appsid not in ('80000001','80000002','80000006','80000064','80000066','80001011','80001098','80001292','80001539','80002480','80004786','80004787','80004948','80002819','80004944','80004953')"
+    }
 
     val spark = SparkSession.builder()
       .appName(s"calibration_sample")
@@ -53,6 +61,7 @@ object SampleOnCvrCalibrationByModel {
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
          |  where $selectCondition1
+         |  and $mediaCondition
          |  and cvr_model_name in ('$model','$calimodel')
          |  and is_ocpc = 1) a
          | left join
