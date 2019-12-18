@@ -9,6 +9,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+@deprecated
 object OcpcChargeAll {
   def main(args: Array[String]): Unit = {
     /*
@@ -118,7 +119,7 @@ object OcpcChargeAll {
     val result = spark
         .sql(sqlRequest)
         .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-        .filter(s"media in ('qtt', 'hottopic')")
+        .filter(s"media in ('qtt', 'hottopic', 'novel')")
         .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
         .filter(s"industry in ('feedapp', 'elds')")
         .select("unitid")
@@ -195,15 +196,15 @@ object OcpcChargeAll {
       .sql(sqlRequest1)
       .filter(s"is_hidden = 0")
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
       .select("searchid", "unitid", "media", "timestamp", "date", "hour")
       .distinct()
 
-    rawData
-        .repartition(5)
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20190802a")
+//    rawData
+//        .repartition(5)
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010a")
 
     rawData.createOrReplaceTempView("raw_data")
 
@@ -262,18 +263,22 @@ object OcpcChargeAll {
     // 数据关联并更新pay_cnt与pay_date:
     // 如果pay_cnt为空，则初始化为0，pay_date初始化为本赔付周期开始日期
     // 全部更新：pay_cnt加1，pay_date更新为下一个起始赔付周期
+    val ocpcChargeTime = date1 + " 00:00:00"
     val data = costUnits
       .join(payUnits, Seq("unitid"), "outer")
       .select("unitid", "ocpc_charge_time", "prev_pay_cnt", "prev_pay_date", "flag")
+      .na.fill(ocpcChargeTime, Seq("ocpc_charge_time"))
       .na.fill(0, Seq("prev_pay_cnt"))
       .na.fill(date1, Seq("prev_pay_date"))
+      .withColumn("ocpc_charge_time_old", col("ocpc_charge_time"))
+      .withColumn("ocpc_charge_time", udfSetOcpcChargeTime(ocpcChargeTime)(col("prev_pay_cnt"), col("ocpc_charge_time")))
       .na.fill(1, Seq("flag"))
       .withColumn("pay_date", udfCalculatePayDate(date2)(col("prev_pay_cnt"), col("prev_pay_date"), col("flag")))
       .withColumn("pay_cnt", udfCalculateCnt()(col("prev_pay_cnt"), col("flag")))
 
-    data
-      .repartition(5)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20190802b")
+//    data
+//      .repartition(5)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_rawdata20191010b")
 
     data.show(10)
 
@@ -283,6 +288,14 @@ object OcpcChargeAll {
     result
 
   }
+
+  def udfSetOcpcChargeTime(ocpcChargeDate: String) = udf((prevPayCnt: Int, ocpcChargeTime: String) => {
+    val result = prevPayCnt match {
+      case 0 => ocpcChargeTime
+      case _ => ocpcChargeDate
+    }
+    result
+  })
 
   def udfCalculateCnt() = udf((prevPayCnt: Int, flag: Int) => {
     var result = prevPayCnt
@@ -434,7 +447,7 @@ object OcpcChargeAll {
       .filter(s"is_hidden = 0")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media in ('qtt', 'hottopic')")
+      .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")
 

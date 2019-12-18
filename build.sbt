@@ -35,8 +35,8 @@ libraryDependencies ++= Seq(
   "net.debasishg" %% "redisclient" % "3.9",
   "org.apache.commons" % "commons-math3" % "3.5",
   "commons-codec" % "commons-codec" % "1.9",
-  "redis.clients" % "jedis" % "2.9.0"
-
+  "redis.clients" % "jedis" % "2.9.0",
+  "com.google.protobuf" % "protobuf-java-util" % "3.2.0"
 )
 
 assemblyMergeStrategy in assembly := {

@@ -79,7 +79,7 @@ object OcpcCalculateAUC {
          |    conversion_goal,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |        else 'novel'
          |    end) as media,
          |    (case
@@ -93,8 +93,6 @@ object OcpcCalculateAUC {
          |where $selectCondition1
          |and isclick = 1
          |and $mediaSelection
-         |and ideaid > 0 and adsrc = 1
-         |and userid > 0
          |and is_ocpc = 1
          |and conversion_goal > 0
        """.stripMargin
@@ -115,7 +113,7 @@ object OcpcCalculateAUC {
        |FROM
        |  dl_cpc.ocpc_label_cvr_hourly
        |WHERE
-       |  $selectCondition2
+       |  $selectCondition1
        """.stripMargin
     println(sqlRequest2)
     val cvrData = spark.sql(sqlRequest2)

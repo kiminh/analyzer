@@ -27,5 +27,12 @@ CREATE TABLE IF NOT EXISTS test.ocpc_report_base_hourly
 PARTITIONED by (`date` string, `hour` string)
 STORED as PARQUET;
 
-alter table dl_cpc.ocpc_report_base_hourly add columns (adslot_type int);
-alter table dl_cpc.ocpc_report_base_hourly add columns (total_exp_cpm double);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (adslot_type int);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (total_exp_cpm double);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (total_rawcvr double);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (deep_conversion_goal int);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (cpa_check_priority int);
+--alter table dl_cpc.ocpc_report_base_hourly add columns (is_deep_ocpc int);
+alter table dl_cpc.ocpc_report_base_hourly add columns (deep_click bigint, deep_cv bigint, total_deepcvr double, total_deep_cpagiven bigint, total_deep_jfbfactor double, total_deep_cvrfactor double, total_deep_calipcvr double, total_deep_smooth_factor double, real_deep_click bigint, total_deep_price bigint, total_deep_bid bigint);
+alter table dl_cpc.ocpc_report_base_hourly add columns (ocpc_expand int)
+alter table dl_cpc.ocpc_report_base_hourly add columns (bl_hidden_tax double, bk_hidden_tax double)

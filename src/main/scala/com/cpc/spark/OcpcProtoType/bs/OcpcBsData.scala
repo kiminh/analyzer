@@ -2,15 +2,17 @@ package com.cpc.spark.OcpcProtoType.bs
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import scala.collection.mutable.ListBuffer
 import java.io.FileOutputStream
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import ocpcBsParmas.ocpcBsParmas.{SingleItem, OcpcBsParmasList}
+import ocpcBsParmas.ocpcBsParmas.{OcpcBsParmasList, SingleItem}
 
 
 object OcpcBsData {
@@ -32,10 +34,10 @@ object OcpcBsData {
     val baseData = getBaseData(hourInt, date, hour, spark)
 
     // 计算结果
-    val data = calculateData(baseData, expTag, spark)
-    val result = data.filter(s"cv >= $minCV")
+    val result = calculateData(baseData, expTag, minCV, spark)
 
     result
+        .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("exp_tag", lit(expTag))
@@ -72,16 +74,18 @@ object OcpcBsData {
       val key = record.getAs[String]("key")
       val postcvr = record.getAs[Double]("cvr")
       val postctr = record.getAs[Double]("ctr")
+      val cvrFactor = record.getAs[Double]("cvr_factor")
+      val jfbFactor = record.getAs[Double]("jfb_factor")
 
       if (cnt % 100 == 0) {
-        println(s"key:$key, postcvr:$postcvr, postctr:$postctr")
+        println(s"key:$key, postcvr:$postcvr, postctr:$postctr, cvrFactor:$cvrFactor, jfbFactor:$jfbFactor")
       }
       cnt += 1
 
       val currentItem = SingleItem(
         key = key,
-        cvrCalFactor = 1.0,
-        jfbFactor = 1.0,
+        cvrCalFactor = cvrFactor,
+        jfbFactor = jfbFactor,
         smoothFactor = 0.0,
         postCvr = postcvr,
         postCtr = postctr
@@ -103,7 +107,7 @@ object OcpcBsData {
   }
 
 
-  def calculateData(baseData: DataFrame, expTag: String, spark: SparkSession) = {
+  def calculateData(baseData: DataFrame, expTag: String, minCV: Int, spark: SparkSession) = {
     baseData.createOrReplaceTempView("base_data")
     val sqlRequest1 =
       s"""
@@ -112,7 +116,10 @@ object OcpcBsData {
          |  media,
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
-         |  sum(isclick) * 1.0 / sum(isshow) as ctr
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |  sum(case when isclick=1 and bscvr>0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid
          |FROM
          |  base_data
          |GROUP BY unitid, media
@@ -121,9 +128,15 @@ object OcpcBsData {
     val data1 = spark
       .sql(sqlRequest1)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("unitid")))
-      .select("key", "cv", "cvr", "ctr")
+      .select("key", "cv", "cvr", "ctr", "bscvr", "total_price", "total_bid")
+      .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
+      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
+      .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
+      .filter(s"cv >= $minCV")
       .cache()
 
     val sqlRequest2 =
@@ -135,7 +148,10 @@ object OcpcBsData {
          |  conversion_goal,
          |  sum(case when isclick=1 then iscvr else 0 end) as cv,
          |  sum(case when isclick=1 then iscvr else 0 end) * 1.0 / sum(isclick) as cvr,
-         |  sum(isclick) * 1.0 / sum(isshow) as ctr
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |  sum(case when isclick=1 and bscvr > 0 then bscvr else 0 end) * 1.0 / sum(case when isclick=1 and bscvr > 0 then 1 else 0 end) as bscvr,
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) * 0.01 as total_bid
          |FROM
          |  base_data
          |GROUP BY media, adslot_type, adtype, conversion_goal
@@ -144,9 +160,15 @@ object OcpcBsData {
     val data2 = spark
       .sql(sqlRequest2)
       .withColumn("exp_tag", lit(expTag))
+      .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", concat(col("exp_tag"), col("media")))
       .withColumn("key", concat_ws("&", col("exp_tag"), col("adslot_type"), col("adtype"), col("conversion_goal")))
-      .select("key", "cv", "cvr", "ctr")
+      .select("key", "cv", "cvr", "ctr", "bscvr", "total_price", "total_bid")
+      .withColumn("cvr_factor", col("cvr") * 1.0 / col("bscvr"))
+      .withColumn("jfb_factor", col("total_bid") * 1.0 / col("total_price"))
+      .na.fill(1.0, Seq("cvr_factor", "jfb_factor"))
+      .select("key", "cv", "cvr", "ctr", "cvr_factor", "jfb_factor")
+      .filter(s"cv >= $minCV")
       .cache()
 
     data1.show(10)
@@ -154,21 +176,25 @@ object OcpcBsData {
 
     val data = data1
       .union(data2)
-      .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr")
+      .selectExpr("key", "cv", "cast(cvr as double) cvr", "cast(ctr as double) ctr", "cast(cvr_factor as double) cvr_factor", "cast(jfb_factor as double) jfb_factor")
+      .withColumn("cvr_factor_old", col("cvr_factor"))
+      .withColumn("jfb_factor_old", col("jfb_factor"))
+      .withColumn("cvr_factor", udfSeRangeValue(0.2, 5.0)(col("cvr_factor")))
+      .withColumn("jfb_factor", udfSeRangeValue(1.0, 2.0)(col("jfb_factor")))
 
+//    data
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191209a")
 
     data
-
-
-
   }
 
-  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
+  def udfSeRangeValue(minValue: Double, maxValue: Double) = udf((value: Double) => {
+    var result = math.min(math.max(minValue, value), maxValue)
 
+    result
+  })
+
+  def getBaseData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -193,29 +219,33 @@ object OcpcBsData {
          |  adtype as original_adtype,
          |  isshow,
          |  isclick,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'Qtt'
-         |      when media_appsid in ('80002819') then 'HT66'
-         |      else 'Midu'
-         |  end) as media,
+         |  media_appsid,
          |  cast(exp_cvr as double) as exp_cvr,
-         |  cast(exp_ctr as double) as exp_ctr
+         |  cast(exp_ctr as double) as exp_ctr,
+         |  cast(bscvr as double) * 1.0 / 1000000 as bscvr,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  hidden_tax,
+         |  date,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  isshow = 1
          |AND
          |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .withColumn("adtype", udfMapAdtype()(col("original_adtype")))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =

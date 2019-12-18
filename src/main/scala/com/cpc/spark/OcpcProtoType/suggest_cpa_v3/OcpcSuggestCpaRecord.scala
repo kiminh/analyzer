@@ -6,6 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.OcpcProtoType.OcpcTools.getConfCPA
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -20,6 +21,7 @@ object OcpcSuggestCpaRecord {
     4. 读取前一天的时间分区中的所有cpa与kvalue
     5. 数据关联，并更新字段cpa，kvalue以及day_cnt字段
      */
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
@@ -50,17 +52,16 @@ object OcpcSuggestCpaRecord {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .repartition(50)
       .cache()
 
     resultDF.show(10)
 
 
     resultDF
-      .repartition(10)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_hourly")
     resultDF
-      .repartition(10)
 //      .write.mode("overwrite").insertInto("test.ocpc_history_suggest_cpa_version")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_history_suggest_cpa_version")
 
@@ -85,6 +86,10 @@ object OcpcSuggestCpaRecord {
     val data = spark
         .sql(sqlRequest)
         .filter(s"cpa_suggest is not null")
+        .groupBy("unitid", "media", "conversion_goal")
+        .agg(
+          avg(col("cpa_suggest")).alias("cpa_suggest")
+        )
 
     data.show(10)
     data
@@ -93,6 +98,7 @@ object OcpcSuggestCpaRecord {
   def getCleanData(suggestCPA: DataFrame, ocpcFlag: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val joinData = suggestCPA
       .join(ocpcFlag, Seq("unitid", "media", "conversion_goal"), "left_outer")
+//      .select("unitid", "media", "conversion_goal", "cpa_suggest", "flag")
       .select("unitid", "media", "conversion_goal", "cpa_suggest", "click", "flag")
 
     val result = joinData
@@ -126,10 +132,10 @@ object OcpcSuggestCpaRecord {
          |    isclick,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
+         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
          |        else 'novel'
          |    end) as media,
-         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    conversion_goal,
          |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
@@ -147,11 +153,14 @@ object OcpcSuggestCpaRecord {
     val resultDF = spark
       .sql(sqlRequest)
       .filter(s"is_hidden is null or is_hidden = 0")
+//      .select("unitid", "media", "conversion_goal")
+//      .distinct()
       .groupBy("unitid", "media", "conversion_goal")
       .agg(
         sum(col("isclick")).alias("click")
       )
       .withColumn("flag", lit(1))
+//      .select("unitid", "media", "conversion_goal", "flag")
       .select("unitid", "media", "conversion_goal", "click", "flag")
       .filter(s"click>0")
     resultDF

@@ -337,3 +337,6 @@
 {"version": "ocpcv1", "exp_tag": "HT66", "identifier": "2335876", "smooth_factor": 0.0}
 {"version": "ocpcv1", "exp_tag": "realtimeHT66", "identifier": "2335876", "smooth_factor": 0.0}
 {"version": "ocpcv1", "exp_tag": "delayNewHT66", "identifier": "2335876", "smooth_factor": 0.0}
+{"version": "ocpcv1", "exp_tag": "delayExpHT66", "identifier": "2535805", "smooth_factor": 0.0}
+{"version": "ocpcv1", "exp_tag": "delayExpHT66", "identifier": "2533556", "smooth_factor": 0.0}
+{"version": "ocpcv1", "exp_tag": "delayExpHT66", "identifier": "2470933", "smooth_factor": 0.0}

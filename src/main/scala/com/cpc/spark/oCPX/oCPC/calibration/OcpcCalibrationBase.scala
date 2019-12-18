@@ -24,12 +24,12 @@ object OcpcCalibrationBase {
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
     val result1 = OcpcCalibrationBaseMain(date, hour, hourInt, spark)
-    val result2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt, spark)
+//    val result2 = OcpcCalibrationBaseMainOnlySmooth(date, hour, hourInt, spark)
 
     result1
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731a")
-    result2
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731b")
+//    result2
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_base_factor20190731b")
 
   }
 
@@ -54,7 +54,10 @@ object OcpcCalibrationBase {
          |  media in ('hottopic', 'novel')
        """.stripMargin
     println(sqlRequest)
-    val baseData = spark.sql(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)
@@ -73,7 +76,10 @@ object OcpcCalibrationBase {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseData = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
 
     // 计算结果
     val result = calculateParameter(baseData, spark)

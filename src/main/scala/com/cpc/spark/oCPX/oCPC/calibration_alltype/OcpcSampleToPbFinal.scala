@@ -1,7 +1,10 @@
 package com.cpc.spark.oCPX.oCPC.calibration_alltype
 
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, getTimeRangeSqlDay}
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -36,10 +39,10 @@ object OcpcSampleToPbFinal {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, fileName:$fileName")
 
-    val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
-    val version1 = version
-    val data1 = getData(date, hour, tableName1, version1, spark)
-    data1.printSchema()
+//    val tableName1 = "dl_cpc.ocpc_param_pb_data_hourly_v2"
+//    val version1 = version
+//    val data1 = getData(date, hour, tableName1, version1, spark)
+//    data1.printSchema()
 
     val tableName2 = "dl_cpc.ocpc_param_pb_data_hourly"
     val version2 = version
@@ -51,8 +54,8 @@ object OcpcSampleToPbFinal {
     val data3 = getData(date, hour, tableName3, version3, spark)
     data3.printSchema()
 
-    val result1 = data1
-      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+//    val result1 = data1
+//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
 
     val result2 = data2
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -63,7 +66,8 @@ object OcpcSampleToPbFinal {
 
 
 
-    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
+//    val result = result1.union(result2).union(result3).filter(s"is_hidden = 0")
+    val result = result2.union(result3).filter(s"is_hidden = 0")
     val resultDF = setDataByConfig(result, version, date, hour, spark)
 
     val finalVersion = version + "pbfile"
@@ -109,6 +113,9 @@ object OcpcSampleToPbFinal {
       )
       .select("exp_tag", "conversion_goal", "weight")
 
+    // determine the maximum and minimum value
+    val valueRange = getRangeValue(date, hour, 24, spark)
+
 
     val data = baseData
       .join(confData, Seq("exp_tag", "identifier"), "left_outer")
@@ -116,8 +123,15 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
+      .withColumn("cali_value_before_change", col("cali_value")) // todo: 手动调整校准系数
+      .withColumn("cali_value", udfCheckCaliMaxById(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
+      .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
+      .na.fill(2.0, Seq("max_cali"))
+      .na.fill(0.5, Seq("min_cali"))
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
       .cache()
 
     data.show(10)
@@ -127,6 +141,83 @@ object OcpcSampleToPbFinal {
 
     data
   }
+
+  def udfCheckCaliMaxById(date: String, hour: String) = udf((identifier: String, expTag: String, caliValue: Double) => {
+    val idList = identifier.split("&")
+    val unitid = idList(0).toInt
+    val hourInt = hour.toInt
+
+    var result = caliValue
+    if (unitid == 2283585 && expTag == "adtype15MiDu" && date == "2019-12-05" && hourInt < 13) {
+      result = math.min(caliValue, 1.0)
+    }
+    result
+  })
+
+  def udfCheckCvrFactorDiscount(date: String) = udf((identifier: String) => {
+    val idList = identifier.split("&")
+    val unitId = idList(0).toInt
+    val discountUnitMap = Map(2493065 ->	0.304738457, 2488541 ->	0.384347388, 2486507 ->	0.42602729, 2487900 ->	0.447122503, 2484414 ->	0.447202319, 2450185 ->	0.47290526, 2493128 ->	0.517055558, 2489590 ->	0.549835833, 2401313 ->	0.573311281, 2488469 ->	0.579391844, 2453436 ->	0.602415542, 2442775 ->	0.602686077, 2456177 ->	0.608504897, 2338669 ->	0.621816766, 2294346 ->	0.622079719, 2487891 ->	0.626703325, 2489583 ->	0.630905049, 2496421 ->	0.661265109, 2489917 ->	0.668466259, 2438511 ->	0.673274774, 2275227 ->	0.673672127, 2489914 ->	0.677809855, 2414304 ->	0.695988806, 2493106 ->	0.696439203, 2494781 ->	0.699595541, 2476841 ->	0.711377215, 2388977 ->	0.721823988, 2473035 ->	0.727914746, 2457167 ->	0.733262482, 2434622 ->	0.737438087, 2481026 ->	0.744963753, 2489921 ->	0.746047398, 2476971 ->	0.748907116, 2393799 ->	0.760969542, 2431615 ->	0.771227777, 2492944 ->	0.773539966, 2472825 ->	0.782309092, 2466742 ->	0.797097353)
+
+    var result = discountUnitMap.getOrElse(unitId, 1.0)
+    if (date != "2019-11-06") {
+      result = 1.0
+    }
+    result
+  })
+
+  def getRangeValue(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val tableName = "dl_cpc.ocpc_base_unionlog"
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal
+         |FROM
+         |  $tableName
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  site_type = 1
+         |GROUP BY unitid, conversion_goal
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal")
+      .withColumn("max_cali", lit(2.0))
+      .withColumn("min_cali", lit(0.5))
+
+    data
+  }
+
+  def udfCheckCali() = udf((caliValue: Double, maxValue: Double, minValue: Double) => {
+    var result = caliValue
+    if (result < minValue) {
+      result = minValue
+    }
+    if (result > maxValue) {
+      result = maxValue
+    }
+    result
+  })
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
     val sqlRequest =

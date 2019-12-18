@@ -50,8 +50,8 @@ object Udfs_wj{
     */
   def udfGetMedia() = udf((media_appsid: String) => {
     val qtt = List("80000001","80000002")
-    val hottopic = List("80002819", "80004944")
-    val midu = List("80001098","80001292","80001011","80001539","80002480")
+    val hottopic = List("80002819", "80004944", "80004948", "80004953")
+    val midu = List("80001098","80001292","80001011","80001539","80002480", "80004786", "80004787")
     if (qtt.contains(media_appsid)) //
       "qtt"
     else if (midu.contains((media_appsid)))
@@ -86,14 +86,30 @@ object Udfs_wj{
       val logs = valueLog.split(",")
       for (log <- logs) {
         val splits = log.split(":")
-        val key = splits(0)
-        val value = splits(1)
-        result += (key -> value)
+        if (splits.length == 2) {
+          val key = splits(0)
+          val value = splits(1)
+          result += (key -> value)
+        }
       }
       result
     } else {
       null
     }
+  })
+
+  def udfStringToMapFilter() = udf((valueLog: String) => {
+    var flag = 0
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        if (splits.length == 1) {
+          flag = 1
+        }
+      }
+    }
+    flag
   })
 
   def udfStringToMapCheck() = udf((valueLog: String) => {

@@ -1,0 +1,2 @@
+CREATE TABLE dl_cpc.dw_unitid_conversion_target
+LIKE dl_cpc.dw_unitid_detail;

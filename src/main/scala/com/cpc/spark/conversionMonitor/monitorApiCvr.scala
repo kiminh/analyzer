@@ -163,8 +163,9 @@ object monitorApiCvr {
          |    userid,
          |    (case
          |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944') then 'hottopic'
-         |        else 'novel'
+         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
+         |        when media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787') as 'novel'
+         |        else 'others'
          |    end) as media,
          |    isclick,
          |    price

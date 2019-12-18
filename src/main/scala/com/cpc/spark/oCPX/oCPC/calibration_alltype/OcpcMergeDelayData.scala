@@ -28,9 +28,9 @@ object OcpcMergeDelayData {
     val date = date0
     val hour = hour0
     val data = selectWeishiCali(expTag, data0, data1, date, hour, spark)
-    data
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_merge_delay20190806")
+//    data
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_merge_delay20190806")
 
 
     val resultDF = data
@@ -51,7 +51,7 @@ object OcpcMergeDelayData {
 
   def getExpTags(expTag: String, spark: SparkSession) = {
     val qtt = expTag + "Qtt"
-    val midu = expTag + "Midu"
+    val midu = expTag + "MiDu"
     val hottopic = expTag + "HT66"
     val result = s"exp_tag in ('$qtt', '$midu', '$hottopic')"
     result

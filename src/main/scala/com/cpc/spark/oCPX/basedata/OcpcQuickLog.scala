@@ -47,10 +47,9 @@ object OcpcQuickLog {
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-    val selectCondition = s"day = '$date' and hour = '$hour'"
+    val selectCondition1 = s"day = '$date' and hour = '$hour'"
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |  searchid,
@@ -65,15 +64,15 @@ object OcpcQuickLog {
          |  ocpc_step,
          |  adclass,
          |  price,
-         |  adtype
+         |  adtype,
+         |  bid_ocpc,
+         |  hidden_tax
          |FROM
          |  dl_cpc.cpc_basedata_click_event
          |WHERE
-         |  $selectCondition
+         |  $selectCondition1
          |AND
-         |  $mediaSelection
-         |AND
-         |  ocpc_step in (1, 2)
+         |  ocpc_step >= 1
          |AND
          |  adslot_type != 7
          |AND
@@ -81,34 +80,102 @@ object OcpcQuickLog {
          |AND
          |  antispam_score = 10000
        """.stripMargin
-    println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
+
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
       .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "bid_ocpc", "hidden_tax")
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val today = dateConverter.parse(date + " " + hour)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -3)
+    val yesterday = calendar.getTime
+    val tmpData = dateConverter.format(yesterday)
+    val tmpDate = tmpData.split(" ")
+    val date1 = tmpDate(0)
+    val hour1 = tmpDate(1)
+    val selectCondition2 = getTimeRangeSqlDay(date1, hour1, date, hour)
+
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ocpc_log
+         |FROM
+         |  dl_cpc.cpc_basedata_adx_event
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  adslot_type != 7
+         |""".stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    val clickData = data1
+      .join(data2, Seq("searchid"), "left_outer")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "ocpc_log", "bid_ocpc", "hidden_tax")
 
     clickData
   }
 
   def getCvLog(date: String, hour: String, spark: SparkSession) = {
     // 抽取cv数据
+//    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
+//      var result = -1
+//      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
+//        result = 1
+//      } else if (traceType == "active_third" && traceOp2 == "") {
+//        result = 0 // result = 2
+//      } else if (traceType == "active_third" && traceOp2 == "0") {
+//        result = 2
+//      } else if (traceType == "active_third" && traceOp2 == "1") {
+//        result = 5
+//      } else if (traceType == "active_third" && traceOp2 == "2") {
+//        result = 7
+//      } else if (traceType == "active_third" && traceOp2 == "5") {
+//        result = 11
+//      } else if (traceType == "active_third" && traceOp2 == "6") {
+//        result = 6
+//      } else if (traceType == "active_third" && traceOp2 == "26") {
+//        result = 3
+//      } else if (traceType == "active_third" && traceOp2 == "27") {
+//        result = 12
+//      } else if (traceType == "active15" && traceOp2 == "site_form") {
+//        result = 3
+//      } else if (traceType == "ctsite_active15" && traceOp2 == "ct_site_form") {
+//        result = 3
+//      } else if (traceType == "js_active" && traceOp2 == "js_form") {
+//        result = 3
+//      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
+//        result = 4
+//      } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
+//        result = 4
+//      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "ON_BANNER") {
+//        result = 4
+//      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "CLICK_POPUPWINDOW_ADDWX") {
+//        result = 4
+//      } else {
+//        result = -1
+//      }
+//      result
+//    })
+
     spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-      var result = 0
-      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
-        result = 1
-      } else if (traceType == "active_third") {
-        result = 2
-      } else if (traceType == "active15" || traceType == "ctsite_active15") {
-        result = 3
-      } else if (traceType == "js_active" && traceOp2 == "js_form") {
-        result = 3
-      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
-        result = 4
-      } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
-        result = 4
-      } else {
-        result = 0
+      var result = (traceType, traceOp1, traceOp2) match {
+        case (_, "REPORT_DOWNLOAD_PKGADDED", _) => 1
+        case ("active_third", _, "") | ("active_third", _, "0") => 2
+        case ("active_third", _, "26") | ("active15", _, "site_form") | ("ctsite_active15", _, "ct_site_form") | ("js_active", _, "js_form") => 3
+        case (_, "REPORT_USER_STAYINWX", _) | ("js_active", _, "active_copywx") | (_, "REPORT_ICON_STAYINWX", "ON_BANNER") | (_, "REPORT_ICON_STAYINWX", "CLICK_POPUPWINDOW_ADDWX") => 4
+        case ("active_third", _, "1") => 5
+        case (_, _, _) => 0
       }
       result
     })
@@ -128,14 +195,8 @@ object OcpcQuickLog {
          |  $selectCondition
        """.stripMargin
     println(sqlRequest)
-    val cvData1 = spark.sql(sqlRequest)
-
-    val cvData2 = cvData1
-      .filter(s"conversion_goal = 2")
-      .withColumn("conversion_goal", lit(3))
-
-    val cvData = cvData1
-      .union(cvData2)
+    val cvData = spark
+      .sql(sqlRequest)
       .filter(s"conversion_goal > 0")
       .select("searchid", "conversion_goal")
       .distinct()

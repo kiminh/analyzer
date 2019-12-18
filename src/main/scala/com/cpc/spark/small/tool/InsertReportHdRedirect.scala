@@ -3,7 +3,7 @@ package com.cpc.spark.small.tool
 import java.sql.DriverManager
 import java.util.Properties
 
-import com.cpc.spark.log.parser.CfgLog
+import com.cpc.spark.log.parser.CfgLogNew
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -37,31 +37,39 @@ object InsertReportHdRedirect {
       .appName("InsertHdRedirectLog date " + argDay + " ,hour " + argHour)
       .enableHiveSupport()
       .getOrCreate()
+
     import ctx.implicits._
-    var cfgLog = ctx.read
-      .parquet("/warehouse/dl_cpc.db/cpc_cfg_log/date=%s/hour=%s".format(argDay, argHour))
-      .as[CfgLog].rdd.filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
+
+    val cfgLog = ctx
+      .sql("select * from dl_cpc.cpc_basedata_as_cfg_event where day='%s' and hour=%s".format(argDay, argHour))
+      .rdd
+      .filter(x => x.getAs[String]("log_type") == "/hdjump" || x.getAs[String]("log_type") == "/reqhd")
       .cache()
-    var toResult = cfgLog.map(x => ((x.aid, x.redirect_url, x.hour), 1)).reduceByKey((x, y) => x + y).map {
+
+    var toResult = cfgLog
+      .map(x => ((x.getAs[String]("aid"), x.getAs[String]("redirect_url"), x.getAs[String]("hour")), 1))
+      .reduceByKey((x, y) => x + y).map {
       case ((adslotId, url, hour), count) =>
-        ((argDay, hour, adslotId),HdRedict(argDay, hour, adslotId, url, count))
+        ((argDay, hour, adslotId), HdRedict(argDay, hour, adslotId, url, count))
     }
     .reduceByKey{
-      (a,b)=>
+      (a, b)=>
         val date = a.date
         val hour  = a.hour
         val adslotId = a.adslot_id
-        var pv = a.pv+b.pv
+        val pv = a.pv + b.pv
         HdRedict(date, hour, adslotId, "", pv)
     }
     .map{
       x=>
-        (x._2.adslot_id,x._2.date,x._2.hour.toInt,x._2.pv)
+        (x._2.adslot_id, x._2.date, x._2.hour.toInt, x._2.pv)
     }
 
     println("count:" + toResult.count())
 
-    val insertDataFrame =ctx.createDataFrame(toResult).toDF("adslot_id","date","hour","pv")
+    val insertDataFrame = ctx
+      .createDataFrame(toResult)
+      .toDF("adslot_id", "date", "hour", "pv")
 
     insertDataFrame.show(10)
 

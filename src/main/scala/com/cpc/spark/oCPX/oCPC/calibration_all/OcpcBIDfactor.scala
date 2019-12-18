@@ -93,11 +93,16 @@ object OcpcBIDfactor {
   def getBidFactor(version: String, expTag: String, spark: SparkSession) = {
     // 从配置文件读取数据
     val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_config.bid_factor_v2")
+    val confPath = conf.getString("exp_config_v2.bid_factor")
     val rawData = spark.read.format("json").json(confPath)
     val data = rawData
-      .filter(s"version = '$version'")
       .select("exp_tag", "conversion_goal", "high_bid_factor", "low_bid_factor", "min_cv")
+      .groupBy("exp_tag", "conversion_goal")
+      .agg(
+        min(col("high_bid_factor")).alias("high_bid_factor"),
+        min(col("low_bid_factor")).alias("low_bid_factor"),
+        min(col("min_cv")).alias("min_cv")
+      )
       .distinct()
 
     println("bid factor config:")
