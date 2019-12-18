@@ -28,18 +28,18 @@ object OcpcUnionlogQuickFix {
 
     data
       .repartition(100)
-      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216b")
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog20191216b")
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
 
-//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-//    ocpcData
-//      .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-////      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+    ocpcData
+      .repartition(50)
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -251,7 +251,96 @@ object OcpcUnionlogQuickFix {
       .withColumn("deep_ocpc_step_old", col("deep_ocpc_step"))
       .withColumn("deep_ocpc_step", when(col("flag") === 1 && col("deep_ocpc_step") === 1, 2).otherwise(col("deep_ocpc_step")))
 
-    val resultDF = rawData
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest2 =
+      s"""
+         |select
+         |    searchid,
+         |    timestamp,
+         |    network,
+         |    concat_ws(',', exptags) as exptags,
+         |    media_type,
+         |    media_appsid,
+         |    adslot_id as adslotid,
+         |    adslot_type,
+         |    adtype,
+         |    adsrc,
+         |    interaction,
+         |    bid,
+         |    price,
+         |    ideaid,
+         |    unitid,
+         |    planid,
+         |    country,
+         |    province,
+         |    city,
+         |    uid,
+         |    ua,
+         |    os,
+         |    sex,
+         |    age,
+         |    isshow,
+         |    isclick,
+         |    0 as duration,
+         |    userid,
+         |    cast(is_ocpc as int) as is_ocpc,
+         |    (case when isclick=1 then ocpc_log else '' end) as ocpc_log,
+         |    user_city,
+         |    city_level,
+         |    adclass,
+         |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
+         |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
+         |    charge_type,
+         |    0 as antispam,
+         |    usertype,
+         |    conversion_goal,
+         |    conversion_from,
+         |    is_api_callback,
+         |    siteid,
+         |    cvr_model_name,
+         |    user_req_ad_num,
+         |    user_req_num,
+         |    is_new_ad,
+         |    is_auto_coin,
+         |    bid_discounted_by_ad_slot,
+         |    discount,
+         |    exp_cpm,
+         |    cvr_threshold,
+         |    dsp_cpm,
+         |    new_user_days,
+         |    ocpc_step,
+         |    previous_id,
+         |    ocpc_status,
+         |    bscvr,
+         |    second_cpm,
+         |    final_cpm,
+         |    ocpc_expand,
+         |    ext_string['exp_ids'] as expids,
+         |    bsctr,
+         |    raw_cvr,
+         |    deep_cvr,
+         |    raw_deep_cvr,
+         |    deep_cvr_model_name,
+         |    deep_ocpc_log,
+         |    is_deep_ocpc,
+         |    deep_conversion_goal,
+         |    deep_cpa,
+         |    cpa_check_priority,
+         |    ocpc_expand_tag,
+         |    ori_cvr,
+         |    uid_mc_show0,
+         |    uid_mc_click0,
+         |    site_type,
+         |    tuid,
+         |    hidden_tax,
+         |    pure_deep_exp_cvr,
+         |    deep_ocpc_step
+         |from raw_data
+         |""".stripMargin
+    println(sqlRequest2)
+    val resultDF = spark
+      .sql(sqlRequest2)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
