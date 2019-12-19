@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareLabel.prepareLabelMain
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v2.prepareLabel.prepareLabelMain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -29,8 +29,8 @@ object prepareTrainingSample {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
-    val data1 = getFeatureData(date, hour, hourInt, version, expTag, spark)
-    val data2 = prepareLabelMain(date, hour, hourInt, spark)
+    val data1 = getFeatureData(date, hour, hourInt, version, expTag, spark) // todo
+    val data2 = prepareLabelMain(date, hour, hourInt, 10, spark)
 
     val samples = assemblySample(data1, data2, spark)
     samples
@@ -39,8 +39,8 @@ object prepareTrainingSample {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_hourly")
   }
 
   def assemblySample(dataRaw1: DataFrame, dataRaw2: DataFrame, spark: SparkSession) = {
@@ -48,16 +48,12 @@ object prepareTrainingSample {
       .withColumn("time", udfAddHour(4)(col("date"), col("hour")))
       .withColumn("hour_diff", lit(4))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "date", "hour", "hour_diff")
-//    data1
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191128a")
 
     val data2 = dataRaw2
       .withColumn("time", concat_ws(" ", col("date"), col("hour")))
       .withColumn("label", col("pcoc"))
       .filter("label is not null")
       .select("identifier", "media", "conversion_goal", "conversion_from", "label", "time", "date", "hour")
-//    data2
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191128b")
 
     val data = data1
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list", "time", "hour_diff")
@@ -102,12 +98,13 @@ object prepareTrainingSample {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
+    // todo
     val sqlRequest =
       s"""
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pcoc_sample_part_hourly
+         |  test.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  $selectCondition
          |AND
