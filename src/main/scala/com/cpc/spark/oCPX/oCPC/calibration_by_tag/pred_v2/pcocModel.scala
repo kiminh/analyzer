@@ -204,9 +204,14 @@ object pcocModel {
     val pipelineModel = pipeline.fit(data)
     val dataset = pipelineModel.transform(data)
 
-    val dataItem = data.select("identifier", "media", "conversion_goal", "conversion_from", "hour").distinct()
+//    val dataItem = data.select("identifier", "media", "conversion_goal", "conversion_from", "hour").distinct()
+    val dataUnitItem = data.select("identifier").distinct()
+    val dataMediaItem = data.select("media").distinct()
+    val dataHourItem = data.select("hour").distinct()
     val predictFeatures = predictRawData
-      .join(dataItem, Seq("identifier", "media", "conversion_goal", "conversion_from", "hour"), "inner")
+      .join(dataUnitItem, Seq("identifier"), "inner")
+      .join(dataMediaItem, Seq("media"), "inner")
+      .join(dataHourItem, Seq("hour"), "inner")
     val predictData = pipelineModel.transform(predictFeatures)
 
 
