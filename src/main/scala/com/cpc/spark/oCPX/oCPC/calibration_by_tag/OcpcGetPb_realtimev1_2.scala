@@ -5,7 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor.{calculateData1, ca
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{getDataByTimeSpan, calculateCalibrationValueCVR}
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCalibrationBase, getDataByTimeSpan, calculateCalibrationValueCVR}
 
 object OcpcGetPb_realtimev1_2 {
   /*
