@@ -56,6 +56,7 @@ object OcpcGetPb_realtimev1_2 {
       .cache()
     pcocData_base.show(10)
 
+    
     // 数据关联
     val pcocData_final = pcocData
       .join(pcocData_base, Seq("identifier", "conversion_goal", "media" ), "outer")
