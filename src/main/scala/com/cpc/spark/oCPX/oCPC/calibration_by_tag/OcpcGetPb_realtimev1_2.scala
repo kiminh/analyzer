@@ -285,7 +285,8 @@ object OcpcGetPb_realtimev1_2 {
     data3.show(10)
 
     // 计算最终值
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
+    //val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, expTag, spark)
 
     calibration.show(10)
 

@@ -213,7 +213,7 @@ object OcpcGetPb_adtype15 {
     data3.show(10)
 
     // 计算最终值
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, expTag, spark)
 
     calibration.show(10)
 
@@ -240,7 +240,7 @@ object OcpcGetPb_adtype15 {
     data
   }
 
-  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, expTag: String, spark: SparkSession) = {
     // 主校准模型
     val data1 = dataRaw1
       .filter(s"cv >= min_cv")
