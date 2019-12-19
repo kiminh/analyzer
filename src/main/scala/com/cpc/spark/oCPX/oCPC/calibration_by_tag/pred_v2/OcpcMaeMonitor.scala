@@ -28,13 +28,13 @@ object OcpcMaeMonitor {
     println(s"date=$date, hour=$hour, version=$version, expTag1=$expTag1, expTag2=$expTag2, hourDiff=$hourDiff")
 
     // baseline校准策略的pcoc
-    val baselineData = getBaselinePcoc(date, hour, 12, hourDiff, version, expTag2, spark)
+    val baselineData = getBaselinePcoc(date, hour, 24, hourDiff, version, expTag2, spark)
 
     // pcoc预估校准策略的pcoc
-    val predData = getPredPcoc(date, hour, 12, hourDiff, version, expTag1, spark)
+    val predData = getPredPcoc(date, hour, 24, hourDiff, version, expTag1, spark)
 
     // 真实pcoc
-    val hourlyPcoc = getRealPcoc(date, hour, 12, spark)
+    val hourlyPcoc = getRealPcoc(date, hour, 24, spark)
 
     // 计算分小时分单元分媒体的pcoc差异
     val hourlyDiff = calculateHourlyDiff(hourlyPcoc, baselineData, predData, hourDiff, expTag2, spark).cache()
@@ -44,8 +44,8 @@ object OcpcMaeMonitor {
       .withColumn("version", lit(version))
       .select("unitid", "time", "click", "cv", "real_pcoc", "baseline_pcoc", "pred_pcoc", "baseline_diff", "pred_diff", "date", "hour", "version", "exp_tag")
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_cmp_hourly")
-//      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_cmp_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_cmp_hourly")
 
     // 计算点击加权分单元分媒体mae
     val result = calculateMae(hourlyDiff, spark)
@@ -59,8 +59,8 @@ object OcpcMaeMonitor {
       .withColumn("version", lit(version))
       .select("unitid", "method", "baseline_mae", "pred_mae", "click", "cv", "date", "hour", "version", "exp_tag")
       .repartition(1)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_hourly")
-//      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_calibration_method_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_calibration_method_hourly")
   }
 
   def generatePriorityTable(baseData: DataFrame, spark: SparkSession) = {
