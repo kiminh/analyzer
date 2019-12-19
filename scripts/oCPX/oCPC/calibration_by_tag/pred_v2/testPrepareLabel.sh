@@ -18,10 +18,11 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v2.prepareLabel \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6
 
 #val date = args(0).toString
 #val hour = args(1).toString
 #val hourInt = args(2).toInt
 #val version = args(3).toString
 #val expTag = args(4).toString
+#val minCV = args(5).toInt
