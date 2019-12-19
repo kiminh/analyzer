@@ -1,11 +1,11 @@
 package com.cpc.spark.oCPX.oCPC.calibration_by_tag
 
 import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor.{calculateData1, calculateCalibrationValueCVR}
+import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor.{calculateData1, calculateData2}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{getDataByTimeSpan, calculateData2}
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{getDataByTimeSpan, calculateCalibrationValueCVR}
 
 object OcpcGetPb_realtimev1_2 {
   /*
@@ -56,7 +56,7 @@ object OcpcGetPb_realtimev1_2 {
       .cache()
     pcocData_base.show(10)
 
-    
+
     // 数据关联
     val pcocData_final = pcocData
       .join(pcocData_base, Seq("identifier", "conversion_goal", "media" ), "outer")
