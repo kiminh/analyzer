@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v2
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getBaseDataDelay, getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getBaseDataDelay, getBaseData, getTimeRangeSqlDate, udfMediaName, udfSetExpTag}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
@@ -163,7 +163,7 @@ object OcpcMaeMonitor {
   }
 
   def getRealPcoc(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     baseDataRaw.createOrReplaceTempView("base_data")
     val sqlRequest =
       s"""
