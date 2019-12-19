@@ -45,7 +45,7 @@ object OcpcGetPb_realtimev1_2 {
     val pcocDataRaw = OcpcCVRfactor(date1, hour1, hourInt, minCV, spark)
     val pcocData = pcocDataRaw
       .withColumn("expTag", col("media"))
-      .selectExpr("identifier", "conversion_goal", "expTag", "cvr_factor as cvr_factor2" )
+      .selectExpr("identifier", "conversion_goal", "exp_tag", "cvr_factor as cvr_factor2" )
       .cache()
     pcocData.show(10)
 
@@ -53,14 +53,14 @@ object OcpcGetPb_realtimev1_2 {
     val pcocData_baseRaw = OcpcCVRfactor_base(date1, hour1, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData_base = pcocData_baseRaw
       .withColumn("cvr_factor1", lit(1.0) / col("pcoc"))
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "expTag", "cvr_factor1")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "exp_tag", "cvr_factor1")
       .cache()
     pcocData_base.show(10)
 
 
     // 数据关联
     val pcocData_final = pcocData
-      .join(pcocData_base, Seq("identifier", "conversion_goal", "expTag" ), "outer")
+      .join(pcocData_base, Seq("identifier", "conversion_goal", "exp_tag" ), "outer")
       .withColumn("cvr_factor", when(col("cvr_factor2").isNull, col("cvr_factor1")).otherwise(col("cvr_factor2")))
 
     pcocData_final
