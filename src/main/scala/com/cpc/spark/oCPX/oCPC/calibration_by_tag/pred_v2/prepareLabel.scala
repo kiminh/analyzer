@@ -141,6 +141,7 @@ object prepareLabel {
       .select("identifier", "media", "conversion_goal", "conversion_from", "date", "hour", "pcoc", "click", "cv")
       .filter(s"cv >= $minCV")
       .filter(s"pcoc is not null")
+      .filter(s"pcoc >= 0.5 and pcoc <= 2.0")
 
     resultDF
 
