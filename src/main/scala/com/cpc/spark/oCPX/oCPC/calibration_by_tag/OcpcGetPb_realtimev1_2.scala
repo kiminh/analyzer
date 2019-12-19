@@ -44,7 +44,7 @@ object OcpcGetPb_realtimev1_2 {
     // 计算pcoc
     val pcocDataRaw = OcpcCVRfactor(date1, hour1, hourInt, minCV, spark)
     val pcocData = pcocDataRaw
-      .withColumn("expTag", col("media"))
+      .withColumn("exp_tag", col("media"))
       .selectExpr("identifier", "conversion_goal", "exp_tag", "cvr_factor as cvr_factor2" )
       .cache()
     pcocData.show(10)
