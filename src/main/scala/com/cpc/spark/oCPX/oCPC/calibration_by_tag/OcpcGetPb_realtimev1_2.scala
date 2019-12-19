@@ -261,7 +261,6 @@ object OcpcGetPb_realtimev1_2 {
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("min_cv", 80)
       .filter(s"cv > 0")
       .withColumn("priority", lit(1))
@@ -271,7 +270,6 @@ object OcpcGetPb_realtimev1_2 {
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("min_cv", 80)
       .filter(s"cv > 0")
       .withColumn("priority", lit(2))
@@ -281,7 +279,6 @@ object OcpcGetPb_realtimev1_2 {
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .withColumn("min_cv", 80)
       .filter(s"cv > 0")
       .withColumn("priority", lit(3))
