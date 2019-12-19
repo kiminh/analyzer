@@ -180,13 +180,13 @@ object pcocModel {
     val cv48Encoder = new OneHotEncoder().setInputCol("cv48_index").setOutputCol("cv48_vec")
     stagesArray.append(cv48Encoder)
 
-//    one-hot for cv72
-    val cv72Indexer = new StringIndexer().setInputCol("cv72").setOutputCol("cv72_index")
-    stagesArray.append(cv72Indexer)
-    val cv72Encoder = new OneHotEncoder().setInputCol("cv72_index").setOutputCol("cv72_vec")
-    stagesArray.append(cv72Encoder)
+////    one-hot for cv72
+//    val cv72Indexer = new StringIndexer().setInputCol("cv72").setOutputCol("cv72_index")
+//    stagesArray.append(cv72Indexer)
+//    val cv72Encoder = new OneHotEncoder().setInputCol("cv72_index").setOutputCol("cv72_vec")
+//    stagesArray.append(cv72Encoder)
 
-    val featureArray = Array("identifier_vec", "media_vec", "hour_vec", "cv6_vec", "cv12_vec", "cv24_vec", "cv48_vec", "cv72_vec", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72")
+    val featureArray = Array("identifier_vec", "media_vec", "hour_vec", "cv6_vec", "cv12_vec", "cv24_vec", "cv48_vec", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72")
     val assembler = new VectorAssembler().setInputCols(featureArray).setOutputCol("features")
     stagesArray.append(assembler)
 
