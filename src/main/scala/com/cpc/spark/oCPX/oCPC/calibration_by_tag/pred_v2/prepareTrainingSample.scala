@@ -29,7 +29,7 @@ object prepareTrainingSample {
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
 
-    val data1 = getFeatureData(date, hour, hourInt, version, expTag, spark) // todo
+    val data1 = getFeatureData(date, hour, hourInt, version, expTag, spark)
     val data2 = prepareLabelMain(date, hour, hourInt, 10, spark)
 
     val samples = assemblySample(data1, data2, spark)
@@ -98,13 +98,12 @@ object prepareTrainingSample {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
-    // todo
     val sqlRequest =
       s"""
          |SELECT
          |  *
          |FROM
-         |  test.ocpc_pcoc_sample_part_hourly
+         |  dl_cpc.ocpc_pcoc_sample_part_hourly
          |WHERE
          |  $selectCondition
          |AND
