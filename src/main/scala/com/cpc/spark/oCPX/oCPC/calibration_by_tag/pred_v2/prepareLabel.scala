@@ -23,28 +23,27 @@ object prepareLabel {
     val hourInt = args(2).toInt
     val version = args(3).toString
     val expTag = args(4).toString
+    val minCV = args(5).toInt
 
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, version=$version, expTag=$expTag, minCV=$minCV")
 
-//    val rawData = getBaseData(date, hour, hourInt, spark).cache()
-//    val baseData = calculateBaseData(rawData, spark).cache()
-
-    val baseData = prepareLabelMain(date, hour, hourInt, spark)
+    val baseData = prepareLabelMain(date, hour, hourInt, minCV, spark)
     baseData
-      .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "date", "hour")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "pcoc", "date", "hour", "click", "cv")
       .repartition(1)
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
+      .write.mode("overwrite").saveAsTable("test.ocpc_pcoc_sample_part2_hourly20191219a")
 //      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part2_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part2_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part2_hourly")
 
   }
 
-  def prepareLabelMain(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def prepareLabelMain(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
     val rawData = getBaseData(date, hour, hourInt, spark)
-    val baseData = calculateBaseData(rawData, spark)
+    val baseData = calculateBaseData(rawData, minCV, spark)
 
     baseData
   }
@@ -126,7 +125,7 @@ object prepareLabel {
     resultDF
   }
 
-  def calculateBaseData(dataRaw: DataFrame, spark: SparkSession) = {
+  def calculateBaseData(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
     // 数据关联
     val resultDF = dataRaw
       .groupBy("identifier", "media", "conversion_goal", "conversion_from", "date", "hour")
@@ -139,7 +138,8 @@ object prepareLabel {
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("identifier", "media", "conversion_goal", "conversion_from", "date", "hour", "pcoc")
+      .select("identifier", "media", "conversion_goal", "conversion_from", "date", "hour", "pcoc", "click", "cv")
+      .filter(s"cv >= $minCV")
       .filter(s"pcoc is not null")
 
     resultDF
