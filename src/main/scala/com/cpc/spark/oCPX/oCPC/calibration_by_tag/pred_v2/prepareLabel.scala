@@ -35,7 +35,7 @@ object prepareLabel {
       .repartition(1)
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
-      .write.mode("overwrite").saveAsTable("test.ocpc_pcoc_sample_part2_hourly20191219a")
+      .write.mode("overwrite").saveAsTable("test.ocpc_pcoc_sample_part2_hourly20191219b")
 //      .write.mode("overwrite").insertInto("test.ocpc_pcoc_sample_part2_hourly")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_sample_part2_hourly")
 
