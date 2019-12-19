@@ -61,6 +61,7 @@ object OcpcGetPb_realtimev1_2 {
     // 数据关联
     val pcocData_final = pcocData
       .join(pcocData_base, Seq("identifier", "conversion_goal", "exp_tag" ), "outer")
+      .withColumn("media", col("exp_tag"))
       .withColumn("cvr_factor", when(col("cvr_factor2").isNull, col("cvr_factor1")).otherwise(col("cvr_factor2")))
 
     pcocData_final
