@@ -5,7 +5,7 @@ import com.cpc.spark.oCPX.oCPC.calibration_all.OcpcBIDfactor.{calculateData1, ca
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCalibrationBase, getDataByTimeSpan, calculateCalibrationValueCVR}
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_adtype15.{OcpcCalibrationBase, getDataByTimeSpan}
 
 object OcpcGetPb_realtimev1_2 {
   /*
@@ -291,7 +291,51 @@ object OcpcGetPb_realtimev1_2 {
     calibration.show(10)
 
     val resultDF = calibration
-      .select("unitid", "conversion_goal", "media", "pcoc")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc")
+
+    resultDF
+
+  }
+
+
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, expTag: String, spark: SparkSession) = {
+    // 主校准模型
+    val data1 = dataRaw1
+      .filter(s"cv >= min_cv")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+
+    // 备用校准模型
+    val data2 = dataRaw2
+      .filter(s"cv >= min_cv")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+
+    // 兜底校准模型
+    val data3 = dataRaw3
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+
+    // 数据筛选
+    val baseData = data1.union(data2).union(data3)
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  exp_tag,
+         |  pcoc,
+         |  priority,
+         |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority) as seq
+         |FROM
+         |  base_data
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val resultDF = data
+      .filter(s"seq = 1")
+
+    resultDF.show()
 
     resultDF
 
