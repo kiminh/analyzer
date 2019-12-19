@@ -187,6 +187,7 @@ object OcpcMaeMonitor {
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
       .withColumn("media", udfMediaName()(col("media")))
       .filter(s"pcoc is not null")
+      .filter(s"pcoc >= 0.5 and pcoc <= 2.0")
 
     data
   }
