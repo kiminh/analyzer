@@ -22,6 +22,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     /home/cpc/ghj/cpc/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 $4 $5 $6 $7 $8
 
 
+
 #val date = args(0).toString
 #val hour = args(1).toString
 #val date1 = args(2).toString
