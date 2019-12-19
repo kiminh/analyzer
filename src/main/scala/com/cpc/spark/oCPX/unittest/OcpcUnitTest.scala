@@ -24,7 +24,7 @@ object OcpcUnitTest {
     val ocpcBuliang = getBaseData(date, hour, spark)
 
     ocpcBuliang
-      .filter(s"unitid = 2628251 and iscvr = 1")
+      .filter(s"unitid = 2628251")
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218a")
 
 
