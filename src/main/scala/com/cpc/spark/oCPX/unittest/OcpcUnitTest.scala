@@ -1,12 +1,9 @@
 package com.cpc.spark.oCPX.unittest
 
-
-import com.cpc.spark.OcpcProtoType.bs.OcpcBsData.getBaseData
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_realtimev1.OcpcCVRfactor
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass._
 
 
 object OcpcUnitTest {
@@ -23,10 +20,9 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = ocpcBlackUnits(spark)
+    // 计算pcoc
+//    val pcocData = OcpcCVRfactor("2019-12-05", , hourInt, minCV, spark)
 
-    dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191205")
 
   }
 

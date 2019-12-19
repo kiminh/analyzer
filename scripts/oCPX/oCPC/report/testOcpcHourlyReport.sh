@@ -20,4 +20,3 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReport \
     /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2
-

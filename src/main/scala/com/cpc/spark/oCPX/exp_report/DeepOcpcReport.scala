@@ -33,7 +33,7 @@ object DeepOcpcReport {
 
     val rawData = getCompleteExp(date, dayInt, spark)
     rawData
-      .select("cali_tag", "recall_tag", "cpa_check_priority", "media", "unitid", "conversion_goal", "deep_conversion_goal", "click", "cost", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "cpagiven", "deep_cpagiven", "show", "date")
+      .select("cali_tag", "recall_tag", "cpa_check_priority", "media", "unitid", "conversion_goal", "deep_conversion_goal", "click", "cost", "pre_cvr1", "pre_cvr2", "cv1", "cv2", "cpagiven", "deep_cpagiven", "show", "deep_ocpc_step", "date")
       .repartition(1)
       .write.mode("overwrite").insertInto("dl_cpc.deep_ocpc_exp_report_daily")
 //      .write.mode("overwrite").insertInto("test.deep_ocpc_exp_report_daily")
@@ -50,10 +50,6 @@ object DeepOcpcReport {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     val sqlRequest =
       s"""
          |SELECT
@@ -65,6 +61,7 @@ object DeepOcpcReport {
          |    conversion_goal,
          |    deep_conversion_goal,
          |    date,
+         |    deep_ocpc_step,
          |    sum(isshow) as show,
          |    sum(isclick) as click,
          |    sum(case when isclick=1 then price else 0 end) *0.01 as cost,
@@ -103,8 +100,10 @@ object DeepOcpcReport {
          |        (case
          |            when media_appsid in ('80000001', '80000002') then 'qtt'
          |            when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |            else 'novel'
+         |            when media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787') then 'novel'
+         |            else 'others'
          |        end) as media,
+         |        a.deep_ocpc_step,
          |        date
          |    FROM
          |        (select
@@ -114,8 +113,8 @@ object DeepOcpcReport {
          |        WHERE
          |            date between '${date1}' and '${date}'
          |        and deep_cvr_model_name is not NULL
-         |        and $mediaSelection
-         |        and is_deep_ocpc = 1) as a
+         |        and is_deep_ocpc = 1
+         |        and deep_ocpc_step > 0) as a
          |    left join
          |        (select
          |            searchid,
@@ -157,7 +156,7 @@ object DeepOcpcReport {
          |        a.searchid = c.searchid
          |    AND
          |        a.conversion_goal = c.conversion_goal) as t
-         |group by t.cali_tag, t.recall_tag, t.cpa_check_priority, t.media, t.unitid, t.conversion_goal, t.deep_conversion_goal, t.date
+         |group by t.cali_tag, t.recall_tag, t.cpa_check_priority, t.media, t.unitid, t.conversion_goal, t.deep_conversion_goal, t.date, t.deep_ocpc_step
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

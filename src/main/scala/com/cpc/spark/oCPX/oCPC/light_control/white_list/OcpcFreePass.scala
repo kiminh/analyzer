@@ -78,7 +78,7 @@ object OcpcFreePass {
 
 
     val resultDF = spark
-      .table("test.ocpc_auto_second_stage_light")
+      .table("dl_cpc.ocpc_auto_second_stage_light")
       .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
 
     resultDF

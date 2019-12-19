@@ -34,6 +34,10 @@ object OcpcGetPb_adtype15 {
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
     dataRaw.show(10)
 
+    // todo
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20191217a")
+
     // 计费比系数模块
     val jfbDataRaw = OcpcJFBfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
@@ -67,8 +71,8 @@ object OcpcGetPb_adtype15 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -97,7 +101,7 @@ object OcpcGetPb_adtype15 {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
