@@ -72,7 +72,6 @@ object MultiDimensionCalibOnQttCvr {
                       |  (select *
                       |  from dl_cpc.cpc_basedata_union_events
                       |  where $selectCondition2
-                      |  and unitid not in ('2615901','2615526','2615523','2615898','2615718','2615962','2615973','2615812')
                       |  and $mediaSelection and isclick = 1
                       |  and cvr_model_name in ('$calimodel','$model')
                       |  and ideaid > 0 and adsrc = 1 AND userid > 0

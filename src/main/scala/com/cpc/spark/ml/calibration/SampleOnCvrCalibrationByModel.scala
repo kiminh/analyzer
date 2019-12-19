@@ -56,7 +56,8 @@ object SampleOnCvrCalibrationByModel {
          |  when user_show_ad_num = 2 then '2'
          |  when user_show_ad_num in (3,4) then '4'
          |  when user_show_ad_num in (5,6,7) then '7'
-         |  else '8' end as user_show_ad_num
+         |  else '8' end as user_show_ad_num,
+         |a.conversion_goal
          |from
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
@@ -91,7 +92,7 @@ object SampleOnCvrCalibrationByModel {
       .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .filter("iscvr is not null")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
-        "exp_cvr","day","userid","conversion_from","hour","siteid","ideaidnew","unitidnew","useridnew")
+        "exp_cvr","day","userid","conversion_from","hour","siteid","ideaidnew","unitidnew","useridnew","conversion_goal")
       result.show(10)
     val avgs = result.rdd.map(f => {
       f.mkString("\001")
@@ -100,7 +101,7 @@ object SampleOnCvrCalibrationByModel {
 
 
     printToFile(new File(s"/home/cpc/scheduled_job/hourly_calibration/calibration_sample_${model}.csv"),
-      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew") {
+      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew\001conversion_goal") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
