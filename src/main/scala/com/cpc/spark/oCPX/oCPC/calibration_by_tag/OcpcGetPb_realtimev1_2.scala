@@ -64,7 +64,10 @@ object OcpcGetPb_realtimev1_2 {
       .withColumn("media", col("exp_tag"))
       .withColumn("cvr_factor", when(col("cvr_factor2").isNull, col("cvr_factor1")).otherwise(col("cvr_factor2")))
 
-    pcocData_final
+    val pcocData_finalDF = pcocData_final
+      .select("identifier", "conversion_goal", "media", "exp_tag", "cvr_factor", "cvr_factor1", "cvr_factor2")
+        
+    pcocData_finalDF
       .repartition(1)
       .write.mode("overwrite").insertInto("test.pcocData_final_20191219")
 
