@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_realtimev1.OcpcCVRfactor
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.ocpcBlackUsers
+
+import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReport.getBaseData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,10 +21,11 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val ocpcBuliang = ocpcBlackUsers(spark)
+    val ocpcBuliang = getBaseData(date, hour, spark)
 
     ocpcBuliang
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216a")
+      .filter(s"unitid = 2628251 and iscvr = 1")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218a")
 
 
   }
