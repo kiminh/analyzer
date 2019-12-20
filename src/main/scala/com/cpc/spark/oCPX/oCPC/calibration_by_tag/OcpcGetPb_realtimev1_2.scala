@@ -44,8 +44,7 @@ object OcpcGetPb_realtimev1_2 {
     // 计算pcoc
     val pcocDataRaw = OcpcCVRfactor(date1, hour1, hourInt, minCV, spark)
     val pcocData = pcocDataRaw
-      .withColumn("exp_tag", col("media"))
-      .selectExpr("identifier", "conversion_goal", "exp_tag", "cvr_factor as cvr_factor2" )
+      .selectExpr("identifier", "conversion_goal", "media", "cvr_factor as cvr_factor2" )
       .cache()
     pcocData.show(10)
 
@@ -53,20 +52,19 @@ object OcpcGetPb_realtimev1_2 {
     val pcocData_baseRaw = OcpcCVRfactor_base(date1, hour1, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData_base = pcocData_baseRaw
       .withColumn("cvr_factor1", lit(1.0) / col("pcoc"))
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "exp_tag", "cvr_factor1")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "cvr_factor1")
       .cache()
     pcocData_base.show(10)
 
 
     // 数据关联
     val pcocData_final = pcocData
-      .join(pcocData_base, Seq("identifier", "conversion_goal", "exp_tag" ), "outer")
-      .withColumn("media", col("exp_tag"))
+      .join(pcocData_base, Seq("identifier", "conversion_goal", "media" ), "outer")
       .withColumn("cvr_factor", when(col("cvr_factor2").isNull, col("cvr_factor1")).otherwise(col("cvr_factor2")))
 
     val pcocData_finalDF = pcocData_final
-      .select("identifier", "conversion_goal", "media", "exp_tag", "cvr_factor", "cvr_factor1", "cvr_factor2")
-        
+      .select("identifier", "conversion_goal", "media", "cvr_factor", "cvr_factor1", "cvr_factor2")
+
     pcocData_finalDF
       .repartition(1)
       .write.mode("overwrite").insertInto("test.pcocData_final_20191219")
@@ -264,8 +262,6 @@ object OcpcGetPb_realtimev1_2 {
 
     val dataRaw1 = getDataByTimeSpan(dataRaw, date, hour, hourInt1, spark)
     val data1 = dataRaw1
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("min_cv", lit(80))
       .filter(s"cv > 0")
       .withColumn("priority", lit(1))
@@ -273,8 +269,6 @@ object OcpcGetPb_realtimev1_2 {
 
     val dataRaw2 = getDataByTimeSpan(dataRaw, date, hour, hourInt2, spark)
     val data2 = dataRaw2
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("min_cv", lit(80))
       .filter(s"cv > 0")
       .withColumn("priority", lit(2))
@@ -282,8 +276,6 @@ object OcpcGetPb_realtimev1_2 {
 
     val dataRaw3 = getDataByTimeSpan(dataRaw, date, hour, hourInt3, spark)
     val data3 = dataRaw3
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("min_cv", lit(80))
       .filter(s"cv > 0")
       .withColumn("priority", lit(3))
@@ -291,32 +283,32 @@ object OcpcGetPb_realtimev1_2 {
 
     // 计算最终值
     //val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, expTag, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
 
     calibration.show(10)
 
     val resultDF = calibration
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc")
+      .select("unitid", "conversion_goal", "media", "pcoc")
 
     resultDF
 
   }
 
 
-  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, expTag: String, spark: SparkSession) = {
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
     // 主校准模型
     val data1 = dataRaw1
       .filter(s"cv >= min_cv")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .select("unitid", "conversion_goal", "media", "pcoc", "priority")
 
     // 备用校准模型
     val data2 = dataRaw2
       .filter(s"cv >= min_cv")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .select("unitid", "conversion_goal", "media", "pcoc", "priority")
 
     // 兜底校准模型
     val data3 = dataRaw3
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .select("unitid", "conversion_goal", "media", "pcoc", "priority")
 
     // 数据筛选
     val baseData = data1.union(data2).union(data3)
@@ -327,10 +319,10 @@ object OcpcGetPb_realtimev1_2 {
          |SELECT
          |  unitid,
          |  conversion_goal,
-         |  exp_tag,
+         |  media,
          |  pcoc,
          |  priority,
-         |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority) as seq
+         |  row_number() over(partition by unitid, conversion_goal, media order by priority) as seq
          |FROM
          |  base_data
          |""".stripMargin
