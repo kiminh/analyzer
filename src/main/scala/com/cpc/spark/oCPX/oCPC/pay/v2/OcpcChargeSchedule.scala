@@ -30,7 +30,7 @@ object OcpcChargeSchedule {
     val dayCnt = args(2).toInt
 
     // 获取前一天的ocpc_compensate线上数据（备份表），基于ocpc_charge_time和deep_ocpc_charge_time来判断周期开始日期以及分别需要计算深度还是浅层赔付
-    val ocpcCompensate = getOcpcCompensateScheduleTemp(date, version, spark)
+    val ocpcCompensate = getOcpcCompensateSchedule(date, version, spark)
 
     // 统计今天的分单元消耗和开始消费时间
     val todayData = getTodayData(date, spark)
