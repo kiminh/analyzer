@@ -41,8 +41,7 @@ object OcpcGetPb_realtimev2 {
     // 计算jfb_factor,
     val jfbDataRaw = OcpcJFBfactor(date, hour, spark)
     val jfbData = jfbDataRaw
-      .withColumn("jfb_factor", lit(1.0) / col("jfb"))
-      .selectExpr("identifier", "conversion_goal", "media",  "click", "acb", "acp", "jfb_factor as jfb_factor2")
+      .selectExpr("identifier", "conversion_goal", "media", "jfb_factor as jfb_factor2")
       .cache()
     jfbData.show(10)
 
