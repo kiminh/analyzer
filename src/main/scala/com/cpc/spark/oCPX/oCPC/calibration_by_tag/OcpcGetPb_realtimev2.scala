@@ -61,9 +61,9 @@ object OcpcGetPb_realtimev2 {
     val jfbData_finalDF = jfbData_final
       .select("identifier", "conversion_goal", "media", "jfb_factor", "jfb_factor1", "jfb_factor2")
 
-    jfbData_finalDF
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.jfbData_final_20191219")
+    //jfbData_finalDF
+    //.repartition(1)
+    //.write.mode("overwrite").insertInto("test.jfbData_final_20191219")
 
 
     // 计算pcoc
@@ -90,9 +90,9 @@ object OcpcGetPb_realtimev2 {
     val pcocData_finalDF = pcocData_final
       .select("identifier", "conversion_goal", "media", "cvr_factor", "cvr_factor1", "cvr_factor2")
 
-    pcocData_finalDF
-      .repartition(1)
-      .write.mode("overwrite").insertInto("test.pcocData_final_20191219")
+    //pcocData_finalDF
+    //  .repartition(1)
+    //  .write.mode("overwrite").insertInto("test.pcocData_final_20191219")
 
     // 分段校准
     val bidFactor = OcpcBIDfactor(date, hour, version, expTag, 48, spark)
@@ -113,8 +113,8 @@ object OcpcGetPb_realtimev2 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 //
 
   }
