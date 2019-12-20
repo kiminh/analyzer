@@ -123,6 +123,8 @@ object OcpcGetPb_realtimev2 {
     // 组装数据
     val result = pcocData
       .join(jfbData, Seq("identifier", "conversion_goal", "media"), "inner")
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(bidFactor, Seq("identifier", "conversion_goal", "exp_tag"), "left_outer")
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor", "post_cvr", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor"))
