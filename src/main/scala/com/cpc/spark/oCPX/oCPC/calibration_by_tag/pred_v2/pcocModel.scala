@@ -267,23 +267,10 @@ object pcocModel {
      */
     val dataRaw = parseFeatures(rawData, spark)
 
-    // hour特征：one-hot编码
-//    val hourIndexer = new StringIndexer()
-//      .setInputCol("hour")
-//      .setOutputCol("hour_index")
-//      .fit(dataRaw)
-//    val hourIndexed = hourIndexer.transform(dataRaw)
-//    val hourEncoder = new OneHotEncoder()
-//      .setInputCol("hour_index")
-//      .setOutputCol("hour_vec")
-//    val hourFeature = hourEncoder
-//      .transform(hourIndexed)
-//      .select("identifier", "media", "conversion_goal", "conversion_from", "hour_vec")
-//    hourFeature.show(10)
-
     // 数据关联
     val data = dataRaw
       .select("identifier", "media", "conversion_goal", "conversion_from", "time", "hour", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72", "label", "double_feature_list", "string_feature_list")
+      .filter(s"cv72 = 1")
 
     data
   }

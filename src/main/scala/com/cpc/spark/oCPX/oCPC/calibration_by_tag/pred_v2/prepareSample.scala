@@ -58,7 +58,6 @@ object prepareSample {
       .join(data4, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
       .join(data5, Seq("identifier", "media", "conversion_goal", "conversion_from"), "inner")
       .selectExpr("identifier", "media", "conversion_goal", "conversion_from", "pcoc6", "pcoc12", "pcoc24", "pcoc48", "pcoc72", "cv6", "cv12", "cv24", "cv48", "cv72")
-      .filter(s"cv72 = 1")
       .withColumn("double_feature_list", udfDoubleFeatures()(col("pcoc6"), col("pcoc12"), col("pcoc24"), col("pcoc48"), col("pcoc72")))
       .withColumn("string_feature_list", udfStringFeatures()(col("cv6"), col("cv12"), col("cv24"), col("cv48"), col("cv72")))
       .select("identifier", "media", "conversion_goal", "conversion_from", "double_feature_list", "string_feature_list")
