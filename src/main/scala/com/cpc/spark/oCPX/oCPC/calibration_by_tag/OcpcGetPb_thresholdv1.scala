@@ -49,6 +49,7 @@ object OcpcGetPb_thresholdv1 {
     // 校准系数模块
     val pcocDataRaw = OcpcCVRfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val pcocData = pcocDataRaw
+      .withColumn("pcoc", when(col("pcoc") < 0.55, lit(0.55)).otherwise(col("pcoc")))
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
       .cache()
