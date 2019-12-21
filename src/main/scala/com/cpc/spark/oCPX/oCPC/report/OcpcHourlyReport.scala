@@ -63,13 +63,12 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
-    // todo
     val sqlRequest =
       s"""
          |SELECT
@@ -89,7 +88,7 @@ object OcpcHourlyReport {
          |  0 as is_hidden,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
-         |  sum(case when isclick = 1 then iscvr else 0 end) as cv,
+         |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) as total_price,
          |  sum(case when isclick=1 then bid else 0 end) as total_bid,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
