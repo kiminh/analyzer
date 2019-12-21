@@ -36,23 +36,31 @@ object pcocModel {
 
     val trainingData = getTrainingData(data, spark)
 
+    trainingData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191221a")
+
     val predictData = getPredictData(date, hour, hourDiff, version, expTag, spark)
+
+    predictData
+      .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191221b")
 
     val result = trainAndPredict(trainingData, predictData, spark)
 
-//    result
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191129b")
-
-    val resultDF = extracePredictData(result, hourDiff, spark)
-    resultDF
+    result
       .repartition(1)
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .withColumn("exp_tag", lit(expTag))
-//      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_pred_data20191221c")
+
+//    val resultDF = extracePredictData(result, hourDiff, spark)
+//    resultDF
+//      .repartition(1)
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .withColumn("exp_tag", lit(expTag))
+////      .write.mode("overwrite").insertInto("test.ocpc_pcoc_prediction_result_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_prediction_result_hourly")
 
   }
 
