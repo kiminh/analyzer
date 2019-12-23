@@ -31,7 +31,7 @@ object model_auc {
          |and ctr_model_name like 'qtt-list-dnn-rawid%'
              """.stripMargin
     print(sql)
-    val data = spark.sql(sql).cache()
+    val data = spark.sql(sql)
     val ctr_model_name_list = data.rdd.map(x => x.getAs[String]("ctr_model_name")).distinct().collect()
     data.createOrReplaceTempView("base_event")
     spark.sql(
