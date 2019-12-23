@@ -61,8 +61,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -209,7 +209,6 @@ object OcpcSampleToPbFinal {
   }
 
   def getOcpcUnits(spark: SparkSession) = {
-    // 媒体id映射表
     val conf = ConfigFactory.load("ocpc")
     val path = conf.getString("exp_config_v2.deep_ocpc_black_units")
     val dataRaw = spark.read.format("json").json(path)
