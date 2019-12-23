@@ -26,15 +26,9 @@ object model_auc {
          |where day = '$day'
          |and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |and adsrc in (1, 28)
-         |and userid > 0
-         |and ideaid > 0
+         |and adslot_type = 1
          |and isshow = 1
-         |and uid not like "%.%"
-         |and uid not like "%000000%"
-         |and length(uid) in (14, 15, 36)
-         |and (charge_type is null or charge_type = 1)
-         |and length(ctr_model_name) > 0
-         |and ctr_model_name not like '%noctr%'
+         |and ctr_model_name like 'qtt-list-dnn-rawid%'
              """.stripMargin
     print(sql)
     val data = spark.sql(sql).cache()
