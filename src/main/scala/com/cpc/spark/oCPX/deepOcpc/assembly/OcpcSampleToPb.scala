@@ -6,7 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 
@@ -36,12 +36,6 @@ object OcpcSampleToPb {
     println(s"date=$date, hour=$hour, version:$version, hourInt:$hourInt")
 
     val resultDF = getCalibrationData(date, hour, version, hourInt, spark)
-//
-//    val resultDF = data
-//      .join(adtype15List, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-//      .na.fill(1.0, Seq("ratio"))
-//      .withColumn("jfb_factor_old", col("jfb_factor"))
-//      .withColumn("jfb_factor", col("jfb_factor_old") *  col("ratio"))
 
     resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -152,6 +146,7 @@ object OcpcSampleToPb {
     }
     result
   })
+
 
 }
 
