@@ -36,6 +36,10 @@ object OcpcHourlyReportV2 {
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
     val stage3Data = calculateData(rawData, spark)
 
+    // stage2
+    val stage2DataRaw = rawData.filter(s"deep_ocpc_step != 2 and ocpc_step = 2")
+    val stage2Data = calculateData(rawData, spark)
+
   }
 
   def calculateData(rawData: DataFrame, spark: SparkSession) = {
