@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReport.getBaseData
+import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReportV2.getBaseData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,10 +21,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val ocpcBuliang = getBaseData(date, hour, spark)
+    val rawData = getBaseData(date, hour, spark)
 
-    ocpcBuliang
-      .filter(s"unitid = 2628251")
+
+    rawData
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218a")
 
 
