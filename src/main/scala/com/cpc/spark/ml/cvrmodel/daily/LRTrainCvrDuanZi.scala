@@ -95,6 +95,8 @@ object LRTrainCvrDuanZi {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
+    s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
+
 //    val userAppIdx = getUidApp(spark, cvrPathSep)
     for (key <- dictStr.keys) {
       println(key)
@@ -255,7 +257,8 @@ object LRTrainCvrDuanZi {
       name,
       allData,
       destfile,
-      1e8
+      1e8,
+      typeWord+"-cvr"
     )
 
     Utils
@@ -403,7 +406,8 @@ object LRTrainCvrDuanZi {
              name: String,
              ulog: DataFrame,
              destfile: String,
-             n: Double
+             n: Double,
+             typeWordCtrOrCVr: String
            ): Unit = {
 
     trainLog :+= "\n------train log--------"
@@ -465,6 +469,7 @@ object LRTrainCvrDuanZi {
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
 
     println("check before save")
     println("check dict:")
@@ -477,6 +482,7 @@ object LRTrainCvrDuanZi {
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
     model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
+    model.savePbPack(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)

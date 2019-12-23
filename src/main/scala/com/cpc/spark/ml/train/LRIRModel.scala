@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.train
 
 import java.io.{FileOutputStream, PrintWriter}
+import org.apache.hadoop.fs.{FileSystem, Path}
 import java.util.{Calendar, Date}
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
@@ -333,6 +334,50 @@ class LRIRModel {
       mediaid = dict("mediaid")
     )
     pack.writeTo(new FileOutputStream(path))
+  }
+
+  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true,isHdfsPath:Boolean=false): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      auPRC = auPRC,
+      auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir:Option[IRModel] = if(withIR) {
+      Option(IRModel(
+        boundaries = irmodel.boundaries.toSeq,
+        predictions = irmodel.predictions.toSeq,
+        meanSquareError = irError * irError
+      ))
+    }else{
+      None
+    }
+    val pack = Pack(
+      lr = Option(lr),
+      ir = ir,
+      createTime = new Date().getTime,
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      mediaid = dict("mediaid")
+    )
+    if(isHdfsPath){
+      val conf = ctx.hadoopConfiguration
+      val fs = FileSystem.get(conf)
+      fs.exists(new Path(path))
+    }else{
+      pack.writeTo(new FileOutputStream(path))
+    }
+
   }
 
 
