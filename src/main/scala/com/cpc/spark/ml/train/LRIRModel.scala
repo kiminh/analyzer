@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.train
 
-import java.io.{FileOutputStream, PrintWriter}
+import java.io.{BufferedOutputStream, FileOutputStream, OutputStreamWriter, PrintWriter}
+
 import org.apache.hadoop.fs.{FileSystem, Path}
 import java.util.{Calendar, Date}
 
@@ -371,9 +372,11 @@ class LRIRModel {
       mediaid = dict("mediaid")
     )
     if(isHdfsPath){
-      val conf = ctx.hadoopConfiguration
+      val conf = ctx.sparkContext.hadoopConfiguration
       val fs = FileSystem.get(conf)
-      fs.exists(new Path(path))
+      val hdfsPath=new Path(path)
+      val out = new BufferedOutputStream(fs.create(hdfsPath, false ))
+      pack.writeTo(out)
     }else{
       pack.writeTo(new FileOutputStream(path))
     }
