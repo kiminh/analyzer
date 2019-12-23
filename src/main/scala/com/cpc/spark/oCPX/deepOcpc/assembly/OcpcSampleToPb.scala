@@ -41,8 +41,8 @@ object OcpcSampleToPb {
 
     val resultDF = result
         .join(blackUnits, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
-        .withColumn("cali_value", when(col("black_flag") === 1 || col("black_flag").isNull, 0.01).otherwise(col("cali_value")))
-        .withColumn("jfb_factor", when(col("black_flag") === 1 || col("black_flag").isNull, 0.01).otherwise(col("jfb_factor")))
+        .withColumn("cali_value", when(col("black_flag") === 1, 0.01).otherwise(col("cali_value")))
+        .withColumn("jfb_factor", when(col("black_flag") === 1, 0.01).otherwise(col("jfb_factor")))
         .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
         .na.fill(0.0, Seq("post_cvr", "cpa_suggest", "smooth_factor"))
         .na.fill(0, Seq("is_hidden"))
