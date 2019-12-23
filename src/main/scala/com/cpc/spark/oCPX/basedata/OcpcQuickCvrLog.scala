@@ -29,7 +29,8 @@ object OcpcQuickCvrLog {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
-      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+      .write.mode("overwrite").saveAsTable("test.ocpc_quick_cv_log20191223")
+//      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
@@ -76,8 +77,8 @@ object OcpcQuickCvrLog {
       .sql(sqlRequest)
       .withColumn("conversion_goal", col("conversion_type").getItem(0))
       .withColumn("conversion_from", col("conversion_type").getItem(1))
-      .filter(s"conversion_goal > 0 and conversion_type > 0")
-      .select("searchid", "conversion_goal", "conversion_from")
+      .filter(s"conversion_goal > 0 and conversion_from > 0")
+      .select("searchid", "conversion_goal", "conversion_from", "conversion_type")
       .distinct()
 
     cvData
