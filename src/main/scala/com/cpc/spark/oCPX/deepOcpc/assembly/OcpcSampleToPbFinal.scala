@@ -122,7 +122,6 @@ object OcpcSampleToPbFinal {
 
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
-      val isHidden = record.getAs[Int]("is_hidden").toString
       val expTag = record.getAs[String]("exp_tag")
       val key = expTag + "&" + identifier
       val conversionGoal = record.getAs[Int]("conversion_goal")
@@ -215,7 +214,7 @@ object OcpcSampleToPbFinal {
     val path = conf.getString("exp_config_v2.deep_ocpc_black_units")
     val dataRaw = spark.read.format("json").json(path)
     val data = dataRaw
-      .select("identifier", "conversion_goal", "exp_tag")
+      .selectExpr("identifier", "cast(conversion_goal as int) as conversion_goal", "exp_tag")
       .withColumn("black_flag", lit(1))
       .distinct()
     data.show(10)
