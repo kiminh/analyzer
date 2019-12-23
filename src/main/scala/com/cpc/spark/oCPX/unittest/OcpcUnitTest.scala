@@ -27,8 +27,8 @@ object OcpcUnitTest {
 
 
 
-    rawData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218a")
+    stage3Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218b")
 
 
   }
