@@ -21,4 +21,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_quick_click_log add columns (ocpc_log string);
 --alter table dl_cpc.ocpc_quick_click_log add columns (bid_ocpc int);
 --alter table dl_cpc.ocpc_quick_click_log add columns (hidden_tax int)
-alter table test.ocpc_quick_click_log add columns (conversion_from int)
+alter table dl_cpc.ocpc_quick_click_log add columns (conversion_from int)
