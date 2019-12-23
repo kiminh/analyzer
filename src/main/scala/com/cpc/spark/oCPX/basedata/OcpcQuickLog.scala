@@ -31,13 +31,13 @@ object OcpcQuickLog {
       .write.mode("overwrite").insertInto("test.ocpc_quick_click_log")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_click_log")
 
-//    // 转化数据
-//    val cvData = getCvLog(date, hour, spark)
-//    cvData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .repartition(10)
-////      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
+    // 转化数据
+    val cvData = getCvLog(date, hour, spark)
+    cvData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(10)
+      .write.mode("overwrite").insertInto("test.ocpc_quick_cv_log")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_quick_cv_log")
 
 
@@ -122,61 +122,105 @@ object OcpcQuickLog {
 
     val clickData = data1
       .join(data2, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "ocpc_log", "bid_ocpc", "hidden_tax")
+      .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "ocpc_log", "bid_ocpc", "hidden_tax", "conversion_from")
 
     clickData
   }
 
-  def getCvLog(date: String, hour: String, spark: SparkSession) = {
-    // 抽取cv数据
+//  def getCvLog(date: String, hour: String, spark: SparkSession) = {
+//    // 抽取cv数据
+////    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
+////      var result = -1
+////      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
+////        result = 1
+////      } else if (traceType == "active_third" && traceOp2 == "") {
+////        result = 0 // result = 2
+////      } else if (traceType == "active_third" && traceOp2 == "0") {
+////        result = 2
+////      } else if (traceType == "active_third" && traceOp2 == "1") {
+////        result = 5
+////      } else if (traceType == "active_third" && traceOp2 == "2") {
+////        result = 7
+////      } else if (traceType == "active_third" && traceOp2 == "5") {
+////        result = 11
+////      } else if (traceType == "active_third" && traceOp2 == "6") {
+////        result = 6
+////      } else if (traceType == "active_third" && traceOp2 == "26") {
+////        result = 3
+////      } else if (traceType == "active_third" && traceOp2 == "27") {
+////        result = 12
+////      } else if (traceType == "active15" && traceOp2 == "site_form") {
+////        result = 3
+////      } else if (traceType == "ctsite_active15" && traceOp2 == "ct_site_form") {
+////        result = 3
+////      } else if (traceType == "js_active" && traceOp2 == "js_form") {
+////        result = 3
+////      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
+////        result = 4
+////      } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
+////        result = 4
+////      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "ON_BANNER") {
+////        result = 4
+////      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "CLICK_POPUPWINDOW_ADDWX") {
+////        result = 4
+////      } else {
+////        result = -1
+////      }
+////      result
+////    })
+//
 //    spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
-//      var result = -1
-//      if (traceOp1 == "REPORT_DOWNLOAD_PKGADDED") {
-//        result = 1
-//      } else if (traceType == "active_third" && traceOp2 == "") {
-//        result = 0 // result = 2
-//      } else if (traceType == "active_third" && traceOp2 == "0") {
-//        result = 2
-//      } else if (traceType == "active_third" && traceOp2 == "1") {
-//        result = 5
-//      } else if (traceType == "active_third" && traceOp2 == "2") {
-//        result = 7
-//      } else if (traceType == "active_third" && traceOp2 == "5") {
-//        result = 11
-//      } else if (traceType == "active_third" && traceOp2 == "6") {
-//        result = 6
-//      } else if (traceType == "active_third" && traceOp2 == "26") {
-//        result = 3
-//      } else if (traceType == "active_third" && traceOp2 == "27") {
-//        result = 12
-//      } else if (traceType == "active15" && traceOp2 == "site_form") {
-//        result = 3
-//      } else if (traceType == "ctsite_active15" && traceOp2 == "ct_site_form") {
-//        result = 3
-//      } else if (traceType == "js_active" && traceOp2 == "js_form") {
-//        result = 3
-//      } else if (traceOp1 == "REPORT_USER_STAYINWX") {
-//        result = 4
-//      } else if (traceType == "js_active" && traceOp2 == "active_copywx") {
-//        result = 4
-//      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "ON_BANNER") {
-//        result = 4
-//      } else if (traceOp1 == "REPORT_ICON_STAYINWX" && traceOp2 == "CLICK_POPUPWINDOW_ADDWX") {
-//        result = 4
-//      } else {
-//        result = -1
+//      var result = (traceType, traceOp1, traceOp2) match {
+//        case (_, "REPORT_DOWNLOAD_PKGADDED", _) => 1
+//        case ("active_third", _, "") | ("active_third", _, "0") => 2
+//        case ("active_third", _, "26") | ("active15", _, "site_form") | ("ctsite_active15", _, "ct_site_form") | ("js_active", _, "js_form") => 3
+//        case (_, "REPORT_USER_STAYINWX", _) | ("js_active", _, "active_copywx") | (_, "REPORT_ICON_STAYINWX", "ON_BANNER") | (_, "REPORT_ICON_STAYINWX", "CLICK_POPUPWINDOW_ADDWX") => 4
+//        case ("active_third", _, "1") => 5
+//        case (_, _, _) => 0
 //      }
 //      result
 //    })
+//    val selectCondition = s"day = '$date' and hour = '$hour'"
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  trace_type,
+//         |  trace_op1,
+//         |  trace_op2,
+//         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_goal
+//         |FROM
+//         |  dl_cpc.cpc_basedata_trace_event
+//         |WHERE
+//         |  $selectCondition
+//       """.stripMargin
+//    println(sqlRequest)
+//    val cvData = spark
+//      .sql(sqlRequest)
+//      .filter(s"conversion_goal > 0")
+//      .select("searchid", "conversion_goal")
+//      .distinct()
+//
+//    cvData
+//  }
+
+  def getCvLog(date: String, hour: String, spark: SparkSession) = {
 
     spark.udf.register("getConversionGoal", (traceType: String, traceOp1: String, traceOp2: String) => {
+      /*
+      生成conversion_goal和conversion_from的Array
+       */
       var result = (traceType, traceOp1, traceOp2) match {
-        case (_, "REPORT_DOWNLOAD_PKGADDED", _) => 1
-        case ("active_third", _, "") | ("active_third", _, "0") => 2
-        case ("active_third", _, "26") | ("active15", _, "site_form") | ("ctsite_active15", _, "ct_site_form") | ("js_active", _, "js_form") => 3
-        case (_, "REPORT_USER_STAYINWX", _) | ("js_active", _, "active_copywx") | (_, "REPORT_ICON_STAYINWX", "ON_BANNER") | (_, "REPORT_ICON_STAYINWX", "CLICK_POPUPWINDOW_ADDWX") => 4
-        case ("active_third", _, "1") => 5
-        case (_, _, _) => 0
+        case (_, "REPORT_DOWNLOAD_PKGADDED", _) => Array(1, 3)
+        case ("active_third", _, "") | ("active_third", _, "0") => Array(2, 1)
+        case ("active_third", _, "26") => Array(3, 1)
+        case ("active15", _, _) | ("ctsite_active15", _, _) => Array(3, 2)
+        case ("js_active", _, "js_form") => Array(3, 4)
+        case (_, "REPORT_USER_STAYINWX", _) | (_, "REPORT_ICON_STAYINWX", "ON_BANNER") | (_, "REPORT_ICON_STAYINWX", "CLICK_POPUPWINDOW_ADDWX") => Array(4, 3)
+        case ("js_active", _, "active_copywx") => Array(4, 4)
+        case ("active_third", _, "1") => Array(5, 1)
+        case (_, _, _) => Array(-1, 0)
       }
       result
     })
@@ -189,7 +233,7 @@ object OcpcQuickLog {
          |  trace_type,
          |  trace_op1,
          |  trace_op2,
-         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_goal
+         |  getConversionGoal(trace_type, trace_op1, trace_op2) as conversion_type
          |FROM
          |  dl_cpc.cpc_basedata_trace_event
          |WHERE
@@ -198,12 +242,15 @@ object OcpcQuickLog {
     println(sqlRequest)
     val cvData = spark
       .sql(sqlRequest)
-      .filter(s"conversion_goal > 0")
-      .select("searchid", "conversion_goal")
+      .withColumn("conversion_goal", col("conversion_type").getItem(0))
+      .withColumn("conversion_from", col("conversion_type").getItem(1))
+      .filter(s"conversion_goal > 0 and conversion_from > 0")
+      .select("searchid", "conversion_goal", "conversion_from")
       .distinct()
 
     cvData
   }
+
 
 
 }
