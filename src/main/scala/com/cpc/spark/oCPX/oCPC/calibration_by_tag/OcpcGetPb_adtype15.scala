@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.calibration_by_tag
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getBaseData, getBaseDataDelay, getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getBaseDataNewCv, getBaseDataDelay, getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
