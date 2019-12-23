@@ -1,6 +1,7 @@
 package com.cpc.spark.oCPX.oCPC.report
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -31,6 +32,57 @@ object OcpcHourlyReportV2 {
     // 拉取点击、消费、转化等基础数据
     val rawData = getBaseData(date, hour, spark)
 
+    // stage3
+    val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
+    val stage3Data = calculateData(rawData, spark)
+
+  }
+
+  def calculateData(rawData: DataFrame, spark: SparkSession) = {
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  unitid,
+         |  userid,
+         |  adclass,
+         |  adslot_type,
+         |  conversion_goal,
+         |  deep_conversion_goal,
+         |  cpa_check_priority,
+         |  is_deep_ocpc,
+         |  media_appsid,
+         |  hr,
+         |  ocpc_expand,
+         |  sum(isshow) as show,
+         |  sum(isclick) as click,
+         |  sum(case when isclick=1 then iscvr else 0 end) as cv,
+         |  sum(case when isclick=1 then price else 0 end) as total_price,
+         |  sum(case when isclick=1 then bid else 0 end) as total_bid,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 as total_precvr,
+         |  sum(case when isclick=1 then raw_cvr else 0 end) * 1.0 as total_rawcvr,
+         |  sum(case when isshow=1 then exp_ctr else 0 end) * 1.0 as total_prectr,
+         |  sum(case when isshow=1 then exp_cpm else 0 end) * 1.0 as total_exp_cpm,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['cpagiven'] as double) else 0 end) as total_cpagiven,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_jfbfactor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) as total_cpasuggest,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor,
+         |  sum(case when hidden_tax < 0 and isclick=1 then -hidden_tax else 0 end) as bl_hidden_tax,
+         |  sum(case when hidden_tax > 0 and isclick=1 then hidden_tax else 0 end) as bk_hidden_tax
+         |
+         |FROM
+         |  raw_data
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media_appsid, hr, ocpc_expand
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).cache()
+    println("base_data:")
+    data.show(10)
+    data
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -67,7 +119,8 @@ object OcpcHourlyReportV2 {
          |    ocpc_step,
          |    deep_ocpc_step,
          |    ocpc_log,
-         |    deep_ocpc_log
+         |    deep_ocpc_log,
+         |    (case when length(deep_ocpc_log_dict) > 0 and isclick=1 then 1 else 0 end) as deep_flag
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -77,9 +130,7 @@ object OcpcHourlyReportV2 {
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
-    val clickDataRaw = spark.sql(sqlRequest1)
-
-    val clickData = mapMediaName(clickDataRaw, spark)
+    val clickData = spark.sql(sqlRequest1)
 
     // 关联浅层转化表
     val sqlRequest2 =
@@ -118,6 +169,8 @@ object OcpcHourlyReportV2 {
       .join(cvData1, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
       .join(cvData2, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr1", "iscvr2"))
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
     resultDF
 
