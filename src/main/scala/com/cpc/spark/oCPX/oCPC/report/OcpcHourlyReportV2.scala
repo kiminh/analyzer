@@ -48,6 +48,7 @@ object OcpcHourlyReportV2 {
          |  userid,
          |  adclass,
          |  adslot_type,
+         |  adslotid,
          |  conversion_goal,
          |  deep_conversion_goal,
          |  cpa_check_priority,
@@ -68,15 +69,18 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_jfbfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['postCvr'] as double) else 0 end) * 1.0 as total_calipostcvr,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['CpaSuggest'] as double) else 0 end) as total_cpasuggest,
-         |  sum(case when isclick=1 then cast(ocpc_log_dict['smoothFactor'] as double) else 0 end) * 1.0 as total_smooth_factor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['discreteFactor'] as double) else 0 end) as total_discrete_factor,
          |  sum(case when hidden_tax < 0 and isclick=1 then -hidden_tax else 0 end) as bl_hidden_tax,
          |  sum(case when hidden_tax > 0 and isclick=1 then hidden_tax else 0 end) as bk_hidden_tax
-         |
+         |  sum(case when isclick=1 then cast(deep_cpa as double) else 0 end) as total_deep_cpagiven,
+         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
+         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_deep_cvrfactor,
+         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_deep_calipcvr,
+         |  sum(case when isclick=1 and real_deep_flag = 1 then 1 else 0 end) as real_deep_click,
+         |  sum(case when isclick=1 then exp_cvr2 else 0 end) * 1.0 as total_deepcvr
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media_appsid, hr, ocpc_expand
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media_appsid, hr, ocpc_expand
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
@@ -120,7 +124,9 @@ object OcpcHourlyReportV2 {
          |    deep_ocpc_step,
          |    ocpc_log,
          |    deep_ocpc_log,
-         |    (case when length(deep_ocpc_log_dict) > 0 and isclick=1 then 1 else 0 end) as deep_flag
+         |    (case when length(deep_ocpc_log_dict) > 0 and isclick=1 then 1 else 0 end) as real_deep_flag,
+         |    (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * exp_cvr * 1.0 / 1000000 else deep_cvr * 1.0 / 1000000 end) as exp_cvr2,
+         |    deep_cpa
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE

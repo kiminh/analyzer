@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReportV2.getBaseData
+import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReportV2.{calculateData, getBaseData}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -22,6 +22,9 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
     val rawData = getBaseData(date, hour, spark)
+    val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
+    val stage3Data = calculateData(rawData, spark)
+
 
 
     rawData
