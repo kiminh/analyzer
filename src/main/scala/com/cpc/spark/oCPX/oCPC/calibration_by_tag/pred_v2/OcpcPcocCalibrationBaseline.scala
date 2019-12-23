@@ -1,16 +1,16 @@
-package com.cpc.spark.oCPX.oCPC.calibration_by_tag
+package com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v2
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getBaseData, getBaseDataDelay, getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb_adtype15 {
+object OcpcPcocCalibrationBaseline {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -97,7 +97,7 @@ object OcpcGetPb_adtype15 {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))

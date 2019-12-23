@@ -44,7 +44,7 @@ object OcpcFreePass {
     val whiteList = getWhiteList(spark)
 
     // oCPC补量实验
-    val ocpcBuliang = ocpcBlackUnits(spark)
+    val ocpcBuliang = ocpcBlackUsers(spark)
 
     // 数据关联
     val joinData = unit
@@ -60,12 +60,13 @@ object OcpcFreePass {
         .join(whiteList, Seq("unitid", "userid", "media"), "left_outer")
         .na.fill(0, Seq("user_black_flag", "user_cost_flag", "unit_white_flag"))
         .withColumn("flag", udfDetermineFlag()(col("flag_ratio"), col("random_value"), col("user_black_flag"), col("user_cost_flag"), col("unit_white_flag"), col("time_flag")))
-        .join(ocpcBuliang, Seq("unitid"), "left_outer")
-        .na.fill(0, Seq("bl_flag"))
-        .withColumn("flag", when(col("bl_flag") === 1, 0).otherwise(col("flag")))
+        .join(ocpcBuliang, Seq("userid"), "left_outer")
+        .na.fill(0, Seq("is_open"))
+        .withColumn("flag_old", col("flag"))
+        .withColumn("flag", when(col("is_open") === 1, 1).otherwise(col("flag")))
 
 //    joinData
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191210a")
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
 
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
@@ -91,6 +92,20 @@ object OcpcFreePass {
 
 
 
+  }
+
+  def ocpcBlackUsers(spark: SparkSession) = {
+    val dataRaw = spark.read.textFile("/user/cpc/lixuejian/online/select_hidden_tax_user/ocpc_hidden_tax_user.list")
+//    val dataRaw = spark.read.textFile("/user/cpc/wangjun/ocpc/test/ocpc_hidden_tax_user.list")
+
+    val data = dataRaw
+      .select("value")
+      .withColumn("userid", udfGetItem(0, " ")(col("value")))
+      .withColumn("is_open", udfGetItem(1, " ")(col("value")))
+      .select("userid", "is_open")
+      .distinct()
+
+    data
   }
 
   def ocpcBlackUnits(spark: SparkSession) = {
