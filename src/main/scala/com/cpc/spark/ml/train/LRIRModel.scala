@@ -337,7 +337,7 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true,isHdfsPath:Boolean=false): Unit = {
+  def savePbPackHdfs(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -371,15 +371,12 @@ class LRIRModel {
       cityid = dict("cityid"),
       mediaid = dict("mediaid")
     )
-    if(isHdfsPath){
-      val conf = ctx.sparkContext.hadoopConfiguration
-      val fs = FileSystem.get(conf)
-      val hdfsPath=new Path(path)
-      val out = new BufferedOutputStream(fs.create(hdfsPath, false ))
-      pack.writeTo(out)
-    }else{
-      pack.writeTo(new FileOutputStream(path))
-    }
+
+    val conf = ctx.sparkContext.hadoopConfiguration
+    val fs = FileSystem.get(conf)
+    val hdfsPath=new Path(path)
+    val out = new BufferedOutputStream(fs.create(hdfsPath, false ))
+    pack.writeTo(out)
 
   }
 

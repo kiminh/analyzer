@@ -482,7 +482,7 @@ object LRTrainCvrDuanZi {
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
     model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
-    model.savePbPack(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false, true)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
