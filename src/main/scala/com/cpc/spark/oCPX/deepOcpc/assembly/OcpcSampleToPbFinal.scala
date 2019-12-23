@@ -38,18 +38,20 @@ object OcpcSampleToPbFinal {
 
     val tableName1 = "dl_cpc.ocpc_deep_param_pb_data_hourly"
     val version1 = version
-    val result1 = getData(date, hour, tableName1, version1, spark)
-    result1.printSchema()
-//    val whiteUnits = getPermissionData(version, spark)
-//
-//    val result1 = data1
-//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-//      .join(whiteUnits, Seq("identifier"), "inner")
+    val result = getData(date, hour, tableName1, version1, spark)
+    result.printSchema()
 
-//    result1
-//      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191206a")
+    val blackUnits = getOcpcUnits(spark)
 
-    val resultDF = result1.filter(s"is_hidden = 0")
+    val resultDF = result
+      .join(blackUnits, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
+      .withColumn("cali_value", when(col("black_flag") === 1, 0.01).otherwise(col("cali_value")))
+      .withColumn("jfb_factor", when(col("black_flag") === 1, 0.01).otherwise(col("jfb_factor")))
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
+      .na.fill(0.0, Seq("post_cvr", "cpa_suggest", "smooth_factor"))
+      .na.fill(0, Seq("is_hidden"))
+      .na.fill(0.01, Seq("jfb_factor", "cali_value"))
+      .filter(s"is_hidden = 0")
 
     val finalVersion = version + "pbfile"
     resultDF
@@ -59,8 +61,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -201,6 +203,20 @@ object OcpcSampleToPbFinal {
       .sql(sqlRequest)
       .withColumn("flag", lit(1))
       .distinct()
+
+    data
+  }
+
+  def getOcpcUnits(spark: SparkSession) = {
+    // 媒体id映射表
+    val conf = ConfigFactory.load("ocpc")
+    val path = conf.getString("exp_config_v2.deep_ocpc_black_units")
+    val dataRaw = spark.read.format("json").json(path)
+    val data = dataRaw
+      .select("identifier", "conversion_goal", "exp_tag")
+      .withColumn("black_flag", lit(1))
+      .distinct()
+    data.show(10)
 
     data
   }

@@ -35,18 +35,7 @@ object OcpcSampleToPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, hourInt:$hourInt")
 
-    val result = getCalibrationData(date, hour, version, hourInt, spark)
-
-    val blackUnits = getOcpcUnits(spark)
-
-    val resultDF = result
-        .join(blackUnits, Seq("identifier", "conversion_goal", "exp_tag"), "outer")
-        .withColumn("cali_value", when(col("black_flag") === 1, 0.01).otherwise(col("cali_value")))
-        .withColumn("jfb_factor", when(col("black_flag") === 1, 0.01).otherwise(col("jfb_factor")))
-        .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
-        .na.fill(0.0, Seq("post_cvr", "cpa_suggest", "smooth_factor"))
-        .na.fill(0, Seq("is_hidden"))
-        .na.fill(0.01, Seq("jfb_factor", "cali_value"))
+    val resultDF = getCalibrationData(date, hour, version, hourInt, spark)
 
     resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
@@ -157,20 +146,6 @@ object OcpcSampleToPb {
     }
     result
   })
-
-  def getOcpcUnits(spark: SparkSession) = {
-    // 媒体id映射表
-    val conf = ConfigFactory.load("ocpc")
-    val path = conf.getString("exp_config_v2.deep_ocpc_black_units")
-    val dataRaw = spark.read.format("json").json(path)
-    val data = dataRaw
-      .select("identifier", "conversion_goal", "exp_tag")
-      .withColumn("black_flag", lit(1))
-      .distinct()
-    data.show(10)
-
-    data
-  }
 
 
 }
