@@ -80,7 +80,7 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then exp_cvr2 else 0 end) * 1.0 as total_deepcvr
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, industry, media_appsid, hr, ocpc_expand
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, media_appsid, hr, ocpc_expand
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest).cache()
