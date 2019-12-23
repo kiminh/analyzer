@@ -235,6 +235,92 @@ object OcpcTools {
     resultDF
   }
 
+  def getBaseDataNewCv(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  adslot_type,
+         |  isshow,
+         |  isclick,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  cast(exp_cvr as double) as exp_cvr,
+         |  cast(exp_ctr as double) as exp_ctr,
+         |  media_appsid,
+         |  (case
+         |      when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
+         |      when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
+         |      when (adslot_type=7 and cast(adclass as string) like '100%') then "yysc"
+         |      when adclass in (110110100, 125100100) then "wzcp"
+         |      else "others"
+         |  end) as industry,
+         |  conversion_goal,
+         |  conversion_from,
+         |  expids,
+         |  exptags,
+         |  ocpc_expand,
+         |  hidden_tax,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  isclick = 1
+       """.stripMargin
+    println(sqlRequest)
+    val clickDataRaw = spark
+      .sql(sqlRequest)
+      .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
+
+    // 清除米读异常数据
+    val clickData = mapMediaName(clickDataRaw, spark)
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as iscvr,
+         |  conversion_goal,
+         |  conversion_from
+         |FROM
+         |  dl_cpc.ocpc_quick_cv_log
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
+
+
+    // 数据关联
+    val resultDF = clickData
+      .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+
+    resultDF
+  }
+
   def getBaseDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
