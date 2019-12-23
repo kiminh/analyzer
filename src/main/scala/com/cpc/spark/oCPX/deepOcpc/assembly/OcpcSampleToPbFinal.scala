@@ -118,6 +118,8 @@ object OcpcSampleToPbFinal {
     var list = new ListBuffer[SingleItem]
     var cnt = 0
 
+    data.printSchema()
+
     for (record <- data.collect()) {
       val identifier = record.getAs[String]("identifier")
       val isHidden = record.getAs[Int]("is_hidden").toString
