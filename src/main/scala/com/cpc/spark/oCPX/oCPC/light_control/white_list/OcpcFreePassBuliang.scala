@@ -38,11 +38,12 @@ object OcpcFreePassBuliang {
         .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
 
     joinData
-      .select("unitid", "userid", "conversion_goal", "is_ocpc", "ocpc_status", "is_open")
+      .select("unitid", "userid", "conversion_goal", "ocpc_status")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data_buliang20191223")
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_free_pass_buliang_hourly")
 
 
 
@@ -57,6 +58,7 @@ object OcpcFreePassBuliang {
       .withColumn("userid", udfGetItem(0, " ")(col("value")))
       .withColumn("is_open", udfGetItem(1, " ")(col("value")))
       .select("userid", "is_open")
+      .filter(s"is_open = 1")
       .distinct()
 
     data
