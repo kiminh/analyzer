@@ -102,6 +102,7 @@ object OcpcHourlyReportV2 {
          |    unitid,
          |    userid,
          |    adslot_type,
+         |    adslotid,
          |    adclass,
          |    conversion_goal,
          |    conversion_from,
