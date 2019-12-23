@@ -34,8 +34,8 @@ object OcpcFreePassBuliang {
     val joinData = unit
         .join(ocpcBuliang, Seq("userid"), "inner")
 
-    joinData
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
+//    joinData
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
 
     joinData
       .select("unitid", "userid", "conversion_goal", "ocpc_status")
@@ -43,7 +43,9 @@ object OcpcFreePassBuliang {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_free_pass_buliang_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_free_pass_buliang_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_free_pass_buliang_hourly")
+
 
 
 
