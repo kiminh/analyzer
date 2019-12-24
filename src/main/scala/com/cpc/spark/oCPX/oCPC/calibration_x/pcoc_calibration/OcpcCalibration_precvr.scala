@@ -4,13 +4,15 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb_weightv1{
+object OcpcCalibration_precvr{
+  /*
+
+   */
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -310,8 +312,6 @@ object OcpcGetPb_weightv1{
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
-    baseData
-        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
