@@ -14,6 +14,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, WrappedArray}
 import scala.util.Random
+import scala.sys.process._
 
 /**
   * Created by zhaolei on 22/12/2017.
@@ -127,6 +128,8 @@ object LRTrainMiRead {
       parserName = "miread-bs-ctrparser4-daily"
       parserDestFile = "miread-bs-ctrparser4-daily.lrm"
     }
+
+    s"mkdir -p /home/cpc/anal/model/togo/" !
 
     train(
       spark,

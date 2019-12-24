@@ -16,6 +16,7 @@ import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ListBuffer, WrappedArray}
 import scala.util.Random
+import scala.sys.process._
 
 
 /**
@@ -141,6 +142,8 @@ object LRTrainV4 {
     model.clearResult()
 
     val allData = spark.sqlContext.read.parquet(dfPath)
+
+    s"mkdir -p /home/cpc/anal/model/togo/" !
 
     train(
       spark,
