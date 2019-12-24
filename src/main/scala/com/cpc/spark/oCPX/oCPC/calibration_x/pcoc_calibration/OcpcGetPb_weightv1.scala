@@ -43,7 +43,7 @@ object OcpcGetPb_weightv1{
     jfbData.show(10)
 
     // 校准系数模块
-    val pcocDataRaw = OcpcCVRfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val pcocDataRaw = OcpcCVRfactor(dataRaw, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -139,8 +139,7 @@ object OcpcGetPb_weightv1{
   }
 
   def getDataByTimeSpan(dataRaw: DataFrame, date: String, hour: String, hourInt: Int, spark: SparkSession) = {
-    dataRaw
-      .createOrReplaceTempView("raw_data")
+    dataRaw.createOrReplaceTempView("raw_data")
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -183,44 +182,84 @@ object OcpcGetPb_weightv1{
     data
   }
 
+  def getDataByHourDiff(dataRaw: DataFrame, leftHourBound: Int, rightHourBound: Int, spark: SparkSession) = {
+    dataRaw
+      .createOrReplaceTempView("raw_data")
+
+    val selectCondition = s"hour_diff >= $leftHourBound and hour_diff < $rightHourBound"
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    conversion_goal,
+         |    media,
+         |    sum(click) as click,
+         |    sum(cv) as cv,
+         |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(acb * click) * 1.0 / sum(click) as acb,
+         |    sum(acp * click) * 1.0 / sum(click) as acp
+         |FROM
+         |    raw_data
+         |WHERE
+         |    $selectCondition
+         |GROUP BY unitid, conversion_goal, media
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc")
+
+    data
+  }
+
   /*
   校准件系数模块
    */
-  def OcpcCVRfactor(date: String, hour: String, expTag: String, dataRaw: DataFrame, hourInt1: Int, hourInt2: Int, hourInt3: Int, spark: SparkSession) = {
-    val expConf = getCvrExpConf(spark)
+  def OcpcCVRfactor(dataRaw: DataFrame, expTag: String, spark: SparkSession) = {
+    /*
+    calculate the calibration value based on weighted calibration:
+    case1: 0 ~ 5: 0.4
+    case2: 6 ~ 12: 0.3
+    case3: 12 ~ 24: 0.2
+    case4: 24 ~ 48: 0.1
 
-    val dataRaw1 = getDataByTimeSpan(dataRaw, date, hour, hourInt1, spark)
+    use 80 as cv threshold
+    if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
+     */
+    val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
-      .withColumn("priority", lit(1))
+      .filter(s"cv > 80")
     data1.show(10)
 
-    val dataRaw2 = getDataByTimeSpan(dataRaw, date, hour, hourInt2, spark)
+    val dataRaw2 = getDataByHourDiff(dataRaw, 6, 12, spark)
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
-      .withColumn("priority", lit(2))
+      .filter(s"cv > 80")
     data2.show(10)
 
-    val dataRaw3 = getDataByTimeSpan(dataRaw, date, hour, hourInt3, spark)
+    val dataRaw3 = getDataByHourDiff(dataRaw, 12, 24, spark)
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
-      .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
-      .withColumn("priority", lit(3))
+      .filter(s"cv > 80")
     data3.show(10)
 
+    val dataRaw4 = getDataByHourDiff(dataRaw, 24, 48, spark)
+    val data4 = dataRaw4
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .withColumn("min_cv", lit(80))
+      .filter(s"cv > 0")
+    data4.show(10)
+
+
     // 计算最终值
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, spark)
 
     calibration.show(10)
 
@@ -231,39 +270,48 @@ object OcpcGetPb_weightv1{
 
   }
 
-  def getCvrExpConf(spark: SparkSession) ={
-    // 从配置文件读取数据
-    val conf = ConfigFactory.load("ocpc")
-    val confPath = conf.getString("exp_config_v2.cvr_factor")
-    val rawData = spark.read.format("json").json(confPath)
-    val data = rawData
-      .groupBy("exp_tag", "conversion_goal")
-      .agg(min(col("min_cv")).alias("min_cv"))
-      .distinct()
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
+    /*
+    calculate the calibration value based on weighted calibration:
+    case1: 0 ~ 5: 0.4
+    case2: 6 ~ 12: 0.3
+    case3: 12 ~ 24: 0.2
+    case4: 24 ~ 48: 0.1
 
-    println("cvr factor config:")
-    data.show(10)
-
-    data
-  }
-
-  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, spark: SparkSession) = {
-    // 主校准模型
+    pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4
+     */
+    // case1
     val data1 = dataRaw1
-      .filter(s"cv >= min_cv")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .withColumn("pcoc1", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc1")
 
-    // 备用校准模型
+    // case2
     val data2 = dataRaw2
-      .filter(s"cv >= min_cv")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .withColumn("pcoc2", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc2")
 
-    // 兜底校准模型
+    // case3
     val data3 = dataRaw3
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "priority")
+      .withColumn("pcoc3", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc3")
 
-    // 数据筛选
-    val baseData = data1.union(data2).union(data3)
+    // case4
+    val data4 = dataRaw4
+      .withColumn("pcoc4", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc4")
+
+
+    val baseData = data4
+        .join(data3, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
+        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
+        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
+
+
+
+
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
