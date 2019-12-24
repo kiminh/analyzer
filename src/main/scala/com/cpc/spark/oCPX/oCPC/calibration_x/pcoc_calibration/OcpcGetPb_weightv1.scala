@@ -67,8 +67,8 @@ object OcpcGetPb_weightv1{
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -261,10 +261,6 @@ object OcpcGetPb_weightv1{
     // 计算最终值
     val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, spark)
 
-    calibration.show(10)
-    calibration
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201091224c")
-
     val resultDF = calibration
       .select("unitid", "conversion_goal", "exp_tag", "pcoc")
 
@@ -314,11 +310,6 @@ object OcpcGetPb_weightv1{
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
-
-    baseData
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_data201091224b")
-
-
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
@@ -338,7 +329,7 @@ object OcpcGetPb_weightv1{
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
-    val resultDF = data
+    val resultDF = data.cache()
 
     resultDF.show()
 
