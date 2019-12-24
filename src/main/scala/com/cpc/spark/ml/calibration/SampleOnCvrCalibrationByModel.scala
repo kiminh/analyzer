@@ -66,10 +66,10 @@ object SampleOnCvrCalibrationByModel {
          |  and cvr_model_name in ('$model','$calimodel')
          |  and is_ocpc = 1) a
          | left join
-         | (select distinct searchid,conversion_goal,1 as iscvr
+         | (select distinct searchid,conversion_goal,1 as iscvr,conversion_from
          |  from dl_cpc.ocpc_quick_cv_log
          |  where  $selectCondition2) c
-         |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
+         |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal and a.conversion_from = c.conversion_from
              """.stripMargin
     println(sql)
     val data = spark.sql(sql)
