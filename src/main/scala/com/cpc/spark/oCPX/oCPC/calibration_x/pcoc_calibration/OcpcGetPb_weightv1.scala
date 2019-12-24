@@ -43,7 +43,7 @@ object OcpcGetPb_weightv1{
     jfbData.show(10)
 
     // 校准系数模块
-    val pcocDataRaw = OcpcCVRfactor(dataRaw, spark)
+    val pcocDataRaw = OcpcCVRfactor(dataRaw, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -262,6 +262,8 @@ object OcpcGetPb_weightv1{
     val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, spark)
 
     calibration.show(10)
+    calibration
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201091224c")
 
     val resultDF = calibration
       .select("unitid", "conversion_goal", "exp_tag", "pcoc")
@@ -305,11 +307,16 @@ object OcpcGetPb_weightv1{
         .join(data3, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .withColumn("pcoc3_old", col("pcoc3"))
+        .withColumn("pcoc2_old", col("pcoc2"))
+        .withColumn("pcoc1_old", col("pcoc1"))
         .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
-        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
-        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
+        .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
+        .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
 
+    baseData
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_data201091224b")
 
 
     baseData.createOrReplaceTempView("base_data")
@@ -320,9 +327,11 @@ object OcpcGetPb_weightv1{
          |  unitid,
          |  conversion_goal,
          |  exp_tag,
-         |  pcoc,
-         |  priority,
-         |  row_number() over(partition by unitid, conversion_goal, exp_tag order by priority) as seq
+         |  pcoc1,
+         |  pcoc2,
+         |  pcoc3,
+         |  pcoc4,
+         |  0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4 as pcoc
          |FROM
          |  base_data
          |""".stripMargin
@@ -330,7 +339,6 @@ object OcpcGetPb_weightv1{
     val data = spark.sql(sqlRequest)
 
     val resultDF = data
-      .filter(s"seq = 1")
 
     resultDF.show()
 
