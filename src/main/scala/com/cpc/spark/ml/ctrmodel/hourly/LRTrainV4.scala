@@ -57,6 +57,8 @@ object LRTrainV4 {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
+    s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
+
     println("dates = " + dates)
 
     dates.foreach(dt => {
@@ -146,7 +148,8 @@ object LRTrainV4 {
       "qtt-bs-ctrparser4-daily",
       allData,
       "qtt-bs-ctrparser4-daily.lrm",
-      4e8
+      4e8,
+      typeWord
     )
 
     Utils
@@ -284,7 +287,7 @@ object LRTrainV4 {
     data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double,typeWordCtrOrCVr: String): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -354,6 +357,9 @@ object LRTrainV4 {
 
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+
+    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)

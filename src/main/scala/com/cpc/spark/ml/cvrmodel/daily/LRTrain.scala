@@ -102,6 +102,8 @@ object LRTrain {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
+    s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
+
     for (key <- dictStr.keys) {
       println(key)
     }
@@ -260,7 +262,8 @@ object LRTrain {
       name,
       allData,
       destfile,
-      1e8
+      1e8,
+      typeWord+"-cvr"
     )
 
     Utils
@@ -408,7 +411,8 @@ object LRTrain {
              name: String,
              ulog: DataFrame,
              destfile: String,
-             n: Double
+             n: Double,
+             typeWordCtrOrCVr: String
            ): Unit = {
 
     trainLog :+= "\n------train log--------"
@@ -485,6 +489,9 @@ object LRTrain {
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
+
+    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)

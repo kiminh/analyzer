@@ -27,8 +27,8 @@ object LRTrainMiRead {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val spark: SparkSession = model
-      .initSpark("miread [cpc-model] linear regression")
+    val typeWord = "miread-ctr"
+
 
     val dictDays = args(0).toInt
     val appDays = args(1).toInt
@@ -39,6 +39,9 @@ object LRTrainMiRead {
     if (args.length >= 5){
       parserArg = args(4)
     }
+
+    val spark: SparkSession = model
+      .initSpark(s"[cpc-model] ${typeWord}-bs-%s-daily".format(parserArg))
 
     // 按分区取数据
     val appPathSep = getPathSeq(date, hour, appDays)
@@ -131,7 +134,8 @@ object LRTrainMiRead {
       parserName,
       qttAll,
       parserDestFile,
-      4e8
+      4e8,
+      typeWord
     )
 
     Utils
@@ -251,7 +255,7 @@ object LRTrainMiRead {
     data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double, typeWordCtrOrCVr: String): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -355,6 +359,9 @@ object LRTrainMiRead {
     // backup on hdfs.
     model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_lrmodeldata/%s".format(date))
     model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_irmodeldata/%s".format(date))
+
+    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
+    model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap, true, true)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
