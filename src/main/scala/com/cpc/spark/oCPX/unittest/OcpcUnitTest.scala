@@ -23,15 +23,11 @@ object OcpcUnitTest {
 
     val rawData = getBaseData(date, hour, spark)
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
-    val stage3Data = calculateData(rawData, spark)
-
-    val stage2DataRaw = rawData.filter(s"deep_ocpc_step != 2 and ocpc_step = 2")
-    val stage2Data = calculateData(rawData, spark)
+    val stage3Data = calculateData(stage3DataRaw, spark)
 
 
-
-    stage2Data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191218c")
+    stage3Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191224a")
 
 
   }

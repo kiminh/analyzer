@@ -34,11 +34,15 @@ object OcpcHourlyReportV2 {
 
     // stage3
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
-    val stage3Data = calculateData(rawData, spark)
+    val stage3Data = calculateData(stage3DataRaw, spark)
 
     // stage2
     val stage2DataRaw = rawData.filter(s"deep_ocpc_step != 2 and ocpc_step = 2")
-    val stage2Data = calculateData(rawData, spark)
+    val stage2Data = calculateData(stage2DataRaw, spark)
+
+    // stage1
+    val stage1DataRaw = rawData.filter(s"ocpc_step = 1")
+    val stage1Data = calculateData(stage1DataRaw, spark)
 
   }
 
@@ -140,6 +144,7 @@ object OcpcHourlyReportV2 {
          |and `hour` <= '$hour'
          |and isshow = 1
          |and conversion_goal > 0
+         |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
     val clickData = spark.sql(sqlRequest1)
