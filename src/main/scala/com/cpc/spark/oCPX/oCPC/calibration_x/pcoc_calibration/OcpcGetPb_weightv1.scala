@@ -223,7 +223,8 @@ object OcpcGetPb_weightv1{
     case1: 0 ~ 5: 0.4
     case2: 0 ~ 12: 0.3
     case3: 0 ~ 24: 0.2
-    case4: 0 ~ 48: 0.1
+    case4: 0 ~ 48: 0.05
+    case5: 0 ~ 84: 0.05
 
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
@@ -249,17 +250,23 @@ object OcpcGetPb_weightv1{
       .filter(s"cv > 80")
     data3.show(10)
 
-    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 84, spark)
+    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
     val data4 = dataRaw4
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .withColumn("min_cv", lit(80))
-      .filter(s"cv > 0")
+      .filter(s"cv > 80")
     data4.show(10)
+
+    val dataRaw5 = getDataByHourDiff(dataRaw, 0, 84, spark)
+    val data5 = dataRaw5
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+      .filter(s"cv > 0")
+    data5.show(10)
 
 
     // 计算最终值
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, data5, spark)
 
     val resultDF = calibration
       .select("unitid", "conversion_goal", "exp_tag", "pcoc")
@@ -268,13 +275,14 @@ object OcpcGetPb_weightv1{
 
   }
 
-  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, spark: SparkSession) = {
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, dataRaw5: DataFrame, spark: SparkSession) = {
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
     case2: 0 ~ 12: 0.3
     case3: 0 ~ 24: 0.2
-    case4: 0 ~ 48: 0.1
+    case4: 0 ~ 48: 0.05
+    case5: 0 ~ 84: 0.05
 
     pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4
      */
@@ -298,14 +306,22 @@ object OcpcGetPb_weightv1{
       .withColumn("pcoc4", col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "pcoc4")
 
+    // case5
+    val data5 = dataRaw5
+      .withColumn("pcoc5", col("pcoc"))
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc5")
 
-    val baseData = data4
+
+    val baseData = data5
+        .join(data4, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data3, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .withColumn("pcoc4_old", col("pcoc4"))
         .withColumn("pcoc3_old", col("pcoc3"))
         .withColumn("pcoc2_old", col("pcoc2"))
         .withColumn("pcoc1_old", col("pcoc1"))
+        .withColumn("pcoc4", when(col("pcoc4").isNull, col("pcoc5")).otherwise(col("pcoc4")))
         .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
@@ -324,7 +340,8 @@ object OcpcGetPb_weightv1{
          |  pcoc2,
          |  pcoc3,
          |  pcoc4,
-         |  0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4 as pcoc
+         |  pcoc5,
+         |  (0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.05 * pcoc4 + 0.05 * pcoc5) as pcoc
          |FROM
          |  base_data
          |""".stripMargin
