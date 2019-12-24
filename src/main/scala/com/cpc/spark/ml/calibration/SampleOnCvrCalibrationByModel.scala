@@ -48,7 +48,7 @@ object SampleOnCvrCalibrationByModel {
     val sql =
       s"""
          |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
-         |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from, hour,a.day,
+         |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,a.conversion_from, hour,a.day,
          |if(c.iscvr is not null,1,0) iscvr,case when siteid = 0 then 'wailian' when siteid>=5000000 then 'chitu' when siteid>=2000000 then 'jingyu' else 'laojianzhan' end siteid,
          |case
          |  when user_show_ad_num = 0 then '0'
