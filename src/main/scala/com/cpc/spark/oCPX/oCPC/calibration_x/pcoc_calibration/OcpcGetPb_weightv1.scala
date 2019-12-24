@@ -221,9 +221,9 @@ object OcpcGetPb_weightv1{
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
-    case2: 6 ~ 12: 0.3
-    case3: 12 ~ 24: 0.2
-    case4: 24 ~ 48: 0.1
+    case2: 0 ~ 12: 0.3
+    case3: 0 ~ 24: 0.2
+    case4: 0 ~ 48: 0.1
 
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
@@ -235,21 +235,21 @@ object OcpcGetPb_weightv1{
       .filter(s"cv > 80")
     data1.show(10)
 
-    val dataRaw2 = getDataByHourDiff(dataRaw, 6, 12, spark)
+    val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv > 80")
     data2.show(10)
 
-    val dataRaw3 = getDataByHourDiff(dataRaw, 12, 24, spark)
+    val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv > 80")
     data3.show(10)
 
-    val dataRaw4 = getDataByHourDiff(dataRaw, 24, 48, spark)
+    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
     val data4 = dataRaw4
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
@@ -276,9 +276,9 @@ object OcpcGetPb_weightv1{
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
-    case2: 6 ~ 12: 0.3
-    case3: 12 ~ 24: 0.2
-    case4: 24 ~ 48: 0.1
+    case2: 0 ~ 12: 0.3
+    case3: 0 ~ 24: 0.2
+    case4: 0 ~ 48: 0.1
 
     pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4
      */
