@@ -28,8 +28,8 @@ object OcpcUnitTest {
 
 
 
-    pcocDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224a")
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224b")
 
 
   }
