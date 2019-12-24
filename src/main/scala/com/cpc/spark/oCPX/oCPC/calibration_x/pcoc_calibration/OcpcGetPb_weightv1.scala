@@ -249,7 +249,7 @@ object OcpcGetPb_weightv1{
       .filter(s"cv > 80")
     data3.show(10)
 
-    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
+    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 84, spark)
     val data4 = dataRaw4
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
