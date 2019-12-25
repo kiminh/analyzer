@@ -52,22 +52,29 @@ object FeatureMonitor {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 9) {
+    if (args.length != 12) {
       System.err.println(
         """
           |you have to input 8 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
-    val Array(one_hot_feature, count_one_hot, count_multi_hot, model_name, sample_path, update_type, curday, hour, pt) = args
+    val Array(one_hot_feature, count_one_hot, count_multi_hot, model_name, sample_path, update_type, curday, hour, pt, onehot_count_threshold, onehot_idcount_threshold, multihot_count_threshold) = args
     val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     cal.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val threshold1 = onehot_count_threshold.split(",")
+    val threshold2 = onehot_idcount_threshold.split(",")
+    val threshold3 = multihot_count_threshold.split(",")
 
     val name_list_one_hot = one_hot_feature.split(",")
     if (count_one_hot.toInt != name_list_one_hot.length) {
+      println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
+      System.exit(1)
+    }
+    if (count_one_hot.toInt != threshold1.length || count_one_hot.toInt != threshold2.length+1 || count_multi_hot.toInt != threshold3.length) {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
@@ -131,12 +138,12 @@ object FeatureMonitor {
       val one_hot_feature_id_num_cur = one_hot_feature_id_num.split(",")
       val multi_hot_feature_count_cur = multi_hot_feature_count.split(",")
       for(i <- 0 until one_hot_feature_count_his.length){
-        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>1.3 || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>1.3){
+        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i).toFloat){
           exception_feature = exception_feature :+ name_list_one_hot(i)
         }
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
-        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
+        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i).toFloat || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i).toFloat){
           if(i == count_one_hot.toInt){
             exception_feature = exception_feature :+ "sample_count"
           } else {
@@ -145,7 +152,7 @@ object FeatureMonitor {
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
-        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
+        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i).toFloat || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i).toFloat){
           exception_feature = exception_feature :+ "multihot_" + i.toString
         }
       }
@@ -169,12 +176,12 @@ object FeatureMonitor {
       val one_hot_feature_id_num_cur = one_hot_feature_id_num.split(",")
       val multi_hot_feature_count_cur = multi_hot_feature_count.split(",")
       for(i <- 0 until one_hot_feature_count_his.length){
-        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>1.3 || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>1.3){
+        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i).toFloat){
           exception_feature = exception_feature :+ name_list_one_hot(i)
         }
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
-        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
+        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i).toFloat || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i).toFloat){
           if(i == count_one_hot.toInt){
             exception_feature = exception_feature :+ "sample_count"
           } else {
@@ -183,7 +190,7 @@ object FeatureMonitor {
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
-        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
+        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i).toFloat || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i).toFloat){
           exception_feature = exception_feature :+ "multihot_" + i.toString
         }
       }
