@@ -39,14 +39,13 @@ object OcpcCalculateHourlyCali_weightv1{
     // data join
     val data = currentPcoc
       .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
 
     val resultDF = data
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .withColumn("exp_tag", col("exp_tag"))
+      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
 
 
     resultDF
@@ -209,11 +208,11 @@ object OcpcCalculateHourlyCali_weightv1{
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("current_pcoc", col("pcoc"))
-      .filter(s"cv >= 40")
+      .withColumn("current_cv", col("cv"))
     result.show(10)
 
     val resultDF = result
-      .select("unitid", "conversion_goal", "exp_tag", "current_pcoc")
+      .select("unitid", "conversion_goal", "exp_tag", "current_pcoc", "current_cv")
 
     resultDF
 

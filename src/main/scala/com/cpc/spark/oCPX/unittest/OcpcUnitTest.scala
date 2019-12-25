@@ -36,13 +36,13 @@ object OcpcUnitTest {
     // data join
     val data = currentPcoc
       .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
+      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
 
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "date", "hour", "version", "exp_tag")
+      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
 
     resultDF
       .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224c")
