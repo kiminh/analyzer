@@ -50,8 +50,8 @@ object OcpcCalculateHourlyCali_by_user {
 
     resultDF
         .repartition(1)
-        .write.mode("overwrite").insertInto("test.ocpc_pcoc_pred_diff_by_userid_hourly")
-//        .write.mode("overwrite").insertInto("test.check_ocpc_base_data20191225")
+//        .write.mode("overwrite").insertInto("test.ocpc_pcoc_pred_diff_by_userid_hourly")
+        .write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_pred_diff_by_userid_hourly")
 
   }
 
