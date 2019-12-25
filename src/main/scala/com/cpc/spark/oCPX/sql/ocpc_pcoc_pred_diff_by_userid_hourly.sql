@@ -5,5 +5,5 @@ CREATE TABLE test.ocpc_pcoc_pred_diff_by_userid_hourly(
     current_pcoc            double,
     current_cv              bigint
 )
-partitioned by (`date` string, `hour` string, version string, exp_tag string)
+partitioned by (`date` string, `hour` string, exp_tag string)
 stored as parquet;
