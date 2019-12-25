@@ -375,7 +375,7 @@ class LRIRModel {
     val conf = ctx.sparkContext.hadoopConfiguration
     val fs = FileSystem.get(conf)
     val hdfsPath=new Path(path)
-    val out = new BufferedOutputStream(fs.create(hdfsPath, false ))
+    val out = new BufferedOutputStream(fs.create(hdfsPath, true ))
     pack.writeTo(out)
 
   }
@@ -462,7 +462,7 @@ class LRIRModel {
       val conf = ctx.sparkContext.hadoopConfiguration
       val fs = FileSystem.get(conf)
       val hdfsPath=new Path(path)
-      val out = new BufferedOutputStream(fs.create(hdfsPath, false ))
+      val out = new BufferedOutputStream(fs.create(hdfsPath, true ))
       pack.writeTo(out)
     }else{
       pack.writeTo(new FileOutputStream(path))

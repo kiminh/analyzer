@@ -97,6 +97,8 @@ object LRTrainCvrOther {
 
     s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
 
+    s"rm /home/cpc/anal/model/togo-cvr/*" !
+
 //    val userAppIdx = getUidApp(spark, cvrPathSep)
     for (key <- dictStr.keys) {
       println(key)

@@ -104,6 +104,8 @@ object LRTrain {
 
     s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
 
+    s"rm /home/cpc/anal/model/togo-cvr/*" !
+
     for (key <- dictStr.keys) {
       println(key)
     }

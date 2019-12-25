@@ -58,7 +58,9 @@ object LRTrainV4 {
 
     s"hdfs dfs -rm -r ${idPath}" !
 
-    s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
+    s"mkdir -p /home/cpc/anal/model/togo/" !
+
+    s"rm /home/cpc/anal/model/togo/*" !
 
     println("dates = " + dates)
 
