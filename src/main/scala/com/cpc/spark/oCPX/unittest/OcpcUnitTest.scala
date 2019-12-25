@@ -26,26 +26,26 @@ object OcpcUnitTest {
     // base data
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt, spark).cache()
     dataRaw.show(10)
+//
+//    // cvr_factor based on previous pcoc
+//    val previousPcoc = OcpcPrevPcoc(dataRaw, expTag, spark)
+//
+//    // current pcoc
+//    val currentPcoc = OcpcCurrentPcoc(dataRaw, expTag, spark)
+//
+//    // data join
+//    val data = currentPcoc
+//      .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
+//      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
+//
+//    val resultDF = data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "date", "hour", "version", "exp_tag")
 
-    // cvr_factor based on previous pcoc
-    val previousPcoc = OcpcPrevPcoc(dataRaw, expTag, spark)
-
-    // current pcoc
-    val currentPcoc = OcpcCurrentPcoc(dataRaw, expTag, spark)
-
-    // data join
-    val data = currentPcoc
-      .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
-
-    val resultDF = data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "date", "hour", "version", "exp_tag")
-
-    resultDF
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224c")
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224b")
 
 
   }
