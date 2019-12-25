@@ -289,7 +289,7 @@ object OcpcCalculateHourlyCali_weightv1{
     case4: 0 ~ 48: 0.05
     case5: 0 ~ 84: 0.05
 
-    pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4
+    pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.05 * pcoc4 + 0.05 * pcoc5
      */
     // case1
     val data1 = dataRaw1
@@ -331,8 +331,8 @@ object OcpcCalculateHourlyCali_weightv1{
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
-//    baseData
-//        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
+    baseData
+        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
