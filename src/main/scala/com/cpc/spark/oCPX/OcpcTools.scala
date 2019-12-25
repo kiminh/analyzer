@@ -307,8 +307,8 @@ object OcpcTools {
          |FROM
          |  dl_cpc.ocpc_quick_cv_log
          |WHERE
-         |  $selectCondition
-       """.stripMargin
+         |  `date` >= '$date1'
+    """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
 
