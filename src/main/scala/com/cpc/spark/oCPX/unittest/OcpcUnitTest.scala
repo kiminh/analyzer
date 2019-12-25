@@ -39,11 +39,10 @@ object OcpcUnitTest {
       .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
 
     val resultDF = data
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .withColumn("exp_tag", col("exp_tag"))
+      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "date", "hour", "version", "exp_tag")
 
     resultDF
       .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224c")

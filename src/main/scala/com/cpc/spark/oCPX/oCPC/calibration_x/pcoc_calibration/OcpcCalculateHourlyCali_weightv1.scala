@@ -332,7 +332,7 @@ object OcpcCalculateHourlyCali_weightv1{
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
     baseData
-        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
+        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191225a")
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
