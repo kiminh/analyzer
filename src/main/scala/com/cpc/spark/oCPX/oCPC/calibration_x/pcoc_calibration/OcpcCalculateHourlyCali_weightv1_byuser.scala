@@ -19,12 +19,12 @@ object OcpcCalculateHourlyCali_weightv1_byuser {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
+    val expTag = args(2).toString
+    val dbName = args(3).toString
     val hourInt = 89
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, expTag=$expTag")
+    println(s"date=$date, hour=$hour, expTag=$expTag, dbName=$dbName")
 
     // base data
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt, spark).cache()
@@ -44,12 +44,12 @@ object OcpcCalculateHourlyCali_weightv1_byuser {
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("userid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
+      .select("userid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "exp_tag")
 
 
     resultDF
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_base_data20191225")
+      .repartition(1)
+      .write.mode("overwrite").insertInto(s"$dbName.ocpc_pcoc_pred_diff_by_userid_hourly")
 
   }
 
@@ -317,21 +317,21 @@ object OcpcCalculateHourlyCali_weightv1_byuser {
 
 
     val baseData = data5
-        .join(data4, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data3, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data2, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data1, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
-        .withColumn("pcoc4_old", col("pcoc4"))
-        .withColumn("pcoc3_old", col("pcoc3"))
-        .withColumn("pcoc2_old", col("pcoc2"))
-        .withColumn("pcoc1_old", col("pcoc1"))
-        .withColumn("pcoc4", when(col("pcoc4").isNull, col("pcoc5")).otherwise(col("pcoc4")))
-        .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
-        .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
-        .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
+      .join(data4, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+      .join(data3, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+      .join(data2, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+      .join(data1, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+      .withColumn("pcoc4_old", col("pcoc4"))
+      .withColumn("pcoc3_old", col("pcoc3"))
+      .withColumn("pcoc2_old", col("pcoc2"))
+      .withColumn("pcoc1_old", col("pcoc1"))
+      .withColumn("pcoc4", when(col("pcoc4").isNull, col("pcoc5")).otherwise(col("pcoc4")))
+      .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
+      .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
+      .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
-    baseData
-        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191225a")
+//    baseData
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191225a")
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =
