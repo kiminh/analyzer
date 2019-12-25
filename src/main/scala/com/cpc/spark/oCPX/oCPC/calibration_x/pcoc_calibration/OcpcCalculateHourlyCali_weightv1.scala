@@ -197,15 +197,15 @@ object OcpcCalculateHourlyCali_weightv1{
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
      */
-    val dataRaw = getDataByHourDiff(dataRaw, 0, 1, spark)
-    val data = dataRaw
+    val data = getDataByHourDiff(dataRaw, 0, 1, spark)
+    val result = data
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("current_pcoc", col("pcoc"))
       .filter(s"cv >= 40")
-    data.show(10)
+    result.show(10)
 
-    val resultDF = data
+    val resultDF = result
       .select("unitid", "conversion_goal", "exp_tag", "current_pcoc")
 
     resultDF
