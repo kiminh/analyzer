@@ -9,7 +9,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcCalculateHourlyCali_weightv1 {
+object OcpcCalculateHourlyCali_weightv1_byuser {
   /*
   calculate the pcoc incrementation by hour
    */
@@ -38,14 +38,14 @@ object OcpcCalculateHourlyCali_weightv1 {
 
     // data join
     val data = currentPcoc
-      .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
+      .join(previousPcoc, Seq("userid", "conversion_goal", "exp_tag"), "inner")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
 
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
+      .select("userid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
 
 
     resultDF
@@ -57,8 +57,8 @@ object OcpcCalculateHourlyCali_weightv1 {
   def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = jfbData
-      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
+      .join(pcocData, Seq("userid", "conversion_goal", "exp_tag"), "inner")
+      .select("userid", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
       .withColumn("post_cvr", lit(0.0))
@@ -101,7 +101,7 @@ object OcpcCalculateHourlyCali_weightv1 {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media", "date", "hour", "hour_diff")
+      .groupBy("userid", "conversion_goal", "media", "date", "hour", "hour_diff")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -111,7 +111,7 @@ object OcpcCalculateHourlyCali_weightv1 {
       )
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour", "hour_diff")
+      .select("userid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp", "date", "hour", "hour_diff")
 
     data
   }
@@ -136,7 +136,7 @@ object OcpcCalculateHourlyCali_weightv1 {
     val sqlRequest =
       s"""
          |SELECT
-         |    unitid,
+         |    userid,
          |    conversion_goal,
          |    media,
          |    sum(click) as click,
@@ -149,13 +149,13 @@ object OcpcCalculateHourlyCali_weightv1 {
          |    raw_data
          |WHERE
          |    $selectCondition
-         |GROUP BY unitid, conversion_goal, media
+         |GROUP BY userid, conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
+      .select("userid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc", "acb", "acp")
 
     data
   }
@@ -168,7 +168,7 @@ object OcpcCalculateHourlyCali_weightv1 {
     val sqlRequest =
       s"""
          |SELECT
-         |    unitid,
+         |    userid,
          |    conversion_goal,
          |    media,
          |    sum(click) as click,
@@ -181,13 +181,13 @@ object OcpcCalculateHourlyCali_weightv1 {
          |    raw_data
          |WHERE
          |    $selectCondition
-         |GROUP BY unitid, conversion_goal, media
+         |GROUP BY userid, conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc")
+      .select("userid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc")
 
     data
   }
@@ -212,7 +212,7 @@ object OcpcCalculateHourlyCali_weightv1 {
     result.show(10)
 
     val resultDF = result
-      .select("unitid", "conversion_goal", "exp_tag", "current_pcoc", "current_cv")
+      .select("userid", "conversion_goal", "exp_tag", "current_pcoc", "current_cv")
 
     resultDF
 
@@ -273,7 +273,7 @@ object OcpcCalculateHourlyCali_weightv1 {
     val calibration = calculateCalibrationValuePCOC(data1, data2, data3, data4, data5, spark)
 
     val resultDF = calibration
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc")
 
     resultDF
 
@@ -293,34 +293,34 @@ object OcpcCalculateHourlyCali_weightv1 {
     // case1
     val data1 = dataRaw1
       .withColumn("pcoc1", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc1")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc1")
 
     // case2
     val data2 = dataRaw2
       .withColumn("pcoc2", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc2")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc2")
 
     // case3
     val data3 = dataRaw3
       .withColumn("pcoc3", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc3")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc3")
 
     // case4
     val data4 = dataRaw4
       .withColumn("pcoc4", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc4")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc4")
 
     // case5
     val data5 = dataRaw5
       .withColumn("pcoc5", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc5")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc5")
 
 
     val baseData = data5
-        .join(data4, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data3, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-        .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data4, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data3, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data2, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
+        .join(data1, Seq("userid", "conversion_goal", "exp_tag"), "left_outer")
         .withColumn("pcoc4_old", col("pcoc4"))
         .withColumn("pcoc3_old", col("pcoc3"))
         .withColumn("pcoc2_old", col("pcoc2"))
@@ -337,7 +337,7 @@ object OcpcCalculateHourlyCali_weightv1 {
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid,
+         |  userid,
          |  conversion_goal,
          |  exp_tag,
          |  pcoc1,

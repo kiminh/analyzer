@@ -1,6 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_calibration.OcpcCalculateHourlyCali_weightv1.{OcpcCalibrationBase, OcpcCurrentPcoc, OcpcPrevPcoc}
+import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_calibration.OcpcCalculateHourlyCali_weightv1_byuser.{OcpcCalibrationBase, OcpcCurrentPcoc, OcpcPrevPcoc}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -23,6 +23,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
+
     // base data
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt, spark).cache()
     dataRaw.show(10)
@@ -35,17 +36,17 @@ object OcpcUnitTest {
 
     // data join
     val data = currentPcoc
-      .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
+      .join(previousPcoc, Seq("userid", "conversion_goal", "exp_tag"), "inner")
+      .select("userid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc", "current_cv")
 
     val resultDF = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      .select("unitid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
+      .select("userid", "conversion_goal", "pcoc", "current_pcoc", "current_cv", "date", "hour", "version", "exp_tag")
 
     resultDF
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224c")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_unit_test20191224d")
 
 
   }
