@@ -234,35 +234,35 @@ object OcpcCalculateHourlyCali_weightv1{
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
      */
-    val dataRaw1 = getDataByHourDiff(dataRaw, 1, 7, spark)
+    val dataRaw1 = getDataByHourDiff(dataRaw, 5, 11, spark)
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data1.show(10)
 
-    val dataRaw2 = getDataByHourDiff(dataRaw, 1, 13, spark)
+    val dataRaw2 = getDataByHourDiff(dataRaw, 5, 17, spark)
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data2.show(10)
 
-    val dataRaw3 = getDataByHourDiff(dataRaw, 1, 25, spark)
+    val dataRaw3 = getDataByHourDiff(dataRaw, 5, 29, spark)
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data3.show(10)
 
-    val dataRaw4 = getDataByHourDiff(dataRaw, 1, 49, spark)
+    val dataRaw4 = getDataByHourDiff(dataRaw, 5, 53, spark)
     val data4 = dataRaw4
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data4.show(10)
 
-    val dataRaw5 = getDataByHourDiff(dataRaw, 1, 85, spark)
+    val dataRaw5 = getDataByHourDiff(dataRaw, 5, 89, spark)
     val data5 = dataRaw5
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
