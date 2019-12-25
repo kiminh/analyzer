@@ -26,7 +26,7 @@ object OcpcCalculateHourlyCali_weightv1{
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, expTag=$expTag")
 
-    // 基础数据
+    // base data
     val dataRaw = OcpcCalibrationBase(date, hour, hourInt, spark).cache()
     dataRaw.show(10)
 
@@ -41,7 +41,16 @@ object OcpcCalculateHourlyCali_weightv1{
       .join(previousPcoc, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
       .select("unitid", "conversion_goal", "exp_tag", "pcoc", "current_pcoc")
 
+    val resultDF = data
+      .select("unitid", "conversion_goal", "pcoc", "current_pcoc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", col("exp_tag"))
 
+
+    resultDF
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_base_data20191225")
 
   }
 
@@ -65,9 +74,7 @@ object OcpcCalculateHourlyCali_weightv1{
    */
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
-    动态计算alpha平滑系数
-    1. 基于原始pcoc，计算预测cvr的量纲系数
-    2. 二分搜索查找到合适的平滑系数
+
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
