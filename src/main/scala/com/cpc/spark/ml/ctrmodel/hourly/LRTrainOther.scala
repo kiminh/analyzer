@@ -366,6 +366,7 @@ object LRTrainOther {
     model.saveIrHdfs("hdfs://emr-cluster/user/cpc/lrmodel/miread_irmodeldata/%s".format(date))
 
     val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
+    println("hdfslrfilepath = " + hdfslrfilepath)
     model.savePbPackNew(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, dictLength.toMap, true, true)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
