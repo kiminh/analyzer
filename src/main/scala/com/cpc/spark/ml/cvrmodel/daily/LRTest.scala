@@ -49,7 +49,7 @@ object LRTest {
     print("\nweights ideaid = "+ model.getLRmodel().weights.apply(24231))
 
 
-    println("modelPath = " + modelPath)
+    println("\nmodelPath = " + modelPath)
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-04-18-50")
 //    model.loadLRmodel("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50")
 
