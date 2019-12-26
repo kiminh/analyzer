@@ -90,6 +90,8 @@ object LRTest {
 //    val size=1+24+9+100+10+20+10+cityid+1+mediaid+1+slotid+1+10+100+100+adclass+1+16+10+planid+1+unitid+1+ideaid+1+1001
 //    println("size = " + size)
 
+    println("weights = " + model.getLRmodel().weights.toArray)
+
     val vectorToPredict : Vector = Vectors.sparse(model.getLRmodel().weights.size, els)
 
     println("-- prediction result: %s --"
