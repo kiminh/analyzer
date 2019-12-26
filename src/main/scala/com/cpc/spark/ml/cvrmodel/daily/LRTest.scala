@@ -57,7 +57,7 @@ object LRTest {
     var els = Seq[(Int, Double)]()
 
     els = els :+ (0, 1d)  //bias
-    els = els :+ (18, 1d) // hour
+    els = els :+ (20, 1d) // hour
     els = els :+ (26, 1d) // sex
     els = els :+ (35, 1d) // age
     els = els :+ (135, 1d) // os
@@ -66,15 +66,15 @@ object LRTest {
     els = els :+ (174, 1d) // cityid
     els = els :+ (542, 1d) // mediaid
     els = els :+ (563, 1d) // slotid
-    els = els :+ (1023, 1d) // phone_level
-    els = els :+ (1033, 1d) // pagenum
-    els = els :+ (1133, 1d) // bookid
-    els = els :+ (1233, 1d) // adclass
-    els = els :+ (1319, 1d) // adtype
-    els = els :+ (1333, 1d) // adslot_type
-    els = els :+ (1342, 1d) // planid
-    els = els :+ (12193, 1d) // unitid
-    els = els :+ (24231, 1d) // ideaid
+    els = els :+ (1445, 1d) // phone_level
+    els = els :+ (1455, 1d) // pagenum
+    els = els :+ (1555, 1d) // bookid
+    els = els :+ (1655, 1d) // adclass
+    els = els :+ (1745, 1d) // adtype
+    els = els :+ (1759, 1d) // adslot_type
+    els = els :+ (1768, 1d) // planid
+    els = els :+ (15382, 1d) // unitid
+    els = els :+ (30735, 1d) // ideaid
 
 
 //    // hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/qtt-bs-cvrparser4-daily_2019-09-09-18-50
