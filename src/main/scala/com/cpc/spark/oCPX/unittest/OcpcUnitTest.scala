@@ -28,7 +28,15 @@ object OcpcUnitTest {
     // base data
     val dataRaw = OcpcCalibrationBase(date, hour, 72, spark)
 
-    val data = calculateDeepCvr(date, 3, spark)
+    // calculate post_cvr1, pre_cvr2
+    val data1 = calculateDataCvr(dataRaw, 80, spark)
+
+    // calculate deep_cvr
+    val data2 = calculateDeepCvr(date, 3, spark)
+
+    // data join
+    val data = data1
+      .join(data2, Seq("unitid", "media"), "inner")
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901226b")

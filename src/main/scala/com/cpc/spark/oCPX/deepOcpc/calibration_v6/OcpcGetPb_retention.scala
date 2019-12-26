@@ -49,6 +49,8 @@ object OcpcGetPb_retention {
     val data1 = calculateDataCvr(dataRaw, 80, spark)
     val data2 = calculateDeepCvr(date, 3, spark)
 
+    val data =
+
 
   }
 
@@ -62,11 +64,15 @@ object OcpcGetPb_retention {
     post_cvr1, pre_cvr2: calculate by sliding time window
      */
 
-    // calculate deep_cvr
-    val deepCvr = calculateDeepCvr(date, 3, spark)
+    // calculate post_cvr1, pre_cvr2
+    val data1 = calculateDataCvr(dataRaw, 80, spark)
 
-    // calculate post_cvr1, pre_cvr2 in sliding time window
-    val data = calculateDataCvr(dataRaw, 80, spark)
+    // calculate deep_cvr
+    val data2 = calculateDeepCvr(date, 3, spark)
+
+    // data join
+    val data = data1
+      .join(data2, Seq("unitid", "media"), "inner")
 
 
   }
