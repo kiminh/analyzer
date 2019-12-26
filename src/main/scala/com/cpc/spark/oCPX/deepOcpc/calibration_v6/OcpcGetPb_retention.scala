@@ -47,7 +47,7 @@ object OcpcGetPb_retention {
     cvr factor calculation
      */
     val data1 = calculateDataCvr(dataRaw, 80, spark)
-
+    val data2 = calculateDeepCvr(date, 3, spark)
 
 
   }
