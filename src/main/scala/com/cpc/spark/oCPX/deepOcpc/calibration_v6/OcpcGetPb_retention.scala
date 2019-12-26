@@ -49,12 +49,61 @@ object OcpcGetPb_retention {
      */
     val cvrData = calculateCvrFactor(dataRaw, date, hour, spark)
 
+    val resultData = assemblyData(jfbData, cvrData, spark)
+
+    val result = resultData
+      .withColumn("cpagiven", lit(1.0))
+      .withColumn("is_hidden", lit(0))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+    val resultDF = result
+      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+
+
+    resultDF
+      .withColumn("deep_conversion_goal", lit(2))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+
 
   }
 
+  def assemblyData(jfbData: DataFrame, cvrData: DataFrame, spark: SparkSession) = {
+    // 组装数据
+    // set some default value
+    // post_cvr: 0.0
+    // smooth_factor: 0.3
+    // high_bid_factor: 1.0
+    // low_bid_factor: 1.0
+    val data = jfbData
+      .join(cvrData, Seq("unitid", "conversion_goal", "media"), "inner")
+      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "jfb_factor", "cvr_factor")
+      .withColumn("post_cvr", lit(0.0))
+      .withColumn("smooth_factor", lit(0.3))
+      .withColumn("high_bid_factor", lit(1.0))
+      .withColumn("low_bid_factor", lit(1.0))
+      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+      .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
+      .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+
+    data
+  }
+
+
   // calculate jfb factor
   def calcualteJfbFactor(dataRaw: DataFrame, spark: SparkSession) = {
+    val data = getDataByHourDiff(dataRaw, 0, 48, spark)
 
+    val result = data
+      .withColumn("jfb_factor", col("acb") * 1.0 / col("acp"))
+
+    val resultDF = result.select("unitid", "conversion_goal", "media", "jfb_factor")
+
+    resultDF
   }
 
   // calculate cvr factor
@@ -195,7 +244,7 @@ object OcpcGetPb_retention {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "post_cvr1")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "post_cvr1", "acb", "acp")
 
     data
   }
