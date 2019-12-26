@@ -88,7 +88,7 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor_old", col("smooth_factor"))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
       .withColumn("cali_value_old", col("cali_value"))
-      .withColumn("cali_value", udfCalculateCaliValue(date, hour)(col("identifier"), col("cali_value")))
+      .withColumn("cali_value", udfCalculateCaliValue(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
       .cache()
 
     data
@@ -99,13 +99,13 @@ object OcpcSampleToPbFinal {
   }
 
 
-  def udfCalculateCaliValue(date: String, hour: String) = udf((identifier: String, caliValue: Double) => {
+  def udfCalculateCaliValue(date: String, hour: String) = udf((identifier: String, expTag: String, caliValue: Double) => {
     var result = caliValue
     val discountUnitMap = Map("2593206" ->	0.250031331, "2566057" -> 0.516086391, "2565794" -> 0.265733378, "2593089" -> 0.377641349, "2593024" -> 0.374991778)
 
     var tmpCali = discountUnitMap.getOrElse(identifier, 0.0)
 
-    if (tmpCali > 0.0 && date == "2019-12-26") {
+    if (tmpCali > 0.0 && date == "2019-12-26" && expTag == "v4Qtt") {
       result = tmpCali
     }
     result
