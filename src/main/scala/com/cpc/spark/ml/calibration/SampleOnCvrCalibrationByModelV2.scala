@@ -22,6 +22,7 @@ object SampleOnCvrCalibrationByModelV2 {
     val calimodel = args(4)
     val media = args(5)
     val task = args(6)
+    val sample_date = args(7)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
@@ -33,6 +34,7 @@ object SampleOnCvrCalibrationByModelV2 {
     println(s"hourRange=$hourRange")
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
+    println(s"sample_date=$sample_date")
     val selectCondition1 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql(startDate, startHour, endDate, endHour)
     var mediaCondition = "media_appsid in ('80000001','80000002','80000006','80000064','80000066')"
@@ -60,6 +62,7 @@ object SampleOnCvrCalibrationByModelV2 {
          |  when user_show_ad_num in (3,4) then '4'
          |  when user_show_ad_num in (5,6,7) then '7'
          |  else '8' end as user_show_ad_num,
+         |  a.cvr_model_name,
          |a.conversion_goal
          |from
          |  (select * from
@@ -77,7 +80,7 @@ object SampleOnCvrCalibrationByModelV2 {
 
     val data = spark.sql(sql)
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$startDate/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
       .toDF("id","prediction","num")
 
     dnn_data.show(10)
