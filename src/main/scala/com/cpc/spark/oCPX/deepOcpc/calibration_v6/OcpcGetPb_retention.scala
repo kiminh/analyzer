@@ -93,7 +93,7 @@ object OcpcGetPb_retention {
          |  userid,
          |  isshow,
          |  isclick,
-         |  deep_cvr,
+         |  deep_cvr * 1.0 / 1000000 as deep_cvr,
          |  bid_discounted_by_ad_slot as bid,
          |  price,
          |  media_appsid,
