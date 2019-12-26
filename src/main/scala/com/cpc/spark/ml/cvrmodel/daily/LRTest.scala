@@ -25,11 +25,11 @@ object LRTest {
       .initSpark("[cpc-model] lr-model test")
 
 
-    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/duanzi_lrmodeldata/2019-12-26-04-24"
+    val modelPath="hdfs://emr-cluster/user/cpc/lrmodel/miread_lrmodeldata/2019-12-26-04-15"
     // model
     model.loadLRmodel(modelPath)
     print("\nweights bias = "+ model.getLRmodel().weights.apply(0))
-    print("\nweights hour = "+ model.getLRmodel().weights.apply(15))
+    print("\nweights hour = "+ model.getLRmodel().weights.apply(18))
     print("\nweights sex = "+ model.getLRmodel().weights.apply(26))
     print("\nweights age = "+ model.getLRmodel().weights.apply(35))
     print("\nweights os = "+ model.getLRmodel().weights.apply(135))
@@ -57,7 +57,7 @@ object LRTest {
     var els = Seq[(Int, Double)]()
 
     els = els :+ (0, 1d)  //bias
-    els = els :+ (15, 1d) // hour
+    els = els :+ (18, 1d) // hour
     els = els :+ (26, 1d) // sex
     els = els :+ (35, 1d) // age
     els = els :+ (135, 1d) // os
