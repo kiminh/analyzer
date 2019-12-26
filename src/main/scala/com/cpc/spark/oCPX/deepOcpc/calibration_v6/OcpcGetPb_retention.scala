@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.typesafe.config.ConfigFactory
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import org.apache.log4j.{Level, Logger}
@@ -63,7 +64,74 @@ object OcpcGetPb_retention {
   }
 
   def calculateDeepCvr(date: String, dayInt: Int, spark: SparkSession) = {
-    
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val date1String = calendar.getTime
+    val date1 = dateConverter.format(date1String)
+    calendar.add(Calendar.DATE, -1)
+    val date2String = calendar.getTime
+    val date2 = dateConverter.format(date2String)
+    calendar.add(Calendar.DATE, -dayInt)
+    val date3String = calendar.getTime
+    val date3 = dateConverter.format(date3String)
+
+    // 激活数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  conversion_goal,
+         |  media_appsid,
+         |  1 as iscvr1
+         |FROM
+         |  dl_cpc.cpc_conversion
+         |WHERE
+         |  day between '$date3' and '$date2'
+         |AND
+         |  array_contains(conversion_target, 'api_app_active')
+         |""".stripMargin
+    println(sqlRequest1)
+    val data1Raw = spark
+      .sql(sqlRequest1)
+      .distinct()
+
+    val data1 = mapMediaName(data1Raw, spark)
+
+    // 次留数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as iscvr2
+         |FROM
+         |  dl_cpc.cpc_conversion
+         |WHERE
+         |  day >= '$date3'
+         |AND
+         |  array_contains(conversion_target, 'api_app_retention')
+         |""".stripMargin
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .distinct()
+
+    val data = data1
+      .join(data2, Seq("searchid"), "left_outer")
+      .groupBy("unitid", "media")
+      .agg(
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2")
+      )
+      .select("unitid", "media", "cv1", "cv2")
+      .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
+
+    data
   }
 
 
