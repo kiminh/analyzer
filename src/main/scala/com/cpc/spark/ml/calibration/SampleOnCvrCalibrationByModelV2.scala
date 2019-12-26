@@ -98,6 +98,7 @@ object SampleOnCvrCalibrationByModelV2 {
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","hour","siteid","conversion_goal")
       result.show(10)
+    println("sample num: %d",result.count())
     val avgs = result.rdd.map(f => {
       f.mkString("\001")
     })
