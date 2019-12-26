@@ -79,6 +79,14 @@ object OcpcGetPb_retention {
       .join(data2, Seq("unitid", "media"), "inner")
 
 
+    // calculate data
+    val result = data
+      .withColumn("cvr_factor", col("post_cvr1") * col("deep_cvr") * 1.0 / col("pre_cvr2"))
+
+    val resultDF = result
+      .select("unitid", "conversion_goal", "media", "cvr_factor")
+
+    resultDF
   }
 
   // base data
