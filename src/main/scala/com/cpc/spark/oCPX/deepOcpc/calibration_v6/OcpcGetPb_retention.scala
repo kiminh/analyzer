@@ -51,7 +51,7 @@ object OcpcGetPb_retention {
 
   }
 
-  def calculateCvrFactor(date: String, hour: String, spark: SparkSession) = {
+  def calculateCvrFactor(dataRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     method to calculate cvr_factor: predict the retention cv
 
@@ -65,7 +65,7 @@ object OcpcGetPb_retention {
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
     // calculate post_cvr1, pre_cvr2 in sliding time window
-    val data = calculateDataCvr(80, spark)
+    val data = calculateDataCvr(dataRaw, 80, spark)
 
 
   }
