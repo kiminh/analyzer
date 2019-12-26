@@ -80,6 +80,8 @@ object OcpcGetPb_retention {
     val data = jfbData
       .join(cvrData, Seq("unitid", "conversion_goal", "media"), "inner")
       .selectExpr("cast(unitid as string) identifier", "conversion_goal", "media", "jfb_factor", "cvr_factor")
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("post_cvr", lit(0.0))
       .withColumn("smooth_factor", lit(0.3))
       .withColumn("high_bid_factor", lit(1.0))
@@ -87,8 +89,7 @@ object OcpcGetPb_retention {
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
+
 
     data
   }
