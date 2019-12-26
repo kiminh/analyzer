@@ -394,6 +394,7 @@ object OcpcGetPb_retention {
         sum(col("iscvr2")).alias("cv2")
       )
       .select("unitid", "media", "cv1", "cv2")
+      .filter(s"cv2 >= 10")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
     val resultDF = data.select("unitid", "media", "deep_cvr")
