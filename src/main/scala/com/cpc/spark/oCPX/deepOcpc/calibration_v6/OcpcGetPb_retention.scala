@@ -42,6 +42,7 @@ object OcpcGetPb_retention {
     /*
     jfb_factor calculation
      */
+    val jfbData = calcualteJfbFactor(dataRaw, spark)
 
     /*
     cvr factor calculation
@@ -51,6 +52,12 @@ object OcpcGetPb_retention {
 
   }
 
+  // calculate jfb factor
+  def calcualteJfbFactor(dataRaw: DataFrame, spark: SparkSession) = {
+
+  }
+
+  // calculate cvr factor
   def calculateCvrFactor(dataRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     method to calculate cvr_factor: predict the retention cv
@@ -254,9 +261,13 @@ object OcpcGetPb_retention {
          |  data
          |""".stripMargin
     println(sqlRequest)
-    val result = spark.sql(sqlRequest)
+    val result = spark
+      .sql(sqlRequest)
+      .filter(s"seq = 1")
 
-    result
+    val resultDF = result.select("unitid", "conversion_goal", "media", "pre_cvr2", "post_cvr1")
+
+    resultDF
   }
 
   def calculateDeepCvr(date: String, dayInt: Int, spark: SparkSession) = {
@@ -327,7 +338,9 @@ object OcpcGetPb_retention {
       .select("unitid", "media", "cv1", "cv2")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
-    data
+    val resultDF = data.select("unitid", "media", "deep_cvr")
+
+    resultDF
   }
 
 
