@@ -61,8 +61,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -87,14 +87,29 @@ object OcpcSampleToPbFinal {
       .sql(sqlRequest)
       .withColumn("smooth_factor_old", col("smooth_factor"))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCalculateCaliValue(date, hour)(col("identifier"), col("cali_value")))
       .cache()
 
-//    data
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
+    data
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
     data.show(10)
     data
 
   }
+
+
+  def udfCalculateCaliValue(date: String, hour: String) = udf((identifier: String, caliValue: Double) => {
+    var result = caliValue
+    val discountUnitMap = Map("2593206" ->	0.250031331, "2566057" -> 0.516086391, "2565794" -> 0.265733378, "2593089" -> 0.377641349, "2593024" -> 0.374991778)
+
+    var tmpCali = discountUnitMap.getOrElse(identifier, 0.0)
+
+    if (tmpCali > 0.0 && date == "2019-12-26") {
+      result = tmpCali
+    }
+    result
+  })
 
   def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
