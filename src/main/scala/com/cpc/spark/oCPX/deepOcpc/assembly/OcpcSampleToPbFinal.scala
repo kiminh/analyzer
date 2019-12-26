@@ -91,8 +91,8 @@ object OcpcSampleToPbFinal {
       .withColumn("cali_value", udfCalculateCaliValue(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
       .cache()
 
-    data
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
+//    data
+//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
     data.show(10)
     data
 
