@@ -223,15 +223,7 @@ object OcpcCalculateHourlyCali_weightv1_byuser {
    */
   def OcpcPrevPcoc(dataRaw: DataFrame, expTag: String, spark: SparkSession) = {
     /*
-    calculate the calibration value based on weighted calibration:
-    case1: 0 ~ 5: 0.4
-    case2: 0 ~ 12: 0.3
-    case3: 0 ~ 24: 0.2
-    case4: 0 ~ 48: 0.05
-    case5: 0 ~ 84: 0.05
-
-    use 80 as cv threshold
-    if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
+    get the previous pcoc(cvr_factor) from the data
      */
     val dataRaw1 = getDataByHourDiff(dataRaw, 5, 11, spark)
     val data1 = dataRaw1
