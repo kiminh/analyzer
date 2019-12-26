@@ -30,8 +30,6 @@ object OcpcGetPb_retention {
     val version = args(2).toString
     val expTag = args(3).toString
     val hourInt = args(4).toInt
-    val minCV1 = args(5).toInt
-    val minCV2 = args(6).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
@@ -49,7 +47,7 @@ object OcpcGetPb_retention {
      */
     val cvrData = calculateCvrFactor(dataRaw, date, hour, spark)
 
-    val resultData = assemblyData(jfbData, cvrData, spark)
+    val resultData = assemblyData(jfbData, cvrData, expTag, spark)
 
     val result = resultData
       .withColumn("cpagiven", lit(1.0))
@@ -72,7 +70,7 @@ object OcpcGetPb_retention {
 
   }
 
-  def assemblyData(jfbData: DataFrame, cvrData: DataFrame, spark: SparkSession) = {
+  def assemblyData(jfbData: DataFrame, cvrData: DataFrame, expTag: String, spark: SparkSession) = {
     // 组装数据
     // set some default value
     // post_cvr: 0.0
@@ -89,6 +87,8 @@ object OcpcGetPb_retention {
       .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
+      .withColumn("media", udfMediaName()(col("media")))
+      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
 
     data
   }
