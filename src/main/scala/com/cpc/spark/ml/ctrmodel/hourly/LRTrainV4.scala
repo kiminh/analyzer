@@ -364,7 +364,8 @@ object LRTrainV4 {
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
 
     val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
-    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
+    println("hdfslrfilepath = " + hdfslrfilepath)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, true)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)

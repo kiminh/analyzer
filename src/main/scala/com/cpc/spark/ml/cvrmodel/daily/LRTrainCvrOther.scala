@@ -483,13 +483,13 @@ object LRTrainCvrOther {
 
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
     model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
+    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, true)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, true)
 
     val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
-    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, false)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, true)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
