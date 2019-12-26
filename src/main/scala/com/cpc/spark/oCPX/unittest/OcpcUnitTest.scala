@@ -38,8 +38,11 @@ object OcpcUnitTest {
     val data = data1
       .join(data2, Seq("unitid", "media"), "inner")
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901226b")
+    val result = data
+      .withColumn("cvr_factor", col("post_cvr1") * col("deep_cvr") * 1.0 / col("pre_cvr2"))
+
+    result
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901226c")
 
 
   }
