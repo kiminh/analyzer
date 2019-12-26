@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv1.udfCalculateHourDiff
 import com.typesafe.config.ConfigFactory
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
@@ -35,6 +36,9 @@ object OcpcGetPb_retention {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
+    // base data
+    val dataRaw = OcpcCalibrationBase(date, hour, 72, spark)
+
     /*
     jfb_factor calculation
      */
@@ -60,7 +64,193 @@ object OcpcGetPb_retention {
     // calculate deep_cvr
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
+    // calculate post_cvr1, pre_cvr2 in sliding time window
+    val data = calculateDataCvr(80, spark)
 
+
+  }
+
+  // base data
+  def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  userid,
+         |  isshow,
+         |  isclick,
+         |  deep_cvr,
+         |  bid_discounted_by_ad_slot as bid,
+         |  price,
+         |  media_appsid,
+         |  conversion_goal,
+         |  conversion_from,
+         |  hidden_tax,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_base_unionlog
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  is_deep_ocpc = 1
+         |AND
+         |  isclick = 1
+         |AND
+         |  deep_conversion_goal = 2
+       """.stripMargin
+    println(sqlRequest)
+    val clickDataRaw = spark.sql(sqlRequest)
+
+    // 清除米读异常数据
+    val clickData = mapMediaName(clickDataRaw, spark)
+
+    // 抽取cv数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  conversion_goal,
+         |  conversion_from,
+         |  1 as iscvr
+         |FROM
+         |  dl_cpc.ocpc_cvr_log_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
+
+
+    // 数据关联
+    val baseData = clickData
+      .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+      .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
+      .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+
+    // 计算结果
+    val resultDF = calculateParameter(baseData, spark)
+
+    resultDF
+  }
+
+  def getDataByHourDiff(dataRaw: DataFrame, leftHourBound: Int, rightHourBound: Int, spark: SparkSession) = {
+    dataRaw
+      .createOrReplaceTempView("raw_data")
+
+    val selectCondition = s"hour_diff >= $leftHourBound and hour_diff < $rightHourBound"
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    conversion_goal,
+         |    media,
+         |    sum(click) as click,
+         |    sum(cv1) as cv1,
+         |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
+         |    sum(cv1) * 1.0 / sum(click) as post_cvr1,
+         |    sum(acb * click) * 1.0 / sum(click) as acb,
+         |    sum(acp * click) * 1.0 / sum(click) as acp
+         |FROM
+         |    raw_data
+         |WHERE
+         |    $selectCondition
+         |GROUP BY unitid, conversion_goal, media
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "post_cvr1")
+
+    data
+  }
+
+  def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
+    val data  =rawData
+      .filter(s"isclick=1")
+      .groupBy("unitid", "conversion_goal", "media", "date", "hour", "hour_diff")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cv1"),
+        avg(col("bid")).alias("acb"),
+        avg(col("price")).alias("acp"),
+        avg(col("deep_cvr")).alias("pre_cvr2")
+      )
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
+
+    data
+  }
+
+
+  // calculate post_cvr1, pre_cvr2 in sliding time window
+  def calculateDataCvr(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
+    val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
+    val data1 = dataRaw1
+      .filter(s"cv >= 80")
+      .withColumn("priority", lit(1))
+    data1.show(10)
+
+    val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
+    val data2 = dataRaw2
+      .filter(s"cv >= 80")
+      .withColumn("priority", lit(2))
+    data2.show(10)
+
+    val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
+    val data3 = dataRaw3
+      .filter(s"cv >= 80")
+      .withColumn("priority", lit(3))
+    data3.show(10)
+
+    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
+    val data4 = dataRaw4
+      .filter(s"cv >= 80")
+      .withColumn("priority", lit(4))
+    data4.show(10)
+
+    val dataRaw5 = getDataByHourDiff(dataRaw, 0, 72, spark)
+    val data5 = dataRaw5.withColumn("priority", lit(5))
+    data5.show(10)
+
+    val data = data1.union(data2).union(data3).union(data4).union(data5)
+
+    data.createOrReplaceTempView("data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  click,
+         |  cv1,
+         |  pre_cvr2,
+         |  post_cvr1,
+         |  priority,
+         |  row_number() over(partition by unitid, conversion_goal, media order by priority) as seq
+         |FROM
+         |  data
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+
+    result
   }
 
   def calculateDeepCvr(date: String, dayInt: Int, spark: SparkSession) = {
