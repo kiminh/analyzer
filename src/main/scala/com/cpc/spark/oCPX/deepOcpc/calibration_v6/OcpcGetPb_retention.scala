@@ -203,30 +203,32 @@ object OcpcGetPb_retention {
   def calculateDataCvr(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
     val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
-      .filter(s"cv >= 80")
+      .filter(s"cv1 >= 80")
       .withColumn("priority", lit(1))
     data1.show(10)
 
     val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
     val data2 = dataRaw2
-      .filter(s"cv >= 80")
+      .filter(s"cv1 >= 80")
       .withColumn("priority", lit(2))
     data2.show(10)
 
     val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
     val data3 = dataRaw3
-      .filter(s"cv >= 80")
+      .filter(s"cv1 >= 80")
       .withColumn("priority", lit(3))
     data3.show(10)
 
     val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
     val data4 = dataRaw4
-      .filter(s"cv >= 80")
+      .filter(s"cv1 >= 80")
       .withColumn("priority", lit(4))
     data4.show(10)
 
     val dataRaw5 = getDataByHourDiff(dataRaw, 0, 72, spark)
-    val data5 = dataRaw5.withColumn("priority", lit(5))
+    val data5 = dataRaw5
+      .filter(s"cv1 > 0")
+      .withColumn("priority", lit(5))
     data5.show(10)
 
     val data = data1.union(data2).union(data3).union(data4).union(data5)
