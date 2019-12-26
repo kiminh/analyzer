@@ -66,7 +66,6 @@ object SampleOnCvrCalibrationByModelV2 {
          |  dl_cpc.cvr_calibration_sample_all
          |  where $selectCondition1
          |  and $mediaCondition
-         |  and cvr_model_name in ('$model','$calimodel')
          |  and is_ocpc = 1) a
          | left join
          | (select distinct searchid,conversion_goal,1 as iscvr,conversion_from
@@ -75,18 +74,10 @@ object SampleOnCvrCalibrationByModelV2 {
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal and a.conversion_from = c.conversion_from
              """.stripMargin
     println(sql)
-    val data = spark.sql(sql)
-    val defaultideaid = data.groupBy("ideaid").count()
-      .withColumn("ideaidtag",when(col("count")>=10,1).otherwise(0))
-      .filter("ideaidtag=1")
-    val defaultunitid = data.groupBy("unitid").count()
-      .withColumn("unitidtag",when(col("count")>=10,1).otherwise(0))
-      .filter("unitidtag=1")
-    val defaultuserid = data.groupBy("userid").count()
-      .withColumn("useridtag",when(col("count")>=10,1).otherwise(0))
-      .filter("useridtag=1")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$endDate/result-*")
+    val data = spark.sql(sql)
+
+    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$startDate/result-*")
       .toDF("id","prediction","num")
 
     dnn_data.show(10)
@@ -94,19 +85,15 @@ object SampleOnCvrCalibrationByModelV2 {
     println("dnn model sample is %d".format(dnn_data.count()))
     // get union log
 
-    val result = data
+    val result = data.withColumn("raw_cvr",when(col("cvr_model_name").isin(model,calimodel),col("raw_cvr")).otherwise(0))
+      .union(data.filter(s"cvr_model_name in ('$model','$calimodel'）"))
       .withColumn("id",hash64(0)(col("searchid")))
-      .join(dnn_data,Seq("id"),"left")
+      .join(dnn_data,Seq("id"),"outer")
       .withColumn("raw_cvr",when(col("prediction").isNotNull,col("prediction")).otherwise("raw_cvr"))
-      .join(defaultideaid,Seq("ideaid"),"left")
-      .join(defaultunitid,Seq("unitid"),"left")
-      .join(defaultuserid,Seq("userid"),"left")
-      .withColumn("ideaidnew",when(col("ideaidtag")===1,col("ideaid")).otherwise(9999999))
-      .withColumn("unitidnew",when(col("unitidtag")===1,col("unitid")).otherwise(9999999))
-      .withColumn("useridnew",when(col("useridtag")===1,col("userid")).otherwise(9999999))
       .filter("iscvr is not null")
+      .filter("raw_cvr > 0")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
-        "exp_cvr","day","userid","conversion_from","hour","siteid","ideaidnew","unitidnew","useridnew","conversion_goal")
+        "exp_cvr","day","userid","conversion_from","hour","siteid","conversion_goal")
       result.show(10)
     val avgs = result.rdd.map(f => {
       f.mkString("\001")
@@ -115,7 +102,7 @@ object SampleOnCvrCalibrationByModelV2 {
 
 
     printToFile(new File(s"/home/cpc/scheduled_job/hourly_calibration/calibration_sample_${model}.csv"),
-      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001ideaidnew\001unitidnew\001useridnew\001conversion_goal") {
+      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001conversion_goal") {
       p => avgs.foreach(p.println) // avgs.foreach(p.println)
     }
 
