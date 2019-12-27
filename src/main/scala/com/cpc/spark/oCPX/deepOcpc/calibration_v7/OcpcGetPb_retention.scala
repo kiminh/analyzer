@@ -283,6 +283,11 @@ object OcpcGetPb_retention {
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
       .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
+      .withColumn("cv2_t1", col("cv1") * col("deep_cvr"))
+      .withColumn("click_t1", col("click"))
+      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
+
+    result
   }
 
   def calculateDeepCvr(date: String, dayInt: Int, spark: SparkSession) = {

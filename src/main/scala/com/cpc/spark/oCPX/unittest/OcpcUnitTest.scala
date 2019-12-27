@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.deepOcpc.calibration_v7.OcpcGetPb_retention.OcpcCalibrationBase
+import com.cpc.spark.oCPX.deepOcpc.calibration_v7.OcpcGetPb_retention.{OcpcCalibrationBase, calculateCvrPart1, calculateDeepCvr}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -49,8 +49,13 @@ object OcpcUnitTest {
 //    stage1Data
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227c")
 
-    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
-    dataRaw
+    val deepCvr = calculateDeepCvr(date, 3, spark)
+
+//    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
+//
+//    val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
+
+    deepCvr
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
 
 
