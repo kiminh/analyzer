@@ -51,11 +51,11 @@ object OcpcUnitTest {
 
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
-//    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
-//
-//    val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
+    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
-    deepCvr
+    val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
+
+    data1
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
 
 
