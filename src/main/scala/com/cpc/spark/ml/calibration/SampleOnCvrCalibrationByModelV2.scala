@@ -88,7 +88,7 @@ object SampleOnCvrCalibrationByModelV2 {
     println("dnn model sample is %d".format(dnn_data.count()))
     // get union log
 
-    val result = data.withColumn("raw_cvr",when(col("cvr_model_name").isin(model,calimodel,"qtt-cvr-dnn-rawid_novel_jisu_tuid_v2"),col("raw_cvr")).otherwise(0))
+    val result = data.withColumn("raw_cvr",when(col("cvr_model_name").isin(List(model,calimodel,"qtt-cvr-dnn-rawid_novel_jisu_tuid_v2")),col("raw_cvr")).otherwise(0))
       .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"outer")
