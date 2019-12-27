@@ -4,10 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv1.udfCalculateHourDiff
 import com.typesafe.config.ConfigFactory
-//import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
-//import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -46,25 +43,25 @@ object OcpcGetPb_retention {
      */
     val cvrData = calculateCvrFactor(dataRaw, date, hour, spark)
 
-    val resultData = assemblyData(jfbData, cvrData, expTag, spark)
-
-    val result = resultData
-      .withColumn("cpagiven", lit(1.0))
-      .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-    val resultDF = result
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-
-    resultDF
-      .withColumn("deep_conversion_goal", lit(2))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+//    val resultData = assemblyData(jfbData, cvrData, expTag, spark)
+//
+//    val result = resultData
+//      .withColumn("cpagiven", lit(1.0))
+//      .withColumn("is_hidden", lit(0))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//    val resultDF = result
+//      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
+//
+//
+//    resultDF
+//      .withColumn("deep_conversion_goal", lit(2))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
 
   }
@@ -114,26 +111,25 @@ object OcpcGetPb_retention {
     calibration_value = post_cvr2 / pre_cvr2
     post_cvr2 = (cv1_t1 * deep_cvr + cv2_t2 * recall_t2 + cv2_t3 * recall_t3 + cv2_t4 * recall_t4) / (click_t1 + click_t2 + click_t3 + click_t4)
      */
+    // calculate deep_cvr
+    val deepCvr = calculateDeepCvr(date, 3, spark)
 
     // calculate post_cvr1, pre_cvr2
-    val data1 = calculateDataCvr(dataRaw, 20, spark)
+    val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
 
-    // calculate deep_cvr
-    val data2 = calculateDeepCvr(date, 3, spark)
-
-    // data join
-    val data = data1
-      .join(data2, Seq("unitid", "media"), "inner")
-
-
-    // calculate data
-    val result = data
-      .withColumn("cvr_factor", col("post_cvr1") * col("deep_cvr") * 1.0 / col("pre_cvr2"))
-
-    val resultDF = result
-      .select("unitid", "conversion_goal", "media", "cvr_factor")
-
-    resultDF
+//    // data join
+//    val data = data1
+//      .join(data2, Seq("unitid", "media"), "inner")
+//
+//
+//    // calculate data
+//    val result = data
+//      .withColumn("cvr_factor", col("post_cvr1") * col("deep_cvr") * 1.0 / col("pre_cvr2"))
+//
+//    val resultDF = result
+//      .select("unitid", "conversion_goal", "media", "cvr_factor")
+//
+//    resultDF
   }
 
   // base data
@@ -217,7 +213,6 @@ object OcpcGetPb_retention {
     println(sqlRequest3)
     val cvData2 = spark.sql(sqlRequest3).distinct()
 
-
     // 数据关联
     val baseData = clickData
       .join(cvData1, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
@@ -246,8 +241,8 @@ object OcpcGetPb_retention {
          |    media,
          |    sum(click) as click,
          |    sum(cv1) as cv1,
+         |    sum(cv1) as cv2,
          |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
-         |    sum(cv1) * 1.0 / sum(click) as post_cvr1,
          |    sum(acb * click) * 1.0 / sum(click) as acb,
          |    sum(acp * click) * 1.0 / sum(click) as acp
          |FROM
@@ -259,13 +254,13 @@ object OcpcGetPb_retention {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "post_cvr1", "acb", "acp")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp")
 
     data
   }
 
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
-    val data  =rawData
+    val data = rawData
       .filter(s"isclick=1")
       .groupBy("unitid", "conversion_goal", "deep_conversion_goal", "media", "date", "hour", "hour_diff")
       .agg(
@@ -282,65 +277,12 @@ object OcpcGetPb_retention {
   }
 
 
-  // calculate post_cvr1, pre_cvr2 in sliding time window
-  def calculateDataCvr(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
-    val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
-    val data1 = dataRaw1
-      .filter(s"cv1 >= 80")
-      .withColumn("priority", lit(1))
-    data1.show(10)
-
-    val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
-    val data2 = dataRaw2
-      .filter(s"cv1 >= 80")
-      .withColumn("priority", lit(2))
-    data2.show(10)
-
-    val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
-    val data3 = dataRaw3
-      .filter(s"cv1 >= 80")
-      .withColumn("priority", lit(3))
-    data3.show(10)
-
-    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
-    val data4 = dataRaw4
-      .filter(s"cv1 >= 80")
-      .withColumn("priority", lit(4))
-    data4.show(10)
-
-    val dataRaw5 = getDataByHourDiff(dataRaw, 0, 72, spark)
-    val data5 = dataRaw5
-      .filter(s"cv1 > 0")
-      .withColumn("priority", lit(5))
-    data5.show(10)
-
-    val data = data1.union(data2).union(data3).union(data4).union(data5)
-
-    data.createOrReplaceTempView("data")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  conversion_goal,
-         |  media,
-         |  click,
-         |  cv1,
-         |  pre_cvr2,
-         |  post_cvr1,
-         |  priority,
-         |  row_number() over(partition by unitid, conversion_goal, media order by priority) as seq
-         |FROM
-         |  data
-         |""".stripMargin
-    println(sqlRequest)
-    val result = spark
-      .sql(sqlRequest)
-      .filter(s"seq = 1")
-
-    val resultDF = result.select("unitid", "conversion_goal", "media", "pre_cvr2", "post_cvr1")
-
-    resultDF
+  // calculate post_cvr2, pre_cvr2 in sliding time window
+  def calculateCvrPart1(dataRaw: DataFrame, deepCvr: DataFrame, spark: SparkSession) = {
+    val data = getDataByHourDiff(dataRaw, 0, 24, spark)
+    val result = data
+      .join(deepCvr, Seq("unitid", "media"), "inner")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
   }
 
   def calculateDeepCvr(date: String, dayInt: Int, spark: SparkSession) = {

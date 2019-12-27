@@ -699,5 +699,15 @@ object OcpcTools {
     }
   })
 
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+
+    val nowTime = dateConverter.parse(date + " " + hour)
+    val ocpcTime = dateConverter.parse(date1 + " " + hour1)
+    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    hourDiff
+  })
 
 }
