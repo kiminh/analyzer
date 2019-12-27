@@ -285,7 +285,7 @@ object OcpcGetPb_retention {
       .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
       .withColumn("cv2_t1", col("cv1") * col("deep_cvr"))
       .withColumn("click_t1", col("click"))
-      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
+//      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
 
     result
   }
