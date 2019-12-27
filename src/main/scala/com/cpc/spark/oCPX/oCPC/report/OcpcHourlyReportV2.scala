@@ -135,7 +135,7 @@ object OcpcHourlyReportV2 {
          |    ocpc_log,
          |    deep_ocpc_log,
          |    (case when length(deep_ocpc_log) > 0 and isclick=1 then 1 else 0 end) as real_deep_flag,
-         |    (case when pure_deep_exp_cvr > 0 then pure_deep_exp_cvr * exp_cvr * 1.0 / 1000000 else deep_cvr * 1.0 / 1000000 end) as exp_cvr2,
+         |    deep_cvr * 1.0 / 1000000 as exp_cvr2,
          |    deep_cpa
          |FROM
          |    dl_cpc.ocpc_base_unionlog

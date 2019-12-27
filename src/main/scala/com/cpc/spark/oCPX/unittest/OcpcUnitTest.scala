@@ -43,6 +43,12 @@ object OcpcUnitTest {
     stage3Data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
 
+    stage2Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
+
+    stage1Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227c")
+
 
   }
 
