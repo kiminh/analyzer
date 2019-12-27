@@ -52,7 +52,9 @@ object SampleOnCvrCalibrationByModelV2 {
       .getOrCreate()
     val sql =
       s"""
-         |select a.searchid, cast(raw_cvr/1000000 as double) as raw_cvr, substring(adclass,1,6) as adclass,
+         |select a.searchid, if(cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')
+         |,cast(raw_cvr/1000000 as double),0) as raw_cvr,
+         |substring(adclass,1,6) as adclass,
          |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,a.conversion_from, hour,a.day,
          |if(c.iscvr is not null,1,0) iscvr,case when siteid = 0 then 'wailian' when siteid>=5000000 then 'chitu' when siteid>=2000000 then 'jingyu' else 'laojianzhan' end siteid,
          |case
@@ -88,7 +90,7 @@ object SampleOnCvrCalibrationByModelV2 {
     println("dnn model sample is %d".format(dnn_data.count()))
     // get union log
 
-    val result = data.withColumn("raw_cvr",when(col("cvr_model_name").isin(List(model,calimodel,"qtt-cvr-dnn-rawid_novel_jisu_tuid_v2")),col("raw_cvr")).otherwise(0))
+    val result = data
       .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"outer")
