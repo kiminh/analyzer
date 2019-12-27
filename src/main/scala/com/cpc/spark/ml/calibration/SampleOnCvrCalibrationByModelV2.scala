@@ -81,6 +81,7 @@ object SampleOnCvrCalibrationByModelV2 {
     println(sql)
 
     val data = spark.sql(sql)
+    data.show(10)
 
     val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
       .toDF("id","prediction","num")
@@ -91,7 +92,7 @@ object SampleOnCvrCalibrationByModelV2 {
     // get union log
 
     val result = data
-      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
+//      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"outer")
       .withColumn("raw_cvr",when(col("prediction").isNotNull,col("prediction")).otherwise("raw_cvr"))
