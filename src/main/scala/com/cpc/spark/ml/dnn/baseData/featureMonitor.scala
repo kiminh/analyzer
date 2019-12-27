@@ -15,6 +15,8 @@ import org.tensorflow.example.Example
 import org.tensorflow.spark.datasources.tfrecords.TensorFlowInferSchema
 import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecoder
 
+import scala.collection.mutable
+
 /**
   * 解析tfrecord到hdfs并监控特征变化
   * created time : 2019/12/05 16:38
@@ -65,16 +67,38 @@ object FeatureMonitor {
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
     cal.add(Calendar.DATE, -1)
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val threshold1 = onehot_count_threshold.split(",")
-    val threshold2 = onehot_idcount_threshold.split(",")
-    val threshold3 = multihot_count_threshold.split(",")
-
+    val threshold1 = mutable.Map[String, Float]()
+    val threshold2 = mutable.Map[String, Float]()
+    val threshold3 = mutable.Map[String, Float]()
+    if(onehot_count_threshold.split(",").length>0){
+      for(i <- onehot_count_threshold.split(",")){
+        threshold1.put(i.split(":")(0), i.split(":")(1).toFloat)
+        if (count_one_hot.toInt <= i.split(":")(0).toInt) {
+          println("out of boundary, onehot_count:%s" + i.split(":")(0))
+          System.exit(1)
+        }
+      }
+    }
+    if(onehot_idcount_threshold.split(",").length>0){
+      for(i <- onehot_idcount_threshold.split(",")){
+        threshold2.put(i.split(":")(0), i.split(":")(1).toFloat)
+        if (count_one_hot.toInt+1 <= i.split(":")(0).toInt) {
+          println("out of boundary, onehot_idcount:%s" + i.split(":")(0))
+          System.exit(1)
+        }
+      }
+    }
+    if(multihot_count_threshold.split(",").length>0){
+      for(i <- multihot_count_threshold.split(",")){
+        threshold3.put(i.split(":")(0), i.split(":")(1).toFloat)
+        if (count_multi_hot.toInt <= i.split(":")(0).toInt) {
+          println("out of boundary, count_multi_hot:%s" + i.split(":")(0))
+          System.exit(1)
+        }
+      }
+    }
     val name_list_one_hot = one_hot_feature.split(",")
     if (count_one_hot.toInt != name_list_one_hot.length) {
-      println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
-      System.exit(1)
-    }
-    if (count_one_hot.toInt != threshold1.length || count_one_hot.toInt != threshold2.length+1 || count_multi_hot.toInt != threshold3.length) {
       println("mismatched, count_one_hot:%d" + count_one_hot + ", name_list_one_hot.length:" + name_list_one_hot.length.toString)
       System.exit(1)
     }
@@ -138,22 +162,45 @@ object FeatureMonitor {
       val one_hot_feature_id_num_cur = one_hot_feature_id_num.split(",")
       val multi_hot_feature_count_cur = multi_hot_feature_count.split(",")
       for(i <- 0 until one_hot_feature_count_his.length){
-        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i).toFloat){
-          exception_feature = exception_feature :+ name_list_one_hot(i)
+        if(threshold1.contains(i.toString)){
+          if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i.toString).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i.toString)){
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
+        } else {
+          if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>1.3 || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>1.3){
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
         }
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
-        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i).toFloat || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i).toFloat){
-          if(i == count_one_hot.toInt){
-            exception_feature = exception_feature :+ "sample_count"
-          } else {
-            exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+        if(threshold2.contains(i.toString)){
+          if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i.toString) || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i.toString)){
+            if(i == count_one_hot.toInt){
+              exception_feature = exception_feature :+ "sample_count"
+            } else {
+              exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+            }
+          }
+        }
+        else {
+          if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
+            if(i == count_one_hot.toInt){
+              exception_feature = exception_feature :+ "sample_count"
+            } else {
+              exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+            }
           }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
-        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i).toFloat || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i).toFloat){
-          exception_feature = exception_feature :+ "multihot_" + i.toString
+        if(threshold3.contains(i.toString)){
+          if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i.toString) || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i.toString)){
+            exception_feature = exception_feature :+ "multihot_" + i.toString
+          }
+        } else {
+          if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
+            exception_feature = exception_feature :+ "multihot_" + i.toString
+          }
         }
       }
     }
@@ -176,22 +223,45 @@ object FeatureMonitor {
       val one_hot_feature_id_num_cur = one_hot_feature_id_num.split(",")
       val multi_hot_feature_count_cur = multi_hot_feature_count.split(",")
       for(i <- 0 until one_hot_feature_count_his.length){
-        if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i).toFloat){
-          exception_feature = exception_feature :+ name_list_one_hot(i)
+        if(threshold1.contains(i.toString)){
+          if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>threshold1(i.toString).toFloat || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>threshold1(i.toString)){
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
+        } else {
+          if(one_hot_feature_count_his(i).toFloat/one_hot_feature_count_cur(i).toFloat>1.3 || one_hot_feature_count_cur(i).toFloat/one_hot_feature_count_his(i).toFloat>1.3){
+            exception_feature = exception_feature :+ name_list_one_hot(i)
+          }
         }
       }
       for(i <- 0 until one_hot_feature_id_num_his.length){
-        if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i).toFloat || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i).toFloat){
-          if(i == count_one_hot.toInt){
-            exception_feature = exception_feature :+ "sample_count"
-          } else {
-            exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+        if(threshold2.contains(i.toString)){
+          if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>threshold2(i.toString) || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>threshold2(i.toString)){
+            if(i == count_one_hot.toInt){
+              exception_feature = exception_feature :+ "sample_count"
+            } else {
+              exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+            }
+          }
+        }
+        else {
+          if(one_hot_feature_id_num_cur(i).toFloat/one_hot_feature_id_num_his(i).toFloat>1.3 || one_hot_feature_id_num_his(i).toFloat/one_hot_feature_id_num_cur(i).toFloat>1.3){
+            if(i == count_one_hot.toInt){
+              exception_feature = exception_feature :+ "sample_count"
+            } else {
+              exception_feature = exception_feature :+ name_list_one_hot(i) + "_idCount"
+            }
           }
         }
       }
       for(i <- 0 until multi_hot_feature_count_his.length){
-        if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i).toFloat || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i).toFloat){
-          exception_feature = exception_feature :+ "multihot_" + i.toString
+        if(threshold3.contains(i.toString)){
+          if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>threshold3(i.toString) || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>threshold3(i.toString)){
+            exception_feature = exception_feature :+ "multihot_" + i.toString
+          }
+        } else {
+          if(multi_hot_feature_count_cur(i).toFloat/multi_hot_feature_count_his(i).toFloat>1.3 || multi_hot_feature_count_his(i).toFloat/multi_hot_feature_count_cur(i).toFloat>1.3){
+            exception_feature = exception_feature :+ "multihot_" + i.toString
+          }
         }
       }
     }
