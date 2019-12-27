@@ -29,13 +29,12 @@ object OcpcGetPb_retention {
     val hour = args(1).toString
     val version = args(2).toString
     val expTag = args(3).toString
-    val hourInt = args(4).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag")
 
     // base data
-    val dataRaw = OcpcCalibrationBase(date, hour, 72, spark)
+    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
     /*
     jfb_factor calculation
@@ -112,14 +111,12 @@ object OcpcGetPb_retention {
     /*
     method to calculate cvr_factor: predict the retention cv
 
-    cvr_factor = post_cvr1 * deep_cvr / pre_cvr2
-
-    deep_cvr: calculate by natural day
-    post_cvr1, pre_cvr2: calculate by sliding time window
+    calibration_value = post_cvr2 / pre_cvr2
+    post_cvr2 = (cv1_t1 * deep_cvr + cv2_t2 * recall_t2 + cv2_t3 * recall_t3 + cv2_t4 * recall_t4) / (click_t1 + click_t2 + click_t3 + click_t4)
      */
 
     // calculate post_cvr1, pre_cvr2
-    val data1 = calculateDataCvr(dataRaw, 80, spark)
+    val data1 = calculateDataCvr(dataRaw, 20, spark)
 
     // calculate deep_cvr
     val data2 = calculateDeepCvr(date, 3, spark)
@@ -168,6 +165,7 @@ object OcpcGetPb_retention {
          |  media_appsid,
          |  conversion_goal,
          |  conversion_from,
+         |  deep_conversion_goal,
          |  hidden_tax,
          |  date,
          |  hour
@@ -188,27 +186,43 @@ object OcpcGetPb_retention {
     // 清除米读异常数据
     val clickData = mapMediaName(clickDataRaw, spark)
 
-    // 抽取cv数据
+    // get shallow cv data
     val sqlRequest2 =
       s"""
          |SELECT
          |  searchid,
          |  conversion_goal,
          |  conversion_from,
-         |  1 as iscvr
+         |  1 as iscvr1
          |FROM
          |  dl_cpc.ocpc_cvr_log_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2).distinct()
+    val cvData1 = spark.sql(sqlRequest2).distinct()
+
+    // get deep cv data
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  deep_conversion_goal,
+         |  1 as iscvr2
+         |FROM
+         |  dl_cpc.ocpc_label_deep_cvr_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest3)
+    val cvData2 = spark.sql(sqlRequest3).distinct()
 
 
     // 数据关联
     val baseData = clickData
-      .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
-      .na.fill(0, Seq("iscvr"))
+      .join(cvData1, Seq("searchid", "conversion_goal", "conversion_from"), "left_outer")
+      .join(cvData2, Seq("searchid", "deep_conversion_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr1", "iscvr2"))
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
@@ -253,15 +267,16 @@ object OcpcGetPb_retention {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data  =rawData
       .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "media", "date", "hour", "hour_diff")
+      .groupBy("unitid", "conversion_goal", "deep_conversion_goal", "media", "date", "hour", "hour_diff")
       .agg(
         sum(col("isclick")).alias("click"),
-        sum(col("iscvr")).alias("cv1"),
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2"),
         avg(col("bid")).alias("acb"),
         avg(col("price")).alias("acp"),
         avg(col("deep_cvr")).alias("pre_cvr2")
       )
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
 
     data
   }
