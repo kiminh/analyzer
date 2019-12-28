@@ -240,7 +240,7 @@ object OcpcGetPb_retention {
       s"""
          |SELECT
          |    unitid,
-         |    deep_conversion_goal,
+         |    conversion_goal,
          |    media,
          |    sum(click) as click,
          |    sum(cv1) as cv1,
@@ -252,12 +252,12 @@ object OcpcGetPb_retention {
          |    raw_data
          |WHERE
          |    $selectCondition
-         |GROUP BY unitid, deep_conversion_goal, media
+         |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .select("unitid", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp")
 
     data
   }
@@ -265,7 +265,7 @@ object OcpcGetPb_retention {
   def calculateParameter(rawData: DataFrame, spark: SparkSession) = {
     val data = rawData
       .filter(s"isclick=1")
-      .groupBy("unitid", "conversion_goal", "deep_conversion_goal", "media", "date", "hour", "hour_diff")
+      .groupBy("unitid", "deep_conversion_goal", "media", "date", "hour", "hour_diff")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr1")).alias("cv1"),
@@ -274,7 +274,8 @@ object OcpcGetPb_retention {
         avg(col("price")).alias("acp"),
         avg(col("deep_cvr")).alias("pre_cvr2")
       )
-      .select("unitid", "conversion_goal", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
+      .withColumn("conversion_goal", col("deep_conversion_goal"))
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
 
     data
   }
@@ -300,7 +301,7 @@ object OcpcGetPb_retention {
       .join(data1Filter, Seq("unitid", "conversion_goal", "media"), "inner")
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
       .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
-      .withColumn("hour_diff", lit(24))
+      .withColumn("hour_diff", lit(48))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
 
     val data2Filter = data2
@@ -311,7 +312,7 @@ object OcpcGetPb_retention {
       .join(data2Filter, Seq("unitid", "conversion_goal", "media"), "inner")
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
       .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
-      .withColumn("hour_diff", lit(24))
+      .withColumn("hour_diff", lit(72))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
 
     val data = data1.union(data2).union(data3)
@@ -320,7 +321,7 @@ object OcpcGetPb_retention {
     val sqlRequest =
       s"""
          |SELECT
-         |   conversion_goal as deep_conversion_goal,
+         |   conversion_goal,
          |   hour_diff,
          |   value as recall_value
          |FROM
@@ -331,8 +332,13 @@ object OcpcGetPb_retention {
     println(sqlRequest)
     val recallValue = spark.sql(sqlRequest)
 
+    val result = data
+      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
+      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
 
-
+    result
   }
 
 
@@ -340,10 +346,10 @@ object OcpcGetPb_retention {
     val data = getDataByHourDiff(dataRaw, 0, 24, spark)
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
-      .select("unitid", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
+      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
       .withColumn("cv2_t1", col("cv1") * col("deep_cvr"))
       .withColumn("click_t1", col("click"))
-      .select("unitid", "deep_conversion_goal", "media", "click_t1", "cv2_t1")
+      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
 
     result
   }
