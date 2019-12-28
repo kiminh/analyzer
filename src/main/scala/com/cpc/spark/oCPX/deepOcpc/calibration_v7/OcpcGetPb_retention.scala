@@ -115,23 +115,39 @@ object OcpcGetPb_retention {
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
     // calculate cv2_t1
-    val data1 = calculateCvrPart1(dataRaw, deepCvr, 20, spark)
+    val data1 = calculateCvrPart1(dataRaw, deepCvr, 10, spark)
 
     // calculate cv2_t2 ~ cv2_t4
     val data2 = calculateCvrPart2(dataRaw, 20, spark)
 
     // data join
     val data = data1.union(data2)
-//
-//
-//    // calculate data
-//    val result = data
-//      .withColumn("cvr_factor", col("post_cvr1") * col("deep_cvr") * 1.0 / col("pre_cvr2"))
-//
-//    val resultDF = result
-//      .select("unitid", "conversion_goal", "media", "cvr_factor")
-//
-//    resultDF
+
+    data.createOrReplaceTempView("data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  sum(click) as click,
+         |  sum(cv2) as cv2,
+         |  sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
+         |  sum(cv2_recall) as cv2_recall
+         |FROM
+         |  result_table
+         |GROUP BY unitid, conversion_goal, media
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+      .withColumn("post_cvr2", col("cv2_recall") * 1.0 / col("click"))
+      .withColumn("cvr_factor", col("post_cvr2") * 1.0 / col("pre_cvr2"))
+
+    val resultDF = result
+      .select("unitid", "conversion_goal", "media", "cvr_factor")
+
+    resultDF
   }
 
   // base data
