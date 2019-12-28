@@ -176,6 +176,8 @@ object OcpcGetPb_retention {
          |  is_deep_ocpc = 1
          |AND
          |  isclick = 1
+         |AND
+         |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
     val clickDataRaw = spark.sql(sqlRequest)
@@ -222,9 +224,6 @@ object OcpcGetPb_retention {
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
-
-    baseData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
