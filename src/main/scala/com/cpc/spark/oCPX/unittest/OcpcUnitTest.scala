@@ -52,10 +52,10 @@ object OcpcUnitTest {
 
     val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
-    val dataRaw1 = getDataByHourDiff(dataRaw, 24, 48, spark)
+//    val dataRaw1 = getDataByHourDiff(dataRaw, 24, 48, spark)
 
-    dataRaw1
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
 
 
 
