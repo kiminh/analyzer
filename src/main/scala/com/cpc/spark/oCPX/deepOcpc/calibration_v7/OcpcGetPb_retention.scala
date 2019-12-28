@@ -115,14 +115,13 @@ object OcpcGetPb_retention {
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
     // calculate cv2_t1
-    val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
+    val data1 = calculateCvrPart1(dataRaw, deepCvr, 20, spark)
 
     // calculate cv2_t2 ~ cv2_t4
     val data2 = calculateCvrPart2(dataRaw, 20, spark)
 
-//    // data join
-//    val data = data1
-//      .join(data2, Seq("unitid", "media"), "inner")
+    // data join
+    val data = data1.union(data2)
 //
 //
 //    // calculate data
@@ -346,17 +345,40 @@ object OcpcGetPb_retention {
       .withColumn("tag", lit(2))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
 
-    result
+    result.createOrReplaceTempView("result_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  sum(click) as click,
+         |  sum(cv2) as cv2,
+         |  sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
+         |  sum(cv2_recall) as cv2_recall,
+         |  2 as tag
+         |FROM
+         |  result_table
+         |GROUP BY unitid, conversion_goal, media
+         |""".stripMargin
+    println(sqlRequest2)
+    val resultDF = spark
+        .sql(sqlRequest2)
+        .filter(s"cv2 >= $minCV")
+
+    resultDF
   }
 
 
-  def calculateCvrPart1(dataRaw: DataFrame, deepCvr: DataFrame, spark: SparkSession) = {
+  def calculateCvrPart1(dataRaw: DataFrame, deepCvr: DataFrame, minCV: Int, spark: SparkSession) = {
     val data = getDataByHourDiff(dataRaw, 0, 24, spark)
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
       .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
       .withColumn("cv2_recall", col("cv1") * col("deep_cvr"))
       .withColumn("tag", lit(1))
+      .filter(s"cv1 >= $minCV")
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
 
     result
