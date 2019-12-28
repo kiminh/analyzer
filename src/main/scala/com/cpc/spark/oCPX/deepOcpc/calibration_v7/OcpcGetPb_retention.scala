@@ -244,7 +244,7 @@ object OcpcGetPb_retention {
          |    media,
          |    sum(click) as click,
          |    sum(cv1) as cv1,
-         |    sum(cv1) as cv2,
+         |    sum(cv2) as cv2,
          |    sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
          |    sum(acb * click) * 1.0 / sum(click) as acb,
          |    sum(acp * click) * 1.0 / sum(click) as acp
