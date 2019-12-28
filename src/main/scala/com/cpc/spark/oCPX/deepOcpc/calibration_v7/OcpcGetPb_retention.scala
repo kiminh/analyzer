@@ -317,6 +317,9 @@ object OcpcGetPb_retention {
 
     val data = data1.union(data2).union(data3)
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
+
     // get recall value
     val sqlRequest =
       s"""
@@ -331,6 +334,9 @@ object OcpcGetPb_retention {
          |""".stripMargin
     println(sqlRequest)
     val recallValue = spark.sql(sqlRequest)
+
+    recallValue
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
 
     val result = data
       .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
