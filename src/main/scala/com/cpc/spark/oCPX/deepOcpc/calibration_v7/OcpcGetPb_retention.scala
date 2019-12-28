@@ -225,6 +225,9 @@ object OcpcGetPb_retention {
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
 
+    baseData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
+
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
 
