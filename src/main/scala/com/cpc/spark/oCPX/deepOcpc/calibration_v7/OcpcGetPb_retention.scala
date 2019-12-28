@@ -226,7 +226,7 @@ object OcpcGetPb_retention {
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
 
     baseData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
