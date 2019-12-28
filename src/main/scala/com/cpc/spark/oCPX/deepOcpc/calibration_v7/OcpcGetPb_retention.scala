@@ -343,6 +343,8 @@ object OcpcGetPb_retention {
       .na.fill(1.0, Seq("recall_value"))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
+      .withColumn("tag", lit(2))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
 
     result
   }
@@ -353,9 +355,9 @@ object OcpcGetPb_retention {
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
       .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
-      .withColumn("cv2_t1", col("cv1") * col("deep_cvr"))
-      .withColumn("click_t1", col("click"))
-//      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
+      .withColumn("cv2_recall", col("cv1") * col("deep_cvr"))
+      .withColumn("tag", lit(1))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
 
     result
   }
