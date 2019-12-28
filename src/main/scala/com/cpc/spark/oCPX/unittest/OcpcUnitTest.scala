@@ -63,7 +63,28 @@ object OcpcUnitTest {
     // data join
     val data = data1.union(data2)
 
-    data
+    data.createOrReplaceTempView("data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  sum(click) as click,
+         |  sum(cv2) as cv2,
+         |  sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
+         |  sum(cv2_recall) as cv2_recall
+         |FROM
+         |  result_table
+         |GROUP BY unitid, conversion_goal, media
+         |""".stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+      .withColumn("post_cvr2", col("cv2_recall") * 1.0 / col("click"))
+      .withColumn("cvr_factor", col("post_cvr2") * 1.0 / col("pre_cvr2"))
+
+    result
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227c")
 
 
