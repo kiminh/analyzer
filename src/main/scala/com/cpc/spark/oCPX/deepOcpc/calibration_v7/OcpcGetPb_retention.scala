@@ -114,8 +114,11 @@ object OcpcGetPb_retention {
     // calculate deep_cvr
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
-    // calculate post_cvr1, pre_cvr2
+    // calculate cv2_t1
     val data1 = calculateCvrPart1(dataRaw, deepCvr, spark)
+
+    // calculate cv2_t2 ~ cv2_t4
+    val data2 = calculateCvrPart2(dataRaw, 20, spark)
 
 //    // data join
 //    val data = data1
@@ -237,7 +240,7 @@ object OcpcGetPb_retention {
       s"""
          |SELECT
          |    unitid,
-         |    conversion_goal,
+         |    deep_conversion_goal,
          |    media,
          |    sum(click) as click,
          |    sum(cv1) as cv1,
@@ -249,12 +252,12 @@ object OcpcGetPb_retention {
          |    raw_data
          |WHERE
          |    $selectCondition
-         |GROUP BY unitid, conversion_goal, media
+         |GROUP BY unitid, deep_conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp")
+      .select("unitid", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp")
 
     data
   }
@@ -271,21 +274,76 @@ object OcpcGetPb_retention {
         avg(col("price")).alias("acp"),
         avg(col("deep_cvr")).alias("pre_cvr2")
       )
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
+      .select("unitid", "conversion_goal", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "date", "hour", "hour_diff")
 
     data
   }
 
 
-  // calculate post_cvr2, pre_cvr2 in sliding time window
+  def calculateCvrPart2(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
+    // get cv data
+    val dataRaw1 = getDataByHourDiff(dataRaw, 24, 48, spark)
+    val dataRaw2 = getDataByHourDiff(dataRaw, 48, 72, spark)
+    val dataRaw3 = getDataByHourDiff(dataRaw, 72, 96, spark)
+
+    val data1 = dataRaw1
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
+      .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
+      .withColumn("hour_diff", lit(24))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+
+    val data1Filter = data1
+      .filter(s"flag = 0")
+      .select("unitid", "conversion_goal", "media")
+
+    val data2 = dataRaw2
+      .join(data1Filter, Seq("unitid", "conversion_goal", "media"), "inner")
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
+      .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
+      .withColumn("hour_diff", lit(24))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+
+    val data2Filter = data2
+      .filter(s"flag = 0")
+      .select("unitid", "conversion_goal", "media")
+
+    val data3 = dataRaw3
+      .join(data2Filter, Seq("unitid", "conversion_goal", "media"), "inner")
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
+      .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
+      .withColumn("hour_diff", lit(24))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+
+    val data = data1.union(data2).union(data3)
+
+    // get recall value
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   conversion_goal as deep_conversion_goal,
+         |   hour_diff,
+         |   value as recall_value
+         |FROM
+         |  dl_cpc.algo_recall_info_v1
+         |WHERE
+         |  version = 'v1'
+         |""".stripMargin
+    println(sqlRequest)
+    val recallValue = spark.sql(sqlRequest)
+
+
+
+  }
+
+
   def calculateCvrPart1(dataRaw: DataFrame, deepCvr: DataFrame, spark: SparkSession) = {
     val data = getDataByHourDiff(dataRaw, 0, 24, spark)
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
-      .select("unitid", "conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
+      .select("unitid", "deep_conversion_goal", "media", "click", "cv1", "cv2", "pre_cvr2", "acb", "acp", "deep_cvr")
       .withColumn("cv2_t1", col("cv1") * col("deep_cvr"))
       .withColumn("click_t1", col("click"))
-//      .select("unitid", "conversion_goal", "media", "click_t1", "cv2_t1")
+      .select("unitid", "deep_conversion_goal", "media", "click_t1", "cv2_t1")
 
     result
   }
