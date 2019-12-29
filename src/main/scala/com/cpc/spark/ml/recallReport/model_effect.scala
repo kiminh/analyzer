@@ -97,7 +97,7 @@ object model_effect {
 
   def hash(seed:Int, dist_map:mutable.Map[Int, String])= udf {
     x:String => {
-      var hash_value = Murmur3Hash.stringHash32(x,seed).toDouble
+      var hash_value = Murmur3Hash.stringHash32(x,seed)
       if(hash_value<0){
         hash_value += scala.math.pow(2,32)
       }
