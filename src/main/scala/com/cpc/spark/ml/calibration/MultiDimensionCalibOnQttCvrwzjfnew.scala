@@ -69,6 +69,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |  dl_cpc.cpc_basedata_union_events
          |  where $selectCondition2
          |  and cvr_model_name in ('$calimodel','$model')
+         |  and unitid not in (2662501','2662545','2662542','2662502')
          |  and isclick = 1
          |  and ideaid > 0 and adsrc = 1 AND userid > 0
          |  AND (charge_type IS NULL OR charge_type = 1)
