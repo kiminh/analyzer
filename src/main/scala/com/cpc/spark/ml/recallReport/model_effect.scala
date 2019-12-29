@@ -77,7 +77,7 @@ object model_effect {
          |        (rev_all/uv) as arpu_all,(rev_all/imp_all) as cpm_all, (rev_all/click_all) as acp_all,
          |        imp_cpc,click_cpc,rev_cpc,(click_cpc/imp_cpc) as ctr_cpc,(rev_cpc/uv) as arpu_cpc,
          |        (rev_cpc/imp_cpc) as cpm_cpc, (rev_cpc/click_cpc) as acp_cpc,(imp_all/uv) imp_uid,
-         |        exp_ctr * imp_all/click_all as pcoc
+         |        exp_ctr * imp_cpc/click_cpc as pcoc
          |    from (
          |        select
          |            hash_model_name,
