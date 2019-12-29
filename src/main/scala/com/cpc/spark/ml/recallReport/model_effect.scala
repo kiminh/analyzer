@@ -23,7 +23,7 @@ object model_effect {
     val oneday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val dist_map = mutable.Map[Int, String]()
     val dist_split = dist.split(";")
-    for(i <- dist.split(",")){
+    for(i <- dist_split){
       val model_name = i.split(",")(0)
       val start = i.split(",")(1).toInt
       val end = i.split(",")(2).toInt
