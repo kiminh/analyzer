@@ -42,7 +42,7 @@ object model_effect {
          |    and isshow=1
          |    and ctr_model_name not like '%noctr%'
          |    and adsrc in (1, 28)
-         |    and hour = "03"
+         |    and hour = '03'
          |""".stripMargin
     val dau_log_test = spark.sql(sql_test).withColumn("hash_model_name",hash(seed, dist_map)($"uid"))
     val acc = dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()
@@ -66,6 +66,7 @@ object model_effect {
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
          |    and adslot_type = 1
          |    and isshow=1
+         |    and ctr_model_name not like '%noctr%'
          |""".stripMargin
     spark.sql(sql).withColumn("hash_model_name",hash(seed, dist_map)($"uid")).createOrReplaceTempView("union_log")
     spark.sql(
@@ -97,12 +98,12 @@ object model_effect {
 
   def hash(seed:Int, dist_map:mutable.Map[Int, String])= udf {
     x:String => {
-      var hash_value = Murmur3Hash.stringHash32(x,seed).toDouble
+      var hash_value = Murmur3Hash.stringHash32(x,seed).toLong
       if(hash_value<0){
-        hash_value += scala.math.pow(2,32)
+        hash_value += 4294967296L
       }
-      val dis = hash_value.toInt%1000
-      dist_map(dis)
+      val dis = hash_value%1000
+      dist_map(dis.toInt)
     }
   }
 
