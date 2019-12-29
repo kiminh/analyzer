@@ -55,7 +55,7 @@ object model_effect {
          |        ,charge_type
          |        ,isshow
          |        ,isclick
-         |        ,exp_ctr
+         |        ,raw_ctr
          |        ,price
          |        ,dsp_cpm
          |        ,adsrc
