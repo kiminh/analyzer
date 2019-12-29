@@ -36,7 +36,7 @@ object model_effect {
          |select uid, tuid
          |        ,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events
-         |    where day = '{0}'
+         |    where day = '$oneday'
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
          |    and adslot_type = 1
          |    and isshow=1
@@ -65,12 +65,11 @@ object model_effect {
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
          |    and adslot_type = 1
          |    and isshow=1
-         |    and ctr_model_name not like '%noctr%'
          |""".stripMargin
     spark.sql(sql).withColumn("hash_model_name",hash(seed, dist_map)($"uid")).createOrReplaceTempView("union_log")
     spark.sql(
       s"""
-         |insert into dl_cpc.cpc_model_effect partition (day="$oneday")
+         |insert overwrite table dl_cpc.cpc_model_effect partition (day="$oneday")
          |select
          |        hash_model_name, uv, imp_all, click_all, rev_all, (click_all/imp_all) as ctr_all,
          |        (rev_all/uv) as arpu_all,(rev_all/imp_all) as cpm_all, (rev_all/click_all) as acp_all,
@@ -84,7 +83,7 @@ object model_effect {
          |            sum(isshow) as imp_all,
          |            sum(isclick) as click_all,
          |            sum(if(isclick > 0 and adsrc in (1, 28), price, 0)
-         |                + if(isshow > 0 and adsrc not in (1, 28), dsp_cpm / 1000, 0)) as rev_all,
+         |            + if(isshow > 0 and adsrc not in (1, 28), dsp_cpm / 1000, 0)) as rev_all,
          |            sum(if(isshow > 0 and adsrc in (1, 28), 1, 0)) as imp_cpc,
          |            sum(if(isclick > 0 and adsrc in (1, 28), 1, 0)) as click_cpc,
          |            sum(if(isclick > 0 and adsrc in (1, 28), price, 0)) as rev_cpc,
