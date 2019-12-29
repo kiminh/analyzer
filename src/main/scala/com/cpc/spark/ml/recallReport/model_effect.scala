@@ -70,7 +70,7 @@ object model_effect {
     spark.sql(sql).withColumn("hash_model_name",hash(seed, dist_map)($"uid")).createOrReplaceTempView("union_log")
     spark.sql(
       s"""
-         |insert into dl_cpc.model_effect partition (day="$oneday")
+         |insert into dl_cpc.cpc_model_effect partition (day="$oneday")
          |select
          |        hash_model_name, uv, imp_all, click_all, rev_all, (click_all/imp_all) as ctr_all,
          |        (rev_all/uv) as arpu_all,(rev_all/imp_all) as cpm_all, (rev_all/click_all) as acp_all,
