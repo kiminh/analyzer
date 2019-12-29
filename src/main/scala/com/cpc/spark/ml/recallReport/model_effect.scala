@@ -45,8 +45,9 @@ object model_effect {
          |    and hour = "03"
          |""".stripMargin
     val dau_log_test = spark.sql(sql_test).withColumn("hash_model_name",hash(seed, dist_map)($"uid"))
-    if(dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()<0.95){
-      println("hash wrong")
+    val acc = dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()
+    if(acc<0.95){
+      println("hash wrong:%s", acc.toString)
       System.exit(1)
     }
     val sql =
