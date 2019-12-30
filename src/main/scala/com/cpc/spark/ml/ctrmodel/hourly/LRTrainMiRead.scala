@@ -99,6 +99,7 @@ object LRTrainMiRead {
          |from dl_cpc.cpc_basedata_union_events
          |where %s
          |  and media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787')
+         |  and adsrc in (1, 28)
          |  and isshow = 1
          |  and ideaid > 0
          |  and unitid > 0
