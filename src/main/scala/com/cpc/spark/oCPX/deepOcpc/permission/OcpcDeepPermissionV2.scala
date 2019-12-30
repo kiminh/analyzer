@@ -7,6 +7,7 @@ import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDate
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateAUC._
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateCV._
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepPermission.udfDetermineFlag
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
@@ -49,6 +50,9 @@ object OcpcDeepPermissionV2 {
      */
     println("pay data ######################################")
     val payData = getPermissionData(date, hour, 72, 3, spark)
+
+    // get unit info
+    val unitInfo = getUnitInfo(spark)
 
     /*
     1.union数据
@@ -182,6 +186,32 @@ object OcpcDeepPermissionV2 {
       .select("identifier", "media", "deep_conversion_goal", "click", "cv", "auc", "cost", "deep_cpagiven", "deep_cpareal")
 
     data
+  }
+
+  def getUnitInfo(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority FROM unit_ocpc where is_deep_ocpc = 1) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("unit_id"))
+      .selectExpr("unitid",  "cast(deep_conversion_goal as int) conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
   }
 
 
