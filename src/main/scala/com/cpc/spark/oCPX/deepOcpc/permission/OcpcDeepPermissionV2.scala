@@ -62,7 +62,8 @@ object OcpcDeepPermissionV2 {
     val data = retentionData
       .union(payData)
       .join(unitInfo, Seq("identifier", "deep_conversion_goal"), "left_outer")
-      .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
+      .filter(s"cpa_check_priority is not null")
+      .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc"), col("cpa_check_priority")))
       .withColumn("cpa", col("deep_cpareal"))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
       .cache()
@@ -72,8 +73,8 @@ object OcpcDeepPermissionV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     /*
     读取历史准入数据
@@ -85,9 +86,6 @@ object OcpcDeepPermissionV2 {
      */
     val result = updateData(prevData, data, spark)
 //
-//    result
-//        .repartition(1)
-//        .write.mode("overwrite").saveAsTable("test.ocpc_deep_white_unit_version20191120")
 
     /*
     保存数据
@@ -164,10 +162,24 @@ object OcpcDeepPermissionV2 {
     data
   }
 
-  def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
+  def udfDetermineFlag() = udf((cv: Int, auc: Double, cpaCheckPriority: Int) => {
     var result = 0
-    if (cv > 10 && auc > 0.55) {
-      result = 1
+
+    result = cpaCheckPriority match {
+      case 2 => {
+        if (cv > 60 && auc > 0.6) {
+          1
+        } else {
+          0
+        }
+      }
+      case _ => {
+        if (cv > 10 && auc > 0.55) {
+          1
+        } else {
+          0
+        }
+      }
     }
     result
   })
