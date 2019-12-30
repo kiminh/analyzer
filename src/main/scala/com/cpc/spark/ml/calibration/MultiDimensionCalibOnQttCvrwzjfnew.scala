@@ -94,7 +94,8 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     wrong_data.show(10)
 
     val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
-        .filter("flag != 1")
+      .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
+        .filter("flag = 0")
 
     filter_data.show(10)
 
