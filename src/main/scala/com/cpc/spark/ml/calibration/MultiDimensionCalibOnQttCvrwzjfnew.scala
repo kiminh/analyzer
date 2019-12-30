@@ -88,7 +88,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
       s"""
          |select * from
          |(select
-         |  unitid, count(*) click, sum(iscvr)/count(*) cvr
+         |  unitid, count(*) click, sum(isclck)/count(*) cvr
          |  from test
          |  group by unitid
          |)
