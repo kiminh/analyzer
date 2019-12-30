@@ -101,7 +101,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     val filter_data = log.join(wrong_data.select("unitid"),Seq("unitid"),"left")
         .filter("flag != 1")
 
-    LogToPb(log, session, calimodel,threshold)
+    LogToPb(filter_data, session, calimodel,threshold)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
