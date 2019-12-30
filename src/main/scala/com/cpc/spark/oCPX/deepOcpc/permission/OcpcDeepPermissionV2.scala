@@ -61,6 +61,7 @@ object OcpcDeepPermissionV2 {
      */
     val data = retentionData
       .union(payData)
+      .join(unitInfo, Seq("identifier", "deep_conversion_goal"), "left_outer")
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
       .withColumn("cpa", col("deep_cpareal"))
       .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
@@ -206,7 +207,7 @@ object OcpcDeepPermissionV2 {
       .load()
 
     val resultDF = data
-      .selectExpr("unitid",  "cast(deep_conversion_goal as int) conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority")
+      .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority")
       .distinct()
 
     resultDF.show(10)
