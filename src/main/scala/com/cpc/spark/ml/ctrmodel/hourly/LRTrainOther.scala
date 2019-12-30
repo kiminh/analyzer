@@ -132,7 +132,7 @@ object LRTrainOther {
 
     s"mkdir -p /home/cpc/anal/model/togo/" !
 
-    s"rm /home/cpc/anal/model/togo/*" !
+//    s"rm /home/cpc/anal/model/togo/*" !
 
     train(
       spark,
