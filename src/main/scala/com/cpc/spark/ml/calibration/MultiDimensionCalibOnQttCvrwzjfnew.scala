@@ -69,7 +69,6 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
          |  dl_cpc.cpc_basedata_union_events
          |  where $selectCondition2
          |  and cvr_model_name in ('$calimodel','$model')
-         |  and unitid not in ('2662501','2662545','2662542','2662502')
          |  and isclick = 1
          |  and ideaid > 0 and adsrc = 1 AND userid > 0
          |  AND (charge_type IS NULL OR charge_type = 1)
@@ -83,6 +82,26 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val log = session.sql(sql)
     log.show(10)
+    log.createOrReplaceTempView("test")
+
+    val wrong_data_sql =
+      s"""
+         |select unitid
+         |from
+         |(select
+         |  unitid, count(*) click, sum(iscvr)/count(*) cvr
+         |  from test
+         |  group by unitid
+         |)
+         |where cvr > 0.8 and click > 100
+         |""".stripMargin
+    val wrong_data = session.sql(wrong_data_sql).withColumn("flag",lit(1))
+    println("######  filter unitid  ######")
+    wrong_data.show(10)
+
+    val filter_data = log.join(wrong_data,Seq("unitid"),"left")
+        .filter("flag != 1")
+
     LogToPb(log, session, calimodel,threshold)
   }
 
