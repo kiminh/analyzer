@@ -85,7 +85,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val wrong_data = log.groupBy("unitid")
       .agg(count(col("isclick")).alias("click"),
-        (sum(col("isclick"))/count(col("isclick")).alias("cvr")))
+        sum(col("isclick"))/count(col("isclick").alias("cvr")))
       .filter("click > 100")
       .filter("cvr > 0.8")
       .withColumn("flag",lit(1))
