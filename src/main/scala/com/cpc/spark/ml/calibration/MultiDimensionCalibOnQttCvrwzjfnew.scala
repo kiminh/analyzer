@@ -82,19 +82,13 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val log = session.sql(sql)
     log.show(10)
-    log.createOrReplaceTempView("test")
 
-    val wrong_data_sql =
-      s"""
-         |select * from
-         |(select
-         |  unitid, count(*) click, sum(isclick)/count(*) cvr
-         |  from test
-         |  group by unitid
-         |)
-         |where cvr > 0.8 and click > 100
-         |""".stripMargin
-    val wrong_data = session.sql(wrong_data_sql).withColumn("flag",lit(1))
+    val wrong_data = log.groupBy("unitid")
+      .agg(count(col("isclick")).alias("click"),
+        (sum(col("isclick"))/count(col("isclick")).alias("cvr")))
+      .filter("click > 100")
+      .filter("cvr > 0.8")
+      .withColumn("flag",lit(1))
     println("######  filter unitid  ######")
     wrong_data.show(10)
 
