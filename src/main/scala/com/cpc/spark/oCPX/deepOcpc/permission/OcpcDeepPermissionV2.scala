@@ -206,7 +206,6 @@ object OcpcDeepPermissionV2 {
       .load()
 
     val resultDF = data
-      .withColumn("unitid", col("unit_id"))
       .selectExpr("unitid",  "cast(deep_conversion_goal as int) conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority")
       .distinct()
 
