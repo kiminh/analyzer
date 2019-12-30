@@ -86,8 +86,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val wrong_data_sql =
       s"""
-         |select unitid
-         |from
+         |select * from
          |(select
          |  unitid, count(*) click, sum(iscvr)/count(*) cvr
          |  from test
@@ -99,7 +98,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     println("######  filter unitid  ######")
     wrong_data.show(10)
 
-    val filter_data = log.join(wrong_data,Seq("unitid"),"left")
+    val filter_data = log.join(wrong_data.select("unitid"),Seq("unitid"),"left")
         .filter("flag != 1")
 
     LogToPb(log, session, calimodel,threshold)
