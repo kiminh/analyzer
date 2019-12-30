@@ -96,6 +96,8 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
     val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
         .filter("flag != 1")
 
+    filter_data.show(10)
+
     LogToPb(filter_data, session, calimodel,threshold)
   }
 
