@@ -92,8 +92,8 @@ object DeepOcpcReport {
          |              when exptags like '%deepOcpcExpTag:v3%' then 'v3'
          |              when exptags like '%deepOcpcExpTag:v4%' then 'v4'
          |              when exptags like '%deepOcpcExpTag:v5%' then 'v5'
-         |              when exptags like '%deepOcpcExpTag:v5%' then 'v6'
-         |              when exptags like '%deepOcpcExpTag:v5%' then 'v7'
+         |              when exptags like '%deepOcpcExpTag:v6%' then 'v6'
+         |              when exptags like '%deepOcpcExpTag:v7%' then 'v7'
          |              else 'dz'
          |        end) as cali_tag,
          |        (case when exptags like '%ocpc_rcl:v205%' then 'v205'
