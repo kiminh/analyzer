@@ -88,12 +88,28 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor_old", col("smooth_factor"))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
       .withColumn("cali_value_old", col("cali_value"))
-      .withColumn("cali_value", udfCalculateCaliValue(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
+      .withColumn("cali_value", udfCheckValue(0.5, 2.0)(col("cali_value")))
+      .withColumn("jfb_factor", udfCheckValue(1.0, 2.0)(col("jfb_factor")))
       .cache()
+
+    data
+        .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191230")
+    
     data.show(10)
     data
 
   }
+
+  def udfCheckValue(minCali: Double, maxCali: Double) = udf((value: Double) => {
+    var result = value
+    if (result < minCali) {
+      result = minCali
+    }
+    if (result > maxCali) {
+      result = maxCali
+    }
+    result
+  })
 
 
   def udfCalculateCaliValue(date: String, hour: String) = udf((identifier: String, expTag: String, caliValue: Double) => {
