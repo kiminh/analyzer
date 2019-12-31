@@ -33,7 +33,7 @@ object model_effect {
     }
     val sql_test =
       s"""
-         |select uid, tuid
+         |select if(length(tuid)>0, tuid, uid) as uid
          |        ,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events
          |    where day = '$oneday'
@@ -52,7 +52,7 @@ object model_effect {
     }
     val sql =
       s"""
-         |select uid, tuid
+         |select if(length(tuid)>0, tuid, uid) as uid
          |        ,charge_type
          |        ,isshow
          |        ,isclick
