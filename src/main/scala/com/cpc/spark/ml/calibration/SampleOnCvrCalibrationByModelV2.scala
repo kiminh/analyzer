@@ -92,7 +92,7 @@ object SampleOnCvrCalibrationByModelV2 {
     // get union log
 
     val result = data
-      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
+//      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"left")
       .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
