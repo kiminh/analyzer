@@ -82,7 +82,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val log = session.sql(sql)
     log.show(10)
-    log.createOrReplaceTempView("test")
+//    log.createOrReplaceTempView("test")
 
 //    val wrong_data_sql =
 //      s"""
