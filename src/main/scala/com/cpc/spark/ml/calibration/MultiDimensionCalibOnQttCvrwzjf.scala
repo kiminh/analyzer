@@ -61,7 +61,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
     // get union log
     val clicksql = s"""
                       |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(a.adclass,1,6) as adclass,
-                      |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,unitid,
+                      |a.cvr_model_name as model, a.adslot_id as adslotid, a.ideaid,a.unitid,
                       |case
                       |  when user_show_ad_num = 0 then '0'
                       |  when user_show_ad_num = 1 then '1'
