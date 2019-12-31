@@ -101,19 +101,31 @@ object MultiDimensionCalibOnQttCvrwzjf {
     val log = clickData.join(cvrData,Seq("searchid"),"left")
       .withColumn("isclick",col("iscvr")).cache()
     log.show(10)
-    LogToPb(log, session, calimodel,threshold)
-    log.unpersist()
-    val irModel = IRModel(
-      boundaries = Seq(1.0),
-      predictions = Seq(k.toDouble)
-    )
-    println(s"k is: $k")
-    val caliconfig = CalibrationConfig(
-      name = calimodel,
-      ir = Option(irModel)
-    )
-    val localPath = saveProtoToLocal(calimodel, caliconfig)
-    saveFlatTextFileForDebug(calimodel, caliconfig)
+
+    val wrong_data = log
+      .withColumn("iscvr",col("isclick"))
+      .groupBy("unitid")
+      .agg(count(col("iscvr")).alias("click"),
+        sum(col("iscvr")).alias("iscvr"))
+      .withColumn("cvr",col("iscvr")/col("click"))
+      .filter("click > 100")
+      .filter("cvr > 0.8")
+      .withColumn("flag",lit(1))
+
+    println("######  filter unitid  ######")
+    wrong_data.show(10)
+
+    val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
+      .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
+      .filter("flag = 0")
+
+    filter_data.show(10)
+    val tablename = model.split("-").mkString("_")
+    filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${tablename}")
+
+    val data = session.sql(s"select * from dl_cpc.post_calibration_${tablename}")
+
+    LogToPb(data, session, calimodel,threshold)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
