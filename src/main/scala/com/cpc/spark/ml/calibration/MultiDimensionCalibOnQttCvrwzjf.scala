@@ -34,7 +34,7 @@ object MultiDimensionCalibOnQttCvrwzjf {
     val model = args(4)
     val calimodel = args(5)
     val k = args(6)
-    val threshold = args(7).toInt
+    val threshold = 10000
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key)
