@@ -82,22 +82,35 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val log = session.sql(sql)
     log.show(10)
+    log.createOrReplaceTempView("test")
 
-    val wrong_data = log.groupBy("unitid")
-      .agg(count(col("isclick")).alias("click"),
-        sum(col("isclick")).alias("iscvr"))
-      .withColumn("cvr",col("iscvr")/col("click"))
-      .filter("click > 100")
-      .filter("cvr > 0.8")
-      .withColumn("flag",lit(1))
-    println("######  filter unitid  ######")
-    wrong_data.show(10)
+    val wrong_data_sql =
+      s"""
+         |select *
+         |from (
+         |select unitid,sum(isclick)/count(*) cvr,count(*) click
+         |from test
+         |group by unitid)
+         |""".stripMargin
+
+//    val wrong_data = log.groupBy("unitid")
+//      .agg(count(col("isclick")).alias("click"),
+//        sum(col("isclick")).alias("iscvr"))
+//      .withColumn("cvr",col("iscvr")/col("click"))
+//      .filter("click > 100")
+//      .filter("cvr > 0.8")
+//      .withColumn("flag",lit(1))
+
+    val wrong_data = session.sql(wrong_data_sql).withColumn("flag",lit(1))
+      println("######  filter unitid  ######")
+      wrong_data.show(10)
 
     val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
       .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
         .filter("flag = 0")
 
-    filter_data.show(10)
+//    filter_data.show(10)
+//    filter_data.write.mode("overwrite").saveAsTable("test.wy")
 
     LogToPb(filter_data, session, calimodel,threshold)
   }
