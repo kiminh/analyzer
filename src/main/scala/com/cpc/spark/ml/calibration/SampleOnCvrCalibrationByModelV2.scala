@@ -95,7 +95,7 @@ object SampleOnCvrCalibrationByModelV2 {
       .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"left")
-      .withColumn("raw_cvr",when(col("prediction").isNotNull,col("prediction")).otherwise("raw_cvr"))
+      .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
       .filter("raw_cvr > 0")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","hour","siteid","conversion_goal")
