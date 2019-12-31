@@ -105,7 +105,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
 
     val data = session.sql(s"select * from dl_cpc.post_calibration_${model}")
 
-    LogToPb(filter_data, session, calimodel,threshold)
+    LogToPb(data, session, calimodel,threshold)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
