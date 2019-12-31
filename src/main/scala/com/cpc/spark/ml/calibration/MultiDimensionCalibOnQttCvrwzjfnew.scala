@@ -101,6 +101,7 @@ object MultiDimensionCalibOnQttCvrwzjfnew {
         .filter("flag = 0")
 
     filter_data.show(10)
+    val tablename = model.split("-").mkString("_")
     filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${model}")
 
     val data = session.sql(s"select * from dl_cpc.post_calibration_${model}")
