@@ -123,6 +123,9 @@ object OcpcGetPb_retention {
     // data join
     val data = data1.union(data2)
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
+
     data.createOrReplaceTempView("data")
 
     val sqlRequest =
@@ -146,7 +149,7 @@ object OcpcGetPb_retention {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "cvr_factor")
-      .filter(s"cvr_factor > 0")
+//      .filter(s"cvr_factor > 0")
 
     resultDF
   }
