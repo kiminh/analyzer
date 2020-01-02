@@ -257,7 +257,6 @@ object OcpcTools {
     val passwd = conf.getString("adv_report.password")
     val driver = conf.getString("adv_report.driver")
 //    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
-    val selectCondition
     val table =
       s"""
        |(SELECT
