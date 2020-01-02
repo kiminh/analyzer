@@ -356,8 +356,8 @@ object OcpcGetPb_weightv2{
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
         .withColumn("pcoc1", when(col("pcoc1").isNull, col("pcoc2")).otherwise(col("pcoc1")))
 
-    baseData
-        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
+//    baseData
+//        .write.mode("overwrite").saveAsTable("test.ocpc_check_data20191224a")
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest =

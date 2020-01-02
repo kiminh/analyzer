@@ -27,10 +27,10 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
     val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 84, spark).cache()
-    realtimeDataRaw.show(10)
-    val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, "weightv2", spark)
+//    realtimeDataRaw.show(10)
+//    val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, "weightv2", spark)
 
-    pcocDataRaw
+    realtimeDataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102b")
 
 
