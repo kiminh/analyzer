@@ -136,7 +136,7 @@ object OcpcGetPb_retention {
          |  sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
          |  sum(cv2_recall) as cv2_recall
          |FROM
-         |  result_table
+         |  data
          |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
