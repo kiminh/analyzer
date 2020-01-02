@@ -22,17 +22,6 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
     val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
-//    // calculate deep_cvr
-//    val deepCvr = calculateDeepCvr(date, 3, spark)
-//
-//    // calculate cv2_t1
-//    val data1 = calculateCvrPart1(dataRaw, deepCvr, 10, spark)
-//
-//    // calculate cv2_t2 ~ cv2_t4
-//    val data2 = calculateCvrPart2(dataRaw, 20, spark)
-//
-//    // data join
-//    val data = data1.union(data2)
 
     val cvrData = calculateCvrFactor(dataRaw, date, hour, spark)
 

@@ -123,8 +123,8 @@ object OcpcGetPb_retention {
     // data join
     val data = data1.union(data2)
 
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
 
     data.createOrReplaceTempView("data")
 
