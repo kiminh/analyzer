@@ -60,8 +60,8 @@ object OcpcGetPb_retention {
     resultDF
       .withColumn("deep_conversion_goal", lit(2))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
 
   }
@@ -373,13 +373,13 @@ object OcpcGetPb_retention {
       .join(recallValue2, Seq("conversion_goal", "userid", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .na.fill(1.0, Seq("recall_value"))
-//      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
-//      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
 
-    result
-        .write.mode("overwrite").saveAsTable("test.ocpc_result_table20200102")
+//    result
+//        .write.mode("overwrite").saveAsTable("test.ocpc_result_table20200102")
 
     result.createOrReplaceTempView("result_table")
 
