@@ -68,8 +68,8 @@ object OcpcGetPb_weightv2{
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
