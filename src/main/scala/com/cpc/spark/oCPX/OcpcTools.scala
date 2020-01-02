@@ -22,7 +22,7 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-    val data = getRealtimeData(24, date, hour, spark)
+    val data = getBaseDataRealtime(24, date, hour, spark)
 
     data
       .repartition(5)
@@ -224,7 +224,7 @@ object OcpcTools {
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
@@ -232,6 +232,60 @@ object OcpcTools {
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
+    resultDF
+  }
+
+  def getBaseDataRealtime(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+
+
+    val conf = ConfigFactory.load("ocpc")
+    val url = conf.getString("adv_report.url")
+    val user = conf.getString("adv_report.user")
+    val passwd = conf.getString("adv_report.password")
+    val driver = conf.getString("adv_report.driver")
+//    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
+    val selectCondition
+    val table =
+      s"""
+       |(SELECT
+       |    unit_id as unitid,
+       |    sum(click) as click,
+       |    sum(sum_cvr) * 0.000001 / sum(click) as pre_cvr,
+       |    sum(cvr_num) as cv
+       |FROM report_conversion_hourly
+       |where $selectCondition
+       |and ocpc_step > 0
+       |group by unit_id
+       |order by unit_id) as tmp
+       |""".stripMargin
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("id"))
+      .selectExpr("unitid", "click", "pre_cvr", "cv")
+      .distinct()
+
+    resultDF.show(10)
     resultDF
   }
 
