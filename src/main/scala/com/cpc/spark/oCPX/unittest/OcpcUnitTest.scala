@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getBaseDataRealtime
+import com.cpc.spark.oCPX.oCPC.calibration_x.realtime.pcoc_calibration.OcpcGetPb_weightv2.OcpcRealtimeCalibrationBase
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -25,7 +26,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val data = getBaseDataRealtime(24, date, hour, spark)
+    val data = OcpcRealtimeCalibrationBase(date, hour, hourInt3, spark).cache()
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")

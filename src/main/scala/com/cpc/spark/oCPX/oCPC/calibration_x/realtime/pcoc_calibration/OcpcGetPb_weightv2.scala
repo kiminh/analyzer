@@ -43,6 +43,7 @@ object OcpcGetPb_weightv2{
 
     // 校准系数模块
     val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, hourInt3, spark).cache()
+    realtimeDataRaw.show(10)
     val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
