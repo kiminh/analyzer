@@ -295,12 +295,24 @@ object OcpcTools {
     val result = mapMediaName(dataRaw, spark)
 
     val resultDF = result
-      .selectExpr("unitid", "media", "media_appsid", "date", "hour", "click", "pre_cvr", "cv")
+      .selectExpr("unitid", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int)n as hour", "click", "pre_cvr", "cv")
+      .withColumn("hour", udfConvertHourIntToString()(col("hour")))
       .distinct()
 
     resultDF.show(10)
     resultDF
   }
+
+  def udfConvertHourIntToString() = udf((hour: Int) => {
+    var result = {
+      if (hour < 10) {
+        "0" + hour.toString
+      } else {
+        hour.toString
+      }
+    }
+    result
+  })
 
   def getBaseDataNewCv(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据

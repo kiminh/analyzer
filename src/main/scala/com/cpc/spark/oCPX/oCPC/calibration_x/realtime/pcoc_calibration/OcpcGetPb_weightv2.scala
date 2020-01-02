@@ -43,7 +43,7 @@ object OcpcGetPb_weightv2{
 
     // 校准系数模块
     // todo
-    val realtimeDataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
+    val realtimeDataRaw = OcpcRealtimeCalibration(date, hour, hourInt3, spark).cache()
     val pcocDataRaw = OcpcCVRfactor(dataRaw, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
@@ -94,6 +94,9 @@ object OcpcGetPb_weightv2{
    */
   def OcpcRealtimeCalibration(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
+
+    val baseData = baseDataRaw
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
   }
 
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
