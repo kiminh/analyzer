@@ -364,7 +364,11 @@ object OcpcGetPb_retention {
     println(sqlRequest2)
     val recallValue2 = spark.sql(sqlRequest2)
 
+    val unitInfoRaw = getConversionGoalNew(spark)
+    val unitInfo = unitInfoRaw.select("unitid", "userid").distinct()
+
     val result = data
+      .join(unitInfo, Seq("unitid"), "inner")
       .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
       .join(recallValue2, Seq("conversion_goal", "userid", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
