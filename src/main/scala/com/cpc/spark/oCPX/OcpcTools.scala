@@ -270,15 +270,15 @@ object OcpcTools {
       s"""
        |(SELECT
        |    unit_id as unitid,
-       |    media_appsid,
+       |    media_id as media_appsid,
        |    sum(click) as click,
        |    sum(sum_cvr) * 0.000001 / sum(click) as pre_cvr,
        |    sum(cvr_num) as cv
        |FROM report_conversion_hourly
        |where $selectCondition
        |and ocpc_step > 0
-       |group by unit_id, media_appsid
-       |order by unit_id, media_appsid) as tmp
+       |group by unit_id, media_id
+       |order by unit_id, media_id) as tmp
        |""".stripMargin
     println(table)
 
