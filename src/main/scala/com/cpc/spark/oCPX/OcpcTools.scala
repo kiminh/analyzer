@@ -298,7 +298,7 @@ object OcpcTools {
 
     val resultDF = result
       .join(conversionGoal, Seq("unitid"), "inner")
-      .selectExpr("unitid", "conversion_goal", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int) as hour", "click", "pre_cvr", "cv")
+      .selectExpr("unitid", "conversion_goal", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int) as hour", "click", "cast(pre_cvr as double) as pre_cvr", "cv")
       .withColumn("hour", udfConvertHourIntToString()(col("hour")))
       .distinct()
 
