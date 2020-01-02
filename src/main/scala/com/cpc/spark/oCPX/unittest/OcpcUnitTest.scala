@@ -26,7 +26,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val data = OcpcRealtimeCalibrationBase(date, hour, hourInt3, spark).cache()
+    val data = OcpcRealtimeCalibrationBase(date, hour, 24, spark).cache()
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
