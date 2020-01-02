@@ -27,6 +27,9 @@ object OcpcUnitTest {
 
     val deepCvr = calculateDeepCvr(date, 3, spark)
 
+    deepCvr
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102c")
+
     // calculate cv2_t1
     val data1 = calculateCvrPart1(dataRaw, deepCvr, 0, spark)
 
@@ -37,7 +40,9 @@ object OcpcUnitTest {
     val data = data1.union(data2)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102d")
+
+
 
 
 //    dataRaw
