@@ -352,14 +352,14 @@ object OcpcGetPb_retention {
       s"""
          |SELECT
          |   conversion_goal,
-         |   userid,
+         |   id as userid,
          |   hour_diff,
          |   avg(value) as recall_value2
          |FROM
          |  dl_cpc.algo_recall_info_v1
          |WHERE
          |  version = 'v_userid'
-         |GROUP BY conversion_goal, userid, hour_diff
+         |GROUP BY conversion_goal, id, hour_diff
          |""".stripMargin
     println(sqlRequest2)
     val recallValue2 = spark.sql(sqlRequest2)
