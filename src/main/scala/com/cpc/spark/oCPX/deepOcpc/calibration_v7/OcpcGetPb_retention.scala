@@ -125,8 +125,8 @@ object OcpcGetPb_retention {
 
     data.createOrReplaceTempView("data")
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
 
     val sqlRequest =
       s"""

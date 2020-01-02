@@ -23,12 +23,11 @@ object OcpcUnitTest {
 
     val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
-    val cvrData = calculateCvrFactor(dataRaw, date, hour, spark)
 
 //    val deepCvr = calculateDeepCvr(date, 3, spark)
 //
 //    // calculate cv2_t1
-//    val data1 = calculateCvrPart1(dataRaw, deepCvr, 10, spark)
+//    val data1 = calculateCvrPart1(dataRaw, deepCvr, 0, spark)
 //
 //    // calculate cv2_t2 ~ cv2_t4
 //    val data2 = calculateCvrPart2(dataRaw, 20, spark)
@@ -40,8 +39,8 @@ object OcpcUnitTest {
 //      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
 
 
-    cvrData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102b")
+    dataRaw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103a")
 
 
 
