@@ -88,6 +88,15 @@ object OcpcTools {
       s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 
+  def getTimeRangeSqlDateInt(startDate: String, startHour: Int, endDate: String, endHour: Int): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= $endHour and hour > $startHour)"
+    }
+    return s"((`date` = '$startDate' and hour > $startHour) " +
+      s"or (`date` = '$endDate' and hour <= $endHour) " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
   def udfConcatStringInt(str: String) = udf((intValue: Int) => {
     val result = str + intValue.toString
     result
@@ -247,8 +256,9 @@ object OcpcTools {
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val hour1Int = tmpDateValue(1).toInt
+    val hourInt = hour.toInt
+    val selectCondition = getTimeRangeSqlDateInt(date1, hour1Int, date, hourInt)
 
 
     val conf = ConfigFactory.load("ocpc")
