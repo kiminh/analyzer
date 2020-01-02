@@ -270,6 +270,7 @@ object OcpcTools {
        |group by unit_id
        |order by unit_id) as tmp
        |""".stripMargin
+    println(table)
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -280,7 +281,6 @@ object OcpcTools {
       .load()
 
     val resultDF = data
-      .withColumn("unitid", col("id"))
       .selectExpr("unitid", "click", "pre_cvr", "cv")
       .distinct()
 
