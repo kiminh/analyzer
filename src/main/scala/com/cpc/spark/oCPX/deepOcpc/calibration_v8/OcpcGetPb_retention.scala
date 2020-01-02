@@ -377,10 +377,8 @@ object OcpcGetPb_retention {
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
-//    result
-//        .write.mode("overwrite").saveAsTable("test.ocpc_result_table20200102")
 
     result.createOrReplaceTempView("result_table")
 
@@ -416,7 +414,7 @@ object OcpcGetPb_retention {
       .withColumn("cv2_recall", col("cv1") * col("deep_cvr"))
       .withColumn("tag", lit(1))
       .filter(s"cv1 >= $minCV")
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
     result
   }
@@ -490,7 +488,7 @@ object OcpcGetPb_retention {
       .filter(s"cv2 >= 10")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
-    val resultDF = data.select("unitid", "media", "deep_cvr")
+    val resultDF = data.selectExpr("unitid", "media", "cast(deep_cvr as double) as deep_cvr")
 
     resultDF
   }
