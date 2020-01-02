@@ -16,25 +16,25 @@ object OcpcGetPb_weightv2{
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
+    val date1 = args(2).toString
+    val hour1 = args(3).toString
+    val version = args(4).toString
+    val expTag = args(5).toString
 
     // 主校准回溯时间长度
-    val hourInt1 = args(4).toInt
+    val hourInt1 = args(6).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(5).toInt
+    val hourInt2 = args(7).toInt
     // 兜底校准时长
-    val hourInt3 = args(6).toInt
+    val hourInt3 = args(8).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
-
-    // 基础数据
-    val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
-    dataRaw.show(10)
+    println(s"date=$date, hour=$hour, date1=$date1, hour1=$hour1, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计费比系数模块
-    val jfbDataRaw = OcpcJFBfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val dataRaw = OcpcCalibrationBase(date1, hour1, hourInt3, spark).cache()
+    dataRaw.show(10)
+    val jfbDataRaw = OcpcJFBfactor(date1, hour1, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
@@ -60,8 +60,8 @@ object OcpcGetPb_weightv2{
     val resultDF = data
       .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("date", lit(date1))
+      .withColumn("hour", lit(hour1))
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
