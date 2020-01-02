@@ -266,23 +266,23 @@ object OcpcTools {
     val user = conf.getString("adv_report.user")
     val passwd = conf.getString("adv_report.password")
     val driver = conf.getString("adv_report.driver")
-//    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
     val table =
       s"""
        |(SELECT
        |    unit_id as unitid,
+       |    media_appsid,
        |    sum(click) as click,
        |    sum(sum_cvr) * 0.000001 / sum(click) as pre_cvr,
        |    sum(cvr_num) as cv
        |FROM report_conversion_hourly
        |where $selectCondition
        |and ocpc_step > 0
-       |group by unit_id
-       |order by unit_id) as tmp
+       |group by unit_id, media_appsid
+       |order by unit_id, media_appsid) as tmp
        |""".stripMargin
     println(table)
 
-    val data = spark.read.format("jdbc")
+    val dataRaw = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
       .option("user", user)
@@ -290,8 +290,10 @@ object OcpcTools {
       .option("dbtable", table)
       .load()
 
-    val resultDF = data
-      .selectExpr("unitid", "click", "pre_cvr", "cv")
+    val result = mapMediaName(dataRaw, spark)
+
+    val resultDF = result
+      .selectExpr("unitid", "media", "media_appsid", "click", "pre_cvr", "cv")
       .distinct()
 
     resultDF.show(10)
