@@ -244,14 +244,14 @@ object OcpcTools {
     resultDF
   }
 
-  def getBaseDataRealtime(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseDataRealtime(hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.HOUR, -hourCnt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
