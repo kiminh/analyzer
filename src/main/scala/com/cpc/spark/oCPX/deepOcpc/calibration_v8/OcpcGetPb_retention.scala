@@ -332,38 +332,54 @@ object OcpcGetPb_retention {
 
     val data = data1.union(data2).union(data3)
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
-
     // get recall value
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |   conversion_goal,
          |   hour_diff,
-         |   value as recall_value
+         |   avg(value) as recall_value1
          |FROM
          |  dl_cpc.algo_recall_info_v1
          |WHERE
          |  version = 'v1'
+         |GROUP BY conversion_goal, hour_diff
          |""".stripMargin
-    println(sqlRequest)
-    val recallValue = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val recallValue1 = spark.sql(sqlRequest1)
 
-    recallValue
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |   conversion_goal,
+         |   userid,
+         |   hour_diff,
+         |   avg(value) as recall_value2
+         |FROM
+         |  dl_cpc.algo_recall_info_v1
+         |WHERE
+         |  version = 'v_userid'
+         |GROUP BY conversion_goal, userid, hour_diff
+         |""".stripMargin
+    println(sqlRequest2)
+    val recallValue2 = spark.sql(sqlRequest2)
 
     val result = data
-      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .join(recallValue2, Seq("conversion_goal", "userid", "hour_diff"), "left_outer")
+      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .na.fill(1.0, Seq("recall_value"))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
+//      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+//      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+
+    result
+        .write.mode("overwrite").saveAsTable("test.ocpc_result_table20200102")
 
     result.createOrReplaceTempView("result_table")
 
-    val sqlRequest2 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -378,9 +394,9 @@ object OcpcGetPb_retention {
          |  result_table
          |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
-    println(sqlRequest2)
+    println(sqlRequest3)
     val resultDF = spark
-        .sql(sqlRequest2)
+        .sql(sqlRequest3)
         .filter(s"cv2 >= $minCV")
 
     resultDF
