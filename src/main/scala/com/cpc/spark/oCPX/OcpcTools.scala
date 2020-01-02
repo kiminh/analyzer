@@ -294,8 +294,11 @@ object OcpcTools {
 
     val result = mapMediaName(dataRaw, spark)
 
+    val conversionGoal = getConversionGoal(date, hour, spark)
+
     val resultDF = result
-      .selectExpr("unitid", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int) as hour", "click", "pre_cvr", "cv")
+      .join(conversionGoal, Seq("unitid"), "inner")
+      .selectExpr("unitid", "conversion_goal", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int) as hour", "click", "pre_cvr", "cv")
       .withColumn("hour", udfConvertHourIntToString()(col("hour")))
       .distinct()
 

@@ -42,9 +42,8 @@ object OcpcGetPb_weightv2{
     jfbData.show(10)
 
     // 校准系数模块
-    // todo
-    val realtimeDataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
-    val pcocDataRaw = OcpcCVRfactor(dataRaw, expTag, spark)
+    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, hourInt3, spark).cache()
+    val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -68,8 +67,8 @@ object OcpcGetPb_weightv2{
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -92,11 +91,35 @@ object OcpcGetPb_weightv2{
   /*
   基础数据
    */
-  def OcpcRealtimeCalibration(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
 
     val baseData = baseDataRaw
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  date,
+         |  hour,
+         |  hour_diff,
+         |  sum(click) as click,
+         |  sum(cv) as cv,
+         |  sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr
+         |FROM
+         |  base_data
+         |GROUP BY unitid, conversion_goal, media, date, hour, hour_diff
+         |""".stripMargin
+    println(sqlRequest)
+    val data  = spark.sql(sqlRequest)
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "date", "hour", "hour_diff")
+
+    data
   }
 
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
@@ -204,9 +227,7 @@ object OcpcGetPb_weightv2{
          |    sum(click) as click,
          |    sum(cv) as cv,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
-         |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(acb * click) * 1.0 / sum(click) as acb,
-         |    sum(acp * click) * 1.0 / sum(click) as acp
+         |    sum(cv) * 1.0 / sum(click) as post_cvr
          |FROM
          |    raw_data
          |WHERE
