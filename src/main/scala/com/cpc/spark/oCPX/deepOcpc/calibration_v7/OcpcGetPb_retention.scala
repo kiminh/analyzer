@@ -149,7 +149,7 @@ object OcpcGetPb_retention {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "cvr_factor")
-      .filter(s"cvr_factor > 0")
+//      .filter(s"cvr_factor > 0")
 
     resultDF
   }
@@ -336,9 +336,6 @@ object OcpcGetPb_retention {
 
     val data = data1.union(data2).union(data3)
 
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
-
     // get recall value
     val sqlRequest =
       s"""
@@ -354,16 +351,13 @@ object OcpcGetPb_retention {
     println(sqlRequest)
     val recallValue = spark.sql(sqlRequest)
 
-//    recallValue
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
-
     val result = data
       .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
       .na.fill(1.0, Seq("recall_value"))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
     result.createOrReplaceTempView("result_table")
 
@@ -399,7 +393,7 @@ object OcpcGetPb_retention {
       .withColumn("cv2_recall", col("cv1") * col("deep_cvr"))
       .withColumn("tag", lit(1))
       .filter(s"cv1 >= $minCV")
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
     result
   }
@@ -473,7 +467,7 @@ object OcpcGetPb_retention {
       .filter(s"cv2 >= 10")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
-    val resultDF = data.select("unitid", "media", "deep_cvr")
+    val resultDF = data.selectExpr("unitid", "media", "cast(deep_cvr as double) as deep_cvr")
 
     resultDF
   }
