@@ -146,6 +146,7 @@ object OcpcGetPb_retention {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "cvr_factor")
+      .filter(s"cvr_factor > 0")
 
     resultDF
   }
