@@ -271,14 +271,16 @@ object OcpcTools {
        |(SELECT
        |    unit_id as unitid,
        |    media_id as media_appsid,
+       |    date,
+       |    hour,
        |    sum(click) as click,
        |    sum(sum_cvr) * 0.000001 / sum(click) as pre_cvr,
        |    sum(cvr_num) as cv
        |FROM report_conversion_hourly
        |where $selectCondition
        |and ocpc_step > 0
-       |group by unit_id, media_id
-       |order by unit_id, media_id) as tmp
+       |group by unit_id, media_id, date, hour
+       |order by unit_id, media_id, date, hour) as tmp
        |""".stripMargin
     println(table)
 
@@ -293,7 +295,7 @@ object OcpcTools {
     val result = mapMediaName(dataRaw, spark)
 
     val resultDF = result
-      .selectExpr("unitid", "media", "media_appsid", "click", "pre_cvr", "cv")
+      .selectExpr("unitid", "media", "media_appsid", "date", "hour", "click", "pre_cvr", "cv")
       .distinct()
 
     resultDF.show(10)
