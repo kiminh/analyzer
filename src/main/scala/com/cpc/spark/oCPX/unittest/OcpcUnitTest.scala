@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.deepOcpc.assembly.OcpcGetPb_baseline.getData
+import com.cpc.spark.oCPX.oCPC.report.OcpcHourlyReportV2.{calculateData, getBaseData}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -22,9 +22,15 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val dataRaw = getData(date, hour, spark)
-    dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103c")
+    // 拉取点击、消费、转化等基础数据
+    val rawData = getBaseData(date, hour, spark)
+
+    // stage3
+    val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
+    val stage3Data = calculateData(stage3DataRaw, spark)
+
+    stage3Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103a")
 
 
 

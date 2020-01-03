@@ -79,13 +79,14 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_cvrfactor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['discreteFactor'] as double) else 0 end) as total_discrete_factor,
+         |  sum(case when isclick=1 then cast(ocpc_log_dict['dynamicbid'] as double) else 0 end) * 1.0 as total_shallow_bid,
          |  sum(case when hidden_tax < 0 and isclick=1 then -hidden_tax else 0 end) as bl_hidden_tax,
          |  sum(case when hidden_tax > 0 and isclick=1 then hidden_tax else 0 end) as bk_hidden_tax,
          |  sum(case when isclick=1 then cast(deep_cpa as double) else 0 end) as total_deep_cpagiven,
-         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
-         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_deep_cvrfactor,
-         |  sum(case when isclick=1 and real_deep_flag = 1 then cast(deep_ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_deep_calipcvr,
-         |  sum(case when isclick=1 and real_deep_flag = 1 then 1 else 0 end) as real_deep_click,
+         |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
+         |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_deep_cvrfactor,
+         |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_deep_calipcvr,
+         |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['dynamicbid'] as double) else 0 end) * 1.0 as total_deep_bid,
          |  sum(case when isclick=1 then exp_cvr2 else 0 end) * 1.0 as total_deepcvr
          |FROM
          |  raw_data
@@ -134,7 +135,6 @@ object OcpcHourlyReportV2 {
          |    deep_ocpc_step,
          |    ocpc_log,
          |    deep_ocpc_log,
-         |    (case when length(deep_ocpc_log) > 0 and isclick=1 then 1 else 0 end) as real_deep_flag,
          |    deep_cvr * 1.0 / 1000000 as exp_cvr2,
          |    deep_cpa
          |FROM
