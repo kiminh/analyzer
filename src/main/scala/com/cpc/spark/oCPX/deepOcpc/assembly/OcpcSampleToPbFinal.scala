@@ -64,6 +64,18 @@ object OcpcSampleToPbFinal {
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
+    val result2 = getData2(date, hour, spark)
+    val resultDF2 = result2
+      .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+
+    resultDF2
+      .repartition(5)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(finalVersion))
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")
 
     savePbPack(resultDF, fileName, spark)
   }
@@ -94,6 +106,31 @@ object OcpcSampleToPbFinal {
 
 //    data
 //        .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191230")
+
+    data.show(10)
+    data
+
+  }
+
+  def getData2(date: String, hour: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_deep_param_pb_data_hourly_baseline
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  hour = '$hour'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCheckValue(0.5, 2.0)(col("cali_value")))
+      .withColumn("jfb_factor", udfCheckValue(1.0, 2.0)(col("jfb_factor")))
+      .cache()
 
     data.show(10)
     data

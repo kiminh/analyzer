@@ -53,6 +53,7 @@ object OcpcSampleToPb {
       .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
       .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")

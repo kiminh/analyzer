@@ -10,5 +10,5 @@ create table if not exists test.ocpc_deep_param_pb_data_hourly_baseline(
     smooth_factor   double,
     cpagiven        double
 )
-partitioned by (`date` string, `hour` string)
+partitioned by (`date` string, `hour` string, version string)
 stored as parquet;
