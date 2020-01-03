@@ -28,13 +28,9 @@ object OcpcGetPb_pay {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
     val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
-//    rawData
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(rawData, spark)
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
 
 
     // 数据组装
@@ -58,8 +54,8 @@ object OcpcGetPb_pay {
     resultDF
       .withColumn("deep_conversion_goal", lit(3))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
   }
 
