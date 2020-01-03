@@ -25,12 +25,12 @@ object OcpcUnitTest {
     // 拉取点击、消费、转化等基础数据
     val rawData = getBaseData(date, hour, spark)
 
-    // stage3
-    val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
-    val stage3Data = calculateData(stage3DataRaw, spark)
+    // stage2
+    val stage2DataRaw = rawData.filter(s"deep_ocpc_step != 2 and ocpc_step = 2")
+    val stage2Data = calculateData(stage2DataRaw, spark)
 
-    stage3Data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103a")
+    stage2Data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103b")
 
 
 
