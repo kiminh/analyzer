@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.deepOcpc.calibration_v7.OcpcGetPb_retention.{OcpcCalibrationBase, calculateCvrFactor, calculateCvrPart1, calculateCvrPart2, calculateDeepCvr, getDataByHourDiff}
+import com.cpc.spark.oCPX.deepOcpc.calibration_baseline.OcpcGetPb_pay.OcpcCalibrationFactor
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,36 +21,11 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
-//    val data = getDataByHourDiff(dataRaw, 0, 24, spark)
+    val rawData = OcpcCalibrationFactor(date, hour, 72, 20, spark)
 
-    val deepCvr = calculateDeepCvr(date, 3, spark)
-
-    deepCvr
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102c")
-
-    // calculate cv2_t1
-    val data1 = calculateCvrPart1(dataRaw, deepCvr, 0, spark)
-
-    // calculate cv2_t2 ~ cv2_t4
-    val data2 = calculateCvrPart2(dataRaw, 20, spark)
-
-    // data join
-    val data = data1.union(data2)
-
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102d")
-
-
-
-
-//    dataRaw
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103a")
-//
-//    data
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103b")
-
+    rawData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200103a")
 
 
 

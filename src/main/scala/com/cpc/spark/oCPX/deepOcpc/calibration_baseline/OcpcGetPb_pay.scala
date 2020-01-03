@@ -19,15 +19,13 @@ object OcpcGetPb_pay {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
     val hourInt = args(4).toInt
     val minCV = args(5).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
+    println(s"date=$date, hour=$hour, hourInt:$hourInt")
 
-    val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
+    val rawData = OcpcCalibrationFactor(date, hour, hourInt, minCV, spark)
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(rawData, spark)
@@ -38,24 +36,19 @@ object OcpcGetPb_pay {
 
     // 输出到结果表 dl_cpc.ocpc_deep_pb_data_hourly
     // 明投单元
-    val result = resultData
+    val resultDF = resultData
       .withColumn("cpagiven", lit(1.0))
-      .withColumn("is_hidden", lit(0))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-    val resultDF = result
-      .select("identifier", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
-
-
+      .withColumn("deep_conversion_goal", lit(3))
+      .withColumn("exp_tag", concat_ws("-", col("exp_tag"), col("deep_conversion_goal")))
+      .select("conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag")
 
     resultDF
-      .withColumn("deep_conversion_goal", lit(3))
+
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline_exp")
 
   }
 
@@ -67,17 +60,32 @@ object OcpcGetPb_pay {
     // high_bid_factor: 1.0
     // low_bid_factor: 1.0
     val data = rawData
-      .selectExpr("cast(unitid as string) identifier", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
+      .selectExpr("conversion_goal", "media", "jfb_factor", "cvr_factor")
       .withColumn("post_cvr", lit(0.0))
       .withColumn("smooth_factor", lit(0.3))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("identifier"), col("smooth_factor")))
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
-      .select("identifier", "conversion_goal", "exp_tag", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+      .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
 
-    data
+    val expArray = Array("v4", "v5", "v6", "v7")
+    var result = data
+      .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+      .withColumn("exp_tag", lit("v3") + col("media"))
+      .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "exp_tag")
+
+    for (item <- expArray) {
+      val singleData = data
+        .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
+        .withColumn("exp_tag", lit(item) + col("media"))
+        .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "exp_tag")
+
+      result = result.union(singleData)
+    }
+
+    result
   }
 
 
@@ -190,12 +198,12 @@ object OcpcGetPb_pay {
   }
 
 
-  def OcpcCalibrationFactor(date: String, hour: String, hourInt: Int, expTag: String, minCV: Int, spark: SparkSession) = {
+  def OcpcCalibrationFactor(date: String, hour: String, hourInt: Int, minCV: Int, spark: SparkSession) = {
     val baseData = getBaseData(hourInt, date, hour, spark)
 
     val resultDF = baseData
       .filter(s"isclick=1")
-      .groupBy("unitid", "deep_conversion_goal", "media")
+      .groupBy("deep_conversion_goal", "media")
       .agg(
         sum(col("isclick")).alias("click"),
         sum(col("iscvr")).alias("cv"),
@@ -203,14 +211,13 @@ object OcpcGetPb_pay {
         sum(col("price")).alias("total_price"),
         sum(col("exp_cvr")).alias("total_pre_cvr")
       )
-      .select("unitid", "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
+      .select( "deep_conversion_goal", "media", "click", "cv", "total_bid", "total_price", "total_pre_cvr")
       .na.fill(0, Seq("cv"))
       .filter(s"deep_conversion_goal = 3")
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .withColumn("post_cvr", col("cv") * 1.0 / col("click"))
       .withColumn("pre_cvr", col("total_pre_cvr") * 1.0 / col("click"))
       .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .withColumn("min_cv", lit(minCV))
 
     resultDF.show(10)
