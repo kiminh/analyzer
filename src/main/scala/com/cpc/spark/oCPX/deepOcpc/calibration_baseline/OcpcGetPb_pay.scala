@@ -68,7 +68,7 @@ object OcpcGetPb_pay {
       .na.fill(1.0, Seq("jfb_factor", "cvr_factor", "high_bid_factor", "low_bid_factor"))
       .na.fill(0.0, Seq("post_cvr", "smooth_factor"))
 
-    val expArray = Array("v4", "v5", "v6", "v7")
+    val expArray = Array("v4", "v5", "v6", "v7", "v8")
     var result = data
       .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
       .withColumn("exp_tag", udfConcatStringColumn("v3")(col("media")))
