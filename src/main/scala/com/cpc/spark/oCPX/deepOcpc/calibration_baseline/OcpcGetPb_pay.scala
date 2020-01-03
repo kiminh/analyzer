@@ -19,8 +19,8 @@ object OcpcGetPb_pay {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val hourInt = args(4).toInt
-    val minCV = args(5).toInt
+    val hourInt = args(2).toInt
+    val minCV = args(3).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt:$hourInt")
@@ -45,7 +45,6 @@ object OcpcGetPb_pay {
       .select("conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag")
 
     resultDF
-
       .repartition(1)
       .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline_exp")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline_exp")
@@ -78,7 +77,7 @@ object OcpcGetPb_pay {
     for (item <- expArray) {
       val singleData = data
         .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-        .withColumn("exp_tag", udfConcatStringColumn("v3")(col("media")))
+        .withColumn("exp_tag", udfConcatStringColumn(item)(col("media")))
         .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "exp_tag")
 
       result = result.union(singleData)
