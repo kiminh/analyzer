@@ -336,24 +336,8 @@ object OcpcGetPb_retention {
 
     val data = data1.union(data2).union(data3)
 
-    // get recall value
-    val sqlRequest =
-      s"""
-         |SELECT
-         |   conversion_goal,
-         |   hour_diff,
-         |   value as recall_value
-         |FROM
-         |  dl_cpc.algo_recall_info_v1
-         |WHERE
-         |  version = 'v1'
-         |""".stripMargin
-    println(sqlRequest)
-    val recallValue = spark.sql(sqlRequest)
-
     val result = data
-      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
-      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("recall_value", lit(1.0))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
