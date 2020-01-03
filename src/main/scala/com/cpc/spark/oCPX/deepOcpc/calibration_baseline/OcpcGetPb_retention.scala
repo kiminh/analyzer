@@ -1,4 +1,4 @@
-package com.cpc.spark.oCPX.deepOcpc.calibration_base
+package com.cpc.spark.oCPX.deepOcpc.calibration_baseline
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -136,7 +136,7 @@ object OcpcGetPb_retention {
          |  sum(pre_cvr2 * click) * 1.0 / sum(click) as pre_cvr2,
          |  sum(cv2_recall) as cv2_recall
          |FROM
-         |  result_table
+         |  data
          |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
     println(sqlRequest)
@@ -146,6 +146,7 @@ object OcpcGetPb_retention {
 
     val resultDF = result
       .select("unitid", "conversion_goal", "media", "cvr_factor")
+      .filter(s"cvr_factor > 0")
 
     resultDF
   }
@@ -332,38 +333,56 @@ object OcpcGetPb_retention {
 
     val data = data1.union(data2).union(data3)
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227a")
-
     // get recall value
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
          |   conversion_goal,
          |   hour_diff,
-         |   value as recall_value
+         |   avg(value) as recall_value1
          |FROM
          |  dl_cpc.algo_recall_info_v1
          |WHERE
          |  version = 'v1'
+         |GROUP BY conversion_goal, hour_diff
          |""".stripMargin
-    println(sqlRequest)
-    val recallValue = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val recallValue1 = spark.sql(sqlRequest1)
 
-    recallValue
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data201901227b")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |   conversion_goal,
+         |   id as userid,
+         |   hour_diff,
+         |   avg(value) as recall_value2
+         |FROM
+         |  dl_cpc.algo_recall_info_v1
+         |WHERE
+         |  version = 'v_userid'
+         |GROUP BY conversion_goal, id, hour_diff
+         |""".stripMargin
+    println(sqlRequest2)
+    val recallValue2 = spark.sql(sqlRequest2)
+
+    val unitInfoRaw = getConversionGoalNew(spark)
+    val unitInfo = unitInfoRaw.select("unitid", "userid").distinct()
 
     val result = data
-      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .join(unitInfo, Seq("unitid"), "inner")
+      .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .join(recallValue2, Seq("conversion_goal", "userid", "hour_diff"), "left_outer")
+      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .na.fill(1.0, Seq("recall_value"))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
       .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
+
 
     result.createOrReplaceTempView("result_table")
 
-    val sqlRequest2 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -378,9 +397,9 @@ object OcpcGetPb_retention {
          |  result_table
          |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
-    println(sqlRequest2)
+    println(sqlRequest3)
     val resultDF = spark
-        .sql(sqlRequest2)
+        .sql(sqlRequest3)
         .filter(s"cv2 >= $minCV")
 
     resultDF
@@ -395,7 +414,7 @@ object OcpcGetPb_retention {
       .withColumn("cv2_recall", col("cv1") * col("deep_cvr"))
       .withColumn("tag", lit(1))
       .filter(s"cv1 >= $minCV")
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "cv2_recall", "tag")
+      .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
     result
   }
@@ -469,7 +488,7 @@ object OcpcGetPb_retention {
       .filter(s"cv2 >= 10")
       .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
-    val resultDF = data.select("unitid", "media", "deep_cvr")
+    val resultDF = data.selectExpr("unitid", "media", "cast(deep_cvr as double) as deep_cvr")
 
     resultDF
   }
