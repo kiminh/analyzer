@@ -72,13 +72,13 @@ object OcpcGetPb_pay {
     val expArray = Array("v4", "v5", "v6", "v7")
     var result = data
       .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-      .withColumn("exp_tag", lit("v3") + col("media"))
+      .withColumn("exp_tag", udfConcatStringColumn("v3")(col("media")))
       .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "exp_tag")
 
     for (item <- expArray) {
       val singleData = data
         .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor")
-        .withColumn("exp_tag", lit(item) + col("media"))
+        .withColumn("exp_tag", udfConcatStringColumn("v3")(col("media")))
         .select("conversion_goal", "media", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "exp_tag")
 
       result = result.union(singleData)
@@ -86,6 +86,11 @@ object OcpcGetPb_pay {
 
     result
   }
+
+  def udfConcatStringColumn(value1: String) = udf((value2: String) => {
+    val result = value1 + value2
+    result
+  })
 
 
   def calculateCalibrationValue(dataRaw: DataFrame, spark: SparkSession) = {
