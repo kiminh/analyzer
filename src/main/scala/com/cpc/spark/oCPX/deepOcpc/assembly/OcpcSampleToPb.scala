@@ -103,7 +103,7 @@ object OcpcSampleToPb {
       s"""
          |SELECT
          |  *,
-         |  row_number() over(partition by identifier, conversion_goal, is_hidden, exp_tag order by time_stamp desc) as seq
+         |  row_number() over(partition by conversion_goal, exp_tag order by time_stamp desc) as seq
          |FROM
          |  raw_data
        """.stripMargin
