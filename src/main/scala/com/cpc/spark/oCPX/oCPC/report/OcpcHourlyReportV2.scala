@@ -34,19 +34,22 @@ object OcpcHourlyReportV2 {
 
     // stage3
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
-    val stage3Data = calculateData(stage3DataRaw, spark)
+    val stage3Data = calculateData(stage3DataRaw, 3, spark)
 
     // stage2
     val stage2DataRaw = rawData.filter(s"deep_ocpc_step != 2 and ocpc_step = 2")
-    val stage2Data = calculateData(stage2DataRaw, spark)
+    val stage2Data = calculateData(stage2DataRaw, 2, spark)
 
     // stage1
     val stage1DataRaw = rawData.filter(s"ocpc_step = 1")
-    val stage1Data = calculateData(stage1DataRaw, spark)
+    val stage1Data = calculateData(stage1DataRaw, 1, spark)
+
+    // data union
+    val data = stage1Data.union(stage2Data).union(stage3Data)
 
   }
 
-  def calculateData(rawData: DataFrame, spark: SparkSession) = {
+  def calculateData(rawData: DataFrame, ocpcStage: Int, spark: SparkSession) = {
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest =
       s"""
@@ -60,7 +63,6 @@ object OcpcHourlyReportV2 {
          |  conversion_goal,
          |  deep_conversion_goal,
          |  cpa_check_priority,
-         |  is_deep_ocpc,
          |  media_appsid,
          |  hr,
          |  ocpc_expand,
@@ -80,8 +82,8 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then cast(ocpc_log_dict['pcvr'] as double) else 0 end) * 1.0 as total_calipcvr,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['discreteFactor'] as double) else 0 end) as total_discrete_factor,
          |  sum(case when isclick=1 then cast(ocpc_log_dict['dynamicbid'] as double) else 0 end) * 1.0 as total_shallow_bid,
-         |  sum(case when hidden_tax < 0 and isclick=1 then -hidden_tax else 0 end) as bl_hidden_tax,
-         |  sum(case when hidden_tax > 0 and isclick=1 then hidden_tax else 0 end) as bk_hidden_tax,
+         |  sum(case when isclick=1 and hidden_tax < 0 then -hidden_tax else 0 end) as bl_hidden_tax,
+         |  sum(case when isclick=1 and hidden_tax > 0 then hidden_tax else 0 end) as bk_hidden_tax,
          |  sum(case when isclick=1 then cast(deep_cpa as double) else 0 end) as total_deep_cpagiven,
          |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['kvalue'] as double) else 0 end) * 1.0 as total_deep_jfbfactor,
          |  sum(case when isclick=1 then cast(deep_ocpc_log_dict['cvrCalFactor'] as double) else 0 end) * 1.0 as total_deep_cvrfactor,
@@ -90,10 +92,13 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then exp_cvr2 else 0 end) * 1.0 as total_deepcvr
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, is_deep_ocpc, media_appsid, hr, ocpc_expand
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, media_appsid, hr, ocpc_expand
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest).cache()
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("ocpc_stage", lit(ocpcStage))
+      .cache()
     println("base_data:")
     data.show(10)
     data
