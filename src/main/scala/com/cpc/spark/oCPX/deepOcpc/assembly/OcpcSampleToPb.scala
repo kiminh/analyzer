@@ -43,8 +43,8 @@ object OcpcSampleToPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
     val resultDF2 = getCalibrationData2(date, hour, hourInt, spark)
