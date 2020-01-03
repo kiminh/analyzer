@@ -56,11 +56,10 @@ object OcpcSampleToPbFinal {
     val finalVersion = version + "pbfile"
     resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-      .repartition(5)
+      .repartition(1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
-      .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
@@ -69,11 +68,10 @@ object OcpcSampleToPbFinal {
       .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
 
     resultDF2
-      .repartition(5)
+      .repartition(1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
-      .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")
 
