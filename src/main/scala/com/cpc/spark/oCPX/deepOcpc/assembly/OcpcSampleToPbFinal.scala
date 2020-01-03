@@ -64,7 +64,7 @@ object OcpcSampleToPbFinal {
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
-    val result2 = getData2(date, hour, spark)
+    val result2 = getData2(date, hour, version, spark)
     val resultDF2 = result2
       .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
 
@@ -77,7 +77,7 @@ object OcpcSampleToPbFinal {
       .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")
 
-    savePbPack(resultDF, fileName, spark)
+    savePbPack(resultDF, resultDF2, fileName, spark)
   }
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
@@ -112,7 +112,7 @@ object OcpcSampleToPbFinal {
 
   }
 
-  def getData2(date: String, hour: String, spark: SparkSession) = {
+  def getData2(date: String, hour: String, version: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -123,6 +123,8 @@ object OcpcSampleToPbFinal {
          |  date = '$date'
          |AND
          |  hour = '$hour'
+         |AND
+         |  version = '$version'
        """.stripMargin
     println(sqlRequest)
     val data = spark
@@ -161,7 +163,7 @@ object OcpcSampleToPbFinal {
     result
   })
 
-  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
+  def savePbPack(data: DataFrame, data2: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
     oCPCQTT&unitid&isHiddenOcpc
     string   key = 1;
@@ -231,26 +233,34 @@ object OcpcSampleToPbFinal {
 
     }
 
-    // add base data
-    val expArray = Array("v3", "v4", "v5", "v6", "v7")
-    for (item <- expArray) {
-      val cvrCalFactor = 0.5
-      val jfbFactor = 1.0
-      val smoothFactor = 0.3
-      val postCvr = 0.0
-      val cpaGiven = 0.0
-      val cpaSuggest = 0.0
+    data.printSchema()
+
+    for (record <- data2.collect()) {
+      val expTag = record.getAs[String]("exp_tag")
+      val conversionGoal = record.getAs[Int]("conversion_goal")
+      val key = expTag + "&c" + conversionGoal.toString
+      val cvrCalFactor = record.getAs[Double]("cali_value")
+      val jfbFactor = record.getAs[Double]("jfb_factor")
+      val smoothFactor = record.getAs[Double]("smooth_factor")
+      val postCvr = record.getAs[Double]("post_cvr")
+      val cpaGiven = record.getAs[Double]("cpagiven")
+      val cpaSuggest = record.getAs[Double]("cpa_suggest")
       val paramT = 2.0
-      val highBidFactor = 1.0
-      val lowBidFactor = 1.0
+      val highBidFactor = record.getAs[Double]("high_bid_factor")
+      val lowBidFactor = record.getAs[Double]("low_bid_factor")
       val minCPM = 0
       val minBid = 0
       val cpcbid = 0
       val maxbid = 0
 
-      list += SingleItem(
-        key = item + "Qtt" + "&c2",
-        conversionGoal = 2,
+      if (cnt % 100 == 0) {
+        println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        key = key,
+        conversionGoal = conversionGoal,
         cvrCalFactor = cvrCalFactor,
         jfbFactor = jfbFactor,
         smoothFactor = smoothFactor,
@@ -266,140 +276,179 @@ object OcpcSampleToPbFinal {
         maxbid = maxbid
 
       )
+      list += currentItem
 
-      list += SingleItem(
-        key = item + "Qtt" + "&c3",
-        conversionGoal = 3,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-      )
-
-      list += SingleItem(
-        key = item + "HT66" + "&c2",
-        conversionGoal = 2,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-
-      )
-
-      list += SingleItem(
-        key = item + "HT66" + "&c3",
-        conversionGoal = 3,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-      )
-
-      list += SingleItem(
-        key = item + "MiDu" + "&c2",
-        conversionGoal = 2,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-
-      )
-
-      list += SingleItem(
-        key = item + "MiDu" + "&c3",
-        conversionGoal = 3,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-      )
-
-      list += SingleItem(
-        key = item + "Other" + "&c2",
-        conversionGoal = 2,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-
-      )
-
-      list += SingleItem(
-        key = item + "Other" + "&c3",
-        conversionGoal = 3,
-        cvrCalFactor = cvrCalFactor,
-        jfbFactor = jfbFactor,
-        smoothFactor = smoothFactor,
-        postCvr = postCvr,
-        cpaGiven = cpaGiven,
-        cpaSuggest = cpaSuggest,
-        paramT = paramT,
-        highBidFactor = highBidFactor,
-        lowBidFactor = lowBidFactor,
-        ocpcMincpm = minCPM,
-        ocpcMinbid = minBid,
-        cpcbid = cpcbid,
-        maxbid = maxbid
-      )
-
-      val key = item + "Qtt" + "&c3"
-      val conversionGoal = 3
-      println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
     }
+
+//    // add base data
+//    val expArray = Array("v3", "v4", "v5", "v6", "v7")
+//    for (item <- expArray) {
+//      val cvrCalFactor = 0.5
+//      val jfbFactor = 1.0
+//      val smoothFactor = 0.3
+//      val postCvr = 0.0
+//      val cpaGiven = 0.0
+//      val cpaSuggest = 0.0
+//      val paramT = 2.0
+//      val highBidFactor = 1.0
+//      val lowBidFactor = 1.0
+//      val minCPM = 0
+//      val minBid = 0
+//      val cpcbid = 0
+//      val maxbid = 0
+//
+//      list += SingleItem(
+//        key = item + "Qtt" + "&c2",
+//        conversionGoal = 2,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//
+//      )
+//
+//      list += SingleItem(
+//        key = item + "Qtt" + "&c3",
+//        conversionGoal = 3,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//      )
+//
+//      list += SingleItem(
+//        key = item + "HT66" + "&c2",
+//        conversionGoal = 2,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//
+//      )
+//
+//      list += SingleItem(
+//        key = item + "HT66" + "&c3",
+//        conversionGoal = 3,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//      )
+//
+//      list += SingleItem(
+//        key = item + "MiDu" + "&c2",
+//        conversionGoal = 2,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//
+//      )
+//
+//      list += SingleItem(
+//        key = item + "MiDu" + "&c3",
+//        conversionGoal = 3,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//      )
+//
+//      list += SingleItem(
+//        key = item + "Other" + "&c2",
+//        conversionGoal = 2,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//
+//      )
+//
+//      list += SingleItem(
+//        key = item + "Other" + "&c3",
+//        conversionGoal = 3,
+//        cvrCalFactor = cvrCalFactor,
+//        jfbFactor = jfbFactor,
+//        smoothFactor = smoothFactor,
+//        postCvr = postCvr,
+//        cpaGiven = cpaGiven,
+//        cpaSuggest = cpaSuggest,
+//        paramT = paramT,
+//        highBidFactor = highBidFactor,
+//        lowBidFactor = lowBidFactor,
+//        ocpcMincpm = minCPM,
+//        ocpcMinbid = minBid,
+//        cpcbid = cpcbid,
+//        maxbid = maxbid
+//      )
+//
+//      val key = item + "Qtt" + "&c3"
+//      val conversionGoal = 3
+//      println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
+//    }
 
 
     val result = list.toArray[SingleItem]
