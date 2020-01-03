@@ -46,8 +46,8 @@ object OcpcGetPb_pay {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline_exp")
 
   }
 
