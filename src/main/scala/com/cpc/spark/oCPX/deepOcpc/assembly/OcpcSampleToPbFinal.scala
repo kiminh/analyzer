@@ -232,6 +232,7 @@ object OcpcSampleToPbFinal {
     }
 
     data2.printSchema()
+    cnt = 0
 
     for (record <- data2.collect()) {
       val expTag = record.getAs[String]("exp_tag")
@@ -251,7 +252,7 @@ object OcpcSampleToPbFinal {
       val cpcbid = 0
       val maxbid = 0
 
-      if (cnt % 100 == 0) {
+      if (cnt % 10 == 0) {
         println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
       }
       cnt += 1
