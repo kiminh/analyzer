@@ -47,12 +47,84 @@ object OcpcSampleToPb {
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
 
-    val resultDF2 = getCalibrationData2(date, hour, version, hourInt, spark)
+    val resultDF2 = getCalibrationData2(date, hour, hourInt, spark)
+
+    resultDF2
+      .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(5)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
+    //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")
 
   }
 
-  def getCalibrationData2(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
+  def getCalibrationData2(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  exp_tag,
+         |  cvr_factor as cali_value,
+         |  jfb_factor,
+         |  post_cvr,
+         |  smooth_factor,
+         |  high_bid_factor,
+         |  low_bid_factor,
+         |  cpagiven,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_deep_pb_data_hourly_baseline
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark
+      .sql(sqlRequest1)
+      .withColumn("create_time", concat_ws(" ", col("date"), col("hour")))
+      .withColumn("time_stamp", unix_timestamp(col("create_time"), "yyyy-MM-dd HH"))
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  *,
+         |  row_number() over(partition by identifier, conversion_goal, is_hidden, exp_tag order by time_stamp desc) as seq
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val dataRaw1 = spark.sql(sqlRequest2)
+
+    val data1 = dataRaw1
+      .filter(s"seq = 1")
+      .cache()
+    data1.show(10)
+
+    val data = data1
+      .withColumn("cpa_suggest", lit(0.0))
+      .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
+      .withColumn("cali_value", udfCheckCali(0.1, 2.0)(col("cali_value")))
+      .na.fill(1.0, Seq("high_bid_factor", "low_bid_factor", "cpagiven"))
+      .na.fill(0.0, Seq("cali_value", "jfb_factor", "post_cvr", "cpa_suggest", "smooth_factor"))
+
+    data.show(10)
+
+    data
   }
 
   def getCalibrationData(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
