@@ -35,16 +35,23 @@ object OcpcSampleToPb {
     println("parameters:")
     println(s"date=$date, hour=$hour, version:$version, hourInt:$hourInt")
 
-    val resultDF = getCalibrationData(date, hour, version, hourInt, spark)
+    val resultDF1 = getCalibrationData(date, hour, version, hourInt, spark)
 
-    resultDF
+    resultDF1
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
+
+
+    val resultDF2 = getCalibrationData2(date, hour, version, hourInt, spark)
+
+  }
+
+  def getCalibrationData2(date: String, hour: String, version: String, hourInt: Int, spark: SparkSession) = {
 
   }
 
@@ -107,22 +114,6 @@ object OcpcSampleToPb {
       .filter(s"seq = 1")
       .cache()
     data1.show(10)
-
-//    val sqlRequest3 =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  conversion_goal,
-//         |  avg(cpa_suggest) as cpa_suggest
-//         |FROM
-//         |  dl_cpc.ocpc_history_suggest_cpa_version
-//         |WHERE
-//         |  version = 'ocpcv1'
-//         |GROUP BY unitid, conversion_goal
-//       """.stripMargin
-//    println(sqlRequest3)
-//    val data2 = spark.sql(sqlRequest3).cache()
-//    data2.show(10)
 
     val data = data1
       .withColumn("cpa_suggest", lit(0.0))

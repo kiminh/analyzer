@@ -28,8 +28,8 @@ object OcpcGetPb_baseline {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline")
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_baseline")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_baseline")
 
 
   }
@@ -41,7 +41,7 @@ object OcpcGetPb_baseline {
          |  *,
          |  split(exp_tag, '-') as exp_tag_list
          |FROM
-         |  test.ocpc_deep_pb_data_hourly_baseline_exp
+         |  dl_cpc.ocpc_deep_pb_data_hourly_baseline_exp
          |WHERE
          |  date = '$date'
          |AND
