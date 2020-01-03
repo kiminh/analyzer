@@ -47,7 +47,7 @@ object OcpcGetPb_retention {
       .withColumn("cpagiven", lit(1.0))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("deep_conversion_goal", lit(3))
+      .withColumn("deep_conversion_goal", lit(2))
       .withColumn("exp_tag", concat_ws("-", col("exp_tag"), col("deep_conversion_goal")))
       .select("conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag")
 
@@ -96,7 +96,7 @@ object OcpcGetPb_retention {
     }
 
 
-    data
+    result
   }
 
   def udfConcatStringColumn(value1: String) = udf((value2: String) => {
