@@ -193,6 +193,7 @@ object OcpcHourlyReportV2 {
       .na.fill(0, Seq("iscvr1", "iscvr2"))
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
       .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
+      .selectExpr("searchid", "ideaid", "unitid", "userid", "adslot_type", "adslotid", "adclass", "conversion_goal", "conversion_from", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "ocpc_expand", "isclick", "isshow", "price", "bid", "exp_cvr", "cast(raw_cvr as double) as raw_cvr", "exp_ctr", "media_appsid", "exp_cpm", "hr", "hidden_tax", "ocpc_step", "deep_ocpc_step", "ocpc_log", "deep_ocpc_log", "cast(exp_cvr2 as double) as exp_cvr2", "deep_cpa")
 
     resultDF
 
