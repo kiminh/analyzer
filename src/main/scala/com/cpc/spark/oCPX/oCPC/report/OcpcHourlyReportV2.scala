@@ -51,8 +51,45 @@ object OcpcHourlyReportV2 {
     // data union
     val data = stage1Data.union(stage2Data).union(stage3Data)
 
+    // get ad name
+    val adProdName = getAdProdName(spark)
+
     saveDataToHDFS(data, dbName, spark)
 
+  }
+
+  def getAdProdName(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.cpc_sales_crm.url")
+    val user = conf.getString("adv_read_mysql.cpc_sales_crm.user")
+    val passwd = conf.getString("adv_read_mysql.cpc_sales_crm.password")
+    val driver = conf.getString("adv_read_mysql.cpc_sales_crm.driver")
+    val table =
+      s"""
+         |(SELECT a.adv_user_id , p.name
+         |FROM customer_adv_account a
+         |left join product p
+         |on a.product_id = p.id
+         |GROUP BY a.adv_user_id , p.name) as tmp
+         |""".stripMargin
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("userid", col("adv_user_id"))
+      .withColumn("prod_name", col("name"))
+      .selectExpr("userid", "prod_name")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
   }
 
   def saveDataToHDFS(data: DataFrame, dbName: String, spark: SparkSession) = {
@@ -62,7 +99,7 @@ object OcpcHourlyReportV2 {
     val tableName = s"$dbName.ocpc_report_data_hourly"
     println(s"save data to $tableName")
     result
-      .repartition(5)
+      .repartition(1)
       .write.mode("overwrite").insertInto(tableName)
   }
 
