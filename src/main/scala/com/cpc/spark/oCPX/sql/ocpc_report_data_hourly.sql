@@ -2,6 +2,7 @@ create table test.ocpc_report_data_hourly (
     ideaid                  int,
     unitid                  int,
     userid                  int,
+    prod_name               string,
     adclass                 int,
     adslot_type             int,
     adslotid                string,
