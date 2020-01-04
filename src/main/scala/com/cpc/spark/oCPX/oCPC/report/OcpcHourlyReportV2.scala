@@ -1,5 +1,8 @@
 package com.cpc.spark.oCPX.oCPC.report
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
@@ -25,13 +28,13 @@ object OcpcHourlyReportV2 {
       .getOrCreate()
 
     val date = args(0).toString
-    val hour = args(1).toString
+    val dayInt = args(1).toInt
     val dbName = args(2).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, dbName=$dbName")
+    println(s"date=$date, dayInt=$dayInt, dbName=$dbName")
 
     // 拉取点击、消费、转化等基础数据
-    val rawData = getBaseData(date, hour, spark)
+    val rawData = getBaseData(date, dayInt, spark)
 
     // stage3
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
@@ -119,10 +122,19 @@ object OcpcHourlyReportV2 {
     data
   }
 
-  def getBaseData(date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(date: String, dayInt: Int, spark: SparkSession) = {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayInt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -161,8 +173,7 @@ object OcpcHourlyReportV2 {
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
-         |    `date` = '$date'
-         |and `hour` <= '$hour'
+         |    `date` >= '$date1'
          |and isshow = 1
          |and conversion_goal > 0
          |and is_ocpc = 1
@@ -181,7 +192,7 @@ object OcpcHourlyReportV2 {
          |FROM
          |  dl_cpc.ocpc_cvr_log_hourly
          |WHERE
-         |  date >= '$date'
+         |  date >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData1 = spark.sql(sqlRequest2).distinct()
@@ -196,7 +207,7 @@ object OcpcHourlyReportV2 {
          |FROM
          |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
-         |  date >= '$date'
+         |  date >= '$date1'
        """.stripMargin
     println(sqlRequest3)
     val cvData2 = spark.sql(sqlRequest3).distinct()
