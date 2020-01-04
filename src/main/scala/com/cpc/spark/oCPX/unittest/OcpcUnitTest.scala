@@ -23,7 +23,7 @@ object OcpcUnitTest {
 
 
     // 拉取点击、消费、转化等基础数据
-    val rawData = getBaseData(date, hour, spark)
+    val rawData = getBaseData(date, 0, spark)
 
     // stage3
     val stage3DataRaw = rawData.filter(s"deep_ocpc_step = 2")
