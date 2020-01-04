@@ -26,8 +26,9 @@ object OcpcHourlyReportV2 {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val dbName = args(2).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour")
+    println(s"date=$date, hour=$hour, dbName=$dbName")
 
     // 拉取点击、消费、转化等基础数据
     val rawData = getBaseData(date, hour, spark)
@@ -47,6 +48,19 @@ object OcpcHourlyReportV2 {
     // data union
     val data = stage1Data.union(stage2Data).union(stage3Data)
 
+    saveDataToHDFS(data, dbName, spark)
+
+  }
+
+  def saveDataToHDFS(data: DataFrame, dbName: String, spark: SparkSession) = {
+    val result = data
+      .select("ideaid", "unitid", "userid", "adclass", "adslot_type", "adslotid", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "media_appsid", "ocpc_expand", "show", "click", "cv1", "cv2", "total_price", "total_bid", "total_precvr", "total_rawcvr", "total_prectr", "total_exp_cpm", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_discrete_factor", "total_shallow_bid", "bl_hidden_tax", "bk_hidden_tax", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_bid", "total_deepcvr", "ocpc_stage", "date", "hour")
+
+    val tableName = s"$dbName.ocpc_report_data_hourly20200104"
+    println(s"save data to $dbName")
+    result
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable(tableName)
   }
 
   def calculateData(rawData: DataFrame, ocpcStage: Int, spark: SparkSession) = {
@@ -64,8 +78,9 @@ object OcpcHourlyReportV2 {
          |  deep_conversion_goal,
          |  cpa_check_priority,
          |  media_appsid,
-         |  hr,
          |  ocpc_expand,
+         |  date,
+         |  hour,
          |  sum(isshow) as show,
          |  sum(isclick) as click,
          |  sum(case when isclick=1 then iscvr1 else 0 end) as cv1,
@@ -92,7 +107,7 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 then exp_cvr2 else 0 end) * 1.0 as total_deepcvr
          |FROM
          |  raw_data
-         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, media_appsid, hr, ocpc_expand
+         |GROUP BY ideaid, unitid, userid, adclass, adslot_type, adslotid, conversion_goal, deep_conversion_goal, cpa_check_priority, media_appsid, ocpc_expand, date, hour
        """.stripMargin
     println(sqlRequest)
     val data = spark
@@ -134,14 +149,15 @@ object OcpcHourlyReportV2 {
          |    exp_ctr,
          |    media_appsid,
          |    cast(exp_cpm as double) / 1000000 as exp_cpm,
-         |    hour as hr,
          |    hidden_tax,
          |    ocpc_step,
          |    deep_ocpc_step,
          |    ocpc_log,
          |    deep_ocpc_log,
          |    deep_cvr * 1.0 / 1000000 as exp_cvr2,
-         |    deep_cpa
+         |    deep_cpa,
+         |    date,
+         |    hour
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
@@ -193,7 +209,7 @@ object OcpcHourlyReportV2 {
       .na.fill(0, Seq("iscvr1", "iscvr2"))
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
       .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
-      .selectExpr("searchid", "ideaid", "unitid", "userid", "adslot_type", "adslotid", "adclass", "conversion_goal", "conversion_from", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "ocpc_expand", "isclick", "isshow", "price", "bid", "exp_cvr", "cast(raw_cvr as double) as raw_cvr", "exp_ctr", "media_appsid", "exp_cpm", "hr", "hidden_tax", "ocpc_step", "deep_ocpc_step", "ocpc_log", "deep_ocpc_log", "cast(exp_cvr2 as double) as exp_cvr2", "deep_cpa", "iscvr1", "iscvr2", "ocpc_log_dict", "deep_ocpc_log_dict")
+      .selectExpr("searchid", "ideaid", "unitid", "userid", "adslot_type", "adslotid", "adclass", "conversion_goal", "conversion_from", "deep_conversion_goal", "cpa_check_priority", "is_deep_ocpc", "ocpc_expand", "isclick", "isshow", "price", "bid", "exp_cvr", "cast(raw_cvr as double) as raw_cvr", "exp_ctr", "media_appsid", "exp_cpm", "hidden_tax", "ocpc_step", "deep_ocpc_step", "ocpc_log", "deep_ocpc_log", "cast(exp_cvr2 as double) as exp_cvr2", "deep_cpa", "iscvr1", "iscvr2", "ocpc_log_dict", "deep_ocpc_log_dict", "date", "hour")
 
     resultDF
 
