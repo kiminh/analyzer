@@ -86,6 +86,7 @@ object OcpcHourlyReportV2 {
       .withColumn("userid", col("adv_user_id"))
       .withColumn("prod_name", col("name"))
       .selectExpr("userid", "prod_name")
+      .filter(s"prod_name is not null")
       .distinct()
 
     resultDF.show(10)
