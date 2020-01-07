@@ -86,8 +86,8 @@ object OcpcHourlyReportV2 {
       .withColumn("prod_name", col("name"))
       .selectExpr("userid", "prod_name")
       .filter(s"prod_name is not null")
-      .cache()
       .distinct()
+      .cache()
 
     resultDF.show(10)
     resultDF
