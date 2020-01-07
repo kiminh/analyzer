@@ -67,11 +67,10 @@ object OcpcHourlyReportV2 {
     val driver = conf.getString("adv_read_mysql.cpc_sales_crm.driver")
     val table =
       s"""
-         |(SELECT a.adv_user_id , p.name
-         |FROM customer_adv_account a
-         |left join product p
-         |on a.product_id = p.id
-         |GROUP BY a.adv_user_id , p.name) as tmp
+         |(select a.adv_user_id, p.name
+         |from customer_adv_account as a
+         |INNER JOIN product as p
+         |on a.product_id= p.id) as tmp
          |""".stripMargin
 
     val data = spark.read.format("jdbc")
@@ -87,6 +86,7 @@ object OcpcHourlyReportV2 {
       .withColumn("prod_name", col("name"))
       .selectExpr("userid", "prod_name")
       .filter(s"prod_name is not null")
+      .cache()
       .distinct()
 
     resultDF.show(10)
