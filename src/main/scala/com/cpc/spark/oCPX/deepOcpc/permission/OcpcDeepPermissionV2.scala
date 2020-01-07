@@ -73,8 +73,8 @@ object OcpcDeepPermissionV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
     /*
     读取历史准入数据
@@ -167,7 +167,7 @@ object OcpcDeepPermissionV2 {
 
     result = cpaCheckPriority match {
       case 2 => {
-        if (cv > 60 && auc > 0.6) {
+        if (cv > 30 && auc > 0.6) {
           1
         } else {
           0
