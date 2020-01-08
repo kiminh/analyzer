@@ -89,7 +89,7 @@ object model_effect {
          |            sum(if(isshow > 0 and adsrc in (1, 28), 1, 0)) as imp_cpc,
          |            sum(if(isclick > 0 and adsrc in (1, 28), 1, 0)) as click_cpc,
          |            sum(if(isclick > 0 and adsrc in (1, 28), price, 0)) as rev_cpc,
-         |            avg(raw_ctr/1000000 )as exp_ctr
+         |            sum(if(adsrc in (1, 28),raw_ctr/1000000,0)) / sum(if(adsrc in (1, 28),1,0)) as exp_ctr
          |        from union_log
          |        group by hash_model_name
          |    ) t
