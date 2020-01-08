@@ -407,6 +407,7 @@ object OcpcPayDataUpdate {
     val resultDF = data
       .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
       .distinct()
+      .cache()
 
     resultDF.show(10)
     resultDF
