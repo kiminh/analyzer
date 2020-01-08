@@ -222,6 +222,7 @@ object OcpcDeepPermissionV2 {
     val resultDF = data
       .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority", "cast(deep_ocpc_status as int) deep_ocpc_status")
       .distinct()
+      .cache()
 
     resultDF.show(10)
     resultDF
