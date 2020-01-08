@@ -391,8 +391,9 @@ object OcpcPayDataUpdate {
 //    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
     val table =
       s"""
-         |SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc
+         |(SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc
          |FROM ocpc_compensate
+         |WHERE date(ocpc_charge_time) = '$date1') as tmp
          |""".stripMargin
 
     val data = spark.read.format("jdbc")
