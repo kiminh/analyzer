@@ -75,11 +75,7 @@ object OcpcDeepCalculateCV {
          |    searchid,
          |    cast(unitid as string) identifier,
          |    cast(deep_cvr as bigint) as score,
-         |    (case
-         |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |        else 'novel'
-         |    end) as media,
+         |    media_appsid,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
