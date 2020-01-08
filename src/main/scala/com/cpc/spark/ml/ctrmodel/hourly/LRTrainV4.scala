@@ -112,7 +112,7 @@ object LRTrainV4 {
            |from dl_cpc.cpc_basedata_union_events
            |where day = "$dt"
            |  and media_appsid in ('80000001','80000002')
-           |  and adslot_type in (1, 2)
+           |  and adsrc in (1, 28)
            |  and isshow = 1
            |  and ideaid > 0
            |  and unitid > 0)a
