@@ -167,7 +167,7 @@ object OcpcDeepPermissionV2 {
 
     result = cpaCheckPriority match {
       case 2 => {
-        if (cv > 30 && auc > 0.6) {
+        if (cv > 60 && auc > 0.6) {
           1
         } else {
           0
