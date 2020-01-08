@@ -76,34 +76,34 @@ object OcpcDeepPermissionV2 {
       .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
-//    /*
-//    读取历史准入数据
-//     */
-//    val prevData = getPrevData(date, version, spark)
+    /*
+    读取历史准入数据
+     */
+    val prevData = getPrevData(date, version, spark)
+
+    /*
+    更新准入数据
+     */
+    val result = updateData(prevData, data, spark)
 //
-//    /*
-//    更新准入数据
-//     */
-//    val result = updateData(prevData, data, spark)
-////
-//
-//    /*
-//    保存数据
-//     */
-//    result
-//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-//      .withColumn("version", lit(version))
-//      .repartition(1)
-////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+
+    /*
+    保存数据
+     */
+    result
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-//
-//
-//    result
-//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit(version))
-//      .repartition(1)
-////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+
+
+    result
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
