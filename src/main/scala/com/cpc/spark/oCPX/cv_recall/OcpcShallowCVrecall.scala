@@ -21,7 +21,7 @@ object OcpcShallowCVrecall {
 
     data
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.check_cv_delay_distribution20200108b")
+      .write.mode("overwrite").insertInto("test.cv_delay_distribution_daily")
 
 
   }
@@ -32,7 +32,7 @@ object OcpcShallowCVrecall {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -8)
+    calendar.add(Calendar.DATE, -7)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
@@ -103,7 +103,10 @@ object OcpcShallowCVrecall {
          |GROUP BY tttt.unitid, tttt.userid, tttt.conversion_goal, tttt.hour_diff
          |""".stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .selectExpr("unitid", "userid", "conversion_goal", "cast(hour_diff as int) hour_diff", "cast(cv as int) cv")
+        .withColumn("date", lit(date1))
 
     data
   }
