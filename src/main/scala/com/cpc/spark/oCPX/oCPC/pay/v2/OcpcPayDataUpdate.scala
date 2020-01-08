@@ -405,7 +405,6 @@ object OcpcPayDataUpdate {
 
     val resultDF = data
       .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
-      .filter(s"date(ocpc_charge_time) = '$date1'")
       .distinct()
       .cache()
 
