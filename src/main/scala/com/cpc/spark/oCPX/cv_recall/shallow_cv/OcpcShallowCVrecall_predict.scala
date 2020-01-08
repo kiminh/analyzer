@@ -1,13 +1,12 @@
-package com.cpc.spark.oCPX.cv_recall
+package com.cpc.spark.oCPX.cv_recall.shallow_cv
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.utils
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcShallowCVrecall {
+object OcpcShallowCVrecall_predict {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
@@ -21,7 +20,7 @@ object OcpcShallowCVrecall {
 
     data
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.cv_delay_distribution_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.cv_delay_distribution_daily")
 
 
   }
