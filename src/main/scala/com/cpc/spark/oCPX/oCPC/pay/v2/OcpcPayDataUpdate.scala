@@ -393,7 +393,6 @@ object OcpcPayDataUpdate {
       s"""
          |SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc
          |FROM ocpc_compensate
-         |WHERE date(ocpc_charge_time) = '$date1'
          |""".stripMargin
 
     val data = spark.read.format("jdbc")
@@ -406,6 +405,7 @@ object OcpcPayDataUpdate {
 
     val resultDF = data
       .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
+      .filter(s"date(ocpc_charge_time) = '$date1'")
       .distinct()
       .cache()
 
