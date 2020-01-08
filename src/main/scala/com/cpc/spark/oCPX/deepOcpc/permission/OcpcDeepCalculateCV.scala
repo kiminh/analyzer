@@ -95,11 +95,12 @@ object OcpcDeepCalculateCV {
          |and deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val scoreDataRaw = spark
+    val scoreData = spark
       .sql(sqlRequest)
+      .withColumn("media", lit("all"))
       .filter(s"deep_conversion_goal = $deepConversionGoal")
 
-    val scoreData = mapMediaName(scoreDataRaw, spark)
+//    val scoreData = mapMediaName(scoreDataRaw, spark)
 
     // 取历史区间: cvr数据
     val selectCondition2 = s"`date`>='$date1'"

@@ -73,37 +73,37 @@ object OcpcDeepPermissionV2 {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
-    /*
-    读取历史准入数据
-     */
-    val prevData = getPrevData(date, version, spark)
-
-    /*
-    更新准入数据
-     */
-    val result = updateData(prevData, data, spark)
-
-    /*
-    保存数据
-     */
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-
-
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
+//    /*
+//    读取历史准入数据
+//     */
+//    val prevData = getPrevData(date, version, spark)
+//
+//    /*
+//    更新准入数据
+//     */
+//    val result = updateData(prevData, data, spark)
+//
+//    /*
+//    保存数据
+//     */
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//
+//
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
   def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
@@ -166,7 +166,7 @@ object OcpcDeepPermissionV2 {
 
     result = cpaCheckPriority match {
       case 2 => {
-        if (cv > 60 && auc > 0.6) {
+        if (cv > 20 && auc > 0.55) {
           1
         } else {
           0
