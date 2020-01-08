@@ -59,13 +59,14 @@ object OcpcDeepPermissionV2 {
     2.判断是否准入
     3.保存数据
      */
+//    selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority", "cast(deep_ocpc_status as int) deep_ocpc_status")
     val data = retentionData
       .union(payData)
       .join(unitInfo, Seq("identifier", "deep_conversion_goal"), "left_outer")
       .filter(s"cpa_check_priority is not null")
       .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc"), col("cpa_check_priority")))
       .withColumn("cpa", col("deep_cpareal"))
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click", "cpa_check_priority", "deep_ocpc_status")
       .cache()
     data.show(10)
 
@@ -76,35 +77,35 @@ object OcpcDeepPermissionV2 {
       .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
-    /*
-    读取历史准入数据
-     */
-    val prevData = getPrevData(date, version, spark)
-
-    /*
-    更新准入数据
-     */
-    val result = updateData(prevData, data, spark)
+//    /*
+//    读取历史准入数据
+//     */
+//    val prevData = getPrevData(date, version, spark)
 //
-
-    /*
-    保存数据
-     */
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-
-
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
+//    /*
+//    更新准入数据
+//     */
+//    val result = updateData(prevData, data, spark)
+////
+//
+//    /*
+//    保存数据
+//     */
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//
+//
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
   def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
@@ -208,7 +209,7 @@ object OcpcDeepPermissionV2 {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-    val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority FROM unit_ocpc where is_deep_ocpc = 1) as tmp"
+    val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority, deep_ocpc_status FROM unit_ocpc where is_deep_ocpc = 1) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -219,7 +220,7 @@ object OcpcDeepPermissionV2 {
       .load()
 
     val resultDF = data
-      .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority")
+      .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority", "cast(deep_ocpc_status as int) deep_ocpc_status")
       .distinct()
 
     resultDF.show(10)
