@@ -36,11 +36,11 @@ object OcpcPayDataUpdate {
     // 统计消费与赔付
     val payDataRaw = calculatePayRaw(data, ocpcCompensate, date, spark)
 
-    payDataRaw
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216c")
+    // 按照深度ocpc赔付的逻辑进行数据调整
+    val payData = calculateFinalPay(payDataRaw, spark)
 
-//    // 按照深度ocpc赔付的逻辑进行数据调整
-//    val payData = calculateFinalPay(payDataRaw, spark)
+    payData
+      .write.mode("overwrite").saveAsTable("test.ocpc_check_update_pay_data20191216a")
 
 
   }
@@ -67,10 +67,12 @@ object OcpcPayDataUpdate {
          |  cpa_check_priority,
          |  ocpc_charge_time,
          |  deep_ocpc_charge_time,
-         |  date_diff,
-         |  pay_cnt,
-         |  is_pay_flag,
-         |  is_deep_pay_flag,
+         |  cost as cost_old,
+         |  conversion as conversion_old,
+         |  cpagiven as cpagiven_old,
+         |  pay as pay_old,
+         |  is_deep_ocpc,
+         |  compensate_key,
          |  click1,
          |  cv1,
          |  cpagiven1,
@@ -88,8 +90,7 @@ object OcpcPayDataUpdate {
          |  (case when cv2 = 0 then cost2
          |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
          |        else 0
-         |  end) as pay2,
-         |  (case when cpa_check_priority = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
+         |  end) as pay2
          |FROM
          |  raw_data
          |""".stripMargin
@@ -120,11 +121,10 @@ object OcpcPayDataUpdate {
       .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
 
     val result1 = data1
-      .filter(s"is_filter = 0")
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "cost_old", "conversion_old", "cpagiven_old", "pay_old", "is_deep_ocpc", "compensate_key", "pay_type")
 
     val result2 = data2
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "cost_old", "conversion_old", "cpagiven_old", "pay_old", "is_deep_ocpc", "compensate_key", "pay_type")
 
     val result = result1.union(result2)
 
@@ -154,7 +154,7 @@ object OcpcPayDataUpdate {
       .na.fill(0, Seq("cv1", "cv2"))
 
     val ocpcCompensate = ocpcCompensateRaw
-        .select("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
+        .select("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
         .withColumn("deep_ocpc_step", when(col("is_deep_ocpc") === 1, 2).otherwise(1))
 
     costData.createOrReplaceTempView("data")
@@ -181,7 +181,7 @@ object OcpcPayDataUpdate {
     val result = spark
       .sql(sqlRequest)
       .join(ocpcCompensate, Seq("unitid", "deep_ocpc_step"), "inner")
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
 
     result
   }
@@ -391,7 +391,7 @@ object OcpcPayDataUpdate {
 //    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
     val table =
       s"""
-         |(SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc
+         |(SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc, compensate_key
          |FROM ocpc_compensate
          |WHERE date(ocpc_charge_time) = '$date1') as tmp
          |""".stripMargin
@@ -405,7 +405,7 @@ object OcpcPayDataUpdate {
       .load()
 
     val resultDF = data
-      .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc")
+      .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
       .distinct()
       .cache()
 
