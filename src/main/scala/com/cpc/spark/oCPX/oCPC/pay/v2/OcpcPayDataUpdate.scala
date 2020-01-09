@@ -215,6 +215,7 @@ object OcpcPayDataUpdate {
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -dayCnt)
+    calendar.add(Calendar.DATE, 1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` between '$date1' and '$date'"
@@ -298,6 +299,7 @@ object OcpcPayDataUpdate {
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     calendar.add(Calendar.DATE, -dayCnt)
+    calendar.add(Calendar.DATE, 1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` between '$date1' and '$date'"
