@@ -5,10 +5,10 @@ import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.udfConcatStringInt
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcChargeCost {
+object OcpcChargeCostUpdate {
   def main(args: Array[String]): Unit = {
     /*
     按照七天周期计算赔付数据
@@ -53,8 +53,8 @@ object OcpcChargeCost {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily_new")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily_new")
 
   }
 
