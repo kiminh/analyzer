@@ -16,6 +16,8 @@ object model_effect {
     val curday = args(0)
     val seed = args(1).toInt
     val dist = args(2)
+    val hour_start = args(3)
+    val hour_end = args(4)
     import spark.implicits._
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
@@ -42,7 +44,7 @@ object model_effect {
          |    and isshow=1
          |    and ctr_model_name not like '%noctr%'
          |    and adsrc in (1, 28)
-         |    and hour = '03'
+         |    and hour = '$hour_end'
          |""".stripMargin
     val dau_log_test = spark.sql(sql_test).withColumn("hash_model_name",hash(seed, dist_map)($"uid"))
     val acc = dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()
@@ -63,6 +65,8 @@ object model_effect {
          |        ,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events
          |    where day = '$oneday'
+         |    and hour >= '$hour_start'
+         |    and hour <= '$hour_end'
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
          |    and adslot_type = 1
          |    and isshow=1
