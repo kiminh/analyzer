@@ -48,7 +48,7 @@ object model_effect {
          |""".stripMargin
     val dau_log_test = spark.sql(sql_test).withColumn("hash_model_name",hash(seed, dist_map)($"uid"))
     val acc = dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()
-    if(acc<0.95){
+    if(acc<0.999){
       println("hash wrong:%s", acc.toString)
       System.exit(1)
     }
