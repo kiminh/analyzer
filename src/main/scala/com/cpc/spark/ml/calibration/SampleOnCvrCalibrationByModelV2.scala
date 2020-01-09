@@ -8,7 +8,7 @@ import com.cpc.spark.ml.checktool.OutputScoreDifference.{hash64, restrict}
 import com.cpc.spark.ocpc.OcpcUtils.{getTimeRangeSql, getTimeRangeSql4}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, when}
+import org.apache.spark.sql.functions.{col, count, lit, sum, when}
 
 import scala.sys.process._
 
@@ -91,15 +91,33 @@ object SampleOnCvrCalibrationByModelV2 {
     println("dnn model sample is %d".format(dnn_data.count()))
     // get union log
 
-    val result = data
-//      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
+    val union_sample = data
+      //      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"left")
       .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
       .filter("raw_cvr > 0")
+
+    val wrong_data = union_sample
+      .groupBy("unitid")
+      .agg(count(col("iscvr")).alias("click"),
+        sum(col("iscvr")).alias("iscvr"))
+      .withColumn("cvr",col("iscvr")/col("click"))
+      .filter("click > 100")
+      .filter("cvr > 0.8")
+      .withColumn("flag",lit(1))
+
+    println("######  filter unitid  ######")
+    wrong_data.show(10)
+
+    val result = union_sample.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
+      .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
+      .filter("flag = 0")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
         "exp_cvr","day","userid","conversion_from","hour","siteid","conversion_goal")
-      result.show(10)
+
+    result.show(10)
+
     println("sample num: %d",result.count())
     val avgs = result.rdd.map(f => {
       f.mkString("\001")
