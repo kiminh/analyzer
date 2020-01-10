@@ -7,6 +7,7 @@ import com.cpc.spark.oCPX.OcpcTools._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
@@ -97,7 +98,8 @@ object OcpcHourlyReportV2 {
     val result = data
       .join(adProdName, Seq("userid"), "left_outer")
       .na.fill(" ", Seq("prod_name"))
-      .select("ideaid", "unitid", "userid", "prod_name", "adclass", "adslot_type", "adslotid", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "media_appsid", "ocpc_expand", "show", "click", "cv1", "cv2", "total_price", "total_bid", "total_precvr", "total_rawcvr", "total_prectr", "total_exp_cpm", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_discrete_factor", "total_shallow_bid", "bl_hidden_tax", "bk_hidden_tax", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_bid", "total_deepcvr", "ocpc_stage", "date", "hour")
+      .withColumn("media_id", col("media_appsid").cast(IntegerType))
+      .select("ideaid", "unitid", "userid", "prod_name", "adclass", "adslot_type", "adslotid", "conversion_goal", "deep_conversion_goal", "cpa_check_priority", "media_appsid", "ocpc_expand", "show", "click", "cv1", "cv2", "total_price", "total_bid", "total_precvr", "total_rawcvr", "total_prectr", "total_exp_cpm", "total_cpagiven", "total_jfbfactor", "total_cvrfactor", "total_calipcvr", "total_discrete_factor", "total_shallow_bid", "bl_hidden_tax", "bk_hidden_tax", "total_deep_cpagiven", "total_deep_jfbfactor", "total_deep_cvrfactor", "total_deep_calipcvr", "total_deep_bid", "total_deepcvr", "ocpc_stage", "media_id", "date", "hour")
 
     val tableName = s"$dbName.ocpc_report_data_hourly"
     println(s"save data to $tableName")
