@@ -90,7 +90,8 @@ object OcpcPayDataUpdate {
          |  (case when cv2 = 0 then cost2
          |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
          |        else 0
-         |  end) as pay2
+         |  end) as pay2,
+         |  (case when cpa_check_priority = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
          |FROM
          |  raw_data
          |""".stripMargin
@@ -121,6 +122,7 @@ object OcpcPayDataUpdate {
       .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
 
     val result1 = data1
+      .filter(s"is_filter = 0")
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "cost_old", "conversion_old", "cpagiven_old", "pay_old", "is_deep_ocpc", "compensate_key", "pay_type")
 
     val result2 = data2
