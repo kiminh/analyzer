@@ -56,16 +56,26 @@ object OcpcSampleToPbFinal {
     val finalVersion = version + "pbfile"
     resultDF
       .select("identifier", "conversion_goal", "is_hidden", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
-      .repartition(5)
+      .repartition(1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
-      .repartition(5)
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly")
 
+    val result2 = getData2(date, hour, version, spark)
+    val resultDF2 = result2
+      .select("conversion_goal", "exp_tag", "cali_value", "jfb_factor", "post_cvr", "high_bid_factor", "low_bid_factor", "cpa_suggest", "smooth_factor", "cpagiven")
 
-    savePbPack(resultDF, fileName, spark)
+    resultDF2
+      .repartition(1)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(finalVersion))
+//      .write.mode("overwrite").insertInto("test.ocpc_deep_param_pb_data_hourly_baseline")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_param_pb_data_hourly_baseline")
+
+    savePbPack(resultDF, resultDF2, fileName, spark)
   }
 
   def getData(date: String, hour: String, tableName: String, version: String, spark: SparkSession) = {
@@ -87,16 +97,71 @@ object OcpcSampleToPbFinal {
       .sql(sqlRequest)
       .withColumn("smooth_factor_old", col("smooth_factor"))
       .withColumn("smooth_factor", udfSetSmoothFactor()(col("smooth_factor")))
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCheckValue(0.5, 2.0)(col("cali_value")))
+      .withColumn("jfb_factor", udfCheckValue(1.0, 2.0)(col("jfb_factor")))
       .cache()
 
 //    data
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191104")
+//        .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20191230")
+
     data.show(10)
     data
 
   }
 
-  def savePbPack(data: DataFrame, fileName: String, spark: SparkSession): Unit = {
+  def getData2(date: String, hour: String, version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_deep_param_pb_data_hourly_baseline
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  hour = '$hour'
+         |AND
+         |  version = '$version'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_value", udfCheckValue(0.5, 2.0)(col("cali_value")))
+      .withColumn("jfb_factor", udfCheckValue(1.0, 2.0)(col("jfb_factor")))
+      .cache()
+
+    data.show(10)
+    data
+
+  }
+
+  def udfCheckValue(minCali: Double, maxCali: Double) = udf((value: Double) => {
+    var result = value
+    if (result < minCali) {
+      result = minCali
+    }
+    if (result > maxCali) {
+      result = maxCali
+    }
+    result
+  })
+
+
+  def udfCalculateCaliValue(date: String, hour: String) = udf((identifier: String, expTag: String, caliValue: Double) => {
+    var result = caliValue
+    val discountUnitMap = Map("2593206" ->	0.250031331, "2566057" -> 0.516086391, "2565794" -> 0.265733378, "2593089" -> 0.377641349, "2593024" -> 0.374991778)
+
+    var tmpCali = discountUnitMap.getOrElse(identifier, 0.0)
+
+    if (tmpCali > 0.0 && date == "2019-12-26" && expTag == "v4Qtt") {
+      result = tmpCali
+    }
+    result
+  })
+
+  def savePbPack(data: DataFrame, data2: DataFrame, fileName: String, spark: SparkSession): Unit = {
     /*
     oCPCQTT&unitid&isHiddenOcpc
     string   key = 1;
@@ -165,6 +230,56 @@ object OcpcSampleToPbFinal {
       list += currentItem
 
     }
+
+    data2.printSchema()
+    cnt = 0
+
+    for (record <- data2.collect()) {
+      val expTag = record.getAs[String]("exp_tag")
+      val conversionGoal = record.getAs[Int]("conversion_goal")
+      val key = expTag + "&c" + conversionGoal.toString
+      val cvrCalFactor = record.getAs[Double]("cali_value")
+      val jfbFactor = record.getAs[Double]("jfb_factor")
+      val smoothFactor = record.getAs[Double]("smooth_factor")
+      val postCvr = record.getAs[Double]("post_cvr")
+      val cpaGiven = record.getAs[Double]("cpagiven")
+      val cpaSuggest = record.getAs[Double]("cpa_suggest")
+      val paramT = 2.0
+      val highBidFactor = record.getAs[Double]("high_bid_factor")
+      val lowBidFactor = record.getAs[Double]("low_bid_factor")
+      val minCPM = 0
+      val minBid = 0
+      val cpcbid = 0
+      val maxbid = 0
+
+      if (cnt % 10 == 0) {
+        println(s"key:$key, conversionGoal:$conversionGoal, cvrCalFactor:$cvrCalFactor, jfbFactor:$jfbFactor, smoothFactor:$smoothFactor, postCvr:$postCvr, cpaGiven:$cpaGiven, cpaSuggest:$cpaSuggest, paramT:$paramT, highBidFactor:$highBidFactor, lowBidFactor:$lowBidFactor, minCPM:$minCPM, minBid:$minBid, cpcbid:$cpcbid, maxbid:$maxbid")
+      }
+      cnt += 1
+
+      val currentItem = SingleItem(
+        key = key,
+        conversionGoal = conversionGoal,
+        cvrCalFactor = cvrCalFactor,
+        jfbFactor = jfbFactor,
+        smoothFactor = smoothFactor,
+        postCvr = postCvr,
+        cpaGiven = cpaGiven,
+        cpaSuggest = cpaSuggest,
+        paramT = paramT,
+        highBidFactor = highBidFactor,
+        lowBidFactor = lowBidFactor,
+        ocpcMincpm = minCPM,
+        ocpcMinbid = minBid,
+        cpcbid = cpcbid,
+        maxbid = maxbid
+
+      )
+      list += currentItem
+
+    }
+
+
     val result = list.toArray[SingleItem]
     val adRecordList = OcpcParamsList(
       records = result

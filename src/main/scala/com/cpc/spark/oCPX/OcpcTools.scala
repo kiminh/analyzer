@@ -22,7 +22,7 @@ object OcpcTools {
     val hour = args(1).toString
 
     // 测试实时数据表和离线表
-    val data = getRealtimeData(24, date, hour, spark)
+    val data = getBaseDataRealtime(24, date, hour, spark)
 
     data
       .repartition(5)
@@ -70,6 +70,34 @@ object OcpcTools {
     resultDF
   }
 
+  def getConversionGoalNew(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .withColumn("cpagiven", col("ocpc_bid"))
+      .selectExpr("unitid",  "userid", "cpagiven", "cast(conversion_goal as int) conversion_goal", "is_ocpc", "ocpc_status")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+  }
+
   def getTimeRangeSqlDay(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
       return s"(`day` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
@@ -85,6 +113,15 @@ object OcpcTools {
     }
     return s"((`date` = '$startDate' and hour > '$startHour') " +
       s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
+  def getTimeRangeSqlDateInt(startDate: String, startHour: Int, endDate: String, endHour: Int): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= $endHour and hour > $startHour)"
+    }
+    return s"((`date` = '$startDate' and hour > $startHour) " +
+      s"or (`date` = '$endDate' and hour <= $endHour) " +
       s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 
@@ -224,7 +261,7 @@ object OcpcTools {
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
@@ -234,6 +271,79 @@ object OcpcTools {
 
     resultDF
   }
+
+  def getBaseDataRealtime(hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1Int = tmpDateValue(1).toInt
+    val hourInt = hour.toInt
+    val selectCondition = getTimeRangeSqlDateInt(date1, hour1Int, date, hourInt)
+
+
+    val conf = ConfigFactory.load("ocpc")
+    val url = conf.getString("adv_report.url")
+    val user = conf.getString("adv_report.user")
+    val passwd = conf.getString("adv_report.password")
+    val driver = conf.getString("adv_report.driver")
+    val table =
+      s"""
+       |(SELECT
+       |    unit_id as unitid,
+       |    media_id as media_appsid,
+       |    date,
+       |    hour,
+       |    sum(click) as click,
+       |    sum(sum_cvr) * 0.000001 / sum(click) as pre_cvr,
+       |    sum(cvr_num) as cv
+       |FROM report_conversion_hourly
+       |where $selectCondition
+       |and ocpc_step > 0
+       |group by unit_id, media_id, date, hour
+       |order by unit_id, media_id, date, hour) as tmp
+       |""".stripMargin
+    println(table)
+
+    val dataRaw = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val result = mapMediaName(dataRaw, spark)
+
+    val conversionGoal = getConversionGoal(date, hour, spark)
+
+    val resultDF = result
+      .join(conversionGoal, Seq("unitid"), "inner")
+      .selectExpr("unitid", "conversion_goal", "media", "media_appsid", "cast(date as string) as date", "cast(hour as int) as hour", "click", "cast(pre_cvr as double) as pre_cvr", "cv")
+      .withColumn("hour", udfConvertHourIntToString()(col("hour")))
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def udfConvertHourIntToString() = udf((hour: Int) => {
+    var result = {
+      if (hour < 10) {
+        "0" + hour.toString
+      } else {
+        hour.toString
+      }
+    }
+    result
+  })
 
   def getBaseDataNewCv(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
@@ -393,7 +503,7 @@ object OcpcTools {
          |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
@@ -699,5 +809,15 @@ object OcpcTools {
     }
   })
 
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+
+    val nowTime = dateConverter.parse(date + " " + hour)
+    val ocpcTime = dateConverter.parse(date1 + " " + hour1)
+    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    hourDiff
+  })
 
 }

@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 //import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.ocpcV3.utils
@@ -59,10 +60,6 @@ object OcpcDeepCalculateAUC {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition1 = getTimeRangeSqlDate(date1, hour1, date, hour)
-
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -70,11 +67,7 @@ object OcpcDeepCalculateAUC {
          |    searchid,
          |    cast(unitid as string) identifier,
          |    cast(deep_cvr as bigint) as score,
-         |    (case
-         |        when media_appsid in ('80000001', '80000002') then 'qtt'
-         |        when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |        else 'novel'
-         |    end) as media,
+         |    media_appsid,
          |    (case
          |        when (cast(adclass as string) like '134%' or cast(adclass as string) like '107%') then "elds"
          |        when (adslot_type<>7 and cast(adclass as string) like '100%') then "feedapp"
@@ -86,7 +79,6 @@ object OcpcDeepCalculateAUC {
          |from dl_cpc.ocpc_base_unionlog
          |where $selectCondition1
          |and isclick = 1
-         |and $mediaSelection
          |and is_ocpc = 1
          |and is_deep_ocpc = 1
          |and deep_cvr is not null
@@ -94,7 +86,10 @@ object OcpcDeepCalculateAUC {
     println(sqlRequest)
     val scoreData = spark
       .sql(sqlRequest)
+      .withColumn("media", lit("all"))
       .filter(s"deep_conversion_goal = $deepConversionGoal")
+
+//    val scoreData = mapMediaName(scoreDataRaw, spark)
 
     // 取历史区间: cvr数据
     val selectCondition2 = s"`date`>='$date1'"

@@ -7,6 +7,7 @@ import com.cpc.spark.OcpcProtoType.OcpcTools.getTimeRangeSqlDate
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateAUC._
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepCalculateCV._
 import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepPermission.udfDetermineFlag
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
@@ -50,6 +51,9 @@ object OcpcDeepPermissionV2 {
     println("pay data ######################################")
     val payData = getPermissionData(date, hour, 72, 3, spark)
 
+    // get unit info
+    val unitInfo = getUnitInfo(spark)
+
     /*
     1.union数据
     2.判断是否准入
@@ -57,9 +61,11 @@ object OcpcDeepPermissionV2 {
      */
     val data = retentionData
       .union(payData)
-      .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc")))
+      .join(unitInfo, Seq("identifier", "deep_conversion_goal"), "left_outer")
+      .filter(s"cpa_check_priority is not null")
+      .withColumn("flag", udfDetermineFlag()(col("cv"), col("auc"), col("cpa_check_priority")))
       .withColumn("cpa", col("deep_cpareal"))
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click", "cpa_check_priority", "deep_ocpc_status")
       .cache()
     data.show(10)
 
@@ -70,38 +76,34 @@ object OcpcDeepPermissionV2 {
 //      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_daily")
       .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_daily")
 
-    /*
-    读取历史准入数据
-     */
-    val prevData = getPrevData(date, version, spark)
-
-    /*
-    更新准入数据
-     */
-    val result = updateData(prevData, data, spark)
+//    /*
+//    读取历史准入数据
+//     */
+//    val prevData = getPrevData(date, version, spark)
+//
+//    /*
+//    更新准入数据
+//     */
+//    val result = updateData(prevData, data, spark)
+//
+//    /*
+//    保存数据
+//     */
+//    result
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
+//
 //
 //    result
-//        .repartition(1)
-//        .write.mode("overwrite").saveAsTable("test.ocpc_deep_white_unit_version20191120")
-
-    /*
-    保存数据
-     */
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_version")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_version")
-
-
-    result
-      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
+//      .select("identifier", "media", "deep_conversion_goal", "cv", "auc", "flag", "cost", "cpa", "deep_cpagiven", "click")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit(version))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_deep_white_unit_backup_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_white_unit_backup_daily")
   }
 
   def updateData(prevData: DataFrame, data: DataFrame, spark: SparkSession) = {
@@ -159,10 +161,24 @@ object OcpcDeepPermissionV2 {
     data
   }
 
-  def udfDetermineFlag() = udf((cv: Int, auc: Double) => {
+  def udfDetermineFlag() = udf((cv: Int, auc: Double, cpaCheckPriority: Int) => {
     var result = 0
-    if (cv > 10 && auc > 0.55) {
-      result = 1
+
+    result = cpaCheckPriority match {
+      case 2 => {
+        if (cv > 20 && auc > 0.55) {
+          1
+        } else {
+          0
+        }
+      }
+      case _ => {
+        if (cv > 10 && auc > 0.55) {
+          1
+        } else {
+          0
+        }
+      }
     }
     result
   })
@@ -182,6 +198,32 @@ object OcpcDeepPermissionV2 {
       .select("identifier", "media", "deep_conversion_goal", "click", "cv", "auc", "cost", "deep_cpagiven", "deep_cpareal")
 
     data
+  }
+
+  def getUnitInfo(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority, deep_ocpc_status FROM unit_ocpc where is_deep_ocpc = 1) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority", "cast(deep_ocpc_status as int) deep_ocpc_status")
+      .distinct()
+      .cache()
+
+    resultDF.show(10)
+    resultDF
   }
 
 

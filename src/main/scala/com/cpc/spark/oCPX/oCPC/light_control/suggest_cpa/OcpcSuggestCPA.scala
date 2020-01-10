@@ -111,6 +111,7 @@ object OcpcSuggestCPA {
       .withColumn("is_recommend", udfIsRecommend()(col("industry"), col("media"), col("conversion_goal"), col("cvrcnt"), col("auc"), col("is_recommend"), col("min_cv"), col("min_auc")))
       .na.fill(0, Seq("is_recommend", "cvrcnt"))
       .withColumn("is_recommend_old", col("is_recommend"))
+      .withColumn("is_recommend", when(col("post_cvr") > 0.5, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("bl_flag") === 1 && col("cvrcnt") < 30, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("industry") === "wzcp", 1).otherwise(col("is_recommend")))
       .select("unitid", "userid", "conversion_goal", "media", "adclass", "industry", "usertype", "adslot_type", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pre_cvr", "post_cvr", "pcoc", "cal_bid", "auc", "is_recommend", "ocpc_status", "bl_flag", "is_recommend_old")

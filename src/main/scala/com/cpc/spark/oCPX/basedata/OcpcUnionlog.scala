@@ -112,7 +112,8 @@ object OcpcUnionlog {
          |    tuid,
          |    hidden_tax,
          |    pure_deep_exp_cvr,
-         |    deep_ocpc_step
+         |    deep_ocpc_step,
+         |    bid_ocpc
          |from
          |    base_data
        """.stripMargin
@@ -215,7 +216,8 @@ object OcpcUnionlog {
          |    tuid,
          |    hidden_tax,
          |    pure_deep_exp_cvr,
-         |    deep_ocpc_step
+         |    deep_ocpc_step,
+         |    bid_ocpc
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
