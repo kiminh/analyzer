@@ -39,8 +39,11 @@ object OcpcPayDataUpdate {
     // 按照深度ocpc赔付的逻辑进行数据调整
     val payData = calculateFinalPay(payDataRaw, spark)
 
+    // todo
     payData
-      .write.mode("overwrite").saveAsTable("test.ocpc_check_update_pay_data20191216a")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
+      .withColumn("date", lit(date))
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily_new")
 
 
   }
