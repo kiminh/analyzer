@@ -503,7 +503,7 @@ object OcpcTools {
          |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2)
+    val cvData = spark.sql(sqlRequest2).distinct()
 
 
     // 数据关联
