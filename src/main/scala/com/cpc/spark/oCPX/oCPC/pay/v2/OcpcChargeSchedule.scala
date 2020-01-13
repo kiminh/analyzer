@@ -362,8 +362,6 @@ object OcpcChargeSchedule {
       .filter(s"seq = 1")
       .select("unitid", "timestamp", "ocpc_charge_time")
 
-    // todo
-    // fix deep_ocpc_charge_time is not correct
     val sqlRequest2 =
       s"""
          |SELECT
