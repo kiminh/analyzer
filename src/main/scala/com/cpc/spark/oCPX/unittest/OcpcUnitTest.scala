@@ -30,7 +30,7 @@ object OcpcUnitTest {
          |  adclass,
          |  conversion_goal,
          |  timestamp,
-         |  from_unixtime(timestamp,'YYYY-MM-DD HH:mm:ss') as ocpc_charge_time,
+         |  from_unixtime(timestamp,'yyyy-MM-dd HH:mm:ss') as ocpc_charge_time,
          |  row_number() over(partition by unitid order by timestamp) as seq
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
