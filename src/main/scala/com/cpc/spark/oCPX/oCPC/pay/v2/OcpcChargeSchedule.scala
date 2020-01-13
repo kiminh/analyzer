@@ -53,8 +53,8 @@ object OcpcChargeSchedule {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
+//      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
 
   }
 
