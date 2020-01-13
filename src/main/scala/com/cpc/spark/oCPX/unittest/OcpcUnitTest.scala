@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcPayDataUpdate.getShallowData
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.getTodayData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,11 +21,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
+    val todayData = getTodayData(date, spark)
 
-    val data = getShallowData(date, 7, spark)
-
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200107c")
+    todayData
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200107d")
 
 
 
