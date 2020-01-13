@@ -96,7 +96,7 @@ object OcpcGetPb_weightv1{
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseDataExp(hourInt, date, hour, spark)
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
