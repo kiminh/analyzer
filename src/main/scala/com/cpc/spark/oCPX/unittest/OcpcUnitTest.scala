@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeSchedule.{getTodayData, udfDeterminePayIndustry}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.getShallowData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,31 +21,9 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  unitid,
-         |  adslot_type,
-         |  adclass,
-         |  conversion_goal,
-         |  timestamp,
-         |  from_unixtime(timestamp,'yyyy-MM-dd HH:mm:ss') as ocpc_charge_time,
-         |  row_number() over(partition by unitid order by timestamp) as seq
-         |FROM
-         |  dl_cpc.ocpc_filter_unionlog
-         |WHERE
-         |  date = '$date'
-         |""".stripMargin
-    println(sqlRequest1)
-    val data1 = spark
-      .sql(sqlRequest1)
-      .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
-      .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
-      .filter(s"seq = 1")
-      .select("unitid", "timestamp", "ocpc_charge_time")
+    val shallowOcpcData = getShallowData(date, 7, spark)
 
-    data1
+    shallowOcpcData
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200113a")
 
 
