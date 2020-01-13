@@ -18,6 +18,7 @@ object model_effect {
     val dist = args(2)
     val hour_start = args(3)
     val hour_end = args(4)
+    val threshold = args(5)
     import spark.implicits._
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
@@ -48,7 +49,7 @@ object model_effect {
          |""".stripMargin
     val dau_log_test = spark.sql(sql_test).withColumn("hash_model_name",hash(seed, dist_map)($"uid"))
     val acc = dau_log_test.filter("hash_model_name=ctr_model_name").count()*1.0/dau_log_test.count()
-    if(acc<0.999){
+    if(acc<threshold.toFloat){
       println("hash wrong:%s", acc.toString)
       System.exit(1)
     }
