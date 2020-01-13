@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.udfConcatStringInt
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
@@ -277,7 +278,6 @@ object OcpcChargeCost {
          |  price,
          |  cast(deep_cpa as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
-         |  cpa_check_priority,
          |  is_deep_ocpc,
          |  date
          |FROM
@@ -289,11 +289,14 @@ object OcpcChargeCost {
          |AND conversion_goal > 0
          |""".stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
-      .na.fill(0, Seq("cpa_check_priority"))
       .filter(s"deep_ocpc_step = 2")
+
+    val cpaCheckPriority = getCPAcheckPriority(spark)
+    val clickData = clickDataRaw
+      .join(cpaCheckPriority, Seq("unitid"), "inner")
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -360,9 +363,8 @@ object OcpcChargeCost {
          |  price,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
-         |  cpa_check_priority,
          |  is_deep_ocpc,
-         |   date
+         |  date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -371,10 +373,14 @@ object OcpcChargeCost {
          |AND conversion_goal > 0
          |""".stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .na.fill(1, Seq("deep_ocpc_step"))
+
+    val cpaCheckPriority = getCPAcheckPriority(spark)
+    val clickData = clickDataRaw
+      .join(cpaCheckPriority, Seq("unitid"), "left_outer")
       .na.fill(0, Seq("cpa_check_priority"))
 
     // 抽取cv数据
@@ -417,6 +423,37 @@ object OcpcChargeCost {
     val data = spark.sql(sqlRequest3)
 
     data
+  }
+
+  def getCPAcheckPriority(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table =
+      s"""
+         |(SELECT unit_id as unitid, cpa_check_priority
+         |FROM unit_ocpc
+         |WHERE is_deep_ocpc = 1) as tmp
+         |""".stripMargin
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .selectExpr("cast(unitid as int) unitid",  "cast(cpa_check_priority as int) as cpa_check_priority")
+      .distinct()
+      .cache()
+
+    resultDF.show(10)
+    resultDF
   }
 
 
