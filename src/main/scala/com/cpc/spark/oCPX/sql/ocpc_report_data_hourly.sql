@@ -40,4 +40,4 @@ create table test.ocpc_report_data_hourly (
 partitioned by (`date` string, `hour` string)
 stored as parquet;
 
-alter table test.ocpc_report_data_hourly add columns (media_id int)
+alter table dl_cpc.ocpc_report_data_hourly add columns (media_id int)
