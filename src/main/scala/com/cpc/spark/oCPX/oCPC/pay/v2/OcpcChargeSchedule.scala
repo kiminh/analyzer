@@ -469,6 +469,7 @@ object OcpcChargeSchedule {
     val date1 = dateConverter.format(yesterday)
 
     // 整合ocpc_charge_time
+    // todo
     val sqlRequest =
       s"""
          |SELECT
@@ -481,7 +482,7 @@ object OcpcChargeSchedule {
          |WHERE
          |  date = '$date1'
          |AND
-         |  version = '$version'
+         |  version = 'ocpc'
          |""".stripMargin
     println(sqlRequest)
     val result = spark.sql(sqlRequest)
