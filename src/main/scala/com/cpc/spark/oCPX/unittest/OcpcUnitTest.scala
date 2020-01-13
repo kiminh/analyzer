@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.{getDeepData, getShallowData}
+import com.cpc.spark.oCPX.oCPC.pay.v2.OcpcChargeCost.getCPAcheckPriority
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,10 +21,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val shallowOcpcData = getDeepData(date, 7, spark)
 
-    shallowOcpcData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200113b")
+    val data = getCPAcheckPriority(spark)
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200113c")
 
 
 
