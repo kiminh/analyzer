@@ -133,7 +133,7 @@ object OcpcGetPb_weightv2{
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
