@@ -42,7 +42,7 @@ object OcpcGetPb_weightv2{
     jfbData.show(10)
 
     // 校准系数模块
-    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, hourInt3, spark).cache()
+    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 100, spark).cache()
     realtimeDataRaw.show(10)
     val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, expTag, spark)
     val pcocData = pcocDataRaw
@@ -68,8 +68,8 @@ object OcpcGetPb_weightv2{
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
 
   }
@@ -96,7 +96,7 @@ object OcpcGetPb_weightv2{
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
 
     val baseData = baseDataRaw
-      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), col("conversion_goal")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -141,13 +141,17 @@ object OcpcGetPb_weightv2{
     resultDF
   }
 
-  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String, conversionGoal: Int) => {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
 
     val nowTime = dateConverter.parse(date + " " + hour)
     val ocpcTime = dateConverter.parse(date1 + " " + hour1)
-    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+    var hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    if (conversionGoal == 2 || conversionGoal == 5) {
+      hourDiff = hourDiff - 3
+    }
 
     hourDiff
   })
