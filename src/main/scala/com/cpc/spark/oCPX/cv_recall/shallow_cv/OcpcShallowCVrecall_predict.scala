@@ -103,6 +103,9 @@ object OcpcShallowCVrecall_predict {
       .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
       .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
 
+    baseData
+        .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117c")
+
     baseData.createOrReplaceTempView("base_data")
 
     val sqlRequest3 =
