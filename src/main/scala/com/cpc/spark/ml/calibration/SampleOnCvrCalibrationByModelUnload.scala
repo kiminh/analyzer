@@ -21,8 +21,6 @@ object SampleOnCvrCalibrationByModelUnload {
     val model = args(3)
     val calimodel = args(4)
     val media = args(5)
-    val task = args(6)
-    val sample_date = args(7)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
@@ -34,7 +32,6 @@ object SampleOnCvrCalibrationByModelUnload {
     println(s"hourRange=$hourRange")
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
-    println(s"sample_date=$sample_date")
     val selectCondition1 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql(startDate, startHour, endDate, endHour)
     var mediaCondition = "media_appsid in ('80000001','80000002','80000006','80000064','80000066')"
