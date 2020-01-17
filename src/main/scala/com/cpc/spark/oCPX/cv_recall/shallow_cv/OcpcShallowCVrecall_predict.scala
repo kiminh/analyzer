@@ -33,7 +33,7 @@ object OcpcShallowCVrecall_predict {
 
   def cvRecallPredict(date: String, hourDiff: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourDiff, spark)
-    
+
   }
 
   def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
@@ -93,7 +93,7 @@ object OcpcShallowCVrecall_predict {
     val cvData = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .withColumn("cv_data", col("date"))
+      .withColumn("cv_date", col("date"))
       .withColumn("cv_hour", col("hour"))
       .select("searchid", "conversion_goal", "conversion_from", "cv_date", "cv_hour")
 
