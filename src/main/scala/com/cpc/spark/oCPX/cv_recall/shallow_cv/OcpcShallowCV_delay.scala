@@ -44,7 +44,7 @@ object OcpcShallowCV_delay {
          |  userid,
          |  sum(price) * 0.01 as cost
          |FROM
-         |  dl_cpc.ocpc_base_unionglog
+         |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  date = '$date'
          |AND
