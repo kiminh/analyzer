@@ -5,7 +5,6 @@ import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.executor.DataReadMethod.DataReadMethod
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -17,25 +16,25 @@ object OcpcGetPb_weightv3{
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
+    val date1 = args(2).toString
+    val hour1 = args(3).toString
+    val version = args(4).toString
+    val expTag = args(5).toString
 
     // 主校准回溯时间长度
-    val hourInt1 = args(4).toInt
+    val hourInt1 = args(6).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(5).toInt
+    val hourInt2 = args(7).toInt
     // 兜底校准时长
-    val hourInt3 = args(6).toInt
+    val hourInt3 = args(8).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
-
-    // 基础数据
-    val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
-    dataRaw.show(10)
+    println(s"date=$date, hour=$hour, date1=$date1, hour1=$hour1, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计费比系数模块
-    val jfbDataRaw = OcpcJFBfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val dataRaw = OcpcCalibrationBase(date1, hour1, hourInt3, spark).cache()
+    dataRaw.show(10)
+    val jfbDataRaw = OcpcJFBfactor(date1, hour1, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
@@ -43,7 +42,9 @@ object OcpcGetPb_weightv3{
     jfbData.show(10)
 
     // 校准系数模块
-    val pcocDataRaw = OcpcCVRfactor(dataRaw, expTag, spark)
+    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 100, spark).cache()
+    realtimeDataRaw.show(10)
+    val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -59,16 +60,16 @@ object OcpcGetPb_weightv3{
     val resultDF = data
       .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("date", lit(date1))
+      .withColumn("hour", lit(hour1))
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
 
   }
@@ -91,6 +92,37 @@ object OcpcGetPb_weightv3{
   /*
   基础数据
    */
+  def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
+
+    val baseData = baseDataRaw
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), col("conversion_goal")))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  date,
+         |  hour,
+         |  hour_diff,
+         |  sum(click) as click,
+         |  sum(cv) as cv,
+         |  sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr
+         |FROM
+         |  base_data
+         |GROUP BY unitid, conversion_goal, media, date, hour, hour_diff
+         |""".stripMargin
+    println(sqlRequest)
+    val data  = spark.sql(sqlRequest)
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "date", "hour", "hour_diff")
+
+    data
+  }
+
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
@@ -101,7 +133,7 @@ object OcpcGetPb_weightv3{
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
@@ -109,13 +141,17 @@ object OcpcGetPb_weightv3{
     resultDF
   }
 
-  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String, conversionGoal: Int) => {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
 
     val nowTime = dateConverter.parse(date + " " + hour)
     val ocpcTime = dateConverter.parse(date1 + " " + hour1)
-    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+    var hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    if (conversionGoal == 2 || conversionGoal == 5) {
+      hourDiff = hourDiff - 3
+    }
 
     hourDiff
   })
@@ -196,9 +232,7 @@ object OcpcGetPb_weightv3{
          |    sum(click) as click,
          |    sum(cv) as cv,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
-         |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(acb * click) * 1.0 / sum(click) as acb,
-         |    sum(acp * click) * 1.0 / sum(click) as acp
+         |    sum(cv) * 1.0 / sum(click) as post_cvr
          |FROM
          |    raw_data
          |WHERE
@@ -220,60 +254,53 @@ object OcpcGetPb_weightv3{
   def OcpcCVRfactor(dataRaw: DataFrame, expTag: String, spark: SparkSession) = {
     /*
     calculate the calibration value based on weighted calibration:
-    case1: 0 ~ 3: 0.3
-    case2: 0 ~ 6: 0.2
-    case3: 0 ~ 12: 0.2
-    case4: 0 ~ 24: 0.2
-    case5: 0 ~ 48: 0.05
-    case6: 0 ~ 84: 0.05
+    case1: 0 ~ 5: 0.4
+    case2: 0 ~ 12: 0.3
+    case3: 0 ~ 24: 0.2
+    case4: 0 ~ 48: 0.05
+    case5: 0 ~ 84: 0.05
 
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
      */
-    val dataRaw1 = getDataByHourDiff(dataRaw, 0, 3, spark)
+    val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data1.show(10)
 
-    val dataRaw2 = getDataByHourDiff(dataRaw, 0, 6, spark)
+    val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
     val data2 = dataRaw2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data2.show(10)
 
-    val dataRaw3 = getDataByHourDiff(dataRaw, 0, 12, spark)
+    val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
     val data3 = dataRaw3
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data3.show(10)
 
-    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 24, spark)
+    val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
     val data4 = dataRaw4
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
     data4.show(10)
 
-    val dataRaw5 = getDataByHourDiff(dataRaw, 0, 48, spark)
+    val dataRaw5 = getDataByHourDiff(dataRaw, 0, 84, spark)
     val data5 = dataRaw5
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .filter(s"cv > 80")
+      .filter(s"cv > 0")
     data5.show(10)
 
-    val dataRaw6 = getDataByHourDiff(dataRaw, 0, 84, spark)
-    val data6 = dataRaw6
-      .withColumn("media", udfMediaName()(col("media")))
-      .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .filter(s"cv >= 80")
-    data6.show(10)
 
     // 计算最终值
-    val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, data5, data6, spark)
+    val calibration = calculateCalibrationValueCVR(data1, data2, data3, data4, data5, spark)
 
     val resultDF = calibration
       .select("unitid", "conversion_goal", "exp_tag", "pcoc")
@@ -282,17 +309,16 @@ object OcpcGetPb_weightv3{
 
   }
 
-  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, dataRaw5: DataFrame, dataRaw6: DataFrame, spark: SparkSession) = {
+  def calculateCalibrationValueCVR(dataRaw1: DataFrame, dataRaw2: DataFrame, dataRaw3: DataFrame, dataRaw4: DataFrame, dataRaw5: DataFrame, spark: SparkSession) = {
     /*
     calculate the calibration value based on weighted calibration:
-    case1: 0 ~ 3: 0.3
-    case2: 0 ~ 6: 0.2
-    case3: 0 ~ 12: 0.2
-    case4: 0 ~ 24: 0.2
-    case5: 0 ~ 48: 0.05
-    case6: 0 ~ 84: 0.05
+    case1: 0 ~ 5: 0.4
+    case2: 0 ~ 12: 0.3
+    case3: 0 ~ 24: 0.2
+    case4: 0 ~ 48: 0.05
+    case5: 0 ~ 84: 0.05
 
-    pcoc = 0.3 * pcoc1 + 0.2 * pcoc2 + 0.2 * pcoc3 + 0.2 * pcoc4 + 0.05 * pcoc5 + 0.05 * pcoc6
+    pcoc = 0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.1 * pcoc4
      */
     // case1
     val data1 = dataRaw1
@@ -319,24 +345,16 @@ object OcpcGetPb_weightv3{
       .withColumn("pcoc5", col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "pcoc5")
 
-    // case6
-    val data6 = dataRaw6
-      .withColumn("pcoc6", col("pcoc"))
-      .select("unitid", "conversion_goal", "exp_tag", "pcoc6")
 
-
-    val baseData = data6
-        .join(data5, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
+    val baseData = data5
         .join(data4, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data3, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data2, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
         .join(data1, Seq("unitid", "conversion_goal", "exp_tag"), "left_outer")
-        .withColumn("pcoc5_old", col("pcoc5"))
         .withColumn("pcoc4_old", col("pcoc4"))
         .withColumn("pcoc3_old", col("pcoc3"))
         .withColumn("pcoc2_old", col("pcoc2"))
         .withColumn("pcoc1_old", col("pcoc1"))
-        .withColumn("pcoc5", when(col("pcoc5").isNull, col("pcoc6")).otherwise(col("pcoc5")))
         .withColumn("pcoc4", when(col("pcoc4").isNull, col("pcoc5")).otherwise(col("pcoc4")))
         .withColumn("pcoc3", when(col("pcoc3").isNull, col("pcoc4")).otherwise(col("pcoc3")))
         .withColumn("pcoc2", when(col("pcoc2").isNull, col("pcoc3")).otherwise(col("pcoc2")))
@@ -357,7 +375,7 @@ object OcpcGetPb_weightv3{
          |  pcoc3,
          |  pcoc4,
          |  pcoc5,
-         |  (0.3 * pcoc1 + 0.2 * pcoc2 + 0.2 * pcoc3 + 0.2 * pcoc4 + 0.05 * pcoc5 + 0.05 * pcoc6) as pcoc
+         |  (0.4 * pcoc1 + 0.3 * pcoc2 + 0.2 * pcoc3 + 0.05 * pcoc4 + 0.05 * pcoc5) as pcoc
          |FROM
          |  base_data
          |""".stripMargin
