@@ -98,7 +98,7 @@ object OcpcShallowCVrecall_predict {
       .select("searchid", "conversion_goal", "conversion_from", "cv_date", "cv_hour")
 
     val baseData = clickData
-      .join(cvData, Seq("conversion_goal", "conversion_from"), "inner")
+      .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
       .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date", "cv_hour")
       .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
       .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
