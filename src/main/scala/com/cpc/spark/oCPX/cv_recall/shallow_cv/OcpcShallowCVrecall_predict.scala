@@ -32,18 +32,12 @@ object OcpcShallowCVrecall_predict {
   }
 
   def cvRecallPredict(date: String, hourDiff: Int, spark: SparkSession) = {
-    val hourList = Array("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23")
-    var data = calculateCV(date, "00", hourDiff, spark)
-    for (hour <- hourList) {
-      val singleData = calculateCV(date, hour, hourDiff, spark)
-      data = data.union(singleData)
-    }
-    data
+    val cvData = calculateCV(date, hourDiff, spark)
   }
 
-  def calculateCV(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
+    val newDate = date + " " + "00"
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
@@ -53,121 +47,92 @@ object OcpcShallowCVrecall_predict {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, "23")
 
-    val sqlRequest =
+    val sqlRequest1 =
       s"""
          |SELECT
-         |    tt.userid,
-         |    tt.conversion_goal,
-         |    min(tt.recall_value) as recall_value
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    conversion_goal,
+         |    conversion_from,
+         |    date as click_date,
+         |    hour as click_hour
          |FROM
-         |    (SELECT
-         |        aa.unitid,
-         |        aa.userid,
-         |        aa.conversion_goal,
-         |        aa.click,
-         |        aa.cv as cv1,
-         |        bb.click,
-         |        bb.cv as cv2,
-         |        bb.cv * 1.0 / aa.cv as recall_value
-         |    FROM
-         |        (SELECT
-         |            a.unitid,
-         |            a.userid,
-         |            a.conversion_goal,
-         |            count(a.isclick) as click,
-         |            count(b.iscvr) as cv
-         |        FROM
-         |            (SELECT
-         |                *
-         |            FROM
-         |                dl_cpc.ocpc_base_unionlog
-         |            WHERE
-         |                $selectCondition
-         |            AND
-         |                is_ocpc = 1
-         |            AND
-         |                conversion_goal in (2, 5)
-         |            AND
-         |                isclick = 1) as a
-         |        LEFT JOIN
-         |            (SELECT
-         |                searchid,
-         |                conversion_goal,
-         |                conversion_from,
-         |                1 as iscvr
-         |            FROM
-         |                dl_cpc.ocpc_cvr_log_hourly
-         |            WHERE
-         |                $selectCondition
-         |            GROUP BY searchid, conversion_goal, conversion_from) as b
-         |        ON
-         |            a.searchid = b.searchid
-         |        AND
-         |            a.conversion_goal = b.conversion_goal
-         |        AND
-         |            a.conversion_from = b.conversion_from
-         |        GROUP BY a.unitid, a.userid, a.conversion_goal) as aa
-         |    LEFT JOIN
-         |        (SELECT
-         |            a.unitid,
-         |            a.userid,
-         |            a.conversion_goal,
-         |            count(a.isclick) as click,
-         |            count(b.iscvr) as cv
-         |        FROM
-         |            (SELECT
-         |                *
-         |            FROM
-         |                dl_cpc.ocpc_base_unionlog
-         |            WHERE
-         |                $selectCondition
-         |            AND
-         |                is_ocpc = 1
-         |            AND
-         |                conversion_goal in (2, 5)
-         |            AND
-         |                isclick = 1) as a
-         |        LEFT JOIN
-         |            (SELECT
-         |                searchid,
-         |                conversion_goal,
-         |                conversion_from,
-         |                1 as iscvr
-         |            FROM
-         |                dl_cpc.ocpc_cvr_log_hourly
-         |            WHERE
-         |                date >= '$date1'
-         |            GROUP BY searchid, conversion_goal, conversion_from) as b
-         |        ON
-         |            a.searchid = b.searchid
-         |        AND
-         |            a.conversion_goal = b.conversion_goal
-         |        AND
-         |            a.conversion_from = b.conversion_from
-         |        GROUP BY a.unitid, a.userid, a.conversion_goal) as bb
-         |    ON
-         |        aa.unitid = bb.unitid
-         |    AND
-         |        aa.userid = bb.userid
-         |    AND
-         |        aa.conversion_goal = bb.conversion_goal) as tt
+         |    dl_cpc.ocpc_base_unionlog
          |WHERE
-         |    tt.cv1 >= 80
-         |GROUP BY tt.userid, tt.conversion_goal
+         |    $selectCondition
+         |AND
+         |    is_ocpc = 1
+         |AND
+         |    conversion_goal in (2, 5)
+         |AND
+         |    isclick = 1
          |""".stripMargin
-    println(sqlRequest)
-    val data = spark
-      .sql(sqlRequest)
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("hour_diff", lit(hourInt)).cache()
+    println(sqlRequest1)
+    val clickData = spark.sql(sqlRequest1)
 
-    data.show(10)
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    searchid,
+         |    conversion_goal,
+         |    conversion_from,
+         |    date,
+         |    hour,
+         |    1 as iscvr,
+         |    row_number() over(partition by searchid, conversion_goal, conversion_from order by date, hour) as seq
+         |FROM
+         |    dl_cpc.ocpc_cvr_log_hourly
+         |WHERE
+         |    date >= '$date1'
+         |""".stripMargin
+    println(sqlRequest2)
+    val cvData = spark
+      .sql(sqlRequest2)
+      .filter(s"seq = 1")
+      .withColumn("cv_data", col("date"))
+      .withColumn("cv_hour", col("hour"))
+      .select("searchid", "conversion_goal", "conversion_from", "cv_date", "cv_hour")
+
+    val baseData = clickData
+      .join(cvData, Seq("conversion_goal", "conversion_from"), "inner")
+      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date", "cv_hour")
+      .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
+      .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  userid,
+         |  conversion_goal,
+         |  click_hour_diff,
+         |  cv_hour_diff,
+         |  count(distinct searchid) as cv
+         |FROM
+         |  base_data
+         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
+         |""".stripMargin
+    println(sqlRequest3)
+    val data = spark.sql(sqlRequest3)
 
     data
   }
+
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+
+    val nowTime = dateConverter.parse(date + " " + hour)
+    val ocpcTime = dateConverter.parse(date1 + " " + hour1)
+    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    hourDiff
+  })
 
 
 }
