@@ -122,7 +122,7 @@ object SampleOnCvrCalibrationByModelV4 {
     val avgs = result.rdd.map(f => {
       f.mkString("\001")
     })
-      .coalesce(1).saveAsTextFile("hdfs://emr-cluster/user/cpc/wy/calibration/calibration_sample_${model}_${endDate}-${endHour}-${hourRange}/")
+      .coalesce(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/calibration/calibration_sample_${model}_${endDate}-${endHour}-${hourRange}/")
 
 
 //    printToFile(new File(s"/home/cpc/scheduled_job/hourly_calibration/calibration_sample_${model}.csv"),
