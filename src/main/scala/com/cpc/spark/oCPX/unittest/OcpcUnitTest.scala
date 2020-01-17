@@ -1,6 +1,8 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
+
+
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.calculateCost
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -14,26 +16,16 @@ object OcpcUnitTest {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val date = args(0).toString
+    val date1 = args(0).toString
     val hour = args(1).toString
 
     println("parameters:")
-    println(s"date=$date, hour=$hour")
+    println(s"date=$date1, hour=$hour")
 
-
-//    val cvData = calculateCV(date, 6, spark)
-//
-//    var data = calculateRecallValue(cvData, 1, 6, spark)
-//
-//    for (startHour <- 2 to 24) {
-//      val singleData = calculateRecallValue(cvData, startHour, 6, spark)
-//      data = data.union(singleData)
-//    }
-
-    val data = cvRecallPredict(date, 6, spark)
+    val data = calculateCost(date1, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117e")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117f")
 
 
 
