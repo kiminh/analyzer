@@ -17,7 +17,18 @@ object OcpcShallowCVrecall_predict {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
+  }
 
+  def calculateRecallValue(date: String, hourDiff: Int, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val baseData = cvRecallPredict(date1, hourDiff, spark)
   }
 
   def cvRecallPredict(date: String, hourDiff: Int, spark: SparkSession) = {
