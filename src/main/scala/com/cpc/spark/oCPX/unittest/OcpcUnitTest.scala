@@ -21,7 +21,7 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val dataRaw = calculateCV(date, hourDiff, spark)
+    val dataRaw = calculateCV(date, 6, spark)
     dataRaw
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117b")
 
