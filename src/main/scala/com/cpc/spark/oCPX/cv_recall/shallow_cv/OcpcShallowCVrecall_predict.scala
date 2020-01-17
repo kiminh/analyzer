@@ -17,6 +17,7 @@ object OcpcShallowCVrecall_predict {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
+    val data = cvRecallPredict(date, 6, spark)
   }
 
   def cvRecallPredict(date: String, hourInt: Int, spark: SparkSession) = {
@@ -30,7 +31,13 @@ object OcpcShallowCVrecall_predict {
       data = data.union(singleData)
     }
 
-    data
+    val result = data
+        .groupBy("userid", "conversion_goal")
+        .agg(
+          avg(col("recall_value")).alias("recall_value")
+        )
+        .select("userid", "conversion_goal", "recall_value")
+    result
   }
 
   def calculateRecallValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
