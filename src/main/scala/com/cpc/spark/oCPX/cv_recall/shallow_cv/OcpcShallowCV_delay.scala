@@ -99,7 +99,9 @@ object OcpcShallowCV_delay {
          |GROUP BY tt.userid
          |""".stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("hour_diff", when(col("hour_diff") < 0, 0).otherwise(col("hour_diff")))
 
     data
   }

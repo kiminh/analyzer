@@ -22,7 +22,7 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val data = calculateMinHourDiff(date, spark)
+    val data = getUserDelay(date, spark)
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117g")
