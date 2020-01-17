@@ -77,11 +77,8 @@ object model_effect {
       s"""
          |insert overwrite table dl_cpc.cpc_model_effect_cvr partition (day="$oneday",version="$version")
          |select
-         |        hash_model_name, uv, imp_all, click_all, rev_all, (click_all/imp_all) as ctr_all,
-         |        (rev_all/uv) as arpu_all,(rev_all/imp_all) as cpm_all, (rev_all/click_all) as acp_all,
-         |        imp_cpc,click_cpc,rev_cpc,(click_cpc/imp_cpc) as ctr_cpc,(rev_cpc/uv) as arpu_cpc,
-         |        (rev_cpc/imp_cpc) as cpm_cpc, (rev_cpc/click_cpc) as acp_cpc,(imp_all/uv) imp_uid,
-         |        exp_ctr * imp_cpc/click_cpc as pcoc
+         |        hash_model_name, uv, imp_all, rev_all,
+         |        (rev_all/uv) as arpu_all,cv_all,(cv_all/imp_all) show_cvr
          |    from (
          |        select
          |            hash_model_name,
@@ -91,9 +88,7 @@ object model_effect {
          |            sum(if(isclick > 0 and adsrc in (1, 28), price, 0)
          |            + if(isshow > 0 and adsrc not in (1, 28), dsp_cpm / 1000, 0)) as rev_all,
          |            sum(if(isshow > 0 and adsrc in (1, 28), 1, 0)) as imp_cpc,
-         |            sum(if(isclick > 0 and adsrc in (1, 28), 1, 0)) as click_cpc,
-         |            sum(if(isclick > 0 and adsrc in (1, 28), price, 0)) as rev_cpc,
-         |            sum(if(adsrc in (1, 28),raw_ctr/1000000,0)) / sum(if(adsrc in (1, 28),1,0)) as exp_ctr
+         |            sum(case when (b.searchid is not null)  then 1 else 0 end) as cv_all
          |        from union_log a
          |        left join (
          |            select searchid,ideaid,conversion_goal
