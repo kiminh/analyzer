@@ -25,6 +25,7 @@ object OcpcShallowCVrecall_predict {
     var data = calculateRecallValue(cvData, 1, hourInt, spark)
 
     for (startHour <- 2 to 24) {
+        println(s"########  startHour = $startHour  #######")
       val singleData = calculateRecallValue(cvData, startHour, hourInt, spark)
       data = data.union(singleData)
     }
@@ -47,12 +48,21 @@ object OcpcShallowCVrecall_predict {
       .agg(sum(col("cv")).alias("cv"))
       .select("unitid", "userid", "conversion_goal", "cv")
 
-    val resultData = totalCV
+    val result = totalCV
       .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
       .select("unitid", "userid", "conversion_goal", "total_cv", "cv")
-      .withColumn("hour_diff", lit(startHour))
+      .withColumn("recall_value", col("total_cv") * 1.0 / col("cv"))
+      .filter(s"cv >= 80")
 
-    resultData
+    val finalResult = result
+      .groupBy("userid", "conversion_goal")
+      .agg(
+        min(col("recall_value")).alias("recall_value"),
+        count(col("unitid")).alias("unit_cnt")
+      )
+      .select("userid", "conversion_goal", "recall_value", "unit_cnt")
+
+    finalResult
   }
 
   def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
