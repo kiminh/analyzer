@@ -22,7 +22,7 @@ object OcpcShallowCV_delay {
   }
 
   def getUserDelay(date: String, spark: SparkSession) = {
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
