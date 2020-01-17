@@ -162,7 +162,9 @@ object OcpcShallowCVrecall_predict {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("hour_diff", lit(hourInt))
+      .withColumn("hour_diff", lit(hourInt)).cache()
+
+    data.show(10)
 
     data
   }
