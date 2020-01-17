@@ -31,15 +31,16 @@ object OcpcShallowCVrecall_predict {
       data = data.union(singleData)
     }
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117d")
-
     val result = data
         .groupBy("userid", "conversion_goal")
         .agg(
           avg(col("recall_value")).alias("recall_value")
         )
         .select("userid", "conversion_goal", "recall_value")
+        .withColumn("recall_value", when(col("recall_value") < 1.0, 1.0).otherwise(when(col("recall_value") > 2.0, 2.0).otherwise(col("recall_value"))))
+        .cache()
+
+    result.show(10)
     result
   }
 
