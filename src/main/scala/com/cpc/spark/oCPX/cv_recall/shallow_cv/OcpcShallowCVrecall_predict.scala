@@ -33,6 +33,7 @@ object OcpcShallowCVrecall_predict {
 
   def cvRecallPredict(date: String, hourDiff: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourDiff, spark)
+    
   }
 
   def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
