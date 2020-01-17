@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.getUserDelay
 import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
@@ -96,8 +97,21 @@ object OcpcGetPb_weightv3{
   def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
 
+    val delayDataRaw = getUserDelay(date, spark)
+    val delayData = delayDataRaw
+      .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
+      .select("userid", "conversion_goal", "delay_hour")
+
+    val unitUserInfoRaw = getConversionGoalNew(spark)
+    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
+    unitUserInfo.show(10)
+
     val baseData = baseDataRaw
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
+      .na.fill(0.0, Seq("delay_hour"))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), col("conversion_goal")))
+      .withColumn("hour_diff", col("hour_diff") - col("delay_hour"))
 
     baseData.createOrReplaceTempView("base_data")
 
