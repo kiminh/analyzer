@@ -69,7 +69,7 @@ object OcpcShallowCVrecall_predict {
       )
       .select("userid", "conversion_goal", "recall_value", "unit_cnt")
       .filter(s"unit_cnt > 1")
-      .withColumn("hour_diff", lit(hourInt))
+      .withColumn("start_hour", lit(startHour))
 
     finalResult
   }
