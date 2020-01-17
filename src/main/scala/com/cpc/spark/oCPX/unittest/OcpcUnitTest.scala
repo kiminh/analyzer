@@ -25,10 +25,10 @@ object OcpcUnitTest {
 
     var data = calculateRecallValue(cvData, 1, 6, spark)
 
-    for (startHour <- 2 to 24) {
-      val singleData = calculateRecallValue(cvData, startHour, 6, spark)
-      data = data.union(singleData)
-    }
+//    for (startHour <- 2 to 24) {
+//      val singleData = calculateRecallValue(cvData, startHour, 6, spark)
+//      data = data.union(singleData)
+//    }
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117d")
