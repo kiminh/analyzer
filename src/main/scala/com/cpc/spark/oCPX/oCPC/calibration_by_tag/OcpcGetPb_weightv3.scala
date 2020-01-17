@@ -100,6 +100,7 @@ object OcpcGetPb_weightv3{
     val delayDataRaw = getUserDelay(date, spark)
     val delayData = delayDataRaw
       .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
+      .filter(s"cost > 100")
       .select("userid", "conversion_goal", "delay_hour")
 
     val unitUserInfoRaw = getConversionGoalNew(spark)
