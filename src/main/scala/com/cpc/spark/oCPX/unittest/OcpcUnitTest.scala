@@ -1,6 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.calculateCV
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.{calculateCV, calculateRecallValue}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -21,9 +21,12 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val dataRaw = calculateCV(date, 6, spark)
-    dataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117b")
+    val cvData = calculateCV(date, 6, spark)
+
+    var data = calculateRecallValue(cvData, 1, 6, spark)
+
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117c")
 
 
 
