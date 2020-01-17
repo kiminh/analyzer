@@ -17,6 +17,8 @@ object OcpcShallowCV_delay {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
+    val data = getUserDelay(date, spark)
+
   }
 
   def getUserDelay(date: String, spark: SparkSession) = {

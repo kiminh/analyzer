@@ -2,7 +2,7 @@ package com.cpc.spark.oCPX.unittest
 
 
 
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.{calculateCost, calculateMinHourDiff}
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.{calculateCost, calculateMinHourDiff, getUserDelay}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -16,13 +16,13 @@ object OcpcUnitTest {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val date1 = args(0).toString
+    val date = args(0).toString
     val hour = args(1).toString
 
     println("parameters:")
-    println(s"date=$date1, hour=$hour")
+    println(s"date=$date, hour=$hour")
 
-    val data = calculateMinHourDiff(date1, spark)
+    val data = getUserDelay(date, spark)
 
     data
       .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117g")
