@@ -54,9 +54,6 @@ object OcpcShallowCVrecall_predict {
       .withColumn("recall_value", col("total_cv") * 1.0 / col("cv"))
       .filter(s"cv >= 80")
 
-    result
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117c")
-
     val finalResult = result
       .groupBy("userid", "conversion_goal")
       .agg(
@@ -64,6 +61,7 @@ object OcpcShallowCVrecall_predict {
         count(col("unitid")).alias("unit_cnt")
       )
       .select("userid", "conversion_goal", "recall_value", "unit_cnt")
+      .filter(s"unit_cnt > 1")
       .withColumn("hour_diff", lit(hourInt))
 
     finalResult
