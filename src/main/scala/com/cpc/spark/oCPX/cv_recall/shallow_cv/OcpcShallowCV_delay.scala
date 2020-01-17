@@ -42,6 +42,7 @@ object OcpcShallowCV_delay {
       s"""
          |SELECT
          |  userid,
+         |  conversion_goal,
          |  sum(price) * 0.01 as cost
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -49,7 +50,11 @@ object OcpcShallowCV_delay {
          |  date = '$date'
          |AND
          |  isclick = 1
-         |GROUP BY userid
+         |AND
+         |  conversion_goal in (2, 5)
+         |AND
+         |  is_ocpc = 1
+         |GROUP BY userid, conversion_goal
          |""".stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -85,6 +90,8 @@ object OcpcShallowCV_delay {
          |            dl_cpc.cpc_conversion
          |        WHERE
          |            day = '$date'
+         |        AND
+         |            conversion_goal in (2, 5)
          |        AND
          |            array_contains(conversion_target, 'api')) as t) as tt
          |GROUP BY tt.userid

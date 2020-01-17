@@ -2,7 +2,7 @@ package com.cpc.spark.oCPX.unittest
 
 
 
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.calculateCost
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.{calculateCost, calculateMinHourDiff}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -22,10 +22,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date1, hour=$hour")
 
-    val data = calculateCost(date1, spark)
+    val data = calculateMinHourDiff(date1, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117f")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117g")
 
 
 
