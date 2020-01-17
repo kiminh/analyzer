@@ -31,6 +31,9 @@ object OcpcShallowCVrecall_predict {
       data = data.union(singleData)
     }
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117d")
+
     val result = data
         .groupBy("userid", "conversion_goal")
         .agg(
