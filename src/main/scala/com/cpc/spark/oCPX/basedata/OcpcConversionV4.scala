@@ -26,9 +26,9 @@ object OcpcConversionV4 {
       .union(cv5)
       .distinct()
 
-//    val resultDF = cv1.union(cv2).union(cv3).union(cv4).union(cv5)
+    val resultDF = cv1.union(cv2).union(cv3).union(cv4).union(cv5)
 
-    result
+    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_label_cvr_hourly")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_label_cvr_hourly")
     println("successfully save data into table: dl_cpc.ocpc_unit_label_cvr_hourly")

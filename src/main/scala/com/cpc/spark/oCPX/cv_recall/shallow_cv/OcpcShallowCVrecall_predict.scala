@@ -11,13 +11,27 @@ object OcpcShallowCVrecall_predict {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
+    val hourInt = args(1).toInt
+    val dbName = args(2).toString
     println("parameters:")
     println(s"date=$date")
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallPredict(date, 6, spark)
+    val data = cvRecallPredict(date, hourInt, spark)
+
+    val tableName = s"$dbName.ocpc_recall_value_daily"
+
+    data
+      .withColumn("id", col("userid"))
+      .selectExpr("cast(id as string) id", "conversion_goal", "recall_value")
+      .withColumn("date", lit(date))
+      .withColumn("strat", lit("min_value"))
+      .withColumn("hour_diff", lit(hourInt))
+      .repartition(1)
+      .write.mode("overwrite").insertInto("")
+
   }
 
   def cvRecallPredict(date: String, hourInt: Int, spark: SparkSession) = {
