@@ -32,7 +32,7 @@ object OcpcGetPb_weightv4{
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 基础数据
-    val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBase(date, hour, 100, spark).cache()
     dataRaw.show(10)
 
     // 计费比系数模块
