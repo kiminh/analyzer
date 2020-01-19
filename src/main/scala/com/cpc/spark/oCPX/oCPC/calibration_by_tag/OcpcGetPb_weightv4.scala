@@ -99,7 +99,6 @@ object OcpcGetPb_weightv4{
     2. 二分搜索查找到合适的平滑系数
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
-
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
