@@ -106,14 +106,9 @@ object OcpcGetPb_weightv4{
       .filter(s"cost > 100")
       .select("userid", "conversion_goal", "delay_hour")
 
-    val unitUserInfoRaw = getConversionGoalNew(spark)
-    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
-    unitUserInfo.show(10)
-
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-      .join(unitUserInfo, Seq("unitid"), "inner")
       .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
       .na.fill(0.0, Seq("delay_hour"))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
