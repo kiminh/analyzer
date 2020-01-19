@@ -260,7 +260,7 @@ object OcpcGetPb_weightv1{
     val data5 = dataRaw5
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
     data5.show(10)
 
 

@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -34,31 +35,37 @@ object OcpcShallowCVrecall_assessment {
 
   }
 
-  def cvRecallPredict(date: String, hourInt: Int, spark: SparkSession) = {
+  def cvRecallAssessment(date: String, hourInt: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourInt, spark)
 
-    var data = calculateRecallValue(cvData, 1, hourInt, spark)
+    var rawData = calculateCvValue(cvData, 1, hourInt, spark)
 
     for (startHour <- 2 to 24) {
         println(s"########  startHour = $startHour  #######")
-      val singleData = calculateRecallValue(cvData, startHour, hourInt, spark)
-      data = data.union(singleData)
+      val singleData = calculateCvValue(cvData, startHour, hourInt, spark)
+      rawData = rawData.union(singleData)
     }
 
-    val result = data
-        .groupBy("userid", "conversion_goal")
-        .agg(
-          avg(col("recall_value")).alias("recall_value")
-        )
-        .select("userid", "conversion_goal", "recall_value")
-        .withColumn("recall_value", when(col("recall_value") < 1.0, 1.0).otherwise(when(col("recall_value") > 2.0, 2.0).otherwise(col("recall_value"))))
-        .cache()
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
+    val recallValue = recallValueRaw
+      .withColumn("userid", col("id"))
+      .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
 
-    result.show(10)
+    val result = rawData
+        .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
+        .na.fill(1.0, Seq("recall_value"))
+
     result
   }
 
-  def calculateRecallValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
+  def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
     val endHour = startHour + hourInt
     val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
 
@@ -76,20 +83,9 @@ object OcpcShallowCVrecall_assessment {
     val result = totalCV
       .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
       .select("unitid", "userid", "conversion_goal", "total_cv", "cv")
-      .withColumn("recall_value", col("total_cv") * 1.0 / col("cv"))
-      .filter(s"cv >= 80")
-
-    val finalResult = result
-      .groupBy("userid", "conversion_goal")
-      .agg(
-        min(col("recall_value")).alias("recall_value"),
-        count(col("unitid")).alias("unit_cnt")
-      )
-      .select("userid", "conversion_goal", "recall_value", "unit_cnt")
-      .filter(s"unit_cnt > 1")
       .withColumn("start_hour", lit(startHour))
 
-    finalResult
+    result
   }
 
   def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
@@ -146,47 +142,22 @@ object OcpcShallowCVrecall_assessment {
          |    date >= '$date1'
          |""".stripMargin
     println(sqlRequest2)
-    val cvData1 = spark
+    val cvData = spark
       .sql(sqlRequest2)
       .filter(s"seq = 1")
-      .withColumn("cv_date1", col("date"))
-      .withColumn("cv_hour1", col("hour"))
-      .select("searchid", "conversion_goal", "conversion_from", "cv_date1", "cv_hour1")
-
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |    searchid,
-         |    conversion_goal,
-         |    conversion_from,
-         |    date,
-         |    hour,
-         |    1 as iscvr,
-         |    row_number() over(partition by searchid, conversion_goal, conversion_from order by date, hour) as seq
-         |FROM
-         |    dl_cpc.ocpc_cvr_log_hourly
-         |WHERE
-         |    $selectCondition
-         |""".stripMargin
-    println(sqlRequest3)
-    val cvData2 = spark
-      .sql(sqlRequest3)
-      .filter(s"seq = 1")
-      .withColumn("cv_date2", col("date"))
-      .withColumn("cv_hour2", col("hour"))
-      .select("searchid", "conversion_goal", "conversion_from", "cv_date2", "cv_hour2")
+      .withColumn("cv_date", col("date"))
+      .withColumn("cv_hour", col("hour"))
+      .select("searchid", "conversion_goal", "conversion_from", "cv_date", "cv_hour")
 
     val baseData = clickData
-      .join(cvData1, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
-      .join(cvData2, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
-      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date1", "cv_hour1", "cv_date2", "cv_hour2")
+      .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
+      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date", "cv_hour")
       .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
-      .withColumn("cv_hour_diff1", udfCalculateHourDiff(date1, hour1)(col("cv_date1"), col("cv_hour1")))
-      .withColumn("cv_hour_diff2", udfCalculateHourDiff(date1, hour1)(col("cv_date2"), col("cv_hour2")))
+      .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
 
     baseData.createOrReplaceTempView("base_data")
 
-    val sqlRequest4 =
+    val sqlRequest3 =
       s"""
          |SELECT
          |  unitid,
@@ -199,8 +170,8 @@ object OcpcShallowCVrecall_assessment {
          |  base_data
          |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
          |""".stripMargin
-    println(sqlRequest4)
-    val data = spark.sql(sqlRequest4).cache()
+    println(sqlRequest3)
+    val data = spark.sql(sqlRequest3).cache()
 
     data.show(10)
 
