@@ -184,7 +184,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(1))
     data1.show(10)
 
@@ -194,7 +194,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(2))
     data2.show(10)
 
@@ -204,7 +204,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(3))
     data3.show(10)
 
