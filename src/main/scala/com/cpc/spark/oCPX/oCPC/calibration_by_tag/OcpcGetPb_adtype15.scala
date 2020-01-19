@@ -77,7 +77,7 @@ object OcpcGetPb_adtype15 {
   def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = jfbData
-      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
+      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
