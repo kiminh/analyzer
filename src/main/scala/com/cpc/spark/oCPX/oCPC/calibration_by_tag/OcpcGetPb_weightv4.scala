@@ -100,19 +100,10 @@ object OcpcGetPb_weightv4{
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
 
-    val delayDataRaw = getUserDelay(date, spark)
-    val delayData = delayDataRaw
-      .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
-      .filter(s"cost > 100")
-      .select("userid", "conversion_goal", "delay_hour")
-
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-      .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(0.0, Seq("delay_hour"))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
-      .withColumn("hour_diff", col("hour_diff") - col("delay_hour"))
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
