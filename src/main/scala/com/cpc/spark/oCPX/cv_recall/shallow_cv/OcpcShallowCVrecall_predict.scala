@@ -30,7 +30,7 @@ object OcpcShallowCVrecall_predict {
       .withColumn("strat", lit("min_value"))
       .withColumn("hour_diff", lit(hourInt))
       .repartition(1)
-      .write.mode("overwrite").insertInto("")
+      .write.mode("overwrite").insertInto(tableName)
 
   }
 
