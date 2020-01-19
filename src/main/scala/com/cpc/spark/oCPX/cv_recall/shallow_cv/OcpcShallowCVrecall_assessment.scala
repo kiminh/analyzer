@@ -20,18 +20,9 @@ object OcpcShallowCVrecall_assessment {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallPredict(date, hourInt, spark)
+    val data = cvRecallAssessment(date, hourInt, spark)
 
-    val tableName = s"$dbName.ocpc_recall_value_daily"
-
-    data
-      .withColumn("id", col("userid"))
-      .selectExpr("cast(id as string) id", "conversion_goal", "recall_value")
-      .withColumn("date", lit(date))
-      .withColumn("strat", lit("min_value"))
-      .withColumn("hour_diff", lit(hourInt))
-      .repartition(1)
-      .write.mode("overwrite").insertInto(tableName)
+    
 
   }
 
