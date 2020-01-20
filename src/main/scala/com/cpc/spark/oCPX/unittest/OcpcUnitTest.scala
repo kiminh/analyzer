@@ -21,7 +21,7 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val data = cvRecallAssessment(date, 6, spark)
+    val data = cvRecallAssessment(date, 12, spark)
 
     data
       .write.mode("overwrite").saveAsTable("test.check_cv_recall20200120b")
