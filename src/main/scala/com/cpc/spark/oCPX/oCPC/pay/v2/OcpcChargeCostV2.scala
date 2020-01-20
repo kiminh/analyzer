@@ -9,17 +9,22 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcPayDataUpdate {
+object OcpcChargeCostV2 {
   def main(args: Array[String]): Unit = {
     /*
-    update the pay data based on ocpc_charge_time
+    按照七天周期计算赔付数据
+    1. 计算当天所有单元的点击、消费、转化、平均cpagiven、平均cpareal、赔付金额
+    2. 获取这批单元在赔付周期中的起始时间
+    3. 如果当前为周期第一天，则重新落表，否则，叠加上前一天的历史数据
+    4. 数据落表，需包括周期编号，是否周期第一天
      */
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
     val date = args(0).toString
-    val dayCnt = args(1).toInt
+    val version = args(1).toString
+    val dayCnt = args(2).toInt
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, dayCnt, spark)
@@ -30,21 +35,27 @@ object OcpcPayDataUpdate {
     // 数据关联
     val data = assemblyData(shallowOcpcData, deepOcpcData, spark)
 
-    // 抽取赔付数据
-    val ocpcCompensate = getOcpcCompensate(date, spark)
+    // 抽取周期数据表
+    val scheduleData = getSchedule(date, version, spark)
 
     // 统计消费与赔付
-    val payDataRaw = calculatePayRaw(data, ocpcCompensate, spark)
+    val payDataRaw = calculatePayRaw(data, scheduleData, date, spark)
 
     // 按照深度ocpc赔付的逻辑进行数据调整
     val payData = calculateFinalPay(payDataRaw, spark)
 
-    // todo
-    payData
+//    payData
+//      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
+
+    val resultDF = payData
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
       .withColumn("date", lit(date))
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily_new")
+      .withColumn("version", lit(version))
 
+    resultDF
+      .repartition(1)
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
 
@@ -70,12 +81,10 @@ object OcpcPayDataUpdate {
          |  cpa_check_priority,
          |  ocpc_charge_time,
          |  deep_ocpc_charge_time,
-         |  cost as cost_old,
-         |  conversion as conversion_old,
-         |  cpagiven as cpagiven_old,
-         |  pay as pay_old,
-         |  is_deep_ocpc,
-         |  compensate_key,
+         |  date_diff,
+         |  pay_cnt,
+         |  is_pay_flag,
+         |  is_deep_pay_flag,
          |  click1,
          |  cv1,
          |  cpagiven1,
@@ -93,7 +102,8 @@ object OcpcPayDataUpdate {
          |  (case when cv2 = 0 then cost2
          |        when cv2 > 0 and cost2 > 1.2 * cv2 * cpagiven2 then cost2 - 1.2 * cv2 * cpagiven2
          |        else 0
-         |  end) as pay2
+         |  end) as pay2,
+         |  (case when cpa_check_priority = 0 and is_deep_pay_flag = 1 then 1 else 0 end) as is_filter
          |FROM
          |  raw_data
          |""".stripMargin
@@ -124,15 +134,17 @@ object OcpcPayDataUpdate {
       .withColumn("pay", when(col("pay_type") === 1, col("pay2")).otherwise(col("pay1")))
 
     val result1 = data1
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "cost_old", "conversion_old", "cpagiven_old", "pay_old", "is_deep_ocpc", "compensate_key", "pay_type")
+      .filter(s"is_filter = 0")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
     val result2 = data2
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "cost_old", "conversion_old", "cpagiven_old", "pay_old", "is_deep_ocpc", "compensate_key", "pay_type")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
 
     val result = result1.union(result2)
 
     result
   }
+
 
   def udfDeterminePayType() = udf((cpaCheckPriority: Int, pay1: Double, pay2: Double) => {
     val result = cpaCheckPriority match {
@@ -150,17 +162,21 @@ object OcpcPayDataUpdate {
     result
   })
 
-
-  def calculatePayRaw(dataRaw: DataFrame, ocpcCompensateRaw: DataFrame, spark: SparkSession) = {
+  def calculatePayRaw(dataRaw: DataFrame, scheduleDataRaw: DataFrame, date: String, spark: SparkSession) = {
     val costData = dataRaw
-      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2")
+      .withColumn("date_dist", udfCalculateDateDist(date)(col("date")))
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "date_dist")
       .na.fill(0, Seq("cv1", "cv2"))
 
-    val ocpcCompensate = ocpcCompensateRaw
-        .select("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
-        .withColumn("deep_ocpc_step", when(col("is_deep_ocpc") === 1, 2).otherwise(1))
+    val schedulData = scheduleDataRaw
+      .select("unitid", "calc_dates", "date_diff", "pay_cnt", "ocpc_charge_time", "deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag")
 
-    costData.createOrReplaceTempView("data")
+    val data = costData
+      .join(schedulData, Seq("unitid"), "inner")
+      .select("unitid", "date", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "cpa_check_priority", "click2", "cv2", "cost2", "cpagiven2", "date_dist", "calc_dates", "ocpc_charge_time", "deep_ocpc_charge_time")
+      .withColumn("is_in_schedule", when(col("date_dist") <= col("calc_dates"), 1).otherwise(0))
+
+    data.createOrReplaceTempView("data")
 
     val sqlRequest =
       s"""
@@ -178,15 +194,44 @@ object OcpcPayDataUpdate {
          |  sum(cost2) as cost2
          |FROM
          |  data
+         |WHERE
+         |  is_in_schedule = 1
          |GROUP BY unitid, deep_ocpc_step, cpa_check_priority
          |""".stripMargin
     println(sqlRequest)
     val result = spark
       .sql(sqlRequest)
-      .join(ocpcCompensate, Seq("unitid", "deep_ocpc_step"), "inner")
-      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
+      .join(schedulData, Seq("unitid"), "inner")
+      .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click1", "cv1", "cost1", "cpagiven1", "click2", "cv2", "cost2", "cpagiven2", "ocpc_charge_time", "deep_ocpc_charge_time", "date_diff", "pay_cnt", "is_pay_flag", "is_deep_pay_flag")
 
     result
+  }
+
+  def udfCalculateDateDist(date: String) = udf((currentDate: String) => {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+
+    val today = dateConverter.parse(date)
+    val ocpcChargeDate = dateConverter.parse(currentDate.split(" ")(0))
+    val result = (today.getTime() - ocpcChargeDate.getTime()) / (1000 * 60 * 60 * 24) + 1
+    result
+  })
+
+  def getSchedule(date: String, version: String, spark: SparkSession) = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  *
+         |FROM
+         |  dl_cpc.ocpc_compensate_schedule_daily
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  version = '$version'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest).filter(s"is_pay_flag = 1 OR is_deep_pay_flag = 1")
+    data
   }
 
   def assemblyData(dataRaw1: DataFrame, dataRaw2: DataFrame, session: SparkSession) = {
@@ -217,11 +262,10 @@ object OcpcPayDataUpdate {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, dayCnt)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -dayCnt)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` between '$date' and '$date1'"
+    val selectCondition = s"`date` between '$date1' and '$date'"
 
     val sqlRequest1 =
       s"""
@@ -234,7 +278,6 @@ object OcpcPayDataUpdate {
          |  price,
          |  cast(deep_cpa as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
-         |  cpa_check_priority,
          |  is_deep_ocpc,
          |  date
          |FROM
@@ -246,11 +289,14 @@ object OcpcPayDataUpdate {
          |AND conversion_goal > 0
          |""".stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
-      .na.fill(0, Seq("cpa_check_priority"))
       .filter(s"deep_ocpc_step = 2")
+
+    val cpaCheckPriority = getCPAcheckPriority(spark)
+    val clickData = clickDataRaw
+      .join(cpaCheckPriority, Seq("unitid"), "inner")
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -262,7 +308,7 @@ object OcpcPayDataUpdate {
          |FROM
          |  dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
-         |  `date` >= '$date'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
@@ -289,8 +335,8 @@ object OcpcPayDataUpdate {
          |""".stripMargin
     println(sqlRequest3)
     val data = spark
-      .sql(sqlRequest3)
-      .filter(s"deep_ocpc_step = 2")
+        .sql(sqlRequest3)
+        .filter(s"deep_ocpc_step = 2")
 
     data
   }
@@ -301,11 +347,10 @@ object OcpcPayDataUpdate {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, dayCnt)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -dayCnt)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date` between '$date' and '$date1'"
+    val selectCondition = s"`date` between '$date1' and '$date'"
 
     val sqlRequest1 =
       s"""
@@ -318,9 +363,8 @@ object OcpcPayDataUpdate {
          |  price,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
-         |  cpa_check_priority,
          |  is_deep_ocpc,
-         |   date
+         |  date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -329,10 +373,14 @@ object OcpcPayDataUpdate {
          |AND conversion_goal > 0
          |""".stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
       .na.fill(1, Seq("deep_ocpc_step"))
+
+    val cpaCheckPriority = getCPAcheckPriority(spark)
+    val clickData = clickDataRaw
+      .join(cpaCheckPriority, Seq("unitid"), "left_outer")
       .na.fill(0, Seq("cpa_check_priority"))
 
     // 抽取cv数据
@@ -345,7 +393,7 @@ object OcpcPayDataUpdate {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date'
+         |  `date` >= '$date1'
        """.stripMargin
     println(sqlRequest2)
     val cvData = spark.sql(sqlRequest2).distinct()
@@ -377,19 +425,18 @@ object OcpcPayDataUpdate {
     data
   }
 
-
-  def getOcpcCompensate(date: String, spark: SparkSession) = {
+  def getCPAcheckPriority(spark: SparkSession) = {
     val conf = ConfigFactory.load("ocpc")
+
     val url = conf.getString("adv_read_mysql.new_deploy.url")
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-//    val table = "(select id, user_id, ocpc_bid, cast(conversion_goal as char) as conversion_goal, is_ocpc, ocpc_status from adv.unit where ideas is not null) as tmp"
     val table =
       s"""
-         |(SELECT unit_id as unitid, user_id as userid, ocpc_charge_time, deep_ocpc_charge_time, cost, conversion, cpareal, cpagiven, pay, is_deep_ocpc, compensate_key
-         |FROM ocpc_compensate
-         |WHERE date(ocpc_charge_time) = '$date') as tmp
+         |(SELECT unit_id as unitid, cpa_check_priority
+         |FROM unit_ocpc
+         |WHERE is_deep_ocpc = 1) as tmp
          |""".stripMargin
 
     val data = spark.read.format("jdbc")
@@ -401,14 +448,13 @@ object OcpcPayDataUpdate {
       .load()
 
     val resultDF = data
-      .selectExpr("unitid",  "userid", "ocpc_charge_time", "deep_ocpc_charge_time", "cost", "conversion", "cpagiven", "pay", "is_deep_ocpc", "compensate_key")
+      .selectExpr("cast(unitid as int) unitid",  "cast(cpa_check_priority as int) as cpa_check_priority")
       .distinct()
       .cache()
 
     resultDF.show(10)
     resultDF
   }
-
 
 
 }
