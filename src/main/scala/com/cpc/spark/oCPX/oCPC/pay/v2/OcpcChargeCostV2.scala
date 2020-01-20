@@ -54,7 +54,7 @@ object OcpcChargeCostV2 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily20200120b")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
@@ -186,11 +186,11 @@ object OcpcChargeCostV2 {
          |  cpa_check_priority,
          |  sum(click1) as click1,
          |  sum(cv1) as cv1,
-         |  sum(cpagiven1 * click1) * 1.0 / sum(click1) as cpagiven1,
+         |  sum(cpagiven1 * cv1) * 1.0 / sum(cv1) as cpagiven1,
          |  sum(cost1) as cost1,
          |  sum(click2) as click2,
          |  sum(cv2) as cv2,
-         |  sum(cpagiven2 * click2) * 1.0 / sum(click2) as cpagiven2,
+         |  sum(cpagiven2 * cv2) * 1.0 / sum(cv2) as cpagiven2,
          |  sum(cost2) as cost2
          |FROM
          |  data
@@ -328,7 +328,7 @@ object OcpcChargeCostV2 {
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
-         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
+         |  sum(case when iscvr=1 then cpagiven else 0 end) * 1.0 / sum(iscvr) as cpagiven
          |FROM
          |  base_data
          |GROUP BY unitid, date, deep_ocpc_step, cpa_check_priority
@@ -414,7 +414,7 @@ object OcpcChargeCostV2 {
          |  sum(isclick) as click,
          |  sum(iscvr) as cv,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 as cost,
-         |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven
+         |  sum(case when iscvr=1 then cpagiven else 0 end) * 1.0 / sum(iscvr) as cpagiven
          |FROM
          |  base_data
          |GROUP BY unitid, date, deep_ocpc_step, cpa_check_priority
