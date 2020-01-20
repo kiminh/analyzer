@@ -46,7 +46,6 @@ object OcpcShallowCVrecall_assessment {
     val date1 = dateConverter.format(yesterday)
     val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
     val recallValue = recallValueRaw
-      .withColumn("userid", col("id"))
       .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
 
     val result = rawData
