@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.oCPC.assessment
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName}
 import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -12,80 +12,79 @@ object OcpcCalibration_assessment {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
-    val hourInt = args(1).toInt
-    val dbName = args(2).toString
+    val hour = args(1).toString
+    val hourInt = args(2).toInt
+    val dbName = args(3).toString
     println("parameters:")
     println(s"date=$date")
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallAssessment(date, hourInt, spark)
+    val data = cvRecallAssessment(date, hour, hourInt, spark)
 
 
 
   }
 
-  def cvRecallAssessment(date: String, hourInt: Int, spark: SparkSession) = {
-    val cvData = calculateCV(date, hourInt, spark)
+  def cvRecallAssessment(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val pcocData = getPcoc(date, hour, hourInt, "qtt", spark)
+    val caliData = getCalibrationValue(date, hour, 4, hourInt, "Qtt", spark)
 
-    var rawData = calculateCvValue(cvData, 1, hourInt, spark)
+    val data = pcocData
+      .join(caliData, Seq("unitid", "conversion_goal", "hour_diff"), "inner")
+      .select("unitid", "userid", "conversion_goal", "hour_diff", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
+      .withColumn("cali_pcoc", col("pcoc") * col("cali_value"))
 
-    for (startHour <- 2 to 24) {
-        println(s"########  startHour = $startHour  #######")
-      val singleData = calculateCvValue(cvData, startHour, hourInt, spark)
-      rawData = rawData.union(singleData)
-    }
+    data
+  }
 
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
+  def getCalibrationValue(date: String, hour: String, hourDiff: Int, hourInt: Int, media: String, spark: SparkSession) = {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.HOUR, -hourInt)
+    calendar.add(Calendar.HOUR, -hourDiff)
     val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
-    val recallValue = recallValueRaw
-      .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
-    val result = rawData
-        .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
-        .na.fill(1.0, Seq("recall_value"))
-        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
-        .withColumn("pred_cv", col("cv") * col("recall_value"))
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(identifier as int) unitid,
+         |  conversion_goal,
+         |  exp_tag,
+         |  cali_value,
+         |  date,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_param_pb_data_hourly_alltype
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  version = 'ocpcv1pbfile'
+         |AND
+         |  exp_tag like '%$media'
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .withColumn("hour_diff", udfCalculateHourDiff(date1, hour1)(col("date"), col("hour")))
+      .distinct()
 
-    result
+    data
+
   }
 
-  def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
-    val endHour = startHour + hourInt
-    val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
-
-    val totalCV = data
-      .groupBy("unitid", "userid", "conversion_goal")
-      .agg(
-        sum(col("cv")).alias("total_cv"),
-        sum(col("cost")).alias("cost")
-      )
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cost")
-
-    val clickCV = data
-      .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
-      .groupBy("unitid", "userid", "conversion_goal")
-      .agg(sum(col("cv")).alias("cv"))
-      .select("unitid", "userid", "conversion_goal", "cv")
-
-    val result = totalCV
-      .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv")
-      .withColumn("start_hour", lit(startHour))
-
-    result
-  }
-
-  def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
+  def getPcoc(date: String, hour: String, hourInt: Int, media: String, spark: SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + "00"
+    val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
@@ -95,7 +94,7 @@ object OcpcCalibration_assessment {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, "23")
+    val selectCondition = getTimeRangeSqlDate(date1, hour1, date, hour)
 
     val sqlRequest1 =
       s"""
@@ -105,6 +104,7 @@ object OcpcCalibration_assessment {
          |    userid,
          |    conversion_goal,
          |    conversion_from,
+         |    media_appsid,
          |    price,
          |    exp_cvr,
          |    isclick,
@@ -120,7 +120,8 @@ object OcpcCalibration_assessment {
          |    isclick = 1
          |""".stripMargin
     println(sqlRequest1)
-    val clickData = spark.sql(sqlRequest1)
+    val clickDataRaw = spark.sql(sqlRequest1)
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     val sqlRequest2 =
       s"""
@@ -141,8 +142,9 @@ object OcpcCalibration_assessment {
       .distinct()
 
     val baseData = clickData
+      .filter(s"media = '$media'")
       .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "left")
-      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "price", "exp_cvr", "isclick", "iscvr", "date", "hour")
+      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "media",  "price", "exp_cvr", "isclick", "iscvr", "date", "hour")
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -154,13 +156,20 @@ object OcpcCalibration_assessment {
          |  conversion_goal,
          |  date,
          |  hour,
-         |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
+         |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost,
+         |  sum(iscvr) as cv,
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+         |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr
          |FROM
          |  base_data
-         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
+         |GROUP BY unitid, userid, conversion_goal, date, hour
          |""".stripMargin
     println(sqlRequest3)
-    val data = spark.sql(sqlRequest3).cache()
+    val data = spark
+      .sql(sqlRequest3)
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
+      .withColumn("hour_diff", udfCalculateHourDiff(date1, hour1)(col("date"), col("hour")))
+      .cache()
 
     data.show(10)
 
