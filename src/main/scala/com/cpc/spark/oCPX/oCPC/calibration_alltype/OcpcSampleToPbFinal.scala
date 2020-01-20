@@ -136,9 +136,9 @@ object OcpcSampleToPbFinal {
       .cache()
 
     data.show(10)
-    data
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
+//    data
+//      .repartition(10)
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
 
     data
   }
