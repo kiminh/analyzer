@@ -22,7 +22,7 @@ object OcpcShallowCVrecall_assessment {
 
     val data = cvRecallAssessment(date, hourInt, spark)
 
-    
+
 
   }
 
@@ -52,6 +52,8 @@ object OcpcShallowCVrecall_assessment {
     val result = rawData
         .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
         .na.fill(1.0, Seq("recall_value"))
+        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
+        .withColumn("pred_cv", col("cv") * col("recall_value"))
 
     result
   }
@@ -62,8 +64,11 @@ object OcpcShallowCVrecall_assessment {
 
     val totalCV = data
       .groupBy("unitid", "userid", "conversion_goal")
-      .agg(sum(col("cv")).alias("total_cv"))
-      .select("unitid", "userid", "conversion_goal", "total_cv")
+      .agg(
+        sum(col("cv")).alias("total_cv"),
+        sum(col("cost")).alias("cost")
+      )
+      .select("unitid", "userid", "conversion_goal", "total_cv", "cost")
 
     val clickCV = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
@@ -73,7 +78,7 @@ object OcpcShallowCVrecall_assessment {
 
     val result = totalCV
       .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cv")
+      .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv")
       .withColumn("start_hour", lit(startHour))
 
     result
@@ -101,6 +106,7 @@ object OcpcShallowCVrecall_assessment {
          |    userid,
          |    conversion_goal,
          |    conversion_from,
+         |    price,
          |    date as click_date,
          |    hour as click_hour
          |FROM
@@ -142,7 +148,7 @@ object OcpcShallowCVrecall_assessment {
 
     val baseData = clickData
       .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
-      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date", "cv_hour")
+      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "price", "click_date", "click_hour", "cv_date", "cv_hour")
       .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
       .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
 
@@ -156,7 +162,8 @@ object OcpcShallowCVrecall_assessment {
          |  conversion_goal,
          |  click_hour_diff,
          |  cv_hour_diff,
-         |  count(distinct searchid) as cv
+         |  count(distinct searchid) as cv,
+         |  sum(price) * 0.01 as cost
          |FROM
          |  base_data
          |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
