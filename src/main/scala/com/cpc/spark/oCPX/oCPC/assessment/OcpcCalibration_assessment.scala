@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName}
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -21,13 +20,13 @@ object OcpcCalibration_assessment {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallAssessment(date, hour, hourInt, spark)
+    val data = pcocCalibrationAssessment(date, hour, hourInt, spark)
 
 
 
   }
 
-  def cvRecallAssessment(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+  def pcocCalibrationAssessment(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val pcocData = getPcoc(date, hour, hourInt, "qtt", spark)
     val caliData = getCalibrationValue(date, hour, 4, hourInt, "Qtt", spark)
 

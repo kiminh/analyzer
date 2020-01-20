@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.assessment.OcpcCalibration_assessment.{getCalibrationValue, getPcoc}
+import com.cpc.spark.oCPX.oCPC.assessment.OcpcCalibration_assessment.{getCalibrationValue, getPcoc, pcocCalibrationAssessment}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -23,13 +23,13 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val caliData = getCalibrationValue(date, hour, 4, hourInt, "Qtt", spark)
+    val data = pcocCalibrationAssessment(date, hour, hourInt, spark)
 
 //    data
 //      .write.mode("overwrite").saveAsTable("test.check_cv_recall20200120c")
 
-    caliData
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200120b")
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200120c")
 
 
 
