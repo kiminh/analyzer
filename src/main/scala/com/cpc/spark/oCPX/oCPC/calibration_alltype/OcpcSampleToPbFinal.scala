@@ -78,8 +78,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -124,7 +124,8 @@ object OcpcSampleToPbFinal {
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
       .withColumn("cali_value_before_change", col("cali_value")) // todo: 手动调整校准系数
-      .withColumn("cali_value", udfCheckCaliMaxById(date, hour)(col("identifier"), col("exp_tag"), col("cali_value")))
+      .withColumn("cali_ratio", udfCheckCvrFactorDiscount(date)(col("identifier")))
+      .withColumn("cali_value", col("cali_value") * col("cali_ratio"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
       .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
@@ -135,32 +136,20 @@ object OcpcSampleToPbFinal {
       .cache()
 
     data.show(10)
-//    data
-//      .repartition(10)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_smooth_data20190828")
+    data
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
 
     data
   }
 
-  def udfCheckCaliMaxById(date: String, hour: String) = udf((identifier: String, expTag: String, caliValue: Double) => {
-    val idList = identifier.split("&")
-    val unitid = idList(0).toInt
-    val hourInt = hour.toInt
-
-    var result = caliValue
-    if (unitid == 2283585 && expTag == "adtype15MiDu" && date == "2019-12-05" && hourInt < 13) {
-      result = math.min(caliValue, 1.0)
-    }
-    result
-  })
-
   def udfCheckCvrFactorDiscount(date: String) = udf((identifier: String) => {
     val idList = identifier.split("&")
     val unitId = idList(0).toInt
-    val discountUnitMap = Map(2493065 ->	0.304738457, 2488541 ->	0.384347388, 2486507 ->	0.42602729, 2487900 ->	0.447122503, 2484414 ->	0.447202319, 2450185 ->	0.47290526, 2493128 ->	0.517055558, 2489590 ->	0.549835833, 2401313 ->	0.573311281, 2488469 ->	0.579391844, 2453436 ->	0.602415542, 2442775 ->	0.602686077, 2456177 ->	0.608504897, 2338669 ->	0.621816766, 2294346 ->	0.622079719, 2487891 ->	0.626703325, 2489583 ->	0.630905049, 2496421 ->	0.661265109, 2489917 ->	0.668466259, 2438511 ->	0.673274774, 2275227 ->	0.673672127, 2489914 ->	0.677809855, 2414304 ->	0.695988806, 2493106 ->	0.696439203, 2494781 ->	0.699595541, 2476841 ->	0.711377215, 2388977 ->	0.721823988, 2473035 ->	0.727914746, 2457167 ->	0.733262482, 2434622 ->	0.737438087, 2481026 ->	0.744963753, 2489921 ->	0.746047398, 2476971 ->	0.748907116, 2393799 ->	0.760969542, 2431615 ->	0.771227777, 2492944 ->	0.773539966, 2472825 ->	0.782309092, 2466742 ->	0.797097353)
+    val discountUnitMap = Map(2706111 -> 0.766429284, 2706174 -> 0.884534881, 2706209 -> 0.682934968, 2706385 -> 0.897888865, 2706469 -> 0.975722865, 2706500 -> 0.566258024, 2706543 -> 0.877753195, 2706566 -> 0.861109459, 2706645 -> 0.677304366)
 
     var result = discountUnitMap.getOrElse(unitId, 1.0)
-    if (date != "2019-11-06") {
+    if (date != "2020-01-20") {
       result = 1.0
     }
     result
