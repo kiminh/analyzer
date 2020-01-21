@@ -23,7 +23,7 @@ object OcpcCalibration_assessment {
     val data = pcocCalibrationAssessment(date, hour, hourInt, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200120c")
+      .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment2020121a")
 
 
   }
