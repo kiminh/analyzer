@@ -438,7 +438,7 @@ object OcpcChargeCostV2 {
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
     val table =
       s"""
-         |(SELECT unit_id as unitid, cast(cpa_check_priority as int) as cpa_check_priority
+         |(SELECT unit_id as unitid, cpa_check_priority
          |FROM unit_ocpc
          |WHERE is_deep_ocpc = 1) as tmp
          |""".stripMargin
@@ -452,7 +452,7 @@ object OcpcChargeCostV2 {
       .load()
 
     val resultDF = data
-      .selectExpr("cast(unitid as int) unitid",  "cast(cpa_check_priority as int) as cpa_check_priority")
+      .selectExpr("cast(unitid as int) unitid",  "cpa_check_priority")
       .filter(s"cpa_check_priority in (0, 1, 2, 3)")
       .distinct()
       .cache()
