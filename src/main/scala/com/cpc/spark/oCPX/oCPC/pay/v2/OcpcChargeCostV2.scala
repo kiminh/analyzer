@@ -49,6 +49,7 @@ object OcpcChargeCostV2 {
 //      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
 
     val finalVersion = version + envSuffix
+    println(s"finalVersion = $finalVersion")
 
     val resultDF = payData
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
