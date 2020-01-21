@@ -453,9 +453,6 @@ object OcpcChargeCost {
       .cache()
 
 
-    resultDF
-        .write.mode("overwrite").saveAsTable("test.check_ocpc_cpa_priority20200120")
-
     resultDF.show(10)
     resultDF
   }
