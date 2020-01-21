@@ -67,7 +67,7 @@ object OcpcGetPb_base {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pb_data_hourly_exp20200121")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
