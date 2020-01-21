@@ -450,10 +450,10 @@ object OcpcChargeCostV2 {
       .option("password", passwd)
       .option("dbtable", table)
       .load()
+      .cache()
 
     val resultDF = data
-      .selectExpr("cast(unitid as int) unitid",  "cpa_check_priority")
-      .filter(s"cpa_check_priority in (0, 1, 2, 3)")
+      .selectExpr("cast(unitid as int) unitid",  "cast(cpa_check_priority as int) as cpa_check_priority")
       .distinct()
       .cache()
 
