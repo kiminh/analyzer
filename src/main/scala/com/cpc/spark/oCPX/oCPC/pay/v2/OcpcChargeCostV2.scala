@@ -58,8 +58,8 @@ object OcpcChargeCostV2 {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
 
@@ -453,6 +453,7 @@ object OcpcChargeCostV2 {
 
     val resultDF = data
       .selectExpr("cast(unitid as int) unitid",  "cast(cpa_check_priority as int) as cpa_check_priority")
+      .filter(s"cpa_check_priority in (0, 1, 2, 3)")
       .distinct()
       .cache()
 
