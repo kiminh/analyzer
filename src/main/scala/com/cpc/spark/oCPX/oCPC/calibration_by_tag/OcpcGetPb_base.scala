@@ -57,6 +57,7 @@ object OcpcGetPb_base {
 
     // 明投单元
     val resultDF = data
+      .filter(s"exp_tag in ('Qtt', 'MiDu', 'HT66')")
       .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(0))
       .withColumn("date", lit(date))
@@ -67,8 +68,8 @@ object OcpcGetPb_base {
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
