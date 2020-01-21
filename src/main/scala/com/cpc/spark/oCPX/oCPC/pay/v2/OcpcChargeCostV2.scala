@@ -25,6 +25,7 @@ object OcpcChargeCostV2 {
     val date = args(0).toString
     val version = args(1).toString
     val dayCnt = args(2).toInt
+    val envSuffix = args(3).toString
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, dayCnt, spark)
@@ -47,10 +48,12 @@ object OcpcChargeCostV2 {
 //    payData
 //      .write.mode("overwrite").saveAsTable("test.ocpc_check_exp_data20191216b")
 
+    val finalVersion = version + envSuffix
+
     val resultDF = payData
       .select("unitid", "deep_ocpc_step", "cpa_check_priority", "click", "cv", "cost", "cpagiven", "cpareal", "pay", "ocpc_charge_time", "deep_ocpc_charge_time", "pay_cnt", "is_pay_flag", "is_deep_pay_flag", "pay_type")
       .withColumn("date", lit(date))
-      .withColumn("version", lit(version))
+      .withColumn("version", lit(finalVersion))
 
     resultDF
       .repartition(1)
