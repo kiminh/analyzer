@@ -1,7 +1,9 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv5.{OcpcCalibrationBase, OcpcRealtimeCalibrationBase}
+import com.cpc.spark.oCPX.OcpcTools.{getBaseDataRealtime, getConversionGoalNew}
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.getUserDelay
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv5.{OcpcCalibrationBase, OcpcRealtimeCalibrationBase, udfCalculateHourDiff}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -24,11 +26,29 @@ object OcpcUnitTest {
 
 
 
-    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 100, spark).cache()
+
+    val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
+
+    val delayDataRaw = getUserDelay(date, spark)
+    val delayData = delayDataRaw
+      .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
+      .filter(s"cost > 100")
+      .select("userid", "conversion_goal", "delay_hour")
+
+    val unitUserInfoRaw = getConversionGoalNew(spark)
+    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
+    unitUserInfo.show(10)
+
+    val baseData = baseDataRaw
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
+      .na.fill(0.0, Seq("delay_hour"))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
 
 
 
-    realtimeDataRaw
+
+    baseData
       .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200121a")
 
 
