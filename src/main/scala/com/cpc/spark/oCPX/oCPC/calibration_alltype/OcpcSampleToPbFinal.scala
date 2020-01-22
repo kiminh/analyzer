@@ -146,7 +146,7 @@ object OcpcSampleToPbFinal {
   def resetCvrFactor(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val unitUserInfoRaw = getConversionGoalNew(spark)
     val unitUserInfo = unitUserInfoRaw
-      .select("cast(unitid as string) as identifier", "userid")
+      .selectExpr("cast(unitid as string) as identifier", "userid")
       .withColumn("douyin_flag", lit(1))
       .filter(s"userid == 1699405")
       .distinct()
