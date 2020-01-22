@@ -136,12 +136,12 @@ object OcpcSampleToPbFinal {
       .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
       .cache()
 
-    result.show(10)
-    result
+    resultDF.show(10)
+    resultDF
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
 
-    result
+    resultDF
   }
 
   def resetCvrFactor(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
