@@ -177,7 +177,7 @@ object OcpcSampleToPbFinal {
         if (hourDiff >= 0) {
           1.3
         } else {
-          if (date == "2020-01-23") {
+          if (date == "2020-01-21") {
             0.7
           } else {
             1.0
