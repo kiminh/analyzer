@@ -125,15 +125,16 @@ object OcpcSampleToPbFinal {
       .na.fill(1.0, Seq("weight"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
-      .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
-      .na.fill(2.0, Seq("max_cali"))
-      .na.fill(0.5, Seq("min_cali"))
-      .withColumn("cali_value_old", col("cali_value"))
-      .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
-      .cache()
 
 
     val result = resetCvrFactor(data, date, hour, spark)
+
+    val resultDF = result
+      .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
+      .na.fill(2.0, Seq("max_cali"))
+      .na.fill(0.5, Seq("min_cali"))
+      .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
+      .cache()
 
     result.show(10)
     result
@@ -166,7 +167,7 @@ object OcpcSampleToPbFinal {
 
   def udfSetCaliRatio(date: String, hour: String) = udf((flag: Int) => {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val checkTime = dateConverter.parse("2020-01-23 06")
+    val checkTime = dateConverter.parse("2020-01-21 06")
     val nowTime = dateConverter.parse(date + " " + hour)
     val hourDiff = (checkTime.getTime() - nowTime.getTime()) / (1000 * 60 * 60)
 
