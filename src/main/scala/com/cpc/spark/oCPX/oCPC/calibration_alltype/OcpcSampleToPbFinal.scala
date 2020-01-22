@@ -167,7 +167,7 @@ object OcpcSampleToPbFinal {
 
   def udfSetCaliRatio(date: String, hour: String) = udf((flag: Int) => {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val checkTime = dateConverter.parse("2020-01-21 06")
+    val checkTime = dateConverter.parse("2020-01-23 06")
     val nowTime = dateConverter.parse(date + " " + hour)
     val hourDiff = (checkTime.getTime() - nowTime.getTime()) / (1000 * 60 * 60)
 
@@ -177,7 +177,7 @@ object OcpcSampleToPbFinal {
         if (hourDiff >= 0) {
           1.3
         } else {
-          if (date == "2020-01-21") {
+          if (date == "2020-01-23") {
             0.7
           } else {
             1.0
