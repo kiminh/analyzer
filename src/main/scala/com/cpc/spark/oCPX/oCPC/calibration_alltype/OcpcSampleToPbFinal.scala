@@ -154,7 +154,7 @@ object OcpcSampleToPbFinal {
     unitUserInfo.show(10)
 
     val data = rawData
-      .join(unitUserInfo, Seq("userid"), "left_outer")
+      .join(unitUserInfo, Seq("identifier"), "left_outer")
       .na.fill(0, Seq("douyin_flag"))
       .withColumn("cali_value_old", col("cali_value"))
       .withColumn("cali_ratio", udfSetCaliRatio(date, hour)(col("douyin_flag")))
@@ -166,7 +166,7 @@ object OcpcSampleToPbFinal {
 
   def udfSetCaliRatio(date: String, hour: String) = udf((flag: Int) => {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val checkTime = dateConverter.parse("2020-01-23 09")
+    val checkTime = dateConverter.parse("2020-01-23 06")
     val nowTime = dateConverter.parse(date + " " + hour)
     val hourDiff = (checkTime.getTime() - nowTime.getTime()) / (1000 * 60 * 60)
 
