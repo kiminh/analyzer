@@ -148,7 +148,7 @@ object OcpcDeepCVrecall_assessment {
          |    date,
          |    hour,
          |    1 as iscvr,
-         |    row_number() over(partition by searchid, deep_conversion_goal, order by date, hour) as seq
+         |    row_number() over(partition by searchid, deep_conversion_goal order by date, hour) as seq
          |FROM
          |    dl_cpc.ocpc_label_deep_cvr_hourly
          |WHERE
