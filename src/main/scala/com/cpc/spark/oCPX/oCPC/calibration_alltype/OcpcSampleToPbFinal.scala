@@ -4,7 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, getTimeRangeSqlDay}
+import com.cpc.spark.oCPX.OcpcTools.{getConversionGoalNew, getTimeRangeSqlDate, getTimeRangeSqlDay}
 import com.typesafe.config.ConfigFactory
 import ocpcParams.ocpcParams.{OcpcParamsList, SingleItem}
 import org.apache.log4j.{Level, Logger}
@@ -78,8 +78,8 @@ object OcpcSampleToPbFinal {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(finalVersion))
       .repartition(5)
-//      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
+      .write.mode("overwrite").insertInto("test.ocpc_param_pb_data_hourly_alltype")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_param_pb_data_hourly_alltype")
 
 
     savePbPack(resultDF, fileName, spark)
@@ -123,9 +123,6 @@ object OcpcSampleToPbFinal {
       .withColumn("smooth_factor", when(col("smooth_factor_new").isNotNull, col("smooth_factor_new")).otherwise(col("smooth_factor")))
       .join(confData2, Seq("exp_tag", "conversion_goal"), "left_outer")
       .na.fill(1.0, Seq("weight"))
-      .withColumn("cali_value_before_change", col("cali_value")) // todo: 手动调整校准系数
-      .withColumn("cali_ratio", udfCheckCvrFactorDiscount(date)(col("identifier")))
-      .withColumn("cali_value", col("cali_value") * col("cali_ratio"))
       .withColumn("jfb_factor_old", col("jfb_factor"))
       .withColumn("jfb_factor", col("jfb_factor_old") * col("weight"))
       .join(valueRange, Seq("identifier", "conversion_goal"), "left_outer")
@@ -135,25 +132,73 @@ object OcpcSampleToPbFinal {
       .withColumn("cali_value", udfCheckCali()(col("cali_value"), col("max_cali"), col("min_cali")))
       .cache()
 
-    data.show(10)
-//    data
-//      .repartition(10)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
+
+    val result = resetCvrFactor(data, date, hour, spark)
+
+    result.show(10)
+    result
+      .repartition(10)
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_data20200120")
+
+    result
+  }
+
+  def resetCvrFactor(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val unitUserInfoRaw = getConversionGoalNew(spark)
+    val unitUserInfo = unitUserInfoRaw
+      .select("cast(unitid as string) as identifier", "userid")
+      .withColumn("douyin_flag", lit(1))
+      .filter(s"userid == 1699405")
+      .distinct()
+      .cache()
+    unitUserInfo.show(10)
+
+    val data = rawData
+      .join(unitUserInfo, Seq("userid"), "left_outer")
+      .na.fill(0, Seq("douyin_flag"))
+      .withColumn("cali_value_old", col("cali_value"))
+      .withColumn("cali_ratio", udfSetCaliRatio(date, hour)(col("douyin_flag")))
+      .withColumn("cali_value", col("cali_value") * col("cali_ratio"))
+      .withColumn("cali_value", when(col("cali_ratio") === 0.7 && col("cali_value") > 1.0, 1.0).otherwise(col("cali_value")))
 
     data
   }
 
-  def udfCheckCvrFactorDiscount(date: String) = udf((identifier: String) => {
-    val idList = identifier.split("&")
-    val unitId = idList(0).toInt
-    val discountUnitMap = Map(2706111 -> 0.766429284, 2706174 -> 0.884534881, 2706209 -> 0.682934968, 2706385 -> 0.897888865, 2706469 -> 0.975722865, 2706500 -> 0.566258024, 2706543 -> 0.877753195, 2706566 -> 0.861109459, 2706645 -> 0.677304366)
+  def udfSetCaliRatio(date: String, hour: String) = udf((flag: Int) => {
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val checkTime = dateConverter.parse("2020-01-23 09")
+    val nowTime = dateConverter.parse(date + " " + hour)
+    val hourDiff = (checkTime.getTime() - nowTime.getTime()) / (1000 * 60 * 60)
 
-    var result = discountUnitMap.getOrElse(unitId, 1.0)
-    if (date != "2020-01-20") {
-      result = 1.0
+    val result = flag match {
+      case 0 => 1.0
+      case 1 => {
+        if (hourDiff >= 0) {
+          1.3
+        } else {
+          if (date == "2020-01-23") {
+            0.7
+          } else {
+            1.0
+          }
+        }
+      }
+      case _ => 1.0
     }
     result
   })
+
+//  def udfCheckCvrFactorDiscount(date: String) = udf((identifier: String) => {
+//    val idList = identifier.split("&")
+//    val unitId = idList(0).toInt
+//    val discountUnitMap = Map(2706111 -> 0.766429284, 2706174 -> 0.884534881, 2706209 -> 0.682934968, 2706385 -> 0.897888865, 2706469 -> 0.975722865, 2706500 -> 0.566258024, 2706543 -> 0.877753195, 2706566 -> 0.861109459, 2706645 -> 0.677304366)
+//
+//    var result = discountUnitMap.getOrElse(unitId, 1.0)
+//    if (date != "2020-01-20") {
+//      result = 1.0
+//    }
+//    result
+//  })
 
   def getRangeValue(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val tableName = "dl_cpc.ocpc_base_unionlog"
