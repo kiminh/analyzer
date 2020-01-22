@@ -111,7 +111,7 @@ object OcpcGetPb_weightv5{
       .join(unitUserInfo, Seq("unitid"), "inner")
       .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
       .na.fill(0.0, Seq("delay_hour"))
-      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), col("conversion_goal")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
       .withColumn("hour_diff", col("hour_diff") - col("delay_hour"))
 
     baseData.createOrReplaceTempView("base_data")
