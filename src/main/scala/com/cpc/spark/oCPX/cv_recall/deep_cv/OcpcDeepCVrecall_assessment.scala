@@ -20,11 +20,92 @@ object OcpcDeepCVrecall_assessment {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-//    val data = cvRecallAssessment(date, hourInt, spark)
-
-    val data = calculateCV(date, spark)
+    val data = cvRecallAssessment(date, spark)
 
 
+  }
+
+  def cvRecallAssessment(date: String, spark: SparkSession) = {
+    val cvData = calculateCV(date, spark)
+
+    val rawData = calculateCvValue(cvData, 1, spark)
+
+    val recallValue = cvRecallPredict(date, 1, "v1", spark)
+
+    val result = rawData
+      .join(recallValue, Seq("deep_conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .select("unitid", "userid", "deep_conversion_goal", "total_cv", "cv", "recall_value", "date_cnt")
+      .withColumn("pred_cv", col("cv") * col("recall_value"))
+
+    result
+  }
+
+  def cvRecallPredict(date: String, dateInt: Int, version: String, spark: SparkSession) = {
+    /*
+    dl_cpc.algo_recall_info_v2
+     */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   conversion_goal as deep_conversion_goal,
+         |   (case when hour_diff = 24 then 1
+         |         when hour_diff = 48 then 2
+         |         else 3
+         |   end) as date_diff,
+         |   avg(value) as recall_value
+         |FROM
+         |  dl_cpc.algo_recall_info_v2
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  day = '$date1'
+         |AND
+         |  hour = '23'
+         |GROUP BY
+         |  conversion_goal,
+         |  (case when hour_diff = 24 then 1
+         |      when hour_diff = 48 then 2
+         |      else 3
+         |   end)
+         |""".stripMargin
+    println(sqlRequest)
+    val recallValue = spark
+      .sql(sqlRequest)
+      .filter(s"date_diff = $dateInt")
+    recallValue
+  }
+
+  def calculateCvValue(data: DataFrame, dateInt: Int, spark: SparkSession) = {
+    val totalCV = data
+      .groupBy("unitid", "userid", "deep_conversion_goal")
+      .agg(
+        sum(col("cv")).alias("total_cv")
+      )
+      .select("unitid", "userid", "deep_conversion_goal", "total_cv")
+
+    val clickCV = data
+      .filter(s"cv_date_diff <= $dateInt")
+      .groupBy("unitid", "userid", "deep_conversion_goal")
+      .agg(
+        sum(col("cv")).alias("cv")
+      )
+      .select("unitid", "userid", "deep_conversion_goal", "cv")
+
+    val result = totalCV
+      .join(clickCV, Seq("unitid", "userid", "deep_conversion_goal"), "inner")
+      .select("unitid", "userid", "deep_conversion_goal", "total_cv", "cv")
+      .withColumn("date_cnt", lit(dateInt))
+
+    result
   }
 
   def calculateCV(date: String, spark: SparkSession) = {
