@@ -60,8 +60,8 @@ object OcpcGetPb_retention {
     resultDF
       .withColumn("deep_conversion_goal", lit(2))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_deep_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_deep_pb_data_hourly_exp")
 
 
   }
@@ -118,12 +118,15 @@ object OcpcGetPb_retention {
     val data1 = calculateCvrPart1(dataRaw, deepCvr, 10, spark)
 
     // calculate cv2_t2 ~ cv2_t4
-    val data2 = calculateCvrPart2(dataRaw, 20, spark)
+    val data2 = calculateCvrPart2(dataRaw, deepCvr, 20, spark)
 
     // data join
     val data = data1.union(data2)
 
     data.createOrReplaceTempView("data")
+
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200102a")
 
     val sqlRequest =
       s"""
@@ -297,17 +300,36 @@ object OcpcGetPb_retention {
   }
 
 
-  def calculateCvrPart2(dataRaw: DataFrame, minCV: Int, spark: SparkSession) = {
+  def calculateCvrPart2(dataRaw: DataFrame, deepCvrRaw: DataFrame, minCV: Int, spark: SparkSession) = {
     // get cv data
     val dataRaw1 = getDataByHourDiff(dataRaw, 24, 48, spark)
     val dataRaw2 = getDataByHourDiff(dataRaw, 48, 72, spark)
     val dataRaw3 = getDataByHourDiff(dataRaw, 72, 96, spark)
 
+    val recallValue = getRecallValue(spark).cache()
+    recallValue.show(10)
+
+    val deepCvr = deepCvrRaw
+      .groupBy("unitid")
+      .agg(
+        sum(col("cv1")).alias("cv1"),
+        sum(col("cv2")).alias("cv2")
+      )
+      .filter(s"cv2 >= 10")
+      .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
+      .selectExpr("unitid", "cast(deep_cvr as double) as deep_cvr")
+
+
     val data1 = dataRaw1
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
       .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
       .withColumn("hour_diff", lit(24))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("cv2_recall1", col("cv2") * col("recall_value"))
+      .join(deepCvr, Seq("unitid"), "left_outer")
+      .withColumn("cv2_recall2", col("cv1") * col("deep_cvr"))
+      .withColumn("cv2_recall", when(col("deep_cvr").isNotNull, (col("cv2_recall1") + col("cv2_recall2")) * 1.0 / 2).otherwise(col("cv2")))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "cv2_recall", "pre_cvr2", "flag", "hour_diff")
 
     val data1Filter = data1
       .filter(s"flag = 0")
@@ -315,10 +337,12 @@ object OcpcGetPb_retention {
 
     val data2 = dataRaw2
       .join(data1Filter, Seq("unitid", "conversion_goal", "media"), "inner")
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
       .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
       .withColumn("hour_diff", lit(48))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "cv2_recall", "pre_cvr2", "flag", "hour_diff")
 
     val data2Filter = data2
       .filter(s"flag = 0")
@@ -326,63 +350,22 @@ object OcpcGetPb_retention {
 
     val data3 = dataRaw3
       .join(data2Filter, Seq("unitid", "conversion_goal", "media"), "inner")
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2")
       .withColumn("flag", when(col("cv2") >= minCV, 1).otherwise(0))
       .withColumn("hour_diff", lit(72))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff")
+      .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
+      .select("unitid", "conversion_goal", "media", "click", "cv2", "cv2_recall", "pre_cvr2", "flag", "hour_diff")
 
     val data = data1.union(data2).union(data3)
 
-    // get recall value
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |   conversion_goal,
-         |   hour_diff,
-         |   avg(value) as recall_value1
-         |FROM
-         |  dl_cpc.algo_recall_info_v1
-         |WHERE
-         |  version = 'v1'
-         |GROUP BY conversion_goal, hour_diff
-         |""".stripMargin
-    println(sqlRequest1)
-    val recallValue1 = spark.sql(sqlRequest1)
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |   conversion_goal,
-         |   id as userid,
-         |   hour_diff,
-         |   avg(value) as recall_value2
-         |FROM
-         |  dl_cpc.algo_recall_info_v1
-         |WHERE
-         |  version = 'v_userid'
-         |GROUP BY conversion_goal, id, hour_diff
-         |""".stripMargin
-    println(sqlRequest2)
-    val recallValue2 = spark.sql(sqlRequest2)
-
-    val unitInfoRaw = getConversionGoalNew(spark)
-    val unitInfo = unitInfoRaw.select("unitid", "userid").distinct()
-
     val result = data
-      .join(unitInfo, Seq("unitid"), "inner")
-      .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
-      .join(recallValue2, Seq("conversion_goal", "userid", "hour_diff"), "left_outer")
-      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
-      .na.fill(1.0, Seq("recall_value"))
-      .select("unitid", "conversion_goal", "media", "click", "cv2", "pre_cvr2", "flag", "hour_diff", "recall_value")
-      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .withColumn("tag", lit(2))
       .selectExpr("unitid", "conversion_goal", "media", "cast(click as int) as click", "cast(cv2 as int) as cv2", "cast(pre_cvr2 as double) as pre_cvr2", "cast(cv2_recall as double) as cv2_recall", "tag")
 
-
     result.createOrReplaceTempView("result_table")
 
-    val sqlRequest3 =
+    val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
@@ -397,16 +380,40 @@ object OcpcGetPb_retention {
          |  result_table
          |GROUP BY unitid, conversion_goal, media
          |""".stripMargin
-    println(sqlRequest3)
+    println(sqlRequest2)
     val resultDF = spark
-        .sql(sqlRequest3)
+        .sql(sqlRequest2)
         .filter(s"cv2 >= $minCV")
 
     resultDF
   }
 
+  def getRecallValue(spark: SparkSession) = {
+    // get recall value
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   conversion_goal,
+         |   hour_diff,
+         |   value as recall_value
+         |FROM
+         |  dl_cpc.algo_recall_info_v1
+         |WHERE
+         |  version = 'v1'
+         |""".stripMargin
+    println(sqlRequest)
+    val recallValue = spark.sql(sqlRequest)
 
-  def calculateCvrPart1(dataRaw: DataFrame, deepCvr: DataFrame, minCV: Int, spark: SparkSession) = {
+    recallValue
+  }
+
+
+  def calculateCvrPart1(dataRaw: DataFrame, deepCvrRaw: DataFrame, minCV: Int, spark: SparkSession) = {
+    val deepCvr = deepCvrRaw
+      .filter(s"cv2 >= 10")
+      .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
+      .selectExpr("unitid", "media", "cast(deep_cvr as double) as deep_cvr")
+
     val data = getDataByHourDiff(dataRaw, 0, 24, spark)
     val result = data
       .join(deepCvr, Seq("unitid", "media"), "inner")
@@ -485,12 +492,8 @@ object OcpcGetPb_retention {
         sum(col("iscvr2")).alias("cv2")
       )
       .select("unitid", "media", "cv1", "cv2")
-      .filter(s"cv2 >= 10")
-      .withColumn("deep_cvr", col("cv2") * 1.0 / col("cv1"))
 
-    val resultDF = data.selectExpr("unitid", "media", "cast(deep_cvr as double) as deep_cvr")
-
-    resultDF
+    data
   }
 
 
