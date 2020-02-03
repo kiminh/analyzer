@@ -86,6 +86,7 @@ object OcpcDeepCVrecall_assessment {
     val recallValue = spark
       .sql(sqlRequest)
       .filter(s"date_diff = $dateInt")
+      .select("userid", "deep_conversion_goal", "recall_value2")
     recallValue
   }
 
@@ -129,6 +130,7 @@ object OcpcDeepCVrecall_assessment {
     val recallValue = spark
       .sql(sqlRequest)
       .filter(s"date_diff = $dateInt")
+      .select("deep_conversion_goal", "recall_value1")
     recallValue
   }
 
