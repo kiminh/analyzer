@@ -37,7 +37,7 @@ object GetModelPathCvr{
     }
 
     val sql = s"""
-                 |select a.searchid,a.$raw as raw,a.$condition as model,day
+                 |select a.searchid,a.$raw as raw,'' as model_id,a.$condition as model,day
                  |from dl_cpc.cpc_basedata_union_events a
                  |join
                  |  dl_cpc.cpc_snapshot_v2 c
