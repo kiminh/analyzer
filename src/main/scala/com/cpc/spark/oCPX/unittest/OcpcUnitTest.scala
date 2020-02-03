@@ -1,9 +1,8 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.cv_recall.deep_cv.OcpcDeepCVrecall_assessment.{calculateCV, cvRecallAssessment}
+import com.cpc.spark.oCPX.deepOcpc.calibration_v7.OcpcGetPb_retention.{OcpcCalibrationBase, calculateCvrPart1, calculateDeepCvr}
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 
 object OcpcUnitTest {
@@ -22,12 +21,17 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
+    val dataRaw = OcpcCalibrationBase(date, hour, 96, spark)
 
-    val data = cvRecallAssessment(date, 1, spark)
+    // calculate deep_cvr
+    val deepCvr = calculateDeepCvr(date, 3, spark)
+
+    // calculate cv2_t1
+    val data1 = calculateCvrPart1(dataRaw, deepCvr, 10, spark)
 
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203h")
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_exp_data20200203a")
 
 
 
