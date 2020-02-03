@@ -1,6 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-import com.cpc.spark.oCPX.deepOcpc.calibration_v9.OcpcGetPb_retention.{OcpcCalibrationBase, calculateCvrPart1, calculateCvrPart2, calculateDeepCvr, getDataByHourDiff, getRecallValue}
+import com.cpc.spark.oCPX.deepOcpc.calibration_v8.OcpcGetPb_retention.{OcpcCalibrationBase, calculateCvrPart1, calculateCvrPart2, calculateDeepCvr, getDataByHourDiff, getRecallValue}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, lit, sum, when}
