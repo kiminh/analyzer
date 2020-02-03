@@ -341,7 +341,7 @@ object OcpcGetPb_retention {
       .withColumn("hour_diff", lit(48))
       .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
       .na.fill(1.0, Seq("recall_value"))
-      .withColumn("cv2_recall1", col("cv2") * col("recall_value"))
+      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "cv2_recall", "pre_cvr2", "flag", "hour_diff")
 
     val data2Filter = data2
@@ -354,7 +354,7 @@ object OcpcGetPb_retention {
       .withColumn("hour_diff", lit(72))
       .join(recallValue, Seq("conversion_goal", "hour_diff"), "left_outer")
       .na.fill(1.0, Seq("recall_value"))
-      .withColumn("cv2_recall1", col("cv2") * col("recall_value"))
+      .withColumn("cv2_recall", col("cv2") * col("recall_value"))
       .select("unitid", "conversion_goal", "media", "click", "cv2", "cv2_recall", "pre_cvr2", "flag", "hour_diff")
 
     val data = data1.union(data2).union(data3)
