@@ -19,8 +19,11 @@ object OcpcDeepCVrecall_assessment {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallAssessment(date, 2, spark)
+    val rawData1 = cvRecallAssessment(date, 1, spark)
+    val rawData2 = cvRecallAssessment(date, 2, spark)
+    val rawData3 = cvRecallAssessment(date, 3, spark)
 
+    val rawData = rawData1.union(rawData2).union(rawData3)
 
   }
 
@@ -40,6 +43,7 @@ object OcpcDeepCVrecall_assessment {
       .select("unitid", "userid", "deep_conversion_goal", "total_cv", "cv", "recall_value", "date_cnt", "recall_value1", "recall_value2")
       .withColumn("pred_cv", col("cv") * col("recall_value"))
       .withColumn("pred_cv1", col("cv") * col("recall_value1"))
+      .withColumn("date_diff", lit(dateInt))
 
     result
   }
