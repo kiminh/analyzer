@@ -59,7 +59,7 @@ object OcpcDeepCVrecall_assessment {
     val sqlRequest =
       s"""
          |SELECT
-         |   userid,
+         |   id as userid,
          |   conversion_goal as deep_conversion_goal,
          |   (case when hour_diff = 24 then 1
          |         when hour_diff = 48 then 2
@@ -75,7 +75,7 @@ object OcpcDeepCVrecall_assessment {
          |AND
          |  hour = '23'
          |GROUP BY
-         |  userid,
+         |  id,
          |  conversion_goal,
          |  (case when hour_diff = 24 then 1
          |      when hour_diff = 48 then 2
