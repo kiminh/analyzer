@@ -23,11 +23,11 @@ object OcpcUnitTest {
 
 
 
-    val data = cvRecallAssessment(date, spark)
+    val data = cvRecallAssessment(date, 2, spark)
 
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203d")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203e")
 
 
 

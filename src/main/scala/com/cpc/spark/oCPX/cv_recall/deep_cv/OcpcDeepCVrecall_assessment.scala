@@ -19,18 +19,18 @@ object OcpcDeepCVrecall_assessment {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallAssessment(date, spark)
+    val data = cvRecallAssessment(date, 2, spark)
 
 
   }
 
-  def cvRecallAssessment(date: String, spark: SparkSession) = {
+  def cvRecallAssessment(date: String, dateInt: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, spark)
 
-    val rawData = calculateCvValue(cvData, 1, spark)
+    val rawData = calculateCvValue(cvData, dateInt, spark)
 
-    val recallValue1 = cvRecallPredictV1(date, 1, spark)
-    val recallValue2 = cvRecallPredictV2(date, 1, spark)
+    val recallValue1 = cvRecallPredictV1(date, dateInt, spark)
+    val recallValue2 = cvRecallPredictV2(date, dateInt, spark)
 
     val result = rawData
       .join(recallValue1, Seq("deep_conversion_goal"), "left_outer")
