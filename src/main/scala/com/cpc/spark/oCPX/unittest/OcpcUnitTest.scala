@@ -1,7 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-
-import com.cpc.spark.oCPX.cv_recall.deep_cv.OcpcDeepCVrecall_assessment.cvRecallAssessment
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.getUserDelay
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -24,13 +23,13 @@ object OcpcUnitTest {
 
 
 
-    val data = cvRecallAssessment(date, hourInt, spark)
+    val data = getUserDelay(date, spark)
 
 
 
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200121b")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203a")
 
 
 
