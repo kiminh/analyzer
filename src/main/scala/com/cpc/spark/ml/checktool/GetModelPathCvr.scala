@@ -22,7 +22,6 @@ object GetModelPathCvr{
     val hour = args(1)
     val modelType = args(2)
     val modelName = args(3)
-    val select_model_id = args(4)
 
     println(s"dt=$dt hour=$hour")
     println(s"modelName=$modelName")
