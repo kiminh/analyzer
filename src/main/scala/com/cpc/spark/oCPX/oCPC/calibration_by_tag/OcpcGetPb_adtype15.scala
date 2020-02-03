@@ -77,7 +77,7 @@ object OcpcGetPb_adtype15 {
   def assemblyData(jfbData: DataFrame, pcocData: DataFrame, spark: SparkSession) = {
     // 组装数据
     val data = jfbData
-      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "outer")
+      .join(pcocData, Seq("unitid", "conversion_goal", "exp_tag"), "inner")
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor", "cvr_factor")
       .withColumn("high_bid_factor", lit(1.0))
       .withColumn("low_bid_factor", lit(1.0))
@@ -184,7 +184,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(1))
     data1.show(10)
 
@@ -194,7 +194,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(2))
     data2.show(10)
 
@@ -204,7 +204,7 @@ object OcpcGetPb_adtype15 {
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .join(expConf, Seq("conversion_goal", "exp_tag"), "left_outer")
       .na.fill(40, Seq("min_cv"))
-      .filter(s"cv > 0")
+      .filter(s"cv >= 80")
       .withColumn("priority", lit(3))
     data3.show(10)
 

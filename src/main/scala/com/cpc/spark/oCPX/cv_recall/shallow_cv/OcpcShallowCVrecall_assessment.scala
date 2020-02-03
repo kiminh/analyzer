@@ -4,10 +4,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcShallowCVrecall_predict {
+object OcpcShallowCVrecall_assessment {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
@@ -19,53 +20,54 @@ object OcpcShallowCVrecall_predict {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcShallowCVrecall_predict: $date").enableHiveSupport().getOrCreate()
 
-    val data = cvRecallPredict(date, hourInt, spark)
+    val data = cvRecallAssessment(date, hourInt, spark)
 
-    val tableName = s"$dbName.ocpc_recall_value_daily"
 
-    data
-      .withColumn("id", col("userid"))
-      .selectExpr("cast(id as string) id", "conversion_goal", "recall_value")
-      .withColumn("date", lit(date))
-      .withColumn("strat", lit("min_value"))
-      .withColumn("hour_diff", lit(hourInt))
-      .repartition(1)
-      .write.mode("overwrite").insertInto(tableName)
 
   }
 
-  def cvRecallPredict(date: String, hourInt: Int, spark: SparkSession) = {
+  def cvRecallAssessment(date: String, hourInt: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourInt, spark)
 
-    var data = calculateRecallValue(cvData, 1, hourInt, spark)
+    var rawData = calculateCvValue(cvData, 1, hourInt, spark)
 
     for (startHour <- 2 to 24) {
         println(s"########  startHour = $startHour  #######")
-      val singleData = calculateRecallValue(cvData, startHour, hourInt, spark)
-      data = data.union(singleData)
+      val singleData = calculateCvValue(cvData, startHour, hourInt, spark)
+      rawData = rawData.union(singleData)
     }
 
-    val result = data
-        .groupBy("userid", "conversion_goal")
-        .agg(
-          avg(col("recall_value")).alias("recall_value")
-        )
-        .select("userid", "conversion_goal", "recall_value")
-        .withColumn("recall_value", when(col("recall_value") < 1.0, 1.0).otherwise(when(col("recall_value") > 2.0, 2.0).otherwise(col("recall_value"))))
-        .cache()
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
+    val recallValue = recallValueRaw
+      .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
 
-    result.show(10)
+    val result = rawData
+        .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
+        .na.fill(1.0, Seq("recall_value"))
+        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
+        .withColumn("pred_cv", col("cv") * col("recall_value"))
+
     result
   }
 
-  def calculateRecallValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
+  def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
     val endHour = startHour + hourInt
     val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
 
     val totalCV = data
       .groupBy("unitid", "userid", "conversion_goal")
-      .agg(sum(col("cv")).alias("total_cv"))
-      .select("unitid", "userid", "conversion_goal", "total_cv")
+      .agg(
+        sum(col("cv")).alias("total_cv"),
+        sum(col("cost")).alias("cost")
+      )
+      .select("unitid", "userid", "conversion_goal", "total_cv", "cost")
 
     val clickCV = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
@@ -75,21 +77,10 @@ object OcpcShallowCVrecall_predict {
 
     val result = totalCV
       .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cv")
-      .withColumn("recall_value", col("total_cv") * 1.0 / col("cv"))
-      .filter(s"cv >= 80")
-
-    val finalResult = result
-      .groupBy("userid", "conversion_goal")
-      .agg(
-        min(col("recall_value")).alias("recall_value"),
-        count(col("unitid")).alias("unit_cnt")
-      )
-      .select("userid", "conversion_goal", "recall_value", "unit_cnt")
-      .filter(s"unit_cnt > 1")
+      .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv")
       .withColumn("start_hour", lit(startHour))
 
-    finalResult
+    result
   }
 
   def calculateCV(date: String, hourInt: Int, spark: SparkSession) = {
@@ -114,6 +105,7 @@ object OcpcShallowCVrecall_predict {
          |    userid,
          |    conversion_goal,
          |    conversion_from,
+         |    price,
          |    date as click_date,
          |    hour as click_hour
          |FROM
@@ -155,7 +147,7 @@ object OcpcShallowCVrecall_predict {
 
     val baseData = clickData
       .join(cvData, Seq("searchid", "conversion_goal", "conversion_from"), "inner")
-      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "click_date", "click_hour", "cv_date", "cv_hour")
+      .select("searchid", "unitid", "userid", "conversion_goal", "conversion_from", "price", "click_date", "click_hour", "cv_date", "cv_hour")
       .withColumn("click_hour_diff", udfCalculateHourDiff(date1, hour1)(col("click_date"), col("click_hour")))
       .withColumn("cv_hour_diff", udfCalculateHourDiff(date1, hour1)(col("cv_date"), col("cv_hour")))
 
@@ -169,7 +161,8 @@ object OcpcShallowCVrecall_predict {
          |  conversion_goal,
          |  click_hour_diff,
          |  cv_hour_diff,
-         |  count(distinct searchid) as cv
+         |  count(distinct searchid) as cv,
+         |  sum(price) * 0.01 as cost
          |FROM
          |  base_data
          |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff

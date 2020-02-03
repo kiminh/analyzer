@@ -4,12 +4,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools._
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCV_delay.getUserDelay
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcGetPb_weightv1{
+object OcpcGetPb_weightv4{
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -30,7 +32,7 @@ object OcpcGetPb_weightv1{
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 基础数据
-    val dataRaw = OcpcCalibrationBase(date, hour, hourInt3, spark).cache()
+    val dataRaw = OcpcCalibrationBase(date, hour, 100, spark).cache()
     dataRaw.show(10)
 
     // 计费比系数模块
@@ -42,7 +44,7 @@ object OcpcGetPb_weightv1{
     jfbData.show(10)
 
     // 校准系数模块
-    val pcocDataRaw = OcpcCVRfactor(dataRaw, expTag, spark)
+    val pcocDataRaw = OcpcCVRfactor(dataRaw, date, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -216,7 +218,7 @@ object OcpcGetPb_weightv1{
   /*
   校准件系数模块
    */
-  def OcpcCVRfactor(dataRaw: DataFrame, expTag: String, spark: SparkSession) = {
+  def OcpcCVRfactor(dataRaw: DataFrame, date: String, expTag: String, spark: SparkSession) = {
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
@@ -228,11 +230,31 @@ object OcpcGetPb_weightv1{
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
      */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val recallValue1 = cvRecallPredict(date1, 6, spark)
+    val recallValue2 = cvRecallPredict(date1, 12, spark)
+    val recallValue3 = cvRecallPredict(date1, 24, spark)
+
+    val unitUserInfoRaw = getConversionGoalNew(spark)
+    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
+    unitUserInfo.show(10)
+
     val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(recallValue1, Seq("userid", "conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data1.show(10)
 
     val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
@@ -240,6 +262,10 @@ object OcpcGetPb_weightv1{
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(recallValue2, Seq("userid", "conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data2.show(10)
 
     val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
@@ -247,6 +273,10 @@ object OcpcGetPb_weightv1{
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(recallValue3, Seq("userid", "conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data3.show(10)
 
     val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)

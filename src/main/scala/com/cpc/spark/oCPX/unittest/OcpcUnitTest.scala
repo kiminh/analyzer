@@ -1,8 +1,6 @@
 package com.cpc.spark.oCPX.unittest
 
-
-
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv3.OcpcRealtimeCalibrationBase
+import com.cpc.spark.oCPX.cv_recall.deep_cv.OcpcDeepCVrecall_assessment.{calculateCV, cvRecallAssessment}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -18,15 +16,18 @@ object OcpcUnitTest {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = 24
 
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
 
-    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 100, spark).cache()
 
-    realtimeDataRaw
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_data20200117h")
+    val data = cvRecallAssessment(date, 1, spark)
+
+
+    data
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203h")
 
 
 

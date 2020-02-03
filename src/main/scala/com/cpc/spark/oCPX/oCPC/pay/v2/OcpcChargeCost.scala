@@ -452,6 +452,7 @@ object OcpcChargeCost {
       .distinct()
       .cache()
 
+
     resultDF.show(10)
     resultDF
   }
