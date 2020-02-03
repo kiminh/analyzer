@@ -92,7 +92,6 @@ object SampleOnCvrCalibrationByModelV4 {
     // get union log
 
     val union_sample = data
-//      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"left")
       .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
@@ -124,14 +123,6 @@ object SampleOnCvrCalibrationByModelV4 {
     })
       .coalesce(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/calibration/calibration_sample_${model}_${endDate}-${endHour}-${hourRange}/")
 
-
-//    printToFile(new File(s"/home/cpc/scheduled_job/hourly_calibration/calibration_sample_${model}.csv"),
-//      "searchid\001ideaid\001adclass\001adslot_id\001iscvr\001unitid\001raw_cvr\001user_show_ad_num\001exp_cvr\001day\001userid\001conversion_from\001hour\001siteid\001conversion_goal") {
-//      p => avgs.foreach(p.println) // avgs.foreach(p.println)
-//    }
-//
-//   val move =s"hdfs dfs -put -f /home/cpc/scheduled_job/hourly_calibration/calibration_sample_${model}.csv hdfs://emr-cluster/user/cpc/wy/calibration/calibration_sample_${model}_${endDate}-${endHour}-${hourRange}.csv"
-//    move !
   }
 
   def printToFile(f: java.io.File,ColumnName:String)(op: java.io.PrintWriter => Unit)
