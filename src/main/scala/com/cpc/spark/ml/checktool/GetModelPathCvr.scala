@@ -39,10 +39,6 @@ object GetModelPathCvr{
     val sql = s"""
                  |select a.searchid,a.$raw as raw,'' as model_id,a.$condition as model,day
                  |from dl_cpc.cpc_basedata_union_events a
-                 |join
-                 |  dl_cpc.cpc_snapshot_v2 c
-                 |  on a.searchid = c.searchid and a.ideaid=c.ideaid
-                 |  and c.dt = '$dt' and c.hour = '$hour' and c.model_name = '$modelName'
                  |  where a.day ='$dt' and a.hour='$hour'
                  |  and a.$condition = '$modelName'
                  |  and a.adsrc in (1,28) and a.$action = 1
