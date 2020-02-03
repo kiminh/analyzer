@@ -28,9 +28,14 @@ object OcpcGetPb_pay {
     println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt:$hourInt")
 
     val rawData = OcpcCalibrationFactor(date, hour, hourInt, expTag, minCV, spark)
+//    rawData
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029a")
 
     // 计算cvr校准系数
     val data = calculateCalibrationValue(rawData, spark)
+//    data
+//      .write.mode("overwrite").saveAsTable("test.check_ocpc_deep_cvr20191029c")
+
 
     // 数据组装
     val resultData = assemblyData(data, spark)
