@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -30,18 +29,67 @@ object OcpcDeepCVrecall_assessment {
 
     val rawData = calculateCvValue(cvData, 1, spark)
 
-    val recallValue = cvRecallPredict(date, 1, "v1", spark)
+    val recallValue1 = cvRecallPredictV1(date, 1, spark)
+    val recallValue2 = cvRecallPredictV2(date, 1, spark)
 
     val result = rawData
-      .join(recallValue, Seq("deep_conversion_goal"), "left_outer")
-      .na.fill(1.0, Seq("recall_value"))
-      .select("unitid", "userid", "deep_conversion_goal", "total_cv", "cv", "recall_value", "date_cnt")
+      .join(recallValue1, Seq("deep_conversion_goal"), "left_outer")
+      .join(recallValue2, Seq("userid", "deep_conversion_goal"), "left_outer")
+      .na.fill(1.0, Seq("recall_value1"))
+      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
+      .select("unitid", "userid", "deep_conversion_goal", "total_cv", "cv", "recall_value", "date_cnt", "recall_value1", "recall_value2")
       .withColumn("pred_cv", col("cv") * col("recall_value"))
+      .withColumn("pred_cv1", col("cv") * col("recall_value1"))
 
     result
   }
 
-  def cvRecallPredict(date: String, dateInt: Int, version: String, spark: SparkSession) = {
+  def cvRecallPredictV2(date: String, dateInt: Int, spark: SparkSession) = {
+    /*
+    dl_cpc.algo_recall_info_v2
+     */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |   userid,
+         |   conversion_goal as deep_conversion_goal,
+         |   (case when hour_diff = 24 then 1
+         |         when hour_diff = 48 then 2
+         |         else 3
+         |   end) as date_diff,
+         |   avg(value) as recall_value2
+         |FROM
+         |  dl_cpc.algo_recall_info_v2
+         |WHERE
+         |  version = 'v_userid'
+         |AND
+         |  day = '$date1'
+         |AND
+         |  hour = '23'
+         |GROUP BY
+         |  userid,
+         |  conversion_goal,
+         |  (case when hour_diff = 24 then 1
+         |      when hour_diff = 48 then 2
+         |      else 3
+         |   end)
+         |""".stripMargin
+    println(sqlRequest)
+    val recallValue = spark
+      .sql(sqlRequest)
+      .filter(s"date_diff = $dateInt")
+    recallValue
+  }
+
+  def cvRecallPredictV1(date: String, dateInt: Int, spark: SparkSession) = {
     /*
     dl_cpc.algo_recall_info_v2
      */
@@ -61,11 +109,11 @@ object OcpcDeepCVrecall_assessment {
          |         when hour_diff = 48 then 2
          |         else 3
          |   end) as date_diff,
-         |   avg(value) as recall_value
+         |   avg(value) as recall_value1
          |FROM
          |  dl_cpc.algo_recall_info_v2
          |WHERE
-         |  version = '$version'
+         |  version = 'v1'
          |AND
          |  day = '$date1'
          |AND

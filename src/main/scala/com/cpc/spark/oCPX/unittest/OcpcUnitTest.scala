@@ -27,7 +27,7 @@ object OcpcUnitTest {
 
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203c")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200203d")
 
 
 
