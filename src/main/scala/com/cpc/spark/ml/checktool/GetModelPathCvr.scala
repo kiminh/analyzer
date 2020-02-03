@@ -49,7 +49,7 @@ object GetModelPathCvr{
 
     basedata.repartition(5).write.mode("overwrite").insertInto("dl_cpc.dnn_model_score_online")
 
-    val model_path = "1580678920-113469"
+    val model_path = "1580592403-112801"
     println(model_path)
 
     val file = s"model_path_${modelName}_${dt}.txt"
