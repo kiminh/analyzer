@@ -307,15 +307,15 @@ object OcpcGetPb_weightv6{
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .filter(s"seq = 1")
+      .filter(s"seq = 1 and conversion_goal in (2, 5)")
       .groupBy("conversion_goal", "date_click", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
       .withColumn("date", col("date_click"))
-      .select("conversion_goal", "date", "hour_diff", "recall_ratio")
       .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value1 is not null")
+      .select("conversion_goal", "date", "hour_diff", "recall_value1")
 
     data
   }
