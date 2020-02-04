@@ -274,7 +274,6 @@ object OcpcGetPb_weightv6{
   校准件系数模块
    */
   def cvRecallPredictV1(date: String, spark: SparkSession) = {
-    // todo
     /*
     recall value by conversion_goal
      */
@@ -321,7 +320,6 @@ object OcpcGetPb_weightv6{
   }
 
   def cvRecallPredictV2(date: String, spark: SparkSession) = {
-    // todo
     /*
     recall value by conversion_goal
      */
