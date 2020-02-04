@@ -70,8 +70,8 @@ object OcpcGetPb_weightv6{
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
 
   }
@@ -96,23 +96,8 @@ object OcpcGetPb_weightv6{
    */
   def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
-
-    val delayDataRaw = getUserDelay(date, spark)
-    val delayData = delayDataRaw
-      .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
-      .filter(s"cost > 100")
-      .select("userid", "conversion_goal", "delay_hour")
-
-    val unitUserInfoRaw = getConversionGoalNew(spark)
-    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
-    unitUserInfo.show(10)
-
     val baseData = baseDataRaw
-      .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(0.0, Seq("delay_hour"))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
-      .withColumn("hour_diff", col("hour_diff") - col("delay_hour"))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -136,7 +121,25 @@ object OcpcGetPb_weightv6{
     val data  = spark.sql(sqlRequest)
       .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "date", "hour", "hour_diff")
 
-    data
+    // 预召回
+    // todo
+    val recallValue1 = cvRecallPredictV1(date, spark)
+    val recallValue2 = cvRecallPredictV2(date, spark)
+
+    val unitUserInfoRaw = getConversionGoalNew(spark)
+    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
+    unitUserInfo.show(10)
+
+    val recallData = data
+      .join(unitUserInfo, Seq("unitid"), "inner")
+      .join(recallValue1, Seq("conversion_goal", "date", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value1"))
+      .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
+      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
+      .withColumn("cv_recall", col("cv") * col("recall_value"))
+      .withColumn("cv_recall", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
+
+    recallData
   }
 
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
@@ -235,6 +238,7 @@ object OcpcGetPb_weightv6{
   }
 
   def getDataByHourDiff(dataRaw: DataFrame, leftHourBound: Int, rightHourBound: Int, spark: SparkSession) = {
+    // todo
     dataRaw
       .createOrReplaceTempView("raw_data")
 
@@ -247,8 +251,10 @@ object OcpcGetPb_weightv6{
          |    media,
          |    sum(click) as click,
          |    sum(cv) as cv,
+         |    sum(cv_recall) as cv_recall,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
-         |    sum(cv) * 1.0 / sum(click) as post_cvr
+         |    sum(cv) * 1.0 / sum(click) as post_cvr,
+         |    sum(cv_recall) * 1.0 / sum(click) as post_cvr_recall
          |FROM
          |    raw_data
          |WHERE
@@ -258,8 +264,8 @@ object OcpcGetPb_weightv6{
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "post_cvr", "pcoc")
+      .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr_recall"))
+      .select("unitid", "conversion_goal", "media", "click", "cv", "cv_recall", "pre_cvr", "post_cvr", "pcoc")
 
     data
   }
@@ -267,7 +273,103 @@ object OcpcGetPb_weightv6{
   /*
   校准件系数模块
    */
+  def cvRecallPredictV1(date: String, spark: SparkSession) = {
+    // todo
+    /*
+    recall value by conversion_goal
+     */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -3)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  date_click,
+         |  hour_diff,
+         |  recall_ratio,
+         |  date,
+         |  row_number() over (partition by conversion_goal, date_click, hour_diff order by date desc) as seq
+         |FROM
+         |  dl_cpc.ocpc_cvr_pre_recall_ratio
+         |WHERE
+         |  date >= '$date1'
+         |AND
+         |  userid = 'all'
+         |AND
+         |  recall_ratio is not null
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"seq = 1")
+      .groupBy("conversion_goal", "date_click", "hour_diff")
+      .agg(
+        avg(col("recall_ratio")).alias("recall_ratio")
+      )
+      .withColumn("date", col("date_click"))
+      .select("conversion_goal", "date", "hour_diff", "recall_ratio")
+      .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
+      .filter(s"recall_value1 is not null")
+
+    data
+  }
+
+  def cvRecallPredictV2(date: String, spark: SparkSession) = {
+    // todo
+    /*
+    recall value by conversion_goal
+     */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -3)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  cast(userid as int) as userid,
+         |  date_click,
+         |  hour_diff,
+         |  recall_ratio,
+         |  date,
+         |  row_number() over (partition by conversion_goal, userid, date_click, hour_diff order by date desc) as seq
+         |FROM
+         |  dl_cpc.ocpc_cvr_pre_recall_ratio
+         |WHERE
+         |  date >= '$date1'
+         |AND
+         |  userid != 'all'
+         |AND
+         |  recall_ratio is not null
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"seq = 1")
+      .groupBy("conversion_goal", "userid", "date_click", "hour_diff")
+      .agg(
+        avg(col("recall_ratio")).alias("recall_ratio")
+      )
+      .withColumn("date", col("date_click"))
+      .select("conversion_goal", "userid", "date", "hour_diff", "recall_ratio")
+      .withColumn("recall_value2", lit(1) * 1.0 / col("recall_ratio"))
+      .filter(s"recall_value2 is not null")
+
+    data
+  }
+
   def OcpcCVRfactor(dataRaw: DataFrame, date: String, expTag: String, spark: SparkSession) = {
+    // todo
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
@@ -279,32 +381,12 @@ object OcpcGetPb_weightv6{
     use 80 as cv threshold
     if the cv < min_cv, rollback to the upper layer(case1 -> case2, etc.)
      */
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
-    val recallValue1 = cvRecallPredict(date1, 6, spark)
-    val recallValue2 = cvRecallPredict(date1, 12, spark)
-    val recallValue3 = cvRecallPredict(date1, 24, spark)
-
-    val unitUserInfoRaw = getConversionGoalNew(spark)
-    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
-    unitUserInfo.show(10)
-
 
     val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
-      .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(recallValue1, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(1.0, Seq("recall_value"))
-      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data1.show(10)
 
     val dataRaw2 = getDataByHourDiff(dataRaw, 0, 12, spark)
@@ -312,10 +394,6 @@ object OcpcGetPb_weightv6{
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
-      .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(recallValue2, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(1.0, Seq("recall_value"))
-      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data2.show(10)
 
     val dataRaw3 = getDataByHourDiff(dataRaw, 0, 24, spark)
@@ -323,10 +401,6 @@ object OcpcGetPb_weightv6{
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("exp_tag", udfSetExpTag(expTag)(col("media")))
       .filter(s"cv >= 80")
-      .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(recallValue3, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(1.0, Seq("recall_value"))
-      .withColumn("pcoc", col("pcoc") * 1.0 / col("recall_value"))
     data3.show(10)
 
     val dataRaw4 = getDataByHourDiff(dataRaw, 0, 48, spark)
