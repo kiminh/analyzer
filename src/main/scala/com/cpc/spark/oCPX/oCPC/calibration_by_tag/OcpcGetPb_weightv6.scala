@@ -137,6 +137,9 @@ object OcpcGetPb_weightv6{
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("cv_recall", col("cv") * col("recall_value"))
       .withColumn("cv_recall", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
+      .cache()
+
+    recallData.show(10)
 
     recallData
   }
