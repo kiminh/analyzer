@@ -237,7 +237,6 @@ object OcpcGetPb_weightv6{
   }
 
   def getDataByHourDiff(dataRaw: DataFrame, leftHourBound: Int, rightHourBound: Int, spark: SparkSession) = {
-    // todo
     dataRaw
       .createOrReplaceTempView("raw_data")
 
