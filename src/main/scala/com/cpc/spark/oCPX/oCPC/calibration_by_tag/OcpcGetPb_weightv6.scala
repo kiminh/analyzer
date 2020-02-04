@@ -264,7 +264,7 @@ object OcpcGetPb_weightv6{
     val data = spark
       .sql(sqlRequest)
       .withColumn("pcoc", col("pre_cvr") * 1.0 / col("post_cvr_recall"))
-      .select("unitid", "conversion_goal", "media", "click", "cv", "cv_recall", "pre_cvr", "post_cvr", "pcoc")
+      .select("unitid", "conversion_goal", "media", "click", "cv", "cv_recall", "pre_cvr", "post_cvr", "post_cvr_recall", "pcoc")
 
     data
   }
