@@ -122,7 +122,6 @@ object OcpcGetPb_weightv6{
       .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "date", "hour", "hour_diff")
 
     // 预召回
-    // todo
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
 
