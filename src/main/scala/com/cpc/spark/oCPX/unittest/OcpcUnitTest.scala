@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.deepOcpc.DeepOcpcTools.{getDeepData, getDeepDataDelay}
+import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcLightBulb.{getRecommendationAd, getUnitData}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -16,19 +16,23 @@ object OcpcUnitTest {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val hourInt = 24
+    val version = "ocpctest"
 
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
 
-    val data1 = getDeepData(23, date, hour, spark)
-    val data2 = getDeepDataDelay(23, date, hour, spark)
+    // 抽取推荐cpa数据和白名单单元
+    val suggestUnits = getRecommendationAd(version, date, hour, spark)
 
-    data1
+    // 检查线上的媒体id进行校验
+    val units = getUnitData(spark)
+
+
+    suggestUnits
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205a")
 
-    data2
+    units
       .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205b")
 
 
