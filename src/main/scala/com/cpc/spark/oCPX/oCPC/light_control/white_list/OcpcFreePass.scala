@@ -366,6 +366,9 @@ object OcpcFreePass {
 
     val resultDFfinal = mapMediaName(resultDFraw, spark)
 
+    resultDFfinal
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
+
     val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "time_flag", "create_time", "deadline")
