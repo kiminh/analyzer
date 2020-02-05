@@ -364,10 +364,13 @@ object OcpcFreePass {
       .sql(sqlRequest)
       .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
 
+    resultDFraw
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
+
     val resultDFfinal = mapMediaName(resultDFraw, spark)
 
     resultDFfinal
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205b")
 
     val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
