@@ -324,7 +324,7 @@ object OcpcSuggestCPA {
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
          |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(case when isclick=1 then bid else 0 end) as jfb,
-         |  sum(case when iscvr=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
          |  sum(iscvr) * 1.0 / sum(isclick) as post_cvr
          |FROM
