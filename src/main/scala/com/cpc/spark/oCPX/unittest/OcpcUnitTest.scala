@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.{getUnitData, getUserCost}
+import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcWhiteList.getUnitData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -22,15 +22,10 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val unit = getUnitData(date, hour, spark).cache()
+    val unit = getUnitData(spark)
 
     unit
       .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_exp_data20200205a")
-
-    val userCost = getUserCost(date, spark)
-
-    userCost
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_exp_data20200205b")
 
 
 
