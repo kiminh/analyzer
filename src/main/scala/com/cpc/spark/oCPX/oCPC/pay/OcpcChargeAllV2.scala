@@ -3,12 +3,13 @@ package com.cpc.spark.oCPX.oCPC.pay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{udfConcatStringInt, udfDetermineIndustry, udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfConcatStringInt, udfDetermineIndustry}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+@deprecated
 object OcpcChargeAllV2 {
   def main(args: Array[String]): Unit = {
     /*
@@ -175,10 +176,13 @@ object OcpcChargeAllV2 {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark
+    val rawData1 = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val rawData2 = mapMediaName(rawData1, spark)
+
+    val rawData = rawData2
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"industry in ('feedapp', 'elds')")

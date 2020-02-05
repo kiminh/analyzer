@@ -63,9 +63,12 @@ object OcpcDailyCostReport {
          |and ext_int['is_ocpc'] = 1
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark
+    val rawData1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val rawData2 = mapMediaName(rawData1, spark)
+
+    val rawData = rawData2
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .filter(s"ocpc_step=1 or (ocpc_step>=2 and is_hidden=0)")
 
@@ -124,9 +127,12 @@ object OcpcDailyCostReport {
          |and is_ocpc = 1
        """.stripMargin
     println(sqlRequest1)
-    val rawData = spark
+    val rawData1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val rawData2 = mapMediaName(rawData1, spark)
+
+    val rawData = rawData2
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
 
     rawData.createOrReplaceTempView("raw_data")

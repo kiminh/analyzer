@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-
+@deprecated
 object OcpcDailyMonitor {
   def main(args: Array[String]): Unit = {
     /*
@@ -97,10 +97,6 @@ object OcpcDailyMonitor {
     val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date` between '$date1' and '$date'"
 
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     val sqlRequest =
       s"""
          |SELECT
@@ -125,16 +121,17 @@ object OcpcDailyMonitor {
          |WHERE
          |    $selectCondition
          |AND
-         |    $mediaSelection
-         |AND
          |    ocpc_step = 1
          |AND
          |    isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val cpcData = spark
+    val cpcDataRaw1 = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val cpcDataRaw2 = mapMediaName(cpcDataRaw1, spark)
+
+    val cpcData = cpcDataRaw2
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .groupBy("unitid", "userid", "adclass", "media", "industry", "conversion_goal")
       .agg(
