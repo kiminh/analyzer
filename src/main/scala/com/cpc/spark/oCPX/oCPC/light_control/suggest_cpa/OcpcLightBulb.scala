@@ -103,7 +103,9 @@ object OcpcLightBulb{
        """.stripMargin
     println(sqlRequest)
     // todo
-    val resultDFraw = spark.sql(sqlRequest).na.fill("80000001", Seq("media_appsid"))
+    val resultDFraw = spark
+      .sql(sqlRequest)
+      .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
 
     val resultDFfinal = mapMediaName(resultDFraw, spark)
     resultDFfinal
