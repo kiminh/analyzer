@@ -163,7 +163,7 @@ object OcpcTools {
       .withColumn("media_name", col("media"))
       .select("media_name", "media_appsid")
       .distinct()
-    mediaMap.show(10)
+    mediaMap.show(50)
 
     val data = dataRaw
       .join(mediaMap, Seq("media_appsid"), "left_outer")
