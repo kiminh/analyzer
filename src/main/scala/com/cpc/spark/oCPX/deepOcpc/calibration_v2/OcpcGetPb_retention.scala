@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v2
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -218,11 +218,12 @@ object OcpcGetPb_retention {
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -302,9 +303,12 @@ object OcpcGetPb_retention {
          |  isclick=1
          |""".stripMargin
     println(sqlRequest)
-    val data = spark
+    val dataRaw1 = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val dataRaw2 = mapMediaName(dataRaw1, spark)
+
+    val data = dataRaw2
       .filter(s"deep_conversion_goal = 2")
       .groupBy("unitid", "media")
       .agg(
@@ -356,10 +360,11 @@ object OcpcGetPb_retention {
          |  array_contains(conversion_target, 'api_app_active')
          |""".stripMargin
     println(sqlRequest1)
-    val data1 = spark
+    val dataRaw1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .distinct()
+
+    val data1 = mapMediaName(dataRaw1, spark)
 
     // 次留数据
     val sqlRequest2 =
