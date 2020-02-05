@@ -102,14 +102,11 @@ object OcpcLightBulb{
          |lateral view explode(split(target_medias, ',')) b as a
        """.stripMargin
     println(sqlRequest)
-    // todo
     val resultDFraw = spark
       .sql(sqlRequest)
       .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
 
     val resultDFfinal = mapMediaName(resultDFraw, spark)
-    resultDFfinal
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
 
     val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel', 'others')")
@@ -121,7 +118,6 @@ object OcpcLightBulb{
     resultDF
   }
 
-  // todo
 //  def udfDetermineMediaNew() = udf((mediaId: String) => {
 //    var result = mediaId match {
 //      case "80000001" => "qtt"

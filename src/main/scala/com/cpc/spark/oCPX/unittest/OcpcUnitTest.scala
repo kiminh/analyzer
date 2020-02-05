@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcLightBulb.getUnitData
+import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -22,9 +22,9 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val units = getUnitData(spark)
+    val unit = getUnitData(date, hour, spark).cache()
 
-    units
+    unit
       .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_exp_data20200205a")
 
 
