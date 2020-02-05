@@ -59,11 +59,6 @@ object DeepOcpcTools {
 
   def getDeepData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // todo
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
@@ -109,8 +104,6 @@ object DeepOcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
@@ -154,11 +147,6 @@ object DeepOcpcTools {
 
   def getDeepDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // todo
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -204,8 +192,6 @@ object DeepOcpcTools {
          |  dl_cpc.ocpc_base_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  $mediaSelection
          |AND
          |  is_ocpc = 1
          |AND
