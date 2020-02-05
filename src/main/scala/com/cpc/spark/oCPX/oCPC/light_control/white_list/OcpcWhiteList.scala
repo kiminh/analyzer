@@ -48,7 +48,6 @@ object OcpcWhiteList {
     val filterUnit = unit
       .join(filterUser, Seq("userid"), "inner")
 
-    // todo
     filterUnit
       .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "media")
       .withColumn("ocpc_light", lit(1))
@@ -58,8 +57,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
   }
 
   def getUserData(spark: SparkSession) = {
@@ -131,9 +130,7 @@ object OcpcWhiteList {
     val user = conf.getString("adv_read_mysql.new_deploy.user")
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
-//    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status in (0, 3)) as tmp"
-    // todo
-    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1) as tmp"
+    val table = "(select id, user_id, cast(conversion_goal as char) as conversion_goal, target_medias, is_ocpc, ocpc_status from adv.unit where ideas is not null and is_ocpc = 1 and ocpc_status in (0, 3)) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -166,15 +163,11 @@ object OcpcWhiteList {
          |lateral view explode(split(target_medias, ',')) b as a
        """.stripMargin
     println(sqlRequest)
-    // todo
     val resultDFraw = spark
       .sql(sqlRequest)
       .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
 
     val resultDFfinal = mapMediaName(resultDFraw, spark)
-
-    resultDFfinal
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
 
     val resultDF = resultDFfinal
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
