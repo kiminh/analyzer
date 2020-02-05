@@ -65,30 +65,28 @@ object OcpcFreePass {
         .withColumn("flag_old", col("flag"))
         .withColumn("flag", when(col("is_open") === 1, 1).otherwise(col("flag")))
 
-//    joinData
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
-
+    // todo
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
+      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_light")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_light")
 
 
-    val resultDF = spark
-      .table("dl_cpc.ocpc_auto_second_stage_light")
-      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
-
-    resultDF
-      .select("unitid", "userid", "conversion_goal", "media")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
+//    val resultDF = spark
+//      .table("dl_cpc.ocpc_auto_second_stage_light")
+//      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version' and flag = 1")
+//
+//    resultDF
+//      .select("unitid", "userid", "conversion_goal", "media")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(1)
+////      .write.mode("overwrite").insertInto("test.ocpc_auto_second_stage_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_second_stage_hourly")
 
 
 

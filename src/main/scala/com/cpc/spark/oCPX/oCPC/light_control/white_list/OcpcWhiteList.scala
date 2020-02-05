@@ -48,13 +48,7 @@ object OcpcWhiteList {
     val filterUnit = unit
       .join(filterUser, Seq("userid"), "inner")
 
-//    filterUser
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018a")
-//
-//    filterUnit
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
+    // todo
     filterUnit
       .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "media")
       .withColumn("ocpc_light", lit(1))
@@ -64,8 +58,8 @@ object OcpcWhiteList {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
+      .write.mode("overwrite").insertInto("test.ocpc_light_control_white_units_hourly")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_control_white_units_hourly")
   }
 
   def getUserData(spark: SparkSession) = {
@@ -93,9 +87,6 @@ object OcpcWhiteList {
       .selectExpr("cast(userid as int) as userid", "adclass")
       .join(blackUserid, Seq("userid"), "left_outer")
       .na.fill(0, Seq("userid_black_flag"))
-
-//    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
 
     val resultDF = result
       .filter(s"userid_black_flag = 0")
