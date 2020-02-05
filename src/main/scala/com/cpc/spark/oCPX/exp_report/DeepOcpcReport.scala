@@ -50,6 +50,7 @@ object DeepOcpcReport {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
+    // todo
     val sqlRequest =
       s"""
          |SELECT
@@ -101,7 +102,7 @@ object DeepOcpcReport {
          |        end) as recall_tag,
          |        (case
          |            when media_appsid in ('80000001', '80000002') then 'qtt'
-         |            when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
+         |            when media_appsid in ('80002819', '80004944', '80004948', '80004953', '80004952') then 'hottopic'
          |            when media_appsid in ('80001098', '80001292', '80001539', '80002480', '80001011', '80004786', '80004787') then 'novel'
          |            else 'others'
          |        end) as media,
