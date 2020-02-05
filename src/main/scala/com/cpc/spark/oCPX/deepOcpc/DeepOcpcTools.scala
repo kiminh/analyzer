@@ -3,6 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
@@ -57,6 +58,7 @@ object DeepOcpcTools {
   })
 
   def getDeepData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // todo
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -122,9 +124,9 @@ object DeepOcpcTools {
          |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val clickDataRaw = spark.sql(sqlRequest)
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -151,6 +153,7 @@ object DeepOcpcTools {
   }
 
   def getDeepDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // todo
     // 抽取媒体id
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias.total.media_selection"
@@ -217,9 +220,9 @@ object DeepOcpcTools {
          |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val clickDataRaw = spark.sql(sqlRequest)
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =

@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.light_control.white_list.OcpcFreePass.getUnitData
+import com.cpc.spark.oCPX.deepOcpc.DeepOcpcTools.{getDeepData, getDeepDataDelay}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -22,10 +22,14 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val unit = getUnitData(date, hour, spark).cache()
+    val data1 = getDeepData(23, date, hour, spark)
+    val data2 = getDeepDataDelay(23, date, hour, spark)
 
-    unit
-      .write.mode("overwrite").saveAsTable("test.check_ocpc_cali_exp_data20200205a")
+    data1
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205a")
+
+    data2
+      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205b")
 
 
 
