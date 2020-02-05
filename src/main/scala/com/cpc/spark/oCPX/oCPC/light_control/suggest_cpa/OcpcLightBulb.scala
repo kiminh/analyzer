@@ -106,6 +106,8 @@ object OcpcLightBulb{
     val resultDFraw = spark.sql(sqlRequest).na.fill("80000001", Seq("media_appsid"))
 
     val resultDFfinal = mapMediaName(resultDFraw, spark)
+    resultDFfinal
+      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20200205a")
 
     val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel', 'others')")
