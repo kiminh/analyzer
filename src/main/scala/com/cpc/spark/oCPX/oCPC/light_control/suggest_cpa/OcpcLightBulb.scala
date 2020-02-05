@@ -41,14 +41,13 @@ object OcpcLightBulb{
     // 推送进入准入表
     val resultDF = assemblyData(suggestUnits, units, spark)
 
-    // todo
     resultDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
       .repartition(5)
-      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_light_api_control_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_light_api_control_hourly")
 
   }
 
