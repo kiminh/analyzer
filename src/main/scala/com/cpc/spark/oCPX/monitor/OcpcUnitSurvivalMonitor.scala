@@ -3,12 +3,13 @@ package com.cpc.spark.oCPX.monitor
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfConcatStringInt, udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfConcatStringInt}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+@deprecated
 object OcpcUnitSurvivalMonitor {
   /*
   分媒体统计每个媒体下各个单元的日耗
@@ -180,9 +181,10 @@ object OcpcUnitSurvivalMonitor {
          |  $mediaSelection
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     val resultDF = clickData
         .groupBy("unitid", "userid", "media", "is_ocpc")
@@ -226,9 +228,10 @@ object OcpcUnitSurvivalMonitor {
          |    target_medias != ''
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val dataRaw = spark.sql(sqlRequest)
       .select("unitid",  "userid", "media_appsid", "is_ocpc", "create_time", "create_date")
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val data = mapMediaName(dataRaw, spark)
 
     val resultDF = data
         .filter(s"create_date > '$date1'")

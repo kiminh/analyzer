@@ -83,9 +83,12 @@ object OcpcQuickLog {
        """.stripMargin
 
     println(sqlRequest1)
-    val data1 = spark
+    val dataRaw1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val dataRaw2 = mapMediaName(dataRaw1, spark)
+
+    val data1 = dataRaw2
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .select("searchid", "unitid", "userid", "adslot_type", "conversion_goal", "media", "industry", "isclick", "exp_cvr", "ocpc_step", "adclass", "price", "adtype", "media_appsid", "bid_ocpc", "hidden_tax", "conversion_from")
 

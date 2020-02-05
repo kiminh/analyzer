@@ -3,12 +3,13 @@ package com.cpc.spark.oCPX.monitor
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfConcatStringInt, udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfConcatStringInt}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+@deprecated
 object OcpcApiCvr {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -110,10 +111,11 @@ object OcpcApiCvr {
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
 
     val sqlRequest2 =
