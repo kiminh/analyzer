@@ -74,8 +74,8 @@ object OcpcHourlyGeneralData {
 
     resultDF
       .select("industry", "cost", "cost_cmp", "cost_ratio", "cost_low", "cost_high", "unitid_cnt", "userid_cnt", "low_unit_percent", "pay_percent", "conversion_goal", "media",  "ocpc_expand", "pre_cvr", "post_cvr", "auc", "date", "hour", "version")
-      .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
+//      .repartition(1).write.mode("overwrite").insertInto("test.ocpc_general_data_industry_hourly")
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_general_data_industry_hourly")
 
 
   }
