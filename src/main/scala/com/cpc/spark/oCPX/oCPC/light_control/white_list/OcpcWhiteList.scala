@@ -179,7 +179,6 @@ object OcpcWhiteList {
     resultDF
   }
 
-  // todo
 //  def udfDetermineMediaNew() = udf((mediaId: String) => {
 //    var result = mediaId match {
 //      case "80000001" => "qtt"

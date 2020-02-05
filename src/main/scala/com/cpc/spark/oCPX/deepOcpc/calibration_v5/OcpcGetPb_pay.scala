@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfCalculateBidWithHiddenTax, udfCalculatePriceWithHiddenTax, udfMediaName, udfSetExpTag}
 import com.cpc.spark.oCPX.deepOcpc.calibration_v5.pay.OcpcDeepBase_payfactor.OcpcDeepBase_payfactorMain
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -194,9 +194,12 @@ object OcpcGetPb_pay {
          |  deep_conversion_goal = 3
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark
+    val rawData1 = spark
       .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val rawData2 = mapMediaName(rawData1, spark)
+
+    val rawData = rawData2
       .withColumn("media", udfMediaName()(col("media")))
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
