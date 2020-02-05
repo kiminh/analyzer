@@ -41,6 +41,7 @@ object OcpcLightBulb{
     // 推送进入准入表
     val resultDF = assemblyData(suggestUnits, units, spark)
 
+    // todo
     resultDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
