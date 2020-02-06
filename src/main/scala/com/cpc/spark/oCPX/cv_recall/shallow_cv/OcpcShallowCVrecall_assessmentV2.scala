@@ -68,6 +68,14 @@ object OcpcShallowCVrecall_assessmentV2 {
     /*
     recall value by conversion_goal
      */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
     val sqlRequest =
       s"""
          |SELECT
@@ -78,7 +86,7 @@ object OcpcShallowCVrecall_assessmentV2 {
          |FROM
          |  dl_cpc.ocpc_cvr_pre_recall_ratio
          |WHERE
-         |  date = '$date'
+         |  date = '$date1'
          |AND
          |  userid = 'all'
          |AND
@@ -104,6 +112,14 @@ object OcpcShallowCVrecall_assessmentV2 {
     /*
     recall value by conversion_goal
      */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
     val sqlRequest =
       s"""
          |SELECT
@@ -115,7 +131,7 @@ object OcpcShallowCVrecall_assessmentV2 {
          |FROM
          |  dl_cpc.ocpc_cvr_pre_recall_ratio
          |WHERE
-         |  date = '$date'
+         |  date = '$date1'
          |AND
          |  userid != 'all'
          |AND
