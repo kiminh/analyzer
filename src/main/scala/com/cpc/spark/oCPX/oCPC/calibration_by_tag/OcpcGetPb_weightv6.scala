@@ -303,6 +303,8 @@ object OcpcGetPb_weightv6{
          |AND
          |  userid = 'all'
          |AND
+         |  date_click >= '$date1'
+         |AND
          |  recall_ratio is not null
          |""".stripMargin
     println(sqlRequest)
@@ -346,6 +348,8 @@ object OcpcGetPb_weightv6{
          |  dl_cpc.ocpc_cvr_pre_recall_ratio
          |WHERE
          |  date >= '$date1'
+         |AND
+         |  date_click >= '$date1'
          |AND
          |  userid != 'all'
          |AND
