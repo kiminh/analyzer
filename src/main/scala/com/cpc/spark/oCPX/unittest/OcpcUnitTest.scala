@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_assessmentV2.{calculateCV, cvRecallPredictV1, cvRecallPredictV2, predictCvValue}
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.OcpcGetPb_weightv6.{cvRecallPredictV1, cvRecallPredictV2}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -22,19 +22,14 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    val cvData = calculateCV(date, hourInt, spark)
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
-    var predCvData = predictCvValue(cvData, 1, hourInt, recallValue1, recallValue2, spark)
 
-    for (startHour <- 2 to 24) {
-      println(s"########  startHour = $startHour  #######")
-      val singleData = predictCvValue(cvData, startHour, hourInt, recallValue1, recallValue2, spark)
-      predCvData = predCvData.union(singleData)
-    }
+    recallValue1
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206a")
 
-    predCvData
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206d")
+    recallValue2
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
 
 
 

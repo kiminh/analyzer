@@ -131,9 +131,9 @@ object OcpcGetPb_weightv6{
 
     val recallData = data
       .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(recallValue1, Seq("conversion_goal", "date", "hour_diff"), "left_outer")
+      .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
       .na.fill(1.0, Seq("recall_value1"))
-      .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
+      .join(recallValue2, Seq("userid", "conversion_goal", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("cv_recall", col("cv") * col("recall_value"))
       .withColumn("cv_recall", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
@@ -275,6 +275,7 @@ object OcpcGetPb_weightv6{
   校准件系数模块
    */
   def cvRecallPredictV1(date: String, spark: SparkSession) = {
+    // todo
     /*
     recall value by conversion_goal
      */
@@ -307,12 +308,11 @@ object OcpcGetPb_weightv6{
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .filter(s"seq = 1 and conversion_goal in (2, 5)")
+      .filter(s"seq = 1 and conversion_goal in (2, 5) and date = date_click")
       .groupBy("conversion_goal", "date_click", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
-      .withColumn("date", col("date_click"))
       .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value1 is not null")
       .select("conversion_goal", "date", "hour_diff", "recall_value1")
@@ -354,7 +354,7 @@ object OcpcGetPb_weightv6{
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
-      .filter(s"seq = 1 and conversion_goal in (2, 5)")
+      .filter(s"seq = 1 and conversion_goal in (2, 5) and date = date_click")
       .groupBy("conversion_goal", "userid", "date_click", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
