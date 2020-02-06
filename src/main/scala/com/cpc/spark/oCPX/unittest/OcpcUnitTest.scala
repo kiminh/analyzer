@@ -23,10 +23,10 @@ object OcpcUnitTest {
 
 
     val cvData = calculateCV(date, hourInt, spark)
-    val predCvData = predictCvValue(cvData, 1, hourInt, spark)
+    val predCvData = predictCvValue(cvData, 5, hourInt, spark)
 
     predCvData
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206c")
 
 
 
