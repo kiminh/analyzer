@@ -371,7 +371,6 @@ object OcpcGetPb_weightv6{
   }
 
   def OcpcCVRfactor(dataRaw: DataFrame, date: String, expTag: String, spark: SparkSession) = {
-    // todo
     /*
     calculate the calibration value based on weighted calibration:
     case1: 0 ~ 5: 0.4
