@@ -265,6 +265,7 @@ object OcpcGetPb_retention {
     val date1String = calendar.getTime
     val date1 = dateConverter.format(date1String)
 
+    // todo
     val sqlRequest =
       s"""
          |SELECT

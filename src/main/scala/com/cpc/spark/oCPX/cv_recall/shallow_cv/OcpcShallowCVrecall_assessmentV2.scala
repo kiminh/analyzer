@@ -39,7 +39,10 @@ object OcpcShallowCVrecall_assessmentV2 {
     }
 
     // todo
-    val predCvData = predictCvValue(cvData, 1, hourInt, spark)
+    // 预召回
+    val recallValue1 = cvRecallPredictV1(date, spark)
+    val recallValue2 = cvRecallPredictV2(date, spark)
+    val predCvData = predictCvValue(cvData, 1, hourInt, recallValue1, recallValue2, spark)
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -61,16 +64,98 @@ object OcpcShallowCVrecall_assessmentV2 {
     result
   }
 
-  def predictCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
+  def cvRecallPredictV1(date: String, spark: SparkSession) = {
+    /*
+    recall value by conversion_goal
+     */
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  date_click,
+         |  hour_diff,
+         |  recall_ratio
+         |FROM
+         |  dl_cpc.ocpc_cvr_pre_recall_ratio
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  userid = 'all'
+         |AND
+         |  recall_ratio is not null
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal in (2, 5)")
+      .groupBy("conversion_goal", "date_click", "hour_diff")
+      .agg(
+        avg(col("recall_ratio")).alias("recall_ratio")
+      )
+      .withColumn("date", col("date_click"))
+      .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
+      .filter(s"recall_value1 is not null")
+      .select("conversion_goal", "date", "hour_diff", "recall_value1")
+
+    data
+  }
+
+  def cvRecallPredictV2(date: String, spark: SparkSession) = {
+    /*
+    recall value by conversion_goal
+     */
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  cast(userid as int) as userid,
+         |  date_click,
+         |  hour_diff,
+         |  recall_ratio
+         |FROM
+         |  dl_cpc.ocpc_cvr_pre_recall_ratio
+         |WHERE
+         |  date = '$date'
+         |AND
+         |  userid != 'all'
+         |AND
+         |  recall_ratio is not null
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal in (2, 5)")
+      .groupBy("conversion_goal", "userid", "date_click", "hour_diff")
+      .agg(
+        avg(col("recall_ratio")).alias("recall_ratio")
+      )
+      .withColumn("date", col("date_click"))
+      .withColumn("recall_value2", lit(1) * 1.0 / col("recall_ratio"))
+      .filter(s"recall_value2 is not null")
+      .select("conversion_goal", "userid", "date", "hour_diff", "recall_value2")
+      .cache()
+
+    data
+  }
+
+  def predictCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, recallValue1: DataFrame, recallValue2: DataFrame, spark: SparkSession) = {
     // todo
     val endHour = startHour + hourInt
     val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
 
-    val clickCV = data
+    val dataRaw = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
       .withColumn("hour_diff", col("click_hour_diff") - lit(startHour))
 
-    clickCV
+    val joinData = dataRaw
+      .join(recallValue1, Seq("conversion_goal", "date", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value1"))
+      .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
+      .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
+      .withColumn("cv_recall", col("cv") * col("recall_value"))
+      .withColumn("cv_recall", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
+
+    joinData
   }
 
   def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
