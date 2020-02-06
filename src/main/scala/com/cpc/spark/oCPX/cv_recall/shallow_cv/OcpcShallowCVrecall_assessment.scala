@@ -65,10 +65,9 @@ object OcpcShallowCVrecall_assessment {
     val totalCV = data
       .groupBy("unitid", "userid", "conversion_goal")
       .agg(
-        sum(col("cv")).alias("total_cv"),
-        sum(col("cost")).alias("cost")
+        sum(col("cv")).alias("total_cv")
       )
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cost")
+      .select("unitid", "userid", "conversion_goal", "total_cv")
 
     val clickCV = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
@@ -78,7 +77,7 @@ object OcpcShallowCVrecall_assessment {
 
     val result = totalCV
       .join(clickCV, Seq("unitid", "userid", "conversion_goal"), "inner")
-      .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv")
+      .select("unitid", "userid", "conversion_goal", "total_cv", "cv")
       .withColumn("start_hour", lit(startHour))
 
     result
