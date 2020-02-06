@@ -30,13 +30,16 @@ object OcpcShallowCVrecall_assessmentV2 {
   def cvRecallAssessment(date: String, hourInt: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourInt, spark)
 
-    var rawData = calculateCvValue(cvData, 1, hourInt, spark)
+    var realCvData = calculateCvValue(cvData, 1, hourInt, spark)
 
     for (startHour <- 2 to 24) {
         println(s"########  startHour = $startHour  #######")
       val singleData = calculateCvValue(cvData, startHour, hourInt, spark)
-      rawData = rawData.union(singleData)
+      realCvData = realCvData.union(singleData)
     }
+
+    // todo
+    val predCvData = predictCvValue(cvData, 1, hourInt, spark)
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -49,13 +52,25 @@ object OcpcShallowCVrecall_assessmentV2 {
     val recallValue = recallValueRaw
       .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
 
-    val result = rawData
+    val result = realCvData
         .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
         .na.fill(1.0, Seq("recall_value"))
         .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
         .withColumn("pred_cv", col("cv") * col("recall_value"))
 
     result
+  }
+
+  def predictCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
+    // todo
+    val endHour = startHour + hourInt
+    val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
+
+    val clickCV = data
+      .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
+      .withColumn("hour_diff", col("click_hour_diff") - lit(startHour))
+
+    clickCV
   }
 
   def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
