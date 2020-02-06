@@ -82,6 +82,8 @@ object OcpcShallowCVrecall_assessmentV2 {
          |WHERE
          |  date = '$date1'
          |AND
+         |  date_click = '$date1'
+         |AND
          |  userid = 'all'
          |AND
          |  recall_ratio is not null
@@ -90,14 +92,13 @@ object OcpcShallowCVrecall_assessmentV2 {
     val data = spark
       .sql(sqlRequest)
       .filter(s"conversion_goal in (2, 5)")
-      .groupBy("conversion_goal", "date_click", "hour_diff")
+      .groupBy("conversion_goal", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
-      .withColumn("date", col("date_click"))
       .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value1 is not null")
-      .select("conversion_goal", "date", "hour_diff", "recall_value1")
+      .select("conversion_goal", "hour_diff", "recall_value1")
       .cache()
 
     data.show(10)
@@ -130,6 +131,8 @@ object OcpcShallowCVrecall_assessmentV2 {
          |WHERE
          |  date = '$date1'
          |AND
+         |  date_click = '$date1'
+         |AND
          |  userid != 'all'
          |AND
          |  recall_ratio is not null
@@ -138,14 +141,13 @@ object OcpcShallowCVrecall_assessmentV2 {
     val data = spark
       .sql(sqlRequest)
       .filter(s"conversion_goal in (2, 5)")
-      .groupBy("conversion_goal", "userid", "date_click", "hour_diff")
+      .groupBy("conversion_goal", "userid", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
-      .withColumn("date", col("date_click"))
       .withColumn("recall_value2", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value2 is not null")
-      .select("conversion_goal", "userid", "date", "hour_diff", "recall_value2")
+      .select("conversion_goal", "userid", "hour_diff", "recall_value2")
       .cache()
 
     data.show(10)
@@ -158,16 +160,15 @@ object OcpcShallowCVrecall_assessmentV2 {
     val endHour = startHour + hourInt
     val data = baseData
       .filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
-      .withColumn("date", col("click_date"))
 
     val dataRaw = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
       .withColumn("hour_diff", col("click_hour_diff") - lit(startHour))
 
     val joinData = dataRaw
-      .join(recallValue1, Seq("conversion_goal", "date", "hour_diff"), "left_outer")
+      .join(recallValue1, Seq("conversion_goal", "hour_diff"), "left_outer")
       .na.fill(1.0, Seq("recall_value1"))
-      .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
+      .join(recallValue2, Seq("userid", "conversion_goal", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("pred_cv", col("cv") * col("recall_value"))
 
@@ -286,11 +287,10 @@ object OcpcShallowCVrecall_assessmentV2 {
          |  conversion_goal,
          |  click_hour_diff,
          |  cv_hour_diff,
-         |  click_date,
          |  count(distinct searchid) as cv
          |FROM
          |  base_data
-         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff, click_date
+         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3).cache()
