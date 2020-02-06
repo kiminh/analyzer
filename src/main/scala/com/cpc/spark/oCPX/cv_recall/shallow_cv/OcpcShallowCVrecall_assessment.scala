@@ -52,7 +52,7 @@ object OcpcShallowCVrecall_assessment {
     val result = rawData
         .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
         .na.fill(1.0, Seq("recall_value"))
-        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
+        .select("unitid", "userid", "conversion_goal", "total_cv", "cv", "recall_value", "start_hour")
         .withColumn("pred_cv", col("cv") * col("recall_value"))
 
     result
