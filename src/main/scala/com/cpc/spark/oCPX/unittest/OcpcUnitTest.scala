@@ -25,7 +25,13 @@ object OcpcUnitTest {
     val cvData = calculateCV(date, hourInt, spark)
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
-    val predCvData = predictCvValue(cvData, 5, hourInt, recallValue1, recallValue2, spark)
+    var predCvData = predictCvValue(cvData, 1, hourInt, recallValue1, recallValue2, spark)
+
+    for (startHour <- 2 to 24) {
+      println(s"########  startHour = $startHour  #######")
+      val singleData = predictCvValue(cvData, startHour, hourInt, recallValue1, recallValue2, spark)
+      predCvData = predCvData.union(singleData)
+    }
 
 //    cvData
 //      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206a")
