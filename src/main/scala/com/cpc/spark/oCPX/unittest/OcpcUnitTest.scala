@@ -22,14 +22,12 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
+    val cvData = calculateCV(date, hourInt, spark)
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
 
-    recallValue1
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206a")
-
-    recallValue2
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
+    cvData
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206c")
 
 
 
