@@ -62,13 +62,13 @@ object OcpcGetPb_v1_part1 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
+      .withColumn("exp_tag", concat_ws("-", col("exp_tag"), col("conversion_goal")))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_pb_data_hourly_exp20200206a")
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
