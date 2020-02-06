@@ -17,8 +17,8 @@ object OcpcUnitTest {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = "ocpctest"
-    val expTag = "v1"
+    val version = "ocpcv1"
+    val expTag = "adtype15"
 
     println("parameters:")
     println(s"date=$date, hour=$hour")
