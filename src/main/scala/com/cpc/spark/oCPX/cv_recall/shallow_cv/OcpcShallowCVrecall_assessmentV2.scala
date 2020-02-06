@@ -157,7 +157,9 @@ object OcpcShallowCVrecall_assessmentV2 {
   def predictCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, recallValue1: DataFrame, recallValue2: DataFrame, spark: SparkSession) = {
     // todo
     val endHour = startHour + hourInt
-    val data = baseData.filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
+    val data = baseData
+      .filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
+      .withColumn("date", col("click_date"))
 
     val dataRaw = data
       .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
@@ -169,7 +171,7 @@ object OcpcShallowCVrecall_assessmentV2 {
       .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("cv_recall", col("cv") * col("recall_value"))
-      .withColumn("cv_recall", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
+      .withColumn("pred_cv", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
 
     joinData
   }
@@ -277,10 +279,11 @@ object OcpcShallowCVrecall_assessmentV2 {
          |  conversion_goal,
          |  click_hour_diff,
          |  cv_hour_diff,
+         |  click_date,
          |  count(distinct searchid) as cv
          |FROM
          |  base_data
-         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff
+         |GROUP BY unitid, userid, conversion_goal, click_hour_diff, cv_hour_diff, click_date
          |""".stripMargin
     println(sqlRequest3)
     val data = spark.sql(sqlRequest3).cache()
