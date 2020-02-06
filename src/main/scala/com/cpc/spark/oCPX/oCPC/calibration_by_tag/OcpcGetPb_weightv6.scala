@@ -311,13 +311,13 @@ object OcpcGetPb_weightv6{
     val data = spark
       .sql(sqlRequest)
       .filter(s"seq = 1 and conversion_goal in (2, 5) and date = date_click")
-      .groupBy("conversion_goal", "date_click", "hour_diff")
+      .groupBy("conversion_goal", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
       .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value1 is not null")
-      .select("conversion_goal", "date_click", "hour_diff", "recall_value1")
+      .select("conversion_goal", "hour_diff", "recall_value1")
 
     data
   }
@@ -359,13 +359,13 @@ object OcpcGetPb_weightv6{
     val data = spark
       .sql(sqlRequest)
       .filter(s"seq = 1 and conversion_goal in (2, 5) and date = date_click")
-      .groupBy("conversion_goal", "userid", "date_click", "hour_diff")
+      .groupBy("conversion_goal", "userid", "hour_diff")
       .agg(
         avg(col("recall_ratio")).alias("recall_ratio")
       )
       .withColumn("recall_value2", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value2 is not null")
-      .select("conversion_goal", "userid", "date_click", "hour_diff", "recall_value2")
+      .select("conversion_goal", "userid", "hour_diff", "recall_value2")
 
     data
   }
