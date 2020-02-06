@@ -61,7 +61,7 @@ object OcpcGetPb_v1 {
          |  *,
          |  split(exp_tag, '-') as exp_tag_list
          |FROM
-         |  test.ocpc_pb_data_hourly_exp
+         |  dl_cpc.ocpc_pb_data_hourly_exp
          |WHERE
          |  `date` = '$date'
          |AND
