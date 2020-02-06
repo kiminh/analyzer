@@ -38,7 +38,6 @@ object OcpcShallowCVrecall_assessmentV2 {
       realCvData = realCvData.union(singleData)
     }
 
-    // todo
     // 预召回
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
@@ -53,7 +52,6 @@ object OcpcShallowCVrecall_assessmentV2 {
     val result = realCvData
         .join(predCvData, Seq("unitid", "userid", "conversion_goal", "start_hour"), "inner")
         .select("unitid", "userid", "conversion_goal", "total_cv", "cv", "single_cv", "pred_cv", "start_hour")
-
 
     result
   }

@@ -33,16 +33,6 @@ object OcpcUnitTest {
       predCvData = predCvData.union(singleData)
     }
 
-//    cvData
-//      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206a")
-
-//    recallValue1
-//      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
-//
-//    recallValue2
-//      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206c")
-//
-//
     predCvData
       .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206d")
 
