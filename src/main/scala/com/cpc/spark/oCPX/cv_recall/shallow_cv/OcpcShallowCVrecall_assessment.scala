@@ -22,6 +22,8 @@ object OcpcShallowCVrecall_assessment {
 
     val data = cvRecallAssessment(date, hourInt, spark)
 
+    data
+      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200206a")
 
 
   }
@@ -151,9 +153,6 @@ object OcpcShallowCVrecall_assessment {
       .withColumn("cv_hour_diff", udfCalculateHourDiff(date, "00")(col("cv_date"), col("cv_hour")))
 
     baseData.createOrReplaceTempView("base_data")
-
-    baseData
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
 
     val sqlRequest3 =
       s"""
