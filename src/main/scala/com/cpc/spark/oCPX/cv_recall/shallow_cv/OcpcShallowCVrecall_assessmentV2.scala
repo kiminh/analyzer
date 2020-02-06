@@ -170,9 +170,7 @@ object OcpcShallowCVrecall_assessmentV2 {
       .na.fill(1.0, Seq("recall_value1"))
       .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
-      .withColumn("cv_recall", col("cv") * col("recall_value"))
-      .withColumn("pred_cv", when(col("cv_recall") > col("click"), col("click")).otherwise(col("cv_recall")))
-
+      .withColumn("pred_cv", col("cv") * col("recall_value"))
     joinData
   }
 
