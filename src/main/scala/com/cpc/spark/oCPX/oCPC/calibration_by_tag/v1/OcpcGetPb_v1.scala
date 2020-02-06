@@ -22,7 +22,10 @@ object OcpcGetPb_v1 {
 
     val data = getData(date, hour, version, expTag, spark)
 
+    val expTagSelection = getExpTags(expTag, spark)
+
     val resultDF = data
+      .filter(expTagSelection)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -36,6 +39,19 @@ object OcpcGetPb_v1 {
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
 
+  }
+
+  def getExpTags(expTag: String, spark: SparkSession) = {
+    var editExpTag = expTag
+    if (expTag == "base") {
+      editExpTag = ""
+    }
+    val qtt = editExpTag + "Qtt"
+    val midu = editExpTag + "MiDu"
+    val hottopic = editExpTag + "HT66"
+    val others = editExpTag + "Other"
+    val result = s"exp_tag in ('$qtt', '$midu', '$hottopic', '$others')"
+    result
   }
 
   def getData(date: String, hour: String, version: String, expTag: String, spark: SparkSession) = {
