@@ -17,25 +17,25 @@ object OcpcGetPb_v1_part2{
 
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val expTag = args(3).toString
+    val date1 = args(2).toString
+    val hour1 = args(3).toString
+    val version = args(4).toString
+    val expTag = args(5).toString
 
     // 主校准回溯时间长度
-    val hourInt1 = args(4).toInt
+    val hourInt1 = args(6).toInt
     // 备用校准回溯时间长度
-    val hourInt2 = args(5).toInt
+    val hourInt2 = args(7).toInt
     // 兜底校准时长
-    val hourInt3 = args(6).toInt
+    val hourInt3 = args(8).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
-
-    // 基础数据
-    val dataRaw = OcpcCalibrationBase(date, hour, 100, spark).cache()
-    dataRaw.show(10)
+    println(s"date=$date, hour=$hour, date1=$date1, hour1=$hour1, version:$version, expTag:$expTag, hourInt1:$hourInt1, hourInt2:$hourInt2, hourInt3:$hourInt3")
 
     // 计费比系数模块
-    val jfbDataRaw = OcpcJFBfactor(date, hour, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
+    val dataRaw = OcpcCalibrationBase(date1, hour1, hourInt3, spark).cache()
+    dataRaw.show(10)
+    val jfbDataRaw = OcpcJFBfactor(date1, hour1, expTag, dataRaw, hourInt1, hourInt2, hourInt3, spark)
     val jfbData = jfbDataRaw
       .withColumn("jfb_factor", lit(1.0) / col("jfb"))
       .select("unitid", "conversion_goal", "exp_tag", "jfb_factor")
@@ -43,7 +43,9 @@ object OcpcGetPb_v1_part2{
     jfbData.show(10)
 
     // 校准系数模块
-    val pcocDataRaw = OcpcCVRfactor(dataRaw, date, expTag, spark)
+    val realtimeDataRaw = OcpcRealtimeCalibrationBase(date, hour, 100, spark).cache()
+    realtimeDataRaw.show(10)
+    val pcocDataRaw = OcpcCVRfactor(realtimeDataRaw, date, expTag, spark)
     val pcocData = pcocDataRaw
       .withColumn("cvr_factor", lit(1.0) / col("pcoc"))
       .select("unitid", "conversion_goal", "exp_tag", "cvr_factor")
@@ -59,16 +61,16 @@ object OcpcGetPb_v1_part2{
     val resultDF = data
       .withColumn("cpagiven", lit(1.0))
       .withColumn("is_hidden", lit(0))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+      .withColumn("date", lit(date1))
+      .withColumn("hour", lit(hour1))
       .withColumn("version", lit(version))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
 
 
   }
@@ -91,6 +93,36 @@ object OcpcGetPb_v1_part2{
   /*
   基础数据
    */
+  def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
+    val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
+    val baseData = baseDataRaw
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  media,
+         |  date,
+         |  hour,
+         |  hour_diff,
+         |  sum(click) as click,
+         |  sum(cv) as cv,
+         |  sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr
+         |FROM
+         |  base_data
+         |GROUP BY unitid, conversion_goal, media, date, hour, hour_diff
+         |""".stripMargin
+    println(sqlRequest)
+    val data  = spark.sql(sqlRequest)
+      .select("unitid", "conversion_goal", "media", "click", "cv", "pre_cvr", "date", "hour", "hour_diff")
+
+    data
+  }
+
   def OcpcCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     /*
     动态计算alpha平滑系数
@@ -101,7 +133,7 @@ object OcpcGetPb_v1_part2{
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
-      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour")))
+      .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
@@ -109,13 +141,17 @@ object OcpcGetPb_v1_part2{
     resultDF
   }
 
-  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String) => {
+  def udfCalculateHourDiff(date: String, hour: String) = udf((date1: String, hour1: String, conversionGoal: Int) => {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
 
     val nowTime = dateConverter.parse(date + " " + hour)
     val ocpcTime = dateConverter.parse(date1 + " " + hour1)
-    val hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+    var hourDiff = (nowTime.getTime() - ocpcTime.getTime()) / (1000 * 60 * 60)
+
+    if (conversionGoal == 2 || conversionGoal == 5) {
+      hourDiff = hourDiff - 3
+    }
 
     hourDiff
   })
@@ -196,9 +232,7 @@ object OcpcGetPb_v1_part2{
          |    sum(click) as click,
          |    sum(cv) as cv,
          |    sum(pre_cvr * click) * 1.0 / sum(click) as pre_cvr,
-         |    sum(cv) * 1.0 / sum(click) as post_cvr,
-         |    sum(acb * click) * 1.0 / sum(click) as acb,
-         |    sum(acp * click) * 1.0 / sum(click) as acp
+         |    sum(cv) * 1.0 / sum(click) as post_cvr
          |FROM
          |    raw_data
          |WHERE
@@ -244,6 +278,7 @@ object OcpcGetPb_v1_part2{
     val unitUserInfoRaw = getConversionGoalNew(spark)
     val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
     unitUserInfo.show(10)
+
 
     val dataRaw1 = getDataByHourDiff(dataRaw, 0, 6, spark)
     val data1 = dataRaw1
