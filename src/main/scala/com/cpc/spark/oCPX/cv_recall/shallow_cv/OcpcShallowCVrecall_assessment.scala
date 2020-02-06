@@ -152,6 +152,9 @@ object OcpcShallowCVrecall_assessment {
 
     baseData.createOrReplaceTempView("base_data")
 
+    baseData
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206b")
+
     val sqlRequest3 =
       s"""
          |SELECT
