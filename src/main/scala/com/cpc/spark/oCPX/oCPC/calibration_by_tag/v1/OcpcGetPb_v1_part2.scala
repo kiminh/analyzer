@@ -64,13 +64,15 @@ object OcpcGetPb_v1_part2{
       .withColumn("date", lit(date1))
       .withColumn("hour", lit(hour1))
       .withColumn("version", lit(version))
+      .withColumn("exp_tag", concat_ws("-", col("exp_tag"), col("conversion_goal")))
       .select("unitid", "conversion_goal", "jfb_factor", "post_cvr", "smooth_factor", "cvr_factor", "high_bid_factor", "low_bid_factor", "cpagiven", "date", "hour", "exp_tag", "is_hidden", "version")
 
 
     resultDF
       .repartition(1)
-//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_pb_data_hourly_exp20200206b")
+//      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -96,6 +98,7 @@ object OcpcGetPb_v1_part2{
   def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
     val baseData = baseDataRaw
+      .filter(s"conversion_goal not in (2, 5)")
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
 
     baseData.createOrReplaceTempView("base_data")
@@ -131,6 +134,7 @@ object OcpcGetPb_v1_part2{
      */
     val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
+      .filter(s"conversion_goal not in (2, 5)")
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))

@@ -67,8 +67,9 @@ object OcpcGetPb_v1_part1 {
 
     resultDF
       .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_pb_data_hourly_exp20200206a")
 //      .write.mode("overwrite").insertInto("test.ocpc_pb_data_hourly_exp")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_data_hourly_exp")
 
 
   }
@@ -97,10 +98,11 @@ object OcpcGetPb_v1_part1 {
     1. 基于原始pcoc，计算预测cvr的量纲系数
     2. 二分搜索查找到合适的平滑系数
      */
-    val baseDataRaw = getBaseDataDelay(hourInt, date, hour, spark)
+    val baseDataRaw = getBaseData(hourInt, date, hour, spark)
     val baseData = baseDataRaw
       .withColumn("bid", udfCalculateBidWithHiddenTax()(col("date"), col("bid"), col("hidden_tax")))
       .withColumn("price", udfCalculatePriceWithHiddenTax()(col("price"), col("hidden_tax")))
+      .filter(s"conversion_goal in (2, 5)")
 
     // 计算结果
     val resultDF = calculateParameter(baseData, spark)
