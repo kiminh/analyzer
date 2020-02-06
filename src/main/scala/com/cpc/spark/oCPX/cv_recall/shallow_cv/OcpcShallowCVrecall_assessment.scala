@@ -13,7 +13,6 @@ object OcpcShallowCVrecall_assessment {
     // 计算日期周期
     val date = args(0).toString
     val hourInt = args(1).toInt
-    val dbName = args(2).toString
     println("parameters:")
     println(s"date=$date")
 
