@@ -171,15 +171,16 @@ object OcpcShallowCVrecall_assessmentV2 {
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("pred_cv", col("cv") * col("recall_value"))
 
-    val result = joinData
-      .groupBy("unitid", "userid", "conversion_goal")
-      .agg(
-        sum(col("pred_cv")).alias("pred_cv")
-      )
-      .select("unitid", "userid", "conversion_goal", "pred_cv")
-      .withColumn("start_hour", lit(startHour))
-
-    result
+    joinData
+//    val result = joinData
+//      .groupBy("unitid", "userid", "conversion_goal")
+//      .agg(
+//        sum(col("pred_cv")).alias("pred_cv")
+//      )
+//      .select("unitid", "userid", "conversion_goal", "pred_cv")
+//      .withColumn("start_hour", lit(startHour))
+//
+//    result
   }
 
   def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
