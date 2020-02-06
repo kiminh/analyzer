@@ -22,7 +22,7 @@ object OcpcShallowCVrecall_assessmentV2 {
     val data = cvRecallAssessment(date, hourInt, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200206a")
+      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200206b")
 
 
   }
@@ -42,24 +42,18 @@ object OcpcShallowCVrecall_assessmentV2 {
     // 预召回
     val recallValue1 = cvRecallPredictV1(date, spark)
     val recallValue2 = cvRecallPredictV2(date, spark)
-    val predCvData = predictCvValue(cvData, 1, hourInt, recallValue1, recallValue2, spark)
+    var predCvData = predictCvValue(cvData, 1, hourInt, recallValue1, recallValue2, spark)
 
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
-    val recallValue = recallValueRaw
-      .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
+    for (startHour <- 2 to 24) {
+      println(s"########  startHour = $startHour  #######")
+      val singleData = predictCvValue(cvData, startHour, hourInt, recallValue1, recallValue2, spark)
+      predCvData = predCvData.union(singleData)
+    }
 
     val result = realCvData
-        .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
-        .na.fill(1.0, Seq("recall_value"))
-        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "recall_value", "start_hour")
-        .withColumn("pred_cv", col("cv") * col("recall_value"))
+        .join(predCvData, Seq("unitid", "userid", "conversion_goal", "start_hour"), "inner")
+        .select("unitid", "userid", "conversion_goal", "total_cv", "cost", "cv", "pred_cv", "start_hour")
+        .withColumn("recall_value", col("pred_cv") * 1.0 / col("cv"))
 
     result
   }
@@ -104,6 +98,9 @@ object OcpcShallowCVrecall_assessmentV2 {
       .withColumn("recall_value1", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value1 is not null")
       .select("conversion_goal", "date", "hour_diff", "recall_value1")
+      .cache()
+
+    data.show(10)
 
     data
   }
@@ -151,6 +148,8 @@ object OcpcShallowCVrecall_assessmentV2 {
       .select("conversion_goal", "userid", "date", "hour_diff", "recall_value2")
       .cache()
 
+    data.show(10)
+
     data
   }
 
@@ -171,7 +170,16 @@ object OcpcShallowCVrecall_assessmentV2 {
       .join(recallValue2, Seq("userid", "conversion_goal", "date", "hour_diff"), "left_outer")
       .withColumn("recall_value", when(col("recall_value2").isNull, col("recall_value1")).otherwise(col("recall_value2")))
       .withColumn("pred_cv", col("cv") * col("recall_value"))
-    joinData
+
+    val result = joinData
+      .groupBy("unitid", "userid", "conversion_goal")
+      .agg(
+        sum(col("pred_cv")).alias("pred_cv")
+      )
+      .select("unitid", "userid", "conversion_goal", "pred_cv")
+      .withColumn("start_hour", lit(startHour))
+
+    result
   }
 
   def calculateCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, spark: SparkSession) = {
