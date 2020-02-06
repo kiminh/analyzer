@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.light_control.suggest_cpa.OcpcLightBulb.{getRecommendationAd, getUnitData}
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_assessment.calculateCV
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -22,18 +22,10 @@ object OcpcUnitTest {
     println(s"date=$date, hour=$hour")
 
 
-    // 抽取推荐cpa数据和白名单单元
-    val suggestUnits = getRecommendationAd(version, date, hour, spark)
+    val cvData = calculateCV(date, 6, spark)
 
-    // 检查线上的媒体id进行校验
-    val units = getUnitData(spark)
-
-
-    suggestUnits
-      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205a")
-
-    units
-      .write.mode("overwrite").saveAsTable("test.check_deep_ocpc_data20200205b")
+    cvData
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206a")
 
 
 
