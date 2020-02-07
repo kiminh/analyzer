@@ -42,10 +42,6 @@ object OcpcChargeSchedule {
     // 更新赔付周期表
     val result = updateSchedule(data, date, dayCnt, spark)
 
-//    result
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20191216a")
-
     val resultDF = result
       .select("unitid", "calc_dates", "date_diff", "pay_cnt", "current_ocpc_charge_time", "current_deep_ocpc_charge_time", "ocpc_charge_time", "deep_ocpc_charge_time", "is_pay_flag", "is_deep_pay_flag", "recent_charge_time")
       .withColumn("date", lit(date))
@@ -53,8 +49,9 @@ object OcpcChargeSchedule {
 
     resultDF
       .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20200207a")
 //      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
 
   }
 
