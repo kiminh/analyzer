@@ -85,4 +85,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (pure_deep_exp_cvr int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (deep_ocpc_step int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (bid_ocpc int);
-alter table test.ocpc_base_unionlog add columns (is_antou_deep_ocpc int);
+alter table dl_cpc.ocpc_base_unionlog add columns (is_antou_deep_ocpc int);
