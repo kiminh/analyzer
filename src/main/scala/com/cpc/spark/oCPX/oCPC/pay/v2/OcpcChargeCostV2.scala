@@ -58,8 +58,9 @@ object OcpcChargeCostV2 {
 
     resultDF
       .repartition(1)
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_result_daily20200207a")
 //      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
 
