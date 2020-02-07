@@ -61,8 +61,7 @@ object OcpcChargeCostV2 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_result_daily20200207d")
-//      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
+      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
   }
@@ -301,7 +300,7 @@ object OcpcChargeCostV2 {
     val clickDataRaw = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
-      .filter(s"deep_ocpc_step = 2")
+      .filter(s"deep_ocpc_step = 2 and is_antou_deep_ocpc != 1")
 
     val cpaCheckPriority = getCPAcheckPriority(spark)
     val clickData = clickDataRaw
