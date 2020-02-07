@@ -287,6 +287,7 @@ object OcpcChargeCostV2 {
          |  cast(deep_cpa as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
          |  is_deep_ocpc,
+         |  (case when is_antou_deep_ocpc is null then 0 else is_antou_deep_ocpc end) as is_antou_deep_ocpc,
          |  date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -295,13 +296,12 @@ object OcpcChargeCostV2 {
          |AND is_deep_ocpc = 1
          |AND isshow = 1
          |AND conversion_goal > 0
-         |AND is_antou_deep_ocpc != 1
          |""".stripMargin
     println(sqlRequest1)
     val clickDataRaw = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
-      .filter(s"deep_ocpc_step = 2")
+      .filter(s"deep_ocpc_step = 2 and is_antou_deep_ocpc != 1")
 
     val cpaCheckPriority = getCPAcheckPriority(spark)
     val clickData = clickDataRaw
