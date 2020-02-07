@@ -61,7 +61,7 @@ object OcpcChargeCostV2 {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_result_daily20200207b")
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_result_daily20200207c")
 //      .write.mode("overwrite").insertInto("test.ocpc_compensate_result_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_result_daily")
 
@@ -295,6 +295,7 @@ object OcpcChargeCostV2 {
          |AND is_deep_ocpc = 1
          |AND isshow = 1
          |AND conversion_goal > 0
+         |AND is_antou_deep_ocpc != 1
          |""".stripMargin
     println(sqlRequest1)
     val clickDataRaw = spark
