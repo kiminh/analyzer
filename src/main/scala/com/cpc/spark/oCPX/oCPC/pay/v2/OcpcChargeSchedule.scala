@@ -49,7 +49,7 @@ object OcpcChargeSchedule {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20200207a")
+      .write.mode("overwrite").saveAsTable("test.ocpc_compensate_schedule_daily20200207b")
 //      .write.mode("overwrite").insertInto("test.ocpc_compensate_schedule_daily")
 //      .write.mode("overwrite").insertInto("dl_cpc.ocpc_compensate_schedule_daily")
 
@@ -376,6 +376,8 @@ object OcpcChargeSchedule {
          |  date = '$date'
          |AND
          |  deep_ocpc_step = 2
+         |AND
+         |  is_antou_deep_ocpc != 1
          |""".stripMargin
     println(sqlRequest2)
     val data2 = spark
