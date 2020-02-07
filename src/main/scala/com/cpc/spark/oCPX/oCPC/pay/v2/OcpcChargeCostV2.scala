@@ -25,7 +25,10 @@ object OcpcChargeCostV2 {
     val date = args(0).toString
     val version = args(1).toString
     val dayCnt = args(2).toInt
-    val envSuffix = args(3).toString
+    var envSuffix = ""
+    if (args.size == 4) {
+      envSuffix = args(3).toString
+    }
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, dayCnt, spark)
