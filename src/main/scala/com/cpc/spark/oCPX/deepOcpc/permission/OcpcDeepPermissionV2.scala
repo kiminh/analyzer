@@ -52,7 +52,9 @@ object OcpcDeepPermissionV2 {
     val payData = getPermissionData(date, hour, 72, 3, spark)
 
     // get unit info
-    val unitInfo = getUnitInfo(spark)
+    val unitInfo1 = getUnitInfo(spark)
+    val unitInfo2 = getUnitInfo2(spark)
+    val unitInfo = unitInfo1.union(unitInfo2).distinct()
 
     /*
     1.union数据
@@ -208,6 +210,32 @@ object OcpcDeepPermissionV2 {
     val passwd = conf.getString("adv_read_mysql.new_deploy.password")
     val driver = conf.getString("adv_read_mysql.new_deploy.driver")
     val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority, deep_ocpc_status FROM unit_ocpc where is_deep_ocpc = 1) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .selectExpr("cast(unitid as string) identifier",  "cast(deep_conversion_goal as int) deep_conversion_goal", "cast(cpa_check_priority as int) cpa_check_priority", "cast(deep_ocpc_status as int) deep_ocpc_status")
+      .distinct()
+      .cache()
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getUnitInfo2(spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val url = conf.getString("adv_read_mysql.new_deploy.url")
+    val user = conf.getString("adv_read_mysql.new_deploy.user")
+    val passwd = conf.getString("adv_read_mysql.new_deploy.password")
+    val driver = conf.getString("adv_read_mysql.new_deploy.driver")
+    val table = "(SELECT unit_id as unitid, deep_conversion_goal, cpa_check_priority, deep_ocpc_status FROM unit_ocpc_dark_throw where is_deep_ocpc = 1) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)

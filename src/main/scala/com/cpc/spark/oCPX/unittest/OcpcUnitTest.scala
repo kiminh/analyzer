@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.oCPC.calibration_by_tag.v1.OcpcGetPb_v1.getData
+import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepPermissionV2.{getUnitInfo, getUnitInfo2}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, lit}
@@ -23,10 +23,18 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val data = getData(date, hour, version, expTag, spark)
+    val unitInfo1 = getUnitInfo(spark)
+    val unitInfo2 = getUnitInfo2(spark)
+    val unitInfo = unitInfo1.union(unitInfo2).distinct()
 
-    data
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200206d")
+    unitInfo1
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210a")
+
+    unitInfo2
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210b")
+
+    unitInfo
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210c")
 
 
 
