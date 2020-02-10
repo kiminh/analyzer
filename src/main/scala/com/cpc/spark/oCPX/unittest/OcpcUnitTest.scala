@@ -23,16 +23,15 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val unitInfo1 = getUnitInfo(spark)
-    val unitInfo2 = getUnitInfo2(spark)
-    val unitInfo = unitInfo1.union(unitInfo2).distinct()
-
+    val unitInfo1 = getUnitInfo(spark).cache()
     unitInfo1
       .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210a")
 
+    val unitInfo2 = getUnitInfo2(spark).cache()
     unitInfo2
       .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210b")
 
+    val unitInfo = unitInfo1.union(unitInfo2).distinct()
     unitInfo
       .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210c")
 
