@@ -34,7 +34,7 @@ object OcpcCalibration_assessment {
 
     val data = pcocData
       .join(caliData, Seq("unitid", "conversion_goal", "hour_diff"), "inner")
-      .select("unitid", "userid", "conversion_goal", "hour_diff", "date", "hour", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
+      .select("unitid", "userid", "conversion_goal", "hour_diff", "date", "hour", "cali_date", "cali_hour", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
       .withColumn("cali_pcoc", col("pcoc") * col("cali_value"))
 
     data
@@ -77,7 +77,9 @@ object OcpcCalibration_assessment {
     val data = spark
       .sql(sqlRequest)
       .withColumn("hour_diff", udfCalculateHourDiff(date1, hour1)(col("date"), col("hour")))
-      .select("unitid", "conversion_goal", "exp_tag", "cali_value", "hour_diff")
+      .withColumn("cali_date", col("date"))
+      .withColumn("cali_hour", col("hour"))
+      .select("unitid", "conversion_goal", "exp_tag", "cali_value", "hour_diff", "cali_date", "cali_hour")
       .distinct()
 
     data
