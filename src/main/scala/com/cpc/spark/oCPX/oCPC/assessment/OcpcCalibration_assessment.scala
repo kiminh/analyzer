@@ -32,6 +32,9 @@ object OcpcCalibration_assessment {
     val pcocData = getPcoc(date, hour, hourInt, "qtt", spark)
     val caliData = getCalibrationValue(date, hour, 4, hourInt, "Qtt", spark)
 
+    pcocData
+      .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment20200207b")
+    
     val data = pcocData
       .join(caliData, Seq("unitid", "conversion_goal", "hour_diff"), "inner")
       .select("unitid", "userid", "conversion_goal", "hour_diff", "date", "hour", "cali_date", "cali_hour", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
