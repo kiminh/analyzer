@@ -34,7 +34,7 @@ object OcpcCalibration_assessment {
 
     pcocData
       .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment20200207b")
-    
+
     val data = pcocData
       .join(caliData, Seq("unitid", "conversion_goal", "hour_diff"), "inner")
       .select("unitid", "userid", "conversion_goal", "hour_diff", "date", "hour", "cali_date", "cali_hour", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
@@ -140,7 +140,7 @@ object OcpcCalibration_assessment {
          |FROM
          |    dl_cpc.ocpc_cvr_log_hourly
          |WHERE
-         |    date >= '$date1'
+         |    $selectCondition
          |""".stripMargin
     println(sqlRequest2)
     val cvData = spark
