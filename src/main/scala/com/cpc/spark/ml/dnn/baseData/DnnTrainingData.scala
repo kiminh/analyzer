@@ -22,7 +22,7 @@ import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecode
   *
   */
 
-object FeatureMonitor {
+object DnnTrainingData {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   def generateSql(model_name: String, curday: String, sample_path: String, pt: String): String = {
