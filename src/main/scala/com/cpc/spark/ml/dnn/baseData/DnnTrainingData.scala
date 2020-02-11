@@ -73,7 +73,7 @@ object DnnTrainingData {
 
     spark.sql(
       s"""
-         |insert into dl_cpc.cpc_training_data partition(day="$oneday", model_name="$model_name")
+         |insert overwrite table dl_cpc.cpc_training_data partition(day="$oneday", model_name="$model_name")
          |select dense[$tuid], dense[$userid], dense[$adclass], dense[$planid], dense[$unitid], dense[$ideaid] from training_data
          |""".stripMargin)
   }
