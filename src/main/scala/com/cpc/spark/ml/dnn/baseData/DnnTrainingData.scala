@@ -47,7 +47,7 @@ object DnnTrainingData {
     val model_name = args(6)
     val sample_path = args(7)
     val curday = args(8)
-    val pt = args(8)
+    val pt = args(9)
 
     val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
