@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlogExp {
+object OcpcUnionlogExpEdit {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -18,8 +18,8 @@ object OcpcUnionlogExp {
 
     data
       .repartition(100)
-//      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_exp")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -27,8 +27,8 @@ object OcpcUnionlogExp {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-//      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_exp")
+      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_exp")
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_exp")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -140,10 +140,10 @@ object OcpcUnionlogExp {
          |    searchid,
          |    timestamp,
          |    network,
-         |    concat_ws(',', exptags) as exptags,
+         |    exptags,
          |    media_type,
          |    media_appsid,
-         |    adslot_id as adslotid,
+         |    adslotid,
          |    adslot_type,
          |    adtype,
          |    adsrc,
@@ -163,17 +163,17 @@ object OcpcUnionlogExp {
          |    age,
          |    isshow,
          |    isclick,
-         |    0 as duration,
+         |    duration,
          |    userid,
-         |    cast(is_ocpc as int) as is_ocpc,
-         |    (case when isclick=1 then ocpc_log else '' end) as ocpc_log,
+         |    is_ocpc,
+         |    ocpc_log,
          |    user_city,
          |    city_level,
          |    adclass,
-         |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
+         |    exp_ctr,
+         |    exp_cvr * 2.0 as exp_cvr,
          |    charge_type,
-         |    0 as antispam,
+         |    antispam,
          |    usertype,
          |    conversion_goal,
          |    conversion_from,
@@ -197,7 +197,7 @@ object OcpcUnionlogExp {
          |    second_cpm,
          |    final_cpm,
          |    ocpc_expand,
-         |    ext_string['exp_ids'] as expids,
+         |    expids,
          |    bsctr,
          |    raw_cvr,
          |    deep_cvr,
