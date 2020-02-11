@@ -48,7 +48,7 @@ object DnnTrainingData {
     val sample_path = args(7)
     val curday = args(8)
     val pt = args(9)
-    print(args)
+    println(args)
     val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
