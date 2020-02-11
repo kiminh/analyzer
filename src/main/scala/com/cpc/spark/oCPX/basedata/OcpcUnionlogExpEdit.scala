@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcUnionlogExpEdit {
+object OcpcUnionlogExpExp {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -18,8 +18,8 @@ object OcpcUnionlogExpEdit {
 
     data
       .repartition(100)
-      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_exp")
+      //      .write.mode("overwrite").insertInto("test.ocpc_base_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_exp")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
@@ -27,8 +27,8 @@ object OcpcUnionlogExpEdit {
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
       .repartition(50)
-      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog_exp")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_exp")
+      //      .write.mode("overwrite").insertInto("test.ocpc_filter_unionlog")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_exp")
 
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -36,9 +36,9 @@ object OcpcUnionlogExpEdit {
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // DONE 调整过滤条件：ocpc_Step
     val baseData = data
-        .filter(s"ocpc_step >= 2")
-        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-        .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
+      .filter(s"ocpc_step >= 2")
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .withColumn("deep_ocpc_log_dict", udfStringToMap()(col("deep_ocpc_log")))
 
     baseData.createOrReplaceTempView("base_data")
 
@@ -135,94 +135,94 @@ object OcpcUnionlogExpEdit {
     // 新版基础数据抽取逻辑
     // done 调整ocpc_log的存在逻辑
     var sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    timestamp,
-         |    network,
-         |    exptags,
-         |    media_type,
-         |    media_appsid,
-         |    adslotid,
-         |    adslot_type,
-         |    adtype,
-         |    adsrc,
-         |    interaction,
-         |    bid,
-         |    price,
-         |    ideaid,
-         |    unitid,
-         |    planid,
-         |    country,
-         |    province,
-         |    city,
-         |    uid,
-         |    ua,
-         |    os,
-         |    sex,
-         |    age,
-         |    isshow,
-         |    isclick,
-         |    duration,
-         |    userid,
-         |    is_ocpc,
-         |    ocpc_log,
-         |    user_city,
-         |    city_level,
-         |    adclass,
-         |    exp_ctr,
-         |    exp_cvr * 2.0 as exp_cvr,
-         |    charge_type,
-         |    antispam,
-         |    usertype,
-         |    conversion_goal,
-         |    conversion_from,
-         |    is_api_callback,
-         |    siteid,
-         |    cvr_model_name,
-         |    user_req_ad_num,
-         |    user_req_num,
-         |    is_new_ad,
-         |    is_auto_coin,
-         |    bid_discounted_by_ad_slot,
-         |    discount,
-         |    exp_cpm,
-         |    cvr_threshold,
-         |    dsp_cpm,
-         |    new_user_days,
-         |    ocpc_step,
-         |    previous_id,
-         |    ocpc_status,
-         |    bscvr,
-         |    second_cpm,
-         |    final_cpm,
-         |    ocpc_expand,
-         |    expids,
-         |    bsctr,
-         |    raw_cvr,
-         |    deep_cvr,
-         |    raw_deep_cvr,
-         |    deep_cvr_model_name,
-         |    deep_ocpc_log,
-         |    is_deep_ocpc,
-         |    deep_conversion_goal,
-         |    deep_cpa,
-         |    cpa_check_priority,
-         |    ocpc_expand_tag,
-         |    ori_cvr,
-         |    uid_mc_show0,
-         |    uid_mc_click0,
-         |    site_type,
-         |    tuid,
-         |    hidden_tax,
-         |    pure_deep_exp_cvr,
-         |    deep_ocpc_step,
-         |    bid_ocpc
-         |from dl_cpc.cpc_basedata_union_events
-         |where $selectWhere
-         |and (isshow>0 or isclick>0)
-         |and adslot_type != 7
-         |and length(searchid) > 0
+    s"""
+       |select
+       |    searchid,
+       |    timestamp,
+       |    network,
+       |    concat_ws(',', exptags) as exptags,
+       |    media_type,
+       |    media_appsid,
+       |    adslot_id as adslotid,
+       |    adslot_type,
+       |    adtype,
+       |    adsrc,
+       |    interaction,
+       |    bid,
+       |    price,
+       |    ideaid,
+       |    unitid,
+       |    planid,
+       |    country,
+       |    province,
+       |    city,
+       |    uid,
+       |    ua,
+       |    os,
+       |    sex,
+       |    age,
+       |    isshow,
+       |    isclick,
+       |    0 as duration,
+       |    userid,
+       |    cast(is_ocpc as int) as is_ocpc,
+       |    (case when isclick=1 then ocpc_log else '' end) as ocpc_log,
+       |    user_city,
+       |    city_level,
+       |    adclass,
+       |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
+       |    cast(exp_cvr * 2.0 / 1000000 as double) as exp_cvr,
+       |    charge_type,
+       |    0 as antispam,
+       |    usertype,
+       |    conversion_goal,
+       |    conversion_from,
+       |    is_api_callback,
+       |    siteid,
+       |    cvr_model_name,
+       |    user_req_ad_num,
+       |    user_req_num,
+       |    is_new_ad,
+       |    is_auto_coin,
+       |    bid_discounted_by_ad_slot,
+       |    discount,
+       |    exp_cpm,
+       |    cvr_threshold,
+       |    dsp_cpm,
+       |    new_user_days,
+       |    ocpc_step,
+       |    previous_id,
+       |    ocpc_status,
+       |    bscvr,
+       |    second_cpm,
+       |    final_cpm,
+       |    ocpc_expand,
+       |    ext_string['exp_ids'] as expids,
+       |    bsctr,
+       |    raw_cvr,
+       |    deep_cvr,
+       |    raw_deep_cvr,
+       |    deep_cvr_model_name,
+       |    deep_ocpc_log,
+       |    is_deep_ocpc,
+       |    deep_conversion_goal,
+       |    deep_cpa,
+       |    cpa_check_priority,
+       |    ocpc_expand_tag,
+       |    ori_cvr,
+       |    uid_mc_show0,
+       |    uid_mc_click0,
+       |    site_type,
+       |    tuid,
+       |    hidden_tax,
+       |    pure_deep_exp_cvr,
+       |    deep_ocpc_step,
+       |    bid_ocpc
+       |from dl_cpc.cpc_basedata_union_events
+       |where $selectWhere
+       |and (isshow>0 or isclick>0)
+       |and adslot_type != 7
+       |and length(searchid) > 0
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
