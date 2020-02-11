@@ -84,7 +84,7 @@ object OcpcShallowCVrecall_assessmentV3 {
       .filter(s"conversion_goal in (2, 5)")
       .groupBy("conversion_goal", "userid", "hour_diff")
       .agg(
-        avg(col("recall_ratio")).alias("recall_ratio")
+        avg(col("cv_ratio")).alias("recall_ratio")
       )
       .withColumn("recall_value", lit(1) * 1.0 / col("recall_ratio"))
       .filter(s"recall_value is not null")
