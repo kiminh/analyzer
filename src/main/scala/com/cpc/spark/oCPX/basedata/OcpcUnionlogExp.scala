@@ -171,7 +171,7 @@ object OcpcUnionlogExp {
          |    city_level,
          |    adclass,
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
+         |    cast(exp_cvr * 2.0 / 1000000 as double) as exp_cvr,
          |    charge_type,
          |    0 as antispam,
          |    usertype,
