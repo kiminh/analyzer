@@ -25,8 +25,8 @@ import org.tensorflow.spark.datasources.tfrecords.serde.DefaultTfRecordRowDecode
 object DnnTrainingData {
   Logger.getRootLogger.setLevel(Level.WARN)
 
-  def generateSql(model_name: String, curday: String, sample_path: String, pt: String): String = {
-    val sql = s"select example from dl_cpc.'$sample_path' where dt='$curday' and pt='$pt' and task='$model_name'"
+  def generateSql(model_name: String, curday: String, sample_path: String): String = {
+    val sql = s"select example from dl_cpc.'$sample_path' where dt='$curday' and task='$model_name'"
     sql
   }
 
@@ -38,17 +38,17 @@ object DnnTrainingData {
         """.stripMargin)
       System.exit(1)
     }
-    val tuid = args(0)
-    val userid = args(1)
-    val adclass = args(2)
-    val planid = args(3)
-    val unitid = args(4)
-    val ideaid = args(5)
+    val tuid = args(0).toInt
+    val userid = args(1).toInt
+    val adclass = args(2).toInt
+    val planid = args(3).toInt
+    val unitid = args(4).toInt
+    val ideaid = args(5).toInt
     val model_name = args(6)
     val sample_path = args(7)
     val curday = args(8)
     val pt = args(9)
-
+    print(args)
     val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
@@ -59,7 +59,7 @@ object DnnTrainingData {
     if (sample_path.startsWith("hdfs://")) {
       importedDf = spark.read.format("tfrecords").option("recordType", "Example").load(sample_path).repartition(3000)
     } else {
-      val rdd = spark.sql(generateSql(model_name, oneday, sample_path, pt))
+      val rdd = spark.sql(generateSql(model_name, oneday, sample_path))
         .rdd.map(x => Base64.decodeBase64(x.getString(0)))
         .filter(_ != null)
       val exampleRdd = rdd.map(x => Example.parseFrom(new BytesWritable(x).getBytes))
