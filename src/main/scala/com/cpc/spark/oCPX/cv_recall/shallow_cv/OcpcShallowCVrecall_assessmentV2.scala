@@ -22,7 +22,7 @@ object OcpcShallowCVrecall_assessmentV2 {
     val data = cvRecallAssessment(date, hourInt, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200206b")
+      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200211b")
 
 
   }
