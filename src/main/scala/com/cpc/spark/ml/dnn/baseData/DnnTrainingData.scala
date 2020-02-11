@@ -26,7 +26,7 @@ object DnnTrainingData {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   def generateSql(model_name: String, curday: String, sample_path: String, pt: String): String = {
-    val sql = s"select example from '$sample_path' where dt='$curday' and pt='$pt' and task='$model_name'"
+    val sql = s"select example from dl_cpc.'$sample_path' where dt='$curday' and pt='$pt' and task='$model_name'"
     sql
   }
 
