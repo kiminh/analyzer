@@ -1,7 +1,7 @@
 package com.cpc.spark.oCPX.unittest
 
 
-import com.cpc.spark.oCPX.deepOcpc.permission.OcpcDeepPermissionV2.{getUnitInfo, getUnitInfo2}
+import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_assessmentV3.cvRecallPredict
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, lit}
@@ -23,17 +23,10 @@ object OcpcUnitTest {
     println("parameters:")
     println(s"date=$date, hour=$hour")
 
-    val unitInfo1 = getUnitInfo(spark)
-    unitInfo1
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210a")
 
-    val unitInfo2 = getUnitInfo2(spark)
-    unitInfo2
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210b")
-
-    val unitInfo = unitInfo1.union(unitInfo2).distinct()
-    unitInfo
-      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200210c")
+    val recallValue = cvRecallPredict(date, spark)
+    recallValue
+      .write.mode("overwrite").saveAsTable("test.check_shallow_ocpc_data20200211a")
 
 
 
