@@ -23,7 +23,7 @@ object OcpcCalibration_assessment {
     val data = pcocCalibrationAssessment(date, hour, hourInt, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment2020121a")
+      .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment20200207a")
 
 
   }
@@ -32,9 +32,12 @@ object OcpcCalibration_assessment {
     val pcocData = getPcoc(date, hour, hourInt, "qtt", spark)
     val caliData = getCalibrationValue(date, hour, 4, hourInt, "Qtt", spark)
 
+    pcocData
+      .write.mode("overwrite").saveAsTable("test.ocpc_shallow_calibration_assessment20200207b")
+
     val data = pcocData
       .join(caliData, Seq("unitid", "conversion_goal", "hour_diff"), "inner")
-      .select("unitid", "userid", "conversion_goal", "hour_diff", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
+      .select("unitid", "userid", "conversion_goal", "hour_diff", "date", "hour", "cali_date", "cali_hour", "pre_cvr", "post_cvr", "pcoc", "cost", "cv", "cali_value", "exp_tag")
       .withColumn("cali_pcoc", col("pcoc") * col("cali_value"))
 
     data
@@ -77,6 +80,9 @@ object OcpcCalibration_assessment {
     val data = spark
       .sql(sqlRequest)
       .withColumn("hour_diff", udfCalculateHourDiff(date1, hour1)(col("date"), col("hour")))
+      .withColumn("cali_date", col("date"))
+      .withColumn("cali_hour", col("hour"))
+      .select("unitid", "conversion_goal", "exp_tag", "cali_value", "hour_diff", "cali_date", "cali_hour")
       .distinct()
 
     data
@@ -134,7 +140,7 @@ object OcpcCalibration_assessment {
          |FROM
          |    dl_cpc.ocpc_cvr_log_hourly
          |WHERE
-         |    date >= '$date1'
+         |    $selectCondition
          |""".stripMargin
     println(sqlRequest2)
     val cvData = spark

@@ -72,10 +72,11 @@ object OcpcRetentionFactor {
          |  array_contains(conversion_target, 'api_app_active')
          |""".stripMargin
     println(sqlRequest1)
-    val data1 = spark
+    val dataRaw1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
       .distinct()
+
+    val data1 = mapMediaName(dataRaw1, spark)
 
     // 次留数据
     val sqlRequest2 =

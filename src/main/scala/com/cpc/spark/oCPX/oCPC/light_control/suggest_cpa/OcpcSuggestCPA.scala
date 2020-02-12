@@ -420,6 +420,8 @@ object OcpcSuggestCPA {
     // 数据关联
     val data = ctrData
       .join(cvrData, Seq("searchid", "cvr_goal"), "left_outer")
+      .na.fill(0, Seq("iscvr"))
+      .withColumn("iscvr", when(col("isclick") === 1, col("iscvr")).otherwise(0))
     data
   }
 

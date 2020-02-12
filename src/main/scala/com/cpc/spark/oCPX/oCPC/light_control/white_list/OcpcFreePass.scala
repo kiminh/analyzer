@@ -65,9 +65,6 @@ object OcpcFreePass {
         .withColumn("flag_old", col("flag"))
         .withColumn("flag", when(col("is_open") === 1, 1).otherwise(col("flag")))
 
-//    joinData
-//        .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191216b")
-
     joinData
       .select("unitid", "userid", "media", "conversion_goal", "ocpc_status", "adclass", "industry", "cost_flag", "time_flag", "flag_ratio", "random_value", "user_black_flag", "user_cost_flag", "unit_white_flag", "flag")
       .withColumn("date", lit(date))
@@ -204,11 +201,7 @@ object OcpcFreePass {
          |SELECT
          |  userid,
          |  conversion_goal,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |      else 'novel'
-         |  end) as media,
+         |  media_appsid,
          |  sum(case when isclick=1 then price else 0 end) * 0.01 as cost
          |FROM
          |  dl_cpc.ocpc_base_unionlog
@@ -223,20 +216,23 @@ object OcpcFreePass {
          |GROUP BY
          |  userid,
          |  conversion_goal,
-         |  (case
-         |      when media_appsid in ('80000001', '80000002') then 'qtt'
-         |      when media_appsid in ('80002819', '80004944', '80004948', '80004953') then 'hottopic'
-         |      else 'novel'
-         |  end)
+         |  media_appsid
        """.stripMargin
     println(sqlRequest1)
-    val userCost = spark
-      .sql(sqlRequest1)
+    val userCostRaw = spark.sql(sqlRequest1)
+
+    val userCost = mapMediaName(userCostRaw, spark)
+
+    val data = userCost
+      .groupBy("userid", "conversion_goal", "media")
+      .agg(
+        sum(col("cost")).alias("cost")
+      )
       .withColumn("user_cost_flag", when(col("cost") >= 1000.0, lit(1)).otherwise(0))
       .select("userid", "conversion_goal", "media", "cost", "user_cost_flag")
       .distinct()
 
-    userCost
+    data
   }
 
   def getBlackList(spark: SparkSession) = {
@@ -363,10 +359,13 @@ object OcpcFreePass {
          |lateral view explode(split(target_medias, ',')) b as a
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark
+    val resultDFraw = spark
       .sql(sqlRequest)
-      .na.fill("", Seq("media_appsid"))
-      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
+
+    val resultDFfinal = mapMediaName(resultDFraw, spark)
+
+    val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media", "time_flag", "create_time", "deadline")
       .distinct()
@@ -376,26 +375,26 @@ object OcpcFreePass {
     resultDF
   }
 
-  def udfDetermineMediaNew() = udf((mediaId: String) => {
-    var result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "80004953" => "hottopic"
-      case "" => "qtt"
-      case "80001098" => "novel"
-      case "80001292" => "novel"
-      case "80001539" => "novel"
-      case "80002480" => "novel"
-      case "80001011" => "novel"
-      case "80004786" => "novel"
-      case "80004787" => "novel"
-      case _ => "others"
-    }
-    result
-  })
+//  def udfDetermineMediaNew() = udf((mediaId: String) => {
+//    var result = mediaId match {
+//      case "80000001" => "qtt"
+//      case "80000002" => "qtt"
+//      case "80002819" => "hottopic"
+//      case "80004944" => "hottopic"
+//      case "80004948" => "hottopic"
+//      case "80004953" => "hottopic"
+//      case "" => "qtt"
+//      case "80001098" => "novel"
+//      case "80001292" => "novel"
+//      case "80001539" => "novel"
+//      case "80002480" => "novel"
+//      case "80001011" => "novel"
+//      case "80004786" => "novel"
+//      case "80004787" => "novel"
+//      case _ => "others"
+//    }
+//    result
+//  })
 
 
 

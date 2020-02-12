@@ -3,6 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
@@ -57,11 +58,7 @@ object DeepOcpcTools {
   })
 
   def getDeepData(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
+    // todo
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
@@ -107,8 +104,6 @@ object DeepOcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
@@ -122,9 +117,9 @@ object DeepOcpcTools {
          |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val clickDataRaw = spark.sql(sqlRequest)
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -151,11 +146,7 @@ object DeepOcpcTools {
   }
 
   def getDeepDataDelay(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
-    // 抽取媒体id
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.total.media_selection"
-    val mediaSelection = conf.getString(conf_key)
-
+    // todo
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -202,8 +193,6 @@ object DeepOcpcTools {
          |WHERE
          |  $selectCondition
          |AND
-         |  $mediaSelection
-         |AND
          |  is_ocpc = 1
          |AND
          |  isclick = 1
@@ -217,9 +206,9 @@ object DeepOcpcTools {
          |  deep_cvr is not null
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val clickDataRaw = spark.sql(sqlRequest)
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -255,23 +244,24 @@ object DeepOcpcTools {
     result
   })
 
-  def udfDetermineMedia() = udf((mediaId: String) => {
-    val result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "80004953" => "hottopic"
-      case "80001098" => "novel"
-      case "80001292" => "novel"
-      case "80001539" => "novel"
-      case "80002480" => "novel"
-      case "80001011" => "novel"
-      case "80004786" => "novel"
-      case "80004787" => "novel"
-      case _ => "others"
-    }
-    result
-  })
+  // todo
+//  def udfDetermineMedia() = udf((mediaId: String) => {
+//    val result = mediaId match {
+//      case "80000001" => "qtt"
+//      case "80000002" => "qtt"
+//      case "80002819" => "hottopic"
+//      case "80004944" => "hottopic"
+//      case "80004948" => "hottopic"
+//      case "80004953" => "hottopic"
+//      case "80001098" => "novel"
+//      case "80001292" => "novel"
+//      case "80001539" => "novel"
+//      case "80002480" => "novel"
+//      case "80001011" => "novel"
+//      case "80004786" => "novel"
+//      case "80004787" => "novel"
+//      case _ => "others"
+//    }
+//    result
+//  })
 }

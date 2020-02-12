@@ -3,6 +3,7 @@ package com.cpc.spark.oCPX.oCPC.light_control.white_list
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
@@ -47,13 +48,6 @@ object OcpcWhiteList {
     val filterUnit = unit
       .join(filterUser, Seq("userid"), "inner")
 
-//    filterUser
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018a")
-//
-//    filterUnit
-//      .repartition(1)
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_white_units20191018b")
     filterUnit
       .select("unitid", "userid", "conversion_goal", "adclass", "ocpc_status", "media")
       .withColumn("ocpc_light", lit(1))
@@ -92,9 +86,6 @@ object OcpcWhiteList {
       .selectExpr("cast(userid as int) as userid", "adclass")
       .join(blackUserid, Seq("userid"), "left_outer")
       .na.fill(0, Seq("userid_black_flag"))
-
-//    result
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_exp_data20191126")
 
     val resultDF = result
       .filter(s"userid_black_flag = 0")
@@ -172,10 +163,13 @@ object OcpcWhiteList {
          |lateral view explode(split(target_medias, ',')) b as a
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark
+    val resultDFraw = spark
       .sql(sqlRequest)
-      .na.fill("", Seq("media_appsid"))
-      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+      .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
+
+    val resultDFfinal = mapMediaName(resultDFraw, spark)
+
+    val resultDF = resultDFfinal
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
       .filter(s"media in ('qtt', 'hottopic')")
       .distinct()
@@ -185,26 +179,26 @@ object OcpcWhiteList {
     resultDF
   }
 
-  def udfDetermineMediaNew() = udf((mediaId: String) => {
-    var result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "80004953" => "hottopic"
-      case "" => "qtt"
-      case "80001098" => "novel"
-      case "80001292" => "novel"
-      case "80001539" => "novel"
-      case "80002480" => "novel"
-      case "80001011" => "novel"
-      case "80004786" => "novel"
-      case "80004787" => "novel"
-      case _ => "others"
-    }
-    result
-  })
+//  def udfDetermineMediaNew() = udf((mediaId: String) => {
+//    var result = mediaId match {
+//      case "80000001" => "qtt"
+//      case "80000002" => "qtt"
+//      case "80002819" => "hottopic"
+//      case "80004944" => "hottopic"
+//      case "80004948" => "hottopic"
+//      case "80004953" => "hottopic"
+//      case "" => "qtt"
+//      case "80001098" => "novel"
+//      case "80001292" => "novel"
+//      case "80001539" => "novel"
+//      case "80002480" => "novel"
+//      case "80001011" => "novel"
+//      case "80004786" => "novel"
+//      case "80004787" => "novel"
+//      case _ => "others"
+//    }
+//    result
+//  })
 
 
 

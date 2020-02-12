@@ -3,7 +3,7 @@ package com.cpc.spark.oCPX.deepOcpc.calibration_v5.retention
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfDetermineMedia, udfMediaName, udfSetExpTag}
+import com.cpc.spark.oCPX.OcpcTools.{getTimeRangeSqlDate, mapMediaName, udfMediaName, udfSetExpTag}
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcRetentionFactor._
 //import com.cpc.spark.oCPX.deepOcpc.calibration_v2.OcpcShallowFactor._
 import com.typesafe.config.ConfigFactory
@@ -261,9 +261,7 @@ object OcpcDeepBase_shallowfactor {
          |  deep_conversion_goal = 2
        """.stripMargin
     println(sqlRequest)
-    val clickDataRaw = spark
-      .sql(sqlRequest)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+    val clickDataRaw = spark.sql(sqlRequest)
 
     val clickData = mapMediaName(clickDataRaw, spark)
 

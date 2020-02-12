@@ -9,6 +9,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
+@deprecated
 object OcpcPIDretrieveData{
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -81,13 +82,12 @@ object OcpcPIDretrieveData{
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .filter(s"pid_factor is not null")
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
-      .withColumn("identifier", concat_ws("&", col("adslot_type"), col("unitid")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -107,6 +107,8 @@ object OcpcPIDretrieveData{
 
     // 数据关联
     val resultDF = clickData
+      .withColumn("adslot_type", udfAdslotTypeMapAs()(col("adslot_type")))
+      .withColumn("identifier", concat_ws("&", col("adslot_type"), col("unitid")))
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 

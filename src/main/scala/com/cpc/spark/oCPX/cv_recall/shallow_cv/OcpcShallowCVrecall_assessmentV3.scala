@@ -4,11 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
-import com.cpc.spark.oCPX.cv_recall.shallow_cv.OcpcShallowCVrecall_predict.cvRecallPredict
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-object OcpcShallowCVrecall_assessment {
+object OcpcShallowCVrecall_assessmentV3 {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
@@ -22,7 +21,7 @@ object OcpcShallowCVrecall_assessment {
     val data = cvRecallAssessment(date, hourInt, spark)
 
     data
-      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200211a")
+      .write.mode("overwrite").saveAsTable("test.check_shallow_recall_cv_ocpc_data20200211c")
 
 
   }
@@ -30,30 +29,97 @@ object OcpcShallowCVrecall_assessment {
   def cvRecallAssessment(date: String, hourInt: Int, spark: SparkSession) = {
     val cvData = calculateCV(date, hourInt, spark)
 
-    var rawData = calculateCvValue(cvData, 1, hourInt, spark)
+    var realCvData = calculateCvValue(cvData, 1, hourInt, spark)
 
     for (startHour <- 2 to 24) {
         println(s"########  startHour = $startHour  #######")
       val singleData = calculateCvValue(cvData, startHour, hourInt, spark)
-      rawData = rawData.union(singleData)
+      realCvData = realCvData.union(singleData)
     }
 
+    // 预召回
+    val recallValue = cvRecallPredict(date, spark)
+    var predCvData = predictCvValue(cvData, 1, hourInt, recallValue, spark)
+
+    for (startHour <- 2 to 24) {
+      println(s"########  startHour = $startHour  #######")
+      val singleData = predictCvValue(cvData, startHour, hourInt, recallValue, spark)
+      predCvData = predCvData.union(singleData)
+    }
+
+    val result = realCvData
+        .join(predCvData, Seq("unitid", "userid", "conversion_goal", "start_hour"), "inner")
+        .select("unitid", "userid", "conversion_goal", "total_cv", "cv", "single_cv", "pred_cv", "start_hour")
+
+    result
+  }
+
+  def cvRecallPredict(date: String, spark: SparkSession) = {
+    /*
+    recall value by conversion_goal
+     */
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val recallValueRaw = cvRecallPredict(date1, hourInt, spark)
-    val recallValue = recallValueRaw
-      .selectExpr("cast(userid as int) userid", "conversion_goal", "recall_value")
 
-    val result = rawData
-        .join(recallValue, Seq("userid", "conversion_goal"), "left_outer")
-        .na.fill(1.0, Seq("recall_value"))
-        .select("unitid", "userid", "conversion_goal", "total_cv", "cv", "recall_value", "start_hour")
-        .withColumn("pred_cv", col("cv") * col("recall_value"))
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  cast(userid as int) as userid,
+         |  hour_diff,
+         |  cv_ratio
+         |FROM
+         |  test.ocpc_cvr_userid
+         |WHERE
+         |  cv_ratio is not null
+         |""".stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .filter(s"conversion_goal in (2, 5)")
+      .groupBy("conversion_goal", "userid", "hour_diff")
+      .agg(
+        avg(col("cv_ratio")).alias("recall_ratio")
+      )
+      .withColumn("recall_value", lit(1) * 1.0 / col("recall_ratio"))
+      .filter(s"recall_value is not null")
+      .select("conversion_goal", "userid", "hour_diff", "recall_value")
+      .cache()
+
+    data.show(10)
+
+    data
+  }
+
+  def predictCvValue(baseData: DataFrame, startHour: Int, hourInt: Int, recallValue: DataFrame, spark: SparkSession) = {
+    // todo
+    val endHour = startHour + hourInt
+    val data = baseData
+      .filter(s"click_hour_diff >= $startHour and click_hour_diff < $endHour")
+
+    val dataRaw = data
+      .filter(s"cv_hour_diff >= $startHour and cv_hour_diff < $endHour")
+      .withColumn("hour_diff", col("click_hour_diff") - lit(startHour))
+
+    val joinData = dataRaw
+      .join(recallValue, Seq("userid", "conversion_goal", "hour_diff"), "left_outer")
+      .na.fill(1.0, Seq("recall_value"))
+      .withColumn("pred_cv", col("cv") * col("recall_value"))
+
+    val result = joinData
+      .groupBy("unitid", "userid", "conversion_goal")
+      .agg(
+        sum(col("pred_cv")).alias("pred_cv"),
+        sum(col("cv")).alias("single_cv")
+      )
+      .withColumn("recall_value", col("pred_cv") * 1.0 / col("single_cv"))
+      .select("unitid", "userid", "conversion_goal", "pred_cv", "single_cv", "recall_value")
+      .withColumn("start_hour", lit(startHour))
 
     result
   }

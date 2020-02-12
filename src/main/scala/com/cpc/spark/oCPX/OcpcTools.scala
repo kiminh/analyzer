@@ -163,7 +163,7 @@ object OcpcTools {
       .withColumn("media_name", col("media"))
       .select("media_name", "media_appsid")
       .distinct()
-    mediaMap.show(10)
+    mediaMap.show(50)
 
     val data = dataRaw
       .join(mediaMap, Seq("media_appsid"), "left_outer")
@@ -343,7 +343,7 @@ object OcpcTools {
          |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
-    val cvData = spark.sql(sqlRequest2).distinct()
+    val cvData = spark.sql(sqlRequest2)
 
 
     // 数据关联
@@ -761,25 +761,26 @@ object OcpcTools {
     result
   })
 
-  def udfDetermineMedia() = udf((mediaId: String) => {
-    val result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "80004953" => "hottopic"
-      case "80001098" => "novel"
-      case "80001292" => "novel"
-      case "80001539" => "novel"
-      case "80002480" => "novel"
-      case "80001011" => "novel"
-      case "80004786" => "novel"
-      case "80004787" => "novel"
-      case _ => "others"
-    }
-    result
-  })
+//  // todo
+//  def udfDetermineMedia() = udf((mediaId: String) => {
+//    val result = mediaId match {
+//      case "80000001" => "qtt"
+//      case "80000002" => "qtt"
+//      case "80002819" => "hottopic"
+//      case "80004944" => "hottopic"
+//      case "80004948" => "hottopic"
+//      case "80004953" => "hottopic"
+//      case "80001098" => "novel"
+//      case "80001292" => "novel"
+//      case "80001539" => "novel"
+//      case "80002480" => "novel"
+//      case "80001011" => "novel"
+//      case "80004786" => "novel"
+//      case "80004787" => "novel"
+//      case _ => "others"
+//    }
+//    result
+//  })
 
   def udfDetermineIndustry() = udf((adslotType: Int, adclass: Int) => {
     val adclassString = adclass.toString

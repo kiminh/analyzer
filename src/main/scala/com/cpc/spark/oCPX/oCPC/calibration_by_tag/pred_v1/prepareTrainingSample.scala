@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.oCPX.OcpcTools.getTimeRangeSqlDate
-import com.cpc.spark.oCPX.oCPC.calibration_x.pcoc_prediction.v3.prepareLabel.prepareLabelMain
+import com.cpc.spark.oCPX.oCPC.calibration_by_tag.pred_v1.prepareLabel.prepareLabelMain
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}

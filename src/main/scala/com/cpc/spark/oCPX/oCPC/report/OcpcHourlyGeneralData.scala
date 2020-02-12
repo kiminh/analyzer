@@ -3,9 +3,8 @@ package com.cpc.spark.oCPX.oCPC.report
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{udfConcatStringInt, udfDetermineIndustry, udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.{mapMediaName, udfConcatStringInt, udfDetermineIndustry}
 import com.typesafe.config.ConfigFactory
-
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
@@ -232,9 +231,12 @@ object OcpcHourlyGeneralData {
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
-    val result = spark
+    val resultRaw1 = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val resultRaw2 = mapMediaName(resultRaw1, spark)
+
+    val result = resultRaw2
       .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
 
     result
@@ -270,11 +272,11 @@ object OcpcHourlyGeneralData {
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
 
     // 关联转化表
@@ -294,6 +296,7 @@ object OcpcHourlyGeneralData {
 
     // 数据关联
     val resultDF = clickData
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
