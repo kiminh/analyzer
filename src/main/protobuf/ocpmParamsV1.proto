@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// @author wangjun
+
+package ocpmParamsV1;
+message SingleItem {
+    string key = 1;
+    double ctrCaliValue = 2;
+}
+
+message ocpmParamsV1List {
+    repeated SingleItem records = 1;
+}
