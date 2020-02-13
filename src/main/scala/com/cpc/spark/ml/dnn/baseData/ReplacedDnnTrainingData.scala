@@ -42,7 +42,7 @@ object ReplacedDnnTrainingData {
     val sample_path = args(1)
     val curday = args(2)
     println(args)
-    val spark = SparkSession.builder().appName("feature monitor").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("embedding replace").enableHiveSupport().getOrCreate()
     import spark.implicits._
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
