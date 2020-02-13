@@ -14,6 +14,8 @@ object UidGroupV2 {
       val date = args(0)
       val label = args(1).toInt
 
+    println("label:",label)
+
           val spark = SparkSession.builder()
             .appName(s"midu_userprofile")
             .enableHiveSupport()
