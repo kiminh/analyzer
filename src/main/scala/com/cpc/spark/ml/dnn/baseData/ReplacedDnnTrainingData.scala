@@ -31,10 +31,10 @@ object ReplacedDnnTrainingData {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 10) {
+    if (args.length != 3) {
       System.err.println(
         """
-          |you have to input 10 parameters !!!
+          |you have to input 3 parameters !!!
         """.stripMargin)
       System.exit(1)
     }
