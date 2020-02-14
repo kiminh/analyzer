@@ -85,7 +85,7 @@ object ReplacedDnnTrainingData {
       s"""
          |select t1.idx2, t1.idx1, t1.id_arr, t1.idx0, t1.sample_idx, t1.label,
          |array(t1.dense[0],t1.dense[1],t1.dense[2],t1.dense[3],t1.dense[4],t1.dense[5],t1.dense[6],
-         |t1.dense[7],t1.dense[8],t1.dense[9],t1.dense[10],if(t2.ideaid is null,t2.newideaidhash, t1.dense[11]),
+         |t1.dense[7],t1.dense[8],t1.dense[9],t1.dense[10],t2.newideaidhash,
          |t1.dense[12],t1.dense[13],t1.dense[14],t1.dense[15],t1.dense[16],t1.dense[17],t1.dense[18],t1.dense[19],
          |t1.dense[20],t1.dense[21],t1.dense[22],t1.dense[23],t1.dense[24],t1.dense[25],t1.dense[26],t1.dense[27],
          |t1.dense[28],t1.dense[29],t1.dense[30],t1.dense[31],t1.dense[32],t1.dense[33],t1.dense[34],t1.dense[35],
