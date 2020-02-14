@@ -71,14 +71,23 @@ object ReplacedDnnTrainingData {
     advDBProp.put("password", "seJzIPUc7xU")
     advDBProp.put("driver", "com.mysql.jdbc.Driver")
 
-    val idea = s"""
-                  |(SELECT distinct id as ideaid, category FROM adv.`idea` where create_time<'$oneday' and id is not null) t """.stripMargin
-    val idea_id = spark.read.jdbc(advDBUrl, idea, advDBProp).select(hash("f11")($"ideaid").alias("ideaidhash"),
+    val new_idea = s"""
+                  |(select t1.ideaid, t1.category from
+                  |(SELECT distinct id as ideaid, category FROM adv.`idea` where id is not null and category) t1 left join
+                  |(SELECT distinct id as ideaid, category FROM adv.`idea` where create_time<'$oneday' and id is not null) t2
+                  |on t1.ideaid=t2.ideaid where t2.ideaid is null) t """.stripMargin
+    val idea_id = spark.read.jdbc(advDBUrl, new_idea, advDBProp).select(hash("f11")($"ideaid").alias("ideaidhash"),
       $"ideaid", hash("f11")($"category").alias("newideaidhash")).createOrReplaceTempView("idea_table")
+
+    val all_idea = s"""
+                      |(SELECT distinct id as ideaid, category FROM adv.`idea` where id is not null) t """.stripMargin
+
+    spark.read.jdbc(advDBUrl, all_idea, advDBProp).select(hash("f11")($"ideaid").alias("ideaidhash"),
+      $"ideaid", hash("f11")($"category").alias("newideaidhash")).createOrReplaceTempView("all_idea_table")
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.cpc_adclass_hashcode partition (day='$oneday')
-         |select ideaidhash, newideaidhash from idea_table
+         |select ideaidhash, newideaidhash from all_idea_table
          |""".stripMargin)
 
     val new_ideaid_data = spark.sql(
@@ -90,7 +99,7 @@ object ReplacedDnnTrainingData {
          |t1.dense[20],t1.dense[21],t1.dense[22],t1.dense[23],t1.dense[24],t1.dense[25],t1.dense[26],t1.dense[27],
          |t1.dense[28],t1.dense[29],t1.dense[30],t1.dense[31],t1.dense[32],t1.dense[33],t1.dense[34],t1.dense[35],
          |t1.dense[36],t1.dense[37],t1.dense[38],t1.dense[39],t1.dense[40],t1.dense[41],t1.dense[42]) as dense
-         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash where t2.ideaid is null
+         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash where t2.ideaid is not null
          |""".stripMargin)
 
     new_ideaid_data.repartition(1000).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
@@ -106,7 +115,7 @@ object ReplacedDnnTrainingData {
     val old_ideaid_data = spark.sql(
       s"""
          |select t1.idx2, t1.idx1, t1.id_arr, t1.idx0, t1.sample_idx, t1.label, t1.dense
-         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash where t2.ideaid is not null
+         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash where t2.ideaid is null
          |""".stripMargin)
 
     old_ideaid_data.repartition(1000).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense").write
