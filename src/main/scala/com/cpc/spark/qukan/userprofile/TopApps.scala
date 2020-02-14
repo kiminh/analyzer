@@ -1,6 +1,7 @@
 package com.cpc.spark.qukan.userprofile
 
 import com.cpc.spark.common.Utils.sendMail
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -10,31 +11,19 @@ object TopApps {
 
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 1) {
-      System.err.println(
-        s"""
-           |Usage: save user installed apps <date=string> <hour=string>
-           |
-        """.stripMargin
-      )
-      System.exit(1)
-    }
-
-    val date = args(0)
-
-    val spark = SparkSession
+    val date: String = args(0)
+    val spark: SparkSession = SparkSession
       .builder()
       .appName("save user installed apps " + date)
       .enableHiveSupport().getOrCreate()
 
     val inpath = "hdfs://emr-cluster/user/cpc/userInstalledApp/%s".format(date)
-    println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
     val pkgs = spark.read.parquet(inpath).rdd.cache()
 
     //1. 所有媒体活跃用户DAU大于2w 的app
-    val allApps = pkgs
+    val allApps: RDD[(String, Long)] = pkgs
       .map(x => (x.getString(0), x.getAs[Seq[String]]("app_name")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
@@ -53,7 +42,7 @@ object TopApps {
       """.stripMargin.format(date, date))
     println("all Apps count: " + allApps.count())
 
-    val iterator = allApps.toLocalIterator
+    val iterator: Iterator[(String, Long)] = allApps.toLocalIterator
     var txt = ""
     while (iterator.hasNext) {
       val t = iterator.next()
@@ -79,15 +68,11 @@ object TopApps {
       "zhuqiqi@qutoutiao.net",
       "jiangxue@qutoutiao.net",
       "zhangfan03@qutoutiao.net",
-      "shanshi@qutoutiao.net"
+      "shanshi@qutoutiao.net",
+      "zhangbowen@qutoutiao.net"
     )
 
-    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), mailingList)
-//    val b = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), Seq("zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
-    if (!b) {
-      println("发送邮件失败")
-    }
-
+    val b: Boolean = sendMail(txt, "%s topApps 活跃用户DAU[所有媒体]".format(date), mailingList)
 
     //2. 安装qtt活跃用户DAU大于2w的app
     val qttApps = pkgs
@@ -98,19 +83,14 @@ object TopApps {
       .filter(_._2 > 20000)
       .sortBy(x => x._2, false)
 
-    val iteratorQtt = qttApps.toLocalIterator
+    val iteratorQtt: Iterator[(String, Long)] = qttApps.toLocalIterator
     var qtt_txt = ""
     while (iteratorQtt.hasNext) {
       val t = iteratorQtt.next()
       qtt_txt = qtt_txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), mailingList)
-//    val qtt = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), Seq("zhuqiqi@qutoutiao.net", "jiangxue@qutoutiao.net"))
-    if (!qtt) {
-      println("发送邮件失败")
-    }
-
+    val qtt: Boolean = sendMail(qtt_txt, "%s topApps 活跃用户DAU[仅趣头条]".format(date), mailingList)
     pkgs.unpersist()
     spark.close()
 
