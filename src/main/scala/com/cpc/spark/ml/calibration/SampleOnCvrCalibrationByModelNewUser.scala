@@ -109,7 +109,7 @@ object SampleOnCvrCalibrationByModelNewUser {
       .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
       .filter("flag = 0")
       .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr",
-        "exp_cvr","day","userid","conversion_from","hour","conversion_goal")
+        "exp_cvr","day","userid","conversion_from","hour","conversion_goal","old_user")
 
     result.show(10)
 
