@@ -57,7 +57,8 @@ object SampleOnCvrCalibrationByModelNewUser {
          |substring(adclass,1,6) as adclass,
          |adslot_id, a.ideaid,exp_cvr,unitid,userid,click_unit_count,a.conversion_from, hour,a.day,
          |  a.cvr_model_name,
-         |a.conversion_goal
+         |a.conversion_goal,
+         |if(c.iscvr is not null, 1, 0) iscvr, if(b.tuid is not null, 1, 0) old_user
          |from
          |  (select * from
          |  dl_cpc.cvr_calibration_sample_all
