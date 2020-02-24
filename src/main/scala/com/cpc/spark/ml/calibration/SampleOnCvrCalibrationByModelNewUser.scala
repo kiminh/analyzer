@@ -78,18 +78,18 @@ object SampleOnCvrCalibrationByModelNewUser {
     val data = spark.sql(sql)
     data.show(10)
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
-      .toDF("id","prediction","num")
-
-    dnn_data.show(10)
-
-    println("dnn model sample is %d".format(dnn_data.count()))
+//    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
+//      .toDF("id","prediction","num")
+//
+//    dnn_data.show(10)
+//
+//    println("dnn model sample is %d".format(dnn_data.count()))
     // get union log
 
     val union_sample = data
-      .withColumn("id",hash64(0)(col("searchid")))
-      .join(dnn_data,Seq("id"),"left")
-      .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
+//      .withColumn("id",hash64(0)(col("searchid")))
+//      .join(dnn_data,Seq("id"),"left")
+//      .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
       .filter("raw_cvr > 0")
 
     val wrong_data = union_sample
