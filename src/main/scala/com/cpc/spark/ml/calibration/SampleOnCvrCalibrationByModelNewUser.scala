@@ -108,8 +108,8 @@ object SampleOnCvrCalibrationByModelNewUser {
     val result = union_sample.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
       .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
       .filter("flag = 0")
-      .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr","user_show_ad_num",
-        "exp_cvr","day","userid","conversion_from","hour","siteid","conversion_goal")
+      .select("searchid","ideaid","adclass","adslot_id","iscvr","unitid","raw_cvr",
+        "exp_cvr","day","userid","conversion_from","hour","conversion_goal")
 
     result.show(10)
 
