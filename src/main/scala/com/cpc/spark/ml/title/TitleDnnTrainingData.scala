@@ -93,7 +93,7 @@ object TitleDnnTrainingData {
       .save(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/cold_start/adlist/title/$oneday/")
     val CountPathTmpNamev4 = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/cold_start/adlist/title/tmp/"
     val CountPathNamev4 = s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/cold_start/adlist/title/$oneday/count"
-    val old_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/cold_start/adlist/oldad/$oneday/part*")
+    val old_sample = spark.read.format("tfrecords").option("recordType", "Example").load(s"hdfs://emr-cluster/user/cpc/aiclk_dataflow/daily/cold_start/adlist/title/$oneday/part*")
     CommonUtils.writeCountToFile(spark, old_sample.count(), CountPathTmpNamev4, CountPathNamev4)
 
   }
