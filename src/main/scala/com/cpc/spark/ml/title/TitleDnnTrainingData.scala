@@ -83,7 +83,7 @@ object TitleDnnTrainingData {
     val old_ideaid_data = spark.sql(
       s"""
          |select t1.idx2, t1.idx1, t1.id_arr, t1.idx0, t1.sample_idx, t1.label, t1.dense, t2.title as float
-         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash
+         |from training_data t1 left join idea_table t2 on t1.dense[11]=t2.ideaidhash where t2.title is not null
          |""".stripMargin)
 
     old_ideaid_data.repartition(1000).select($"sample_idx",$"idx0",$"idx1",$"idx2",$"id_arr", $"label", $"dense", $"float").write
