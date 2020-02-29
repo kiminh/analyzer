@@ -43,13 +43,30 @@ object CalibrationCheckOnMiduCvr {
 
     // get union log
     val sql = s"""
-                 |select postcali_value as ecvr,searchid, raw_cvr, key, substring(adclass,1,6) as adclass, adslotid as adslot_id, ideaid,
-                 |case when user_show_ad_num = 1 then '1'
+                 |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass,
+                 |cvr_model_name, a.adslot_id as adslotid, a.ideaid,exp_cvr,unitid,userid,click_unit_count,conversion_from,
+                 |case
+                 |  when user_show_ad_num = 0 then '0'
+                 |  when user_show_ad_num = 1 then '1'
                  |  when user_show_ad_num = 2 then '2'
                  |  when user_show_ad_num in (3,4) then '4'
                  |  when user_show_ad_num in (5,6,7) then '7'
-                 |  else '8' end as user_show_ad_num
-                 |  from test.wy00
+                 |  else '8' end as user_show_ad_num,
+                 |  if(c.iscvr is not null,1,0) isclick
+                 |from
+                 |  (select * from
+                 |  dl_cpc.cpc_basedata_union_events
+                 |  where day= '$dt'
+                 |  and cvr_model_name = '$modelName'
+                 |  and isclick = 1
+                 |  and ideaid > 0 and adsrc = 1 AND userid > 0
+                 |  AND (charge_type IS NULL OR charge_type = 1)
+                 |  and is_ocpc = 1) a
+                 | left join
+                 | (select distinct searchid,conversion_goal,1 as iscvr
+                 |  from dl_cpc.ocpc_cvr_log_hourly
+                 |  where  day >='$dt') c
+                 |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql).withColumn("group1",concat_ws("_",col("adclass"),col("ideaid"),col("user_show_ad_num"),col("adslot_id")))
