@@ -7,7 +7,6 @@ import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel.{IRModel, PostCalibrations}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, concat_ws, udf, _}
-//import com.cpc.spark.ml.calibration.MultiDimensionCalibOnQtt.computeCalibration
 
 /**
   * author: wangyao
