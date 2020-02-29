@@ -18,9 +18,7 @@ object CalibrationCheckOnMiduCvrTmp {
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val modelPath = args(0)
-    val dt = args(1)
-    val hour = args(2)
-    val modelName = args(3)
+//
 
 
     println(s"modelPath=$modelPath")
