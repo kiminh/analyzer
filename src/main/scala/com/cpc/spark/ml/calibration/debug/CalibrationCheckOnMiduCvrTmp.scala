@@ -18,8 +18,6 @@ object CalibrationCheckOnMiduCvrTmp {
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val modelPath = args(0)
-//
-
 
     println(s"modelPath=$modelPath")
 
@@ -33,8 +31,8 @@ object CalibrationCheckOnMiduCvrTmp {
       write(calimap.toString); close()
     }
 
-    val modelset = calimap.keySet
-    val session = Utils.buildSparkSession("calibration_check")
+    println(calimap.toString())
+
 
   }
 }
