@@ -21,6 +21,7 @@ object CalibrationCheckOnMiduCvrTmp {
 
     println(s"modelPath=$modelPath")
     val file = "/home/cpc/last_calbration.mlm"
+
     s"hdfs dfs -get $modelPath $file" !
 
 
@@ -28,6 +29,8 @@ object CalibrationCheckOnMiduCvrTmp {
 
 
     println(calimap.toString())
+
+    s"rm -r $file" !
 
 
   }
