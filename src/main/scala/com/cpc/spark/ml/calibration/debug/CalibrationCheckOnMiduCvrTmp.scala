@@ -17,7 +17,7 @@ object CalibrationCheckOnMiduCvrTmp {
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    val modelPath = args(0)
+    val modelPath = "hdfs://emr-cluster/warehouse/dl_cpc.db/cpc_algo_models/"+ args(0)
 
     println(s"modelPath=$modelPath")
     val file = "/home/cpc/last_calbration.mlm"
