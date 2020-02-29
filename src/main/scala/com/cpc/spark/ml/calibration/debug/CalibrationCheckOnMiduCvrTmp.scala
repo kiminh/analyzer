@@ -24,9 +24,7 @@ object CalibrationCheckOnMiduCvrTmp {
 
 
     println(s"modelPath=$modelPath")
-    println(s"dt=$dt")
-    println(s"hour=$hour")
-    println(s"modelName=$modelName")
+
 
     val calimap = new PostCalibrations().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath))).caliMap
 
