@@ -51,54 +51,54 @@ object MultiDimensionCalibOnQttCvrV5 {
     val selectCondition1 = getTimeRangeSql(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
 
-    val sql =
-      s"""
-         |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass,
-         |cvr_model_name, a.adslot_id as adslotid, a.ideaid,exp_cvr,unitid,userid,
-         |case
-         |  when user_show_ad_num = 0 then '0'
-         |  when user_show_ad_num = 1 then '1'
-         |  when user_show_ad_num = 2 then '2'
-         |  when user_show_ad_num in (3,4) then '4'
-         |  when user_show_ad_num in (5,6,7) then '7'
-         |  else '8' end as user_show_ad_num,
-         |  if(c.iscvr is not null,1,0) isclick
-         |from
-         |  (select * from
-         |  dl_cpc.cvr_calibration_sample_all
-         |  where $selectCondition2
-         |  and cvr_model_name in ('$calimodel','$model')
-         |  and is_ocpc = 1) a
-         | left join
-         | (select distinct searchid,conversion_goal,1 as iscvr
-         |  from dl_cpc.ocpc_cvr_log_hourly
-         |  where  $selectCondition1) c
-         |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
-         """.stripMargin
-
-    val log = session.sql(sql)
-    log.show(10)
-
-    val wrong_data = log
-      .withColumn("iscvr",col("isclick"))
-      .groupBy("unitid")
-      .agg(count(col("iscvr")).alias("click"),
-        sum(col("iscvr")).alias("iscvr"))
-      .withColumn("cvr",col("iscvr")/col("click"))
-      .filter("click > 100")
-      .filter("cvr > 0.8")
-      .withColumn("flag",lit(1))
-
-      println("######  filter unitid  ######")
-      wrong_data.show(10)
-
-    val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
-      .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
-        .filter("flag = 0")
-
-    filter_data.show(10)
+//    val sql =
+//      s"""
+//         |select a.searchid, cast(a.raw_cvr as bigint) as ectr, substring(adclass,1,6) as adclass,
+//         |cvr_model_name, a.adslot_id as adslotid, a.ideaid,exp_cvr,unitid,userid,
+//         |case
+//         |  when user_show_ad_num = 0 then '0'
+//         |  when user_show_ad_num = 1 then '1'
+//         |  when user_show_ad_num = 2 then '2'
+//         |  when user_show_ad_num in (3,4) then '4'
+//         |  when user_show_ad_num in (5,6,7) then '7'
+//         |  else '8' end as user_show_ad_num,
+//         |  if(c.iscvr is not null,1,0) isclick
+//         |from
+//         |  (select * from
+//         |  dl_cpc.cvr_calibration_sample_all
+//         |  where $selectCondition2
+//         |  and cvr_model_name in ('$calimodel','$model')
+//         |  and is_ocpc = 1) a
+//         | left join
+//         | (select distinct searchid,conversion_goal,1 as iscvr
+//         |  from dl_cpc.ocpc_cvr_log_hourly
+//         |  where  $selectCondition1) c
+//         |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
+//         """.stripMargin
+//
+//    val log = session.sql(sql)
+//    log.show(10)
+//
+//    val wrong_data = log
+//      .withColumn("iscvr",col("isclick"))
+//      .groupBy("unitid")
+//      .agg(count(col("iscvr")).alias("click"),
+//        sum(col("iscvr")).alias("iscvr"))
+//      .withColumn("cvr",col("iscvr")/col("click"))
+//      .filter("click > 100")
+//      .filter("cvr > 0.8")
+//      .withColumn("flag",lit(1))
+//
+//      println("######  filter unitid  ######")
+//      wrong_data.show(10)
+//
+//    val filter_data = log.join(wrong_data.select("unitid","flag"),Seq("unitid"),"left")
+//      .withColumn("flag",when(col("flag").isNull,lit(0)).otherwise(col("flag")))
+//        .filter("flag = 0")
+//
+//    filter_data.show(10)
     val tablename = model.split("-").mkString("_")
-    filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${tablename}_test")
+//    filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${tablename}_test")
 
     val data = session.sql(s"select * from dl_cpc.post_calibration_${tablename}_test")
     println(s"table is dl_cpc.post_calibration_${tablename}_test")
@@ -194,7 +194,7 @@ object MultiDimensionCalibOnQttCvrV5 {
                 calimap += ((modelName,config))
             }
             else {
-              println(s"${modelName} exceeds threshold 5")
+              println(s"${modelName} exceeds threshold 5, discard")
             }
             config
           }
