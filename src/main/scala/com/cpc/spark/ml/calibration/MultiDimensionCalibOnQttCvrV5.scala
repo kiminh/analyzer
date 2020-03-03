@@ -97,12 +97,13 @@ object MultiDimensionCalibOnQttCvrV5 {
         .filter("flag = 0")
 
     filter_data.show(10)
-//    val tablename = model.split("-").mkString("_")
-//    filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${tablename}")
-//
-//    val data = session.sql(s"select * from dl_cpc.post_calibration_${tablename}")
+    val tablename = model.split("-").mkString("_")
+    filter_data.repartition(1).write.mode("overwrite").saveAsTable(s"dl_cpc.post_calibration_${tablename}_test")
 
-    LogToPb(filter_data, session, calimodel,threshold)
+    val data = session.sql(s"select * from dl_cpc.post_calibration_${tablename}_test")
+    println(s"table is dl_cpc.post_calibration_${tablename}_test")
+
+    LogToPb(data, session, calimodel,threshold)
   }
 
   def LogToPb(log:DataFrame, session: SparkSession, model: String, threshold:Int)={
