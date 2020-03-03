@@ -182,11 +182,10 @@ object MultiDimensionCalibOnQttCvrV5 {
               boundaries = irFullModel.boundaries,
               predictions = irFullModel.predictions
             )
-
+            println(s"bin size: ${irFullModel.boundaries.length}")
+            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
             var config = CalibrationConfig()
             if (checkCalibrationThershold(irFullModel.boundaries,irFullModel.predictions)){
-              println(s"bin size: ${irFullModel.boundaries.length}")
-              println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
 
               config = CalibrationConfig(
                 name = modelName,
@@ -310,6 +309,8 @@ object MultiDimensionCalibOnQttCvrV5 {
     for(index <- 0 until boundry.length){
       if(prediction(index)/boundry(index) > 5) {
         flag = false
+        println("boundry",boundry(index))
+        println("prediction",prediction(index))
       }
     }
     flag
