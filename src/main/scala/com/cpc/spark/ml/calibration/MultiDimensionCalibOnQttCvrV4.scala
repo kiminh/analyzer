@@ -75,6 +75,7 @@ object MultiDimensionCalibOnQttCvrV4 {
          |  where  $selectCondition1) c
          |  on a.searchid = c.searchid and a.conversion_goal = c.conversion_goal
          """.stripMargin
+    println(sql)
 
     val log = session.sql(sql)
     log.show(10)
