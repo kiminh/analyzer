@@ -23,6 +23,7 @@ object SampleOnCvrCalibrationByModelV3 {
     val media = args(5)
     val task = args(6)
     val sample_date = args(7)
+    val dnn_sample_flag = args(8)
 
     val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
