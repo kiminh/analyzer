@@ -83,20 +83,27 @@ object SampleOnCvrCalibrationByModelV3 {
     val data = spark.sql(sql)
     data.show(10)
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
-      .toDF("id","prediction","num")
+    var union_sample = data
 
-    dnn_data.show(10)
+    if (dnn_sample_flag==1){
+      val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/calibration/$task/$sample_date/result-*")
+        .toDF("id","prediction","num")
 
-    println("dnn model sample is %d".format(dnn_data.count()))
+      dnn_data.show(10)
+
+      println("dnn model sample is %d".format(dnn_data.count()))
+
+      union_sample = data
+        .withColumn("id",hash64(0)(col("searchid")))
+        .join(dnn_data,Seq("id"),"left")
+        .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
+
+    }
+
     // get union log
 
-    val union_sample = data
-//      .union(data.filter(s"cvr_model_name in ('$model','$calimodel','qtt-cvr-dnn-rawid_novel_jisu_tuid_v2')"))
-      .withColumn("id",hash64(0)(col("searchid")))
-      .join(dnn_data,Seq("id"),"left")
-      .withColumn("raw_cvr",when(col("prediction").isNull,col("raw_cvr")).otherwise(col("prediction")))
-      .filter("raw_cvr > 0")
+    union_sample = union_sample.filter("raw_cvr > 0")
+
 
     val wrong_data = union_sample
       .groupBy("unitid")
