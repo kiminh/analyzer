@@ -19,14 +19,13 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, WrappedArray}
-import scala.util.Random
+import scala.collection.mutable.WrappedArray
 
 /**
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190520).
   */
-object LRTrain {
+object LRTestOnline {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -68,23 +67,18 @@ object LRTrain {
     "doc_id"
   )
 
-
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val days = args(0).toInt
-    val date = args(1)
-    val parser = args(2)
+    val days = 7
+    val date = "2019-09-09-17-44"
+    val parser = "ctrparser4"
 
     var cvrPathSep = getPathSeq(date, days)
     println("cvrPathSep = " + cvrPathSep)
 
-    val typeWord="qtt"
-
     val spark: SparkSession = model
-      .initSpark(s"[cpc-model] ${typeWord}-bs-%s-daily".format(parser))
-
-    val cachePrefix = s"/tmp/cvr_cache_${typeWord}/"
+      .initSpark("[cpc-model] qtt-bs-%s-daily".format(parser))
 
     if (parser == "cvrparser6" || parser == "cvrparser7") {
       initIntFeatureDictV6(spark, cvrPathSep)
@@ -95,201 +89,104 @@ object LRTrain {
     }
 
     val dates = nDayBefore(date, days)
-    val dfPath = cachePrefix + date + "_" + parser + ".parquet"
-    val idPath = cachePrefix + date + "_" + parser + "apIndex" + ".parquet"
 
-    s"hdfs dfs -rm -r ${dfPath}" !
 
-    s"hdfs dfs -rm -r ${idPath}" !
-
-    s"mkdir -p /home/cpc/anal/model/togo-cvr/" !
-
-//    s"rm /home/cpc/anal/model/togo-cvr/*" !
-
+    val userAppIdx = getUidApp(spark, cvrPathSep)
     for (key <- dictStr.keys) {
       println(key)
     }
 
-    dates.foreach(dt => {
-      val tomorrow=DateUtils.getPrevDate(dt, -1)
-
-      val queryRawDataFromUnionEvents =
-        s"""select A.searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslotid
-           |    , adslot_type
-           |    , brand
-           |    , media_type
-           |    , channel
-           |    , sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , pagenum
-           |    , bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , doc_id
-           |    , doc_cat
-           |    , is_new_ad
-           |    , conversion_goal
-           |    , uid,case when cv_types = null then 0
-           |           when conversion_goal = 1 and B.cv_types like '%cvr1%' then 1
-           |           when conversion_goal = 2 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 3 and B.cv_types like '%cvr3%' then 1
-           |           when conversion_goal = 4 and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 5 and B.cv_types like '%cvr5%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 1 and B.cv_types like '%cvr2%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and (adclass like '11011%' or adclass like '125%') and B.cv_types like '%cvr4%' then 1
-           |           when conversion_goal = 0 and is_api_callback = 0 and adclass not like '11011%' and adclass not like '125%' and B.cv_types like '%cvr%' then 1
-           |      else 0 end as label from
-           |(select
-           |    searchid
-           |    , sex
-           |    , age
-           |    , os
-           |    , network
-           |    , isp
-           |    , city
-           |    , media_appsid
-           |    , phone_level
-           |    , `timestamp`
-           |    , adtype
-           |    , planid
-           |    , unitid
-           |    , ideaid
-           |    , adclass
-           |    , adslot_id as adslotid
-           |    , adslot_type
-           |    , brand_title as brand
-           |    , media_type
-           |    , channel
-           |    , client_type as sdk_type
-           |    , dtu_id
-           |    , interaction
-           |    , interact_pagenum as pagenum
-           |    , interact_bookid as bookid
-           |    , userid
-           |    , siteid
-           |    , province
-           |    , city_level
-           |    , content_id as doc_id
-           |    , category as doc_cat
-           |    , is_new_ad
-           |    , uid
-           |    , conversion_goal
-           |    , is_api_callback
-           |  from
-           |    dl_cpc.cpc_basedata_union_events
-           |    where
-           |    day = "$dt"
-           |    and media_appsid in ('80000001','80000002')
-           |    and isshow = 1
-           |    and isclick = 1
-           |    and adsrc=1
-           |    and charge_type = 1) A
-           |  left outer join
-           |   (
-           |      select
-           |      searchid, concat_ws(',', collect_set(cvr_goal)) as cv_types
-           |      from
-           |         dl_cpc.ocpc_label_cvr_hourly
-           |      where
-           |         `date`>="$dt" and `date`<="$tomorrow"
-           |      and label=1
-           |      group by searchid
-           |   ) B
-           |   on A.searchid=B.searchid
-           |
+    val queryRawDataFromUnionEvents =
+      s"""select searchid
+         |    , sex
+         |    , age
+         |    , os
+         |    , network
+         |    , isp
+         |    , city
+         |    , media_appsid
+         |    , phone_level
+         |    , `timestamp`
+         |    , adtype
+         |    , planid
+         |    , unitid
+         |    , ideaid
+         |    , adclass
+         |    , adslot_id as adslotid
+         |    , adslot_type
+         |    , brand_title as brand
+         |    , media_type
+         |    , channel
+         |    , client_type as sdk_type
+         |    , dtu_id
+         |    , interaction
+         |    , interact_pagenum as pagenum
+         |    , interact_bookid as bookid
+         |    , userid
+         |    , siteid
+         |    , province
+         |    , city_level
+         |    , content_id as doc_id
+         |    , category as doc_cat
+         |    , is_new_ad
+         |    , uid
+         |    , conversion_goal
+         |    , is_api_callback
+         |    , cast(bsrawcvr as int) as label
+         |    from
+         |    dl_cpc.cpc_basedata_union_events
+         |    where
+         |    day = "2019-09-12"
+         |    and hour <= '13'
+         |    and searchid in ('czrhQyX-A3ati-WQ6jJ0e4RTU7w4ydgNqzwY3S8a','quUOPHiVHRZu-H_KNmBpOYfnPBs4y0CeUEFf3qzD','YLqXmjWZ_lH02t9psLP9XpvW8jU4y0ch00J-yq74','qMFGvHCagamY4-vHup0E3J8QlAs4yVZXmGkf3aBA','7IAyYEyguLWGlgqFo2hGMxoyi8U4y2yBwrx0Gp9Z','IXAVDaNRUbU7tXWXpKTZfFVwfSU4y8L-Yx1f3aAg','9-Pkwq4lCQQDVWh2I8ur54bhjZk4y0ohow8Vy1-n','k_dl4jp_pE3re-xHwtAffiGI6kw4yd-R-AxpE8zb','LSZKhamJva42KQf3YtcPPdB41uo4ydQFbXXDs-k-','XUoktwwrAMGRX_8cOBjTj26c4r-4ysRUGyCwKKTo')
+         |    and media_appsid in ('80000001','80000002')
+         |    and isshow = 1
+         |    and isclick = 1
+         |    and adsrc=1
+         |    and charge_type = 1
+         |    and array_contains(exptags, 'bslrcvr=bs-v4-cvr')
          """.stripMargin
 
-      println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+    println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
 
-      val df = spark
-        .sql(queryRawDataFromUnionEvents)
+    val df = spark
+      .sql(queryRawDataFromUnionEvents)
 
-      /*val ideaids = df
-        .select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
+    /*val ideaids = df
+      .select("ideaid")
+      .groupBy("ideaid")
+      .count()
+      .where("count > %d".format(minIdeaNum))
 
-      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
+    val sample = df.join(ideaids, Seq("ideaid")).cache()*/
 
-      df.write.mode(SaveMode.Append).parquet(dfPath)
+    val allData = getLeftJoinData(df, userAppIdx).repartition(1)
 
-//      joined.unpersist()
-      // ideaids.unpersist()
-      df.unpersist()
-    })
+    allData.cache()
 
-
+    allData.show(10)
 
     model.clearResult()
-
-    val allData = spark.sqlContext.read.parquet(dfPath)
 
     var name=""
     var destfile=""
     if ("ctrparser4".equals(parser)){
-      name=s"${typeWord}-bs-cvrparser4-daily"
-      destfile=s"${typeWord}-bs-cvrparser4-daily.lrm"
+      name="qtt-bs-cvrparser4-daily"
+      destfile="qtt-bs-cvrparser4-daily.lrm"
     }else if("cvrparser5".equals(parser)){
-      name=s"${typeWord}-bs-cvrparser5-daily"
-      destfile=s"${typeWord}-bs-cvrparser5-daily.lrm"
-    }else if("cvrparser8".equals(parser)){
-      name=s"${typeWord}-bs-cvrparser8-daily"
-      destfile=s"${typeWord}-bs-cvrparser8-daily.lrm"
+      name="qtt-bs-cvrparser5-daily"
+      destfile="qtt-bs-cvrparser5-daily.lrm"
     }
 
     println("name = " + name + " , destfile = " + destfile)
 
-    train(
-      spark,
-      parser,
-      name,
-      allData,
-      destfile,
-      1e8,
-      typeWord+"-cvr"
-    )
+    val sampleTest = formatSample(spark, parser, allData)
 
-    Utils
-      .sendMail(
-        trainLog.mkString("\n"),
-        s"[cpc-bs-q] ${name} 训练复盘",
-        Seq(
-          "fanyiming@qutoutiao.net",
-          "xiongyao@qutoutiao.net",
-          "duanguangdong@qutoutiao.net",
-          "xulu@qutoutiao.net",
-          "wangyao@qutoutiao.net",
-          "qizhi@qutoutiao.net",
-          "huazhenhao@qutoutiao.net"
-        )
-      )
+    println(sampleTest.take(10).foreach(x => println(x.features)))
 
-    allData.unpersist()
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/cvr"
 
-    println(trainLog.mkString("\n"))
-
-    s"hdfs dfs -rm -r $idPath" !
-
-    s"hdfs dfs -rm -r $dfPath" !
+    allData.select("cpc_basedata_union_events.searchid","label").write.mode("overwrite").format("csv").save(savepath)
 
   }
 
@@ -315,24 +212,7 @@ object LRTrain {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 14, 15, 0)
-    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
-    val pathSep = mutable.Map[String, Seq[String]]()
-
-    for (n <- 1 to days * 24) {
-      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
-      cal.add(Calendar.HOUR, 1)
-    }
-
-    pathSep
-  }
-
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
-    var date = ""
-    var hour = ""
-    val cal = Calendar.getInstance()
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(11, 13).toInt, dateStart.substring(14, 16).toInt, 0)
     cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
@@ -413,8 +293,7 @@ object LRTrain {
              name: String,
              ulog: DataFrame,
              destfile: String,
-             n: Double,
-             typeWordCtrOrCVr: String
+             n: Double
            ): Unit = {
 
     trainLog :+= "\n------train log--------"
@@ -476,6 +355,7 @@ object LRTrain {
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
 
     println("check before save")
     println("check dict:")
@@ -487,16 +367,18 @@ object LRTrain {
 
     model.saveHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata_7/${name}_$date")
     model.saveIrHdfs(s"hdfs://emr-cluster/user/cpc/lrmodel/irmodeldata_7/${name}_$date")
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, true)
+    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap, false)
+    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
     val lrFilePathToGo = "/home/cpc/anal/model/togo-cvr/%s.lrm".format(name)
+    val mlfilepathToGo = "/home/cpc/anal/model/togo-cvr/%s.mlm".format(name)
     // for go-live.
-    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, true)
-
-    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
-    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, true)
+    model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap, false)
+    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepath)
+    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
+    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
@@ -521,10 +403,8 @@ object LRTrain {
                   getCvrVectorParser6(u)
                 case "cvrparser7" =>
                   getCvrVectorParser7(u)
-                case "cvrparser8" =>
-                  getCvrVectorParser8(u)
               }
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              LabeledPoint(u.getAs[Int]("label"), vec)
           }
       }
   }
@@ -637,6 +517,122 @@ object LRTrain {
 
   // 190511: baseline features.
   // bs-q项目最初的特征集, 从前同事的项目继承而来.
+//  def getCvrVectorParser4(x: Row): Vector = {
+//
+//    val cal = Calendar.getInstance()
+//    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+//    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
+//    val hour = cal.get(Calendar.HOUR_OF_DAY)
+//    var els = Seq[(Int, Double)]()
+//    var i = 0
+//
+//    els = els :+ (4 + i - 1, 1d)
+//    i += 7
+//
+//    //(24)
+//    els = els :+ (17 + i, 1d)
+//    i += 24
+//
+//    //sex
+//    els = els :+ (0 + i, 1d)
+//    i += 9
+//
+//    //age
+//    els = els :+ (0 + i, 1d)
+//    i += 100
+//
+//    //os 96 - 97 (2)
+//    els = els :+ (1 + i, 1d)
+//    i += 10
+//
+//    //isp
+//    els = els :+ (0 + i, 1d)
+//    i += 20
+//
+//    //net
+//    els = els :+ (1 + i, 1d)
+//    i += 10
+//
+//    els = els :+ (dict("cityid").getOrElse(130800, 0) + i, 1d)
+//    i += dict("cityid").size + 1
+//
+//    //media id
+//    els = els :+ (dict("mediaid").getOrElse(392, 0) + i, 1d)
+//    i += dict("mediaid").size + 1
+//
+//    //ad slot id
+//    els = els :+ (dict("slotid").getOrElse(11, 0) + i, 1d)
+//    i += dict("slotid").size + 1
+//
+//    //0 to 4
+//    els = els :+ (4 + i, 1d)
+//    i += 10
+//
+//    //pagenum
+//    var pnum = 0
+//    if (pnum < 0 || pnum > 50) {
+//      pnum = 0
+//    }
+//    els = els :+ (pnum + i, 1d)
+//    i += 100
+//
+//    //bookid
+//    var bid = 0
+//    try {
+//      bid = 0
+//    } catch {
+//      case e: Exception =>
+//    }
+//    if (bid < 0 || bid > 50) {
+//      bid = 0
+//    }
+//    els = els :+ (bid + i, 1d)
+//    i += 100
+//
+//    //ad class
+//    val adcls = dict("adclass").getOrElse(101101111, 0)
+//    els = els :+ (adcls + i, 1d)
+//    i += dict("adclass").size + 1
+//
+//    //adtype
+//    els = els :+ (3 + i, 1d)
+//    i += 16
+//
+//    //adslot_type
+//    els = els :+ (1 + i, 1d)
+//    i += 10
+//
+//    //planid
+//    els = els :+ (dict("planid").getOrElse(12, 0) + i, 1d)
+//    i += dict("planid").size + 1
+//
+//    //unitid
+//    els = els :+ (dict("unitid").getOrElse(12, 0) + i, 1d)
+//    i += dict("unitid").size + 1
+//
+//    //ideaid
+//    els = els :+ (dict("ideaid").getOrElse(12, 0) + i, 1d)
+//    i += dict("ideaid").size + 1
+//
+//    //label
+//    els = els :+ (i, 1d)
+//    i += 1
+//
+//    println("Vectors size = " + i)
+//
+//    println("els = " + els)
+//
+//    try {
+//      Vectors.sparse(i, els)
+//    } catch {
+//      case e: Exception =>
+//        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+//        null
+//    }
+//  }
+
+  // 190511: baseline features.
+  // bs-q项目最初的特征集, 从前同事的项目继承而来.
   def getCvrVectorParser4(x: Row): Vector = {
 
     val cal = Calendar.getInstance()
@@ -734,122 +730,13 @@ object LRTrain {
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-    println("Vectors size = " + i)
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
-        null
-    }
-  }
-
-
-  // 190511: baseline features.
-  // bs-q项目最初的特征集, 从前同事的项目继承而来.
-  def getCvrVectorParser8(x: Row): Vector = {
-
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[(Int, Double)]()
-    var i = 0
-
-    els = els :+ (week + i - 1, 1d)
-    i += 7
-
-    //(24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //sex
-    els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
-
-    //age
-    els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
-
-    //os 96 - 97 (2)
-    els = els :+ (x.getAs[Int]("os") + i, 1d)
-    i += 10
-
-    //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
-
-    //net
-    els = els :+ (x.getAs[Int]("network") + i, 1d)
-    i += 10
-
-    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
-    i += dict("slotid").size + 1
-
-    //0 to 4
-    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
-    i += 10
-
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ (adcls + i, 1d)
-    i += dict("adclass").size + 1
-
-    //adtype
-    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 16
-
-    //adslot_type
-    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
-    i += 10
-
-    //planid
-    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
-    i += dict("planid").size + 1
-
-    //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
-    i += dict("unitid").size + 1
-
-    //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
-    i += dict("ideaid").size + 1
-
-    //conversion_goal
-    els = els :+ (x.getAs[Int]("conversion_goal") + i, 1d)
-    i += 10
+    //label
+    els = els :+ (i, x.getAs[Int]("label").toDouble)
+    i += 1
 
     println("Vectors size = " + i)
+
+    println("els = " + els)
 
     try {
       Vectors.sparse(i, els)

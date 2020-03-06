@@ -1,9 +1,7 @@
 package com.cpc.spark.ml.train
 
-import java.io.{BufferedOutputStream, FileOutputStream, OutputStreamWriter, PrintWriter}
-
-import org.apache.hadoop.fs.{FileSystem, Path}
-import java.util.{Calendar, Date}
+import java.io.{FileOutputStream, PrintWriter}
+import java.util.Date
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
 import mlmodel.mlmodel
@@ -21,7 +19,7 @@ import scala.collection.mutable
   * Created by Roy on 2017/5/15.
   * LogisticRegression + IsotonicRegression
   */
-class LRIRModel {
+class LRIRModelReg {
 
   private var ctx: SparkSession = null
 
@@ -70,6 +68,7 @@ class LRIRModel {
     lbfgs.optimizer.setNumCorrections(10)
     */
     lbfgs.optimizer.setUpdater(new L1Updater())
+    lbfgs.optimizer.setRegParam(0.001)
     if (iterNum > 0) {
       lbfgs.optimizer.setNumIterations(iterNum)
     }
@@ -181,11 +180,6 @@ class LRIRModel {
     if (testSum < 0) {
       throw new Exception("must run lr test first or test results is empty")
     }
-
-    val predictMean = lrTestResults.map(_._1).mean()
-    val realMean = lrTestResults.map(_._2).mean()
-    val pcoc = predictMean / realMean
-
     var test0 = 0
     var test1 = 0
     lrTestResults
@@ -237,8 +231,7 @@ class LRIRModel {
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble)
       }
-    log = log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
-    log + "predictMean: %.10f, realMean: %.10f, pcoc: %.10f\n".format(predictMean, realMean, pcoc)
+    log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
   }
 
   private var irmodel: IsotonicRegressionModel = _
@@ -337,89 +330,7 @@ class LRIRModel {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def savePbPackHdfs(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true): Unit = {
-    val weights = mutable.Map[Int, Double]()
-    lrmodel.weights.toSparse.foreachActive {
-      case (i, d) =>
-        weights.update(i, d)
-    }
-    val lr = LRModel(
-      parser = parser,
-      featureNum = lrmodel.numFeatures,
-      auPRC = auPRC,
-      auROC = auROC,
-      weights = weights.toMap
-    )
-    val ir:Option[IRModel] = if(withIR) {
-      Option(IRModel(
-        boundaries = irmodel.boundaries.toSeq,
-        predictions = irmodel.predictions.toSeq,
-        meanSquareError = irError * irError
-      ))
-    }else{
-      None
-    }
-    val pack = Pack(
-      lr = Option(lr),
-      ir = ir,
-      createTime = new Date().getTime,
-      planid = dict("planid"),
-      unitid = dict("unitid"),
-      ideaid = dict("ideaid"),
-      slotid = dict("slotid"),
-      adclass = dict("adclass"),
-      cityid = dict("cityid"),
-      mediaid = dict("mediaid")
-    )
-
-    val conf = ctx.sparkContext.hadoopConfiguration
-    val fs = FileSystem.get(conf)
-    val hdfsPath=new Path(path)
-    val out = new BufferedOutputStream(fs.create(hdfsPath, true ))
-    pack.writeTo(out)
-
-  }
-
-
-  def savePbPackAndBias(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]],withIR:Boolean=true, bias1_value:Double): Unit = {
-    val weights = mutable.Map[Int, Double]()
-    lrmodel.weights.toSparse.foreachActive {
-      case (i, d) =>
-        weights.update(i, d)
-    }
-    val lr = LRModel(
-      parser = parser,
-      featureNum = lrmodel.numFeatures,
-      auPRC = auPRC,
-      auROC = auROC,
-      weights = weights.toMap
-    )
-    val ir:Option[IRModel] = if(withIR) {
-      Option(IRModel(
-        boundaries = irmodel.boundaries.toSeq,
-        predictions = irmodel.predictions.toSeq,
-        meanSquareError = irError * irError
-      ))
-    }else{
-      None
-    }
-    val pack = Pack(
-      lr = Option(lr),
-      ir = ir,
-      createTime = new Date().getTime,
-      planid = dict("planid"),
-      unitid = dict("unitid"),
-      ideaid = dict("ideaid"),
-      slotid = dict("slotid"),
-      adclass = dict("adclass"),
-      cityid = dict("cityid"),
-      mediaid = dict("mediaid"),
-      bias1 = bias1_value
-    )
-    pack.writeTo(new FileOutputStream(path))
-  }
-
-  def savePbPackNew(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]], dictLength: Map[String, Int],withIR:Boolean=true,isHdfsPath:Boolean=false): Unit = {
+  def savePbPackNew(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]], dictLength: Map[String, Int],withIR:Boolean=true): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -458,15 +369,7 @@ class LRIRModel {
       dtuid = dictStr("dtu_id"),
       lengthmap = dictLength
     )
-    if(isHdfsPath){
-      val conf = ctx.sparkContext.hadoopConfiguration
-      val fs = FileSystem.get(conf)
-      val hdfsPath=new Path(path)
-      val out = new BufferedOutputStream(fs.create(hdfsPath, true ))
-      pack.writeTo(out)
-    }else{
-      pack.writeTo(new FileOutputStream(path))
-    }
+    pack.writeTo(new FileOutputStream(path))
   }
 
   // fym 190527.

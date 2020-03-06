@@ -1,30 +1,29 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import scala.sys.process._
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
+import com.cpc.spark.ml.dnn.Utils.DateUtils
 import com.cpc.spark.ml.train.LRIRModel
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ListBuffer, WrappedArray}
 import scala.util.Random
+import scala.sys.process._
+
 
 /**
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190511).
   */
-object LRTrain {
+object LRTrainV4 {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -32,78 +31,130 @@ object LRTrain {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val spark: SparkSession = model
-      .initSpark("qtt-bs-lr-ctr")
-
     // 按分区取数据
+    val days=args(0).toInt
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
     val date = args(2)
     val hour = args(3)
 
+    val parser = "ctrparser4"
+
+    val typeWord = "qtt-ctr"
+
+    val spark: SparkSession = model
+      .initSpark(s"[cpc-model] ${typeWord}-bs-%s-daily".format(parser))
+
     initFeatureDict(spark, ctrPathSep)
 
-//    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    val cachePrefix = s"/tmp/cvr_cache_${typeWord}/"
 
-    // fym 190512: to replace getData().
-    val queryRawDataFromUnionEvents =
-      s"""
-         |select
-         |  searchid
-         |  , isclick as label
-         |  , sex
-         |  , age
-         |  , os
-         |  , isp
-         |  , network
-         |  , city
-         |  , media_appsid
-         |  , phone_level
-         |  , `timestamp`
-         |  , adtype
-         |  , planid
-         |  , unitid
-         |  , ideaid
-         |  , adclass
-         |  , adslot_id as adslotid -- bottom-up compatibility.
-         |  , adslot_type
-         |  , interact_pagenum as pagenum -- bottom-up compatibility.
-         |  , interact_bookid as bookid -- bottom-up compatibility.
-         |  , brand_title
-         |  , user_req_num
-         |  , uid
-         |  , click_count as user_click_num
-         |  , click_unit_count as user_click_unit_num
-         |  , long_click_count as user_long_click_count
-         |from dl_cpc.cpc_basedata_union_events
-         |where %s
-         |  and isshow = 1
-         |  and ideaid > 0
-         |  and unitid > 0
-       """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 48))
+    val dates = nDayBefore(date, days)
+    val dfPath = cachePrefix + date + "_" + parser + ".parquet"
+    val idPath = cachePrefix + date + "_" + parser + "apIndex" + ".parquet"
 
-    val rawDataFromTrident = spark
-      .sql(queryRawDataFromUnionEvents)
-      .filter(_.getAs[Int]("ideaid") > 0)
+    s"hdfs dfs -rm -r ${dfPath}" !
+
+    s"hdfs dfs -rm -r ${idPath}" !
+
+    s"mkdir -p /home/cpc/anal/model/togo/" !
+
+//    s"rm /home/cpc/anal/model/togo/*" !
+
+    println("dates = " + dates)
+
+    dates.foreach(dt => {
+      val tomorrow=DateUtils.getPrevDate(dt, -1)
+
+      val queryRawDataFromUnionEvents =
+        s"""
+           |select
+           |  * from
+           |(select
+           |  searchid
+           |  , isclick as label
+           |  , sex
+           |  , age
+           |  , os
+           |  , isp
+           |  , network
+           |  , city
+           |  , media_appsid
+           |  , phone_level
+           |  , `timestamp`
+           |  , adtype
+           |  , planid
+           |  , unitid
+           |  , ideaid
+           |  , adclass
+           |  , adslot_id as adslotid -- bottom-up compatibility.
+           |  , adslot_type
+           |  , interact_pagenum as pagenum -- bottom-up compatibility.
+           |  , interact_bookid as bookid -- bottom-up compatibility.
+           |  , brand_title
+           |  , user_req_num
+           |  , uid
+           |  , click_count as user_click_num
+           |  , click_unit_count as user_click_unit_num
+           |  , long_click_count as user_long_click_count
+           |  , phone_price
+           |  , province
+           |  , city_level
+           |  , media_type
+           |  , channel
+           |  , dtu_id
+           |  , interaction
+           |  , userid
+           |  , is_new_ad
+           |  , hour
+           |  , rand() as rand_v
+           |from dl_cpc.cpc_basedata_union_events
+           |where day = "$dt"
+           |  and media_appsid in ('80000001','80000002')
+           |  and adsrc in (1, 28)
+           |  and isshow = 1
+           |  and ideaid > 0
+           |  and unitid > 0)a
+           |where rand_v>=0 and rand_v<=0.1
+         """.stripMargin
+
+      println("queryRawDataFromUnionEvents = " + queryRawDataFromUnionEvents)
+
+      val df = spark
+        .sql(queryRawDataFromUnionEvents)
+
+      /*val ideaids = df
+        .select("ideaid")
+        .groupBy("ideaid")
+        .count()
+        .where("count > %d".format(minIdeaNum))
+
+      val sample = df.join(ideaids, Seq("ideaid")).cache()*/
+
+      df.write.mode(SaveMode.Append).parquet(dfPath)
+
+      //      joined.unpersist()
+      // ideaids.unpersist()
+
+      df.unpersist()
+    })
 
     //qtt-all-parser3-hourly
     model.clearResult()
 
-    val qttAll = rawDataFromTrident
-      .filter(x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
-          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
-      )
+    val allData = spark.sqlContext.read.parquet(dfPath)
+
+    s"mkdir -p /home/cpc/anal/model/togo/" !
 
     train(
       spark,
       "ctrparser4",
       "qtt-bs-ctrparser4-daily",
-      qttAll,
+      allData,
       "qtt-bs-ctrparser4-daily.lrm",
-      4e8
+      4e8,
+      typeWord
     )
 
     Utils
@@ -122,8 +173,26 @@ object LRTrain {
       )
 
 
-    rawDataFromTrident.unpersist()
+    allData.unpersist()
 //    userAppIdx.unpersist()
+  }
+
+  /**
+    * 取前n天的日期字符串
+    * 自前一天起共n天
+    * @param dateStart 开始日期
+    * @param n 多少天
+    * @return 日期字符串
+    */
+  def nDayBefore(dateStart: String, n: Int): immutable.IndexedSeq[String] = {
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    0.to(n-1).map(c => {
+      val cal = Calendar.getInstance()
+      cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, 1, 0, 0)
+      cal.add(Calendar.DAY_OF_MONTH, -c)
+      dateFormat.format(cal.getTime)
+    })
+
   }
 
 
@@ -223,7 +292,7 @@ object LRTrain {
     data.join(userAppIdx, Seq("uid"), "left_outer")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double,typeWordCtrOrCVr: String): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -293,6 +362,10 @@ object LRTrain {
 
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+
+    val hdfslrfilepath = s"hdfs://emr-cluster/user/cpc/qizhi/lr-${typeWordCtrOrCVr}/lrmodel-%s-%s.lrm".format(name, date)
+    println("hdfslrfilepath = " + hdfslrfilepath)
+    model.savePbPackHdfs(parser, hdfslrfilepath, dict.toMap, dictStr.toMap, true)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
@@ -1239,7 +1312,6 @@ object LRTrain {
   }
 
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
-    import spark.implicits._
     var rate = 1d
     val num = ulog.count().toDouble
 

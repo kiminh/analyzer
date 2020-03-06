@@ -1,16 +1,12 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import scala.sys.process._
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
@@ -24,7 +20,7 @@ import scala.util.Random
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190511).
   */
-object LRTrain {
+object LRTestOnline {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -33,25 +29,30 @@ object LRTrain {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model
-      .initSpark("qtt-bs-lr-ctr")
+      .initSpark("[cpc-model] linear regression")
+
+    val days = 3
+    val datehour = "2019-09-04-02-15"
+    val date="2019-09-04"
+    val hour="21"
+    val parser = "ctrparser4"
 
     // 按分区取数据
-    val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
+    val ctrPathSep = getPathSeq("2019-09-04-14-30",3)
 
-    val date = args(2)
-    val hour = args(3)
+    println("ctrPathSep" + ctrPathSep)
+
 
     initFeatureDict(spark, ctrPathSep)
 
-//    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
     // fym 190512: to replace getData().
     val queryRawDataFromUnionEvents =
       s"""
          |select
          |  searchid
-         |  , isclick as label
+         |  , bsrawctr as label
          |  , sex
          |  , age
          |  , os
@@ -77,67 +78,48 @@ object LRTrain {
          |  , click_unit_count as user_click_unit_num
          |  , long_click_count as user_long_click_count
          |from dl_cpc.cpc_basedata_union_events
-         |where %s
+         |where day = "$date"
+         |    and hour = '$hour'
          |  and isshow = 1
          |  and ideaid > 0
          |  and unitid > 0
+         |  and media_appsid in ('80000001','80000002')
+         |  and adslot_type in (1,2)
+         |  limit 100
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 48))
 
-    val rawDataFromTrident = spark
-      .sql(queryRawDataFromUnionEvents)
-      .filter(_.getAs[Int]("ideaid") > 0)
+    val qttAll = spark
+      .sql(queryRawDataFromUnionEvents).repartition(1)
+
+    qttAll.show(10)
+
 
     //qtt-all-parser3-hourly
     model.clearResult()
 
-    val qttAll = rawDataFromTrident
-      .filter(x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
-          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
-      )
-
-    train(
-      spark,
-      "ctrparser4",
-      "qtt-bs-ctrparser4-daily",
-      qttAll,
-      "qtt-bs-ctrparser4-daily.lrm",
-      4e8
-    )
-
-    Utils
-      .sendMail(
-        trainLog.mkString("\n"),
-        "[cpc-bs-q] qtt-bs-ctrparser4-daily 训练复盘",
-        Seq(
-          "fanyiming@qutoutiao.net",
-          "xiongyao@qutoutiao.net",
-          "duanguangdong@qutoutiao.net",
-          "xulu@qutoutiao.net",
-          "wangyao@qutoutiao.net",
-          "qizhi@qutoutiao.net",
-          "huazhenhao@qutoutiao.net"
-        )
-      )
+    val sampleTest = formatSample(spark, parser, qttAll)
 
 
-    rawDataFromTrident.unpersist()
-//    userAppIdx.unpersist()
+    println(sampleTest.take(10).foreach(x => println(x.features)))
+
+    val savepath = "hdfs://emr-cluster/user/cpc/qizhi/bslr/testonline/ctr"
+
+    qttAll.select("searchid,label").write.mode("overwrite").format("csv").save(savepath)
   }
 
 
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
+  def getPathSeq(dateStart: String, days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -(days * 24 + 2))
+    cal.set(dateStart.substring(0, 4).toInt, dateStart.substring(5, 7).toInt - 1, dateStart.substring(8, 10).toInt, dateStart.substring(11, 13).toInt, dateStart.substring(14, 16).toInt, 0)
+    cal.add(Calendar.HOUR, -((days + 1) * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
     for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date, (pathSep.getOrElse(date, Seq[String]()) :+ hour))
+      pathSep.update(date, pathSep.getOrElse(date, Seq[String]()) :+ hour)
       cal.add(Calendar.HOUR, 1)
     }
 
@@ -263,7 +245,7 @@ object LRTrain {
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
-    model.run(sampleTrain, 10, 1e-8)
+    model.run(sampleTrain, 200, 1e-8)
     model.test(sampleTest)
 
     model.printLrTestLog()
@@ -283,6 +265,8 @@ object LRTrain {
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepathBackup = "/home/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
     val lrFilePathToGo = "/home/cpc/anal/model/togo/%s.lrm".format(name)
+    val mlfilepath = "/home/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
+    val mlfilepathToGo = "/home/cpc/anal/model/togo/%s.mlm".format(name)
 
     // backup on hdfs.
     model.saveHdfs("hdfs://emr-cluster/user/cpc/lrmodel/lrmodeldata/%s".format(date))
@@ -290,12 +274,16 @@ object LRTrain {
 
     // backup on local machine.
     model.savePbPack(parser, lrfilepathBackup, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
     // for go-live.
     model.savePbPack(parser, lrFilePathToGo, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepathToGo, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
+    trainLog :+= "protobuf pack (ir-backup) : %s".format(mlfilepath)
+    trainLog :+= "protobuf pack (ir-to-go) : %s".format(mlfilepathToGo)
 
     /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
@@ -327,7 +315,7 @@ object LRTrain {
                 case "ctrparser4" =>
                   getCtrVectorParser4(u)
               }
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              LabeledPoint(u.getAs[Long]("label").toDouble, vec)
           }
       }
   }
@@ -1227,7 +1215,7 @@ object LRTrain {
     }
     i += 1000 + 1*/
 
-//    println("Vectors size = " + i)
+    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
@@ -1239,7 +1227,6 @@ object LRTrain {
   }
 
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
-    import spark.implicits._
     var rate = 1d
     val num = ulog.count().toDouble
 

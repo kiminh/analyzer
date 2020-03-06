@@ -1,16 +1,11 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
@@ -24,7 +19,7 @@ import scala.util.Random
   * Created by zhaolei on 22/12/2017.
   * new owner: fym (190511).
   */
-object LRTrain {
+object LRTrainMiReadBak {
 
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
@@ -33,14 +28,14 @@ object LRTrain {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model
-      .initSpark("qtt-bs-lr-ctr")
+      .initSpark("miread [cpc-model] linear regression")
 
     // 按分区取数据
-    val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
+    val days = args(0).toInt
 
     val date = args(2)
     val hour = args(3)
+    val ctrPathSep = getPathSeq(date, hour, days)
 
     initFeatureDict(spark, ctrPathSep)
 
@@ -78,38 +73,32 @@ object LRTrain {
          |  , long_click_count as user_long_click_count
          |from dl_cpc.cpc_basedata_union_events
          |where %s
+         |  and media_appsid in ('80001011','80001098','80001292','80001539','80002480','80004786','80004787')
          |  and isshow = 1
          |  and ideaid > 0
          |  and unitid > 0
        """.stripMargin
-        .format(getSelectedHoursBefore(date, hour, 48))
+        .format(getSelectedHoursBefore(date, hour, 24*days))
 
-    val rawDataFromTrident = spark
+    val mireadAll = spark
       .sql(queryRawDataFromUnionEvents)
-      .filter(_.getAs[Int]("ideaid") > 0)
 
-    //qtt-all-parser3-hourly
+    //miread-all-parser3-hourly
     model.clearResult()
-
-    val qttAll = rawDataFromTrident
-      .filter(x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid"))
-          && Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
-      )
 
     train(
       spark,
       "ctrparser4",
-      "qtt-bs-ctrparser4-daily",
-      qttAll,
-      "qtt-bs-ctrparser4-daily.lrm",
+      "miread-bs-ctrparser4-daily",
+       mireadAll,
+      "miread-bs-ctrparser4-daily.lrm",
       4e8
     )
 
     Utils
       .sendMail(
         trainLog.mkString("\n"),
-        "[cpc-bs-q] qtt-bs-ctrparser4-daily 训练复盘",
+        "[cpc-bs-q] miread-bs-ctrparser4-daily 训练复盘",
         Seq(
           "fanyiming@qutoutiao.net",
           "xiongyao@qutoutiao.net",
@@ -122,15 +111,15 @@ object LRTrain {
       )
 
 
-    rawDataFromTrident.unpersist()
-//    userAppIdx.unpersist()
+    mireadAll.unpersist()
   }
 
 
-  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
+  def getPathSeq(cur_date:String, cur_hour:String ,days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
+    cal.set(cur_date.substring(0, 4).toInt, cur_date.substring(5, 7).toInt - 1, cur_date.substring(8, 10).toInt, cur_hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -(days * 24 + 2))
     val pathSep = mutable.Map[String, Seq[String]]()
 
@@ -263,7 +252,7 @@ object LRTrain {
     val sampleTest = formatSample(spark, parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
-    model.run(sampleTrain, 10, 1e-8)
+    model.run(sampleTrain, 200, 1e-8)
     model.test(sampleTest)
 
     model.printLrTestLog()
@@ -296,6 +285,8 @@ object LRTrain {
 
     trainLog :+= "protobuf pack (lr-backup) : %s".format(lrfilepathBackup)
     trainLog :+= "protobuf pack (lr-to-go) : %s".format(lrFilePathToGo)
+
+
 
     /*trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
@@ -1227,7 +1218,7 @@ object LRTrain {
     }
     i += 1000 + 1*/
 
-//    println("Vectors size = " + i)
+    println("Vectors size = " + i)
 
     try {
       Vectors.sparse(i, els)
@@ -1239,7 +1230,6 @@ object LRTrain {
   }
 
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
-    import spark.implicits._
     var rate = 1d
     val num = ulog.count().toDouble
 
