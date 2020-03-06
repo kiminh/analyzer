@@ -310,7 +310,7 @@ object LRTrainOther {
 
     val testNum = sampleTest.count().toDouble * 0.9
     val minBinSize = 1000d
-    var binNum = 1000d
+    var binNum = 100d
     if (testNum < minBinSize * binNum) {
       binNum = testNum / minBinSize
     }
