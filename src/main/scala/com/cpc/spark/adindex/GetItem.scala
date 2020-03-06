@@ -6,8 +6,7 @@ import scala.collection.mutable
 
 object GetItem {
   def getIdea(ideaItem: IdeaItem): Idea = {
-
-    val idea = Idea(
+    Idea(
       ideaid = ideaItem.getIdeaid,
       mtype = ideaItem.getMtypeValue,
       width = ideaItem.getWidth,
@@ -19,13 +18,11 @@ object GetItem {
       white_user_ad_corner = ideaItem.getWhiteUserAdCorner,
       is_api_callback = ideaItem.getIsApiCallback
     )
-    idea
   }
 
   def getGroup(groupItem: GroupItem): Seq[Group] = {
-    var groups = Seq[Group]()
-    val extInt = mutable.Map[String, Int]()
-
+    var groups: Seq[Group] = Seq[Group]()
+    val extInt: mutable.Map[String, Int] = mutable.Map[String, Int]()
     var group = Group(
       unitid = groupItem.getGroupid,
       planid = groupItem.getPlanid,
@@ -40,13 +37,11 @@ object GetItem {
       whitesid = groupItem.getWhitesidList.toArray.mkString(","),
       ages = groupItem.getAgesList.toArray.mkString(","),
       gender = groupItem.getGender,
-
       freq = groupItem.getFreq,
       userlevel = groupItem.getUserlevel,
       usertype = groupItem.getUserType,
       interests = groupItem.getInterestsList.toArray.mkString(","),
       media_class = groupItem.getMediaClassList.toArray.mkString(","),
-
       phonelevel = groupItem.getPhonelevelList.toArray.mkString(","),
       cvr_threshold = groupItem.getCvrThreshold,
       balance = groupItem.getBalance,
@@ -55,7 +50,6 @@ object GetItem {
       network = groupItem.getNetworkList.toArray.mkString(","),
       black_install_pkg = groupItem.getBlackInstallPkgList.toArray.mkString(","),
       dislikes = groupItem.getDislikesList.toArray.mkString(","),
-
       click_freq = groupItem.getClickFreq,
       white_install_pkg = groupItem.getWhiteInstallPkgList.toArray.mkString(","),
       student = groupItem.getStudent,
@@ -66,22 +60,16 @@ object GetItem {
       adslot_weight = groupItem.getAdslotWeight,
       target_adslot_ids = groupItem.getTargetAdslotIdsList.toArray.mkString(",")
     )
-
-    val not_delivery_pr = groupItem.getNotDeliveryPr
-    extInt.update("not_delivery_pr", not_delivery_pr)
+    extInt.update("not_delivery_pr", groupItem.getNotDeliveryPr)
     group = group.copy(ext_int = extInt)
-
-
-    val ideaidsCount = groupItem.getIdeaidsCount
+    val ideaidsCount: Int = groupItem.getIdeaidsCount
     for (i <- 0 until ideaidsCount) {
-      val ideaid = groupItem.getIdeaids(i)
+      val ideaid: Int = groupItem.getIdeaids(i)
       group = group.copy(ideaid = ideaid)
       groups :+= group
     }
     groups
-
   }
-
 }
 
 case class Idea(
