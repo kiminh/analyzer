@@ -36,6 +36,7 @@ object SampleOnCvrCalibrationByModelV3 {
     println(s"startDate=$startDate")
     println(s"startHour=$startHour")
     println(s"sample_date=$sample_date")
+    println(s"dnn_sample_flag=$dnn_sample_flag")
     val selectCondition1 = getTimeRangeSql4(startDate, startHour, endDate, endHour)
     val selectCondition2 = getTimeRangeSql(startDate, startHour, endDate, endHour)
     var mediaCondition = "media_appsid in ('80000001','80000002','80000006','80000064','80000066')"
