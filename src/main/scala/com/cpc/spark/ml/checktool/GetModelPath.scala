@@ -54,22 +54,22 @@ object GetModelPath{
     println("model id is ",select_model_id)
     basedata.filter(s"model_id = '$select_model_id'").repartition(5).write.mode("overwrite").insertInto("dl_cpc.dnn_model_score_online")
 
-    val jdbcProp = new Properties()
-    val jdbcUrl = "jdbc:mysql://rm-2ze0566kl6tl9zp5w.mysql.rds.aliyuncs.com"
-    jdbcProp.put("user", "model_info_r")
-    jdbcProp.put("password", "PHPymz8ERZeujN6L")
-    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
-
-    val table=s"(select job_name from dl_scheduler.model_info where pack_id = '$select_model_id') as tmp"
-    val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp).first().getAs[String]("job_name")
-    println(model_path)
-
-    val file = s"model_path_${modelName}_${dt}.txt"
-    val writer = new PrintWriter(new File(file))
-    writer.write(s"$model_path")
-    writer.close()
-
-   s"hdfs dfs -put -f $file hdfs://emr-cluster/user/cpc/wy/dnn_lastmodel_path/$file" !
+//    val jdbcProp = new Properties()
+//    val jdbcUrl = "jdbc:mysql://rm-2ze0566kl6tl9zp5w.mysql.rds.aliyuncs.com"
+//    jdbcProp.put("user", "model_info_r")
+//    jdbcProp.put("password", "PHPymz8ERZeujN6L")
+//    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+//
+//    val table=s"(select job_name from dl_scheduler.model_info where pack_id = '$select_model_id') as tmp"
+//    val model_path = spark.read.jdbc(jdbcUrl, table, jdbcProp).first().getAs[String]("job_name")
+//    println(model_path)
+//
+//    val file = s"model_path_${modelName}_${dt}.txt"
+//    val writer = new PrintWriter(new File(file))
+//    writer.write(s"$model_path")
+//    writer.close()
+//
+//   s"hdfs dfs -put -f $file hdfs://emr-cluster/user/cpc/wy/dnn_lastmodel_path/$file" !
 
 
   }
