@@ -1,0 +1,3 @@
+# README
+
+按照adtype15的app激活和app注册校准和weightv4的安装、表单和加粉校准进行叠加

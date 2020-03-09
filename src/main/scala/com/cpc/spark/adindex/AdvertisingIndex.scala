@@ -1,88 +1,33 @@
 package com.cpc.spark.adindex
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
-import org.apache.spark.sql.SparkSession
+import idxinterface.Idx
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import scalaj.http.Http
 
 object AdvertisingIndex {
+
+  val URL_TOGO: String = "http://192.168.80.229:9090/reqdumps?filename=index.dump&hostname=dumper&fileMd5=1"
+  val DATE_FMT: String = "yyyy-MM-dd HH:mm:ss"
+  val DAY_FMT: String = "yyyy-MM-dd"
+  val HH_FMT: String = "HH"
+  val MM_FMT: String = "mm"
+  val RPT_MIN: Int = 1
+
   def main(args: Array[String]): Unit = {
-    val url = "http://192.168.80.229:9090/reqdumps?filename=index.dump&hostname=dumper&fileMd5=1"
+    val spark: SparkSession = SparkSession.builder().appName("[cpc-infra] ad-index").enableHiveSupport().getOrCreate()
+    val cal: Calendar = getCalendarByDateTimeStr(args(0).trim)
+    val (date, hour, minute) = (new SimpleDateFormat(DAY_FMT).format(cal.getTime), new SimpleDateFormat(HH_FMT).format(cal.getTime), new SimpleDateFormat(MM_FMT).format(cal.getTime))
 
-    val spark = SparkSession.builder()
-      .appName(" ad index table to hive")
-      .enableHiveSupport()
-      .getOrCreate()
-
-
-    //获取当前时间
-
-    val cal = Calendar.getInstance()
-    val timestamp = (cal.getTimeInMillis / 1000).toInt
-    val date_format = new SimpleDateFormat("yyyy-MM-dd")
-    val hour_format = new SimpleDateFormat("HH")
-    val min_format = new SimpleDateFormat("mm")
-    val date = date_format.format(cal.getTime)
-    val hour = hour_format.format(cal.getTime)
-    val min = min_format.format(cal.getTime)
-    println(timestamp, date, hour, min)
-
-
-    val reponse = Http(url)
-      .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000)
-      .asBytes
-
-    println(reponse.code)
-    var data = Array[Byte]()
-    if (reponse.code != 200) {
-      println("reponse code != 200, 没有成功下载到文件")
-      System.exit(1)
-    }
-
-    data = reponse.body.drop(16)
-    println(data.length)
-
-    val idxItems = idxinterface.Idx.IdxItems.parseFrom(data)
-
-    val gitemsCount = idxItems.getGitemsCount
-    val ditemsCount = idxItems.getDitemsCount
-    println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
-
-
-    var ideaItemMap = Map[Int, Idea]()
-    var unitItemSeq = Seq[Group]()
-    var idx = Seq[Group]()
-
-    for (i <- 0 until ditemsCount) {
-      val dItem = idxItems.getDitems(i) //ideaItem
-
-      val ideaItem = GetItem.getIdea(dItem)
-      ideaItemMap += (ideaItem.ideaid -> ideaItem)
-    }
-
-    for (i <- 0 until gitemsCount) {
-      val gItems = idxItems.getGitems(i) //groupItem
-
-      val unitItem = GetItem.getGroup(gItems)
-      unitItem.foreach { u =>
-        unitItemSeq :+= u
-      }
-    }
-
-    println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
-    println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
-
-
-    for (u <- unitItemSeq) {
-      var unitItem = u
-      val ideaid = u.ideaid
-      if (ideaItemMap.contains(ideaid)) {
-        val ideaItem = ideaItemMap(ideaid)
-        var extInt = unitItem.ext_int
-        extInt = extInt.updated("is_api_callback", ideaItem.is_api_callback)
-
-        unitItem = unitItem.copy(
+    val idxItems: Idx.IdxItems = idxinterface.Idx.IdxItems.parseFrom(Http(URL_TOGO).timeout(connTimeoutMs = 40000, readTimeoutMs = 40000).asBytes.body.drop(16))
+    val ideaItemMap: Map[Int, Idea] = (0 until idxItems.getDitemsCount).map { i: Int => GetItem.getIdea(idxItems.getDitems(i)).ideaid -> GetItem.getIdea(idxItems.getDitems(i))}.toMap
+    val unitItemSeq: Seq[Group] = (0 until idxItems.getGitemsCount).flatMap { i: Int => GetItem.getGroup(idxItems.getGitems(i)) }
+    val idx: Seq[Group] = unitItemSeq.map((u: Group) => {
+      if (ideaItemMap.contains(u.ideaid)) {
+        val ideaItem: Idea = ideaItemMap(u.ideaid)
+        u.copy(
           mtype = ideaItem.mtype,
           width = ideaItem.width,
           height = ideaItem.height,
@@ -91,34 +36,21 @@ object AdvertisingIndex {
           material_level = ideaItem.material_level,
           siteid = ideaItem.siteid,
           white_user_ad_corner = ideaItem.white_user_ad_corner,
-          timestamp = timestamp,
-          ext_int = extInt
+          timestamp = (cal.getTimeInMillis / 1000L).toInt,
+          ext_int = u.ext_int.updated("is_api_callback", ideaItem.is_api_callback)
         )
+      } else null
+    }).filter((u: Group) => u != null)
 
-        idx :+= unitItem
-      }
-    }
-
-
-    println("idx count:  " + idx.size, "head:" + idx.head)
-
-    val idxRDD = spark.sparkContext.parallelize(idx)
-    spark.createDataFrame(idx)
-      .repartition(1)
-      .write
-      .mode("overwrite")
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-    println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-    spark.sql(
-      s"""
-         |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
-           """.stripMargin)
-    spark.close()
-
-    println("done.")
-
+    val location: String = s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute"
+    spark.createDataFrame(idx).repartition(RPT_MIN).write.mode(SaveMode.Overwrite).parquet(location)
+    spark.sql(s"""alter table dl_cpc.cpc_ad_index add if not exists partition (date = "$date", hour="$hour", minute="$minute") location '$location'""")
   }
 
-
+  def getCalendarByDateTimeStr(dateTimeStr: String): Calendar = {
+    val dateTime: Date = new SimpleDateFormat(DATE_FMT).parse(dateTimeStr)
+    val cal: Calendar = Calendar.getInstance()
+    cal.setTime(dateTime)
+    cal
+  }
 }

@@ -3,12 +3,13 @@ package com.cpc.spark.oCPX.oCPC.pay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.oCPX.OcpcTools.{udfDetermineMedia}
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+@deprecated
 object OcpcChargeSchedule {
   def main(args: Array[String]): Unit = {
     /*
@@ -139,18 +140,16 @@ object OcpcChargeSchedule {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val newDataRaw = spark
+    val newDataRaw1 = spark
       .sql(sqlRequest)
       .filter(s"is_hidden = 0")
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
+
+    val newDataRaw2 = mapMediaName(newDataRaw1, spark)
+
+    val newData = newDataRaw2
       .filter(s"media in ('qtt', 'hottopic', 'novel')")
       .withColumn("industry", udfDeterminePayIndustry()(col("adslot_type"), col("adclass"), col("conversion_goal")))
       .distinct()
-
-//    newDataRaw
-//      .write.mode("overwrite").saveAsTable("test.check_ocpc_pay_data20191126")
-
-    val newData = newDataRaw
       .filter(s"industry in ('feedapp', 'elds', 'pay_industry', 'siteform_pay_industry')")
       .select("unitid")
       .distinct()

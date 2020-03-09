@@ -196,6 +196,7 @@ object OcpcGetPb_baseline_others {
   })
 
   def getBaseDataDelayOther(hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // todo
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -248,12 +249,11 @@ object OcpcGetPb_baseline_others {
          |  isclick = 1
        """.stripMargin
     println(sqlRequest)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .filter(s"media == 'others'")
-      .withColumn("media", lit("Other"))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 抽取cv数据
     val sqlRequest2 =
@@ -273,6 +273,8 @@ object OcpcGetPb_baseline_others {
 
     // 数据关联
     val resultDF = clickData
+      .filter(s"media == 'others'")
+      .withColumn("media", lit("Other"))
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 

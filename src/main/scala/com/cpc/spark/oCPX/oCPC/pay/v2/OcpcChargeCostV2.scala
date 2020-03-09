@@ -25,7 +25,10 @@ object OcpcChargeCostV2 {
     val date = args(0).toString
     val version = args(1).toString
     val dayCnt = args(2).toInt
-    val envSuffix = args(3).toString
+    var envSuffix = ""
+    if (args.size == 4) {
+      envSuffix = args(3).toString
+    }
 
     // 计算七天的分天展点消以及浅层转化
     val shallowOcpcData = getShallowData(date, dayCnt, spark)
@@ -283,6 +286,7 @@ object OcpcChargeCostV2 {
          |  cast(deep_cpa as double) as cpagiven,
          |  (case when date >= '2019-12-09' and deep_ocpc_step=2 then 2 else 1 end) as deep_ocpc_step,
          |  is_deep_ocpc,
+         |  (case when is_antou_deep_ocpc is null then 0 else is_antou_deep_ocpc end) as is_antou_deep_ocpc,
          |  date
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -296,7 +300,7 @@ object OcpcChargeCostV2 {
     val clickDataRaw = spark
       .sql(sqlRequest1)
       .na.fill(1, Seq("deep_ocpc_step"))
-      .filter(s"deep_ocpc_step = 2")
+      .filter(s"deep_ocpc_step = 2 and is_antou_deep_ocpc != 1")
 
     val cpaCheckPriority = getCPAcheckPriority(spark)
     val clickData = clickDataRaw

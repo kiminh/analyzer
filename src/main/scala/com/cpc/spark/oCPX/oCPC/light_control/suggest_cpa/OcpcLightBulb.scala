@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.OcpcProtoType.OcpcTools._
+import com.cpc.spark.oCPX.OcpcTools.mapMediaName
 import com.redis.RedisClient
 import org.apache.spark.sql.DataFrame
 //import com.cpc.spark.ocpc.OcpcUtils._
@@ -101,9 +102,13 @@ object OcpcLightBulb{
          |lateral view explode(split(target_medias, ',')) b as a
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
-      .na.fill("", Seq("media_appsid"))
-      .withColumn("media", udfDetermineMediaNew()(col("media_appsid")))
+    val resultDFraw = spark
+      .sql(sqlRequest)
+      .withColumn("media_appsid", when(col("target_medias") === "", "80000001").otherwise(col("media_appsid")))
+
+    val resultDFfinal = mapMediaName(resultDFraw, spark)
+
+    val resultDF = resultDFfinal
       .filter(s"media in ('qtt', 'hottopic', 'novel', 'others')")
       .select("unitid",  "userid", "conversion_goal", "is_ocpc", "ocpc_status", "media")
       .distinct()
@@ -113,26 +118,26 @@ object OcpcLightBulb{
     resultDF
   }
 
-  def udfDetermineMediaNew() = udf((mediaId: String) => {
-    var result = mediaId match {
-      case "80000001" => "qtt"
-      case "80000002" => "qtt"
-      case "80002819" => "hottopic"
-      case "80004944" => "hottopic"
-      case "80004948" => "hottopic"
-      case "80004953" => "hottopic"
-      case "" => "qtt"
-      case "80001098" => "novel"
-      case "80001292" => "novel"
-      case "80001539" => "novel"
-      case "80002480" => "novel"
-      case "80001011" => "novel"
-      case "80004786" => "novel"
-      case "80004787" => "novel"
-      case _ => "others"
-    }
-    result
-  })
+//  def udfDetermineMediaNew() = udf((mediaId: String) => {
+//    var result = mediaId match {
+//      case "80000001" => "qtt"
+//      case "80000002" => "qtt"
+//      case "80002819" => "hottopic"
+//      case "80004944" => "hottopic"
+//      case "80004948" => "hottopic"
+//      case "80004953" => "hottopic"
+//      case "" => "qtt"
+//      case "80001098" => "novel"
+//      case "80001292" => "novel"
+//      case "80001539" => "novel"
+//      case "80002480" => "novel"
+//      case "80001011" => "novel"
+//      case "80004786" => "novel"
+//      case "80004787" => "novel"
+//      case _ => "others"
+//    }
+//    result
+//  })
 
   def getRecommendationAd(version: String, date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =

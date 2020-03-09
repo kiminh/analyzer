@@ -96,23 +96,8 @@ object OcpcGetPb_weightv5{
    */
   def OcpcRealtimeCalibrationBase(date: String, hour: String, hourInt: Int, spark: SparkSession) = {
     val baseDataRaw = getBaseDataRealtime(hourInt, date, hour, spark)
-
-    val delayDataRaw = getUserDelay(date, spark)
-    val delayData = delayDataRaw
-      .withColumn("delay_hour", when(col("hour_diff") > 6, 6).otherwise(col("hour_diff")))
-      .filter(s"cost > 100")
-      .select("userid", "conversion_goal", "delay_hour")
-
-    val unitUserInfoRaw = getConversionGoalNew(spark)
-    val unitUserInfo = unitUserInfoRaw.select("unitid", "userid").distinct().cache()
-    unitUserInfo.show(10)
-
     val baseData = baseDataRaw
-      .join(unitUserInfo, Seq("unitid"), "inner")
-      .join(delayData, Seq("userid", "conversion_goal"), "left_outer")
-      .na.fill(0.0, Seq("delay_hour"))
       .withColumn("hour_diff", udfCalculateHourDiff(date, hour)(col("date"), col("hour"), lit(1)))
-      .withColumn("hour_diff", col("hour_diff") - col("delay_hour"))
 
     baseData.createOrReplaceTempView("base_data")
 

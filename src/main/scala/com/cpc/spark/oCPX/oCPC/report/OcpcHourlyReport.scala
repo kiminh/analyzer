@@ -63,8 +63,8 @@ object OcpcHourlyReport {
 
     resultDF
       .repartition(1)
-      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
-//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
+//      .write.mode("overwrite").insertInto("test.ocpc_report_base_hourly")
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_report_base_hourly")
   }
 
   def calculateBaseData(rawData: DataFrame, spark: SparkSession) = {
@@ -160,12 +160,11 @@ object OcpcHourlyReport {
          |and conversion_goal > 0
        """.stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
       .withColumn("cvr_goal", udfConcatStringInt("cvr")(col("conversion_goal")))
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
 
+    val clickData = mapMediaName(clickDataRaw, spark)
 
     // 关联转化表
     val sqlRequest2 =
@@ -184,6 +183,7 @@ object OcpcHourlyReport {
 
     // 数据关联
     val resultDF = clickData
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .join(cvData, Seq("searchid", "cvr_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
@@ -237,10 +237,10 @@ object OcpcHourlyReport {
          |and deep_ocpc_step = 2
        """.stripMargin
     println(sqlRequest1)
-    val clickData = spark
+    val clickDataRaw = spark
       .sql(sqlRequest1)
-      .withColumn("media", udfDetermineMedia()(col("media_appsid")))
-      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
+
+    val clickData = mapMediaName(clickDataRaw, spark)
 
 
     // 关联转化表
@@ -260,6 +260,7 @@ object OcpcHourlyReport {
 
     // 数据关联
     val resultDF = clickData
+      .withColumn("industry", udfDetermineIndustry()(col("adslot_type"), col("adclass")))
       .join(cvData, Seq("searchid", "deep_conversion_goal"), "left_outer")
       .na.fill(0, Seq("iscvr"))
 
