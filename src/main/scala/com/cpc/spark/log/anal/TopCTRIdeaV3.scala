@@ -51,6 +51,7 @@ object TopCTRIdeaV3 {
 			if (adCtr == null) {
 				adCtr = ulog
 			} else {
+				println(ulog.count())
 				adCtr = adCtr.union(ulog)
 			}
 		}
