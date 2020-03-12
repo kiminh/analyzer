@@ -11,6 +11,7 @@ import scala.util.matching.Regex
 
 /**
   * Created by wanli on 2018/5/8.
+  * Modify by xuyang on 2020/3/12
   */
 object InsertReportDspIdea {
 
@@ -52,7 +53,7 @@ object InsertReportDspIdea {
 
     ctx.udf.register("myFilter",
       (str:String) => {
-//        val charPattern: Regex="""[^x00-xff]|[_a-zA-Z0-9]+""".r   //过滤出标题的中英文和数字  排除非法字符
+        //        val charPattern: Regex="""[^x00-xff]|[_a-zA-Z0-9]+""".r   //过滤出标题的中英文和数字  排除非法字符
         val charPattern: Regex="""[_a-zA-Z0-9]|[\u4e00-\u9fa5]|[\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5]+""".r
         val result = charPattern.findAllMatchIn(str).mkString
 
@@ -61,14 +62,35 @@ object InsertReportDspIdea {
     )
 
     val unionData = ctx.sql(
-      """
-        |SELECT adid_str, myFilter(ad_title),
-        |ext_string['ad_desc'], ext_string['ad_img_urls'],
-        |ad_click_url,isshow,isclick,cul.adsrc,cul.adslot_id
-        |FROM dl_cpc.cpc_basedata_union_events cul
-        |WHERE cul.day="%s" AND adid_str != "" AND cul.adsrc>1
-        |AND cul.isshow>0
-        |""".stripMargin.format(argDay))
+      s"""
+         |SELECT adid_str,
+         |       myFilter(ad_title),
+         |       bd.ad_desc,
+         |       bd.ad_img_urls,
+         |       ad_click_url,
+         |       isshow,
+         |       isclick,
+         |       cul.adsrc,
+         |       cul.adslot_id
+         |FROM (select searchid,
+         |             adid_str,
+         |             ad_title,
+         |             ad_click_url,
+         |             isshow,
+         |             isclick,
+         |             adsrc,
+         |             adslot_id
+         |      from dl_cpc.cpc_basedata_union_events
+         |      WHERE day = '${argDay}' AND adid_str != "" AND adsrc > 1  AND isshow > 0
+         |    ) cul left join
+         |     (select searchid,
+         |             ext_string['ad_desc']     ad_desc,
+         |             ext_string['ad_img_urls'] ad_img_urls
+         |      from dl_cpc.cpc_bd_adx_blob
+         |      where day = '${argDay}'
+         |      ) bd
+         |     on cul.searchid = bd.searchid
+         |""".stripMargin)
       .rdd
       .map {
         x =>
