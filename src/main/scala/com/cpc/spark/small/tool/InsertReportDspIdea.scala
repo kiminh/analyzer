@@ -80,7 +80,7 @@ object InsertReportDspIdea {
          |             isclick,
          |             adsrc,
          |             adslot_id
-         |      from dl_cpc.cpc_basedata_union_events
+         |      from dl_cpc.cpc_basedata_union_events_fqe
          |      WHERE day = '${argDay}' AND adid_str != "" AND adsrc > 1  AND isshow > 0
          |    ) cul left join
          |     (select searchid,
