@@ -3,16 +3,16 @@ package com.cpc.spark.ml.recallReport
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import com.cpc.spark.common.Murmur3Hash
+
 import scala.collection.mutable
 
 
-
-object model_effect {
+object model_effect_adcontent {
   def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().appName("model_effect").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("model_effect_adcontent").enableHiveSupport().getOrCreate()
     val curday = args(0)
     val seed = args(1).toInt
     val dist = args(2)
@@ -41,7 +41,7 @@ object model_effect {
          |    from dl_cpc.cpc_basedata_union_events
          |    where day = '$oneday'
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
-         |    and adslot_type = 1
+         |    and adslot_type = 2
          |    and isshow=1
          |    and ctr_model_name not like '%noctr%'
          |    and adsrc in (1, 28)
@@ -69,14 +69,14 @@ object model_effect {
          |    and hour >= '$hour_start'
          |    and hour <= '$hour_end'
          |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
-         |    and adslot_type = 1
+         |    and adslot_type = 2
          |    and isshow=1
          |    and ctr_model_name not like '%noctr%'
          |""".stripMargin
     spark.sql(sql).withColumn("hash_model_name",hash(seed, dist_map)($"uid")).createOrReplaceTempView("union_log")
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_model_effect partition (model_type="adlist", day="$oneday")
+         |insert overwrite table dl_cpc.cpc_model_effect partition (model_type="adcontent", day="$oneday")
          |select
          |        hash_model_name, uv, imp_all, click_all, rev_all, (click_all/imp_all) as ctr_all,
          |        (rev_all/uv) as arpu_all,(rev_all/imp_all) as cpm_all, (rev_all/click_all) as acp_all,
