@@ -63,7 +63,7 @@ object model_effect {
          |        ,price
          |        ,dsp_cpm
          |        ,adsrc
-         |        ,ctr_model_name
+         |       ,ctr_model_name
          |    from dl_cpc.cpc_basedata_union_events
          |    where day = '$oneday'
          |    and hour >= '$hour_start'
