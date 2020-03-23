@@ -56,6 +56,7 @@ object model_effect_adcontent {
     val sql =
       s"""
          |select A.*, if(B.conversion_goal is not null and isclick=1, 1, 0) as iscvr
+         |from
          |(select searchid, ideaid, conversion_goal, if(length(tuid)>0, tuid, uid) as uid
          |        ,charge_type
          |        ,isshow
