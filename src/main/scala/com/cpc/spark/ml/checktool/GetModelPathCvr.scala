@@ -43,8 +43,9 @@ object GetModelPathCvr{
                  |  where a.day ='$dt' and a.hour='$hour'
                  |  and a.$condition = '$modelName'
                  |  and a.adsrc in (1,28) and a.$action = 1) ta
-                 |  join (select searchid from dl_cpc.cpc_snapshot_v2 where dt = '$dt'
-                 |  and hour = '$hour' and model_name = '$modelName' group by searchid having count(*)=1) tb
+                 |  join (select searchid from dl_cpc.cpc_basedata_union_events
+                 |  where day ='$dt' and hour='$hour' and $condition = '$modelName'
+                 |  and adsrc in (1,28) and $action = 1 group by searchid having count(*)=1) tb
                  |  on ta.searchid=tb.searchid
        """.stripMargin
 
