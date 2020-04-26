@@ -32,7 +32,7 @@ object DnnLookalike{
 
     val sql = s"""
                  |select distinct tb.uid from
-                 |(select searchid_hash, tuid from table dl_cpc.cpc_sample_v2 where dt='${dt}' and hour='00' and pt='daily' and task='$task') ta
+                 |(select searchid_hash, tuid from dl_cpc.cpc_sample_v2 where dt='${dt}' and hour='00' and pt='daily' and task='$task') ta
                  |join
                  |(select tuid,md5(did) as uid from qttdw.dwd_adl_tuid_did_mapping_di where dt='${dt}' group by tuid,did) tb
                  | on ta.tuid=tb.tuid
