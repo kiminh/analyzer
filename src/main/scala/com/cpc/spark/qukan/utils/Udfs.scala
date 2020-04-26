@@ -127,28 +127,15 @@ object Udfs {
   })
 
   def checkStudent() = udf((value: String) => {
-    if(value.contains("224=100")){
-      "student"
-    }
-    else if (value.contains("225=100")){
-      "not_student"
-    }
-    else{
-      "notag"
-    }
-
+    if (value.contains("224")) "student"
+    else if (value.contains("225")) "not_student"
+    else "notag"
   })
-  def checkStudent2() = udf((value: String) => {
-    if(value.contains("239")){
-      "student"
-    }
-    else if(value.contains("240")){
-      "not_student"
-    }
-    else{
-      "notag"
-    }
 
+  def checkStudent2() = udf((value: String) => {
+    if (value.contains("239")) "student"
+    else if (value.contains("240")) "not_student"
+    else "notag"
   })
 
   def checkZfb() = udf((valueMain: String) => {
