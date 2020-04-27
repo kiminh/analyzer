@@ -46,6 +46,6 @@ object DnnLookalike{
     spark.sql(sql).rdd.map{
       r =>
         r.getAs[String]("uid")
-    }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result.txt")
+    }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
   }
 }
