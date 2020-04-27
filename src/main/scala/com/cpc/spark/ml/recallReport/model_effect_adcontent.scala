@@ -19,6 +19,7 @@ object model_effect_adcontent {
     val hour_start = args(3)
     val hour_end = args(4)
     val threshold = args(5)
+    val idea_create_days = args(6).toInt
     import spark.implicits._
     val cal = Calendar.getInstance()
     cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(s"$curday"))
@@ -53,33 +54,67 @@ object model_effect_adcontent {
       println("hash wrong:%s", acc.toString)
       System.exit(1)
     }
-    val sql =
-      s"""
-         |select A.*, if(B.conversion_goal is not null and isclick=1, 1, 0) as iscvr
-         |from
-         |(select searchid, ideaid, conversion_goal, if(length(tuid)>0, tuid, uid) as uid
-         |        ,charge_type
-         |        ,isshow
-         |        ,isclick
-         |        ,raw_ctr
-         |        ,price
-         |        ,dsp_cpm
-         |        ,adsrc
-         |       ,ctr_model_name, cast(bid_ocpc as double) as cpagiven
-         |    from dl_cpc.cpc_basedata_union_events
-         |    where day = '$oneday'
-         |    and hour >= '$hour_start'
-         |    and hour <= '$hour_end'
-         |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
-         |    and adslot_type = 2
-         |    and isshow=1
-         |    and ctr_model_name not like '%noctr%') A
-         |    left join
-         |    (SELECT searchid, ideaid, conversion_goal FROM dl_cpc.ocpc_cvr_log_hourly WHERE date = '$oneday'
-         |    GROUP BY searchid, ideaid, conversion_goal) B ON A.searchid = B.searchid
-         |    AND A.ideaid = B.ideaid
-         |    AND A.conversion_goal = B.conversion_goal
-         |""".stripMargin
+    var sql = """"""
+    if(idea_create_days<0){
+      sql =
+        s"""
+           |select A.*, if(B.conversion_goal is not null and isclick=1, 1, 0) as iscvr
+           |from
+           |(select searchid, ideaid, conversion_goal, if(length(tuid)>0, tuid, uid) as uid
+           |        ,charge_type
+           |        ,isshow
+           |        ,isclick
+           |        ,raw_ctr
+           |        ,price
+           |        ,dsp_cpm
+           |        ,adsrc
+           |       ,ctr_model_name, cast(bid_ocpc as double) as cpagiven
+           |    from dl_cpc.cpc_basedata_union_events
+           |    where day = '$oneday'
+           |    and hour >= '$hour_start'
+           |    and hour <= '$hour_end'
+           |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
+           |    and adslot_type = 2
+           |    and isshow=1
+           |    and ctr_model_name not like '%noctr%') A
+           |    left join
+           |    (SELECT searchid, ideaid, conversion_goal FROM dl_cpc.ocpc_cvr_log_hourly WHERE date = '$oneday'
+           |    GROUP BY searchid, ideaid, conversion_goal) B ON A.searchid = B.searchid
+           |    AND A.ideaid = B.ideaid
+           |    AND A.conversion_goal = B.conversion_goal
+           |""".stripMargin
+    }
+    else {
+      sql =
+        s"""
+           |select A.*, if(B.conversion_goal is not null and isclick=1, 1, 0) as iscvr
+           |from
+           |(select searchid, ideaid, conversion_goal, if(length(tuid)>0, tuid, uid) as uid
+           |        ,charge_type
+           |        ,isshow
+           |        ,isclick
+           |        ,raw_ctr
+           |        ,price
+           |        ,dsp_cpm
+           |        ,adsrc
+           |       ,ctr_model_name, cast(bid_ocpc as double) as cpagiven
+           |    from dl_cpc.cpc_basedata_union_events
+           |    where day = '$oneday'
+           |    and hour >= '$hour_start'
+           |    and hour <= '$hour_end'
+           |    and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
+           |    and adslot_type = 2
+           |    and isshow=1
+           |    and idea_create_days<='$idea_create_days'
+           |    and ctr_model_name not like '%noctr%') A
+           |    left join
+           |    (SELECT searchid, ideaid, conversion_goal FROM dl_cpc.ocpc_cvr_log_hourly WHERE date = '$oneday'
+           |    GROUP BY searchid, ideaid, conversion_goal) B ON A.searchid = B.searchid
+           |    AND A.ideaid = B.ideaid
+           |    AND A.conversion_goal = B.conversion_goal
+           |""".stripMargin
+    }
+
     spark.sql(sql).withColumn("hash_model_name",hash(seed, dist_map)($"uid")).createOrReplaceTempView("union_log")
     spark.sql(
       s"""
