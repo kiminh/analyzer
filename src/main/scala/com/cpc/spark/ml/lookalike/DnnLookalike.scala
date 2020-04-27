@@ -16,7 +16,8 @@ object DnnLookalike{
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val start = args(0)
     val end = args(1)
-    val task = args(2)
+    val ml_ver = args(2)
+    val task = "adcvr-" + ml_ver
 
     println(s"start=$start")
     println(s"task=$task")
@@ -33,7 +34,7 @@ object DnnLookalike{
 
     val sql = s"""
                  |select distinct tb.uid from
-                 |(select searchid_hash, tuid from dl_cpc.cpc_sample_v2 where (dt between '${start}' and '${end}') and hour='00' and pt='daily' and task='$task') ta
+                 |(select searchid_hash, tuid from dl_cpc.cpc_sample_v2 where (dt between '${start}' and '${end}') and hour='00' and pt='daily' and task='$ml_ver') ta
                  |join
                  |(select tuid,md5(did) as uid from qttdw.dwd_adl_tuid_did_mapping_di where (dt between '${start}' and '${end}') group by tuid,did) tb
                  | on ta.tuid=tb.tuid
@@ -45,6 +46,6 @@ object DnnLookalike{
     spark.sql(sql).rdd.map{
       r =>
         r.getAs[String]("uid")
-    }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result.txt")
+    }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
   }
 }
