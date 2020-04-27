@@ -45,7 +45,7 @@ object DnnLookalike{
        """.stripMargin
     println(s"sql:\n$sql")
     spark.sql(sql)
-    
+
     if (start == start){
       spark.sql(
         s"""
