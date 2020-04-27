@@ -53,7 +53,7 @@ object DnnLookalike{
            |""".stripMargin).rdd.map{
         r =>
           r.getAs[String]("uid")
-      }.repartition(2).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
+      }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
     }
 
   }
