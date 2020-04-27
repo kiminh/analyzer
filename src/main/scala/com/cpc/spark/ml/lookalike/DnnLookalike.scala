@@ -33,19 +33,27 @@ object DnnLookalike{
     dnn_data.createOrReplaceTempView("dnn_lookalike")
 
     val sql = s"""
+                 |insert overwrite table dl_cpc.cpc_dnn_lookalike partition(day='${start}', model='$ml_ver')
                  |select distinct tb.uid from
-                 |(select searchid_hash, tuid from dl_cpc.cpc_sample_v2 where (dt between '${start}' and '${end}') and hour='00' and pt='daily' and task='$ml_ver') ta
+                 |(select searchid_hash, tuid from dl_cpc.cpc_sample_v2 where dt='${start}' and hour='00' and pt='daily' and task='$ml_ver') ta
                  |join
-                 |(select tuid,md5(did) as uid from qttdw.dwd_adl_tuid_did_mapping_di where (dt between '${start}' and '${end}') group by tuid,did) tb
+                 |(select tuid,md5(did) as uid from qttdw.dwd_adl_tuid_did_mapping_di where dt='${start}' group by tuid,did) tb
                  | on ta.tuid=tb.tuid
                  |join
                  |(select id from dnn_lookalike where prediction>0 group by id) tc
                  |on ta.searchid_hash=tc.id
        """.stripMargin
     println(s"sql:\n$sql")
-    spark.sql(sql).rdd.map{
-      r =>
-        r.getAs[String]("uid")
-    }.repartition(5).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
+    spark.sql(sql)
+    
+    if (start == start){
+      spark.sql(
+        s"""
+           |select uid from dl_cpc.cpc_dnn_lookalike where model='$ml_ver' group by uid
+           |""".stripMargin).rdd.map{
+        r =>
+          r.getAs[String]("uid")
+      }.repartition(2).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
+    }
   }
 }
