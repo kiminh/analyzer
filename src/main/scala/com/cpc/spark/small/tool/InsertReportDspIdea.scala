@@ -63,11 +63,11 @@ object InsertReportDspIdea {
 
     val unionData = ctx.sql(
       s"""
-         |SELECT adid_str,
-         |       myFilter(ad_title),
-         |       bd.ad_desc,
-         |       bd.ad_img_urls,
-         |       ad_click_url,
+         |SELECT nvl(adid_str,'') adid_str,
+         |       nvl(myFilter(ad_title) ,'') ad_title,
+         |       nvl(bd.ad_desc,'') ad_desc,
+         |       nvl(bd.ad_img_urls,'') ad_img_urls,
+         |       nvl(ad_click_url,'') ad_click_url,
          |       isshow,
          |       isclick,
          |       cul.adsrc,
@@ -80,7 +80,7 @@ object InsertReportDspIdea {
          |             isclick,
          |             adsrc,
          |             adslot_id
-         |      from dl_cpc.cpc_basedata_union_events_fqe
+         |      from dl_cpc.cpc_basedata_union_events
          |      WHERE day = '${argDay}' AND adid_str != "" AND adsrc > 1  AND isshow > 0
          |    ) cul left join
          |     (select searchid,
