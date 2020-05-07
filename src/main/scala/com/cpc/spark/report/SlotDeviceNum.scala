@@ -30,7 +30,7 @@ object SlotDeviceNum {
          |        ,adslot_id
          |        ,os
          |        ,uid
-         |from dl_cpc.cpc_basedata_union_events
+         |from dl_cpc.cpc_basedata_union_events_fqe
          |where day='$day' and hour='$hour'
          |group by media_appsid
          |        ,adslot_type

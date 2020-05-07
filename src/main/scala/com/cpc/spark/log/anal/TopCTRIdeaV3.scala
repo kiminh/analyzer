@@ -38,7 +38,7 @@ object TopCTRIdeaV3 {
 			val stmt =
 				s"""
 				   |select adslot_type, ideaid, media_appsid, sum(isclick) as sum_click, sum(isshow) as sum_show
-				   |from dl_cpc.cpc_basedata_union_events
+				   |from dl_cpc.cpc_basedata_union_events_fqe
 				   |where day = '$date'
 				   |and isshow = 1
 				   |and adslot_id > 0
