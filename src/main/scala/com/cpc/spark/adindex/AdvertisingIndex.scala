@@ -42,7 +42,7 @@ object AdvertisingIndex {
       } else null
     }).filter((u: Group) => u != null)
 
-    val location: String = s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute"
+    val location: String = s"hdfs://cpc1/cpc/dw/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute"
     spark.createDataFrame(idx).repartition(RPT_MIN).write.mode(SaveMode.Overwrite).parquet(location)
     spark.sql(s"""alter table dl_cpc.cpc_ad_index add if not exists partition (date = "$date", hour="$hour", minute="$minute") location '$location'""")
   }
