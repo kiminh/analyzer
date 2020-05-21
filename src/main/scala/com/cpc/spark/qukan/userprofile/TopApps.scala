@@ -15,7 +15,7 @@ object TopApps {
     val pkgs = spark.read.parquet("hdfs://inner-di-hdfs.1sapp.com/cpc1/dw/dl_cpc.db/cpc_user_installed_apps/%s".format(date)).rdd.cache()
 
     val allApps: RDD[(String, Long)] = pkgs.map(x => (x.getString(0), x.getAs[Seq[String]]("app_name"))).flatMap(_._2.map(x => (x, 1L))).reduceByKey(_ + _).filter(_._2 > 20000).sortBy(x => x._2, ascending = false)
-    allApps.toDF("pkg", "install_user_num").write.mode(SaveMode.Overwrite).parquet("hdfs://emr-cluster/warehouse/dl_cpc.db/top_apps/%s".format(date))
+    allApps.toDF("pkg", "install_user_num").write.mode(SaveMode.Overwrite).parquet("hdfs://inner-di-hdfs.1sapp.com/cpc2/dw/dl_cpc.db/top_apps/%s".format(date))
     spark.sql("""ALTER TABLE dl_cpc.top_apps add if not exists PARTITION (`date` = "%s") """.format(date))
 
     val iterator: Iterator[(String, Long)] = allApps.toLocalIterator
