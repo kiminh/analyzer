@@ -11,9 +11,8 @@ object TopApps {
   def main(args: Array[String]): Unit = {
     val date: String = args(0)
     val spark: SparkSession = SparkSession.builder().appName("[cpc-data] topapps" + date).enableHiveSupport().getOrCreate()
-    val inpath: String = "hdfs://emr-cluster/user/cpc/userInstalledApp/%s".format(date)
     import spark.implicits._
-    val pkgs = spark.read.parquet(inpath).rdd.cache()
+    val pkgs = spark.read.parquet("hdfs://inner-di-hdfs.1sapp.com/cpc1/dw/dl_cpc.db/cpc_user_installed_apps/%s".format(date)).rdd.cache()
 
     val allApps: RDD[(String, Long)] = pkgs.map(x => (x.getString(0), x.getAs[Seq[String]]("app_name"))).flatMap(_._2.map(x => (x, 1L))).reduceByKey(_ + _).filter(_._2 > 20000).sortBy(x => x._2, ascending = false)
     allApps.toDF("pkg", "install_user_num").write.mode(SaveMode.Overwrite).parquet("hdfs://emr-cluster/warehouse/dl_cpc.db/top_apps/%s".format(date))
@@ -27,7 +26,6 @@ object TopApps {
     }
 
     val mailingList: Seq[String] = Seq(
-      "dongwei@aiclk.com",
       "zhangting@qutoutiao.net",
       "huxinjie@aiclk.com",
       "sujiaqi@qutoutiao.net",
@@ -36,19 +34,15 @@ object TopApps {
       "heting@qutoutiao.net",
       "liutianlin@qutoutiao.net",
       "baizhen@qutoutiao.net",
-      "zhangzhiyang@qutoutiao.net",
-      "duruiyu@qutoutiao.net",
-      "chenge@qutoutiao.net",
       "zhangxiaonian@qutoutiao.net",
       "zhangwei07@qutoutiao.net",
       "fanyiming@qutoutiao.net",
       "zhuqiqi@qutoutiao.net",
-      "jiangxue@qutoutiao.net",
       "zhangfan03@qutoutiao.net",
       "shanshi@qutoutiao.net",
-      "zhangbowen@qutoutiao.net",
       "wangzheming@qutoutiao.net",
-      "wangxinyuan@qutoutiao.net"
+      "wangxinyuan@qutoutiao.net",
+      "sushanshan@qutoutiao.net"
     )
     sendMail(txt, "%s topapps 活跃用户DAU [所有媒体]".format(date), mailingList)
 
