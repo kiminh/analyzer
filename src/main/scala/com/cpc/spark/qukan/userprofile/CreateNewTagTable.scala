@@ -31,7 +31,8 @@ object CreateNewTagTable {
         .select("uid", "member_id", "sex", "isstudent", "iszfb", "birthday","isstudent2", "date")
         .write.mode("overwrite").insertInto("dl_cpc.cpc_uid_memberid_tag_daily")
 
-      s"hadoop fs -touchz hdfs://emr-cluster/home/successflag/cpcdept/%s/dl_cpc.cpc_uid_memberid_tag_daily-00-00.ok".format(dateValue) !
+
+      s"hadoop fs -touchz hdfs://cpc1/home/successflag/cpcdept/%s/dl_cpc.cpc_uid_memberid_tag_daily-00-00.ok".format(dateValue) !
     }
   }
 }
