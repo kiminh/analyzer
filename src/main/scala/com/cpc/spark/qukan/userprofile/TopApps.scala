@@ -37,12 +37,11 @@ object TopApps {
       "zhangxiaonian@qutoutiao.net",
       "zhangwei07@qutoutiao.net",
       "fanyiming@qutoutiao.net",
-      "zhuqiqi@qutoutiao.net",
+      "cpc_analysis@qutoutiao.net",
       "zhangfan03@qutoutiao.net",
       "shanshi@qutoutiao.net",
       "wangzheming@qutoutiao.net",
-      "wangxinyuan@qutoutiao.net",
-      "sushanshan@qutoutiao.net"
+      "wangxinyuan@qutoutiao.net"
     )
     sendMail(txt, "%s topapps 活跃用户DAU [所有媒体]".format(date), mailingList)
 
