@@ -47,7 +47,7 @@ object InsertReportMediaQualityTest {
       .sql(
         """
           |SELECT searchid,media_appsid,adslot_id,adslot_type,isshow,isclick,planid
-          |FROM dl_cpc.cpc_basedata_union_events
+          |FROM dl_cpc.cpc_basedata_union_events_fqe
           |WHERE day="%s" AND adclass=132102100 AND userid=1001028 AND isshow>0 AND planid>0
         """.stripMargin.format(argDay))
       .rdd
@@ -74,7 +74,7 @@ object InsertReportMediaQualityTest {
       """
         |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslot_id,cul.adslot_type,cutl.trace_type,cutl.duration,cul.planid
         |FROM dl_cpc.cpc_basedata_trace_event cutl
-        |INNER JOIN dl_cpc.cpc_basedata_union_events cul ON cutl.searchid=cul.searchid
+        |INNER JOIN dl_cpc.cpc_basedata_union_events_fqe cul ON cutl.searchid=cul.searchid
         |WHERE cutl.day="%s" AND cul.day="%s" AND cul.adclass=132102100 AND cul.userid=1001028 AND cul.isclick>0
       """.stripMargin.format(argDay, argDay))
       .rdd

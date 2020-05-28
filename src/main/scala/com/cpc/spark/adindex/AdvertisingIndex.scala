@@ -21,30 +21,34 @@ object AdvertisingIndex {
     val cal: Calendar = getCalendarByDateTimeStr(args(0).trim)
     val (date, hour, minute) = (new SimpleDateFormat(DAY_FMT).format(cal.getTime), new SimpleDateFormat(HH_FMT).format(cal.getTime), new SimpleDateFormat(MM_FMT).format(cal.getTime))
 
-    val idxItems: Idx.IdxItems = idxinterface.Idx.IdxItems.parseFrom(Http(URL_TOGO).timeout(connTimeoutMs = 40000, readTimeoutMs = 40000).asBytes.body.drop(16))
-    val ideaItemMap: Map[Int, Idea] = (0 until idxItems.getDitemsCount).map { i: Int => GetItem.getIdea(idxItems.getDitems(i)).ideaid -> GetItem.getIdea(idxItems.getDitems(i))}.toMap
-    val unitItemSeq: Seq[Group] = (0 until idxItems.getGitemsCount).flatMap { i: Int => GetItem.getGroup(idxItems.getGitems(i)) }
-    val idx: Seq[Group] = unitItemSeq.map((u: Group) => {
-      if (ideaItemMap.contains(u.ideaid)) {
-        val ideaItem: Idea = ideaItemMap(u.ideaid)
-        u.copy(
-          mtype = ideaItem.mtype,
-          width = ideaItem.width,
-          height = ideaItem.height,
-          interaction = ideaItem.interaction,
-          `class` = ideaItem.`class`,
-          material_level = ideaItem.material_level,
-          siteid = ideaItem.siteid,
-          white_user_ad_corner = ideaItem.white_user_ad_corner,
-          timestamp = (cal.getTimeInMillis / 1000L).toInt,
-          ext_int = u.ext_int.updated("is_api_callback", ideaItem.is_api_callback)
-        )
-      } else null
-    }).filter((u: Group) => u != null)
+    try {
+      val idxItems: Idx.IdxItems = idxinterface.Idx.IdxItems.parseFrom(Http(URL_TOGO).timeout(connTimeoutMs = 80000, readTimeoutMs = 80000).asBytes.body.drop(16))
+      val ideaItemMap: Map[Int, Idea] = (0 until idxItems.getDitemsCount).map { i: Int => GetItem.getIdea(idxItems.getDitems(i)).ideaid -> GetItem.getIdea(idxItems.getDitems(i))}.toMap
+      val unitItemSeq: Seq[Group] = (0 until idxItems.getGitemsCount).flatMap { i: Int => GetItem.getGroup(idxItems.getGitems(i)) }
+      val idx: Seq[Group] = unitItemSeq.map((u: Group) => {
+        if (ideaItemMap.contains(u.ideaid)) {
+          val ideaItem: Idea = ideaItemMap(u.ideaid)
+          u.copy(
+            mtype = ideaItem.mtype,
+            width = ideaItem.width,
+            height = ideaItem.height,
+            interaction = ideaItem.interaction,
+            `class` = ideaItem.`class`,
+            material_level = ideaItem.material_level,
+            siteid = ideaItem.siteid,
+            white_user_ad_corner = ideaItem.white_user_ad_corner,
+            timestamp = (cal.getTimeInMillis / 1000L).toInt,
+            ext_int = u.ext_int.updated("is_api_callback", ideaItem.is_api_callback)
+          )
+        } else null
+      }).filter((u: Group) => u != null)
 
-    val location: String = s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute"
-    spark.createDataFrame(idx).repartition(RPT_MIN).write.mode(SaveMode.Overwrite).parquet(location)
-    spark.sql(s"""alter table dl_cpc.cpc_ad_index add if not exists partition (date = "$date", hour="$hour", minute="$minute") location '$location'""")
+      val location: String = s"hdfs://cpc1/cpc/dw/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute"
+      spark.createDataFrame(idx).repartition(RPT_MIN).write.mode(SaveMode.Overwrite).parquet(location)
+      spark.sql(s"""alter table dl_cpc.cpc_ad_index add if not exists partition (date = "$date", hour="$hour", minute="$minute") location '$location'""")
+    } catch {
+      case _: Exception =>
+    }
   }
 
   def getCalendarByDateTimeStr(dateTimeStr: String): Calendar = {
