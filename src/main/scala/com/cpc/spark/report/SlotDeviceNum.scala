@@ -90,12 +90,12 @@ object SlotDeviceNum {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day/hour=$hour")
+      .parquet(s"hdfs://inner-di-hdfs.1sapp.com/cpc3/dw/dl_cpc.db/slot_device_num/day=$day/hour=$hour")
 
     spark.sql(
       s"""
          |ALTER TABLE dl_cpc.slot_device_num add if not exists PARTITION(`day` = "$day",`hour` = "$hour")
-         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day/hour=$hour'
+         | LOCATION  'hdfs://inner-di-hdfs.1sapp.com/cpc3/dw/dl_cpc.db/slot_device_num/day=$day/hour=$hour'
       """.stripMargin)
 
     println("base table device")
