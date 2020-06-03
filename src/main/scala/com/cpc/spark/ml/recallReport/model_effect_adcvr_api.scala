@@ -20,7 +20,7 @@ object model_effect_adcvr_api {
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     spark.sql(
       s"""
-         |insert into dl_cpc.cpc_model_effect_api partition (type='total', day='${day}')
+         |insert overwrite table dl_cpc.cpc_model_effect_api partition (type='total', day='${day}')
          |select
          |            case when num < 100 then 'qtt-cvr-dnn-rawid-v6apimeng'
          |                 else 'qtt-cvr-dnn-rawid-v6api-reg-tf' end as tag,
@@ -64,7 +64,7 @@ object model_effect_adcvr_api {
 
     spark.sql(
       s"""
-         |insert into dl_cpc.cpc_model_effect_api partition (type='ocpc5', day='${day}')
+         |insert overwrite table dl_cpc.cpc_model_effect_api partition (type='ocpc5', day='${day}')
          |select  a.cvr_model_name,
          |            count(distinct if(a.tuid is not null,a.tuid,a.uid)) uv,
          |            sum(isshow) as imp,
@@ -104,7 +104,7 @@ object model_effect_adcvr_api {
 
     spark.sql(
       s"""
-         |insert into dl_cpc.cpc_model_effect_api partition (type='ocpc127', day='${day}')
+         |insert overwrite table dl_cpc.cpc_model_effect_api partition (type='ocpc127', day='${day}')
          |select  a.cvr_model_name,
          |            count(distinct if(a.tuid is not null,a.tuid,a.uid)) uv,
          |            sum(isshow) as imp,
