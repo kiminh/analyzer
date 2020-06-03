@@ -31,8 +31,7 @@ object Utils {
 
   def sendMail(txt: String, sub: String, to: Seq[String]): Boolean = {
     val conf = ConfigFactory.load()
-    val session = (SmtpAddress(conf.getString("mail.host"), conf.getInt("mail.port")) :: SessionFactory())
-      .session(Some(conf.getString("mail.username") -> conf.getString("mail.password")))
+    val session = (SmtpAddress(conf.getString("mail.host"), conf.getInt("mail.port")) :: SessionFactory()).session(Some(conf.getString("mail.username") -> conf.getString("mail.password")))
     val toAdd = to.map(new InternetAddress(_))
     val msg = Message(
       from = new InternetAddress(conf.getString("mail.sender")),
