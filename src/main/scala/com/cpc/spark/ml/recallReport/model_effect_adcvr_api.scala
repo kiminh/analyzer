@@ -65,7 +65,7 @@ object model_effect_adcvr_api {
     spark.sql(
       s"""
          |insert into dl_cpc.cpc_model_effect_api partition (type='ocpc5', day='${day}')
-         |select  a.day,a.cvr_model_name,
+         |select  a.cvr_model_name,
          |            count(distinct if(a.tuid is not null,a.tuid,a.uid)) uv,
          |            sum(isshow) as imp,
          |            sum(isclick) as click,
@@ -105,7 +105,7 @@ object model_effect_adcvr_api {
     spark.sql(
       s"""
          |insert into dl_cpc.cpc_model_effect_api partition (type='ocpc127', day='${day}')
-         |select  a.day,a.cvr_model_name,
+         |select  a.cvr_model_name,
          |            count(distinct if(a.tuid is not null,a.tuid,a.uid)) uv,
          |            sum(isshow) as imp,
          |            sum(isclick) as click,
