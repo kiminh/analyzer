@@ -27,7 +27,7 @@ object TopApps {
 
     val mailingList: Seq[String] = Seq(
       "zhangting@qutoutiao.net",
-      "huxinjie@aiclk.com",
+      "huxinjie@qutoutiao.net",
       "sujiaqi@qutoutiao.net",
       "weijinxian@qutoutiao.net",
       "yuxiaoyang@qutoutiao.net",
