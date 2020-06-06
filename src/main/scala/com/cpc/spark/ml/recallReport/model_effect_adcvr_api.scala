@@ -21,7 +21,7 @@ object model_effect_adcvr_api {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_model_effect_api partition (type='ocpc5', day='${day}')
+         |insert overwrite table dl_cpc.cpc_model_effect_api partition (type='ocpc1257', day='${day}')
          |select  a.cvr_model_name,
          |            count(distinct if(a.tuid is not null,a.tuid,a.uid)) uv,
          |            sum(isshow) as imp,
