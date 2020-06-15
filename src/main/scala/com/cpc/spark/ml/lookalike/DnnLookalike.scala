@@ -22,7 +22,7 @@ object DnnLookalike{
     println(s"start=$start")
     println(s"task=$task")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://algo1/cpcalgo/user/cpc/wy/dnn_model_score_offline/$task/$end/result-*")
       .toDF("id","prediction","num")
 
     dnn_data.show(10)
@@ -53,7 +53,7 @@ object DnnLookalike{
            |""".stripMargin).rdd.map{
         r =>
           r.getAs[String]("uid")
-      }.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
+      }.repartition(1).saveAsTextFile(s"hdfs://algo1/cpcalgo/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
     }
 
   }
