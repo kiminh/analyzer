@@ -46,15 +46,15 @@ object DnnLookalike{
     println(s"sql:\n$sql")
     spark.sql(sql)
 
-    if (start == end){
-      spark.sql(
-        s"""
-           |select uid from algo_cpc.cpc_dnn_lookalike where model='$ml_ver' group by uid
-           |""".stripMargin).rdd.map{
-        r =>
-          r.getAs[String]("uid")
-      }.repartition(1).saveAsTextFile(s"hdfs://algo1/cpcalgo/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
-    }
+//    if (start == end){
+//      spark.sql(
+//        s"""
+//           |select uid from algo_cpc.cpc_dnn_lookalike where model='$ml_ver' group by uid
+//           |""".stripMargin).rdd.map{
+//        r =>
+//          r.getAs[String]("uid")
+//      }.repartition(1).saveAsTextFile(s"hdfs://algo1/cpcalgo/user/cpc/wy/dnn_model_score_offline/$task/$end/total_result")
+//    }
 
   }
 }
