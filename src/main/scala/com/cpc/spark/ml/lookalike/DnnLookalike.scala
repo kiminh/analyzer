@@ -37,7 +37,7 @@ object DnnLookalike{
                  |select distinct tb.uid from
                  |(select searchid_hash, tuid from algo_cpc.cpc_sample_v2 where dt='${start}' and hour='00' and pt='daily' and task='$ml_ver') ta
                  |join
-                 |(select tuid,md5(did) as uid from qttdw.dwd_adl_tuid_did_mapping_di where dt='${start}' group by tuid,did) tb
+                 |(select tuid,did as uid from qttdw.dwd_adl_tuid_did_mapping_di where dt='${start}' group by tuid,did) tb
                  | on ta.tuid=tb.tuid
                  |join
                  |(select id from dnn_lookalike where prediction>0 group by id) tc
