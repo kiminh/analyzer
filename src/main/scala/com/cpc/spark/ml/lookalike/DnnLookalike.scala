@@ -34,9 +34,9 @@ object DnnLookalike{
     dnn_data.createOrReplaceTempView("dnn_lookalike")
 
     val sql = s"""
-                 |insert overwrite table algo_cpc.cpc_dnn_lookalike partition(day='${start}', model='$tag_name')
+                 |insert overwrite table algo_cpc.cpc_dnn_lookalike partition(day='${start}', model='$ml_ver')
                  |select distinct tb.uid from
-                 |(select searchid_hash, tuid from algo_cpc.cpc_sample_v2 where dt='${start}' and hour='00' and pt='daily' and task='$ml_ver') ta
+                 |(select searchid_hash, tuid from algo_cpc.cpc_sample_v2 where dt='${start}' and hour='00' and pt='daily' and task='$tag_name') ta
                  |join
                  |(select tuid,did as uid from qttdw.dwd_adl_tuid_did_mapping_di where dt='${start}' group by tuid,did) tb
                  | on ta.tuid=tb.tuid
