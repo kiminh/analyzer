@@ -17,6 +17,7 @@ object DnnLookalike{
     val start = args(0)
     val end = args(1)
     val ml_ver = args(2)
+    val tag_name = args(3)
     val task = "adcvr-" + ml_ver
 
     println(s"start=$start")
@@ -33,7 +34,7 @@ object DnnLookalike{
     dnn_data.createOrReplaceTempView("dnn_lookalike")
 
     val sql = s"""
-                 |insert overwrite table algo_cpc.cpc_dnn_lookalike partition(day='${start}', model='$ml_ver')
+                 |insert overwrite table algo_cpc.cpc_dnn_lookalike partition(day='${start}', model='$tag_name')
                  |select distinct tb.uid from
                  |(select searchid_hash, tuid from algo_cpc.cpc_sample_v2 where dt='${start}' and hour='00' and pt='daily' and task='$ml_ver') ta
                  |join
