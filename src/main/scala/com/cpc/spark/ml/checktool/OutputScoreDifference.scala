@@ -19,11 +19,12 @@ object OutputScoreDifference{
     val dt = args(0)
     val modelName = args(1)
     val task = args(2)
+    val hour=args(3)
 
     println(s"dt=$dt")
     println(s"modelName=$modelName")
 
-    val dnn_data = spark.read.parquet(s"hdfs://emr-cluster/user/cpc/wy/dnn_model_score_offline/$task/$dt/result-*")
+    val dnn_data = spark.read.parquet(s"hdfs://algo1/cpcalgo/user/cpc/wy/dnn_model_score_offline/$task/$dt/result-*")
       .toDF("id","prediction","num")
 
     dnn_data.show(10)
@@ -32,7 +33,11 @@ object OutputScoreDifference{
     // get union log
 
     val sql = s"""
-                 |select * from dl_cpc.dnn_model_score_online where day ='$dt' and model ='$modelName'
+                 |select searchid, raw_cvr as raw from dl_cpc.cpc_basedata_union_events
+                 |where day='${dt}' and hour>'$hour'
+                 |and isshow=1 AND adsrc IN (1, 28)
+                 |AND conversion_goal in (1,2,5,7) and is_ocpc=1 and cvr_model_name='$modelName'
+                 |and media_appsid in ('80000001','80000002','80000006','80000064','80000066')
        """.stripMargin
     println(s"sql:\n$sql")
     val basedata = spark.sql(sql)
