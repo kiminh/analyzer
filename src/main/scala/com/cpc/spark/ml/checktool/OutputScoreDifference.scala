@@ -55,7 +55,6 @@ object OutputScoreDifference{
       .withColumn("diff",col("p_offline")/col("raw"))
       .withColumn("diff",restrict(col("diff")))
 
-    basedata.show(10)
     val sum = basedata.count()
     println("sum is %d".format(sum))
    val result = basedata
