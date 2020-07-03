@@ -39,7 +39,7 @@ object OutputScoreDifference{
                  |and isshow=1 AND adsrc IN (1, 28)
                  |AND conversion_goal in (1,2,5,7) and is_ocpc=1 and cvr_model_name='$modelName'
                  |and media_appsid in ('80000001','80000002','80000006','80000064','80000066')) ta
-                 |left join
+                 |join
                  |(select searchid from dl_cpc.cpc_basedata_union_events
                  |where day='${dt}' and hour='$hour'
                  |and isshow=1 AND adsrc IN (1, 28)
