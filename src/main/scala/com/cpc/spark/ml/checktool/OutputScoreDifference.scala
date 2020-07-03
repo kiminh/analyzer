@@ -55,7 +55,13 @@ object OutputScoreDifference{
       .withColumn("diff",col("p_offline")/col("raw"))
       .withColumn("diff",restrict(col("diff")))
 
-    basedata.where("diff>=1.1 or diff<=0.9").show(50)
+    basedata.createOrReplaceTempView("tmp_table")
+    spark.sql(
+      s"""
+         |insert overwrite table algo_cpc.checktool_result partitions(day='${dt}', model='$modelName'
+         |select searchid, raw, p_offline, diff from tmp_table where diff<=0.9 or diff>=1.1
+         |""".stripMargin)
+
     val sum = basedata.count()
     println("sum is %d".format(sum))
    val result = basedata
