@@ -58,7 +58,7 @@ object OutputScoreDifference{
     basedata.createOrReplaceTempView("tmp_table")
     spark.sql(
       s"""
-         |insert overwrite table algo_cpc.checktool_result partitions(day='${dt}', model='$modelName'
+         |insert overwrite table algo_cpc.checktool_result partition(day='${dt}', model='$modelName'
          |select searchid, raw, p_offline, diff from tmp_table where diff<=0.9 or diff>=1.1
          |""".stripMargin)
 
