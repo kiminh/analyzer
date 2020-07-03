@@ -35,13 +35,13 @@ object OutputScoreDifference{
     val sql = s"""
                  |select ta.* from
                  |(select searchid, raw_cvr as raw from dl_cpc.cpc_basedata_union_events
-                 |where day='${dt}' and hour>'$hour'
+                 |where day='${dt}' and hour='$hour'
                  |and isshow=1 AND adsrc IN (1, 28)
                  |AND conversion_goal in (1,2,5,7) and is_ocpc=1 and cvr_model_name='$modelName'
                  |and media_appsid in ('80000001','80000002','80000006','80000064','80000066')) ta
                  |left join
                  |(select searchid from dl_cpc.cpc_basedata_union_events
-                 |where day='${dt}' and hour>'$hour'
+                 |where day='${dt}' and hour='$hour'
                  |and isshow=1 AND adsrc IN (1, 28)
                  |AND conversion_goal in (1,2,5,7) and is_ocpc=1 and cvr_model_name='$modelName'
                  |and media_appsid in ('80000001','80000002','80000006','80000064','80000066') group by searchid having count(ideaid)<2) tb
@@ -51,10 +51,11 @@ object OutputScoreDifference{
     val basedata = spark.sql(sql)
       .withColumn("id",hash64(0)(col("searchid")))
       .join(dnn_data,Seq("id"),"inner")
-      .selectExpr("raw","cast(prediction*1e6d as Int) p_offline")
+      .selectExpr("searchid", "raw","cast(prediction*1e6d as Int) p_offline")
       .withColumn("diff",col("p_offline")/col("raw"))
       .withColumn("diff",restrict(col("diff")))
 
+    basedata.where("diff>=1.1 or diff<=0.9").show(50)
     val sum = basedata.count()
     println("sum is %d".format(sum))
    val result = basedata
